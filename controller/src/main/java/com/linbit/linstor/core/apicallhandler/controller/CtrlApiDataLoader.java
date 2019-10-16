@@ -199,7 +199,7 @@ public class CtrlApiDataLoader
         VolumeDefinition vlmDfn;
         try
         {
-            vlmDfn = (VolumeDefinition) rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
+            vlmDfn = rscDfn.getVolumeDfn(peerAccCtx.get(), vlmNr);
 
             if (failIfNull && vlmDfn == null)
             {
@@ -309,7 +309,7 @@ public class CtrlApiDataLoader
         SnapshotDefinition snapshotDfn;
         try
         {
-            snapshotDfn = (SnapshotDefinition) rscDfn.getSnapshotDfn(peerAccCtx.get(), snapshotName);
+            snapshotDfn = rscDfn.getSnapshotDfn(peerAccCtx.get(), snapshotName);
 
             if (failIfNull && snapshotDfn == null)
             {
@@ -366,31 +366,18 @@ public class CtrlApiDataLoader
 
     public SnapshotVolume loadSnapshotVlm(Snapshot snapshot, VolumeNumber vlmNr)
     {
-        SnapshotVolume snapshotVolume;
-        try
-        {
-            snapshotVolume = snapshot.getSnapshotVolume(peerAccCtx.get(), vlmNr);
+        SnapshotVolume snapshotVolume = snapshot.getVolume(vlmNr);
 
-            if (snapshotVolume == null)
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+        if (snapshotVolume == null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_NOT_FOUND_SNAPSHOT,
                     "Volume " + vlmNr +
-                        " of snapshot '" + snapshot.getSnapshotName() +
-                        "' of resource '" + snapshot.getResourceName() +
-                        "' on node '" + snapshot.getNodeName() + "' not found."
-                ));
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "load volume " + vlmNr +
                     " of snapshot '" + snapshot.getSnapshotName() +
                     "' of resource '" + snapshot.getResourceName() +
-                    "' on node '" + snapshot.getNodeName() + "'",
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
+                    "' on node '" + snapshot.getNodeName() + "' not found."
+                )
             );
         }
         return snapshotVolume;
@@ -449,7 +436,7 @@ public class CtrlApiDataLoader
         StorPool storPool;
         try
         {
-            storPool = (StorPool) node.getStorPool(peerAccCtx.get(), storPoolDfn.getName());
+            storPool = node.getStorPool(peerAccCtx.get(), storPoolDfn.getName());
 
             if (failIfNull && storPool == null)
             {
@@ -561,7 +548,7 @@ public class CtrlApiDataLoader
                 .build()
             );
         }
-        return (Volume) vlm;
+        return vlm;
     }
 
     public final ResourceGroup loadResourceGroup(ResourceGroupName rscGrpNameRef, boolean failIfNull)
@@ -620,7 +607,7 @@ public class CtrlApiDataLoader
             ResourceGroup rscGrp = loadResourceGroup(rscGrpNameRef, failIfNull);
             if (rscGrp != null)
             {
-                vlmGrp = (VolumeGroup) rscGrp.getVolumeGroup(peerAccCtx.get(), vlmNr);
+                vlmGrp = rscGrp.getVolumeGroup(peerAccCtx.get(), vlmNr);
             }
             if (failIfNull && vlmGrp == null) //FIXME
             {

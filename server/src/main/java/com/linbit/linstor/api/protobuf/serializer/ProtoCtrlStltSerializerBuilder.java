@@ -936,7 +936,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllRscConnections(
                     ProtoCommonSerializerBuilder.serializeResourceConnections(
                         serializerCtx,
-                        localResource.streamResourceConnections(serializerCtx).collect(Collectors.toList())
+                        localResource.streamAbsResourceConnections(serializerCtx).collect(Collectors.toList())
                     )
                 )
                 .build();
@@ -954,7 +954,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                     IntOtherRsc.newBuilder()
                         .setNode(ProtoCommonSerializerBuilder.serializeNode(
                             serializerCtx,
-                            rsc.getAssignedNode())
+                            rsc.getNode())
                         )
                         .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, rsc))
                         .build()
@@ -988,16 +988,15 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
 
             List<IntSnapshotOuterClass.SnapshotVlm> snapshotVlms = new ArrayList<>();
-            for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(serializerCtx))
+            Iterator<SnapshotVolume> snapVlmIt = snapshot.iterateVolumes();
+            while (snapVlmIt.hasNext())
             {
-                StorPool storPool = snapshotVolume.getStorPool(serializerCtx);
+                SnapshotVolume snapshotVolume = snapVlmIt.next();
                 snapshotVlms.add(
                     IntSnapshotOuterClass.SnapshotVlm.newBuilder()
                         .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
                         .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
                         .setVlmNr(snapshotVolume.getVolumeNumber().value)
-                        .setStorPoolUuid(storPool.getUuid().toString())
-                        .setStorPoolName(storPool.getName().displayValue)
                         .build()
                 );
             }
@@ -1018,6 +1017,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
                 .setSuspendResource(snapshot.getSuspendResource(serializerCtx))
                 .setTakeSnapshot(snapshot.getTakeSnapshot(serializerCtx))
+                .setLayerObject(
+                    LayerObjectSerializer.serializeLayerObject(
+                        snapshot.getApiData(serializerCtx, null, null).getLayerData()
+                    )
+                )
                 .build();
         }
     }

@@ -8,6 +8,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.migration.etcd.EtcdMigration;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_00_Init;
@@ -15,6 +16,7 @@ import com.linbit.linstor.dbcp.migration.etcd.Migration_01_DelEmptyRscExtNames;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_02_AutoQuorumAndTiebreaker;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_03_DelProp_SnapshotRestore;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_04_DisklessFlagSplit;
+import com.linbit.linstor.dbcp.migration.etcd.Migration_05_UnifyResourcesAndSnapshots;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -122,26 +124,34 @@ public class DbEtcd implements ControllerETCDDatabase
         migrations.put(2, Migration_02_AutoQuorumAndTiebreaker::migrate);
         migrations.put(3, Migration_03_DelProp_SnapshotRestore::migrate);
         migrations.put(4, Migration_04_DisklessFlagSplit::migrate);
+        migrations.put(5, Migration_05_UnifyResourcesAndSnapshots::migrate);
 
-        for (; dbVersion <= migrations.size(); dbVersion++)
+        try
         {
-            EtcdMigrationMethod migrationMethod = migrations.get(dbVersion);
-            if (migrationMethod == null)
+            for (; dbVersion <= migrations.size(); dbVersion++)
             {
-                throw new ImplementationError(
-                    "missing migration from dbVersion " +
-                        (dbVersion - 1) + " -> " + dbVersion
+                EtcdMigrationMethod migrationMethod = migrations.get(dbVersion);
+                if (migrationMethod == null)
+                {
+                    throw new ImplementationError(
+                        "missing migration from dbVersion " +
+                            (dbVersion - 1) + " -> " + dbVersion
+                    );
+                }
+                migrationMethod.migrate(etcdTx);
+
+                etcdTx.getTransaction().put(
+                    EtcdMigration.putReq(
+                        EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + dbVersion + 1
+                    )
                 );
+
+                etcdTx.commit();
             }
-            migrationMethod.migrate(etcdTx);
-
-            etcdTx.getTransaction().put(
-                EtcdMigration.putReq(
-                    EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + dbVersion + 1
-                )
-            );
-
-            etcdTx.commit();
+        }
+        catch (Exception exc)
+        {
+            throw new LinStorDBRuntimeException("Exception occured during migration", exc);
         }
     }
 
@@ -267,6 +277,6 @@ public class DbEtcd implements ControllerETCDDatabase
 
     private interface EtcdMigrationMethod
     {
-        void migrate(ControllerETCDTransactionMgr txMgr);
+        void migrate(ControllerETCDTransactionMgr txMgr) throws Exception;
     }
 }

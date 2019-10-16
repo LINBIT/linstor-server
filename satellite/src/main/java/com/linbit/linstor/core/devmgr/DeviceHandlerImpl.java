@@ -17,6 +17,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -33,7 +34,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LayerFactory;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.DeviceLayer.LayerProcessResult;
@@ -42,8 +43,8 @@ import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.linstor.storage.utils.MkfsUtils;
+import com.linbit.linstor.utils.SetUtils;
 import com.linbit.utils.Either;
-import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.InternalApiConsts.API_NOTIFY_NODE_APPLIED;
 
@@ -64,7 +65,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -117,16 +117,12 @@ public class DeviceHandlerImpl implements DeviceHandler
     @Override
     public void dispatchResources(Collection<Resource> rscs, Collection<Snapshot> snapshots)
     {
-        /*
-         * TODO: we may need to add some snapshotname-suffix logic (like for resourcename)
-         * when implementing snapshots for / through RAID-layer
-         */
-        Map<DeviceLayer, Set<RscLayerObject>> rscByLayer = groupResourcesByLayer(rscs);
-        Map<ResourceName, Set<Snapshot>> snapshotsByRscName = groupSnapshotsByResourceName(snapshots);
+        Map<DeviceLayer, Set<AbsRscLayerObject<Resource>>> rscByLayer = groupByLayer(rscs);
+        Map<DeviceLayer, Set<AbsRscLayerObject<Snapshot>>> snapByLayer = groupByLayer(snapshots);
 
         calculateGrossSizes(rscs);
 
-        boolean prepareSuccess = prepareLayers(rscByLayer, snapshots);
+        boolean prepareSuccess = prepareLayers(rscByLayer, snapByLayer);
 
         if (prepareSuccess)
         {
@@ -137,17 +133,19 @@ public class DeviceHandlerImpl implements DeviceHandler
             List<Volume> vlmListNotifyDelete = new ArrayList<>();
             List<Snapshot> snapListNotifyDelete = new ArrayList<>();
 
-            processResourcesAndTheirSnapshots(
-                snapshots,
+            processResourcesAndSnapshots(
                 rscs,
-                snapshotsByRscName,
+                snapshots,
                 unprocessedSnapshots,
                 rscListNotifyApplied,
                 rscListNotifyDelete,
                 vlmListNotifyDelete,
                 snapListNotifyDelete
             );
-            processUnprocessedSnapshots(unprocessedSnapshots);
+            processUnprocessedSnapshots(
+                unprocessedSnapshots,
+                snapListNotifyDelete
+            );
 
             notifyResourcesApplied(rscListNotifyApplied);
 
@@ -160,27 +158,33 @@ public class DeviceHandlerImpl implements DeviceHandler
             {
                 listener.notifyResourceDeleted(rsc);
             }
+            for (Snapshot snap : snapListNotifyDelete)
+            {
+                listener.notifySnapshotDeleted(snap);
+            }
 
             updateChangedFreeSpaces();
 
-            clearLayerCaches(rscByLayer);
+            clearLayerCaches(rscByLayer, snapByLayer);
         }
     }
 
-    private Map<DeviceLayer, Set<RscLayerObject>> groupResourcesByLayer(Collection<Resource> allResources)
+    private <RSC extends AbsResource<RSC>> Map<DeviceLayer, Set<AbsRscLayerObject<RSC>>> groupByLayer(
+        Collection<RSC> allResources
+    )
     {
-        Map<DeviceLayer, Set<RscLayerObject>> ret = new HashMap<>();
+        Map<DeviceLayer, Set<AbsRscLayerObject<RSC>>> ret = new HashMap<>();
         try
         {
-            for (Resource rsc : allResources)
+            for (RSC absRsc : allResources)
             {
-                RscLayerObject rootRscData = rsc.getLayerData(wrkCtx);
+                AbsRscLayerObject<RSC> rootRscData = absRsc.getLayerData(wrkCtx);
 
-                LinkedList<RscLayerObject> toProcess = new LinkedList<>();
+                LinkedList<AbsRscLayerObject<RSC>> toProcess = new LinkedList<>();
                 toProcess.add(rootRscData);
                 while (!toProcess.isEmpty())
                 {
-                    RscLayerObject rscData = toProcess.poll();
+                    AbsRscLayerObject<RSC> rscData = toProcess.poll();
                     toProcess.addAll(rscData.getChildren());
 
                     DeviceLayer devLayer = layerFactory.getDeviceLayer(rscData.getLayerKind());
@@ -193,19 +197,6 @@ public class DeviceHandlerImpl implements DeviceHandler
             throw new ImplementationError(accDeniedExc);
         }
         return ret;
-    }
-
-    private Map<ResourceName, Set<Snapshot>> groupSnapshotsByResourceName(Collection<Snapshot> snapshots)
-    {
-        return snapshots.stream().collect(
-            Collectors.groupingBy(
-                Snapshot::getResourceName,
-                Collectors.mapping(
-                    Function.identity(),
-                    Collectors.toSet()
-                )
-            )
-        );
     }
 
     private void calculateGrossSizes(Collection<Resource> rootResources) throws ImplementationError
@@ -224,48 +215,41 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     private boolean prepareLayers(
-        Map<DeviceLayer, Set<RscLayerObject>> rscByLayer,
-        Collection<Snapshot> snapshots
+        Map<DeviceLayer, Set<AbsRscLayerObject<Resource>>> rscByLayer,
+        Map<DeviceLayer, Set<AbsRscLayerObject<Snapshot>>> snapByLayer
     )
     {
         boolean prepareSuccess = true;
 
-        Map<DeviceLayer, Pair<Set<RscLayerObject>, Set<Snapshot>>> dataPerLayer = new HashMap<>();
-        for (Entry<DeviceLayer, Set<RscLayerObject>> entry : rscByLayer.entrySet())
+        Set<DeviceLayer> layerSet = SetUtils.mergeIntoHashSet(rscByLayer.keySet(), snapByLayer.keySet());
+
+        for (DeviceLayer layer : layerSet)
         {
-            dataPerLayer.put(entry.getKey(), new Pair<>(entry.getValue(), new HashSet<>()));
-        }
-        if (!snapshots.isEmpty())
-        {
-            Pair<Set<RscLayerObject>, Set<Snapshot>> storageLayerObjectPair = dataPerLayer.get(storageLayer);
-            if (storageLayerObjectPair == null)
+            Set<AbsRscLayerObject<Resource>> rscSet = rscByLayer.get(layer);
+            Set<AbsRscLayerObject<Snapshot>> snapSet = snapByLayer.get(layer);
+
+            if (rscSet == null)
             {
-                storageLayerObjectPair = new Pair<>(new HashSet<>(), new HashSet<>());
-                dataPerLayer.put(storageLayer, storageLayerObjectPair);
+                rscSet = Collections.emptySet();
             }
-            Set<Snapshot> snapshotsToPrepare = storageLayerObjectPair.objB;
-            snapshotsToPrepare.addAll(snapshots);
-        }
-
-
-        for (Entry<DeviceLayer, Pair<Set<RscLayerObject>, Set<Snapshot>>> entry : dataPerLayer.entrySet())
-        {
-            DeviceLayer layer = entry.getKey();
-            Pair<Set<RscLayerObject>, Set<Snapshot>> pair = entry.getValue();
-            if (!prepare(layer, pair.objA, pair.objB))
+            if (snapSet == null)
             {
-                prepareSuccess = false;
+                snapSet = Collections.emptySet();
+            }
+
+            prepareSuccess = prepare(layer, rscSet, snapSet);
+            if (!prepareSuccess)
+            {
                 break;
             }
         }
         return prepareSuccess;
     }
 
-    private void processResourcesAndTheirSnapshots(
-        Collection<Snapshot> snapshots,
+    private void processResourcesAndSnapshots(
         Collection<Resource> resourceList,
-        Map<ResourceName, Set<Snapshot>> snapshotsByRscName,
-        List<Snapshot> unprocessedSnapshots,
+        Collection<Snapshot> snapshotsRef,
+        List<Snapshot> unprocessedSnapshotsRef,
         List<Resource> rscListNotifyApplied,
         List<Resource> rscListNotifyDelete,
         List<Volume> vlmListNotifyDelete,
@@ -273,6 +257,9 @@ public class DeviceHandlerImpl implements DeviceHandler
     )
         throws ImplementationError
     {
+        Map<ResourceName, List<Snapshot>> snapshotsByRscName = snapshotsRef.stream()
+            .collect(Collectors.groupingBy(Snapshot::getResourceName));
+
         List<Resource> sysFsUpdateList = new ArrayList<>();
         List<Resource> sysFsDeleteList = new ArrayList<>();
 
@@ -280,24 +267,36 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             ResourceName rscName = rsc.getDefinition().getName();
 
-            Set<Snapshot> snapshotList = snapshotsByRscName.getOrDefault(rscName, Collections.emptySet());
-            unprocessedSnapshots.removeAll(snapshotList);
-
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
             try
             {
-                RscLayerObject rscLayerObject = rsc.getLayerData(wrkCtx);
+                List<Snapshot> snapshots = snapshotsByRscName.get(rscName);
+                if (snapshots == null)
+                {
+                    snapshots = Collections.emptyList();
+                }
+                unprocessedSnapshotsRef.removeAll(snapshots);
+
+                AbsRscLayerObject<Resource> rscLayerObject = rsc.getLayerData(wrkCtx);
                 process(
                     rscLayerObject,
-                    snapshotList,
+                    snapshots,
                     apiCallRc
                 );
 
                 if (rscLayerObject.getLayerKind().isLocalOnly() &&
-                        rsc.getStateFlags().isUnset(wrkCtx, Resource.Flags.DELETE)
+                    rsc.getStateFlags().isUnset(wrkCtx, Resource.Flags.DELETE)
                 )
                 {
                     MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, wrkCtx, rsc);
+                }
+                for (Snapshot snapshot : snapshots)
+                {
+                    if (snapshot.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
+                    {
+                        snapListNotifyDelete.add(snapshot);
+                        // snapshot.delete is done by the deviceManager
+                    }
                 }
 
                 /*
@@ -330,16 +329,6 @@ public class DeviceHandlerImpl implements DeviceHandler
                     rscListNotifyApplied.add(rsc);
                 }
 
-                for (Snapshot snapshot : snapshots)
-                {
-                    if (snapshot.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
-                    {
-                        snapListNotifyDelete.add(snapshot);
-                        notificationListener.get().notifySnapshotDeleted(snapshot);
-                        // snapshot.delete is done by the deviceManager
-                    }
-                }
-
                 // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
 
@@ -358,9 +347,9 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
             catch (AbortLayerProcessingException exc)
             {
-                RscLayerObject rscLayerData = exc.rscLayerObject;
+                AbsRscLayerObject<?> rscLayerData = exc.rscLayerObject;
                 List<String> devLayersAbove = new ArrayList<>();
-                RscLayerObject parent = rscLayerData.getParent();
+                AbsRscLayerObject<?> parent = rscLayerData.getParent();
                 while (parent != null)
                 {
                     devLayersAbove.add(layerFactory.getDeviceLayer(parent.getLayerKind()).getName());
@@ -434,22 +423,29 @@ public class DeviceHandlerImpl implements DeviceHandler
         sysFsHandler.updateSysFsSettings(sysFsUpdateList, sysFsDeleteList);
     }
 
-    private void ensureAllVlmDataDeleted(RscLayerObject rscLayerObjectRef, VolumeNumber volumeNumberRef)
+    private void ensureAllVlmDataDeleted(
+        AbsRscLayerObject<Resource> rscLayerObjectRef,
+        VolumeNumber volumeNumberRef
+    )
         throws ImplementationError
     {
-        VlmProviderObject vlmData = rscLayerObjectRef.getVlmProviderObject(volumeNumberRef);
+        VlmProviderObject<Resource> vlmData = rscLayerObjectRef.getVlmProviderObject(volumeNumberRef);
         if (vlmData.exists())
         {
             throw new ImplementationError("Layer '" + rscLayerObjectRef.getLayerKind() + " did not delete the volume " +
                 volumeNumberRef + " of resource " + rscLayerObjectRef.getSuffixedResourceName() + " properly");
         }
-        for (RscLayerObject child : rscLayerObjectRef.getChildren())
+        for (AbsRscLayerObject<Resource> child : rscLayerObjectRef.getChildren())
         {
             ensureAllVlmDataDeleted(child, volumeNumberRef);
         }
     }
 
-    private void processUnprocessedSnapshots(List<Snapshot> unprocessedSnapshots) throws ImplementationError
+    private void processUnprocessedSnapshots(
+        List<Snapshot> unprocessedSnapshots,
+        List<Snapshot> snapListNotifyDelete
+    )
+        throws ImplementationError
     {
         Map<ResourceName, List<Snapshot>> snapshotsByResourceName = unprocessedSnapshots.stream()
             .collect(Collectors.groupingBy(Snapshot::getResourceName));
@@ -474,6 +470,15 @@ public class DeviceHandlerImpl implements DeviceHandler
                     entry.getValue(), // list of snapshots
                     apiCallRc
                 );
+
+                for (Snapshot snapshot : entry.getValue())
+                {
+                    if (snapshot.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
+                    {
+                        snapListNotifyDelete.add(snapshot);
+                        // snapshot.delete is done by the deviceManager
+                    }
+                }
             }
             catch (AccessDeniedException | DatabaseException exc)
             {
@@ -549,11 +554,15 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
     }
 
-    private void clearLayerCaches(Map<DeviceLayer, Set<RscLayerObject>> rscByLayer)
+    private void clearLayerCaches(
+        Map<DeviceLayer, Set<AbsRscLayerObject<Resource>>> rscByLayer,
+        Map<DeviceLayer, Set<AbsRscLayerObject<Snapshot>>> snapByLayer
+    )
     {
-        for (Entry<DeviceLayer, Set<RscLayerObject>> entry : rscByLayer.entrySet())
+        Set<DeviceLayer> layers = SetUtils.mergeIntoHashSet(rscByLayer.keySet(), snapByLayer.keySet());
+
+        for (DeviceLayer layer : layers)
         {
-            DeviceLayer layer = entry.getKey();
             try
             {
                 layer.clearCache();
@@ -571,7 +580,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     .setDetails(exc.getDetailsText())
                     .build()
                 );
-                for (RscLayerObject rsc : entry.getValue())
+                for (AbsRscLayerObject<Resource> rsc : rscByLayer.get(layer))
                 {
                     notificationListener.get().notifyResourceDispatchResponse(
                         rsc.getResourceName(),
@@ -582,7 +591,11 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
     }
 
-    private boolean prepare(DeviceLayer layer, Set<RscLayerObject> rscList, Set<Snapshot> affectedSnapshots)
+    private boolean prepare(
+        DeviceLayer layer,
+        Set<AbsRscLayerObject<Resource>> rscSet,
+        Set<AbsRscLayerObject<Snapshot>> snapSet
+    )
     {
         boolean success;
         try
@@ -590,15 +603,15 @@ public class DeviceHandlerImpl implements DeviceHandler
             errorReporter.logTrace(
                 "Layer '%s' preparing %d resources, %d snapshots",
                 layer.getName(),
-                rscList.size(),
-                affectedSnapshots.size()
+                rscSet.size(),
+                snapSet.size()
             );
-            layer.prepare(rscList, affectedSnapshots);
+            layer.prepare(rscSet, snapSet);
             errorReporter.logTrace(
                 "Layer '%s' finished preparing %d resources, %d snapshots",
                 layer.getName(),
-                rscList.size(),
-                affectedSnapshots.size()
+                rscSet.size(),
+                snapSet.size()
             );
             success = true;
         }
@@ -628,7 +641,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
                 builder.build()
             );
-            for (RscLayerObject failedResource : rscList)
+            for (AbsRscLayerObject<Resource> failedResource : rscSet)
             {
                 notificationListener.get().notifyResourceDispatchResponse(
                     failedResource.getResourceName(),
@@ -639,7 +652,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         return success;
     }
 
-    private void resourceFinished(RscLayerObject layerDataRef)
+    private void resourceFinished(AbsRscLayerObject<Resource> layerDataRef)
     {
         DeviceLayer rootLayer = layerFactory.getDeviceLayer(layerDataRef.getLayerKind());
         if (!layerDataRef.hasFailed())
@@ -664,7 +677,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void sendResourceCreatedEvent(RscLayerObject layerDataRef, UsageState usageStateRef)
+    public void sendResourceCreatedEvent(AbsRscLayerObject<Resource> layerDataRef, UsageState usageStateRef)
     {
         resourceStateEvent.get().triggerEvent(
             ObjectIdentifier.resourceDefinition(layerDataRef.getResourceName()),
@@ -673,7 +686,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void sendResourceDeletedEvent(RscLayerObject layerDataRef)
+    public void sendResourceDeletedEvent(AbsRscLayerObject<Resource> layerDataRef)
     {
         resourceStateEvent.get().closeStream(
             ObjectIdentifier.resourceDefinition(layerDataRef.getResourceName())
@@ -682,8 +695,8 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     @Override
     public LayerProcessResult process(
-        RscLayerObject rscLayerData,
-        Collection<Snapshot> snapshots,
+        AbsRscLayerObject<Resource> rscLayerData,
+        List<Snapshot> snapshotsRef,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
@@ -696,7 +709,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             rscLayerData.getSuffixedResourceName()
         );
 
-        LayerProcessResult processResult = nextLayer.process(rscLayerData, snapshots, apiCallRc);
+        LayerProcessResult processResult = nextLayer.process(rscLayerData, snapshotsRef, apiCallRc);
 
         if (rscLayerData.hasFailed())
         {
@@ -723,15 +736,15 @@ public class DeviceHandlerImpl implements DeviceHandler
 
             VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
 
-            LinkedList<RscLayerObject> rscDataList = new LinkedList<>();
+            LinkedList<AbsRscLayerObject<Resource>> rscDataList = new LinkedList<>();
             rscDataList.add(rsc.getLayerData(wrkCtx));
 
-            VlmProviderObject vlmData = null;
+            VlmProviderObject<Resource> vlmData = null;
             boolean isVlmDataRoot = true;
 
             while (!rscDataList.isEmpty())
             {
-                RscLayerObject rscData = rscDataList.removeFirst();
+                AbsRscLayerObject<Resource> rscData = rscDataList.removeFirst();
                 rscDataList.addAll(rscData.getChildren());
 
                 vlmData = rscData.getVlmProviderObject(vlmNr);
@@ -809,15 +822,16 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final class AbortLayerProcessingException extends LinStorRuntimeException
     {
         private static final long serialVersionUID = -3885415188860635819L;
-        private RscLayerObject rscLayerObject;
+        private AbsRscLayerObject<?> rscLayerObject;
 
-        private AbortLayerProcessingException(RscLayerObject rscLayerObjectRef)
+        private AbortLayerProcessingException(AbsRscLayerObject<?> rscLayerObjectRef)
         {
             super(
-                String.format("Layer '%s' aborted by failed resource '%s'",
-                    rscLayerObjectRef.getLayerKind().name(),
-                    rscLayerObjectRef.getSuffixedResourceName()
-                )
+                "Layer '" + rscLayerObjectRef.getLayerKind().name() + "' aborted by failed " +
+                    (rscLayerObjectRef.getAbsResource() instanceof Resource
+                        ? "resource '" + rscLayerObjectRef.getSuffixedResourceName()
+                        : "snapshot '" + ((Snapshot) rscLayerObjectRef.getAbsResource()).getSnapshotName().displayValue +
+                            "' of resource '" + rscLayerObjectRef.getSuffixedResourceName())
             );
             rscLayerObject = rscLayerObjectRef;
         }

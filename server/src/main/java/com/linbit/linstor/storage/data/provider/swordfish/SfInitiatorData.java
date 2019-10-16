@@ -2,8 +2,9 @@ package com.linbit.linstor.storage.data.provider.swordfish;
 
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -19,14 +20,15 @@ import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class SfInitiatorData extends AbsStorageVlmData implements SfInitiatorVlmProviderObject
+public class SfInitiatorData<RSC extends AbsResource<RSC>>
+    extends AbsStorageVlmData<RSC> implements SfInitiatorVlmProviderObject<RSC>
 {
     // unmodifiable data, once initialized
     private final SfVlmDfnData vlmDfnData;
 
     public SfInitiatorData(
-        StorageRscData rscDataRef,
-        Volume vlmRef,
+        StorageRscData<RSC> rscDataRef,
+        AbsVolume<RSC> vlmRef,
         SfVlmDfnData sfVlmDfnDataRef,
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,

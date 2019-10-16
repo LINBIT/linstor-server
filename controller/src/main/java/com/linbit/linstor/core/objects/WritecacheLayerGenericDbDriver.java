@@ -16,7 +16,7 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -100,20 +100,20 @@ public class WritecacheLayerGenericDbDriver implements WritecacheLayerCtrlDataba
      * @throws DatabaseException
      */
     @Override
-    public Pair<WritecacheRscData, Set<RscLayerObject>> load(
-        Resource rsc,
+    public <RSC extends AbsResource<RSC>> Pair<WritecacheRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
+        RSC rsc,
         int id,
         String rscSuffixRef,
-        RscLayerObject parentRef,
+        AbsRscLayerObject<RSC> parentRef,
         Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef
     )
         throws DatabaseException
     {
-        NodeName nodeName = rsc.getAssignedNode().getName();
+        NodeName nodeName = rsc.getNode().getName();
 
-        Set<RscLayerObject> children = new HashSet<>();
-        Map<VolumeNumber, WritecacheVlmData> vlmMap = new TreeMap<>();
-        WritecacheRscData writecacheRscData = new WritecacheRscData(
+        Set<AbsRscLayerObject<RSC>> children = new HashSet<>();
+        Map<VolumeNumber, WritecacheVlmData<RSC>> vlmMap = new TreeMap<>();
+        WritecacheRscData<RSC> writecacheRscData = new WritecacheRscData<>(
             id,
             rsc,
             parentRef,
@@ -141,7 +141,7 @@ public class WritecacheLayerGenericDbDriver implements WritecacheLayerCtrlDataba
                     VolumeNumber vlmNr;
                     vlmNr = new VolumeNumber(vlmNrInt);
 
-                    Volume vlm = rsc.getVolume(vlmNr);
+                    AbsVolume<RSC> vlm = rsc.getVolume(vlmNr);
                     StorPool cachedStorPool = tmpStorPoolMapRef.get(
                         new Pair<>(
                             nodeName,
@@ -151,7 +151,7 @@ public class WritecacheLayerGenericDbDriver implements WritecacheLayerCtrlDataba
 
                     vlmMap.put(
                         vlm.getVolumeDefinition().getVolumeNumber(),
-                        new WritecacheVlmData(
+                        new WritecacheVlmData<>(
                             vlm,
                             writecacheRscData,
                             cachedStorPool,
@@ -185,14 +185,14 @@ public class WritecacheLayerGenericDbDriver implements WritecacheLayerCtrlDataba
     }
 
     @Override
-    public void persist(WritecacheRscData writecacheRscDataRef) throws DatabaseException
+    public void persist(WritecacheRscData<?> writecacheRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if WritecacheRscData will get a database table in future.
     }
 
     @Override
-    public void persist(WritecacheVlmData writecacheVlmDataRef) throws DatabaseException
+    public void persist(WritecacheVlmData<?> writecacheVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating WritecacheVlmData %s", getId(writecacheVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
@@ -214,14 +214,14 @@ public class WritecacheLayerGenericDbDriver implements WritecacheLayerCtrlDataba
     }
 
     @Override
-    public void delete(WritecacheRscData writecacheRscDataRef) throws DatabaseException
+    public void delete(WritecacheRscData<?> writecacheRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if WritecacheRscData will get a database table in future.
     }
 
     @Override
-    public void delete(WritecacheVlmData writecacheVlmDataRef) throws DatabaseException
+    public void delete(WritecacheVlmData<?> writecacheVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting WritecacheVlmData %s", getId(writecacheVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM))
@@ -249,14 +249,14 @@ public class WritecacheLayerGenericDbDriver implements WritecacheLayerCtrlDataba
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(WritecacheRscData writecacheRscData)
+    private String getId(WritecacheRscData<?> writecacheRscData)
     {
         return "(LayerRscId=" + writecacheRscData.getRscLayerId() +
             ", SuffResName=" + writecacheRscData.getSuffixedResourceName() +
             ")";
     }
 
-    private String getId(WritecacheVlmData writecacheVlmData)
+    private String getId(WritecacheVlmData<?> writecacheVlmData)
     {
         return "(LayerRscId=" + writecacheVlmData.getRscLayerId() +
             ", SuffResName=" + writecacheVlmData.getRscLayerObject().getSuffixedResourceName() +

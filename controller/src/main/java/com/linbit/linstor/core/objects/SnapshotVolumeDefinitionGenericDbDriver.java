@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
+@Deprecated
 public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDefinitionDatabaseDriver
 {
     private static final String TBL_SNAPSHOT_VOLUME_DEFINITIONS = DbConstants.TBL_SNAPSHOT_VOLUME_DEFINITIONS;
@@ -139,11 +140,14 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
     private Pair<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> restoreSnapshotVolumeDefinition(
         ResultSet resultSet,
         SnapshotDefinition snapshotDefinition,
-        VolumeNumber volumeNumber
+        VolumeDefinition vlmDfn
     )
         throws DatabaseException
     {
-        errorReporter.logTrace("Restoring SnapshotVolumeDefinition %s", getId(snapshotDefinition, volumeNumber));
+        errorReporter.logTrace(
+            "Restoring SnapshotVolumeDefinition %s",
+            getId(snapshotDefinition, vlmDfn.getVolumeNumber())
+        );
         Pair<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> retPair;
 
         long volSize = -1;
@@ -155,14 +159,15 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
             SnapshotVolumeDefinition snapshotVolumeDefinition = new SnapshotVolumeDefinition(
                 java.util.UUID.fromString(resultSet.getString(SVD_UUID)),
                 snapshotDefinition,
-                volumeNumber,
+                vlmDfn,
                 volSize,
                 resultSet.getLong(SVD_FLAGS),
                 this,
                 propsContainerFactory,
                 transObjFactory,
                 transMgrProvider,
-                snapshotVlmMap
+                snapshotVlmMap,
+                new TreeMap<>()
             );
 
             retPair = new Pair<>(snapshotVolumeDefinition, new SnapshotVolumeDefinitionInitMaps(snapshotVlmMap));
@@ -183,7 +188,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                     TBL_SNAPSHOT_VOLUME_DEFINITIONS,
                     snapshotDefinition.getResourceName().value,
                     snapshotDefinition.getName().value,
-                    volumeNumber.value,
+                    vlmDfn.getVolumeNumber(),
                     volSize
                 ),
                 mdExc
@@ -195,7 +200,8 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
 
 
     public Map<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> loadAll(
-        Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition> snapshotDfnMap
+        Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition> snapshotDfnMap,
+        Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition> vlmDfnMap
     )
         throws DatabaseException
     {
@@ -237,7 +243,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                         restoreSnapshotVolumeDefinition(
                             resultSet,
                             snapshotDfnMap.get(new Pair<>(rscName, snapshotName)),
-                            volumeNumber
+                            vlmDfnMap.get(new Pair<>(rscName, volumeNumber))
                         );
 
                     loadedSnapshotVlmDfns.put(pair.objA, pair.objB);

@@ -142,7 +142,7 @@ public class CtrlRscAutoHelper
         }
         if (tiebreakerResult.deleting != null)
         {
-            nodeNamesForDelete.add(tiebreakerResult.deleting.getAssignedNode().getName());
+            nodeNamesForDelete.add(tiebreakerResult.deleting.getNode().getName());
             requiresUpdateFlux = true;
         }
         if (tiebreakerResult.takeoverDiskless != null)
@@ -154,7 +154,7 @@ public class CtrlRscAutoHelper
         if (tiebreakerResult.takeoverDiskful != null)
         {
             flux = rscToggleDiskHelper.resourceToggleDisk(
-                tiebreakerResult.takeoverDiskful.getAssignedNode().getName().displayValue,
+                tiebreakerResult.takeoverDiskful.getNode().getName().displayValue,
                 rscDfn.getName().displayValue,
                 null,
                 null,

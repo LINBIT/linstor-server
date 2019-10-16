@@ -77,8 +77,8 @@ public class ResourceConnectionControllerFactory
         );
         dbDriver.create(rscConData);
 
-        sourceResource.setResourceConnection(accCtx, rscConData);
-        targetResource.setResourceConnection(accCtx, rscConData);
+        sourceResource.setAbsResourceConnection(accCtx, rscConData);
+        targetResource.setAbsResourceConnection(accCtx, rscConData);
 
         return rscConData;
     }

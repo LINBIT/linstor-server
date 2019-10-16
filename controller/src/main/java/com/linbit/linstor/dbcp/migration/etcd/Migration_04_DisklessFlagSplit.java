@@ -23,6 +23,7 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
 
     private static final String KIND_DRBD = "DRBD";
     private static final String KIND_NVME = "NVME";
+
     public static void migrate(ControllerETCDTransactionMgr txMgr)
     {
         TreeMap<String, String> allRscLayer = txMgr.readTable("LINSTOR/LAYER_RESOURCE_IDS", true);

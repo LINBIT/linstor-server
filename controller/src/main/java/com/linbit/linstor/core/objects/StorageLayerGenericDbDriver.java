@@ -10,6 +10,7 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -25,7 +26,7 @@ import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
@@ -95,7 +96,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
-    private final SingleColumnDatabaseDriver<VlmProviderObject, StorPool> storPoolDriver;
+    private final SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool> storPoolDriver;
 
     private Map<Integer, List<StorVlmInfoData>> cachedStorVlmInfoByRscLayerId;
 
@@ -125,6 +126,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
         return rscIdDriver;
     }
 
+    @Override
     public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef)
         throws DatabaseException
     {
@@ -185,6 +187,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
         }
     }
 
+    @Override
     public void clearLoadAllCache()
     {
         cachedStorVlmInfoByRscLayerId.clear();
@@ -193,21 +196,26 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
         sfDbDriver.clearLoadAllCache();
     }
 
-    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws DatabaseException
+    @Override
+    public void loadLayerData(
+        Map<ResourceName, ResourceDefinition> rscDfnMap,
+        Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> snapDfnMap
+    ) throws DatabaseException
     {
-        sfDbDriver.loadLayerData(tmpRscDfnMapRef);
+        sfDbDriver.loadLayerData(rscDfnMap);
     }
 
-    public Pair<StorageRscData, Set<RscLayerObject>> load(
-        Resource resourceRef,
+    @Override
+    public <RSC extends AbsResource<RSC>> Pair<StorageRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
+        RSC resourceRef,
         int rscIdRef,
         String rscSuffixRef,
-        RscLayerObject parentRef
+        AbsRscLayerObject<RSC> parentRef
     )
         throws AccessDeniedException, DatabaseException
     {
-        Map<VolumeNumber, VlmProviderObject> vlmMap = new TreeMap<>();
-        StorageRscData storageRscData = new StorageRscData(
+        Map<VolumeNumber, VlmProviderObject<RSC>> vlmMap = new TreeMap<>();
+        StorageRscData<RSC> storageRscData = new StorageRscData<>(
             rscIdRef,
             parentRef,
             resourceRef,
@@ -226,7 +234,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
                 try
                 {
                     VolumeNumber vlmNr = new VolumeNumber(vlmInfo.vlmNr);
-                    Volume vlm = resourceRef.getVolume(vlmNr);
+                    AbsVolume<RSC> vlm = resourceRef.getVolume(vlmNr);
 
                     if (vlm == null)
                     {
@@ -236,7 +244,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
                         );
                     }
 
-                    VlmProviderObject vlmData = loadVlmProviderObject(vlm, storageRscData, vlmInfo);
+                    VlmProviderObject<RSC> vlmData = loadVlmProviderObject(vlm, storageRscData, vlmInfo);
                     vlmMap.put(vlmNr, vlmData);
                 }
                 catch (ValueOutOfRangeException exc)
@@ -258,19 +266,19 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
         );
     }
 
-    private VlmProviderObject loadVlmProviderObject(
-        Volume vlmRef,
-        StorageRscData rscDataRef,
+    private <RSC extends AbsResource<RSC>> VlmProviderObject<RSC> loadVlmProviderObject(
+        AbsVolume<RSC> vlmRef,
+        StorageRscData<RSC> rscDataRef,
         StorVlmInfoData vlmInfo
     )
         throws AccessDeniedException, DatabaseException
     {
-        VlmProviderObject vlmProviderObj;
+        VlmProviderObject<RSC> vlmProviderObj;
         switch (vlmInfo.kind)
         {
             case DISKLESS:
                 // no special database table for diskless DRBD.
-                vlmProviderObj = new DisklessData(
+                vlmProviderObj = new DisklessData<>(
                     vlmRef,
                     rscDataRef,
                     vlmRef.getVolumeDefinition().getVolumeSize(dbCtx),
@@ -281,7 +289,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
                 );
                 break;
             case LVM:
-                vlmProviderObj = new LvmData(
+                vlmProviderObj = new LvmData<>(
                     vlmRef,
                     rscDataRef,
                     vlmInfo.storPool,
@@ -291,7 +299,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
                 );
                 break;
             case LVM_THIN:
-                vlmProviderObj = new LvmThinData(
+                vlmProviderObj = new LvmThinData<>(
                     vlmRef,
                     rscDataRef,
                     vlmInfo.storPool,
@@ -306,7 +314,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
                 break;
             case ZFS: // fall-trough
             case ZFS_THIN:
-                vlmProviderObj = new ZfsData(
+                vlmProviderObj = new ZfsData<>(
                     vlmRef,
                     rscDataRef,
                     vlmInfo.kind,
@@ -318,7 +326,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
                 break;
             case FILE: // fall-through
             case FILE_THIN:
-                vlmProviderObj = new FileData(
+                vlmProviderObj = new FileData<>(
                     vlmRef,
                     rscDataRef,
                     vlmInfo.kind,
@@ -342,26 +350,39 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
             default:
                 throw new ImplementationError("Unhandled storage type: " + vlmInfo.kind);
         }
-        vlmInfo.storPoolInitMaps.getVolumeMap().put(vlmProviderObj.getVolumeKey(), vlmProviderObj);
+        if (vlmRef instanceof Volume)
+        {
+            vlmInfo.storPoolInitMaps.getVolumeMap().put(
+                vlmProviderObj.getVolumeKey(),
+                (VlmProviderObject<Resource>) vlmProviderObj
+            );
+        }
+        else
+        {
+            vlmInfo.storPoolInitMaps.getSnapshotVolumeMap().put(
+                vlmProviderObj.getVolumeKey(),
+                (VlmProviderObject<Snapshot>) vlmProviderObj
+            );
+        }
         return vlmProviderObj;
     }
 
     @Override
-    public void persist(StorageRscData storageRscDataRef)
+    public void persist(StorageRscData<?> storageRscDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if StorageRscData will get a database table in future.
     }
 
     @Override
-    public void delete(StorageRscData storgeRscDataRef)
+    public void delete(StorageRscData<?> storgeRscDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if StorageRscData will get a database table in future.
     }
 
     @Override
-    public void persist(VlmProviderObject vlmDataRef) throws DatabaseException
+    public void persist(VlmProviderObject<?> vlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating StorageVolume %s", getId(vlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
@@ -382,7 +403,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
     }
 
     @Override
-    public void delete(VlmProviderObject vlmDataRef) throws DatabaseException
+    public void delete(VlmProviderObject<?> vlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting StorageVolume %s", getId(vlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM))
@@ -400,7 +421,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
     }
 
     @Override
-    public SingleColumnDatabaseDriver<VlmProviderObject, StorPool> getStorPoolDriver()
+    public SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool> getStorPoolDriver()
     {
         return storPoolDriver;
     }
@@ -410,18 +431,18 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(VlmProviderObject vlmData)
+    private String getId(VlmProviderObject<?> vlmData)
     {
         return vlmData.getProviderKind().name() +
             "( rscId: " + vlmData.getRscLayerObject().getRscLayerId() +
             ", vlmNr:" + vlmData.getVlmNr() + ")";
     }
 
-    private class StorPoolDriver implements SingleColumnDatabaseDriver<VlmProviderObject, StorPool>
+    private class StorPoolDriver implements SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool>
     {
         @Override
         @SuppressWarnings("checkstyle:magicnumber")
-        public void update(VlmProviderObject parent, StorPool storPool) throws DatabaseException
+        public void update(VlmProviderObject<?> parent, StorPool storPool) throws DatabaseException
         {
             errorReporter.logTrace("Updating VlmProviderObject's StorPool from [%s] to [%s] %s",
                 parent.getStorPool().getName().displayValue,

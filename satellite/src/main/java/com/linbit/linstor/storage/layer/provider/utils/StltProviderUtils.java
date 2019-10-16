@@ -6,7 +6,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 
 public class StltProviderUtils
 {
-    public static long getAllocatedSize(VlmProviderObject vlmData, ExtCmd extCmd)
+    public static long getAllocatedSize(VlmProviderObject<?> vlmData, ExtCmd extCmd)
         throws StorageException
     {
         long size;

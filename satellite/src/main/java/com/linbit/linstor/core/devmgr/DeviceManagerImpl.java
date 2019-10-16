@@ -1070,7 +1070,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         curRscDfn.copyResourceMap(wrkCtx, rscMap);
                         for (Resource delRsc : rscMap.values())
                         {
-                            Node peerNode = delRsc.getAssignedNode();
+                            Node peerNode = delRsc.getNode();
                             delRsc.delete(wrkCtx);
                             if (peerNode != controllerPeerConnector.getLocalNode())
                             {
@@ -1108,7 +1108,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         // if the remote resource never gets deleted, it will cause a
                         // divergent UUID exception when the "same" remote resource gets
                         // recreated
-                        Node remoteNode = remoteRsc.getAssignedNode();
+                        Node remoteNode = remoteRsc.getNode();
                         remoteRsc.delete(wrkCtx);
 
                         /*

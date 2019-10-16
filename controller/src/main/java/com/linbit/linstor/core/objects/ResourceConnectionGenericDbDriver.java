@@ -207,8 +207,8 @@ public class ResourceConnectionGenericDbDriver implements ResourceConnectionData
         errorReporter.logTrace("Creating ResourceConnection %s", getId(conDfnData));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT))
         {
-            NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getAssignedNode().getName();
-            NodeName targetNodeName = conDfnData.getTargetResource(dbCtx).getAssignedNode().getName();
+            NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getNode().getName();
+            NodeName targetNodeName = conDfnData.getTargetResource(dbCtx).getNode().getName();
             ResourceName resName = conDfnData.getSourceResource(dbCtx).getDefinition().getName();
             long flags = conDfnData.getStateFlags().getFlagsBits(dbCtx);
 
@@ -249,8 +249,8 @@ public class ResourceConnectionGenericDbDriver implements ResourceConnectionData
         errorReporter.logTrace("Deleting ResourceConnection %s", getId(conDfnData));
         try
         {
-            NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getAssignedNode().getName();
-            NodeName targetNodeName = conDfnData.getTargetResource(dbCtx).getAssignedNode().getName();
+            NodeName sourceNodeName = conDfnData.getSourceResource(dbCtx).getNode().getName();
+            NodeName targetNodeName = conDfnData.getTargetResource(dbCtx).getNode().getName();
             ResourceName resName = conDfnData.getSourceResource(dbCtx).getDefinition().getName();
 
             try (PreparedStatement stmt = getConnection().prepareStatement(DELETE))
@@ -284,8 +284,8 @@ public class ResourceConnectionGenericDbDriver implements ResourceConnectionData
         try
         {
             id = getId(
-                conData.getSourceResource(dbCtx).getAssignedNode().getName().displayValue,
-                conData.getTargetResource(dbCtx).getAssignedNode().getName().displayValue,
+                conData.getSourceResource(dbCtx).getNode().getName().displayValue,
+                conData.getTargetResource(dbCtx).getNode().getName().displayValue,
                 conData.getSourceResource(dbCtx).getDefinition().getName().displayValue
             );
         }
@@ -345,8 +345,8 @@ public class ResourceConnectionGenericDbDriver implements ResourceConnectionData
                 {
                     stmt.setLong(1, flags);
 
-                    stmt.setString(2, rscCon.getSourceResource(dbCtx).getAssignedNode().getName().value);
-                    stmt.setString(3, rscCon.getTargetResource(dbCtx).getAssignedNode().getName().value);
+                    stmt.setString(2, rscCon.getSourceResource(dbCtx).getNode().getName().value);
+                    stmt.setString(3, rscCon.getTargetResource(dbCtx).getNode().getName().value);
                     stmt.setString(4, rscCon.getSourceResource(dbCtx).getDefinition().getName().value);
 
                     stmt.executeUpdate();
@@ -396,8 +396,8 @@ public class ResourceConnectionGenericDbDriver implements ResourceConnectionData
                     {
                         stmt.setInt(1, port.value);
                     }
-                    stmt.setString(2, rscCon.getSourceResource(dbCtx).getAssignedNode().getName().value);
-                    stmt.setString(3, rscCon.getTargetResource(dbCtx).getAssignedNode().getName().value);
+                    stmt.setString(2, rscCon.getSourceResource(dbCtx).getNode().getName().value);
+                    stmt.setString(3, rscCon.getTargetResource(dbCtx).getNode().getName().value);
                     stmt.setString(4, rscCon.getSourceResource(dbCtx).getDefinition().getName().value);
 
                     stmt.executeUpdate();

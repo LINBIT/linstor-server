@@ -27,57 +27,57 @@ public class SatelliteDrbdLayerDriver implements DrbdLayerDatabaseDriver
     }
 
     @Override
-    public void create(DrbdRscData drbdRscDataRef) throws DatabaseException
+    public void create(DrbdRscData<?> drbdRscDataRef) throws DatabaseException
     {
         // no-op
     }
 
     @Override
-    public void delete(DrbdRscData drbdRscDataRef) throws DatabaseException
+    public void delete(DrbdRscData<?> drbdRscDataRef) throws DatabaseException
     {
         // no-op
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public StateFlagsPersistence<DrbdRscData> getRscStateFlagPersistence()
+    public StateFlagsPersistence<DrbdRscData<?>> getRscStateFlagPersistence()
     {
-        return (StateFlagsPersistence<DrbdRscData>) noopStateFlagsDriver;
+        return (StateFlagsPersistence<DrbdRscData<?>>) noopStateFlagsDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdVlmData, StorPool> getExtStorPoolDriver()
+    public SingleColumnDatabaseDriver<DrbdVlmData<?>, StorPool> getExtStorPoolDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdVlmData, StorPool>) noopSingleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdVlmData<?>, StorPool>) noopSingleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscDfnData, TcpPortNumber> getTcpPortDriver()
+    public SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TcpPortNumber> getTcpPortDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData, TcpPortNumber>) noopSingleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TcpPortNumber>) noopSingleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscDfnData, TransportType> getTransportTypeDriver()
+    public SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TransportType> getTransportTypeDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData, TransportType>) noopSingleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TransportType>) noopSingleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscDfnData, String> getRscDfnSecretDriver()
+    public SingleColumnDatabaseDriver<DrbdRscDfnData<?>, String> getRscDfnSecretDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData, String>) noopSingleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscDfnData<?>, String>) noopSingleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<DrbdRscDfnData, Short> getPeerSlotsDriver()
+    public SingleColumnDatabaseDriver<DrbdRscDfnData<?>, Short> getPeerSlotsDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData, Short>) noopSingleColDriver;
+        return (SingleColumnDatabaseDriver<DrbdRscDfnData<?>, Short>) noopSingleColDriver;
     }
 
     @Override
@@ -87,37 +87,37 @@ public class SatelliteDrbdLayerDriver implements DrbdLayerDatabaseDriver
     }
 
     @Override
-    public void persist(DrbdRscDfnData drbdRscDfnDataRef)
+    public void persist(DrbdRscDfnData<?> drbdRscDfnDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(DrbdRscDfnData drbdRscDfnDataRef)
+    public void delete(DrbdRscDfnData<?> drbdRscDfnDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(DrbdVlmData drbdVlmDataRef)
+    public void persist(DrbdVlmData<?> drbdVlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(DrbdVlmData drbdVlmDataRef)
+    public void delete(DrbdVlmData<?> drbdVlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(DrbdVlmDfnData drbdVlmDfnDataRef)
+    public void persist(DrbdVlmDfnData<?> drbdVlmDfnDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(DrbdVlmDfnData drbdVlmDfnDataRef)
+    public void delete(DrbdVlmDfnData<?> drbdVlmDfnDataRef)
     {
         // no-op
     }

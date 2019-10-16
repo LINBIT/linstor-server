@@ -34,7 +34,8 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     private final TransactionSimpleObject<FreeSpaceMgr, Long> freeCapacity;
     private final TransactionSimpleObject<FreeSpaceMgr, Long> totalCapacity;
 
-    private final TransactionSet<FreeSpaceMgr, VlmProviderObject> pendingVolumesToAdd;
+    private final TransactionSet<FreeSpaceMgr, VlmProviderObject<Resource>> pendingVolumesToAdd;
+    private final TransactionSet<FreeSpaceMgr, VlmProviderObject<Snapshot>> pendingSnapshotVolumesToAdd;
 
     public FreeSpaceMgr(
         AccessContext privCtxRef,
@@ -53,10 +54,12 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         freeCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
         totalCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
         pendingVolumesToAdd = transObjFactory.createTransactionSet(this, new TreeSet<>(), null);
+        pendingSnapshotVolumesToAdd = transObjFactory.createTransactionSet(this, new TreeSet<>(), null);
         transObjs = Arrays.asList(
             freeCapacity,
             totalCapacity,
-            pendingVolumesToAdd
+            pendingVolumesToAdd,
+            pendingSnapshotVolumesToAdd
         );
     }
 
@@ -106,12 +109,21 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      *
      * @param vlm
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public void vlmCreating(AccessContext accCtx, VlmProviderObject vlm) throws AccessDeniedException
+    public void vlmCreating(AccessContext accCtx, VlmProviderObject<?> vlm) throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
         // TODO: add check if vlm is part of a registered storPool
-        synchronizedAdd(pendingVolumesToAdd, vlm);
+
+        if (vlm.getVolume() instanceof Volume)
+        {
+            synchronizedAdd(pendingVolumesToAdd, (VlmProviderObject<Resource>) vlm);
+        }
+        else
+        {
+            synchronizedAdd(pendingSnapshotVolumesToAdd, (VlmProviderObject<Snapshot>) vlm);
+        }
     }
 
     /**
@@ -119,15 +131,23 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * {@link FreeSpaceMgr} are cleaned up
      * @throws AccessDeniedException
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public void ensureVlmNoLongerCreating(AccessContext accCtx, VlmProviderObject vlm)
+    public void ensureVlmNoLongerCreating(AccessContext accCtx, VlmProviderObject<?> vlm)
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
         // no need to update capacity or free space as we are only deleting possible references
         // from the pendingAdding list. The "estimated space" will no longer consider this volume
         // and thus will "free up" the until now reserved space.
-        synchronizedRemove(pendingVolumesToAdd, vlm);
+        if (vlm.getVolume() instanceof Volume)
+        {
+            synchronizedRemove(pendingVolumesToAdd, (VlmProviderObject<Resource>) vlm);
+        }
+        else
+        {
+            synchronizedRemove(pendingSnapshotVolumesToAdd, (VlmProviderObject<Snapshot>) vlm);
+        }
     }
 
     /**
@@ -141,17 +161,27 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @param freeCapacityRef
      * @param totalCapacityRef
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void vlmCreationFinished(
         AccessContext accCtx,
-        VlmProviderObject vlm,
+        VlmProviderObject<?> vlm,
         Long freeCapacityRef,
         Long totalCapacityRef
     )
         throws AccessDeniedException
     {
         objProt.requireAccess(accCtx, AccessType.USE);
-        synchronizedRemove(pendingVolumesToAdd, vlm);
+
+        if (vlm.getVolume() instanceof Volume)
+        {
+            synchronizedRemove(pendingVolumesToAdd, (VlmProviderObject<Resource>) vlm);
+        }
+        else
+        {
+            synchronizedRemove(pendingSnapshotVolumesToAdd, (VlmProviderObject<Snapshot>) vlm);
+        }
+
         if (freeCapacityRef != null && totalCapacityRef != null)
         {
             setImpl(freeCapacityRef, totalCapacityRef);
@@ -194,16 +224,18 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         long sum = 0;
-        HashSet<VlmProviderObject> pendingAddVlmCopy;
+        HashSet<VlmProviderObject<?>> pendingAddVlmCopy;
         synchronized (pendingVolumesToAdd)
         {
             pendingAddVlmCopy = new HashSet<>(pendingVolumesToAdd);
         }
-        for (VlmProviderObject vlm : pendingAddVlmCopy)
+        synchronized (pendingSnapshotVolumesToAdd)
+        {
+            pendingAddVlmCopy.addAll(pendingSnapshotVolumesToAdd);
+        }
+        for (VlmProviderObject<?> vlm : pendingAddVlmCopy)
         {
             sum += vlm.getAllocatedSize();
-        }
-        {
         }
         return sum;
     }

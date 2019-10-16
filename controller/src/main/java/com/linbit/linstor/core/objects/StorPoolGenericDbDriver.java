@@ -233,7 +233,8 @@ public class StorPoolGenericDbDriver implements StorPoolDatabaseDriver
     {
         try
         {
-            Map<String, VlmProviderObject> vlmMap = new TreeMap<>();
+            Map<String, VlmProviderObject<Resource>> vlmMap = new TreeMap<>();
+            Map<String, VlmProviderObject<Snapshot>> snapVlmMap = new TreeMap<>();
             StorPool storPool = new StorPool(
                 java.util.UUID.fromString(resultSet.getString(SP_UUID)),
                 node,
@@ -244,9 +245,10 @@ public class StorPoolGenericDbDriver implements StorPoolDatabaseDriver
                 propsContainerFactory,
                 transObjFactory,
                 transMgrProvider,
-                vlmMap
+                vlmMap,
+                snapVlmMap
             );
-            return new Pair<>(storPool, new StorPoolInitMaps(vlmMap));
+            return new Pair<>(storPool, new StorPoolInitMaps(vlmMap, snapVlmMap));
         }
         catch (SQLException sqlExc)
         {
@@ -320,17 +322,28 @@ public class StorPoolGenericDbDriver implements StorPoolDatabaseDriver
 
     private class StorPoolInitMaps implements StorPool.InitMaps
     {
-        private final Map<String, VlmProviderObject> vlmMap;
+        private final Map<String, VlmProviderObject<Resource>> vlmMap;
+        private final Map<String, VlmProviderObject<Snapshot>> snapVlmMap;
 
-        StorPoolInitMaps(Map<String, VlmProviderObject> vlmMapRef)
+        StorPoolInitMaps(
+            Map<String, VlmProviderObject<Resource>> vlmMapRef,
+            Map<String, VlmProviderObject<Snapshot>> snapVlmMapRef
+        )
         {
             vlmMap = vlmMapRef;
+            snapVlmMap = snapVlmMapRef;
         }
 
         @Override
-        public Map<String, VlmProviderObject> getVolumeMap()
+        public Map<String, VlmProviderObject<Resource>> getVolumeMap()
         {
             return vlmMap;
+        }
+
+        @Override
+        public Map<String, VlmProviderObject<Snapshot>> getSnapshotVolumeMap()
+        {
+            return snapVlmMap;
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.AbsVolume;
 
 import java.util.BitSet;
 
@@ -22,14 +22,14 @@ public class VlmStorageState
     private final BitSet flags;
 
     /** The actual linstor volume for reference */
-    private final Volume vlm;
+    private final AbsVolume<?> vlm;
     private final Long actualSize;
     private final String devicePath;
     private final String identifier;
     private final String volumeGroup;
 
     public VlmStorageState(
-        Volume vlmRef,
+        AbsVolume<?> vlmRef,
         long sizeRef,
         String identifierRef,
         String pathRef,
@@ -45,7 +45,7 @@ public class VlmStorageState
         flags = new BitSet();
     }
 
-    public Volume getVolume()
+    public AbsVolume<?> getVolume()
     {
         return vlm;
     }

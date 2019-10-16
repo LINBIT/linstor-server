@@ -2,7 +2,6 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -43,7 +42,7 @@ public class SnapshotVolumeDefinitionControllerFactory
     public SnapshotVolumeDefinition create(
         AccessContext accCtx,
         SnapshotDefinition snapshotDfn,
-        VolumeNumber volumeNumber,
+        VolumeDefinition vlmDfn,
         long volSize,
         SnapshotVolumeDefinition.Flags[] initFlags
     )
@@ -52,7 +51,7 @@ public class SnapshotVolumeDefinitionControllerFactory
         snapshotDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
 
         SnapshotVolumeDefinition snapshotVolumeDefinition =
-            snapshotDfn.getSnapshotVolumeDefinition(accCtx, volumeNumber);
+            snapshotDfn.getSnapshotVolumeDefinition(accCtx, vlmDfn.getVolumeNumber());
 
         if (snapshotVolumeDefinition != null)
         {
@@ -62,13 +61,14 @@ public class SnapshotVolumeDefinitionControllerFactory
         snapshotVolumeDefinition = new SnapshotVolumeDefinition(
             UUID.randomUUID(),
             snapshotDfn,
-            volumeNumber,
+            vlmDfn,
             volSize,
             StateFlagsBits.getMask(initFlags),
             driver,
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
+            new TreeMap<>(),
             new TreeMap<>()
         );
 

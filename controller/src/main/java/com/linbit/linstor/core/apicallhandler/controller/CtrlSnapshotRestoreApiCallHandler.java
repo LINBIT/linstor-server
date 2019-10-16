@@ -27,7 +27,6 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
@@ -37,6 +36,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
@@ -47,7 +47,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -299,17 +298,10 @@ public class CtrlSnapshotRestoreApiCallHandler
     {
         Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);
 
-        // this will set the layerstack multiple times on the resource definition
-        // but it is the easiest way to ensure it is set, should be the same anyway
-        toRscDfn.setLayerStack(peerAccCtx.get(), snapshot.getLayerStack(peerAccCtx.get()));
-
-        NodeId restoredNodeId = snapshot.getNodeId();
-        Resource rsc = ctrlRscCrtApiHelper.createResource(
+        Resource rsc = ctrlRscCrtApiHelper.createResourceFromSnapshot(
             toRscDfn,
             node,
-            restoredNodeId == null ? null : restoredNodeId.value,
-            0L,
-            snapshot.getLayerStack(peerAccCtx.get())
+            snapshot
         );
 
         Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(toRscDfn);
@@ -341,15 +333,14 @@ public class CtrlSnapshotRestoreApiCallHandler
                 ));
             }
 
-            SnapshotVolume fromSnapshotVolume = snapshot.getSnapshotVolume(peerAccCtx.get(), volumeNumber);
+            SnapshotVolume fromSnapshotVolume = snapshot.getVolume(volumeNumber);
 
             if (fromSnapshotVolume == null)
             {
                 throw new ImplementationError("Expected snapshot volume missing");
             }
 
-            Map<String, StorPool> storPool = new HashMap<>();
-            storPool.put("", fromSnapshotVolume.getStorPool(peerAccCtx.get()));
+            Map<String, StorPool> storPool = LayerVlmUtils.getStorPoolMap(rsc, volumeNumber, peerAccCtx.get());
 
             Volume vlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null);
             Props vlmProps = vlm.getProps(peerAccCtx.get());

@@ -237,7 +237,8 @@ public class TestFactory
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
-        Map<String, VlmProviderObject> volumeMapRef
+        Map<String, VlmProviderObject<Resource>> volumeMapRef,
+        Map<String, VlmProviderObject<Snapshot>> snapshotVolumeMapRef
     )
         throws DatabaseException
     {
@@ -251,7 +252,8 @@ public class TestFactory
             propsContainerFactoryRef,
             transObjFactoryRef,
             transMgrProviderRef,
-            volumeMapRef
+            volumeMapRef,
+            snapshotVolumeMapRef
         );
     }
 
@@ -310,7 +312,7 @@ public class TestFactory
     }
 
     /**
-     * Creates a new {@link Volume} without persisting it to the database
+     * Creates a new {@link AbsVolume} without persisting it to the database
      * @throws DatabaseException
      */
     public static Volume createVolume(
@@ -332,10 +334,10 @@ public class TestFactory
             volDfnRef,
             flagValueRef,
             driverRef,
+            vlmConnsMapRef,
             propsContainerFactoryRef,
             transObjFactoryRef,
-            transMgrProviderRef,
-            vlmConnsMapRef
+            transMgrProviderRef
         );
     }
 

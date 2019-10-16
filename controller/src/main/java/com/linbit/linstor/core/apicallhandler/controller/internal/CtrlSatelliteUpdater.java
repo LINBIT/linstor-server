@@ -61,7 +61,7 @@ public class CtrlSatelliteUpdater
                 while (allRscsIterator.hasNext())
                 {
                     Resource allRsc = allRscsIterator.next();
-                    nodesToContact.put(allRsc.getAssignedNode().getName(), allRsc.getAssignedNode());
+                    nodesToContact.put(allRsc.getNode().getName(), allRsc.getNode());
                 }
             }
         }
@@ -135,7 +135,7 @@ public class CtrlSatelliteUpdater
             while (rscIterator.hasNext())
             {
                 Resource currentRsc = rscIterator.next();
-                Peer currentPeer = currentRsc.getAssignedNode().getPeer(apiCtx);
+                Peer currentPeer = currentRsc.getNode().getPeer(apiCtx);
 
                 boolean connected = currentPeer.isConnected();
                 if (connected)
@@ -159,7 +159,7 @@ public class CtrlSatelliteUpdater
                 }
                 else
                 {
-                    responses.addEntry(ResponseUtils.makeNotConnectedWarning(currentRsc.getAssignedNode().getName()));
+                    responses.addEntry(ResponseUtils.makeNotConnectedWarning(currentRsc.getNode().getName()));
                 }
             }
         }

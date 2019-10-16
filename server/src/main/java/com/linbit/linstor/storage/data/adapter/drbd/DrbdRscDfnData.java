@@ -1,11 +1,14 @@
 package com.linbit.linstor.storage.data.adapter.drbd;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
@@ -29,10 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnObject
+public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
+    extends BaseTransactionObject
+    implements DrbdRscDfnObject
 {
+    public static final int SNAPSHOT_TCP_PORT = -1;
+
     // unmodifiable, once initialized
-    private final ResourceDefinition rscDfn;
+    private final ResourceName rscName;
+    private final SnapshotName snapName;
     private final int alStripes;
     private final long alStripeSize;
     private final String suffixedResourceName;
@@ -41,18 +49,19 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     private final DynamicNumberPool tcpPortPool;
 
     // persisted, serialized, ctrl and stlt
-    private final TransactionList<DrbdRscDfnData, DrbdRscData> drbdRscDataList;
-    private final TransactionMap<VolumeNumber, DrbdVlmDfnData> drbdVlmDfnMap;
-    private final TransactionSimpleObject<DrbdRscDfnData, TcpPortNumber> port;
-    private final TransactionSimpleObject<DrbdRscDfnData, TransportType> transportType;
-    private final TransactionSimpleObject<DrbdRscDfnData, String> secret;
-    private final TransactionSimpleObject<DrbdRscDfnData, Short> peerSlots;
+    private final TransactionList<DrbdRscDfnData<RSC>, DrbdRscData<RSC>> drbdRscDataList;
+    private final TransactionMap<VolumeNumber, DrbdVlmDfnData<RSC>> drbdVlmDfnMap;
+    private final TransactionSimpleObject<DrbdRscDfnData<?>, TcpPortNumber> port;
+    private final TransactionSimpleObject<DrbdRscDfnData<?>, TransportType> transportType;
+    private final TransactionSimpleObject<DrbdRscDfnData<?>, String> secret;
+    private final TransactionSimpleObject<DrbdRscDfnData<?>, Short> peerSlots;
 
     // not persisted, serialized, ctrl and stlt
-    private final TransactionSimpleObject<DrbdRscDfnData, Boolean> down;
+    private final TransactionSimpleObject<DrbdRscDfnData<RSC>, Boolean> down;
 
     public DrbdRscDfnData(
-        ResourceDefinition rscDfnRef,
+        ResourceName rscNameRef,
+        SnapshotName snapNameRef,
         String resourceNameSuffixRef,
         short peerSlotsRef,
         int alStripesRef,
@@ -60,8 +69,8 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         Integer portRef,
         TransportType transportTypeRef,
         String secretRef,
-        List<DrbdRscData> drbdRscDataListRef,
-        Map<VolumeNumber, DrbdVlmDfnData> vlmDfnMap,
+        List<DrbdRscData<RSC>> drbdRscDataListRef,
+        Map<VolumeNumber, DrbdVlmDfnData<RSC>> vlmDfnMap,
         DynamicNumberPool tcpPortPoolRef,
         DrbdLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
@@ -73,8 +82,10 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         resourceNameSuffix = resourceNameSuffixRef;
         tcpPortPool = tcpPortPoolRef;
         dbDriver = dbDriverRef;
-        suffixedResourceName = rscDfnRef.getName().displayValue + resourceNameSuffixRef;
-        rscDfn = Objects.requireNonNull(rscDfnRef);
+        suffixedResourceName = rscNameRef.displayValue + (snapNameRef == null ? "" : snapNameRef.displayValue)
+            + resourceNameSuffixRef;
+        rscName = Objects.requireNonNull(rscNameRef);
+        snapName = snapNameRef;
         alStripes = alStripesRef;
         alStripeSize = alStripesSizeRef;
 
@@ -85,8 +96,19 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         }
         else
         {
-            tmpPort = new TcpPortNumber(portRef);
-            tcpPortPool.allocate(portRef);
+            if (portRef == SNAPSHOT_TCP_PORT)
+            {
+                tmpPort = null;
+                if (snapNameRef == null)
+                {
+                    throw new ImplementationError("Invalid port number given for resource");
+                }
+            }
+            else
+            {
+                tmpPort = new TcpPortNumber(portRef);
+                tcpPortPool.allocate(portRef);
+            }
         }
         port = transObjFactory.createTransactionSimpleObject(this, tmpPort, dbDriverRef.getTcpPortDriver());
         transportType = transObjFactory.createTransactionSimpleObject(
@@ -103,7 +125,6 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         drbdVlmDfnMap = transObjFactory.createTransactionMap(vlmDfnMap, null);
 
         transObjs = Arrays.asList(
-            rscDfn,
             port,
             transportType,
             secret,
@@ -118,9 +139,15 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     }
 
     @Override
-    public ResourceDefinition getResourceDefinition()
+    public ResourceName getResourceName()
     {
-        return rscDfn;
+        return rscName;
+    }
+
+    @Override
+    public SnapshotName getSnapshotName()
+    {
+        return snapName;
     }
 
     @Override
@@ -167,7 +194,7 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
         secret.set(secretRef);
     }
 
-    public Collection<DrbdRscData> getDrbdRscDataList()
+    public Collection<DrbdRscData<RSC>> getDrbdRscDataList()
     {
         return drbdRscDataList;
     }
@@ -221,40 +248,44 @@ public class DrbdRscDfnData extends BaseTransactionObject implements DrbdRscDfnO
     @Override
     public void delete() throws DatabaseException
     {
-        Collection<DrbdVlmDfnData> drbdVlmDfns = new ArrayList<>(drbdVlmDfnMap.values());
-        for (DrbdVlmDfnData drbdVlmDfn : drbdVlmDfns)
+        Collection<DrbdVlmDfnData<RSC>> drbdVlmDfns = new ArrayList<>(drbdVlmDfnMap.values());
+        for (DrbdVlmDfnData<RSC> drbdVlmDfn : drbdVlmDfns)
         {
             drbdVlmDfn.delete();
         }
-        tcpPortPool.deallocate(port.get().value);
+        TcpPortNumber tcpPortNumber = port.get();
+        if (tcpPortNumber != null)
+        {
+            tcpPortPool.deallocate(tcpPortNumber.value);
+        }
         dbDriver.delete(this);
     }
 
-
-    public void delete(DrbdVlmDfnData drbdVlmDfnDataRef)
+    public void delete(DrbdVlmDfnData<RSC> drbdVlmDfnDataRef)
     {
-        drbdVlmDfnMap.remove(drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber());
+        drbdVlmDfnMap.remove(drbdVlmDfnDataRef.getVolumeNumber());
     }
 
-    public DrbdVlmDfnData getDrbdVlmDfn(VolumeNumber vlmNr)
+    public DrbdVlmDfnData<RSC> getDrbdVlmDfn(VolumeNumber vlmNr)
     {
         return drbdVlmDfnMap.get(vlmNr);
     }
 
-    public void putDrbdVlmDfn(DrbdVlmDfnData drbdVlmDfnDataRef)
+    public void putDrbdVlmDfn(DrbdVlmDfnData<RSC> drbdVlmDfnDataRef)
     {
-        drbdVlmDfnMap.put(drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber(), drbdVlmDfnDataRef);
+        drbdVlmDfnMap.put(drbdVlmDfnDataRef.getVolumeNumber(), drbdVlmDfnDataRef);
     }
 
     @Override
     public DrbdRscDfnPojo getApiData(AccessContext accCtxRef)
     {
+        TcpPortNumber tcpPort = port.get();
         return new DrbdRscDfnPojo(
             resourceNameSuffix,
             peerSlots.get(),
             alStripes,
             alStripeSize,
-            port.get().value,
+            tcpPort == null ? null : tcpPort.value,
             transportType.get().name(),
             secret.get(),
             down.get()

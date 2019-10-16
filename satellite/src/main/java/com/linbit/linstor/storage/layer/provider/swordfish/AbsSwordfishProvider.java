@@ -6,7 +6,8 @@ import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -48,7 +49,8 @@ import java.util.Set;
 
 
 // TODO: create custom SwordFish communication objects and use a JSON serializer / deserializer
-public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject> implements DeviceProvider
+public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject<Resource>>
+    implements DeviceProvider
 {
     protected final StltConfigAccessor stltConfigAccessor;
     protected Props localNodeProps;
@@ -105,7 +107,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
 
     private void handleUnexpectedReturnCode(RestResponse<Map<String, Object>> response)
     {
-        VlmProviderObject vlmData = response.getVolumeData();
+        VlmProviderObject<Resource> vlmData = response.getVolumeData();
         if (vlmData != null)
         {
             // could be null if we were requesting free space or total capacity (no vlm involved)
@@ -127,13 +129,14 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, DatabaseException
+    public void updateGrossSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException
     {
         // usable size was just updated (set) by the layer above us. nothing to do here
     }
 
     @Override
-    public void prepare(List<VlmProviderObject> vlmDataList, List<SnapshotVolume> snapVlms)
+    public void prepare(List<VlmProviderObject<Resource>> vlmDataListRef, List<VlmProviderObject<Snapshot>> snapVlmsRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op
@@ -148,8 +151,8 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     @SuppressWarnings("unchecked")
     @Override
     public void process(
-        List<VlmProviderObject> rawVlmDataList,
-        List<SnapshotVolume> ignoredSnapshotlist,
+        List<VlmProviderObject<Resource>> rawVlmDataList,
+        List<VlmProviderObject<Snapshot>> ignoredSnapshotlist,
         ApiCallRcImpl apiCallRc
     )
         throws AccessDeniedException, DatabaseException, StorageException
@@ -163,7 +166,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
         {
             for (LAYER_DATA vlmData : vlmDataList)
             {
-                Volume vlm = vlmData.getVolume();
+                Volume vlm = (Volume) vlmData.getVolume();
                 Props props = DeviceLayerUtils.getInternalNamespaceStorDriver(
                     vlm.getVolumeDefinition().getProps(sysCtx)
                 );
@@ -279,7 +282,7 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     }
 
     protected RestResponse<Map<String, Object>> getSwordfishResource(
-        VlmProviderObject vlmData,
+        VlmProviderObject<Resource> vlmData,
         String odataId,
         boolean allowNotFound
     )
@@ -456,12 +459,12 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
     }
 
     @SuppressWarnings("unchecked")
-    protected <T extends State> void clearAndSet(VlmProviderObject vlmData, T state)
+    protected <T extends State> void clearAndSet(VlmProviderObject<Resource> vlmData, T state)
     {
         List<T> states = (List<T>) vlmData.getStates();
         states.clear();
 
-        Volume vlm = vlmData.getVolume();
+        Volume vlm = (Volume) vlmData.getVolume();
         if (state.equals(SfTargetData.INTERNAL_REMOVE))
         {
             vlmDiskStateEvent.get().closeStream(ObjectIdentifier.volumeDefinition(

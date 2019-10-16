@@ -33,18 +33,18 @@ import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionSatelliteFactory;
-import com.linbit.linstor.core.objects.ResourceSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.ResourceSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
+import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinitionSatelliteFactory;
+import com.linbit.linstor.core.objects.VolumeFactory;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -271,10 +271,10 @@ class StltRscApiCallHandler
                 for (Entry<VolumeNumber, VolumeDefinition> entry : vlmDfnsToDelete.entrySet())
                 {
                      VolumeDefinition vlmDfn = entry.getValue();
-                     Iterator<Volume> iterateVolumes = vlmDfn.iterateVolumes(apiCtx);
+                    Iterator<Volume> iterateVolumes = vlmDfn.iterateVolumes(apiCtx);
                      while (iterateVolumes.hasNext())
                      {
-                         Volume vlm = iterateVolumes.next();
+                        Volume vlm = iterateVolumes.next();
                          vlm.markDeleted(apiCtx);
                      }
                     vlmDfn.markDeleted(apiCtx);
@@ -424,7 +424,7 @@ class StltRscApiCallHandler
                         if (otherRsc.getRscUuid().equals(removed.getUuid()))
                         {
                             if (!otherRsc.getNodeName().equals(
-                                removed.getAssignedNode().getName().displayValue)
+                                removed.getNode().getName().displayValue)
                             )
                             {
                                 throw new DivergentDataException(
@@ -433,14 +433,14 @@ class StltRscApiCallHandler
                                 );
                             }
                             if (!otherRsc.getNodeUuid().equals(
-                                removed.getAssignedNode().getUuid())
+                                removed.getNode().getUuid())
                             )
                             {
                                 throw new DivergentUuidsException(
                                     "Node",
-                                    removed.getAssignedNode().getName().displayValue,
+                                    removed.getNode().getName().displayValue,
                                     otherRsc.getNodeName(),
-                                    removed.getAssignedNode().getUuid(),
+                                    removed.getNode().getUuid(),
                                     otherRsc.getNodeUuid()
                                 );
                             }
@@ -504,7 +504,7 @@ class StltRscApiCallHandler
                     else
                     {
                         // we found the resource by the uuid the controller sent us
-                        Node remoteNode = remoteRsc.getAssignedNode();
+                        Node remoteNode = remoteRsc.getNode();
                         // check if the node uuids also match
                         checkUuid(remoteNode, otherRsc);
 
@@ -737,11 +737,11 @@ class StltRscApiCallHandler
         throws AccessDeniedException, InvalidNameException, DivergentDataException, DatabaseException
     {
         VolumeNumber vlmNr = vlmRef.getVolumeDefinition().getVolumeNumber();
-        Resource rsc = vlmRef.getResource();
-        Node node = rsc.getAssignedNode();
+        Resource rsc = vlmRef.getAbsResource();
+        Node node = rsc.getNode();
         NodeName nodeName = node.getName();
 
-        Map<String, VlmProviderObject> storVlmObjMap = LayerRscUtils.getRscDataByProvider(
+        Map<String, VlmProviderObject<Resource>> storVlmObjMap = LayerRscUtils.getRscDataByProvider(
             rsc.getLayerData(apiCtx),
             DeviceLayerKind.STORAGE
         ).stream().collect(Collectors.toMap(
@@ -780,7 +780,7 @@ class StltRscApiCallHandler
                     storPool = storPoolFactory.getInstanceSatellite(
                         apiCtx,
                         storPoolApi.getStorPoolUuid(),
-                        rsc.getAssignedNode(),
+                        rsc.getNode(),
                         storPoolDfn,
                         storPoolApi.getDeviceProviderKind(),
                         freeSpaceMgrFactory.getInstance()
@@ -848,7 +848,7 @@ class StltRscApiCallHandler
             otherRsc.getRscUuid(),
             "Resource",
             String.format("Node: '%s', Rsc: '%s'",
-                rsc.getAssignedNode().getName().displayValue,
+                rsc.getNode().getName().displayValue,
                 rsc.getDefinition().getName().displayValue
             ),
             String.format("Node: '%s', Rsc: '%s'",
@@ -891,7 +891,7 @@ class StltRscApiCallHandler
             vlm.getKey().toString(),
             String.format(
                 "Rsc: '%s', VlmNr: '%d'",
-                vlm.getResource().getDefinition().getName().displayValue,
+                vlm.getAbsResource().getDefinition().getName().displayValue,
                 vlmRaw.getVlmNr()
             )
         );

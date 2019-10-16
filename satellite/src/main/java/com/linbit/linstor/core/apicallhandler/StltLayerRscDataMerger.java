@@ -25,6 +25,7 @@ import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -52,7 +53,7 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -64,7 +65,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
+public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
 {
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final StorPoolDefinitionSatelliteFactory storPoolDefinitionFactory;
@@ -89,14 +90,15 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected DrbdRscDfnData mergeOrCreateDrbdRscDfnData(
-        ResourceDefinition rscDfn,
+    protected DrbdRscDfnData<Resource> mergeOrCreateDrbdRscDfnData(
+        Resource rsc,
         DrbdRscDfnPojo drbdRscDfnPojo
     )
         throws IllegalArgumentException, DatabaseException, ValueOutOfRangeException, AccessDeniedException,
         ExhaustedPoolException, ValueInUseException
     {
-        DrbdRscDfnData rscDfnData = rscDfn.getLayerData(
+        ResourceDefinition rscDfn = rsc.getDefinition();
+        DrbdRscDfnData<Resource> rscDfnData = rscDfn.getLayerData(
             apiCtx,
             DeviceLayerKind.DRBD,
             drbdRscDfnPojo.getRscNameSuffix()
@@ -104,7 +106,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
         if (rscDfnData == null)
         {
             rscDfnData = layerDataFactory.createDrbdRscDfnData(
-                rscDfn,
+                rscDfn.getName(),
+                null,
                 drbdRscDfnPojo.getRscNameSuffix(),
                 drbdRscDfnPojo.getPeerSlots(),
                 drbdRscDfnPojo.getAlStripes(),
@@ -133,13 +136,16 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected DrbdRscData createDrbdRscData(
-        Resource rsc, RscLayerDataApi rscDataPojo, RscLayerObject parent, DrbdRscPojo drbdRscPojo,
-        DrbdRscDfnData drbdRscDfnData
+    protected DrbdRscData<Resource> createDrbdRscData(
+        Resource rsc,
+        RscLayerDataApi rscDataPojo,
+        AbsRscLayerObject<Resource> parent,
+        DrbdRscPojo drbdRscPojo,
+        DrbdRscDfnData<Resource> drbdRscDfnData
     )
         throws DatabaseException, ValueOutOfRangeException, AccessDeniedException
     {
-        DrbdRscData drbdRscData;
+        DrbdRscData<Resource> drbdRscData;
         drbdRscData = layerDataFactory.createDrbdRscData(
             rscDataPojo.getId(),
             rsc,
@@ -165,7 +171,11 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void mergeDrbdRscData(RscLayerObject parentRef, DrbdRscPojo drbdRscPojoRef, DrbdRscData drbdRscDataRef)
+    protected void mergeDrbdRscData(
+        AbsRscLayerObject<Resource> parentRef,
+        DrbdRscPojo drbdRscPojoRef,
+        DrbdRscData<Resource> drbdRscDataRef
+    )
         throws AccessDeniedException, DatabaseException
     {
         drbdRscDataRef.getFlags().resetFlagsTo(
@@ -176,18 +186,22 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void removeDrbdVlm(DrbdRscData drbdRscDataRef, VolumeNumber vlmNrRef)
+    protected void removeDrbdVlm(DrbdRscData<Resource> drbdRscDataRef, VolumeNumber vlmNrRef)
         throws AccessDeniedException, DatabaseException
     {
         drbdRscDataRef.remove(apiCtx, vlmNrRef);
     }
 
     @Override
-    protected DrbdVlmDfnData mergeOrCreateDrbdVlmDfnData(VolumeDefinition vlmDfnRef, DrbdVlmDfnPojo drbdVlmDfnPojoRef)
+    protected DrbdVlmDfnData<Resource> mergeOrCreateDrbdVlmDfnData(
+        AbsVolume<Resource> vlm,
+        DrbdVlmDfnPojo drbdVlmDfnPojoRef
+    )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
-        DrbdVlmDfnData drbdVlmDfnData = vlmDfnRef.getLayerData(
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+        DrbdVlmDfnData<Resource> drbdVlmDfnData = vlmDfn.getLayerData(
             apiCtx,
             DeviceLayerKind.DRBD,
             drbdVlmDfnPojoRef.getRscNameSuffix()
@@ -195,16 +209,17 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
         if (drbdVlmDfnData == null)
         {
             drbdVlmDfnData = layerDataFactory.createDrbdVlmDfnData(
-                vlmDfnRef,
+                vlmDfn,
+                null,
                 drbdVlmDfnPojoRef.getRscNameSuffix(),
                 drbdVlmDfnPojoRef.getMinorNr(),
-                vlmDfnRef.getResourceDefinition().getLayerData(
+                vlmDfn.getResourceDefinition().getLayerData(
                     apiCtx,
                     DeviceLayerKind.DRBD,
                     drbdVlmDfnPojoRef.getRscNameSuffix()
                 )
             );
-            vlmDfnRef.setLayerData(apiCtx, drbdVlmDfnData);
+            vlmDfn.setLayerData(apiCtx, drbdVlmDfnData);
         }
         else
         {
@@ -215,21 +230,21 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
 
     @Override
     protected void createOrMergeDrbdVlmData(
-        Volume vlmRef,
-        DrbdRscData rscDataRef,
+        AbsVolume<Resource> vlmRef,
+        DrbdRscData<Resource> rscDataRef,
         DrbdVlmPojo vlmPojoRef,
         VolumeNumber vlmNrRef,
-        DrbdVlmDfnData drbdVlmDfnDataRef
+        DrbdVlmDfnData<Resource> drbdVlmDfnDataRef
     )
         throws AccessDeniedException, InvalidNameException, DatabaseException
     {
-        DrbdVlmData drbdVlmData = rscDataRef.getVlmLayerObjects().get(vlmNrRef);
+        DrbdVlmData<Resource> drbdVlmData = rscDataRef.getVlmLayerObjects().get(vlmNrRef);
 
         StorPool extMetaStorPool = null;
         String extMetaStorPoolNameStr = vlmPojoRef.getExternalMetaDataStorPool();
         if (extMetaStorPoolNameStr != null)
         {
-            extMetaStorPool = vlmRef.getResource().getAssignedNode().getStorPool(
+            extMetaStorPool = vlmRef.getAbsResource().getNode().getStorPool(
                 apiCtx,
                 new StorPoolName(extMetaStorPoolNameStr)
             );
@@ -255,11 +270,14 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected LuksRscData createLuksRscData(Resource rscRef, RscLayerObject parentRef, LuksRscPojo luksRscPojoRef)
+    protected LuksRscData<Resource> createLuksRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Resource> parentRef,
+        LuksRscPojo luksRscPojoRef
+    )
         throws DatabaseException, AccessDeniedException
     {
-        LuksRscData luksRscData;
-        luksRscData = layerDataFactory.createLuksRscData(
+        LuksRscData<Resource> luksRscData = layerDataFactory.createLuksRscData(
             luksRscPojoRef.getId(),
             rscRef,
             luksRscPojoRef.getRscNameSuffix(),
@@ -277,20 +295,25 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void removeLuksVlm(LuksRscData luksRscDataRef, VolumeNumber vlmNrRef)
+    protected void removeLuksVlm(LuksRscData<Resource> luksRscDataRef, VolumeNumber vlmNrRef)
         throws DatabaseException, AccessDeniedException
     {
         luksRscDataRef.remove(apiCtx, vlmNrRef);
     }
 
+
     @Override
-    protected void createOrMergeLuksVlm(Volume vlmRef, LuksRscData luksRscDataRef, LuksVlmPojo vlmPojoRef)
+    protected void createOrMergeLuksVlm(
+        AbsVolume<Resource> vlmRef,
+        LuksRscData<Resource> luksRscDataRef,
+        LuksVlmPojo vlmPojoRef
+    )
         throws DatabaseException
     {
         VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
         VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
 
-        LuksVlmData luksVlmData = luksRscDataRef.getVlmLayerObjects().get(vlmNr);
+        LuksVlmData<Resource> luksVlmData = luksRscDataRef.getVlmLayerObjects().get(vlmNr);
         if (luksVlmData == null)
         {
             luksVlmData = layerDataFactory.createLuksVlmData(
@@ -312,13 +335,14 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected StorageRscData createStorageRscData(
-        Resource rscRef, RscLayerObject parentRef, StorageRscPojo storRscPojoRef
+    protected StorageRscData<Resource> createStorageRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Resource> parentRef,
+        StorageRscPojo storRscPojoRef
     )
         throws DatabaseException, AccessDeniedException
     {
-        StorageRscData storRscData;
-        storRscData = layerDataFactory.createStorageRscData(
+        StorageRscData<Resource> storRscData = layerDataFactory.createStorageRscData(
             storRscPojoRef.getId(),
             parentRef,
             rscRef,
@@ -336,7 +360,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void removeStorageVlm(StorageRscData storRscDataRef, VolumeNumber vlmNrRef)
+    protected void removeStorageVlm(StorageRscData<Resource> storRscDataRef, VolumeNumber vlmNrRef)
         throws DatabaseException, AccessDeniedException
     {
         storRscDataRef.remove(apiCtx, vlmNrRef);
@@ -344,7 +368,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
 
     @Override
     protected StorPool getStoragePool(
-        Volume vlm,
+        AbsVolume<Resource> vlm,
         VlmLayerDataApi vlmPojo,
         boolean remoteResource
     )
@@ -371,7 +395,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
                 storPool = storPoolFactory.getInstanceSatellite(
                     apiCtx,
                     storPoolApi.getStorPoolUuid(),
-                    vlm.getResource().getAssignedNode(),
+                    vlm.getAbsResource().getNode(),
                     storPoolDfn,
                     storPoolApi.getDeviceProviderKind(),
                     freeSpaceMgrFactory.getInstance()
@@ -388,8 +412,11 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected VlmProviderObject createDisklessVlmData(
-        Volume vlmRef, StorageRscData storRscDataRef, VlmLayerDataApi vlmPojoRef, StorPool storPoolRef
+    protected VlmProviderObject<Resource> createDisklessVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
     )
         throws DatabaseException
     {
@@ -402,20 +429,26 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void mergeDisklessVlm(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
+    protected void mergeDisklessVlm(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
     {
         // ignoring usableSize
     }
 
     @Override
-    protected VlmProviderObject createLvmVlmData(Volume vlmRef, StorageRscData storRscDataRef, StorPool storPoolRef)
+    protected VlmProviderObject<Resource> createLvmVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        StorPool storPoolRef
+    )
         throws DatabaseException
     {
         return layerDataFactory.createLvmData(vlmRef, storRscDataRef, storPoolRef);
     }
 
     @Override
-    protected void mergeLvmVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
+    protected void mergeLvmVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
     {
         // ignoring allocatedSize
         // ignoring devicePath
@@ -423,14 +456,22 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected LvmThinData createLvmThinVlmData(Volume vlmRef, StorageRscData storRscDataRef, StorPool storPoolRef)
+    protected LvmThinData<Resource> createLvmThinVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        StorPool storPoolRef
+    )
         throws DatabaseException
     {
         return layerDataFactory.createLvmThinData(vlmRef, storRscDataRef, storPoolRef);
     }
 
     @Override
-    protected VlmProviderObject createSpdkVlmData(Volume vlmRef, StorageRscData storRscDataRef, StorPool storPoolRef)
+    protected VlmProviderObject<Resource> createSpdkVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        StorPool storPoolRef
+    )
             throws DatabaseException
     {
         return layerDataFactory.createSpdkData(vlmRef, storRscDataRef, storPoolRef);
@@ -444,7 +485,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void mergeLvmThinVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
+    protected void mergeLvmThinVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
     {
         // ignoring allocatedSize
         // ignoring devicePath
@@ -452,17 +494,16 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected VlmProviderObject createSfInitVlmData(
-        Volume vlmRef,
-        StorageRscData storRscDataRef,
+    protected VlmProviderObject<Resource> createSfInitVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
         VlmLayerDataApi vlmPojoRef,
         StorPool storPoolRef
     )
         throws DatabaseException, AccessDeniedException
     {
-        VlmProviderObject vlmData;
-        vlmData = layerDataFactory.createSfInitData(
-            vlmRef,
+        VlmProviderObject<Resource> vlmData = layerDataFactory.createSfInitData(
+            (Volume) vlmRef,
             storRscDataRef,
             restoreSfVlmDfn(
                 vlmRef.getVolumeDefinition(),
@@ -474,7 +515,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void mergeSfInitVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
+    protected void mergeSfInitVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
     {
         // ignoring allocatedSize
         // ignoring devicePath
@@ -482,17 +524,16 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected VlmProviderObject createSfTargetVlmData(
-        Volume vlmRef,
-        StorageRscData storRscDataRef,
+    protected VlmProviderObject<Resource> createSfTargetVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
         VlmLayerDataApi vlmPojoRef,
         StorPool storPoolRef
     )
         throws DatabaseException, AccessDeniedException
     {
-        VlmProviderObject vlmData;
-        vlmData = layerDataFactory.createSfTargetData(
-            vlmRef,
+        VlmProviderObject<Resource> vlmData = layerDataFactory.createSfTargetData(
+            (Volume) vlmRef,
             storRscDataRef,
             restoreSfVlmDfn(
                 vlmRef.getVolumeDefinition(),
@@ -504,15 +545,16 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void mergeSfTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
+    protected void mergeSfTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
     {
         // ignoring allocatedSize
     }
 
     @Override
-    protected VlmProviderObject createZfsData(
-        Volume vlmRef,
-        StorageRscData storRscDataRef,
+    protected VlmProviderObject<Resource> createZfsData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
         VlmLayerDataApi vlmPojoRef,
         StorPool storPoolRef
     )
@@ -522,7 +564,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void mergeZfsData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
+    protected void mergeZfsData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
     {
         // ignoring allocatedSize
         // ignoring devicePath
@@ -530,9 +573,9 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected VlmProviderObject createFileData(
-        Volume vlmRef,
-        StorageRscData storRscDataRef,
+    protected VlmProviderObject<Resource> createFileData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
         VlmLayerDataApi vlmPojoRef,
         StorPool storPoolRef
     )
@@ -542,7 +585,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void mergeFileData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
+    protected void mergeFileData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
     {
         // ignoring allocatedSize
         // ignoring devicePath
@@ -550,23 +594,30 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void setStorPool(VlmProviderObject vlmDataRef, StorPool storPoolRef) throws AccessDeniedException, DatabaseException
+    protected void setStorPool(VlmProviderObject<Resource> vlmDataRef, StorPool storPoolRef)
+        throws AccessDeniedException, DatabaseException
     {
         vlmDataRef.setStorPool(apiCtx, storPoolRef);
     }
 
     @Override
-    protected void putVlmData(StorageRscData storRscDataRef, VlmProviderObject vlmDataRef)
+    protected void putVlmData(
+        StorageRscData<Resource> storRscDataRef,
+        VlmProviderObject<Resource> vlmDataRef
+    )
     {
         storRscDataRef.getVlmLayerObjects().put(vlmDataRef.getVlmNr(), vlmDataRef);
     }
 
     @Override
-    protected NvmeRscData createNvmeRscData(Resource rscRef, RscLayerObject parentRef, NvmeRscPojo nvmeRscPojoRef)
+    protected NvmeRscData<Resource> createNvmeRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Resource> parentRef,
+        NvmeRscPojo nvmeRscPojoRef
+    )
         throws DatabaseException, AccessDeniedException
     {
-        NvmeRscData nvmeRscData;
-        nvmeRscData = layerDataFactory.createNvmeRscData(
+        NvmeRscData<Resource> nvmeRscData = layerDataFactory.createNvmeRscData(
             nvmeRscPojoRef.getId(),
             rscRef,
             nvmeRscPojoRef.getRscNameSuffix(),
@@ -584,22 +635,25 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void removeNvmeVlm(NvmeRscData nvmeRscDataRef, VolumeNumber vlmNrRef)
+    protected void removeNvmeVlm(NvmeRscData<Resource> nvmeRscDataRef, VolumeNumber vlmNrRef)
         throws DatabaseException, AccessDeniedException
     {
         nvmeRscDataRef.remove(apiCtx, vlmNrRef);
     }
 
     @Override
-    protected void createNvmeVlm(Volume vlmRef, NvmeRscData nvmeRscDataRef, VolumeNumber vlmNrRef)
+    protected void createNvmeVlm(
+        AbsVolume<Resource> vlmRef,
+        NvmeRscData<Resource> nvmeRscDataRef,
+        VolumeNumber vlmNrRef
+    )
     {
-        NvmeVlmData nvmeVlmData;
-        nvmeVlmData = layerDataFactory.createNvmeVlmData(vlmRef, nvmeRscDataRef);
+        NvmeVlmData<Resource> nvmeVlmData = layerDataFactory.createNvmeVlmData(vlmRef, nvmeRscDataRef);
         nvmeRscDataRef.getVlmLayerObjects().put(vlmNrRef, nvmeVlmData);
     }
 
     @Override
-    protected void mergeNvmeVlm(NvmeVlmPojo vlmPojoRef, NvmeVlmData nvmeVlmDataRef)
+    protected void mergeNvmeVlm(NvmeVlmPojo vlmPojoRef, NvmeVlmData<Resource> nvmeVlmDataRef)
     {
         // ignoring allocatedSize
         // ignoring devicePath
@@ -608,14 +662,14 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected WritecacheRscData createWritecacheRscData(
+    protected WritecacheRscData<Resource> createWritecacheRscData(
         Resource rscRef,
-        RscLayerObject parentRef,
+        AbsRscLayerObject<Resource> parentRef,
         WritecacheRscPojo writecacheRscPojoRef
     )
         throws DatabaseException, AccessDeniedException
     {
-        WritecacheRscData writecacheRscData;
+        WritecacheRscData<Resource> writecacheRscData;
         writecacheRscData = layerDataFactory.createWritecacheRscData(
             writecacheRscPojoRef.getId(),
             rscRef,
@@ -634,7 +688,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void removeWritecacheVlm(WritecacheRscData writecacheRscDataRef, VolumeNumber vlmNrRef)
+    protected void removeWritecacheVlm(WritecacheRscData<Resource> writecacheRscDataRef, VolumeNumber vlmNrRef)
         throws DatabaseException, AccessDeniedException
     {
         writecacheRscDataRef.remove(apiCtx, vlmNrRef);
@@ -642,19 +696,19 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
 
     @Override
     protected void createWritecacheVlm(
-        Volume vlmRef,
-        WritecacheRscData writecacheRscDataRef,
+        AbsVolume<Resource> vlmRef,
+        WritecacheRscData<Resource> writecacheRscDataRef,
         WritecacheVlmPojo vlmPojo,
         VolumeNumber vlmNrRef
     ) throws AccessDeniedException, InvalidNameException
     {
         String cacheStorPoolNameStr = vlmPojo.getCacheStorPoolName();
-        StorPool cacheStorPool = vlmRef.getResource().getAssignedNode().getStorPool(
+        StorPool cacheStorPool = vlmRef.getAbsResource().getNode().getStorPool(
             apiCtx,
             new StorPoolName(cacheStorPoolNameStr)
         );
 
-        WritecacheVlmData writecacheVlmData = layerDataFactory.createWritecacheVlmData(
+        WritecacheVlmData<Resource> writecacheVlmData = layerDataFactory.createWritecacheVlmData(
             vlmRef,
             cacheStorPool,
             writecacheRscDataRef
@@ -665,7 +719,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     @Override
     protected void mergeWritecacheVlm(
         WritecacheVlmPojo vlmPojo,
-        WritecacheVlmData writecacheVlmData
+        WritecacheVlmData<Resource> writecacheVlmData
     )
     {
         // ignoring allocatedSize
@@ -679,9 +733,13 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
-    protected void updateParent(RscLayerObject child, RscLayerObject newParent) throws DatabaseException
+    protected void updateParent(
+        AbsRscLayerObject<Resource> child,
+        AbsRscLayerObject<Resource> newParent
+    )
+        throws DatabaseException
     {
-        RscLayerObject oldParent = child.getParent();
+        AbsRscLayerObject<Resource> oldParent = child.getParent();
         if (oldParent != null)
         {
             oldParent.getChildren().remove(child);

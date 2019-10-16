@@ -167,6 +167,8 @@ public class ResourceDefinition extends BaseTransactionObject
             volumeMap,
             resourceMap,
             rscDfnProps,
+            layerStack,
+            layerStorage,
             rscGrp,
             deleted
         );
@@ -311,7 +313,7 @@ public class ResourceDefinition extends BaseTransactionObject
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        resourceMap.put(resRef.getAssignedNode().getName(), resRef);
+        resourceMap.put(resRef.getNode().getName(), resRef);
     }
 
     void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
@@ -319,7 +321,7 @@ public class ResourceDefinition extends BaseTransactionObject
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        resourceMap.remove(resRef.getAssignedNode().getName());
+        resourceMap.remove(resRef.getNode().getName());
     }
 
     public void addSnapshotDfn(AccessContext accCtx, SnapshotDefinition snapshotDfn)
@@ -621,7 +623,7 @@ public class ResourceDefinition extends BaseTransactionObject
         {
             Resource rsc = rscInUseIterator.next();
 
-            Peer nodePeer = rsc.getAssignedNode().getPeer(accCtx);
+            Peer nodePeer = rsc.getNode().getPeer(accCtx);
             if (nodePeer != null)
             {
                 Boolean inUse;

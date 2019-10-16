@@ -1,12 +1,14 @@
 package com.linbit.linstor.storage.interfaces.categories.resource;
 
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
-public interface VlmLayerObject extends VlmProviderObject
+public interface VlmLayerObject<RSC extends AbsResource<RSC>>
+    extends VlmProviderObject<RSC>
 {
     default int getRscLayerId()
     {
@@ -18,7 +20,7 @@ public interface VlmLayerObject extends VlmProviderObject
         return getSingleChild().getDevicePath();
     }
 
-    default VlmProviderObject getSingleChild()
+    default VlmProviderObject<RSC> getSingleChild()
     {
         return getRscLayerObject().getSingleChild().getVlmProviderObject(getVlmNr());
     }
@@ -29,10 +31,10 @@ public interface VlmLayerObject extends VlmProviderObject
         return DeviceProviderKind.FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER;
     }
 
-    default VlmProviderObject getChildBySuffix(String suffixRef)
+    default VlmProviderObject<RSC> getChildBySuffix(String suffixRef)
     {
-        RscLayerObject childBySuffix = getRscLayerObject().getChildBySuffix(suffixRef);
-        VlmProviderObject ret = null;
+        AbsRscLayerObject<RSC> childBySuffix = getRscLayerObject().getChildBySuffix(suffixRef);
+        VlmProviderObject<RSC> ret = null;
         if (childBySuffix != null)
         {
             ret = childBySuffix.getVlmProviderObject(getVlmNr());

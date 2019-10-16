@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import com.fasterxml.jackson.jr.ob.JSON;
 import org.apache.http.Header;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpResponse;
@@ -32,8 +34,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-
-import com.fasterxml.jackson.jr.ob.JSON;
 
 public class RestHttpClient implements RestClient
 {
@@ -268,7 +268,7 @@ public class RestHttpClient implements RestClient
         }
 
         @Override
-        public VlmProviderObject getVolumeData()
+        public VlmProviderObject<Resource> getVolumeData()
         {
             return request.vlmData;
         }

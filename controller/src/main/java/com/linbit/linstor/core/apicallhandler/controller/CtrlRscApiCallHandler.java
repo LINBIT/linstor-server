@@ -172,13 +172,13 @@ public class CtrlRscApiCallHandler
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
                 apiCtx,
-                rsc.getAssignedNode(),
+                rsc.getNode(),
                 overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
                 ApiConsts.MASK_RSC
             );
             ctrlPropsHelper.checkPrefNic(
                 apiCtx,
-                rsc.getAssignedNode(),
+                rsc.getNode(),
                 overrideProps.get(ApiConsts.NAMESPC_NVME + "/" + ApiConsts.KEY_PREF_NIC),
                 ApiConsts.MASK_RSC
             );
@@ -237,7 +237,7 @@ public class CtrlRscApiCallHandler
                     {
                         for (Resource rsc : rscDfn.streamResource(peerAccCtx.get())
                             .filter(rsc -> upperFilterNodes.isEmpty() ||
-                                upperFilterNodes.contains(rsc.getAssignedNode().getName().value))
+                                upperFilterNodes.contains(rsc.getNode().getName().value))
                             .collect(toList()))
                         {
                             rscList.addResource(rsc.getApiData(peerAccCtx.get(), null, null));
@@ -329,7 +329,7 @@ public class CtrlRscApiCallHandler
                 // Collect resource connection from all resources, avoiding duplicates
                 for (Resource rsc : rscList)
                 {
-                    List<ResourceConnection> rscConList = rsc.streamResourceConnections(apiCtx).collect(toList());
+                    List<ResourceConnection> rscConList = rsc.streamAbsResourceConnections(apiCtx).collect(toList());
                     for (ResourceConnection rscCon : rscConList)
                     {
                         ResourceConnectionKey rscConKey = new ResourceConnectionKey(
@@ -405,7 +405,7 @@ public class CtrlRscApiCallHandler
     public static String getRscDescription(Resource resource)
     {
         return getRscDescription(
-            resource.getAssignedNode().getName().displayValue, resource.getDefinition().getName().displayValue);
+            resource.getNode().getName().displayValue, resource.getDefinition().getName().displayValue);
     }
 
     public static String getRscDescription(String nodeNameStr, String rscNameStr)
@@ -415,7 +415,7 @@ public class CtrlRscApiCallHandler
 
     public static String getRscDescriptionInline(Resource rsc)
     {
-        return getRscDescriptionInline(rsc.getAssignedNode(), rsc.getDefinition());
+        return getRscDescriptionInline(rsc.getNode(), rsc.getDefinition());
     }
 
     public static String getRscDescriptionInline(Node node, ResourceDefinition rscDfn)

@@ -46,8 +46,8 @@ import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.debug.HexViewer;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -67,6 +67,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -97,10 +98,10 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlSecurityObjects secObjs;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final CtrlLayerDataHelper ctrlLayerStackHelper;
     private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
+    private final CtrlRscLayerDataFactory ctrlLayerStackHelper;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -119,10 +120,10 @@ public class CtrlRscDfnApiCallHandler
         CtrlSecurityObjects secObjsRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlLayerDataHelper ctrlLayerStackHelperRef,
-        CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
+        CtrlRscLayerDataFactory ctrlLayerStackHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -372,8 +373,8 @@ public class CtrlRscDfnApiCallHandler
             {
                 // TODO: might be a good idea to create this object earlier
                 LayerPayload payload = new LayerPayload();
-                payload.getDrbdRscDfn().setTcpPort(portInt);
-                payload.getDrbdRscDfn().setPeerSlotsNewResource(newRscPeerSlots);
+                payload.getDrbdRscDfn().tcpPort = portInt;
+                payload.getDrbdRscDfn().peerSlotsNewResource = newRscPeerSlots;
                 ctrlLayerStackHelper.ensureRequiredRscDfnLayerDataExits(
                     rscDfn,
                     "",

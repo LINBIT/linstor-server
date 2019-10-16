@@ -74,6 +74,7 @@ public class StorPoolSatelliteFactory
                     propsContainerFactory,
                     transObjFactory,
                     transMgrProvider,
+                    new TreeMap<>(),
                     new TreeMap<>()
                 );
                 node.addStorPool(accCtx, storPool);

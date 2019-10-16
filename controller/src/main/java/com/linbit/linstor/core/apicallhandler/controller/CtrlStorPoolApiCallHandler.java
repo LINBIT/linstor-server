@@ -20,6 +20,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -251,15 +252,15 @@ public class CtrlStorPoolApiCallHandler
                     .build()
                 );
             }
-            Collection<VlmProviderObject> volumes = getVolumes(storPool);
+            Collection<VlmProviderObject<Resource>> volumes = getVolumes(storPool);
             if (!volumes.isEmpty())
             {
                 StringBuilder volListSb = new StringBuilder();
-                for (VlmProviderObject vlmObj : volumes)
+                for (VlmProviderObject<Resource> vlmObj : volumes)
                 {
-                    Resource rsc = vlmObj.getVolume().getResource();
+                    Resource rsc = vlmObj.getVolume().getAbsResource();
                     volListSb.append("\n   Node name: '")
-                         .append(rsc.getAssignedNode().getName().displayValue)
+                         .append(rsc.getNode().getName().displayValue)
                          .append("', resource name: '")
                          .append(rsc.getDefinition().getName().displayValue)
                          .append("', volume number: ")
@@ -305,9 +306,9 @@ public class CtrlStorPoolApiCallHandler
         return Flux.<ApiCallRc>just(apiCallRcs).concatWith(flux);
     }
 
-    private Collection<VlmProviderObject> getVolumes(StorPool storPool)
+    private Collection<VlmProviderObject<Resource>> getVolumes(StorPool storPool)
     {
-        Collection<VlmProviderObject> volumes;
+        Collection<VlmProviderObject<Resource>> volumes;
         try
         {
             volumes = storPool.getVolumes(peerAccCtx.get());

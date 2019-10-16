@@ -1,9 +1,14 @@
 package com.linbit.linstor.storage.data.adapter.drbd;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -15,39 +20,49 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
 import java.util.Objects;
 
-public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnObject
+public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
+    extends BaseTransactionObject
+    implements DrbdVlmDfnObject
 {
+    public static final Integer SNAPSHOT_MINOR = -1;
+
     // unmodifiable data, once initialized
     private final VolumeDefinition vlmDfn;
+    private final SnapshotName snapName;
     private final MinorNumber minorNr;
     private final String suffixedResourceName;
     private final String resourceNameSuffix;
     private final DrbdLayerDatabaseDriver dbDriver;
     private final DynamicNumberPool minorPool;
-    private final DrbdRscDfnData drbdRscDfn;
+    private final DrbdRscDfnData<RSC> drbdRscDfn;
 
     public DrbdVlmDfnData(
         VolumeDefinition vlmDfnRef,
+        @Nullable SnapshotName snapNameRef,
         String resourceNameSuffixRef,
         Integer minorRef,
         DynamicNumberPool minorPoolRef,
-        DrbdRscDfnData drbdRscDfnRef,
+        DrbdRscDfnData<RSC> drbdRscDfnRef,
         DrbdLayerDatabaseDriver dbDriverRef,
         Provider<? extends TransactionMgr> transMgrProvider
     )
         throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         super(transMgrProvider);
+        vlmDfn = Objects.requireNonNull(vlmDfnRef);
+        snapName = snapNameRef;
         resourceNameSuffix = resourceNameSuffixRef;
         minorPool = minorPoolRef;
         drbdRscDfn = drbdRscDfnRef;
         dbDriver = dbDriverRef;
-        suffixedResourceName = vlmDfnRef.getResourceDefinition().getName().displayValue + resourceNameSuffixRef;
+        suffixedResourceName = vlmDfnRef.getResourceDefinition().getName().displayValue +
+            (snapName == null ? "" : snapName.displayValue) + resourceNameSuffixRef;
 
         if (minorRef == null)
         {
@@ -55,14 +70,23 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
         }
         else
         {
-            minorNr = new MinorNumber(minorRef);
-            minorPoolRef.allocate(minorRef);
+            if (minorRef != SNAPSHOT_MINOR)
+            {
+                minorNr = new MinorNumber(minorRef);
+                minorPoolRef.allocate(minorRef);
+            }
+            else
+            {
+                if (snapNameRef == null)
+                {
+                    throw new ImplementationError("Invalid minor number given for resource");
+                }
+                minorNr = null;
+            }
         }
 
-        vlmDfn = Objects.requireNonNull(vlmDfnRef);
-
         transObjs = Arrays.asList(
-            vlmDfn
+            drbdRscDfn
         );
     }
 
@@ -73,9 +97,21 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
     }
 
     @Override
-    public VolumeDefinition getVolumeDefinition()
+    public ResourceName getResourceName()
     {
-        return vlmDfn;
+        return vlmDfn.getResourceDefinition().getName();
+    }
+
+    @Override
+    public SnapshotName getSnapshotName()
+    {
+        return snapName;
+    }
+
+    @Override
+    public VolumeNumber getVolumeNumber()
+    {
+        return vlmDfn.getVolumeNumber();
     }
 
     @Override
@@ -98,7 +134,10 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
     @Override
     public void delete() throws DatabaseException
     {
-        minorPool.deallocate(minorNr.value);
+        if (minorNr != null)
+        {
+            minorPool.deallocate(minorNr.value);
+        }
         dbDriver.delete(this);
         drbdRscDfn.delete(this);
     }
@@ -109,7 +148,12 @@ public class DrbdVlmDfnData extends BaseTransactionObject implements DrbdVlmDfnO
         return new DrbdVlmDfnPojo(
             resourceNameSuffix,
             vlmDfn.getVolumeNumber().value,
-            minorNr.value
+            minorNr == null ? null : minorNr.value
         );
+    }
+
+    public VolumeDefinition getVolumeDefinition()
+    {
+        return vlmDfn;
     }
 }

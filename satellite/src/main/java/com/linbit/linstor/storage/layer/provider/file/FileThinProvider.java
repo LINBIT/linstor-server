@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.layer.provider.file;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -19,6 +20,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.nio.file.Path;
 
 @Singleton
@@ -49,7 +51,7 @@ public class FileThinProvider extends FileProvider
     }
 
     @Override
-    protected void createLvImpl(FileData fileData)
+    protected void createLvImpl(FileData<Resource> fileData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         Path backingFile = fileData.getStorageDirectory().resolve(fileData.getIdentifier());
@@ -61,9 +63,8 @@ public class FileThinProvider extends FileProvider
         createLoopDevice(fileData, backingFile);
     }
 
-
     @Override
-    protected void resizeLvImpl(FileData fileData)
+    protected void resizeLvImpl(FileData<Resource> fileData)
         throws StorageException, AccessDeniedException
     {
         // no special command for resize, just "re-allocate" to the needed size

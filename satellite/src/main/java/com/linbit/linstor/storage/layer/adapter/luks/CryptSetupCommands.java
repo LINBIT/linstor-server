@@ -2,13 +2,15 @@ package com.linbit.linstor.storage.layer.adapter.luks;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdUtils;
-import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.utils.Luks;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -196,7 +198,7 @@ public class CryptSetupCommands implements Luks
     }
 
 
-    public boolean hasLuksFormat(LuksVlmData vlmData) throws StorageException
+    public boolean hasLuksFormat(LuksVlmData<Resource> vlmData) throws StorageException
     {
         boolean hasLuks = false;
 

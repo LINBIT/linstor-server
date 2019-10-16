@@ -1,8 +1,10 @@
 package com.linbit.linstor.storage.interfaces.layers.storage;
 
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.storage.interfaces.layers.State;
 
-public interface SfInitiatorVlmProviderObject extends SfVlmProviderObject
+public interface SfInitiatorVlmProviderObject<RSC extends AbsResource<RSC>>
+    extends SfVlmProviderObject<RSC>
 {
     State ATTACHABLE = new State(true, false, "Attachable");
     State WAITING_ATTACHABLE = new State(true, false, "Wf: Attachable");

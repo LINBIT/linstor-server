@@ -12,8 +12,10 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -292,10 +294,10 @@ public class CtrlAutoStorPoolSelector
                     List<Node> nodesToRemove = new ArrayList<>();
                     for (Node node : entry.getValue())
                     {
-                        Collection<VlmProviderObject> volumes = node
+                        Collection<VlmProviderObject<Resource>> volumes = node
                             .getStorPool(apiAccCtx, entry.getKey())
                             .getVolumes(apiAccCtx);
-                        for (VlmProviderObject vlm : volumes)
+                        for (VlmProviderObject<Resource> vlm : volumes)
                         {
                             if (notPlaceWithRscList.contains(vlm.getVolume().getResourceDefinition().getName().value))
                             {

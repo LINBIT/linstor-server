@@ -8,9 +8,9 @@ public interface WritecacheLayerDatabaseDriver
 {
     ResourceLayerIdDatabaseDriver getIdDriver();
 
-    void persist(WritecacheRscData luksRscDataRef) throws DatabaseException;
-    void delete(WritecacheRscData luksRscDataRef) throws DatabaseException;
+    void persist(WritecacheRscData<?> writecacheRscDataRef) throws DatabaseException;
+    void delete(WritecacheRscData<?> writecacheRscDataRef) throws DatabaseException;
 
-    void persist(WritecacheVlmData luksVlmDataRef) throws DatabaseException;
-    void delete(WritecacheVlmData luksVlmDataRef) throws DatabaseException;
+    void persist(WritecacheVlmData<?> writecacheVlmDataRef) throws DatabaseException;
+    void delete(WritecacheVlmData<?> writecacheVlmDataRef) throws DatabaseException;
 }

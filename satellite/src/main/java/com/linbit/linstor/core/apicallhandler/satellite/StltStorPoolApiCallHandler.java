@@ -17,11 +17,14 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
+import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -33,6 +36,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -154,11 +158,21 @@ class StltStorPoolApiCallHandler
                 storPoolProps.map().putAll(storPoolRaw.getStorPoolProps());
                 storPoolProps.keySet().retainAll(storPoolRaw.getStorPoolProps().keySet());
 
-                Collection<VlmProviderObject> vlmDataCol = storPool.getVolumes(apiCtx);
-                for (VlmProviderObject vlmData : vlmDataCol)
+                Collection<VlmProviderObject<Resource>> vlmDataCol = storPool.getVolumes(apiCtx);
+                for (VlmProviderObject<Resource> vlmData : vlmDataCol)
                 {
                     ResourceDefinition rscDfn = vlmData.getVolume().getResourceDefinition();
                     changedResources.add(rscDfn.getName());
+                }
+
+                Collection<VlmProviderObject<Snapshot>> snapVlmDataCol = storPool
+                    .getSnapVolumes(apiCtx);
+                for (VlmProviderObject<Snapshot> snapVlmData : snapVlmDataCol)
+                {
+                    SnapshotVolume vlm = (SnapshotVolume) snapVlmData.getVolume();
+                    changedResources.add(vlm.getResourceName()); // TODO maybe introduce a
+                                                                 // changedSnapshot? if that is even
+                                                                 // possible..
                 }
             }
             else

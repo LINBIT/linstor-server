@@ -9,10 +9,10 @@ public interface NvmeLayerDatabaseDriver
     ResourceLayerIdDatabaseDriver getIdDriver();
 
     // NvmeRscData methods
-    void create(NvmeRscData drbdRscData) throws DatabaseException;
-    void delete(NvmeRscData drbdRscData) throws DatabaseException;
+    void create(NvmeRscData<?> drbdRscData) throws DatabaseException;
+    void delete(NvmeRscData<?> drbdRscData) throws DatabaseException;
 
     // NvmeVlmData methods
-    void persist(NvmeVlmData drbdVlmData) throws DatabaseException;
-    void delete(NvmeVlmData drbdVlmData) throws DatabaseException;
+    void persist(NvmeVlmData<?> drbdVlmData) throws DatabaseException;
+    void delete(NvmeVlmData<?> drbdVlmData) throws DatabaseException;
 }

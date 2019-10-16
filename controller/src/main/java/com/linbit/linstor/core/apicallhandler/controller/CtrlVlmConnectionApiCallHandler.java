@@ -389,8 +389,8 @@ class CtrlVlmConnectionApiCallHandler
         try
         {
             descriptionInline = getVlmConnectionDescriptionInline(
-                vlmConn.getSourceVolume(accCtx).getResource().getAssignedNode().getName().displayValue,
-                vlmConn.getTargetVolume(accCtx).getResource().getAssignedNode().getName().displayValue,
+                vlmConn.getSourceVolume(accCtx).getAbsResource().getNode().getName().displayValue,
+                vlmConn.getTargetVolume(accCtx).getAbsResource().getNode().getName().displayValue,
                 vlmConn.getSourceVolume(accCtx).getResourceDefinition().getName().displayValue,
                 vlmConn.getSourceVolume(accCtx).getVolumeDefinition().getVolumeNumber().value
             );

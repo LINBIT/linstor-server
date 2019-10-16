@@ -26,25 +26,25 @@ public class SatelliteNvmeLayerDriver implements NvmeLayerDatabaseDriver
     }
 
     @Override
-    public void create(NvmeRscData nvmeRscDataRef)
+    public void create(NvmeRscData<?> nvmeRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(NvmeRscData nvmeRscDataRef)
+    public void delete(NvmeRscData<?> nvmeRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(NvmeVlmData nvmeVlmDataRef)
+    public void persist(NvmeVlmData<?> nvmeVlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(NvmeVlmData nvmeVlmDataRef)
+    public void delete(NvmeVlmData<?> nvmeVlmDataRef)
     {
         // no-op
     }

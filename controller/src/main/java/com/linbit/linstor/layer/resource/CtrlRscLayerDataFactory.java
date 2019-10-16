@@ -1,4 +1,4 @@
-package com.linbit.linstor.layer;
+package com.linbit.linstor.layer.resource;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
@@ -12,13 +12,16 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -28,9 +31,10 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import javax.inject.Inject;
@@ -44,29 +48,27 @@ import java.util.LinkedList;
 import java.util.List;
 
 @Singleton
-public class CtrlLayerDataHelper
+public class CtrlRscLayerDataFactory
 {
-    static final String DFLT_ROOT_RSC_NAME_SUFFIX = "";
-
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
-    private final DrbdLayerHelper drbdLayerHelper;
-    private final LuksLayerHelper luksLayerHelper;
-    private final StorageLayerHelper storageLayerHelper;
-    private final NvmeLayerHelper nvmeLayerHelper;
-    private final WritecacheLayerHelper writecacheLayerHelper;
+    private final RscDrbdLayerHelper drbdLayerHelper;
+    private final RscLuksLayerHelper luksLayerHelper;
+    private final RscStorageLayerHelper storageLayerHelper;
+    private final RscNvmeLayerHelper nvmeLayerHelper;
+    private final RscWritecacheLayerHelper writecacheLayerHelper;
 
     @Inject
-    public CtrlLayerDataHelper(
+    public CtrlRscLayerDataFactory(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
-        DrbdLayerHelper drbdLayerHelperRef,
-        LuksLayerHelper luksLayerHelperRef,
-        StorageLayerHelper storageLayerHelperRef,
-        NvmeLayerHelper nvmeLayerHelperRef,
-        WritecacheLayerHelper writecacheLayerHelperRef
+        RscDrbdLayerHelper drbdLayerHelperRef,
+        RscLuksLayerHelper luksLayerHelperRef,
+        RscStorageLayerHelper storageLayerHelperRef,
+        RscNvmeLayerHelper nvmeLayerHelperRef,
+        RscWritecacheLayerHelper writecacheLayerHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -89,6 +91,7 @@ public class CtrlLayerDataHelper
      * {@link DeviceLayerKind#LUKS} on a {@link DeviceLayerKind#STORAGE} layer.
      * A LUKS layer is created if at least one {@link VolumeDefinition}
      * has the {@link VolumeDefinition.Flags#ENCRYPTED} flag set.
+     *
      * @param accCtxRef
      * @return
      */
@@ -129,13 +132,189 @@ public class CtrlLayerDataHelper
         return layerStack;
     }
 
+    public void ensureStackDataExists(
+        Resource rscRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payload
+    )
+    {
+        try
+        {
+            List<DeviceLayerKind> layerList = new ArrayList<>();
+            if (layerListRef == null || layerListRef.isEmpty())
+            {
+                layerList = LayerUtils.getLayerStack(rscRef, apiCtx);
+            }
+            else
+            {
+                layerList.addAll(layerListRef);
+            }
+
+            if (layerList.isEmpty())
+            {
+                throw new ImplementationError("Cannot create resource with empty layer list");
+            }
+
+            AbsRscLayerObject<Resource> rootObj = null;
+
+            List<LayerResult<Resource>> currentLayerDataList = new ArrayList<>();
+            currentLayerDataList.add(new LayerResult<>(null)); // root object
+
+            rootObj = ensureDataRec(rscRef, payload, layerList, new ChildResourceData(""), null);
+
+            rscRef.setLayerData(apiCtx, rootObj);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (ExhaustedPoolException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_POOL_EXHAUSTED_RSC_LAYER_ID,
+                    "No TCP/IP port number could be allocated for the resource"
+                )
+                    .setCause("The pool of free TCP/IP port numbers is exhausted")
+                    .setCorrection(
+                        "- Adjust the TcpPortAutoRange controller configuration value to extend the range\n" +
+                            "  of TCP/IP port numbers used for automatic allocation\n" +
+                            "- Delete unused resource definitions that occupy TCP/IP port numbers from the range\n" +
+                            "  used for automatic allocation\n"
+                    ),
+                exc
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SQL,
+                    "A database exception occurred while creating layer data"
+                ),
+                exc
+            );
+        }
+        catch (Exception exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An exception occurred while creating layer data"
+                ),
+                exc
+            );
+        }
+    }
+
+    private AbsRscLayerObject<Resource> ensureDataRec(
+        Resource rscRef,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerStackRef,
+        ChildResourceData currentData,
+        AbsRscLayerObject<Resource> parentRscObj
+    ) throws InvalidKeyException, DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
+        ValueInUseException, LinStorException, InvalidNameException
+    {
+        DeviceLayerKind currentKind = layerStackRef.get(0);
+        List<DeviceLayerKind> childList = layerStackRef.subList(1, layerStackRef.size());
+
+        AbsRscLayerObject<Resource> ret;
+
+        if (currentData.skipUntilList.contains(currentKind))
+        {
+            AbsRscLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(currentKind);
+            LayerResult<Resource> result = layerHelper.ensureRscDataCreated(
+                rscRef,
+                payloadRef,
+                currentData.rscNameSuffix,
+                parentRscObj,
+                childList
+            );
+
+            if (result == null)
+            {
+                ret = null;
+            }
+            else
+            {
+                ret = result.rscObj;
+
+                for (ChildResourceData childRsc : result.childRsc)
+                {
+                    AbsRscLayerObject<Resource> childRscLayerData = ensureDataRec(
+                        rscRef,
+                        payloadRef,
+                        childList,
+                        childRsc,
+                        result.rscObj
+                    );
+                    if (childRscLayerData != null)
+                    {
+                        result.rscObj.getChildren().add(childRscLayerData);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // pass through to next layer
+            ret = ensureDataRec(rscRef, payloadRef, childList, currentData, parentRscObj);
+        }
+        return ret;
+    }
+
+    public void resetStoragePools(Resource rscRef)
+    {
+        try
+        {
+            LinkedList<AbsRscLayerObject<Resource>> rscDataToProcess = new LinkedList<>();
+            rscDataToProcess.add(rscRef.getLayerData(apiCtx));
+
+            while (!rscDataToProcess.isEmpty())
+            {
+                AbsRscLayerObject<Resource> rscData = rscDataToProcess.removeFirst();
+                getLayerHelperByKind(rscData.getLayerKind()).resetStoragePools(rscData);
+
+                rscDataToProcess.addAll(rscData.getChildren());
+            }
+
+            ensureStackDataExists(rscRef, null, new LayerPayload());
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SQL,
+                    "A database exception occurred while creating layer data"
+                ),
+                exc
+            );
+        }
+        catch (Exception exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An exception occurred while creating layer data"
+                ),
+                exc
+            );
+        }
+    }
+
     public void ensureRequiredRscDfnLayerDataExits(
         ResourceDefinition rscDfn,
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws DatabaseException, ValueOutOfRangeException,
-            ExhaustedPoolException, ValueInUseException
+        throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         List<DeviceLayerKind> layerStack;
         try
@@ -157,7 +336,7 @@ public class CtrlLayerDataHelper
             }
             else
             {
-                DrbdRscDfnData drbdRscDfnData = rscDfn.getLayerData(
+                DrbdRscDfnData<Resource> drbdRscDfnData = rscDfn.getLayerData(
                     apiCtx,
                     DeviceLayerKind.DRBD,
                     rscNameSuffix
@@ -204,184 +383,11 @@ public class CtrlLayerDataHelper
         }
     }
 
-    public void ensureStackDataExists(
-        Resource rscRef,
-        List<DeviceLayerKind> layerListRef,
-        LayerPayload payload
+    public StorPool getStorPool(
+        Volume vlmRef,
+        StorageRscData<Resource> rscDataRef,
+        LayerPayload payloadRef
     )
-    {
-        try
-        {
-            List<DeviceLayerKind> layerList = new ArrayList<>();
-            if (layerListRef == null || layerListRef.isEmpty())
-            {
-                layerList = getLayerStack(rscRef);
-            }
-            else
-            {
-                layerList.addAll(layerListRef);
-            }
-
-            if (layerList.isEmpty())
-            {
-                throw new ImplementationError("Cannot create resource with empty layer list");
-            }
-
-            RscLayerObject rootObj = null;
-
-            List<LayerResult> currentLayerDataList = new ArrayList<>();
-            currentLayerDataList.add(new LayerResult(null)); // root object
-
-            rootObj = ensureDataRec(rscRef, payload, layerList, new ChildResourceData(""), null);
-
-            rscRef.setLayerData(apiCtx, rootObj);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (ExhaustedPoolException exc)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_POOL_EXHAUSTED_RSC_LAYER_ID,
-                    "No TCP/IP port number could be allocated for the resource"
-                )
-                .setCause("The pool of free TCP/IP port numbers is exhausted")
-                .setCorrection(
-                    "- Adjust the TcpPortAutoRange controller configuration value to extend the range\n" +
-                    "  of TCP/IP port numbers used for automatic allocation\n" +
-                    "- Delete unused resource definitions that occupy TCP/IP port numbers from the range\n" +
-                    "  used for automatic allocation\n"
-                ),
-                exc
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_SQL,
-                    "A database exception occurred while creating layer data"
-                ),
-                exc
-            );
-        }
-        catch (Exception exc)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_UNKNOWN_ERROR,
-                    "An exception occurred while creating layer data"
-                ),
-                exc
-            );
-        }
-    }
-
-    private RscLayerObject ensureDataRec(
-        Resource rscRef,
-        LayerPayload payloadRef,
-        List<DeviceLayerKind> layerStackRef,
-        ChildResourceData currentData,
-        RscLayerObject parentRscObj
-    ) throws InvalidKeyException, DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
-        ValueInUseException, LinStorException, InvalidNameException
-    {
-        DeviceLayerKind currentKind = layerStackRef.get(0);
-        List<DeviceLayerKind> childList = layerStackRef.subList(1, layerStackRef.size());
-
-        RscLayerObject ret;
-
-        if (currentData.skipUntilList.contains(currentKind))
-        {
-            AbsLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(currentKind);
-            LayerResult result = layerHelper.ensureRscDataCreated(
-                rscRef,
-                payloadRef,
-                currentData.rscNameSuffix,
-                parentRscObj,
-                childList
-            );
-
-            if (result == null)
-            {
-                ret = null;
-            }
-            else
-            {
-                ret = result.rscObj;
-
-                for (ChildResourceData childRsc : result.childRsc)
-                {
-                    RscLayerObject childRscLayerData = ensureDataRec(
-                        rscRef,
-                        payloadRef,
-                        childList,
-                        childRsc,
-                        result.rscObj
-                    );
-                    if (childRscLayerData != null)
-                    {
-                        result.rscObj.getChildren().add(childRscLayerData);
-                    }
-                }
-            }
-        }
-        else
-        {
-            // pass through to next layer
-            ret = ensureDataRec(rscRef, payloadRef, childList, currentData, parentRscObj);
-        }
-        return ret;
-    }
-
-    public void resetStoragePools(Resource rscRef)
-    {
-        try
-        {
-            LinkedList<RscLayerObject> rscDataToProcess = new LinkedList<>();
-            rscDataToProcess.add(rscRef.getLayerData(apiCtx));
-
-            while (!rscDataToProcess.isEmpty())
-            {
-                RscLayerObject rscData = rscDataToProcess.removeFirst();
-                getLayerHelperByKind(rscData.getLayerKind()).resetStoragePools(rscData);
-
-                rscDataToProcess.addAll(rscData.getChildren());
-            }
-
-            ensureStackDataExists(rscRef, null, new LayerPayload());
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException exc)
-        {
-            errorReporter.reportError(exc);
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_SQL,
-                    "A database exception occurred while creating layer data"
-                ),
-                exc
-            );
-        }
-        catch (Exception exc)
-        {
-            errorReporter.reportError(exc);
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_UNKNOWN_ERROR,
-                    "An exception occurred while creating layer data"
-                ),
-                exc
-            );
-        }
-    }
-
-    StorPool getStorPool(Volume vlmRef, StorageRscData rscDataRef, LayerPayload payloadRef)
         throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         StorPool storPool = null;
@@ -392,17 +398,17 @@ public class CtrlLayerDataHelper
         );
         if (storageVlmPayload != null)
         {
-            storPool = vlmRef.getResource().getAssignedNode().getStorPool(
+            storPool = vlmRef.getAbsResource().getNode().getStorPool(
                 apiCtx,
                 new StorPoolName(storageVlmPayload.storPoolName)
             );
         }
 
-        RscLayerObject child = rscDataRef;
-        RscLayerObject parent = rscDataRef.getParent();
+        AbsRscLayerObject<Resource> child = rscDataRef;
+        AbsRscLayerObject<Resource> parent = rscDataRef.getParent();
         while (parent != null && storPool == null)
         {
-            AbsLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(parent.getLayerKind());
+            AbsRscLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(parent.getLayerKind());
 
             storPool = layerHelper.getStorPool(vlmRef, child);
 
@@ -412,7 +418,7 @@ public class CtrlLayerDataHelper
         if (storPool == null)
         {
             ApiCallRcImpl dummyApiCallRc = new ApiCallRcImpl();
-            Resource rsc = vlmRef.getResource();
+            Resource rsc = vlmRef.getAbsResource();
             VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
 
             storPool = storPoolResolveHelper.resolveStorPool(
@@ -425,9 +431,89 @@ public class CtrlLayerDataHelper
         return storPool;
     }
 
-    AbsLayerHelper<?, ?, ?, ?> getLayerHelperByKind(DeviceLayerKind kind)
+    public void restoreFromSnapshot(Resource rscDataRef, AbsRscLayerObject<Snapshot> snapLayerDataRef)
     {
-        AbsLayerHelper<?, ?, ?, ?> layerHelper;
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
+    }
+
+    public void copyLayerData(
+        AbsRscLayerObject<Snapshot> fromSnapshot,
+        Resource toResource
+    )
+    {
+        try
+        {
+            AbsRscLayerObject<Resource> rscData = copyRec(toResource, fromSnapshot, null);
+            toResource.setLayerData(apiCtx, rscData);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SQL,
+                    "A database exception occurred while creating layer data"
+                ),
+                exc
+            );
+        }
+        catch (ExhaustedPoolException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_POOL_EXHAUSTED_RSC_LAYER_ID,
+                    "No TCP/IP port number could be allocated for the resource"
+                )
+                    .setCause("The pool of free TCP/IP port numbers is exhausted")
+                    .setCorrection(
+                        "- Adjust the TcpPortAutoRange controller configuration value to extend the range\n" +
+                            "  of TCP/IP port numbers used for automatic allocation\n" +
+                            "- Delete unused resource definitions that occupy TCP/IP port numbers from the range\n" +
+                            "  used for automatic allocation\n"
+                    ),
+                exc
+            );
+        }
+        catch (Exception exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An exception occurred while creating layer data"
+                ),
+                exc
+            );
+        }
+    }
+
+    private AbsRscLayerObject<Resource> copyRec(
+        Resource rsc,
+        AbsRscLayerObject<Snapshot> fromSnapData,
+        AbsRscLayerObject<Resource> rscParentRef
+    )
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException
+    {
+        AbsRscLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(fromSnapData.getLayerKind());
+
+        AbsRscLayerObject<Resource> rscData = layerHelper.restoreFromSnapshot(rsc, fromSnapData, rscParentRef);
+
+        for (AbsRscLayerObject<Snapshot> snapChild : fromSnapData.getChildren())
+        {
+            rscData.getChildren().add(copyRec(rsc, snapChild, rscData));
+        }
+        return rscData;
+    }
+
+    protected AbsRscLayerHelper<?, ?, ?, ?> getLayerHelperByKind(
+        DeviceLayerKind kind
+    )
+    {
+        AbsRscLayerHelper<?, ?, ?, ?> layerHelper;
         switch (kind)
         {
             case DRBD:
@@ -451,7 +537,7 @@ public class CtrlLayerDataHelper
         return layerHelper;
     }
 
-    private boolean needsLuksLayer(AccessContext accCtxRef, Resource rscRef)
+    protected boolean needsLuksLayer(AccessContext accCtxRef, Resource rscRef)
         throws AccessDeniedException
     {
         boolean needsLuksLayer = false;
@@ -469,7 +555,7 @@ public class CtrlLayerDataHelper
         return needsLuksLayer;
     }
 
-    private boolean hasSwordfishKind(AccessContext accCtxRef, Resource rscRef)
+    protected boolean hasSwordfishKind(AccessContext accCtxRef, Resource rscRef)
         throws AccessDeniedException
     {
         boolean foundSwordfishKind = false;
@@ -547,18 +633,18 @@ public class CtrlLayerDataHelper
     /**
      * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
      */
-    static class LayerResult
+    public static class LayerResult<RSC extends AbsResource<RSC>>
     {
-        private RscLayerObject rscObj;
+        private AbsRscLayerObject<RSC> rscObj;
         private List<ChildResourceData> childRsc = new ArrayList<>();
 
-        LayerResult(RscLayerObject rscObjRef)
+        LayerResult(AbsRscLayerObject<RSC> rscObjRef)
         {
             rscObj = rscObjRef;
             childRsc.add(new ChildResourceData(""));
         }
 
-        LayerResult(RscLayerObject rscObjref, List<ChildResourceData> childRscListRef)
+        LayerResult(AbsRscLayerObject<RSC> rscObjref, List<ChildResourceData> childRscListRef)
         {
             rscObj = rscObjref;
             childRsc.addAll(childRscListRef);

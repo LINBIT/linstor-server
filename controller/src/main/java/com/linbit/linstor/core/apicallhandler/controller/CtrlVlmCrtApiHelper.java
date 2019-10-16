@@ -171,7 +171,7 @@ public class CtrlVlmCrtApiHelper
         }
         for (StorPool storPool : poolsToCheck)
         {
-            if (getPeerPrivileged(rsc.getAssignedNode()).getConnectionStatus() == Peer.ConnectionStatus.ONLINE &&
+            if (getPeerPrivileged(rsc.getNode()).getConnectionStatus() == Peer.ConnectionStatus.ONLINE &&
                 !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
             )
             {
@@ -181,7 +181,7 @@ public class CtrlVlmCrtApiHelper
                         thinFreeCapacities,
                         true,
                         storPool.getName(),
-                        rsc.getAssignedNode(),
+                        rsc.getNode(),
                         apiCtx
                     )
                     // allow the volume to be created if the free capacity is unknown

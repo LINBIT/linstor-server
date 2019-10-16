@@ -3,11 +3,12 @@ package com.linbit.linstor.utils.layer;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -17,29 +18,31 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Function;
 
 public class LayerVlmUtils
 {
-    public static Set<StorPool> getStorPoolSet(Volume vlm, AccessContext accCtx)
+    public static <RSC extends AbsResource<RSC>> Set<StorPool> getStorPoolSet(
+        AbsVolume<RSC> vlm,
+        AccessContext accCtx
+    )
         throws AccessDeniedException
     {
+        VolumeNumber vlmNr = vlm.getVolumeNumber();
 
-        VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
-
-        Set<RscLayerObject> storageRscDataSet = LayerRscUtils.getRscDataByProvider(
-            vlm.getResource().getLayerData(accCtx),
+        Set<AbsRscLayerObject<RSC>> storageRscDataSet = LayerRscUtils.getRscDataByProvider(
+            vlm.getAbsResource().getLayerData(accCtx),
             DeviceLayerKind.STORAGE
         );
         return getStoragePools(vlmNr, storageRscDataSet);
     }
 
-    private static Set<StorPool> getStoragePools(VolumeNumber vlmNr, Set<RscLayerObject> storageRscDataSet)
+    private static <RSC extends AbsResource<RSC>> Set<StorPool> getStoragePools(
+        VolumeNumber vlmNr, Set<AbsRscLayerObject<RSC>> storageRscDataSet)
     {
         Set<StorPool> storPools = new TreeSet<>();
-        for (RscLayerObject rscData : storageRscDataSet)
+        for (AbsRscLayerObject<RSC> rscData : storageRscDataSet)
         {
-            VlmProviderObject vlmProviderObject = rscData.getVlmProviderObject(vlmNr);
+            VlmProviderObject<RSC> vlmProviderObject = rscData.getVlmProviderObject(vlmNr);
             if (vlmProviderObject != null)
             {
                 /*
@@ -58,7 +61,7 @@ public class LayerVlmUtils
         return storPools;
     }
 
-    public static Set<StorPool> getStorPoolSet(VlmProviderObject vlmData, AccessContext accCtx)
+    public static Set<StorPool> getStorPoolSet(VlmProviderObject<?> vlmData, AccessContext accCtx)
     {
         return getStoragePools(
             vlmData.getVlmNr(), LayerRscUtils.getRscDataByProvider(
@@ -68,21 +71,32 @@ public class LayerVlmUtils
         );
     }
 
-    public static Map<String, StorPool> getStorPoolMap(
-        Volume vlm,
-        AccessContext accCtx,
-        Function<Volume, String> vlmToString
+    public static <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> Map<String, StorPool> getStorPoolMap(
+        VLM vlm,
+        AccessContext accCtx
+    )
+    {
+        return getStorPoolMap(
+            vlm.getAbsResource(),
+            vlm.getVolumeNumber(),
+            accCtx
+        );
+    }
+
+    public static <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> Map<String, StorPool> getStorPoolMap(
+        RSC rsc,
+        VolumeNumber vlmNr,
+        AccessContext accCtx
     )
     {
         Map<String, StorPool> storPoolMap = new TreeMap<>();
         try
         {
-            List<RscLayerObject> storageRscList = LayerUtils.getChildLayerDataByKind(
-                vlm.getResource().getLayerData(accCtx),
+            List<AbsRscLayerObject<RSC>> storageRscList = LayerUtils.getChildLayerDataByKind(
+                rsc.getLayerData(accCtx),
                 DeviceLayerKind.STORAGE
             );
-            VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
-            for (RscLayerObject storageRsc : storageRscList)
+            for (AbsRscLayerObject<RSC> storageRsc : storageRscList)
             {
                 storPoolMap.put(
                     storageRsc.getResourceNameSuffix(),
@@ -94,11 +108,12 @@ public class LayerVlmUtils
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "get storage pool of " + vlmToString.apply(vlm),
+                "get storage pool of " + rsc + ", Volume number: " + vlmNr,
                 ApiConsts.FAIL_ACC_DENIED_VLM
             );
         }
         return storPoolMap;
+
     }
 
     private LayerVlmUtils()

@@ -1,6 +1,7 @@
-package com.linbit.linstor.layer;
+package com.linbit.linstor.layer.resource;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
@@ -14,11 +15,13 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.CtrlLayerDataHelper.ChildResourceData;
+import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -27,9 +30,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
@@ -44,16 +48,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Singleton
-class WritecacheLayerHelper
-    extends AbsLayerHelper<WritecacheRscData, WritecacheVlmData, RscDfnLayerObject, VlmDfnLayerObject>
+class RscWritecacheLayerHelper
+    extends AbsRscLayerHelper<
+        WritecacheRscData<Resource>, WritecacheVlmData<Resource>,
+        RscDfnLayerObject, VlmDfnLayerObject>
 {
     @Inject
-    WritecacheLayerHelper(
+    RscWritecacheLayerHelper(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
-        Provider<CtrlLayerDataHelper> layerHelperProviderRef
+        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory
     )
     {
         super(
@@ -61,9 +67,12 @@ class WritecacheLayerHelper
             apiCtxRef,
             layerDataFactoryRef,
             layerRscIdPoolRef,
-            WritecacheRscData.class,
+            // WritecacheRscData.class cannot directly be casted to Class<WritecacheRscData<Resource>>. because java.
+            // its type is Class<WritecacheRscData> (without nested types), but that is not enough as the
+            // super constructor wants a Class<RSC_PO>, where RSC_PO is WritecacheRscData<Resource>.
+            (Class<WritecacheRscData<Resource>>) ((Object) WritecacheRscData.class),
             DeviceLayerKind.NVME,
-            layerHelperProviderRef
+            rscLayerDataFactory
         );
     }
 
@@ -102,11 +111,11 @@ class WritecacheLayerHelper
     }
 
     @Override
-    protected WritecacheRscData createRscData(
+    protected WritecacheRscData<Resource> createRscData(
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        RscLayerObject parentObjectRef,
+        AbsRscLayerObject<Resource> parentObjectRef,
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
@@ -121,21 +130,21 @@ class WritecacheLayerHelper
     }
 
     @Override
-    protected void mergeRscData(WritecacheRscData rscDataRef, LayerPayload payloadRef)
+    protected void mergeRscData(WritecacheRscData<Resource> rscDataRef, LayerPayload payloadRef)
     {
         // nothing to merge
     }
 
     @Override
-    protected boolean needsChildVlm(RscLayerObject childRscDataRef, Volume vlmRef)
+    protected boolean needsChildVlm(AbsRscLayerObject<Resource> childRscDataRef, Volume vlmRef)
         throws AccessDeniedException, InvalidKeyException
     {
         return true;
     }
 
     @Override
-    protected WritecacheVlmData createVlmLayerData(
-        WritecacheRscData writecacheRscData,
+    protected WritecacheVlmData<Resource> createVlmLayerData(
+        WritecacheRscData<Resource> writecacheRscData,
         Volume vlm,
         LayerPayload payload,
         List<DeviceLayerKind> layerListRef
@@ -149,7 +158,7 @@ class WritecacheLayerHelper
 
     @Override
     protected void mergeVlmData(
-        WritecacheVlmData vlmDataRef,
+        WritecacheVlmData<Resource> vlmDataRef,
         Volume vlmRef,
         LayerPayload payloadRef,
         List<DeviceLayerKind> layerListRef
@@ -161,7 +170,7 @@ class WritecacheLayerHelper
 
     @Override
     protected List<ChildResourceData> getChildRsc(
-        WritecacheRscData rscDataRef,
+        WritecacheRscData<Resource> rscDataRef,
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, InvalidKeyException
@@ -171,7 +180,8 @@ class WritecacheLayerHelper
         children.add(new ChildResourceData(WritecacheRscData.SUFFIX_DATA));
 
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
-        boolean isNvmeInitiator = rscDataRef.getResource().getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
+            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         if (!isNvmeBelow || isNvmeInitiator)
         {
             children.add(new ChildResourceData(WritecacheRscData.SUFFIX_CACHE, DeviceLayerKind.STORAGE));
@@ -181,13 +191,15 @@ class WritecacheLayerHelper
     }
 
     @Override
-    protected StorPool getStorPool(Volume vlmRef, RscLayerObject childRef)
+    public StorPool getStorPool(Volume vlmRef, AbsRscLayerObject<Resource> childRef)
         throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         StorPool pool;
-        WritecacheVlmData writecacheVlmData = (WritecacheVlmData) childRef.getParent().getVlmProviderObject(
-            vlmRef.getVolumeDefinition().getVolumeNumber()
-        );
+        WritecacheVlmData<Resource> writecacheVlmData = (WritecacheVlmData<Resource>) childRef
+            .getParent()
+            .getVlmProviderObject(
+                vlmRef.getVolumeDefinition().getVolumeNumber()
+            );
         if (childRef.getSuffixedResourceName().contains(WritecacheRscData.SUFFIX_CACHE))
         {
             pool = writecacheVlmData.getCacheStorPool();
@@ -200,13 +212,15 @@ class WritecacheLayerHelper
     }
 
     @Override
-    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, DatabaseException
+    protected void resetStoragePools(AbsRscLayerObject<Resource> rscDataRef)
+        throws AccessDeniedException, DatabaseException
     {
         // no-op
     }
 
     @Override
-    protected boolean isExpectedToProvideDevice(WritecacheRscData writecacheRscData) throws AccessDeniedException
+    protected boolean isExpectedToProvideDevice(WritecacheRscData<Resource> writecacheRscData)
+        throws AccessDeniedException
     {
         return true;
     }
@@ -228,7 +242,7 @@ class WritecacheLayerHelper
         StorPool cacheStorPool = null;
         try
         {
-            cacheStorPool = vlm.getResource().getAssignedNode().getStorPool(
+            cacheStorPool = vlm.getAbsResource().getNode().getStorPool(
                 apiCtx,
                 new StorPoolName(cacheStorPoolNameStr)
             );
@@ -240,7 +254,7 @@ class WritecacheLayerHelper
                         ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
                         "The " + getVlmDescriptionInline(vlm) + " specified '" + cacheStorPoolNameStr +
                             "' as the storage pool for external meta-data. Node " +
-                            vlm.getResource().getAssignedNode().getName() + " does not have a storage pool" +
+                            vlm.getAbsResource().getNode().getName() + " does not have a storage pool" +
                             " with that name"
                     )
                 );
@@ -268,27 +282,74 @@ class WritecacheLayerHelper
         );
     }
 
-    private String getCacheSize(Volume vlmRef) throws InvalidKeyException, AccessDeniedException
-    {
-        return getPrioProps(vlmRef).getProp(
-            ApiConsts.KEY_WRITECACHE_SIZE, ApiConsts.NAMESPC_WRITECACHE
-        );
-    }
-
     private PriorityProps getPrioProps(Volume vlmRef) throws AccessDeniedException
     {
         VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
         ResourceDefinition rscDfn = vlmRef.getResourceDefinition();
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
-        Resource rsc = vlmRef.getResource();
+        Resource rsc = vlmRef.getAbsResource();
         PriorityProps prioProps = new PriorityProps(
             vlmDfn.getProps(apiCtx),
             rscGrp.getVolumeGroupProps(apiCtx, vlmDfn.getVolumeNumber()),
             rsc.getProps(apiCtx),
             rscDfn.getProps(apiCtx),
             rscGrp.getProps(apiCtx),
-            rsc.getAssignedNode().getProps(apiCtx)
+            rsc.getNode().getProps(apiCtx)
         );
         return prioProps;
+    }
+
+    @Override
+    protected RscDfnLayerObject restoreRscDfnData(
+        ResourceDefinition rscDfnRef,
+        AbsRscLayerObject<Snapshot> fromSnapDataRef
+    )
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException
+    {
+        // WritecacheLayer does not have resource-definition specific data
+        return null;
+    }
+
+    @Override
+    protected WritecacheRscData<Resource> restoreRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<Resource> rscParentRef
+    )
+        throws DatabaseException, AccessDeniedException, ExhaustedPoolException
+    {
+        return layerDataFactory.createWritecacheRscData(
+            layerRscIdPool.autoAllocate(),
+            rscRef,
+            fromSnapDataRef.getResourceNameSuffix(),
+            rscParentRef
+        );
+    }
+
+    @Override
+    protected VlmDfnLayerObject restoreVlmDfnData(
+        VolumeDefinition vlmDfnRef,
+        VlmProviderObject<Snapshot> fromSnapVlmDataRef
+    ) throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException
+    {
+        // WritecacheLayer does not have volume-definition specific data
+        return null;
+    }
+
+    @Override
+    protected WritecacheVlmData<Resource> restoreVlmData(
+        Volume vlmRef,
+        WritecacheRscData<Resource> rscDataRef,
+        VlmProviderObject<Snapshot> vlmProviderObjectRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        return layerDataFactory.createWritecacheVlmData(
+            vlmRef,
+            ((WritecacheVlmData<Snapshot>) vlmProviderObjectRef).getCacheStorPool(),
+            rscDataRef
+        );
     }
 }

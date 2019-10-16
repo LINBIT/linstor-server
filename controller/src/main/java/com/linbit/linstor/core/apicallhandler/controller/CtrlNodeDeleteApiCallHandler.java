@@ -109,9 +109,9 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         while (rscIter.hasNext())
         {
             Resource rsc = rscIter.next();
-            if (rsc.getAssignedNode().getFlags().isSet(apiCtx, Node.Flags.DELETE))
+            if (rsc.getNode().getFlags().isSet(apiCtx, Node.Flags.DELETE))
             {
-                NodeName nodeName = rsc.getAssignedNode().getName();
+                NodeName nodeName = rsc.getNode().getName();
                 fluxes.add(updateSatellites(nodeName, rscDfn.getName(), context));
             }
         }
@@ -296,7 +296,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         else
         {
             // store to avoid deleted data access
-            Node node = rsc.getAssignedNode();
+            Node node = rsc.getNode();
             UUID nodeUuid = node.getUuid();
             String nodeDescription = firstLetterCaps(getNodeDescriptionInline(node));
             ResourceDefinition rscDfn = rsc.getDefinition();

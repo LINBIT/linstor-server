@@ -10,7 +10,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 
 import static com.linbit.linstor.numberpool.NumberPoolModule.LAYER_RSC_ID_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.MINOR_NUMBER_POOL;
@@ -136,7 +136,7 @@ public class DbNumberPoolInitializer
                 while (iterateResources.hasNext())
                 {
                     Resource rsc = iterateResources.next();
-                    RscLayerObject rscLayerData = rsc.getLayerData(initCtx);
+                    AbsRscLayerObject<?> rscLayerData = rsc.getLayerData(initCtx);
 
                     allocate(rscLayerData);
                 }
@@ -152,10 +152,10 @@ public class DbNumberPoolInitializer
         }
     }
 
-    private void allocate(RscLayerObject rscLayerDataRef) throws ValueInUseException
+    private void allocate(AbsRscLayerObject<?> rscLayerDataRef) throws ValueInUseException
     {
         layerRscIdPool.allocate(rscLayerDataRef.getRscLayerId());
-        for (RscLayerObject childRscLayerData : rscLayerDataRef.getChildren())
+        for (AbsRscLayerObject<?> childRscLayerData : rscLayerDataRef.getChildren())
         {
             allocate(childRscLayerData);
         }

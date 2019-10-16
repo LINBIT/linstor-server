@@ -219,10 +219,10 @@ public class CtrlRscDeleteApiHelper
     public void ensureNotInUse(Resource rsc)
     {
         ResourceName rscName = rsc.getDefinition().getName();
-        NodeName nodeName = rsc.getAssignedNode().getName();
+        NodeName nodeName = rsc.getNode().getName();
 
         Boolean inUse;
-        Peer peer = getPeerPrivileged(rsc.getAssignedNode());
+        Peer peer = getPeerPrivileged(rsc.getNode());
         try (LockGuard ignored = LockGuard.createLocked(peer.getSatelliteStateLock().readLock()))
         {
             inUse = peer.getSatelliteState().getFromResource(

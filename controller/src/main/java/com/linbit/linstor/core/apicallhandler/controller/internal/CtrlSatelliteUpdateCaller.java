@@ -186,7 +186,7 @@ public class CtrlSatelliteUpdateCaller
 
                 Flux<ApiCallRc> response = updateResource(currentRsc, notConnectedHandler, nextStep);
 
-                responses.add(Tuples.of(currentRsc.getAssignedNode().getName(), response));
+                responses.add(Tuples.of(currentRsc.getNode().getName(), response));
             }
         }
         catch (AccessDeniedException implError)
@@ -277,7 +277,7 @@ public class CtrlSatelliteUpdateCaller
     )
         throws AccessDeniedException
     {
-        Node node = currentRsc.getAssignedNode();
+        Node node = currentRsc.getNode();
         NodeName nodeName = node.getName();
 
         Flux<ApiCallRc> response;

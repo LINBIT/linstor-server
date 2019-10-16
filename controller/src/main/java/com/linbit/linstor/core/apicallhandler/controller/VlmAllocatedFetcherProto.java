@@ -17,6 +17,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -186,9 +187,9 @@ public class VlmAllocatedFetcherProto implements VlmAllocatedFetcher
         return storPoolStream;
     }
 
-    private Stream<VlmProviderObject> streamVolumes(StorPool storPool)
+    private Stream<VlmProviderObject<Resource>> streamVolumes(StorPool storPool)
     {
-        Stream<VlmProviderObject> vlmStream;
+        Stream<VlmProviderObject<Resource>> vlmStream;
         try
         {
             vlmStream = storPool.getVolumes(peerAccCtx.get()).stream();

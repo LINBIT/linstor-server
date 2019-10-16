@@ -1,6 +1,9 @@
 package com.linbit.linstor.storage.data.provider.swordfish;
 
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
@@ -110,9 +113,21 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
     }
 
     @Override
-    public VolumeDefinition getVolumeDefinition()
+    public ResourceName getResourceName()
     {
-        return vlmDfn;
+        return vlmDfn.getResourceDefinition().getName();
+    }
+
+    @Override
+    public SnapshotName getSnapshotName()
+    {
+        return null;
+    }
+
+    @Override
+    public VolumeNumber getVolumeNumber()
+    {
+        return vlmDfn.getVolumeNumber();
     }
 
     @Override
@@ -124,6 +139,11 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
     public String getSuffixedResourceName()
     {
         return vlmDfn.getResourceDefinition().getName().displayValue + rscNameSuffix;
+    }
+
+    public VolumeDefinition getVolumeDefinition()
+    {
+        return vlmDfn;
     }
 
     @Override
@@ -141,4 +161,5 @@ public class SfVlmDfnData extends BaseTransactionObject implements SfVlmDfnProvi
             vlmOdata.get()
         );
     }
+
 }

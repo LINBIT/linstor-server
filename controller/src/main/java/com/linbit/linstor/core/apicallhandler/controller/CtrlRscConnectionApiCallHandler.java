@@ -367,8 +367,8 @@ class CtrlRscConnectionApiCallHandler
         try
         {
             descriptionInline = getResourceConnectionDescriptionInline(
-                rscConn.getSourceResource(accCtx).getAssignedNode().getName().displayValue,
-                rscConn.getTargetResource(accCtx).getAssignedNode().getName().displayValue,
+                rscConn.getSourceResource(accCtx).getNode().getName().displayValue,
+                rscConn.getTargetResource(accCtx).getNode().getName().displayValue,
                 rscConn.getSourceResource(accCtx).getDefinition().getName().displayValue
             );
         }

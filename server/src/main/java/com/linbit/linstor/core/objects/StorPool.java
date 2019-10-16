@@ -44,7 +44,9 @@ public class StorPool extends BaseTransactionObject
 {
     public static interface InitMaps
     {
-        Map<String, VlmProviderObject> getVolumeMap();
+        Map<String, VlmProviderObject<Resource>> getVolumeMap();
+
+        Map<String, VlmProviderObject<Snapshot>> getSnapshotVolumeMap();
     }
 
     private final UUID uuid;
@@ -60,7 +62,8 @@ public class StorPool extends BaseTransactionObject
     private final StorPoolDatabaseDriver dbDriver;
     private final FreeSpaceTracker freeSpaceTracker;
 
-    private final TransactionMap<String, VlmProviderObject> vlmProviderMap;
+    private final TransactionMap<String, VlmProviderObject<Resource>> vlmProviderMap;
+    private final TransactionMap<String, VlmProviderObject<Snapshot>> snapVlmProviderMap;
 
     private final TransactionSimpleObject<StorPool, Boolean> deleted;
 
@@ -84,7 +87,8 @@ public class StorPool extends BaseTransactionObject
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef,
-        Map<String, VlmProviderObject> volumeMapRef
+        Map<String, VlmProviderObject<Resource>> volumeMapRef,
+        Map<String, VlmProviderObject<Snapshot>> snapshotVolumeMapRef
     )
         throws DatabaseException
     {
@@ -99,6 +103,7 @@ public class StorPool extends BaseTransactionObject
         node = nodeRef;
         dbDriver = dbDriverRef;
         vlmProviderMap = transObjFactory.createTransactionMap(volumeMapRef, null);
+        snapVlmProviderMap = transObjFactory.createTransactionMap(snapshotVolumeMapRef, null);
 
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(storPoolDef.getName(), node.getName())
@@ -115,6 +120,7 @@ public class StorPool extends BaseTransactionObject
 
         transObjs = Arrays.<TransactionObject>asList(
             vlmProviderMap,
+            snapVlmProviderMap,
             props,
             deleted,
             freeSpaceTracker
@@ -164,7 +170,8 @@ public class StorPool extends BaseTransactionObject
         return PropsAccess.secureGetProps(accCtx, node.getObjProt(), storPoolDef.getObjProt(), props);
     }
 
-    public void putVolume(AccessContext accCtx, VlmProviderObject vlmProviderObj) throws AccessDeniedException
+    public void putVolume(AccessContext accCtx, VlmProviderObject<Resource> vlmProviderObj)
+        throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
@@ -173,7 +180,7 @@ public class StorPool extends BaseTransactionObject
         freeSpaceTracker.vlmCreating(accCtx, vlmProviderObj);
     }
 
-    public void removeVolume(AccessContext accCtx, VlmProviderObject vlmProviderObj)
+    public void removeVolume(AccessContext accCtx, VlmProviderObject<Resource> vlmProviderObj)
         throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
@@ -184,7 +191,7 @@ public class StorPool extends BaseTransactionObject
         vlmProviderMap.remove(vlmProviderObj.getVolumeKey());
     }
 
-    public Collection<VlmProviderObject> getVolumes(AccessContext accCtx) throws AccessDeniedException
+    public Collection<VlmProviderObject<Resource>> getVolumes(AccessContext accCtx) throws AccessDeniedException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
@@ -200,6 +207,36 @@ public class StorPool extends BaseTransactionObject
     public void setPmem(boolean pmemRef) throws DatabaseException
     {
         isPmem.set(pmemRef);
+    }
+
+    public void putSnapshotVolume(AccessContext accCtx, VlmProviderObject<Snapshot> vlmProviderObj)
+        throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        snapVlmProviderMap.put(vlmProviderObj.getVolumeKey(), vlmProviderObj);
+        freeSpaceTracker.vlmCreating(accCtx, vlmProviderObj);
+    }
+
+    public void removeSnapshotVolume(AccessContext accCtx, VlmProviderObject<Snapshot> vlmProviderObj)
+        throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        freeSpaceTracker.ensureVlmNoLongerCreating(accCtx, vlmProviderObj);
+
+        snapVlmProviderMap.remove(vlmProviderObj.getVolumeKey());
+    }
+
+    public Collection<VlmProviderObject<Snapshot>> getSnapVolumes(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        node.getObjProt().requireAccess(accCtx, AccessType.USE);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        return snapVlmProviderMap.values();
     }
 
     public FreeSpaceTracker getFreeSpaceTracker()

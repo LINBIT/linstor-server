@@ -1,4 +1,4 @@
-package com.linbit.linstor.layer;
+package com.linbit.linstor.layer.resource;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
@@ -10,11 +10,13 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.CtrlLayerDataHelper.ChildResourceData;
+import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -23,8 +25,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -41,15 +43,18 @@ import java.util.HashSet;
 import java.util.List;
 
 @Singleton
-class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObject, RscDfnLayerObject, VlmDfnLayerObject>
+class RscStorageLayerHelper extends AbsRscLayerHelper<
+    StorageRscData<Resource>, VlmProviderObject<Resource>,
+    RscDfnLayerObject, VlmDfnLayerObject
+>
 {
     @Inject
-    StorageLayerHelper(
+    RscStorageLayerHelper(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL)  DynamicNumberPool layerRscIdPoolRef,
-        Provider<CtrlLayerDataHelper> layerHelperProviderRef
+        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory
     )
     {
         super(
@@ -57,9 +62,12 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
             apiCtxRef,
             layerDataFactoryRef,
             layerRscIdPoolRef,
-            StorageRscData.class,
+            // StorageRscData.class cannot directly be casted to Class<StorageRscData<Resource>>. because java.
+            // its type is Class<StorageRscData> (without nested types), but that is not enough as the super constructor
+            // wants a Class<RSC_PO>, where RSC_PO is StorageRscData<Resource>.
+            (Class<StorageRscData<Resource>>) ((Object) StorageRscData.class),
             DeviceLayerKind.STORAGE,
-            layerHelperProviderRef
+            rscLayerDataFactory
         );
     }
 
@@ -98,11 +106,11 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
     }
 
     @Override
-    protected StorageRscData createRscData(
+    protected StorageRscData<Resource> createRscData(
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        RscLayerObject parentObjectRef,
+        AbsRscLayerObject<Resource> parentObjectRef,
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
@@ -118,7 +126,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
 
     @Override
     protected List<ChildResourceData> getChildRsc(
-        StorageRscData rscDataRef,
+        StorageRscData<Resource> rscDataRef,
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, InvalidKeyException
@@ -127,21 +135,21 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
     }
 
     @Override
-    protected void mergeRscData(StorageRscData rscDataRef, LayerPayload payloadRef)
+    protected void mergeRscData(StorageRscData<Resource> rscDataRef, LayerPayload payloadRef)
     {
         // nothing to merge
     }
 
     @Override
-    protected boolean needsChildVlm(RscLayerObject childRscDataRef, Volume vlmRef)
+    protected boolean needsChildVlm(AbsRscLayerObject<Resource> childRscDataRef, Volume vlmRef)
         throws AccessDeniedException, InvalidKeyException
     {
         throw new ImplementationError("Storage layer should not have child volumes to be asked for");
     }
 
     @Override
-    protected VlmProviderObject createVlmLayerData(
-        StorageRscData rscData,
+    protected VlmProviderObject<Resource> createVlmLayerData(
+        StorageRscData<Resource> rscData,
         Volume vlm,
         LayerPayload payload,
         List<DeviceLayerKind> layerListRef
@@ -152,7 +160,9 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
         StorPool storPool = layerDataHelperProvider.get().getStorPool(vlm, rscData, payload);
 
         DeviceProviderKind kind = storPool.getDeviceProviderKind();
-        VlmProviderObject vlmData = rscData.getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber());
+        VlmProviderObject<Resource> vlmData = rscData.getVlmProviderObject(
+            vlm.getVolumeDefinition().getVolumeNumber()
+        );
         if (vlmData == null)
         {
             switch (kind)
@@ -164,7 +174,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
                             rscData.getResourceNameSuffix()
                         );
                         vlmData = layerDataFactory.createSfInitData(
-                            vlm,
+                        vlm,
                             rscData,
                             vlmDfnData,
                             storPool
@@ -221,7 +231,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
 
     @Override
     protected void mergeVlmData(
-        VlmProviderObject vlmDataRef,
+        VlmProviderObject<Resource> vlmDataRef,
         Volume vlmRef,
         LayerPayload payloadRef,
         List<DeviceLayerKind> layerListRef
@@ -233,7 +243,8 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
 
         StorPool currentStorPool = vlmDataRef.getStorPool();
 
-        StorageRscData storageRscData = (StorageRscData) vlmDataRef.getRscLayerObject();
+        StorageRscData<Resource> storageRscData = (StorageRscData<Resource>) vlmDataRef
+            .getRscLayerObject();
         StorPool newStorPool = layerDataHelperProvider.get().getStorPool(
             vlmRef,
             storageRscData,
@@ -242,7 +253,7 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
 
         if (newStorPool != null && !newStorPool.equals(currentStorPool))
         {
-            VlmProviderObject vlmData = vlmDataRef;
+            VlmProviderObject<Resource> vlmData = vlmDataRef;
             if (!currentStorPool.getDeviceProviderKind().equals(newStorPool.getDeviceProviderKind()))
             {
                 // if the kind changes, we basically need a new vlmData
@@ -294,7 +305,8 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
     }
 
     @Override
-    protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, DatabaseException
+    protected void resetStoragePools(AbsRscLayerObject<Resource> rscDataRef)
+        throws AccessDeniedException, DatabaseException
     {
         // changing storage pools allows other DeviceProviders than before. Therefore we simply delete
         // all storage volumes as they will be re-created soon
@@ -307,8 +319,94 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
     }
 
     @Override
-    protected boolean isExpectedToProvideDevice(StorageRscData storageRscData) throws AccessDeniedException
+    protected boolean isExpectedToProvideDevice(StorageRscData<Resource> storageRscData) throws AccessDeniedException
     {
         return true;
+    }
+
+    @Override
+    protected RscDfnLayerObject restoreRscDfnData(
+        ResourceDefinition rscDfnRef,
+        AbsRscLayerObject<Snapshot> fromSnapDataRef
+    )
+    {
+        // StorageLayer does not have resource-definition specific data
+        return null;
+    }
+
+    @Override
+    protected VlmDfnLayerObject restoreVlmDfnData(
+        VolumeDefinition vlmDfnRef,
+        VlmProviderObject<Snapshot> fromSnapVlmDataRef
+    )
+    {
+        // StorageLayer does not have volume-definition specific data
+        return null;
+    }
+
+    @Override
+    protected StorageRscData<Resource> restoreRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<Resource> rscParentRef
+    )
+        throws DatabaseException, ExhaustedPoolException
+    {
+        return layerDataFactory.createStorageRscData(
+            layerRscIdPool.autoAllocate(),
+            rscParentRef,
+            rscRef,
+            fromSnapDataRef.getResourceNameSuffix()
+        );
+    }
+
+    @Override
+    protected VlmProviderObject<Resource> restoreVlmData(
+        Volume vlmRef,
+        StorageRscData<Resource> storRscData,
+        VlmProviderObject<Snapshot> snapVlmData
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        VlmProviderObject<Resource> vlmData;
+
+        DeviceProviderKind providerKind = snapVlmData.getProviderKind();
+        StorPool storPool = snapVlmData.getStorPool();
+        switch (providerKind)
+        {
+            case DISKLESS:
+                vlmData = layerDataFactory.createDisklessData(
+                    vlmRef,
+                    snapVlmData.getUsableSize(),
+                    storRscData,
+                    storPool
+                );
+                break;
+            case FILE:
+            case FILE_THIN:
+                vlmData = layerDataFactory.createFileData(vlmRef, storRscData, providerKind, storPool);
+                break;
+            case LVM:
+                vlmData = layerDataFactory.createLvmData(vlmRef, storRscData, storPool);
+                break;
+            case LVM_THIN:
+                vlmData = layerDataFactory.createLvmThinData(vlmRef, storRscData, storPool);
+                break;
+            case SWORDFISH_INITIATOR:
+            case SWORDFISH_TARGET:
+                throw new ImplementationError("Restoring from snapshots is not supported for swordfish-setup");
+            case ZFS:
+            case ZFS_THIN:
+                vlmData = layerDataFactory.createZfsData(vlmRef, storRscData, providerKind, storPool);
+                break;
+            case SPDK:
+                vlmData = layerDataFactory.createSpdkData(vlmRef, storRscData, storPool);
+                break;
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+            default:
+                throw new ImplementationError("Unexpected kind: " + kind);
+        }
+        storPool.putVolume(apiCtx, vlmData);
+        return vlmData;
     }
 }

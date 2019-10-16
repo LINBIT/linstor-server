@@ -24,6 +24,7 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
@@ -100,12 +101,13 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         while (rscIter.hasNext())
         {
             Resource rsc = rscIter.next();
-            if (!rsc.getAssignedNode().getFlags().isSet(apiCtx, Node.Flags.DELETE) &&
+            if (
+                !rsc.getNode().getFlags().isSet(apiCtx, Node.Flags.DELETE) &&
                 !rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.Flags.DELETE) &&
                 rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DELETE)
             )
             {
-                nodeNamesToDelete.add(rsc.getAssignedNode().getName());
+                nodeNamesToDelete.add(rsc.getNode().getName());
             }
         }
 
@@ -157,7 +159,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         }
 
         Set<NodeName> nodeNamesToDelete = new TreeSet<>();
-        NodeName nodeName = rsc.getAssignedNode().getName();
+        NodeName nodeName = rsc.getNode().getName();
         ResourceName rscName = rsc.getDefinition().getName();
 
         ctrlRscDeleteApiHelper.ensureNotInUse(rsc);
@@ -249,20 +251,28 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         {
             for (SnapshotDefinition snapshotDfn : rsc.getDefinition().getSnapshotDfns(peerAccCtx.get()))
             {
-                Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getAssignedNode().getName());
+                Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getNode().getName());
                 if (snapshot != null)
                 {
-                    for (SnapshotVolume snapshotVlm : snapshot.getAllSnapshotVolumes(peerAccCtx.get()))
+                    Iterator<SnapshotVolume> snapVlmIt = snapshot.iterateVolumes();
+                    while (snapVlmIt.hasNext())
                     {
-                        StorPool storPool = snapshotVlm.getStorPool(apiCtx);
-                        if (storPool.getDeviceProviderKind().isSnapshotDependent())
+                        SnapshotVolume snapshotVlm = snapVlmIt.next();
+                        Set<StorPool> storPoolSet = LayerVlmUtils.getStorPoolSet(snapshotVlm, apiCtx);
+                        for (StorPool storPool : storPoolSet)
                         {
-                            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_EXISTS_SNAPSHOT,
-                                "Resource '" + rsc.getDefinition().getName() + "' cannot be deleted because volume " +
-                                    snapshotVlm.getVolumeNumber() + " has dependent snapshot '" +
-                                    snapshot.getSnapshotName() + "'"
-                                ));
+                            if (storPool.getDeviceProviderKind().isSnapshotDependent())
+                            {
+                                throw new ApiRcException(
+                                    ApiCallRcImpl.simpleEntry(
+                                        ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                                        "Resource '" + rsc.getDefinition().getName()
+                                            + "' cannot be deleted because volume " +
+                                            snapshotVlm.getVolumeNumber() + " has dependent snapshot '" +
+                                            snapshot.getSnapshotName() + "'"
+                                    )
+                                );
+                            }
                         }
                     }
                 }

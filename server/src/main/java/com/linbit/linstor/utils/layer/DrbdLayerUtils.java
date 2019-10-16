@@ -6,7 +6,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import java.util.Set;
@@ -17,11 +17,11 @@ public class DrbdLayerUtils
         throws AccessDeniedException
     {
         boolean ret = false;
-        Set<RscLayerObject> drbdRscSet = LayerRscUtils
+        Set<AbsRscLayerObject<Resource>> drbdRscSet = LayerRscUtils
             .getRscDataByProvider(rscRef.getLayerData(accCtx), DeviceLayerKind.DRBD);
-        for (RscLayerObject drbdRsc : drbdRscSet)
+        for (AbsRscLayerObject<Resource> drbdRsc : drbdRscSet)
         {
-            if (isDrbdResourceExpected(accCtx, (DrbdRscData) drbdRsc))
+            if (isDrbdResourceExpected(accCtx, (DrbdRscData<Resource>) drbdRsc))
             {
                 ret = true;
                 break;
@@ -30,12 +30,12 @@ public class DrbdLayerUtils
         return ret;
     }
 
-    public static boolean isDrbdResourceExpected(AccessContext accCtx, DrbdRscData rscData)
+    public static boolean isDrbdResourceExpected(AccessContext accCtx, DrbdRscData<Resource> rscData)
         throws AccessDeniedException
     {
         boolean isDevExpected = true;
 
-        StateFlags<Flags> rscFlags = rscData.getResource().getStateFlags();
+        StateFlags<Flags> rscFlags = rscData.getAbsResource().getStateFlags();
         if (rscFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS))
         {
             isDevExpected = true;
@@ -54,7 +54,7 @@ public class DrbdLayerUtils
         return isDevExpected;
     }
 
-    public static boolean isDrbdDevicePresent(DrbdRscData rscData)
+    public static boolean isDrbdDevicePresent(DrbdRscData<Resource> rscData)
     {
         return rscData.streamVlmLayerObjects().allMatch(
             vlmData -> vlmData.exists() && vlmData.getDevicePath() != null

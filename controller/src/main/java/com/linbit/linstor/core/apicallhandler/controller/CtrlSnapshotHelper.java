@@ -60,7 +60,7 @@ public class CtrlSnapshotHelper
 
     public void ensureSatelliteConnected(Resource rsc, String details)
     {
-        Node node = rsc.getAssignedNode();
+        Node node = rsc.getNode();
         Peer currentPeer = getPeer(node);
 
         boolean connected = currentPeer.isConnected();

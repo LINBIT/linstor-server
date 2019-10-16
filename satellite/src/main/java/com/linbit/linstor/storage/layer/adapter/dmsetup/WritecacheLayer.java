@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -25,7 +26,7 @@ import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
@@ -36,7 +37,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -98,17 +99,21 @@ public class WritecacheLayer implements DeviceLayer
         return this.getClass().getSimpleName();
     }
 
+
     @Override
-    public void prepare(Set<RscLayerObject> rscDataListRef, Set<Snapshot> affectedSnapshotsRef)
+    public void prepare(
+        Set<AbsRscLayerObject<Resource>> rscObjListRef,
+        Set<AbsRscLayerObject<Snapshot>> snapObjListRef
+    )
         throws StorageException, AccessDeniedException, DatabaseException
     {
         errorReporter.logTrace("Writecache: listing all 'writecache' devices");
         Set<String> dmDeviceNames = DmSetupUtils.list(extCmdFactory.create(), "writecache");
 
-        for (RscLayerObject rscDataObj : rscDataListRef)
+        for (AbsRscLayerObject<Resource> rscDataObj : rscObjListRef)
         {
-            WritecacheRscData rscData = (WritecacheRscData) rscDataObj;
-            for (WritecacheVlmData vlmData : rscData.getVlmLayerObjects().values())
+            WritecacheRscData<Resource> rscData = (WritecacheRscData<Resource>) rscDataObj;
+            for (WritecacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
                 String devName = getIdentifier(vlmData);
                 boolean exists = false;
@@ -136,9 +141,9 @@ public class WritecacheLayer implements DeviceLayer
         }
     }
 
-    private String getIdentifier(VlmProviderObject vlmDataRef)
+    private String getIdentifier(VlmProviderObject<Resource> vlmDataRef)
     {
-        RscLayerObject rscData = vlmDataRef.getRscLayerObject();
+        AbsRscLayerObject<Resource> rscData = vlmDataRef.getRscLayerObject();
         return String.format(
             FORMAT_DM_NAME,
             rscData.getResourceName().displayValue,
@@ -148,9 +153,9 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject vlmDataRef) throws AccessDeniedException, DatabaseException
+    public void updateGrossSize(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException, DatabaseException
     {
-        WritecacheVlmData vlmData = (WritecacheVlmData) vlmDataRef;
+        WritecacheVlmData<Resource> vlmData = (WritecacheVlmData<Resource>) vlmDataRef;
 
         String cacheSizeStr = getCacheSize(vlmDataRef.getVolume());
         long cacheSize;
@@ -165,7 +170,7 @@ public class WritecacheLayer implements DeviceLayer
             cacheSize = Long.parseLong(cacheSizeStr);
         }
         vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA).setUsableSize(vlmDataRef.getUsableSize());
-        VlmProviderObject cacheVlmChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
+        VlmProviderObject<Resource> cacheVlmChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
         if (cacheVlmChild != null)
         {
             cacheVlmChild.setUsableSize(cacheSize);
@@ -176,18 +181,18 @@ public class WritecacheLayer implements DeviceLayer
 
     @Override
     public LayerProcessResult process(
-        RscLayerObject rscLayerDataRef,
-        Collection<Snapshot> snapshotsRef,
+        AbsRscLayerObject<Resource> rscLayerDataRef,
+        List<Snapshot> snapshotListRef,
         ApiCallRcImpl apiCallRcRef
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         LayerProcessResult ret;
-        WritecacheRscData rscData = (WritecacheRscData) rscLayerDataRef;
-        boolean deleteFlagSet = rscData.getResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE);
+        WritecacheRscData<Resource> rscData = (WritecacheRscData<Resource>) rscLayerDataRef;
+        boolean deleteFlagSet = rscData.getAbsResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE);
         if (deleteFlagSet)
         {
-            for (WritecacheVlmData vlmData : rscData.getVlmLayerObjects().values())
+            for (WritecacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
                 if (vlmData.exists())
                 {
@@ -212,11 +217,11 @@ public class WritecacheLayer implements DeviceLayer
 
         LayerProcessResult dataResult = resourceProcessorProvider.get().process(
             rscData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA),
-            snapshotsRef,
+            snapshotListRef,
             apiCallRcRef
         );
         LayerProcessResult metaResult;
-        RscLayerObject cacheRscChild = rscData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
+        AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
         if (cacheRscChild == null)
         {
             // we might be an imaginary layer above an NVMe target which does not need a cache...
@@ -227,18 +232,18 @@ public class WritecacheLayer implements DeviceLayer
         {
             metaResult = resourceProcessorProvider.get().process(
                 cacheRscChild,
-                snapshotsRef,
+                snapshotListRef,
                 apiCallRcRef
             );
         }
 
         if (!deleteFlagSet && dataResult == LayerProcessResult.SUCCESS && metaResult == LayerProcessResult.SUCCESS)
         {
-            for (WritecacheVlmData vlmData : rscData.getVlmLayerObjects().values())
+            for (WritecacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
                 PriorityProps prioProps;
                 {
-                    Volume vlm = vlmData.getVolume();
+                    Volume vlm = (Volume) vlmData.getVolume();
                     ResourceDefinition rscDfn = vlm.getResourceDefinition();
                     ResourceGroup rscGrp = rscDfn.getResourceGroup();
                     prioProps = new PriorityProps(
@@ -253,8 +258,8 @@ public class WritecacheLayer implements DeviceLayer
                 }
                 if (!vlmData.exists())
                 {
-                    VlmProviderObject dataChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA);
-                    VlmProviderObject cacheChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
+                    VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA);
+                    VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
                     boolean considerCacheAsPmem = false;
                     {
                         boolean allStorPoolsPmem = true;
@@ -385,9 +390,9 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
-    public void resourceFinished(RscLayerObject layerDataRef) throws AccessDeniedException
+    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
     {
-        if (layerDataRef.getResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE))
+        if (layerDataRef.getAbsResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE))
         {
             resourceProcessorProvider.get().sendResourceDeletedEvent(layerDataRef);
         }
@@ -404,26 +409,26 @@ public class WritecacheLayer implements DeviceLayer
         }
     }
 
-    private String getCacheSize(Volume vlmRef) throws InvalidKeyException, AccessDeniedException
+    private String getCacheSize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
     {
         return getPrioProps(vlmRef).getProp(
             ApiConsts.KEY_WRITECACHE_SIZE, ApiConsts.NAMESPC_WRITECACHE, DFLT_CACHE_SIZE
         ).trim();
     }
 
-    private PriorityProps getPrioProps(Volume vlmRef) throws AccessDeniedException
+    private PriorityProps getPrioProps(AbsVolume<Resource> vlmRef) throws AccessDeniedException
     {
         VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
         ResourceDefinition rscDfn = vlmRef.getResourceDefinition();
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
-        Resource rsc = vlmRef.getResource();
+        Resource rsc = vlmRef.getAbsResource();
         return new PriorityProps(
             vlmDfn.getProps(storDriverAccCtx),
             rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
             rsc.getProps(storDriverAccCtx),
             rscDfn.getProps(storDriverAccCtx),
             rscGrp.getProps(storDriverAccCtx),
-            rsc.getAssignedNode().getProps(storDriverAccCtx)
+            rsc.getNode().getProps(storDriverAccCtx)
         );
     }
 }

@@ -11,6 +11,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition.InitMaps;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
@@ -26,16 +27,17 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotVolumeDefinitions.RESOURCE_NAME;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotVolumeDefinitions.SNAPSHOT_FLAGS;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotVolumeDefinitions.SNAPSHOT_NAME;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotVolumeDefinitions.UUID;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotVolumeDefinitions.VLM_NR;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotVolumeDefinitions.VLM_SIZE;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.RESOURCE_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.SNAPSHOT_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.UUID;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.VLM_FLAGS;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.VLM_NR;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.VLM_SIZE;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -44,7 +46,9 @@ import java.util.function.Function;
 public class SnapshotVolumeDefinitionDbDriver extends
     AbsDatabaseDriver<SnapshotVolumeDefinition,
         SnapshotVolumeDefinition.InitMaps,
-        Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition>>
+        Pair<
+            Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>,
+            Map<Pair<ResourceName, VolumeNumber>, VolumeDefinition>>>
     implements SnapshotVolumeDefinitionCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
@@ -66,7 +70,7 @@ public class SnapshotVolumeDefinitionDbDriver extends
         TransactionObjectFactory transObjFactoryRef
     )
     {
-        super(errorReporterRef, GeneratedDatabaseTables.SNAPSHOT_VOLUME_DEFINITIONS, dbEngineRef, objProtDriverRef);
+        super(errorReporterRef, GeneratedDatabaseTables.VOLUME_DEFINITIONS, dbEngineRef, objProtDriverRef);
         dbCtx = dbCtxRef;
         transMgrProvider = transMgrProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
@@ -77,9 +81,9 @@ public class SnapshotVolumeDefinitionDbDriver extends
         setColumnSetter(SNAPSHOT_NAME, snapVlmDfn -> snapVlmDfn.getSnapshotName().value);
         setColumnSetter(VLM_NR, snapVlmDfn -> snapVlmDfn.getVolumeNumber().value);
         setColumnSetter(VLM_SIZE, snapVlmDfn -> snapVlmDfn.getVolumeSize(dbCtxRef));
-        setColumnSetter(SNAPSHOT_FLAGS, snapVlmDfn -> snapVlmDfn.getFlags().getFlagsBits(dbCtxRef));
+        setColumnSetter(VLM_FLAGS, snapVlmDfn -> snapVlmDfn.getFlags().getFlagsBits(dbCtxRef));
 
-        flagsDriver = generateFlagDriver(SNAPSHOT_FLAGS, SnapshotVolumeDefinition.Flags.class);
+        flagsDriver = generateFlagDriver(VLM_FLAGS, SnapshotVolumeDefinition.Flags.class);
         sizeDriver = generateSingleColumnDriver(
             VLM_SIZE,
             snapVlmDfn -> Long.toString(snapVlmDfn.getVolumeSize(dbCtxRef)),
@@ -102,52 +106,66 @@ public class SnapshotVolumeDefinitionDbDriver extends
     @Override
     protected Pair<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> load(
         RawParameters raw,
-        Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition> snapDfnMap
+        Pair<Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>,
+            Map<Pair<ResourceName, VolumeNumber>, VolumeDefinition>> parentObjs
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        final Map<NodeName, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
-
-        final VolumeNumber vlmNr;
-        final long vlmSize;
-        final long flags;
-
-        switch (getDbType())
+        final Pair<SnapshotVolumeDefinition, InitMaps> ret;
+        final String snapNameStr = raw.get(SNAPSHOT_NAME);
+        if (snapNameStr.equals(ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC))
         {
-            case ETCD:
-                vlmNr = new VolumeNumber(Integer.parseInt(raw.get(VLM_NR)));
-                vlmSize = Integer.parseInt(raw.get(VLM_SIZE));
-                flags = Long.parseLong(raw.get(SNAPSHOT_FLAGS));
-                break;
-            case SQL:
-                vlmNr = raw.build(VLM_NR, VolumeNumber::new);
-                vlmSize = raw.get(VLM_SIZE);
-                flags = raw.get(SNAPSHOT_FLAGS);
-                break;
-            default:
-                throw new ImplementationError("Unknown database type: " + getDbType());
+            // this entry is a VolumeDefinition, not a SnapshotVolumeDefinition
+            ret = null;
         }
+        else
+        {
+            final ResourceName rscName = raw.build(RESOURCE_NAME, ResourceName::new);
+            final Map<NodeName, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
-        return new Pair<>(
-            new SnapshotVolumeDefinition(
-                raw.build(UUID, java.util.UUID::fromString),
-                snapDfnMap.get(
-                    new Pair<>(
-                        raw.build(RESOURCE_NAME, ResourceName::new),
-                        raw.build(SNAPSHOT_NAME, SnapshotName::new)
-                    )
+            final VolumeNumber vlmNr;
+            final long vlmSize;
+            final long flags;
+
+            switch (getDbType())
+            {
+                case ETCD:
+                    vlmNr = new VolumeNumber(Integer.parseInt(raw.get(VLM_NR)));
+                    vlmSize = Integer.parseInt(raw.get(VLM_SIZE));
+                    flags = Long.parseLong(raw.get(VLM_FLAGS));
+                    break;
+                case SQL:
+                    vlmNr = raw.build(VLM_NR, VolumeNumber::new);
+                    vlmSize = raw.get(VLM_SIZE);
+                    flags = raw.get(VLM_FLAGS);
+                    break;
+                default:
+                    throw new ImplementationError("Unknown database type: " + getDbType());
+            }
+
+            ret = new Pair<>(
+                new SnapshotVolumeDefinition(
+                    raw.build(UUID, java.util.UUID::fromString),
+                    parentObjs.objA.get(
+                        new Pair<>(
+                            rscName,
+                            new SnapshotName(snapNameStr)
+                        )
+                    ),
+                    parentObjs.objB.get(new Pair<>(rscName, vlmNr)),
+                    vlmSize,
+                    flags,
+                    this,
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider,
+                    snapshotVlmMap,
+                    new TreeMap<>()
                 ),
-                vlmNr,
-                vlmSize,
-                flags,
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                snapshotVlmMap
-            ),
-            new InitMapsImpl(snapshotVlmMap)
-        );
+                new InitMapsImpl(snapshotVlmMap)
+            );
+        }
+        return ret;
     }
 
     @Override

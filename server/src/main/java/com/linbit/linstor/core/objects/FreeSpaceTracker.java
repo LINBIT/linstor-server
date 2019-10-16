@@ -16,17 +16,17 @@ public interface FreeSpaceTracker extends TransactionObject
 
     void remove(AccessContext accCtx, StorPool storPool) throws AccessDeniedException;
 
-    void vlmCreating(AccessContext accCtx, VlmProviderObject vlmProviderObjRef) throws AccessDeniedException;
+    void vlmCreating(AccessContext accCtx, VlmProviderObject<?> vlmProviderObjRef) throws AccessDeniedException;
 
     void ensureVlmNoLongerCreating(
         AccessContext accCtxRef,
-        VlmProviderObject vlmProviderObjRef
+        VlmProviderObject<?> vlmProviderObjRef
     )
         throws AccessDeniedException;
 
     void vlmCreationFinished(
         AccessContext accCtx,
-        VlmProviderObject vlmProviderObjRef,
+        VlmProviderObject<?> vlmProviderObjRef,
         Long freeCapacityRef,
         Long totalCapacityRef
     )

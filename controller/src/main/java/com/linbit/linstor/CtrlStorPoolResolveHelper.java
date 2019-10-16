@@ -102,7 +102,7 @@ public class CtrlStorPoolResolveHelper
             Props vlmDfnProps = ctrlPropsHelper.getProps(accCtx, vlmDfn);
             Props rscDfnProps = ctrlPropsHelper.getProps(accCtx, rsc.getDefinition());
             Props rscGrpProps = ctrlPropsHelper.getProps(accCtx, rsc.getDefinition().getResourceGroup());
-            Props nodeProps = ctrlPropsHelper.getProps(accCtx, rsc.getAssignedNode());
+            Props nodeProps = ctrlPropsHelper.getProps(accCtx, rsc.getNode());
 
             PriorityProps vlmPrioProps = new PriorityProps(
                 rscProps, vlmDfnProps, rscDfnProps, rscGrpProps, nodeProps
@@ -119,7 +119,7 @@ public class CtrlStorPoolResolveHelper
                 }
                 else
                 {
-                    storPool = rsc.getAssignedNode().getStorPool(
+                    storPool = rsc.getNode().getStorPool(
                         apiCtx,
                         LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                     );
@@ -133,7 +133,7 @@ public class CtrlStorPoolResolveHelper
                 {
                     storPoolNameStr = InternalApiConsts.DEFAULT_STOR_POOL_NAME;
                 }
-                storPool = rsc.getAssignedNode().getStorPool(
+                storPool = rsc.getNode().getStorPool(
                     apiCtx,
                     LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                 );
@@ -143,7 +143,7 @@ public class CtrlStorPoolResolveHelper
                     if (storPool.getDeviceProviderKind().hasBackingDevice())
                     {
                         // If the storage pool has backing storage, check that it is of the same kind as the peers
-                        checkSameKindAsPeers(vlmDfn, rsc.getAssignedNode().getName(), storPool);
+                        checkSameKindAsPeers(vlmDfn, rsc.getNode().getName(), storPool);
                     }
                     else
                     {
@@ -187,7 +187,7 @@ public class CtrlStorPoolResolveHelper
         for (Resource peerRsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
         {
             boolean isDiskless = peerRsc.isDrbdDiskless(apiCtx) || peerRsc.isNvmeInitiator(apiCtx);
-            if (!isDiskless && !peerRsc.getAssignedNode().getName().equals(nodeName))
+            if (!isDiskless && !peerRsc.getNode().getName().equals(nodeName))
             {
                 Volume peerVlm = peerRsc.getVolume(vlmDfn.getVolumeNumber());
                 if (peerVlm != null)
@@ -236,7 +236,7 @@ public class CtrlStorPoolResolveHelper
                 .entryBuilder(FAIL_NOT_FOUND_DFLT_STOR_POOL, "The storage pool '" + storPoolNameStr + "' " +
                     "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
                     "for volume number '" + vlmDfn.getVolumeNumber().value + "' " +
-                    "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.")
+                    "is not deployed on node '" + rsc.getNode().getName().displayValue + "'.")
                 .setDetails("The resource which should be deployed had at least one volume definition " +
                     "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
                     "tried to automatically create. " +

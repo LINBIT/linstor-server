@@ -84,8 +84,8 @@ public class ResourceConnection extends BaseTransactionObject
 
         connectionKey = new ResourceConnectionKey(sourceResourceRef, targetResourceRef);
 
-        NodeName sourceNodeName = connectionKey.getSource().getAssignedNode().getName();
-        NodeName targetNodeName = connectionKey.getTarget().getAssignedNode().getName();
+        NodeName sourceNodeName = connectionKey.getSource().getNode().getName();
+        NodeName targetNodeName = connectionKey.getTarget().getNode().getName();
         if (sourceResourceRef.getDefinition() != targetResourceRef.getDefinition())
         {
             throw new ImplementationError(
@@ -107,8 +107,8 @@ public class ResourceConnection extends BaseTransactionObject
 
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
-                connectionKey.getSource().getAssignedNode().getName(),
-                connectionKey.getTarget().getAssignedNode().getName(),
+                connectionKey.getSource().getNode().getName(),
+                connectionKey.getTarget().getNode().getName(),
                 sourceResourceRef.getDefinition().getName()
             )
         );
@@ -146,7 +146,7 @@ public class ResourceConnection extends BaseTransactionObject
     )
         throws AccessDeniedException
     {
-        return sourceResource.getResourceConnection(accCtx, targetResource);
+        return sourceResource.getAbsResourceConnection(accCtx, targetResource);
     }
 
     @Override
@@ -165,13 +165,13 @@ public class ResourceConnection extends BaseTransactionObject
     {
         checkDeleted();
         Node node = null;
-        if (connectionKey.getSource().getAssignedNode().getName().equals(nodeName))
+        if (connectionKey.getSource().getNode().getName().equals(nodeName))
         {
-            node = connectionKey.getSource().getAssignedNode();
+            node = connectionKey.getSource().getNode();
         }
-        else if (connectionKey.getTarget().getAssignedNode().getName().equals(nodeName))
+        else if (connectionKey.getTarget().getNode().getName().equals(nodeName))
         {
-            node = connectionKey.getTarget().getAssignedNode();
+            node = connectionKey.getTarget().getNode();
         }
         return node;
     }
@@ -298,8 +298,8 @@ public class ResourceConnection extends BaseTransactionObject
     @Override
     public String toString()
     {
-        return "Node1: '" + connectionKey.getSource().getAssignedNode().getName() + "', " +
-               "Node2: '" + connectionKey.getTarget().getAssignedNode().getName() + "', " +
+        return "Node1: '" + connectionKey.getSource().getNode().getName() + "', " +
+               "Node2: '" + connectionKey.getTarget().getNode().getName() + "', " +
                "Rsc: '" + connectionKey.getSource().getDefinition().getName() + "'";
     }
 
@@ -316,8 +316,8 @@ public class ResourceConnection extends BaseTransactionObject
     {
         return new RscConnPojo(
             getUuid(),
-            connectionKey.getSource().getAssignedNode().getName().getDisplayName(),
-            connectionKey.getTarget().getAssignedNode().getName().getDisplayName(),
+            connectionKey.getSource().getNode().getName().getDisplayName(),
+            connectionKey.getTarget().getNode().getName().getDisplayName(),
             connectionKey.getSource().getDefinition().getName().getDisplayName(),
             getProps(accCtx).map(),
             getStateFlags().getFlagsBits(accCtx),

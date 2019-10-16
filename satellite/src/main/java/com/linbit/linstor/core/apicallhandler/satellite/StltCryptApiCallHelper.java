@@ -7,14 +7,15 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
+import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.DeviceManager;
-import com.linbit.linstor.core.StltSecurityObjects;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -24,6 +25,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -72,17 +74,17 @@ public class StltCryptApiCallHelper
                     while (rscIt.hasNext())
                     {
                         Resource rsc = rscIt.next();
-                        RscLayerObject layerData = rsc.getLayerData(apiCtx);
-                        List<RscLayerObject> rscDataList = LayerUtils.getChildLayerDataByKind(
+                        AbsRscLayerObject<Resource> layerData = rsc.getLayerData(apiCtx);
+                        List<AbsRscLayerObject<Resource>> rscDataList = LayerUtils.getChildLayerDataByKind(
                             layerData,
                             DeviceLayerKind.LUKS
                         );
 
-                        for (RscLayerObject rscData : rscDataList)
+                        for (AbsRscLayerObject<Resource> rscData : rscDataList)
                         {
-                            for (VlmProviderObject vlmData : rscData.getVlmLayerObjects().values())
+                            for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
                             {
-                                LuksVlmData cryptVlmData = (LuksVlmData) vlmData;
+                                LuksVlmData<Resource> cryptVlmData = (LuksVlmData<Resource>) vlmData;
                                 if (cryptVlmData.getDecryptedPassword() == null)
                                 {
                                     byte[] encryptedKey = cryptVlmData.getEncryptedKey();

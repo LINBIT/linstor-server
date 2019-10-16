@@ -1,13 +1,14 @@
 package com.linbit.linstor.storage.data.adapter.writecache;
 
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.writecache.WritecacheVlmObject;
@@ -24,11 +25,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class WritecacheVlmData extends BaseTransactionObject implements WritecacheVlmObject
+public class WritecacheVlmData<RSC extends AbsResource<RSC>>
+    extends BaseTransactionObject implements WritecacheVlmObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final Volume vlm;
-    private final RscLayerObject rscData;
+    private final AbsVolume<RSC> vlm;
+    private final AbsRscLayerObject<RSC> rscData;
     private final StorPool cacheStorPool;
 
     // not persisted, serialized, ctrl and stlt
@@ -48,8 +50,8 @@ public class WritecacheVlmData extends BaseTransactionObject implements Writecac
     private Size sizeState;
 
     public WritecacheVlmData(
-        Volume vlmRef,
-        WritecacheRscData rscDataRef,
+        AbsVolume<RSC> vlmRef,
+        WritecacheRscData<RSC> rscDataRef,
         StorPool cacheStorPoolRef,
         WritecacheLayerDatabaseDriver dbDriver,
         TransactionObjectFactory transObjFactory,
@@ -101,7 +103,7 @@ public class WritecacheVlmData extends BaseTransactionObject implements Writecac
     }
 
     @Override
-    public Volume getVolume()
+    public AbsVolume<RSC> getVolume()
     {
         return vlm;
     }
@@ -113,7 +115,7 @@ public class WritecacheVlmData extends BaseTransactionObject implements Writecac
     }
 
     @Override
-    public RscLayerObject getRscLayerObject()
+    public AbsRscLayerObject<RSC> getRscLayerObject()
     {
         return rscData;
     }

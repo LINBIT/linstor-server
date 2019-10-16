@@ -1,5 +1,13 @@
 package com.linbit.linstor.api;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -39,6 +47,7 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 
 import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,14 +70,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
 public class RscAutoPlaceApiTest extends ApiTestBase
@@ -533,7 +534,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .map(rsc -> rsc.getNode()) // we should have now only 2 nodes
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
 
@@ -582,7 +583,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .map(Resource::getNode) // we should have now only 2 nodes
             .collect(Collectors.toList());
         assertEquals(1, deployedNodes.size());
 
@@ -629,7 +630,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .map(Resource::getNode) // we should have now only 2 nodes
             .sorted((n1, n2) -> n1.getName().compareTo(n2.getName()))
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
@@ -679,7 +680,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .map(Resource::getNode) // we should have now only 2 nodes
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
 
@@ -748,7 +749,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .map(Resource::getNode) // we should have now only 2 nodes
             .collect(Collectors.toList());
         assertEquals(5, deployedNodes.size());
 
@@ -796,7 +797,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(Resource::getAssignedNode)
+            .map(Resource::getNode)
             .collect(Collectors.toList());
 
         assertEquals(2, deployedNodes.size());
@@ -824,7 +825,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 diskfull and 2 diskless nodes
+            .map(rsc -> rsc.getNode()) // we should have now only 2 diskfull and 2 diskless nodes
             .collect(Collectors.toList());
         assertEquals(4, deployedNodes.size());
 
@@ -873,7 +874,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
 
@@ -892,7 +893,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         // recheck
         deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
     }
@@ -920,7 +921,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
 
@@ -940,7 +941,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         // recheck
         deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(4, deployedNodes.size());
 
@@ -988,7 +989,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
 
@@ -1012,7 +1013,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         // recheck
         deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(4, deployedNodes.size());
 
@@ -1095,7 +1096,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
         assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
@@ -1131,7 +1132,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
         assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
@@ -1162,7 +1163,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 Volume vlm = vlmIt.next();
                 assertEquals(
                     storPoolName,
-                    vlm.getResource()
+                    vlm.getAbsResource()
                         .getLayerData(SYS_CTX) // drbd layer
                         .getSingleChild() // storage layer
                         .getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber())

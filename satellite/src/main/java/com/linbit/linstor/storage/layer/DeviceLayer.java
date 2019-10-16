@@ -13,12 +13,12 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,20 +28,19 @@ public interface DeviceLayer
 
     String getName();
 
-    void prepare(Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
+    void prepare(
+        Set<AbsRscLayerObject<Resource>> rscObjList,
+        Set<AbsRscLayerObject<Snapshot>> snapObjList
+    )
         throws StorageException, AccessDeniedException, DatabaseException;
 
-    void updateGrossSize(VlmProviderObject vlmData)
+    void updateGrossSize(VlmProviderObject<Resource> vlmData)
         throws AccessDeniedException, DatabaseException;
 
     /**
-     * @param rsc The resource to process
      * @param rscLayerData The current layer's data. This is an explicit parameter in case we
      * want to (in far future) allow multiple occurrences of the same layer in a given layerStack
      * (could be useful in case of RAID)
-     * @param rscNameSuffix A suffix (can be "") which will be appended to the resource name, but
-     * before the volume numbers in case of storage-layers. This is necessary for the RAID layer
-     * @param snapshots Snapshots to be processed
      * @param apiCallRc Responses to the ApiCall
      *
      * @throws StorageException
@@ -51,8 +50,8 @@ public interface DeviceLayer
      * @throws DatabaseException
      */
     LayerProcessResult process(
-        RscLayerObject rscLayerData,
-        Collection<Snapshot> snapshots,
+        AbsRscLayerObject<Resource> rscLayerData,
+        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,
@@ -62,7 +61,7 @@ public interface DeviceLayer
 
     void setLocalNodeProps(Props localNodeProps);
 
-    void resourceFinished(RscLayerObject layerDataRef) throws AccessDeniedException;
+    void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
 
     public interface NotificationListener
     {

@@ -3,7 +3,6 @@ package com.linbit.linstor.core.objects;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -11,6 +10,7 @@ import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Provider;
+
 import java.util.Collections;
 import java.util.Optional;
 
@@ -58,14 +58,14 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     }
 
     @Override
-    public void vlmCreating(AccessContext accCtx, VlmProviderObject vlm)
+    public void vlmCreating(AccessContext accCtx, VlmProviderObject<?> vlm)
         throws AccessDeniedException
     {
         // Ignore
     }
 
     @Override
-    public void ensureVlmNoLongerCreating(AccessContext accCtxRef, VlmProviderObject vlmRef)
+    public void ensureVlmNoLongerCreating(AccessContext accCtxRef, VlmProviderObject<?> vlmRef)
         throws AccessDeniedException
     {
         // Trust me, I no longer track vlmProviderObject as "creating"
@@ -74,7 +74,7 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     @Override
     public void vlmCreationFinished(
         AccessContext accCtx,
-        VlmProviderObject vlm,
+        VlmProviderObject<?> vlm,
         Long freeCapacityRef,
         Long totalCapacityRef
     )

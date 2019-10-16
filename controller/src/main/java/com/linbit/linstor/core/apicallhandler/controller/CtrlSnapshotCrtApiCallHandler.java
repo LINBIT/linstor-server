@@ -35,16 +35,15 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionControllerFactory
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -92,7 +91,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
-    private final CtrlLayerDataHelper layerStackHelper;
+    private final CtrlRscLayerDataFactory layerStackHelper;
 
     @Inject
     public CtrlSnapshotCrtApiCallHandler(
@@ -109,7 +108,7 @@ public class CtrlSnapshotCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlLayerDataHelper layerStackHelperRef
+        CtrlRscLayerDataFactory layerStackHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -199,7 +198,6 @@ public class CtrlSnapshotCrtApiCallHandler
             boolean isEncrypted = isEncrypted(vlmDfn);
             if (isEncrypted)
             {
-
                 String cryptPasswd = vlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
                 if (cryptPasswd == null)
                 {
@@ -475,8 +473,7 @@ public class CtrlSnapshotCrtApiCallHandler
                     Volume vlm = vlmIterator.next();
                     Map<String, StorPool> storPoolMap = getStorPoolMap(
                         vlm,
-                        apiCtx,
-                        CtrlVlmListApiCallHandler::getVlmDescriptionInline
+                        apiCtx
                     );
 
                     for (StorPool storPool : storPoolMap.values())
@@ -502,7 +499,7 @@ public class CtrlSnapshotCrtApiCallHandler
                                     "Storage driver '" + providerKind + "' " + "does not support snapshots."
                                 )
                                 .setDetails("Used for storage pool '" + storPool.getName() + "'" +
-                                    " on '" + rsc.getAssignedNode().getName() + "'.")
+                                    " on '" + rsc.getNode().getName() + "'.")
                                 .build()
                             );
                         }
@@ -541,7 +538,7 @@ public class CtrlSnapshotCrtApiCallHandler
                         "Snapshot with external meta-disk not supported."
                     )
                     .setDetails("Volume " + vlm.getVolumeDefinition().getVolumeNumber().value +
-                        " on node " + rsc.getAssignedNode().getName().displayValue +
+                        " on node " + rsc.getNode().getName().displayValue +
                         " has meta disk path '" + metaDiskPaths + "'")
                     .build()
                 );
@@ -619,7 +616,7 @@ public class CtrlSnapshotCrtApiCallHandler
             snapshotVlmDfn = snapshotVolumeDefinitionControllerFactory.create(
                 peerAccCtx.get(),
                 snapshotDfn,
-                vlmDfn.getVolumeNumber(),
+                vlmDfn,
                 volumeSize,
                 new SnapshotVolumeDefinition.Flags[]{}
             );
@@ -675,29 +672,16 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         String snapshotNameStr = snapshotDfn.getName().displayValue;
         String rscNameStr = rsc.getDefinition().getName().displayValue;
-        String nodeNameStr = rsc.getAssignedNode().getName().displayValue;
+        String nodeNameStr = rsc.getNode().getName().displayValue;
 
         Snapshot snapshot;
         try
         {
-            NodeId nodeId = null;
-            List<RscLayerObject> childLayerDataByKind = LayerUtils.getChildLayerDataByKind(
-                rsc.getLayerData(apiCtx),
-                DeviceLayerKind.DRBD
-            );
-            if (!childLayerDataByKind.isEmpty())
-            {
-                nodeId = ((DrbdRscData) childLayerDataByKind.get(0)).getNodeId();
-            }
-
             snapshot = snapshotFactory.create(
                 peerAccCtx.get(),
-                rsc.getAssignedNode(),
+                rsc,
                 snapshotDfn,
-                nodeId,
-                new Snapshot.Flags[]
-                {},
-                layerStackHelper.getLayerStack(rsc)
+                new Snapshot.Flags[0]
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -738,13 +722,9 @@ public class CtrlSnapshotCrtApiCallHandler
         {
             snapshotVolumeControllerFactory.create(
                 peerAccCtx.get(),
+                rsc,
                 snapshot,
-                snapshotVolumeDefinition,
-                getStorPoolMap(
-                    rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()),
-                    apiCtx,
-                    CtrlVlmListApiCallHandler::getVlmDescriptionInline
-                ).get("")
+                snapshotVolumeDefinition
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -833,14 +813,14 @@ public class CtrlSnapshotCrtApiCallHandler
         List<String> metaDiskPaths = new ArrayList<>();
         try
         {
-            List<RscLayerObject> drbdRscDataList = LayerUtils.getChildLayerDataByKind(
-                vlm.getResource().getLayerData(apiCtx), DeviceLayerKind.DRBD
+            List<AbsRscLayerObject<Resource>> drbdRscDataList = LayerUtils.getChildLayerDataByKind(
+                vlm.getAbsResource().getLayerData(apiCtx), DeviceLayerKind.DRBD
             );
 
-            for (RscLayerObject rscLayerObject : drbdRscDataList)
+            for (AbsRscLayerObject<Resource> rscLayerObject : drbdRscDataList)
             {
-                DrbdRscData drbdRscData = (DrbdRscData) rscLayerObject;
-                for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscLayerObject;
+                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
                     String meta = drbdVlmData.getMetaDiskPath();
                     if (meta != null && !meta.isEmpty() && !meta.equalsIgnoreCase("internal"))

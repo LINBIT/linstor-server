@@ -1,7 +1,7 @@
 package com.linbit.linstor.storage.utils;
 
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageException;
@@ -17,12 +17,15 @@ import java.util.Map;
 
 public class DeviceLayerUtils
 {
-    public static void foreachVlm(Resource[] rscs, ExceptionThrowingConsumer<Volume, StorageException> func)
+    public static <RSC extends AbsResource<RSC>> void foreachVlm(
+        RSC[] rscs,
+        ExceptionThrowingConsumer<AbsVolume<RSC>, StorageException> func
+    )
         throws StorageException
     {
-        for (final Resource rsc : rscs)
+        for (final RSC rsc : rscs)
         {
-            final Iterator<Volume> vlmIt = rsc.iterateVolumes();
+            final Iterator<? extends AbsVolume<RSC>> vlmIt = rsc.iterateVolumes();
             while (vlmIt.hasNext())
             {
                 func.accept(vlmIt.next());
@@ -30,20 +33,19 @@ public class DeviceLayerUtils
         }
     }
 
-    public static void foreachVlm(
-        Resource[] rscs,
-        Map<Volume, VlmStorageState> states,
-        ExceptionThrowingBiConsumer<Volume, VlmStorageState, StorageException> func
+    public static <RSC extends AbsResource<RSC>> void foreachVlm(
+        RSC[] rscs,
+        Map<AbsVolume<RSC>, VlmStorageState> states,
+        ExceptionThrowingBiConsumer<AbsVolume<RSC>, VlmStorageState, StorageException> func
     )
         throws StorageException
     {
-        for (final Resource rsc : rscs)
+        for (final RSC rsc : rscs)
         {
-            final Iterator<Volume> vlmIt = rsc.iterateVolumes();
+            final Iterator<? extends AbsVolume<RSC>> vlmIt = rsc.iterateVolumes();
             while (vlmIt.hasNext())
             {
-                Volume vlm = vlmIt.next();
-                func.accept(vlm, states.get(vlm));
+                func.accept(vlmIt.next(), states.get(vlmIt.next()));
             }
         }
     }

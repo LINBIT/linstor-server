@@ -168,7 +168,7 @@ public class CtrlNodeLostApiCallHandler
             {
                 for (Resource peerRsc : getRscStreamPrivileged(rscDfn).collect(toList()))
                 {
-                    nodesToContact.put(peerRsc.getAssignedNode().getName(), peerRsc.getAssignedNode());
+                    nodesToContact.put(peerRsc.getNode().getName(), peerRsc.getNode());
                 }
             }
             deletePrivileged(rsc);

@@ -214,7 +214,6 @@ public class LvmCommands
         );
     }
 
-
     public static OutputData createSnapshotThin(
         ExtCmd extCmd,
         String volumeGroup,

@@ -262,7 +262,13 @@ public class SQLEngine implements DbEngine
                     Pair<DATA, INIT_MAPS> pair = restoreData(
                         table, resultSet, parentsRef, dataLoaderRef
                     );
-                    loadedObjectsMap.put(pair.objA, pair.objB);
+                    // pair might be null when loading objects sharing the same table.
+                    // For example SnapshotDbDriver will return null when finding a Resource entry
+                    // and vice versa.
+                    if (pair != null)
+                    {
+                        loadedObjectsMap.put(pair.objA, pair.objB);
+                    }
                 }
             }
         }

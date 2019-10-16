@@ -8,7 +8,6 @@ import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -18,7 +17,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
@@ -33,7 +32,6 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -72,7 +70,10 @@ public class NvmeLayer implements DeviceLayer
     }
 
     @Override
-    public void prepare(Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
+    public void prepare(
+        Set<AbsRscLayerObject<Resource>> rscDataList,
+        Set<AbsRscLayerObject<Snapshot>> affectedSnapshots
+    )
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op
@@ -81,39 +82,45 @@ public class NvmeLayer implements DeviceLayer
     /**
      * Connects/disconnects an NVMe Target or creates/deletes its data.
      *
-     * @param rscData   RscLayerObject object to processed.
-     *                  If diskless, rscData is an NVMe Initiator and a Target otherwise.
-     *                  Depending on its {@link Flags} the operation executed on the Initiator/Target is either
-     *                  connect/configure or disconnect/delete.
-     * @param snapshots Collection<Snapshot> to be processed, passed on to {@link DeviceHandler}
-     * @param apiCallRc ApiCallRcImpl responses, passed on to {@link DeviceHandler}
+     * @param rscData
+     *     RscLayerObject object to processed.
+     *     If diskless, rscData is an NVMe Initiator and a Target otherwise.
+     *     Depending on its {@link Flags} the operation executed on the Initiator/Target is either
+     *     connect/configure or disconnect/delete.
+     * @param snapshotList
+     *     Collection<Snapshot> to be processed, passed on to {@link DeviceHandler}
+     * @param apiCallRc
+     *     ApiCallRcImpl responses, passed on to {@link DeviceHandler}
      */
     @Override
-    public LayerProcessResult process(RscLayerObject rscData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+    public LayerProcessResult process(
+        AbsRscLayerObject<Resource> rscData,
+        List<Snapshot> snapshotList,
+        ApiCallRcImpl apiCallRc
+    )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         LayerProcessResult ret;
-        NvmeRscData nvmeRscData = (NvmeRscData) rscData;
+        NvmeRscData<Resource> nvmeRscData = (NvmeRscData<Resource>) rscData;
 
-        // initiator
         if (nvmeRscData.isInitiator(sysCtx))
         {
-            // Initiator
-
             // reading a NVMe Target resource associated with a NVMe Initiator to determine if they belong to SPDK
             final Resource targetRsc = nvmeUtils.getTargetResource(nvmeRscData, sysCtx);
             nvmeRscData.setSpdk(nvmeUtils.isSpdkResource(targetRsc.getLayerData(sysCtx)));
 
             nvmeUtils.setDevicePaths(nvmeRscData, nvmeRscData.exists());
 
-            if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+            // disconnect
+            if (nvmeRscData.exists() && nvmeRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
             {
                 // disconnect
                 nvmeUtils.disconnect(nvmeRscData);
             }
-            else
-            if (!nvmeRscData.exists() &&
-                !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+            // connect
+            else if (!nvmeRscData.exists() &&
+                !nvmeRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE)
+            )
             {
                 // connect
                 nvmeUtils.connect(nvmeRscData, sysCtx);
@@ -140,13 +147,13 @@ public class NvmeLayer implements DeviceLayer
 
             nvmeRscData.setExists(nvmeUtils.isTargetConfigured(nvmeRscData));
 
-            if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+            if (nvmeRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
             {
                 if (nvmeRscData.exists())
                 {
                     // delete target resource
                     nvmeUtils.deleteTargetRsc(nvmeRscData, sysCtx);
-                    resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+                    resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
                 }
                 else
                 {
@@ -172,10 +179,10 @@ public class NvmeLayer implements DeviceLayer
                                 NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
                         );
 
-                        List<NvmeVlmData> newVolumes = new ArrayList<>();
-                        for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                        List<NvmeVlmData<Resource>> newVolumes = new ArrayList<>();
+                        for (NvmeVlmData<Resource> nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
                         {
-                            if (nvmeVlmData.getVolume().getFlags().isSet(sysCtx, Volume.Flags.DELETE))
+                            if (((Volume) nvmeVlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.DELETE))
                             {
                                 if (nvmeRscData.isSpdk())
                                 {
@@ -193,18 +200,20 @@ public class NvmeLayer implements DeviceLayer
                         }
 
                         LayerProcessResult layerProcessResult = resourceProcessorProvider.get()
-                            .process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+                            .process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
 
                         if (layerProcessResult == LayerProcessResult.SUCCESS)
-                        for (NvmeVlmData nvmeVlmData : newVolumes)
                         {
-                            if (nvmeRscData.isSpdk())
+                            for (NvmeVlmData<Resource> nvmeVlmData : newVolumes)
                             {
-                                nvmeUtils.createSpdkNamespace(nvmeVlmData, subsystemName);
-                            }
-                            else
-                            {
-                                nvmeUtils.createNamespace(nvmeVlmData, subsystemDirectory);
+                                if (nvmeRscData.isSpdk())
+                                {
+                                    nvmeUtils.createSpdkNamespace(nvmeVlmData, subsystemName);
+                                }
+                                else
+                                {
+                                    nvmeUtils.createNamespace(nvmeVlmData, subsystemDirectory);
+                                }
                             }
                         }
                     }
@@ -221,7 +230,7 @@ public class NvmeLayer implements DeviceLayer
                 {
                     // Create volumes
                     LayerProcessResult layerProcessResult = resourceProcessorProvider.get()
-                        .process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+                        .process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
                     if (layerProcessResult == LayerProcessResult.SUCCESS)
                     {
                         nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
@@ -234,10 +243,10 @@ public class NvmeLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject vlmData)
+    public void updateGrossSize(VlmProviderObject<Resource> vlmData)
         throws AccessDeniedException, DatabaseException
     {
-        NvmeVlmData nvmeVlmData = (NvmeVlmData) vlmData;
+        NvmeVlmData<Resource> nvmeVlmData = (NvmeVlmData<Resource>) vlmData;
 
         long size = nvmeVlmData.getUsableSize();
         nvmeVlmData.setAllocatedSize(size);
@@ -258,11 +267,11 @@ public class NvmeLayer implements DeviceLayer
     }
 
     @Override
-    public void resourceFinished(RscLayerObject layerDataRef)
+    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef)
         throws AccessDeniedException
     {
-        NvmeRscData nvmeRscData = (NvmeRscData) layerDataRef;
-        if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+        NvmeRscData<Resource> nvmeRscData = (NvmeRscData<Resource>) layerDataRef;
+        if (nvmeRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
         {
             resourceProcessorProvider.get().sendResourceDeletedEvent(nvmeRscData);
         }

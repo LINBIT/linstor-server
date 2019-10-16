@@ -2,8 +2,9 @@ package com.linbit.linstor.storage.data.provider.swordfish;
 
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishTargetVlmPojo;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -19,7 +20,8 @@ import javax.inject.Provider;
 
 import java.util.Objects;
 
-public class SfTargetData extends AbsStorageVlmData implements SfTargetVlmProviderObject
+public class SfTargetData<RSC extends AbsResource<RSC>>
+    extends AbsStorageVlmData<RSC> implements SfTargetVlmProviderObject<RSC>
 {
     private static final int ZERO_USABLE_SIZE = 0; // target is never usable, only initiator
     private static final String DEV_NULL = "/dev/null"; // target is never usable, only initiator
@@ -28,8 +30,8 @@ public class SfTargetData extends AbsStorageVlmData implements SfTargetVlmProvid
     private final SfVlmDfnData vlmDfnData;
 
     public SfTargetData(
-        Volume vlmRef,
-        StorageRscData rscDataRef,
+        AbsVolume<RSC> vlmRef,
+        StorageRscData<RSC> rscDataRef,
         SfVlmDfnData vlmDfnDataRef,
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
@@ -89,7 +91,7 @@ public class SfTargetData extends AbsStorageVlmData implements SfTargetVlmProvid
     }
 
     @Override
-    public Volume getVolume()
+    public AbsVolume<RSC> getVolume()
     {
         return vlm;
     }

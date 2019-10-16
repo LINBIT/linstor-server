@@ -22,25 +22,25 @@ public class SatelliteStorageLayerDriver implements StorageLayerDatabaseDriver
     }
 
     @Override
-    public void persist(StorageRscData storageRscDataRef)
+    public void persist(StorageRscData<?> storageRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(StorageRscData storgeRscDataRef)
+    public void delete(StorageRscData<?> storgeRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(VlmProviderObject vlmDataRef)
+    public void persist(VlmProviderObject<?> vlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(VlmProviderObject vlmDataRef)
+    public void delete(VlmProviderObject<?> vlmDataRef)
     {
         // no-op
     }
@@ -51,9 +51,10 @@ public class SatelliteStorageLayerDriver implements StorageLayerDatabaseDriver
         return NO_OP_ID_DRIVER;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<VlmProviderObject, StorPool> getStorPoolDriver()
+    public SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool> getStorPoolDriver()
     {
-        return (SingleColumnDatabaseDriver<VlmProviderObject, StorPool>) NO_OP_SINGLE_COL_DRIVER;
+        return (SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool>) NO_OP_SINGLE_COL_DRIVER;
     }
 }

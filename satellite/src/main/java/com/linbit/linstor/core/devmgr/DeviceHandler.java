@@ -7,12 +7,13 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.layer.DeviceLayer.LayerProcessResult;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
 import java.util.Collection;
+import java.util.List;
 
 public interface DeviceHandler
 {
@@ -22,14 +23,14 @@ public interface DeviceHandler
     );
 
     LayerProcessResult process(
-        RscLayerObject rscLayerData,
-        Collection<Snapshot> snapshots,
+        AbsRscLayerObject<Resource> rscLayerData,
+        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,
         DatabaseException;
 
-    void sendResourceCreatedEvent(RscLayerObject layerDataRef, UsageState usageStateRef);
+    void sendResourceCreatedEvent(AbsRscLayerObject<Resource> layerDataRef, UsageState usageStateRef);
 
-    void sendResourceDeletedEvent(RscLayerObject layerDataRef);
+    void sendResourceDeletedEvent(AbsRscLayerObject<Resource> layerDataRef);
 }

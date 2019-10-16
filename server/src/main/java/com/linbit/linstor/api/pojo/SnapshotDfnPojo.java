@@ -1,8 +1,10 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
+import com.linbit.utils.Pair;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ public class SnapshotDfnPojo implements SnapshotDefinitionApi
     private final List<SnapshotVolumeDefinitionApi> snapshotVlmDfns;
     private final long flags;
     private final Map<String, String> props;
+    private final List<Pair<String, RscDfnLayerDataApi>> layerData;
 
     public SnapshotDfnPojo(
         ResourceDefinitionApi rscDfnRef,
@@ -23,7 +26,8 @@ public class SnapshotDfnPojo implements SnapshotDefinitionApi
         String snapshotNameRef,
         List<SnapshotVolumeDefinitionApi> snapshotVlmDfnsRef,
         long flagsRef,
-        Map<String, String> propsRef
+        Map<String, String> propsRef,
+        List<Pair<String, RscDfnLayerDataApi>> layerDataRef
     )
     {
         rscDfn = rscDfnRef;
@@ -32,6 +36,7 @@ public class SnapshotDfnPojo implements SnapshotDefinitionApi
         snapshotVlmDfns = snapshotVlmDfnsRef;
         flags = flagsRef;
         props = propsRef;
+        layerData = layerDataRef;
     }
 
     @Override
@@ -68,5 +73,11 @@ public class SnapshotDfnPojo implements SnapshotDefinitionApi
     public Map<String, String> getProps()
     {
         return props;
+    }
+
+    @Override
+    public List<Pair<String, RscDfnLayerDataApi>> getLayerData()
+    {
+        return layerData;
     }
 }

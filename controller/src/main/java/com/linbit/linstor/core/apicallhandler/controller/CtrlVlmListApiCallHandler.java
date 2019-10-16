@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -23,7 +25,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuardFactory;
@@ -33,6 +35,7 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -42,8 +45,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
-
-import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlVlmListApiCallHandler
@@ -117,14 +118,15 @@ public class CtrlVlmListApiCallHandler
                     {
                         for (Resource rsc : rscDfn.streamResource(peerAccCtx.get())
                             .filter(rsc -> nodesFilter.isEmpty() ||
-                                nodesFilter.contains(rsc.getAssignedNode().getName()))
+                                nodesFilter.contains(rsc.getNode().getName()))
                             .collect(toList()))
                         {
                             // create our api object ourselves to filter the volumes by storage pools
 
                             // build volume list filtered by storage pools (if provided)
                             List<VolumeApi> volumes = new ArrayList<>();
-                            List<RscLayerObject> storageRscList = LayerUtils.getChildLayerDataByKind(
+                            List<AbsRscLayerObject<Resource>> storageRscList = LayerUtils
+                                .getChildLayerDataByKind(
                                 rsc.getLayerData(peerAccCtx.get()),
                                 DeviceLayerKind.STORAGE
                             );
@@ -136,7 +138,7 @@ public class CtrlVlmListApiCallHandler
                                 if (!addToList)
                                 {
                                     VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
-                                    for (RscLayerObject storageRsc : storageRscList)
+                                    for (AbsRscLayerObject<Resource> storageRsc : storageRscList)
                                     {
                                         if (storPoolsFilter.contains(
                                             storageRsc.getVlmProviderObject(vlmNr).getStorPool().getName())
@@ -163,7 +165,7 @@ public class CtrlVlmListApiCallHandler
                             }
 
                             List<ResourceConnectionApi> rscConns = new ArrayList<>();
-                            for (ResourceConnection rscConn : rsc.streamResourceConnections(peerAccCtx.get())
+                            for (ResourceConnection rscConn : rsc.streamAbsResourceConnections(peerAccCtx.get())
                                     .collect(toList()))
                             {
                                 rscConns.add(rscConn.getApiData(peerAccCtx.get()));
@@ -173,8 +175,8 @@ public class CtrlVlmListApiCallHandler
                             {
                                 RscPojo filteredRscVlms = new RscPojo(
                                     rscDfn.getName().getDisplayName(),
-                                    rsc.getAssignedNode().getName().getDisplayName(),
-                                    rsc.getAssignedNode().getUuid(),
+                                    rsc.getNode().getName().getDisplayName(),
+                                    rsc.getNode().getUuid(),
                                     rscDfn.getApiData(peerAccCtx.get()),
                                     rsc.getUuid(),
                                     rsc.getStateFlags().getFlagsBits(peerAccCtx.get()),
@@ -231,7 +233,8 @@ public class CtrlVlmListApiCallHandler
     }
 
     private Long getAllocated(
-        Map<Volume.Key, VlmAllocatedResult> vlmAllocatedCapacities, Volume vlm
+        Map<Volume.Key, VlmAllocatedResult> vlmAllocatedCapacities,
+        Volume vlm
     )
         throws AccessDeniedException
     {
@@ -321,13 +324,13 @@ public class CtrlVlmListApiCallHandler
 
     public static String getVlmDescriptionInline(Volume vlm)
     {
-        return getVlmDescriptionInline(vlm.getResource(), vlm.getVolumeDefinition());
+        return getVlmDescriptionInline(vlm.getAbsResource(), vlm.getVolumeDefinition());
     }
 
     public static String getVlmDescriptionInline(Resource rsc, VolumeDefinition vlmDfn)
     {
         return getVlmDescriptionInline(
-            rsc.getAssignedNode().getName().displayValue,
+            rsc.getNode().getName().displayValue,
             rsc.getDefinition().getName().displayValue,
             vlmDfn.getVolumeNumber().value
         );
@@ -340,13 +343,13 @@ public class CtrlVlmListApiCallHandler
 
     public static String getVlmDescription(Volume vlm)
     {
-        return getVlmDescription(vlm.getResource(), vlm.getVolumeDefinition());
+        return getVlmDescription(vlm.getAbsResource(), vlm.getVolumeDefinition());
     }
 
     public static String getVlmDescription(Resource rsc, VolumeDefinition vlmDfn)
     {
         return getVlmDescription(
-            rsc.getAssignedNode().getName().displayValue,
+            rsc.getNode().getName().displayValue,
             rsc.getDefinition().getName().displayValue,
             vlmDfn.getVolumeNumber().value
         );

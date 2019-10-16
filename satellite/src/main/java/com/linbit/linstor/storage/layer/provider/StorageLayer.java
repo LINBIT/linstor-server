@@ -10,7 +10,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -20,11 +19,14 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 
@@ -33,7 +35,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -77,9 +77,9 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void resourceFinished(RscLayerObject layerDataRef) throws AccessDeniedException
+    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
     {
-        if (layerDataRef.getResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE))
+        if (layerDataRef.getAbsResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE))
         {
             resourceProcessorProvider.get().sendResourceDeletedEvent(layerDataRef);
         }
@@ -123,15 +123,18 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void prepare(Set<RscLayerObject> rscObjList, Set<Snapshot> snapshots)
+    public void prepare(
+        Set<AbsRscLayerObject<Resource>> rscObjList,
+        Set<AbsRscLayerObject<Snapshot>> snapObjList
+    )
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        Map<DeviceProvider, Pair<List<VlmProviderObject>, List<SnapshotVolume>>> groupedData;
+        Map<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> groupedData;
         groupedData = new HashMap<>();
 
-        for (RscLayerObject rscLayerObject : rscObjList)
+        for (AbsRscLayerObject<Resource> rscLayerObject : rscObjList)
         {
-            for (VlmProviderObject vlmProviderObject : rscLayerObject.getVlmLayerObjects().values())
+            for (VlmProviderObject<Resource> vlmProviderObject : rscLayerObject.getVlmLayerObjects().values())
             {
                 getOrCreatePair(
                     groupedData,
@@ -140,35 +143,33 @@ public class StorageLayer implements DeviceLayer
             }
         }
 
-        for (Snapshot snapshot : snapshots)
+        for (AbsRscLayerObject<Snapshot> snapLayerObject : snapObjList)
         {
-            for (SnapshotVolume snapVlm : snapshot.getAllSnapshotVolumes(storDriverAccCtx))
+            for (VlmProviderObject<Snapshot> snapVlmProviderObject : snapLayerObject.getVlmLayerObjects().values())
             {
-                Map<String, DeviceProvider> classifier = getDeviceProviders(snapVlm);
-                for (DeviceProvider devProvider : classifier.values())
-                {
-                    getOrCreatePair(
-                        groupedData,
-                        devProvider
-                    ).objB.add(snapVlm);
-                }
+                getOrCreatePair(
+                    groupedData,
+                    getDevProviderByVlmObj(snapVlmProviderObject)
+                ).objB.add(snapVlmProviderObject);
             }
         }
-        for (Entry<DeviceProvider, Pair<List<VlmProviderObject>, List<SnapshotVolume>>> entry : groupedData.entrySet())
+        for (Entry<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> entry : groupedData.entrySet()
+        )
         {
             DeviceProvider deviceProvider = entry.getKey();
-            Pair<List<VlmProviderObject>, List<SnapshotVolume>> pair = entry.getValue();
+            Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> pair = entry.getValue();
 
             deviceProvider.prepare(pair.objA, pair.objB);
         }
     }
 
-    private Pair<List<VlmProviderObject>, List<SnapshotVolume>> getOrCreatePair(
-        Map<DeviceProvider, Pair<List<VlmProviderObject>, List<SnapshotVolume>>> groupedData,
+    private Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> getOrCreatePair(
+        Map<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> groupedData,
         DeviceProvider deviceProvider
     )
     {
-        Pair<List<VlmProviderObject>, List<SnapshotVolume>> pair = groupedData.get(deviceProvider);
+        Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> pair = groupedData
+            .get(deviceProvider);
         if (pair == null)
         {
             pair = new Pair<>(new ArrayList<>(), new ArrayList<>());
@@ -178,42 +179,33 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject vlmObj) throws AccessDeniedException, DatabaseException
+    public void updateGrossSize(VlmProviderObject<Resource> vlmObj)
+        throws AccessDeniedException, DatabaseException
     {
         getDevProviderByVlmObj(vlmObj).updateGrossSize(vlmObj);
     }
 
     @Override
     public LayerProcessResult process(
-        RscLayerObject rscLayerData,
-        Collection<Snapshot> snapshots,
+        AbsRscLayerObject<Resource> rscLayerData,
+        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
-        Map<DeviceProvider, List<VlmProviderObject>> groupedVolumes =
+        Map<DeviceProvider, List<VlmProviderObject<Resource>>> groupedVolumes =
             rscLayerData == null ? // == null when processing unprocessed snapshots
                 Collections.emptyMap() :
                 rscLayerData.streamVlmLayerObjects().collect(Collectors.groupingBy(this::getDevProviderByVlmObj));
 
-        Map<DeviceProvider, List<SnapshotVolume>> groupedSnapshotVolumes = new HashMap<>();
-        for (Snapshot snapshot : snapshots)
-        {
-            for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(storDriverAccCtx))
-            {
-                Map<String, DeviceProvider> deviceProviders = getDeviceProviders(snapshotVolume);
-                for (DeviceProvider devProvider : deviceProviders.values())
-                {
-                    List<SnapshotVolume> list = groupedSnapshotVolumes.get(devProvider);
-                    if (list == null)
-                    {
-                        list = new ArrayList<>();
-                        groupedSnapshotVolumes.put(devProvider, list);
-                    }
-                    list.add(snapshotVolume);
-                }
-            }
-        }
+        Map<DeviceProvider, List<VlmProviderObject<Snapshot>>> groupedSnapshotVolumes = snapshotList.stream()
+            .flatMap(
+                snap -> LayerRscUtils.getRscDataByProvider(
+                    AccessUtils.execPrivileged(() -> snap.getLayerData(storDriverAccCtx)), DeviceLayerKind.STORAGE
+                ).stream()
+            )
+            .flatMap(snapData -> snapData.getVlmLayerObjects().values().stream())
+            .collect(Collectors.groupingBy(this::getDevProviderByVlmObj));
 
         Set<DeviceProvider> deviceProviders = new HashSet<>();
         deviceProviders.addAll(
@@ -231,8 +223,8 @@ public class StorageLayer implements DeviceLayer
 
         for (DeviceProvider devProvider : deviceProviders)
         {
-            List<VlmProviderObject> vlmDataList = groupedVolumes.get(devProvider);
-            List<SnapshotVolume> snapVlmList = groupedSnapshotVolumes.get(devProvider);
+            List<VlmProviderObject<Resource>> vlmDataList = groupedVolumes.get(devProvider);
+            List<VlmProviderObject<Snapshot>> snapVlmList = groupedSnapshotVolumes.get(devProvider);
 
             if (vlmDataList == null)
             {
@@ -244,9 +236,12 @@ public class StorageLayer implements DeviceLayer
             }
             devProvider.process(vlmDataList, snapVlmList, apiCallRc);
 
-            for (VlmProviderObject vlmData : vlmDataList)
+            for (VlmProviderObject<Resource> vlmData : vlmDataList)
             {
-                if (vlmData.exists() && vlmData.getVolume().getFlags().isSet(storDriverAccCtx, Volume.Flags.DELETE))
+                if (
+                    vlmData.exists() &&
+                    ((Volume) vlmData.getVolume()).getFlags().isSet(storDriverAccCtx, Volume.Flags.DELETE)
+                )
                 {
                     throw new ImplementationError(
                         devProvider.getClass().getSimpleName() + " did not delete the volume " + vlmData
@@ -284,27 +279,9 @@ public class StorageLayer implements DeviceLayer
         return spaceMap;
     }
 
-    private DeviceProvider getDevProviderByVlmObj(VlmProviderObject vlmLayerObject)
+    private DeviceProvider getDevProviderByVlmObj(VlmProviderObject<?> vlmLayerObject)
     {
         return deviceProviderMapper.getDeviceProviderByKind(vlmLayerObject.getProviderKind());
-    }
-
-    private Map<String, DeviceProvider> getDeviceProviders(SnapshotVolume snapVlm)
-    {
-        Map<String, DeviceProvider> devProviderMap = new TreeMap<>();
-        try
-        {
-            StorPool storPool = snapVlm.getStorPool(storDriverAccCtx);
-            devProviderMap.put(
-                "",
-                deviceProviderMapper.getDeviceProviderByStorPool(storPool)
-            );
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return devProviderMap;
     }
 
     private Either<SpaceInfo, ApiRcException> getStoragePoolSpaceInfoOrError(StorPool storPool)

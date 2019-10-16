@@ -7,6 +7,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
@@ -56,6 +57,7 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_NODES;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +68,7 @@ import java.util.regex.Matcher;
 import com.fasterxml.jackson.jr.ob.api.MapBuilder;
 
 @Singleton
-public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiatorData>
+public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiatorData<Resource>>
 {
     private static final long POLL_VLM_ATTACH_TIMEOUT_DEFAULT = 1000;
     private static final long POLL_VLM_ATTACH_MAX_TRIES_DEFAULT = 290;
@@ -102,7 +104,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     }
 
     @Override
-    protected void createImpl(SfInitiatorData vlmData)
+    protected void createImpl(SfInitiatorData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         try
@@ -140,7 +142,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     }
 
     @Override
-    protected void deleteImpl(SfInitiatorData vlmData)
+    protected void deleteImpl(SfInitiatorData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         try
@@ -184,14 +186,14 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         }
     }
 
-    private boolean isSfVolumeAttached(SfInitiatorData vlmData)
+    private boolean isSfVolumeAttached(SfInitiatorData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         return getSfVolumeEndpointDurableNameNqn(vlmData) != null;
     }
 
     @SuppressWarnings("unchecked")
-    private String getSfVolumeEndpointDurableNameNqn(SfInitiatorData vlmData)
+    private String getSfVolumeEndpointDurableNameNqn(SfInitiatorData<Resource> vlmData)
         throws StorageException
     {
         RestResponse<Map<String, Object>> sfVlmResp = getSfVlm(vlmData);
@@ -246,7 +248,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     }
 
     @SuppressWarnings("unchecked")
-    private void waitUntilSfVlmIsAttachable(SfInitiatorData vlmData)
+    private void waitUntilSfVlmIsAttachable(SfInitiatorData<Resource> vlmData)
         throws InterruptedException, IOException, StorageException, AccessDeniedException,
         InvalidKeyException, DatabaseException
     {
@@ -334,7 +336,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         clearAndSet(vlmData, SfInitiatorData.ATTACHABLE);
     }
 
-    private void attachSfVolume(SfInitiatorData vlmData)
+    private void attachSfVolume(SfInitiatorData<Resource> vlmData)
         throws IOException, StorageException
     {
         String attachAction = SF_BASE + SF_NODES + "/" + getComposedNodeId() + SF_ACTIONS +
@@ -358,7 +360,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         clearAndSet(vlmData, SfInitiatorData.ATTACHING);
     }
 
-    public String getVolumePath(SfInitiatorData vlmData)
+    public String getVolumePath(SfInitiatorData<Resource> vlmData)
         throws StorageException, AccessDeniedException, InvalidKeyException
     {
         ReadOnlyProps stltRoProps = stltConfigAccessor.getReadonlyProps();
@@ -453,7 +455,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     }
 
     @SuppressWarnings("unchecked")
-    private String detatchSfVlm(SfInitiatorData vlmData)
+    private String detatchSfVlm(SfInitiatorData<Resource> vlmData)
         throws IOException, StorageException
     {
         //        String sfStorSvcId = getSfStorSvcId(vlmDfnProps);
@@ -537,7 +539,7 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
         return composedNodeId;
     }
 
-    private RestResponse<Map<String, Object>> getSfVlm(SfInitiatorData vlmData)
+    private RestResponse<Map<String, Object>> getSfVlm(SfInitiatorData<Resource> vlmData)
         throws StorageException
     {
         return getSwordfishResource(
@@ -548,16 +550,16 @@ public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiator
     }
 
     @Override
-    protected void setUsableSize(SfInitiatorData vlmData, long size) throws DatabaseException
+    protected void setUsableSize(SfInitiatorData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setUsableSize(size);
     }
 
     @Override
-    public void updateAllocatedSize(VlmProviderObject vlmDataRef)
+    public void updateAllocatedSize(VlmProviderObject<Resource> vlmDataRef)
         throws AccessDeniedException, DatabaseException, StorageException
     {
-        SfInitiatorData vlmData = (SfInitiatorData) vlmDataRef;
+        SfInitiatorData<Resource> vlmData = (SfInitiatorData<Resource>) vlmDataRef;
         vlmData.setAllocatedSize(StltProviderUtils.getAllocatedSize(vlmData, extCmdFactory.create()));
     }
 }

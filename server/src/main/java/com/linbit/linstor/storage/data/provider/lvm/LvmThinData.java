@@ -2,8 +2,9 @@ package com.linbit.linstor.storage.data.provider.lvm;
 
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -17,15 +18,16 @@ import javax.inject.Provider;
 
 import java.util.ArrayList;
 
-public class LvmThinData extends LvmData
+public class LvmThinData<RSC extends AbsResource<RSC>>
+    extends LvmData<RSC>
 {
     // not persisted, not serialized, stlt only (copied from storpool)
     private transient String thinPool;
     private transient float dataPercent;
 
     public LvmThinData(
-        Volume vlm,
-        StorageRscData rscData,
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> rscData,
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,

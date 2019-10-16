@@ -3,10 +3,11 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -39,7 +40,7 @@ import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -102,12 +103,12 @@ public class LayerDataFactory
         transObjFactory = transObjFactoryRef;
     }
 
-    public DrbdRscData createDrbdRscData(
+    public <RSC extends AbsResource<RSC>> DrbdRscData<RSC> createDrbdRscData(
         int rscLayerId,
-        Resource rsc,
+        RSC rsc,
         String rscNameSuffix,
-        @Nullable RscLayerObject parent,
-        DrbdRscDfnData rscDfnData,
+        @Nullable AbsRscLayerObject<RSC> parent,
+        DrbdRscDfnData<RSC> rscDfnData,
         NodeId nodeId,
         @Nullable Short peerSlots,
         @Nullable Integer alStripes,
@@ -116,7 +117,7 @@ public class LayerDataFactory
     )
         throws DatabaseException
     {
-        DrbdRscData drbdRscData = new DrbdRscData(
+        DrbdRscData<RSC> drbdRscData = new DrbdRscData<>(
             rscLayerId,
             rsc,
             parent,
@@ -138,8 +139,9 @@ public class LayerDataFactory
         return drbdRscData;
     }
 
-    public DrbdRscDfnData createDrbdRscDfnData(
-        ResourceDefinition rscDfn,
+    public <RSC extends AbsResource<RSC>> DrbdRscDfnData<RSC> createDrbdRscDfnData(
+        ResourceName rscName,
+        SnapshotName snapName,
         String resourceNameSuffix,
         short peerSlots,
         int alStripes,
@@ -150,8 +152,9 @@ public class LayerDataFactory
     )
         throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
-        DrbdRscDfnData drbdRscDfnData = new DrbdRscDfnData(
-            rscDfn,
+        DrbdRscDfnData<RSC> drbdRscDfnData = new DrbdRscDfnData<>(
+            rscName,
+            snapName,
             resourceNameSuffix,
             peerSlots,
             alStripes,
@@ -170,16 +173,18 @@ public class LayerDataFactory
         return drbdRscDfnData;
     }
 
-    public DrbdVlmDfnData createDrbdVlmDfnData(
+    public <RSC extends AbsResource<RSC>> DrbdVlmDfnData<RSC> createDrbdVlmDfnData(
         VolumeDefinition vlmDfn,
+        SnapshotName snapName,
         String resourceNameSuffix,
         Integer minorNrInt,
-        DrbdRscDfnData drbdRscDfnData
+        DrbdRscDfnData<RSC> drbdRscDfnData
     )
         throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
-        DrbdVlmDfnData drbdVlmDfnData = new DrbdVlmDfnData(
+        DrbdVlmDfnData<RSC> drbdVlmDfnData = new DrbdVlmDfnData<>(
             vlmDfn,
+            snapName,
             resourceNameSuffix,
             minorNrInt,
             minorPool,
@@ -191,15 +196,15 @@ public class LayerDataFactory
         return drbdVlmDfnData;
     }
 
-    public DrbdVlmData createDrbdVlmData(
-        Volume vlm,
+    public <RSC extends AbsResource<RSC>> DrbdVlmData<RSC> createDrbdVlmData(
+        AbsVolume<RSC> vlm,
         StorPool extMetaStorPool,
-        DrbdRscData rscData,
-        DrbdVlmDfnData vlmDfnData
+        DrbdRscData<RSC> rscData,
+        DrbdVlmDfnData<RSC> vlmDfnData
     )
         throws DatabaseException
     {
-        DrbdVlmData drbdVlmData = new DrbdVlmData(
+        DrbdVlmData<RSC> drbdVlmData = new DrbdVlmData<>(
             vlm,
             rscData,
             vlmDfnData,
@@ -212,15 +217,15 @@ public class LayerDataFactory
         return drbdVlmData;
     }
 
-    public DisklessData createDisklessData(
-        Volume vlm,
+    public <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> DisklessData<RSC> createDisklessData(
+        VLM vlm,
         long usableSize,
-        StorageRscData rscData,
+        StorageRscData<RSC> rscData,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        DisklessData disklessData = new DisklessData(
+        DisklessData<RSC> disklessData = new DisklessData<>(
             vlm,
             rscData,
             usableSize,
@@ -233,15 +238,15 @@ public class LayerDataFactory
         return disklessData;
     }
 
-    public LuksRscData createLuksRscData(
+    public <RSC extends AbsResource<RSC>> LuksRscData<RSC> createLuksRscData(
         int rscLayerId,
-        Resource rsc,
+        RSC rsc,
         String rscNameSuffix,
-        RscLayerObject parentData
+        AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
-        LuksRscData luksRscData = new LuksRscData(
+        LuksRscData<RSC> luksRscData = new LuksRscData<>(
             rscLayerId,
             rsc,
             rscNameSuffix,
@@ -257,14 +262,14 @@ public class LayerDataFactory
         return luksRscData;
     }
 
-    public LuksVlmData createLuksVlmData(
-        Volume vlm,
-        LuksRscData rscData,
+    public <RSC extends AbsResource<RSC>> LuksVlmData<RSC> createLuksVlmData(
+        AbsVolume<RSC> vlm,
+        LuksRscData<RSC> rscData,
         byte[] password
     )
         throws DatabaseException
     {
-        LuksVlmData luksVlmData = new LuksVlmData(
+        LuksVlmData<RSC> luksVlmData = new LuksVlmData<>(
             vlm,
             rscData,
             password,
@@ -276,15 +281,15 @@ public class LayerDataFactory
         return luksVlmData;
     }
 
-    public StorageRscData createStorageRscData(
+    public <RSC extends AbsResource<RSC>> StorageRscData<RSC> createStorageRscData(
         int rscLayerId,
-        RscLayerObject parentRscData,
-        Resource rsc,
+        AbsRscLayerObject<RSC> parentRscData,
+        RSC rsc,
         String rscNameSuffix
     )
         throws DatabaseException
     {
-        StorageRscData storageRscData = new StorageRscData(
+        StorageRscData<RSC> storageRscData = new StorageRscData<>(
             rscLayerId,
             parentRscData,
             rsc,
@@ -299,15 +304,15 @@ public class LayerDataFactory
         return storageRscData;
     }
 
-    public NvmeRscData createNvmeRscData(
+    public <RSC extends AbsResource<RSC>> NvmeRscData<RSC> createNvmeRscData(
         int rscLayerId,
-        Resource rsc,
+        RSC rsc,
         String rscNameSuffix,
-        RscLayerObject parentData
+        AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
-        NvmeRscData nvmeRscData = new NvmeRscData(
+        NvmeRscData<RSC> nvmeRscData = new NvmeRscData<>(
             rscLayerId,
             rsc,
             parentData,
@@ -323,9 +328,12 @@ public class LayerDataFactory
         return nvmeRscData;
     }
 
-    public NvmeVlmData createNvmeVlmData(Volume vlm, NvmeRscData rscData)
+    public <RSC extends AbsResource<RSC>> NvmeVlmData<RSC> createNvmeVlmData(
+        AbsVolume<RSC> vlm,
+        NvmeRscData<RSC> rscData
+    )
     {
-        return new NvmeVlmData(
+        return new NvmeVlmData<RSC>(
             vlm,
             rscData,
             transObjFactory,
@@ -333,15 +341,15 @@ public class LayerDataFactory
         );
     }
 
-    public WritecacheRscData createWritecacheRscData(
+    public <RSC extends AbsResource<RSC>> WritecacheRscData<RSC> createWritecacheRscData(
         int rscLayerId,
-        Resource rsc,
+        RSC rsc,
         String rscNameSuffix,
-        RscLayerObject parentData
+        AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
-        WritecacheRscData writecacheRscData = new WritecacheRscData(
+        WritecacheRscData<RSC> writecacheRscData = new WritecacheRscData<>(
             rscLayerId,
             rsc,
             parentData,
@@ -357,13 +365,13 @@ public class LayerDataFactory
         return writecacheRscData;
     }
 
-    public WritecacheVlmData createWritecacheVlmData(
-        Volume vlm,
+    public <RSC extends AbsResource<RSC>> WritecacheVlmData<RSC> createWritecacheVlmData(
+        AbsVolume<RSC> vlm,
         StorPool cacheStorPool,
-        WritecacheRscData rscData
+        WritecacheRscData<RSC> rscData
     )
     {
-        return new WritecacheVlmData(
+        return new WritecacheVlmData<>(
             vlm,
             rscData,
             cacheStorPool,
@@ -373,14 +381,14 @@ public class LayerDataFactory
         );
     }
 
-    public LvmData createLvmData(
-        Volume vlm,
-        StorageRscData rscData,
+    public <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> LvmData<RSC> createLvmData(
+        VLM vlm,
+        StorageRscData<RSC> rscData,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        LvmData lvmData = new LvmData(
+        LvmData<RSC> lvmData = new LvmData<>(
             vlm,
             rscData,
             storPoolRef,
@@ -392,14 +400,14 @@ public class LayerDataFactory
         return lvmData;
     }
 
-    public LvmThinData createLvmThinData(
-        Volume vlm,
-        StorageRscData rscData,
+    public <RSC extends AbsResource<RSC>> LvmThinData<RSC> createLvmThinData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> rscData,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        LvmThinData lvmThinData = new LvmThinData(
+        LvmThinData<RSC> lvmThinData = new LvmThinData<>(
             vlm,
             rscData,
             storPoolRef,
@@ -411,14 +419,14 @@ public class LayerDataFactory
         return lvmThinData;
     }
 
-    public SpdkData createSpdkData(
-        Volume vlm,
-        StorageRscData rscData,
+    public <RSC extends AbsResource<RSC>> SpdkData<RSC> createSpdkData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> rscData,
         StorPool storPoolRef
     )
-            throws DatabaseException
+        throws DatabaseException
     {
-        SpdkData spdkData = new SpdkData(
+        SpdkData<RSC> spdkData = new SpdkData<>(
             vlm,
             rscData,
             storPoolRef,
@@ -430,15 +438,15 @@ public class LayerDataFactory
         return spdkData;
     }
 
-    public SfInitiatorData createSfInitData(
-        Volume vlmRef,
-        StorageRscData storRscDataRef,
+    public <RSC extends AbsResource<RSC>> SfInitiatorData<RSC> createSfInitData(
+        AbsVolume<RSC> vlmRef,
+        StorageRscData<RSC> storRscDataRef,
         SfVlmDfnData sfVlmDfnData,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        SfInitiatorData sfInitiatorData = new SfInitiatorData(
+        SfInitiatorData<RSC> sfInitiatorData = new SfInitiatorData<>(
             storRscDataRef,
             vlmRef,
             sfVlmDfnData,
@@ -452,15 +460,15 @@ public class LayerDataFactory
         return sfInitiatorData;
     }
 
-    public SfTargetData createSfTargetData(
-        Volume vlm,
-        StorageRscData rscData,
+    public <RSC extends AbsResource<RSC>> SfTargetData<RSC> createSfTargetData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> rscData,
         SfVlmDfnData sfVlmDfnData,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        SfTargetData sfTargetData = new SfTargetData(
+        SfTargetData<RSC> sfTargetData = new SfTargetData<RSC>(
             vlm,
             rscData,
             sfVlmDfnData,
@@ -494,15 +502,15 @@ public class LayerDataFactory
     }
 
 
-    public ZfsData createZfsData(
-        Volume vlm,
-        StorageRscData rscData,
+    public <RSC extends AbsResource<RSC>> ZfsData<RSC> createZfsData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> rscData,
         DeviceProviderKind kind,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        ZfsData zfsData = new ZfsData(
+        ZfsData<RSC> zfsData = new ZfsData<>(
             vlm,
             rscData,
             kind,
@@ -515,10 +523,15 @@ public class LayerDataFactory
         return zfsData;
     }
 
-    public FileData createFileData(Volume vlm, StorageRscData rscData, DeviceProviderKind kind, StorPool storPool)
+    public <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> FileData<RSC> createFileData(
+        VLM vlm,
+        StorageRscData<RSC> rscData,
+        DeviceProviderKind kind,
+        StorPool storPool
+    )
         throws DatabaseException
     {
-        FileData fileData = new FileData(
+        FileData<RSC> fileData = new FileData<>(
             vlm,
             rscData,
             kind,

@@ -8,9 +8,10 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -41,6 +42,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,12 +52,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Singleton
-public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
+public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, LvmData<Snapshot>>
 {
     private static final int TOLERANCE_FACTOR = 3;
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     public static final String FORMAT_RSC_TO_LVM_ID = "%s%s_%05d";
-    // snapshots look like FORMAT_RSC_TO_LVM_ID + "_%s". should not cause naming conflict
+    public static final String FORMAT_SNAP_TO_LVM_ID = FORMAT_RSC_TO_LVM_ID + "_%s";
     private static final String FORMAT_LVM_ID_WIPE_IN_PROGRESS = "%s-linstor_wiping_in_progress-%d";
     private static final String FORMAT_DEV_PATH = "/dev/%s/%s";
 
@@ -113,14 +115,19 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     @Override
-    protected void updateStates(List<LvmData> vlmDataList, Collection<SnapshotVolume> snapshots)
+    protected void updateStates(List<LvmData<Resource>> vlmDataList, List<LvmData<Snapshot>> snapVlmDataList)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
             extCmdFactory.create(),
-            getAffectedVolumeGroups(vlmDataList, snapshots)
+            getAffectedVolumeGroups(vlmDataList, snapVlmDataList)
         );
-        for (LvmData vlmData : vlmDataList)
+
+        List<LvmData<?>> combinedList = new ArrayList<>();
+        combinedList.addAll(vlmDataList);
+        combinedList.addAll(snapVlmDataList);
+
+        for (LvmData<?> vlmData : combinedList)
         {
             final LvsInfo info = infoListCache.get(getFullQualifiedIdentifier(vlmData));
             updateInfo(vlmData, info);
@@ -156,63 +163,74 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                 }
             }
         }
-
-        updateSnapshotStates(snapshots);
     }
 
-    private String getFullQualifiedIdentifier(LvmData vlmDataRef)
+    protected String getFullQualifiedIdentifier(LvmData<?> vlmDataRef)
     {
         return vlmDataRef.getVolumeGroup() +
             File.separator +
-            asLvIdentifier(vlmDataRef);
+            asIdentifierRaw(vlmDataRef);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected String asIdentifierRaw(LvmData<?> vlmData)
+    {
+        String identifier;
+        if (vlmData.getVolume() instanceof Volume)
+        {
+            identifier = asLvIdentifier((LvmData<Resource>) vlmData);
+        }
+        else
+        {
+            identifier = asSnapLvIdentifier((LvmData<Snapshot>) vlmData);
+        }
+        return identifier;
     }
 
     /*
      * Expected to be overridden (extended) by LvmThinProvider
      */
-    protected void updateInfo(LvmData vlmData, LvsInfo info)
+    @SuppressWarnings({"unchecked", "unused"})
+    protected void updateInfo(LvmData<?> vlmDataRef, LvsInfo info)
         throws DatabaseException, AccessDeniedException, StorageException
     {
-        vlmData.setIdentifier(asLvIdentifier(vlmData));
-        if (info == null)
+        if (vlmDataRef.getVolume() instanceof Volume)
         {
-            vlmData.setExists(false);
-            vlmData.setVolumeGroup(extractVolumeGroup(vlmData));
-            vlmData.setDevicePath(null);
-            vlmData.setAllocatedSize(-1);
-            // vlmData.setUsableSize(-1);
-            vlmData.setDevicePath(null);
-            vlmData.setAttributes(null);
+            vlmDataRef.setIdentifier(asLvIdentifier((LvmData<Resource>) vlmDataRef));
         }
         else
         {
-            vlmData.setExists(true);
-            vlmData.setVolumeGroup(info.volumeGroup);
-            vlmData.setDevicePath(info.path);
-            vlmData.setIdentifier(info.identifier);
-            vlmData.setAllocatedSize(info.size);
-            vlmData.setUsableSize(info.size);
-            vlmData.setAttributes(info.attributes);
+            vlmDataRef.setIdentifier(asSnapLvIdentifier((LvmData<Snapshot>) vlmDataRef));
+        }
+        if (info == null)
+        {
+            vlmDataRef.setExists(false);
+            vlmDataRef.setVolumeGroup(extractVolumeGroup(vlmDataRef));
+            vlmDataRef.setDevicePath(null);
+            vlmDataRef.setAllocatedSize(-1);
+            // vlmData.setUsableSize(-1);
+            vlmDataRef.setDevicePath(null);
+            vlmDataRef.setAttributes(null);
+        }
+        else
+        {
+            vlmDataRef.setExists(true);
+            vlmDataRef.setVolumeGroup(info.volumeGroup);
+            vlmDataRef.setDevicePath(info.path);
+            vlmDataRef.setIdentifier(info.identifier);
+            vlmDataRef.setAllocatedSize(info.size);
+            vlmDataRef.setUsableSize(info.size);
+            vlmDataRef.setAttributes(info.attributes);
         }
     }
 
-    protected String extractVolumeGroup(LvmData vlmData)
+    protected String extractVolumeGroup(LvmData<?> vlmData)
     {
         return getVolumeGroup(vlmData.getStorPool());
     }
 
-    /*
-     * Expected to be overridden by LvmThinProvider
-     */
-    @SuppressWarnings("unused")
-    protected void updateSnapshotStates(Collection<SnapshotVolume> snapshots)
-        throws AccessDeniedException, DatabaseException
-    {
-        // no-op
-    }
-
     @Override
-    protected void createLvImpl(LvmData vlmData)
+    protected void createLvImpl(LvmData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
         LvmCommands.createFat(
@@ -224,12 +242,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         );
     }
 
-    protected String getLvCreateType(LvmData vlmDataRef)
+    protected String getLvCreateType(LvmData<Resource> vlmDataRef)
     {
         String type;
         try
         {
-            Volume vlm = vlmDataRef.getVolume();
+            Volume vlm = (Volume) vlmDataRef.getVolume();
             ResourceDefinition rscDfn = vlm.getResourceDefinition();
             ResourceGroup rscGrp = rscDfn.getResourceGroup();
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
@@ -255,7 +273,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     @Override
-    protected void resizeLvImpl(LvmData vlmData)
+    protected void resizeLvImpl(LvmData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
         LvmCommands.resize(
@@ -267,7 +285,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     @Override
-    protected void deleteLvImpl(LvmData vlmData, String oldLvmId)
+    protected void deleteLvImpl(LvmData<Resource> vlmData, String oldLvmId)
         throws StorageException, DatabaseException, AccessDeniedException
     {
         String devicePath = vlmData.getDevicePath();
@@ -333,7 +351,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     @Override
-    protected Map<String, LvsInfo> getInfoListImpl(List<LvmData> vlmDataList, List<SnapshotVolume> snapVlms)
+    protected Map<String, LvsInfo> getInfoListImpl(
+        List<LvmData<Resource>> vlmDataList,
+        List<LvmData<Snapshot>> snapVlms
+    )
         throws StorageException, AccessDeniedException
     {
         return LvmUtils.getLvsInfo(
@@ -356,6 +377,18 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             resourceName.displayValue,
             rscNameSuffix,
             volumeNumber.value
+        );
+    }
+
+    @Override
+    protected String asSnapLvIdentifierRaw(String rscNameRef, String rscNameSuffixRef, String snapNameRef, int vlmNrRef)
+    {
+        return String.format(
+            FORMAT_SNAP_TO_LVM_ID,
+            rscNameRef,
+            rscNameSuffixRef,
+            vlmNrRef,
+            snapNameRef
         );
     }
 
@@ -442,13 +475,16 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     }
 
     private Set<String> getAffectedVolumeGroups(
-        Collection<LvmData> vlmDataList,
-        Collection<SnapshotVolume> snapVlms
+        Collection<LvmData<Resource>> vlmDataList,
+        Collection<LvmData<Snapshot>> snapVlms
     )
-        throws AccessDeniedException
     {
+        ArrayList<LvmData<?>> combinedList = new ArrayList<>();
+        combinedList.addAll(vlmDataList);
+        combinedList.addAll(snapVlms);
+
         Set<String> volumeGroups = new HashSet<>();
-        for (LvmData vlmData : vlmDataList)
+        for (LvmData<?> vlmData : combinedList)
         {
             String volumeGroup = vlmData.getVolumeGroup();
             if (volumeGroup == null)
@@ -461,39 +497,35 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                 volumeGroups.add(volumeGroup);
             }
         }
-        for (SnapshotVolume snapVlm : snapVlms)
-        {
-            volumeGroups.add(getVolumeGroup(snapVlm.getStorPool(storDriverAccCtx)));
-        }
         return volumeGroups;
     }
 
     @Override
-    protected void setDevicePath(LvmData vlmData, String devPath) throws DatabaseException
+    protected void setDevicePath(LvmData<Resource> vlmData, String devPath) throws DatabaseException
     {
         vlmData.setDevicePath(devPath);
     }
 
     @Override
-    protected void setAllocatedSize(LvmData vlmData, long size) throws DatabaseException
+    protected void setAllocatedSize(LvmData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setAllocatedSize(size);
     }
 
     @Override
-    protected void setUsableSize(LvmData vlmData, long size) throws DatabaseException
+    protected void setUsableSize(LvmData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setUsableSize(size);
     }
 
     @Override
-    protected void setExpectedUsableSize(LvmData vlmData, long size)
+    protected void setExpectedUsableSize(LvmData<Resource> vlmData, long size)
     {
         vlmData.setExepectedSize(size);
     }
 
     @Override
-    protected String getStorageName(LvmData vlmDataRef) throws DatabaseException
+    protected String getStorageName(LvmData<Resource> vlmDataRef) throws DatabaseException
     {
         return vlmDataRef.getVolumeGroup();
     }

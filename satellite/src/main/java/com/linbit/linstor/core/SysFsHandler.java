@@ -19,7 +19,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
@@ -59,7 +59,7 @@ public class SysFsHandler
     private final ExtCmdFactory extCmdFactory;
     private final Map<String, String> cgroupBlkioThrottleReadBpsDeviceMap;
     private final Map<String, String> cgroupBlkioThrottleWriteBpsDeviceMap;
-    private final Map<VlmProviderObject, String> deviceMajorMinorMap;
+    private final Map<VlmProviderObject<Resource>, String> deviceMajorMinorMap;
     private final Props satelliteProps;
 
     public static final String DEVNAME = "DEVNAME";
@@ -102,7 +102,7 @@ public class SysFsHandler
     {
         for (Resource rsc : deleteListRef)
         {
-            RscLayerObject rscLayerData = rsc.getLayerData(apiCtx);
+            AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(apiCtx);
             execForAllVlmData(
                 rscLayerData,
                 true,
@@ -136,7 +136,7 @@ public class SysFsHandler
     {
         for (Resource rsc : updateList)
         {
-            RscLayerObject rscLayerData = rsc.getLayerData(apiCtx);
+            AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(apiCtx);
             execForAllVlmData(
                 rscLayerData,
                 true,
@@ -175,7 +175,7 @@ public class SysFsHandler
     }
 
     private void setThrottle(
-        VlmProviderObject vlmDataRef,
+        VlmProviderObject<Resource> vlmDataRef,
         String identifier,
         String apiKey,
         Map<String, String> deviceThrottleMap,
@@ -183,8 +183,8 @@ public class SysFsHandler
     )
         throws AccessDeniedException, InvalidKeyException, StorageException
     {
-        Volume vlm = vlmDataRef.getVolume();
-        Resource rsc = vlm.getResource();
+        Volume vlm = (Volume) vlmDataRef.getVolume();
+        Resource rsc = vlm.getAbsResource();
         ResourceDefinition rscDfn = vlm.getResourceDefinition();
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
@@ -202,7 +202,7 @@ public class SysFsHandler
             priorityProps.addProps(storPool.getDefinition(apiCtx).getProps(apiCtx));
         }
 
-        priorityProps.addProps(rsc.getAssignedNode().getProps(apiCtx));
+        priorityProps.addProps(rsc.getNode().getProps(apiCtx));
         priorityProps.addProps(satelliteProps);
 
         String expectedThrottle = priorityProps.getProp(
@@ -246,7 +246,7 @@ public class SysFsHandler
         }
     }
 
-    private String getMajorMinor(VlmProviderObject vlmDataRef) throws StorageException
+    private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws StorageException
     {
         String majMin = deviceMajorMinorMap.get(vlmDataRef);
         if (vlmDataRef.exists())
@@ -266,19 +266,19 @@ public class SysFsHandler
     }
 
     private void execForAllVlmData(
-        RscLayerObject rscLayerData,
+        AbsRscLayerObject<Resource> rscLayerData,
         boolean recursive,
-        Executor<VlmProviderObject> consumer
+        Executor<VlmProviderObject<Resource>> consumer
     )
         throws StorageException, AccessDeniedException, InvalidKeyException
     {
-        for (VlmProviderObject vlmData : rscLayerData.getVlmLayerObjects().values())
+        for (VlmProviderObject<Resource> vlmData : rscLayerData.getVlmLayerObjects().values())
         {
             consumer.exec(vlmData);
         }
         if (recursive)
         {
-            for (RscLayerObject childRscData : rscLayerData.getChildren())
+            for (AbsRscLayerObject<Resource> childRscData : rscLayerData.getChildren())
             {
                 execForAllVlmData(childRscData, recursive, consumer);
             }

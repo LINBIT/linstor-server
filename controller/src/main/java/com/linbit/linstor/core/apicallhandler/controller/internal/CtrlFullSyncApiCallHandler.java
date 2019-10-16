@@ -128,7 +128,7 @@ public class CtrlFullSyncApiCallHandler
                     Resource otherRsc = otherRscIterator.next();
                     if (otherRsc != rsc)
                     {
-                        nodes.add(otherRsc.getAssignedNode());
+                        nodes.add(otherRsc.getNode());
                     }
                 }
             }

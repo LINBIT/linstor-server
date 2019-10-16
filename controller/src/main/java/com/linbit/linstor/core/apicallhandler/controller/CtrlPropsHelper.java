@@ -11,13 +11,13 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -202,19 +202,19 @@ public class CtrlPropsHelper
             throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "access properties for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
-                    rsc.getAssignedNode().getName().displayValue + "'",
+                    rsc.getNode().getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
         return props;
     }
 
-    public Props getProps(Volume vlm)
+    public Props getProps(AbsVolume<?> vlm)
     {
         return getProps(peerAccCtx.get(), vlm);
     }
 
-    public Props getProps(AccessContext accCtx, Volume vlm)
+    public Props getProps(AccessContext accCtx, AbsVolume<?> vlm)
     {
         Props props;
         try
@@ -227,7 +227,7 @@ public class CtrlPropsHelper
                 accDeniedExc,
                 "access properties for volume with number '" + vlm.getVolumeDefinition().getVolumeNumber().value +
                     "' on resource '" + vlm.getResourceDefinition().getName().displayValue + "' " +
-                    "on node '" + vlm.getResource().getAssignedNode().getName().displayValue + "'",
+                    "on node '" + vlm.getAbsResource().getNode().getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_VLM
             );
         }

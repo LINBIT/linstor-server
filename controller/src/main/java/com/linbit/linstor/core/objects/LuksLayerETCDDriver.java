@@ -17,7 +17,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Base64;
@@ -67,24 +67,26 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
     }
 
     @Override
-    @SuppressWarnings("checkstyle:magicnumber")
-    public Pair<LuksRscData, Set<RscLayerObject>> load(
-        Resource rsc,
+    @SuppressWarnings({"checkstyle:magicnumber", "unchecked"})
+    public <RSC extends AbsResource<RSC>> Pair<LuksRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
+        RSC absRsc,
         int id,
         String rscSuffixRef,
-        RscLayerObject parentRef
+        AbsRscLayerObject<RSC> parentRef
     )
         throws DatabaseException
     {
-        Pair<DrbdRscData, Set<RscLayerObject>> ret;
-        Set<RscLayerObject> childrenRscDataList = new HashSet<>();
-        Map<VolumeNumber, LuksVlmData> vlmDataMap = new TreeMap<>();
-        LuksRscData rscData = new LuksRscData(
+        Pair<DrbdRscData<RSC>, Set<AbsRscLayerObject<RSC>>> ret;
+        Set<AbsRscLayerObject<RSC>> children = new HashSet<>();
+
+        Map<VolumeNumber, LuksVlmData<RSC>> vlmDataMap = new TreeMap<>();
+
+        LuksRscData<RSC> rscData = new LuksRscData<>(
             id,
-            rsc,
+            absRsc,
             rscSuffixRef,
             parentRef,
-            childrenRscDataList,
+            children,
             vlmDataMap,
             this,
             transObjFactory,
@@ -113,8 +115,8 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
             }
             vlmDataMap.put(
                 vlmNr,
-                new LuksVlmData(
-                    rsc.getVolume(vlmNr),
+                new LuksVlmData<>(
+                    absRsc.getVolume(vlmNr),
                     rscData,
                     Base64.decode(luksVlmByIdMap.get(EtcdUtils.buildKey(LayerLuksVolumes.ENCRYPTED_PASSWORD, pks))),
                     this,
@@ -123,25 +125,25 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
                 )
             );
         }
-        return new Pair<>(rscData, childrenRscDataList);
+        return new Pair<>(rscData, children);
     }
 
     @Override
-    public void persist(LuksRscData luksRscDataRef) throws DatabaseException
+    public void persist(LuksRscData<?> luksRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if LuksRscData will get a database table in future.
     }
 
     @Override
-    public void delete(LuksRscData luksRscDataRef) throws DatabaseException
+    public void delete(LuksRscData<?> luksRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if LuksRscData will get a database table in future.
     }
 
     @Override
-    public void persist(LuksVlmData luksVlmDataRef) throws DatabaseException
+    public void persist(LuksVlmData<?> luksVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating LuksVlmData %s", getId(luksVlmDataRef));
         getNamespace(luksVlmDataRef)
@@ -149,7 +151,7 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
     }
 
     @Override
-    public void delete(LuksVlmData luksVlmDataRef) throws DatabaseException
+    public void delete(LuksVlmData<?> luksVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting LuksVlmData %s", getId(luksVlmDataRef));
         getNamespace(luksVlmDataRef)
@@ -157,12 +159,12 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
     }
 
     @Override
-    public SingleColumnDatabaseDriver<LuksVlmData, byte[]> getVlmEncryptedPasswordDriver()
+    public SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]> getVlmEncryptedPasswordDriver()
     {
         return vlmPwDriver;
     }
 
-    private FluentLinstorTransaction getNamespace(LuksVlmData luksVlmDataRef)
+    private FluentLinstorTransaction getNamespace(LuksVlmData<?> luksVlmDataRef)
     {
         return namespace(
             GeneratedDatabaseTables.LAYER_LUKS_VOLUMES,
@@ -171,18 +173,18 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
         );
     }
 
-    private String getId(LuksVlmData luksVlmDataRef)
+    private String getId(LuksVlmData<?> luksVlmDataRef)
     {
         return "(LayerRscId=" + luksVlmDataRef.getRscLayerId() +
             ", VlmNr=" + luksVlmDataRef.getVlmNr().value +
             ")";
     }
 
-    private class VlmPwDriver implements SingleColumnDatabaseDriver<LuksVlmData, byte[]>
+    private class VlmPwDriver implements SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]>
     {
 
         @Override
-        public void update(LuksVlmData luksVlmDataRef, byte[] encryptedPassword) throws DatabaseException
+        public void update(LuksVlmData<?> luksVlmDataRef, byte[] encryptedPassword) throws DatabaseException
         {
             errorReporter.logTrace(
                 "Updating LuksVlmData's encrypted password %s",

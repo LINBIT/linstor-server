@@ -8,9 +8,9 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -39,7 +39,7 @@ public class ResourceDefinitionControllerFactory
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
-    private final CtrlLayerDataHelper layerStackHelper;
+    private final CtrlRscLayerDataFactory layerStackHelper;
 
     @Inject
     public ResourceDefinitionControllerFactory(
@@ -49,7 +49,7 @@ public class ResourceDefinitionControllerFactory
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
-        CtrlLayerDataHelper layerStackHelperRef
+        CtrlRscLayerDataFactory layerStackHelperRef
     )
     {
         driver = driverRef;
@@ -112,10 +112,10 @@ public class ResourceDefinitionControllerFactory
         // TODO: might be a good idea to create this object earlier
         LayerPayload payload = new LayerPayload();
         DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
-        drbdRscDfn.setPeerSlotsNewResource(peerSlotsRef);
-        drbdRscDfn.setTcpPort(port);
-        drbdRscDfn.setSharedSecret(secret);
-        drbdRscDfn.setTransportType(transType);
+        drbdRscDfn.peerSlotsNewResource = peerSlotsRef;
+        drbdRscDfn.tcpPort = port;
+        drbdRscDfn.sharedSecret = secret;
+        drbdRscDfn.transportType = transType;
         layerStackHelper.ensureRequiredRscDfnLayerDataExits(rscDfn, "", payload);
 
         return rscDfn;

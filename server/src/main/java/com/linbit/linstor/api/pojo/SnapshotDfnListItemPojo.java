@@ -1,9 +1,12 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.ImplementationError;
+import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
+import com.linbit.utils.Pair;
 
 import java.util.List;
 import java.util.Map;
@@ -63,5 +66,11 @@ public class SnapshotDfnListItemPojo implements SnapshotDefinitionListItemApi
     public List<String> getNodeNames()
     {
         return nodeNames;
+    }
+
+    @Override
+    public List<Pair<String, RscDfnLayerDataApi>> getLayerData()
+    {
+        return snapshotDfnApi.getLayerData();
     }
 }

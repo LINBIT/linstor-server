@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.utils;
 
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
@@ -19,7 +20,7 @@ public interface RestClient
     void addFailHandler(UnexpectedReturnCodeHandler handler);
 
     default RestResponse<Map<String, Object>> execute(
-        VlmProviderObject vlmData,
+        VlmProviderObject<Resource> vlmData,
         RestOp op,
         String restURL,
         Map<String, String> httpHeaders,
@@ -41,7 +42,7 @@ public interface RestClient
     }
 
     default RestResponse<Map<String, Object>> execute(
-        VlmProviderObject vlmData,
+        VlmProviderObject<Resource> vlmData,
         RestOp op,
         String restURL,
         Map<String, String> httpHeaders,
@@ -65,10 +66,10 @@ public interface RestClient
         final String payload;
         final List<Integer> expectedRcs;
 
-        final VlmProviderObject vlmData;
+        final VlmProviderObject<Resource> vlmData;
 
         RestHttpRequest(
-            VlmProviderObject vlmDataRef,
+            VlmProviderObject<Resource> vlmDataRef,
             RestOp opRef,
             String restURLRef,
             Map<String, String> httpHeadersRef,

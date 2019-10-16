@@ -63,7 +63,7 @@ public class EtcdUtils
         return buildKey(table.getName(), pks);
     }
 
-    public static String buildKey(
+    public static String buildKeyStr(
         String tableName,
         String columnName,
         String... pks

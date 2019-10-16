@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -57,7 +58,7 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
-    protected void createLvImpl(ZfsData vlmData)
+    protected void createLvImpl(ZfsData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.create(

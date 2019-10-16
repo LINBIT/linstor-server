@@ -4,14 +4,16 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.AbsRscData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.layers.nvme.NvmeRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -25,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class NvmeRscData extends AbsRscData<NvmeVlmData>
+public class NvmeRscData<RSC extends AbsResource<RSC>>
+    extends AbsRscData<RSC, NvmeVlmData<RSC>>
+    implements NvmeRscObject<RSC>
 {
     private boolean exists = false;
     private boolean failed = false;
@@ -33,10 +37,10 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
 
     public NvmeRscData(
         int rscLayerIdRef,
-        Resource rscRef,
-        @Nullable RscLayerObject parentRef,
-        Set<RscLayerObject> childrenRef,
-        Map<VolumeNumber, NvmeVlmData> vlmLayerObjectsMapRef,
+        RSC rscRef,
+        @Nullable AbsRscLayerObject<RSC> parentRef,
+        Set<AbsRscLayerObject<RSC>> childrenRef,
+        Map<VolumeNumber, NvmeVlmData<RSC>> vlmLayerObjectsMapRef,
         String rscNameSuffixRef,
         NvmeLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
@@ -83,20 +87,25 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
     }
 
     @Override
-    public @Nullable RscLayerObject getParent()
+    public @Nullable AbsRscLayerObject<RSC> getParent()
     {
         return parent.get();
     }
 
     @Override
-    public void setParent(@Nonnull RscLayerObject parentObj) throws DatabaseException
+    public void setParent(@Nonnull AbsRscLayerObject<RSC> parentObj) throws DatabaseException
     {
         parent.set(parentObj);
     }
 
     public boolean isInitiator(AccessContext accCtx) throws AccessDeniedException
     {
-        return rsc.getStateFlags().isSet(accCtx, Resource.Flags.NVME_INITIATOR);
+        boolean isDiskless = false;
+        if (rsc instanceof Resource)
+        {
+            isDiskless = ((Resource) rsc).getStateFlags().isSet(accCtx, Resource.Flags.NVME_INITIATOR);
+        }
+        return isDiskless;
     }
 
     @Override
@@ -106,7 +115,7 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
     }
 
     @Override
-    protected void deleteVlmFromDatabase(NvmeVlmData drbdVlmData) throws DatabaseException
+    protected void deleteVlmFromDatabase(NvmeVlmData<RSC> drbdVlmData) throws DatabaseException
     {
         // no-op
     }
@@ -145,7 +154,7 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
     public RscLayerDataApi asPojo(AccessContext accCtx) throws AccessDeniedException
     {
         List<NvmeVlmPojo> vlmPojos = new ArrayList<>();
-        for (NvmeVlmData drbdVlmData : vlmMap.values())
+        for (NvmeVlmData<RSC> drbdVlmData : vlmMap.values())
         {
             vlmPojos.add(drbdVlmData.asPojo(accCtx));
         }

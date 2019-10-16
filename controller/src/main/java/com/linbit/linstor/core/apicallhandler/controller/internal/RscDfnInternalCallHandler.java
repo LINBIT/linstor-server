@@ -95,7 +95,7 @@ public class RscDfnInternalCallHandler
             {
                 resDfnProps.setProp(
                     InternalApiConsts.PROP_PRIMARY_SET,
-                    res.getAssignedNode().getName().value
+                    res.getNode().getName().value
                 );
 
                 ctrlTransactionHelper.commit();

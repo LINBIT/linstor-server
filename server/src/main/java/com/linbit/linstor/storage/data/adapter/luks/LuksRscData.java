@@ -4,14 +4,14 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.AbsRscData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.luks.LuksRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -25,17 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class LuksRscData extends AbsRscData<LuksVlmData> implements LuksRscObject
+public class LuksRscData<RSC extends AbsResource<RSC>>
+    extends AbsRscData<RSC, LuksVlmData<RSC>>
+    implements LuksRscObject<RSC>
 {
     private final LuksLayerDatabaseDriver luksDbDriver;
 
     public LuksRscData(
         int rscLayerIdRef,
-        Resource rscRef,
+        RSC rscRef,
         String rscNameSuffixRef,
-        @Nullable RscLayerObject parentRef,
-        Set<RscLayerObject> childrenRef,
-        Map<VolumeNumber, LuksVlmData> vlmLayerObjectsRef,
+        @Nullable AbsRscLayerObject<RSC> parentRef,
+        Set<AbsRscLayerObject<RSC>> childrenRef,
+        Map<VolumeNumber, LuksVlmData<RSC>> vlmLayerObjectsRef,
         LuksLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
@@ -68,7 +70,7 @@ public class LuksRscData extends AbsRscData<LuksVlmData> implements LuksRscObjec
     }
 
     @Override
-    protected void deleteVlmFromDatabase(LuksVlmData vlmRef) throws DatabaseException
+    protected void deleteVlmFromDatabase(LuksVlmData<RSC> vlmRef) throws DatabaseException
     {
         luksDbDriver.delete(vlmRef);
     }
@@ -83,7 +85,7 @@ public class LuksRscData extends AbsRscData<LuksVlmData> implements LuksRscObjec
     public RscLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         List<LuksVlmPojo> vlmPojos = new ArrayList<>();
-        for (LuksVlmData luksVlmData : vlmMap.values())
+        for (LuksVlmData<RSC> luksVlmData : vlmMap.values())
         {
             vlmPojos.add(luksVlmData.asPojo(accCtxRef));
         }

@@ -39,25 +39,25 @@ public class SatelliteSwordfishLayerDriver implements SwordfishLayerDatabaseDriv
     }
 
     @Override
-    public void persist(SfInitiatorData sfInitiatorDataRef)
+    public void persist(SfInitiatorData<?> sfInitiatorDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(SfInitiatorData sfInitiatorDataRef)
+    public void delete(SfInitiatorData<?> sfInitiatorDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(SfTargetData sfInitiatorDataRef)
+    public void persist(SfTargetData<?> sfInitiatorDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(SfTargetData sfInitiatorDataRef)
+    public void delete(SfTargetData<?> sfInitiatorDataRef)
     {
         // no-op
     }

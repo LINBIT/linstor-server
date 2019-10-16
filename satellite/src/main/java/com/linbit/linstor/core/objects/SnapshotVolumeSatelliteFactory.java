@@ -1,11 +1,8 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -17,17 +14,20 @@ import java.util.UUID;
 
 public class SnapshotVolumeSatelliteFactory
 {
+    private final PropsContainerFactory propsContainerFactory;
     private final SnapshotVolumeDatabaseDriver driver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public SnapshotVolumeSatelliteFactory(
+        PropsContainerFactory propsContainerFactoryRef,
         SnapshotVolumeDatabaseDriver driverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
+        propsContainerFactory = propsContainerFactoryRef;
         driver = driverRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
@@ -37,27 +37,26 @@ public class SnapshotVolumeSatelliteFactory
         AccessContext accCtx,
         UUID snapshotVolumeUuid,
         Snapshot snapshot,
-        SnapshotVolumeDefinition snapshotVolumeDefinition,
-        StorPool storPool
+        SnapshotVolumeDefinition snapshotVolumeDefinition
     )
         throws ImplementationError
     {
         SnapshotVolume snapshotVolume;
         try
         {
-            snapshotVolume = snapshot.getSnapshotVolume(accCtx, snapshotVolumeDefinition.getVolumeNumber());
+            snapshotVolume = snapshot.getVolume(snapshotVolumeDefinition.getVolumeNumber());
             if (snapshotVolume == null)
             {
                 snapshotVolume = new SnapshotVolume(
                     snapshotVolumeUuid,
                     snapshot,
                     snapshotVolumeDefinition,
-                    storPool,
                     driver,
+                    propsContainerFactory,
                     transObjFactory,
                     transMgrProvider
                 );
-                snapshot.addSnapshotVolume(accCtx, snapshotVolume);
+                snapshot.putVolume(accCtx, snapshotVolume);
             }
         }
         catch (Exception exc)

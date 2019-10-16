@@ -1,6 +1,6 @@
 package com.linbit.linstor.storage.utils;
 
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
@@ -19,15 +19,15 @@ public class VolumeUtils
      * @param partial
      * @return
      */
-    public static boolean isVolumeThinlyBacked(VlmProviderObject vlmObj, boolean partial)
+    public static boolean isVolumeThinlyBacked(VlmProviderObject<?> vlmObj, boolean partial)
     {
-        Set<VlmProviderObject> backingVlms = getStorageDevices(vlmObj);
+        Set<VlmProviderObject<?>> backingVlms = getStorageDevices(vlmObj);
 
         boolean ret;
         if (partial)
         {
             ret = false;
-            for (VlmProviderObject tmpVlmObj : backingVlms)
+            for (VlmProviderObject<?> tmpVlmObj : backingVlms)
             {
                 if (tmpVlmObj.getProviderKind().usesThinProvisioning())
                 {
@@ -39,7 +39,7 @@ public class VolumeUtils
         else
         {
             ret = true;
-            for (VlmProviderObject tmpVlmObj : backingVlms)
+            for (VlmProviderObject<?> tmpVlmObj : backingVlms)
             {
                 if (!tmpVlmObj.getProviderKind().usesThinProvisioning())
                 {
@@ -51,10 +51,10 @@ public class VolumeUtils
         return ret;
     }
 
-    public static Set<VlmProviderObject> getStorageDevices(VlmProviderObject vlmObj)
+    public static Set<VlmProviderObject<?>> getStorageDevices(VlmProviderObject<?> vlmObj)
     {
-        Set<VlmProviderObject> backingVlms = new HashSet<>();
-        Set<VlmProviderObject> toExpand = new HashSet<>();
+        Set<VlmProviderObject<?>> backingVlms = new HashSet<>();
+        Set<VlmProviderObject<?>> toExpand = new HashSet<>();
         if (vlmObj instanceof VlmLayerObject)
         {
             toExpand.add(vlmObj);
@@ -66,13 +66,14 @@ public class VolumeUtils
 
         while (!toExpand.isEmpty())
         {
-            Set<VlmProviderObject> toExpandNext = new HashSet<>();
-            for (VlmProviderObject tmpVlmObj : toExpand)
+            Set<VlmProviderObject<?>> toExpandNext = new HashSet<>();
+            for (VlmProviderObject<?> tmpVlmObj : toExpand)
             {
-                Set<RscLayerObject> rscChildren = tmpVlmObj.getRscLayerObject().getChildren();
-                for (RscLayerObject rscChild : rscChildren)
+                Set<?> rscChildren = tmpVlmObj.getRscLayerObject().getChildren();
+                for (Object rscChildObj : rscChildren)
                 {
-                    VlmProviderObject childVlmObj = rscChild.getVlmProviderObject(tmpVlmObj.getVlmNr());
+                    AbsRscLayerObject<?> rscChild = (AbsRscLayerObject<?>) rscChildObj;
+                    VlmProviderObject<?> childVlmObj = rscChild.getVlmProviderObject(tmpVlmObj.getVlmNr());
                     if (childVlmObj != null)
                     {
                         if (childVlmObj instanceof VlmLayerObject)

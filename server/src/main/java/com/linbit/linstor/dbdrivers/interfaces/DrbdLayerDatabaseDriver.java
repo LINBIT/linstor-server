@@ -16,24 +16,24 @@ public interface DrbdLayerDatabaseDriver
     ResourceLayerIdDatabaseDriver getIdDriver();
 
     // DrbdRscData methods
-    void create(DrbdRscData drbdRscData) throws DatabaseException;
-    void delete(DrbdRscData drbdRscData) throws DatabaseException;
-    StateFlagsPersistence<DrbdRscData> getRscStateFlagPersistence();
+    void create(DrbdRscData<?> drbdRscData) throws DatabaseException;
+    void delete(DrbdRscData<?> drbdRscData) throws DatabaseException;
+    StateFlagsPersistence<DrbdRscData<?>> getRscStateFlagPersistence();
 
     // DrbdRscDfnData methods
-    void persist(DrbdRscDfnData drbdRscDfnData) throws DatabaseException;
-    void delete(DrbdRscDfnData drbdRscDfnData) throws DatabaseException;
-    SingleColumnDatabaseDriver<DrbdRscDfnData, TcpPortNumber> getTcpPortDriver();
-    SingleColumnDatabaseDriver<DrbdRscDfnData, TransportType> getTransportTypeDriver();
-    SingleColumnDatabaseDriver<DrbdRscDfnData, String> getRscDfnSecretDriver();
-    SingleColumnDatabaseDriver<DrbdRscDfnData, Short> getPeerSlotsDriver();
+    void persist(DrbdRscDfnData<?> drbdRscDfnData) throws DatabaseException;
+    void delete(DrbdRscDfnData<?> drbdRscDfnData) throws DatabaseException;
+    SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TcpPortNumber> getTcpPortDriver();
+    SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TransportType> getTransportTypeDriver();
+    SingleColumnDatabaseDriver<DrbdRscDfnData<?>, String> getRscDfnSecretDriver();
+    SingleColumnDatabaseDriver<DrbdRscDfnData<?>, Short> getPeerSlotsDriver();
 
     // DrbdVlmData methods
-    void persist(DrbdVlmData drbdVlmData) throws DatabaseException;
-    void delete(DrbdVlmData drbdVlmData) throws DatabaseException;
-    SingleColumnDatabaseDriver<DrbdVlmData, StorPool> getExtStorPoolDriver();
+    void persist(DrbdVlmData<?> drbdVlmData) throws DatabaseException;
+    void delete(DrbdVlmData<?> drbdVlmData) throws DatabaseException;
+    SingleColumnDatabaseDriver<DrbdVlmData<?>, StorPool> getExtStorPoolDriver();
 
     // DrbdVlmDfnData
-    void persist(DrbdVlmDfnData drbdVlmDfnData) throws DatabaseException;
-    void delete(DrbdVlmDfnData drbdVlmDfnData) throws DatabaseException;
+    void persist(DrbdVlmDfnData<?> drbdVlmDfnData) throws DatabaseException;
+    void delete(DrbdVlmDfnData<?> drbdVlmDfnData) throws DatabaseException;
 }

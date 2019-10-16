@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apis.SnapshotApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
@@ -17,6 +18,7 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     private final Long fullSyncId;
     private final Long updateId;
     private final List<SnapshotVolumeApi> snapshotVlms;
+    private final RscLayerDataApi layerData;
 
     public SnapshotPojo(
         SnapshotDefinitionApi snaphotDfnRef,
@@ -26,7 +28,8 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         boolean takeSnapshotRef,
         Long fullSyncIdRef,
         Long updateIdRef,
-        List<SnapshotVolumeApi> snapshotVlmsRef
+        List<SnapshotVolumeApi> snapshotVlmsRef,
+        RscLayerDataApi layerDataRef
     )
     {
         snaphotDfn = snaphotDfnRef;
@@ -37,6 +40,7 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
         snapshotVlms = snapshotVlmsRef;
+        layerData = layerDataRef;
     }
 
     @Override
@@ -97,5 +101,10 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
             eq = snaphotDfn.getSnapshotName().compareTo(otherSnapshotPojo.getSnaphotDfn().getSnapshotName());
         }
         return eq;
+    }
+
+    public RscLayerDataApi getLayerData()
+    {
+        return layerData;
     }
 }

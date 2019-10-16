@@ -159,6 +159,13 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                 }
             }
             Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(new RawParameters(table, rawObjects), parents);
+            // pair might be null when loading objects sharing the same table.
+            // For example SnapshotDbDriver will return null when finding a Resource entry
+            // and vice versa.
+            if (pair != null)
+            {
+                loadedObjectsMap.put(pair.objA, pair.objB);
+            }
             loadedObjectsMap.put(pair.objA, pair.objB);
         }
 

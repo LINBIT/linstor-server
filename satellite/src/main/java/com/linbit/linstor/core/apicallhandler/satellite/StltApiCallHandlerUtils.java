@@ -12,6 +12,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -20,7 +21,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
@@ -114,9 +115,9 @@ public class StltApiCallHandlerUtils
                             .build()
                         );
 
-                        for (VlmProviderObject vlmProviderObject : storPool.getVolumes(apiCtx))
+                        for (VlmProviderObject<Resource> vlmProviderObject : storPool.getVolumes(apiCtx))
                         {
-                            Volume vlm = vlmProviderObject.getVolume();
+                            Volume vlm = (Volume) vlmProviderObject.getVolume();
                             if (
                                 resourceFilter.isEmpty() ||
                                 resourceFilter.contains(vlm.getResourceDefinition().getName())
@@ -143,20 +144,20 @@ public class StltApiCallHandlerUtils
             for (Entry<DeviceProvider, List<StorPool>> entry : storPoolsPerDeviceProvider.entrySet())
             {
                 DeviceProvider deviceProvider = entry.getKey();
-                List<VlmProviderObject> vlmDataList = new ArrayList<>();
+                List<VlmProviderObject<Resource>> vlmDataList = new ArrayList<>();
 
                 for (StorPool storPool : entry.getValue())
                 {
-                    for (VlmProviderObject vlmProviderObject : storPool.getVolumes(apiCtx))
+                    for (VlmProviderObject<Resource> vlmProviderObject : storPool.getVolumes(apiCtx))
                     {
-                        Volume vlm = vlmProviderObject.getVolume();
+                        Volume vlm = (Volume) vlmProviderObject.getVolume();
                         if (resourceFilter.isEmpty() || resourceFilter.contains(vlm.getResourceDefinition().getName()))
                         {
-                            List<RscLayerObject> rscLayerData = LayerUtils.getChildLayerDataByKind(
-                                vlm.getResource().getLayerData(apiCtx),
+                            List<AbsRscLayerObject<Resource>> rscLayerData = LayerUtils.getChildLayerDataByKind(
+                                vlm.getAbsResource().getLayerData(apiCtx),
                                 DeviceLayerKind.STORAGE
                             );
-                            for (RscLayerObject rlo : rscLayerData)
+                            for (AbsRscLayerObject<Resource> rlo : rscLayerData)
                             {
                                 vlmDataList.add(rlo.getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber()));
                             }
@@ -167,13 +168,13 @@ public class StltApiCallHandlerUtils
                 try
                 {
                     deviceProvider.prepare(vlmDataList, Collections.emptyList());
-                    for (VlmProviderObject vlmProviderObject : vlmDataList)
+                    for (VlmProviderObject<Resource> vlmProviderObject : vlmDataList)
                     {
                         try
                         {
                             deviceProvider.updateAllocatedSize(vlmProviderObject);
                             allocatedMap.put(
-                                vlmProviderObject.getVolume().getKey(),
+                                ((Volume) vlmProviderObject.getVolume()).getKey(),
                                 Either.left(vlmProviderObject.getAllocatedSize())
                             );
                         }
@@ -189,7 +190,7 @@ public class StltApiCallHandlerUtils
                                 .build()
                             );
                             allocatedMap.put(
-                                vlmProviderObject.getVolume().getKey(),
+                                ((Volume) vlmProviderObject.getVolume()).getKey(),
                                 Either.right(apiRcException)
                             );
                         }
@@ -206,10 +207,10 @@ public class StltApiCallHandlerUtils
                         .setDetails(exc.getDetailsText())
                         .build()
                     );
-                    for (VlmProviderObject vlmProviderObject : vlmDataList)
+                    for (VlmProviderObject<Resource> vlmProviderObject : vlmDataList)
                     {
                         allocatedMap.put(
-                            vlmProviderObject.getVolume().getKey(),
+                            ((Volume) vlmProviderObject.getVolume()).getKey(),
                             Either.right(apiRcException)
                         );
                     }

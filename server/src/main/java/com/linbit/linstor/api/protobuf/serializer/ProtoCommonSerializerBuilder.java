@@ -54,6 +54,7 @@ import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn.Builder;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo.ExternalTools;
 import com.linbit.linstor.proto.common.FilterOuterClass;
@@ -109,7 +110,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -722,8 +723,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return RscOuterClass.Rsc.newBuilder()
             .setUuid(rsc.getUuid().toString())
             .setName(rsc.getDefinition().getName().displayValue)
-            .setNodeUuid(rsc.getAssignedNode().getUuid().toString())
-            .setNodeName(rsc.getAssignedNode().getName().displayValue)
+            .setNodeUuid(rsc.getNode().getUuid().toString())
+            .setNodeName(rsc.getNode().getName().displayValue)
             .setRscDfnUuid(rsc.getDefinition().getUuid().toString())
             .putAllProps(rsc.getProps(accCtx).map())
             .addAllRscFlags(Resource.Flags.toStringList(rsc.getStateFlags().getFlagsBits(accCtx)))
@@ -777,8 +778,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     {
         RscConn.Builder builder = RscConn.newBuilder()
             .setRscConnUuid(rscConn.getUuid().toString())
-            .setNodeName1(rscConn.getSourceResource(accCtx).getAssignedNode().getName().displayValue)
-            .setNodeName2(rscConn.getTargetResource(accCtx).getAssignedNode().getName().displayValue)
+            .setNodeName1(rscConn.getSourceResource(accCtx).getNode().getName().displayValue)
+            .setNodeName2(rscConn.getTargetResource(accCtx).getNode().getName().displayValue)
             .setRscName(rscConn.getSourceResource(accCtx).getDefinition().getName().displayValue)
             .setRsc1Uuid(rscConn.getSourceResource(accCtx).getUuid().toString())
             .setRsc2Uuid(rscConn.getTargetResource(accCtx).getUuid().toString())
@@ -1159,7 +1160,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         }
 
         public static RscLayerDataOuterClass.RscLayerData serializeLayerObject(
-            RscLayerObject layerData,
+            AbsRscLayerObject<?> layerData,
             AccessContext accCtx
         )
             throws AccessDeniedException
@@ -1262,25 +1263,37 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
         private static DrbdRscDfn buildDrbdRscDfnData(DrbdRscDfnPojo drbdRscDfnPojo)
         {
-            return DrbdRscDfn.newBuilder()
+            DrbdRscDfn.Builder builder = DrbdRscDfn.newBuilder()
                 .setRscNameSuffix(drbdRscDfnPojo.getRscNameSuffix())
                 .setPeersSlots(drbdRscDfnPojo.getPeerSlots())
                 .setAlStripes(drbdRscDfnPojo.getAlStripes())
                 .setAlSize(drbdRscDfnPojo.getAlStripeSize())
-                .setPort(drbdRscDfnPojo.getPort())
                 .setTransportType(drbdRscDfnPojo.getTransportType())
-                .setSecret(drbdRscDfnPojo.getSecret())
-                .setDown(drbdRscDfnPojo.isDown())
-                .build();
+                .setDown(drbdRscDfnPojo.isDown());
+            Integer port = drbdRscDfnPojo.getPort();
+            if (port != null)
+            {
+                builder.setPort(port);
+            }
+            String secret = drbdRscDfnPojo.getSecret();
+            if (secret != null)
+            {
+                builder.setSecret(secret);
+            }
+            return builder.build();
         }
 
         private static DrbdVlmDfn buildDrbdVlmDfnData(DrbdVlmDfnPojo drbdVlmDfnPojo)
         {
-            return DrbdVlmDfn.newBuilder()
+            Builder builder = DrbdVlmDfn.newBuilder()
                 .setRscNameSuffix(drbdVlmDfnPojo.getRscNameSuffix())
-                .setVlmNr(drbdVlmDfnPojo.getVlmNr())
-                .setMinor(drbdVlmDfnPojo.getMinorNr())
-                .build();
+                .setVlmNr(drbdVlmDfnPojo.getVlmNr());
+            Integer minorNr = drbdVlmDfnPojo.getMinorNr();
+            if (minorNr != null)
+            {
+                builder.setMinor(minorNr);
+            }
+            return builder.build();
         }
 
         private static LuksRsc buildLuksRscData(LuksRscPojo rscLayerPojoRef)
@@ -1395,13 +1408,13 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case SWORDFISH_INITIATOR:
                     {
-                        SfVlmDfnData sfVlmDfnData = ((SfInitiatorData) vlmPojo).getVlmDfnLayerObject();
+                        SfVlmDfnData sfVlmDfnData = ((SfInitiatorData<Resource>) vlmPojo).getVlmDfnLayerObject();
                         builder.setSfInit(
                             SwordfishInitiator.newBuilder()
                                 .setSfVlmDfn(
                                     SwordfishVlmDfn.newBuilder()
                                         .setRscNameSuffix(sfVlmDfnData.getRscNameSuffix())
-                                        .setVlmNr(sfVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
+                                        .setVlmNr(sfVlmDfnData.getVolumeNumber().value)
                                         .setVlmOdata(sfVlmDfnData.getVlmOdata())
                                         .build()
                                 )
@@ -1411,13 +1424,13 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case SWORDFISH_TARGET:
                     {
-                        SfVlmDfnData sfVlmDfnData = ((SfInitiatorData) vlmPojo).getVlmDfnLayerObject();
+                        SfVlmDfnData sfVlmDfnData = ((SfInitiatorData<Resource>) vlmPojo).getVlmDfnLayerObject();
                         builder.setSfTarget(
                             SwordfishTarget.newBuilder()
                                 .setSfVlmDfn(
                                     SwordfishVlmDfn.newBuilder()
                                         .setRscNameSuffix(sfVlmDfnData.getRscNameSuffix())
-                                        .setVlmNr(sfVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
+                                        .setVlmNr(sfVlmDfnData.getVolumeNumber().value)
                                         .setVlmOdata(sfVlmDfnData.getVlmOdata())
                                         .build()
                                 )

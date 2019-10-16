@@ -1,7 +1,10 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
@@ -151,22 +154,22 @@ public class LayerUtils
         }
     }
 
-    public static List<RscLayerObject> getChildLayerDataByKind(
-        RscLayerObject rscDataRef,
+    public static <RSC extends AbsResource<RSC>> List<AbsRscLayerObject<RSC>> getChildLayerDataByKind(
+        AbsRscLayerObject<RSC> rscDataRef,
         DeviceLayerKind kind
     )
     {
-        LinkedList<RscLayerObject> rscDataToExplore = new LinkedList<>();
+        LinkedList<AbsRscLayerObject<RSC>> rscDataToExplore = new LinkedList<>();
         if (rscDataRef != null)
         {
             rscDataToExplore.add(rscDataRef);
         }
 
-        List<RscLayerObject> ret = new ArrayList<>();
+        List<AbsRscLayerObject<RSC>> ret = new ArrayList<>();
 
         while (!rscDataToExplore.isEmpty())
         {
-            RscLayerObject rscData = rscDataToExplore.removeFirst();
+            AbsRscLayerObject<RSC> rscData = rscDataToExplore.removeFirst();
             if (rscData.getLayerKind().equals(kind))
             {
                 ret.add(rscData);
@@ -180,24 +183,42 @@ public class LayerUtils
         return ret;
     }
 
-    public static boolean hasLayer(
-        RscLayerObject rscData,
-        DeviceLayerKind kind
-    )
+    public static boolean hasLayer(AbsRscLayerObject<?> rscData, DeviceLayerKind kind)
     {
         return !LayerUtils.getChildLayerDataByKind(rscData, kind).isEmpty();
     }
 
-    public static Set<DeviceLayerKind> getUsedDeviceLayerKinds(RscLayerObject rscLayerObject)
+    public static Set<DeviceLayerKind> getUsedDeviceLayerKinds(
+        AbsRscLayerObject<?> rscLayerObject
+    )
     {
         Set<DeviceLayerKind> ret = new TreeSet<>();
-        LinkedList<RscLayerObject> rscDataToExplore = new LinkedList<>();
+        LinkedList<AbsRscLayerObject<?>> rscDataToExplore = new LinkedList<>();
         rscDataToExplore.add(rscLayerObject);
         while (!rscDataToExplore.isEmpty())
         {
-            RscLayerObject rscData = rscDataToExplore.removeFirst();
+            AbsRscLayerObject<?> rscData = rscDataToExplore.removeFirst();
             ret.add(rscData.getLayerKind());
             rscDataToExplore.addAll(rscData.getChildren());
+        }
+        return ret;
+    }
+
+    public static List<DeviceLayerKind> getLayerStack(AbsResource<?> rscRef, AccessContext accCtx)
+    {
+        List<DeviceLayerKind> ret = new ArrayList<>();
+        try
+        {
+            AbsRscLayerObject<?> layerData = rscRef.getLayerData(accCtx);
+            while (layerData != null)
+            {
+                ret.add(layerData.getLayerKind());
+                layerData = layerData.getFirstChild();
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
         return ret;
     }
@@ -205,5 +226,4 @@ public class LayerUtils
     private LayerUtils()
     {
     }
-
 }

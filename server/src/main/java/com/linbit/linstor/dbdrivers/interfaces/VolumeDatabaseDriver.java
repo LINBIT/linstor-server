@@ -5,14 +5,14 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**
- * Database driver for {@link com.linbit.linstor.core.objects.Volume}.
+ * Database driver for {@link com.linbit.linstor.core.objects.AbsVolume}.
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
 public interface VolumeDatabaseDriver
 {
     /**
-     * Persists the given {@link com.linbit.linstor.core.objects.Volume} into the database.
+     * Persists the given {@link com.linbit.linstor.core.objects.AbsVolume} into the database.
      *
      * @param volume
      *  The data to be stored (including the primary key)
@@ -22,7 +22,7 @@ public interface VolumeDatabaseDriver
     void create(Volume volume) throws DatabaseException;
 
     /**
-     * Removes the given {@link com.linbit.linstor.core.objects.Volume} from the database
+     * Removes the given {@link com.linbit.linstor.core.objects.AbsVolume} from the database
      *
      * @param volume
      *  The data identifying the row to delete

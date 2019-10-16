@@ -8,8 +8,10 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -42,6 +44,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,11 +53,12 @@ import java.util.Map;
 import java.util.Set;
 
 @Singleton
-public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
+public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>, SpdkData<Snapshot>>
 {
     private static final int TOLERANCE_FACTOR = 3;
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     public static final String FORMAT_RSC_TO_SPDK_ID = "%s%s_%05d";
+    public static final String FORMAT_SNAP_TO_SPDK_ID = FORMAT_RSC_TO_SPDK_ID + "_%s";
     private static final String FORMAT_SPDK_ID_WIPE_IN_PROGRESS = "%s-linstor_wiping_in_progress";
     private static final String SPDK_FORMAT_DEV_PATH = SPDK_PATH_PREFIX+"%s/%s";
 
@@ -110,14 +114,19 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
     }
 
     @Override
-    protected void updateStates(List<SpdkData> vlmDataList, Collection<SnapshotVolume> snapshots)
+    protected void updateStates(List<SpdkData<Resource>> vlmDataList, List<SpdkData<Snapshot>> snapshots)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         final Map<String, Long> extentSizes = SpdkUtils.getExtentSize(
             extCmdFactory.create(),
             getAffectedVolumeGroups(vlmDataList, snapshots)
         );
-        for (SpdkData vlmData : vlmDataList)
+
+        List<SpdkData<?>> combinedList = new ArrayList<>();
+        combinedList.addAll(vlmDataList);
+        combinedList.addAll(snapshots);
+
+        for (SpdkData<?> vlmData : snapshots)
         {
 
             final LvsInfo info = infoListCache.get(getFullQualifiedIdentifier(vlmData));
@@ -152,21 +161,33 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
                 }
             }
         }
-
-        updateSnapshotStates(snapshots);
     }
 
-    private String getFullQualifiedIdentifier(SpdkData vlmDataRef)
+    private String getFullQualifiedIdentifier(SpdkData<?> vlmDataRef)
     {
         return vlmDataRef.getVolumeGroup() +
             File.separator +
-            asLvIdentifier(vlmDataRef);
+            asIdentifierRaw(vlmDataRef);
     }
 
-    protected void updateInfo(SpdkData vlmData, LvsInfo info)
+    protected String asIdentifierRaw(SpdkData<?> vlmData)
+    {
+        String identifier;
+        if (vlmData.getVolume() instanceof Volume)
+        {
+            identifier = asLvIdentifier((SpdkData<Resource>) vlmData);
+        }
+        else
+        {
+            identifier = asSnapLvIdentifier((SpdkData<Snapshot>) vlmData);
+        }
+        return identifier;
+    }
+
+    protected void updateInfo(SpdkData<?> vlmData, LvsInfo info)
         throws DatabaseException, AccessDeniedException, StorageException
     {
-        vlmData.setIdentifier(asLvIdentifier(vlmData));
+        vlmData.setIdentifier(asIdentifierRaw(vlmData));
         if (info == null)
         {
             vlmData.setExists(false);
@@ -187,7 +208,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
         }
     }
 
-    protected String extractVolumeGroup(SpdkData vlmData)
+    protected String extractVolumeGroup(SpdkData<?> vlmData)
     {
         return getVolumeGroup(vlmData.getStorPool());
     }
@@ -200,7 +221,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
     }
 
     @Override
-    protected void createLvImpl(SpdkData vlmData)
+    protected void createLvImpl(SpdkData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
         SpdkCommands.createFat(
@@ -212,12 +233,12 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
         );
     }
 
-    protected String getLvCreateType(SpdkData vlmDataRef)
+    protected String getLvCreateType(SpdkData<Resource> vlmDataRef)
     {
         String type;
         try
         {
-            Volume vlm = vlmDataRef.getVolume();
+            Volume vlm = (Volume) vlmDataRef.getVolume();
             ResourceDefinition rscDfn = vlm.getResourceDefinition();
             ResourceGroup rscGrp = rscDfn.getResourceGroup();
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
@@ -243,7 +264,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
     }
 
     @Override
-    protected void resizeLvImpl(SpdkData vlmData)
+    protected void resizeLvImpl(SpdkData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
         SpdkCommands.resize(
@@ -255,7 +276,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
     }
 
     @Override
-    protected void deleteLvImpl(SpdkData vlmData, String oldSpdkId)
+    protected void deleteLvImpl(SpdkData<Resource> vlmData, String oldSpdkId)
         throws StorageException, DatabaseException
     {
         // just make sure to not colide with any other ongoing wipe-lv-name
@@ -311,7 +332,10 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
     }
 
     @Override
-    protected Map<String, LvsInfo> getInfoListImpl(List<SpdkData> vlmDataList, List<SnapshotVolume> snapVlms)
+    protected Map<String, LvsInfo> getInfoListImpl(
+        List<SpdkData<Resource>> vlmDataList,
+        List<SpdkData<Snapshot>> snapVlms
+    )
         throws StorageException, AccessDeniedException
     {
         return SpdkUtils.getLvsInfo(
@@ -334,6 +358,18 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
             resourceName.displayValue,
             rscNameSuffix,
             volumeNumber.value
+        );
+    }
+
+    @Override
+    protected String asSnapLvIdentifierRaw(String rscNameRef, String rscNameSuffixRef, String snapNameRef, int vlmNrRef)
+    {
+        return String.format(
+            FORMAT_SNAP_TO_SPDK_ID,
+            rscNameRef,
+            rscNameSuffixRef,
+            vlmNrRef,
+            snapNameRef
         );
     }
 
@@ -407,13 +443,16 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
     }
 
     private Set<String> getAffectedVolumeGroups(
-        Collection<SpdkData> vlmDataList,
-        Collection<SnapshotVolume> snapVlms
+        Collection<SpdkData<Resource>> vlmDataList,
+        Collection<SpdkData<Snapshot>> snapVlms
     )
-        throws AccessDeniedException
     {
+        ArrayList<SpdkData<?>> combinedList = new ArrayList<>();
+        combinedList.addAll(vlmDataList);
+        combinedList.addAll(snapVlms);
+
         Set<String> volumeGroups = new HashSet<>();
-        for (SpdkData vlmData : vlmDataList)
+        for (SpdkData<?> vlmData : combinedList)
         {
             String volumeGroup = vlmData.getVolumeGroup();
             if (volumeGroup == null)
@@ -426,10 +465,6 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
                 volumeGroups.add(volumeGroup);
             }
         }
-        for (SnapshotVolume snapVlm : snapVlms)
-        {
-            volumeGroups.add(getVolumeGroup(snapVlm.getStorPool(storDriverAccCtx)));
-        }
         return volumeGroups;
     }
 
@@ -440,31 +475,31 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
     }
 
     @Override
-    protected void setDevicePath(SpdkData vlmData, String devPath) throws DatabaseException
+    protected void setDevicePath(SpdkData<Resource> vlmData, String devPath) throws DatabaseException
     {
         vlmData.setDevicePath(devPath);
     }
 
     @Override
-    protected void setAllocatedSize(SpdkData vlmData, long size) throws DatabaseException
+    protected void setAllocatedSize(SpdkData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setAllocatedSize(size);
     }
 
     @Override
-    protected void setUsableSize(SpdkData vlmData, long size) throws DatabaseException
+    protected void setUsableSize(SpdkData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setUsableSize(size);
     }
 
     @Override
-    protected void setExpectedUsableSize(SpdkData vlmData, long size)
+    protected void setExpectedUsableSize(SpdkData<Resource> vlmData, long size)
     {
         vlmData.setExepectedSize(size);
     }
 
     @Override
-    protected String getStorageName(SpdkData vlmDataRef) throws DatabaseException
+    protected String getStorageName(SpdkData<Resource> vlmDataRef) throws DatabaseException
     {
         return vlmDataRef.getVolumeGroup();
     }

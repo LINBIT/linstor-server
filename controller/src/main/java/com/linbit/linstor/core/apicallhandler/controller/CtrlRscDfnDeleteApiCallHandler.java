@@ -143,7 +143,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         rscInUse = anyResourceInUsePrivileged(rscDfn);
         if (rscInUse.isPresent())
         {
-            NodeName nodeName = rscInUse.get().getAssignedNode().getName();
+            NodeName nodeName = rscInUse.get().getNode().getName();
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.FAIL_IN_USE,

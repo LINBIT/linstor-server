@@ -79,7 +79,7 @@ public class NodeInternalCallHandler
                             Resource otherRsc = otherRscIterator.next();
                             if (otherRsc != rsc)
                             {
-                                otherNodes.add(otherRsc.getAssignedNode());
+                                otherNodes.add(otherRsc.getNode());
                             }
                         }
                     }

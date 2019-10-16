@@ -1,11 +1,10 @@
 package com.linbit.linstor.dbcp.migration;
 
-import com.google.common.io.Resources;
-import com.linbit.linstor.dbdrivers.derby.DbConstants;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.DatabaseInfo.DbProduct;
+import com.linbit.linstor.dbdrivers.derby.DbConstants;
+import com.linbit.utils.StringUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +12,8 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import com.google.common.io.Resources;
 
 public class MigrationUtils
 {
@@ -91,7 +92,7 @@ public class MigrationUtils
             case POSTGRESQL:
                 sql = String.format("ALTER TABLE %s DROP COLUMN %s;", table, column);
                 break;
-            case ETCD: // fall-though
+            case ETCD: // fall-through
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + database);
@@ -140,7 +141,7 @@ public class MigrationUtils
                 }
                 sql.append(";");
                 break;
-            case ETCD: // fall-though
+            case ETCD: // fall-through
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + database);
@@ -176,7 +177,7 @@ public class MigrationUtils
             case ORACLE_RDBMS:
                 type = typeRef.replaceAll("VARCHAR", "VARCHAR2");
                 break;
-            case ETCD: // fall-though
+            case ETCD: // fall-through
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + databaseRef);
@@ -221,7 +222,7 @@ public class MigrationUtils
                     replaceTypesByDialect(databaseRef, typeRef)
                 );
                 break;
-            case ETCD: // fall-though
+            case ETCD: // fall-through
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + databaseRef);
@@ -264,7 +265,7 @@ public class MigrationUtils
                     columnDefinition
                 );
                 break;
-            case ETCD: // fall-though
+            case ETCD: // fall-through
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + databaseRef);
@@ -305,7 +306,7 @@ public class MigrationUtils
                     fkName
                 );
                 break;
-            case ETCD: // fall-though
+            case ETCD: // fall-through
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + dbProduct);
@@ -338,7 +339,7 @@ public class MigrationUtils
             case POSTGRESQL:
                 sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s;", table, constraintName);
                 break;
-            case ETCD: // fall-though
+            case ETCD: // fall-through
             case UNKNOWN:
             default:
                 throw new ImplementationError("Unexpected database type: " + dbProductRef);
@@ -369,8 +370,175 @@ public class MigrationUtils
             case POSTGRESQL:
                 sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s;", table, constraintName);
                 break;
-            case ETCD: // fall-though
+            case ETCD: // fall-through
             case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
+        }
+        return sql;
+    }
+
+    public static String addColumnConstraintCheck(
+        DbProduct dbProductRef,
+        String tableName,
+        String checkName,
+        String checkCondition
+    )
+    {
+        String sql;
+        switch (dbProductRef)
+        {
+            case ASE:
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case H2:
+            case MARIADB:
+            case MSFT_SQLSERVER:
+            case MYSQL:
+            case ORACLE_RDBMS:
+            case POSTGRESQL:
+                sql = String.format(
+                    "ALTER TABLE %s ADD CONSTRAINT %s CHECK (%s)",
+                    tableName,
+                    checkName,
+                    checkCondition
+                );
+                break;
+            case INFORMIX:
+                sql = String.format(
+                    "ALTER TABLE %s ADD CONSTRAINT CHECK (%s) CONSTRAINT %s",
+                    tableName,
+                    checkCondition,
+                    checkName
+                );
+                break;
+            case ETCD:
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
+        }
+        return sql;
+    }
+
+    public static String dropColumnConstraintPrimaryKey(DbProduct dbProductRef, String tableName, String pkName)
+    {
+        String sql;
+        switch (dbProductRef)
+        {
+            case ASE:
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case H2:
+            case INFORMIX:
+            case MARIADB:
+            case MSFT_SQLSERVER:
+            case MYSQL:
+            case ORACLE_RDBMS:
+                sql = String.format("ALTER TABLE %s DROP PRIMARY KEY", tableName);
+                break;
+            case POSTGRESQL:
+                sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s", tableName, pkName);
+                break;
+            case ETCD:
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
+        }
+        return sql;
+    }
+
+    public static String addColumnConstraintPrimaryKey(
+        DbProduct dbProductRef,
+        String tableName,
+        String constraintName,
+        String... columns
+    )
+    {
+        String sql;
+        String joinedColumns = StringUtils.join(", ", columns);
+        switch (dbProductRef)
+        {
+            case ASE:
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case H2:
+            case MARIADB:
+            case MSFT_SQLSERVER:
+            case MYSQL:
+            case ORACLE_RDBMS:
+            case POSTGRESQL:
+                sql = String.format(
+                    "ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (%s)",
+                    tableName,
+                    constraintName,
+                    joinedColumns
+                );
+                break;
+            case INFORMIX:
+                sql = String.format(
+                    "ALTER TABLE %s ADD CONSTRAINT PRIMARY KEY (%s) CONSTRAINT %s",
+                    tableName,
+                    joinedColumns,
+                    constraintName
+                );
+                break;
+            case ETCD:
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
+        }
+        return sql;
+    }
+
+    public static String addColumnConstraintForeignKey(
+        DbProduct dbProductRef,
+        String localTableName,
+        String fkName,
+        String joinedLocalColumns,
+        String remoteTableName,
+        String joinedRemoteColumns
+    )
+    {
+        String sql;
+        switch (dbProductRef)
+        {
+            case ASE:
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case H2:
+            case MARIADB:
+            case MSFT_SQLSERVER:
+            case MYSQL:
+            case ORACLE_RDBMS:
+            case POSTGRESQL:
+                sql = String.format(
+                    "ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s)",
+                    localTableName,
+                    fkName,
+                    joinedLocalColumns,
+                    remoteTableName,
+                    joinedRemoteColumns
+                );
+                break;
+            case INFORMIX:
+                sql = String.format(
+                    "ALTER TABLE %s ADD CONSTRAINT FOREIGN KEY (%s) REFERENCES %s (%s) CONSTRAINT %s",
+                    localTableName,
+                    joinedLocalColumns,
+                    remoteTableName,
+                    joinedRemoteColumns,
+                    fkName
+                );
+            case UNKNOWN:
+            case ETCD:
             default:
                 throw new ImplementationError("Unexpected database type: " + dbProductRef);
         }

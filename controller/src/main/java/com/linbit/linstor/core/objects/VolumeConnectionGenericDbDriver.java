@@ -23,6 +23,7 @@ import com.linbit.utils.Triple;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -172,8 +173,8 @@ public class VolumeConnectionGenericDbDriver implements VolumeConnectionDatabase
             Volume targetVolume = conDfnData.getTargetVolume(dbCtx);
 
             stmt.setString(1, conDfnData.getUuid().toString());
-            stmt.setString(2, sourceVolume.getResource().getAssignedNode().getName().value);
-            stmt.setString(3, targetVolume.getResource().getAssignedNode().getName().value);
+            stmt.setString(2, sourceVolume.getAbsResource().getNode().getName().value);
+            stmt.setString(3, targetVolume.getAbsResource().getNode().getName().value);
             stmt.setString(4, sourceVolume.getResourceDefinition().getName().value);
             stmt.setInt(5, sourceVolume.getVolumeDefinition().getVolumeNumber().value);
 
@@ -202,8 +203,8 @@ public class VolumeConnectionGenericDbDriver implements VolumeConnectionDatabase
             Volume sourceVolume = conDfnData.getSourceVolume(dbCtx);
             Volume targetVolume = conDfnData.getTargetVolume(dbCtx);
 
-            stmt.setString(1, sourceVolume.getResource().getAssignedNode().getName().value);
-            stmt.setString(2, targetVolume.getResource().getAssignedNode().getName().value);
+            stmt.setString(1, sourceVolume.getAbsResource().getNode().getName().value);
+            stmt.setString(2, targetVolume.getAbsResource().getNode().getName().value);
             stmt.setString(3, sourceVolume.getResourceDefinition().getName().value);
             stmt.setInt(4, sourceVolume.getVolumeDefinition().getVolumeNumber().value);
 
@@ -234,8 +235,8 @@ public class VolumeConnectionGenericDbDriver implements VolumeConnectionDatabase
             Volume sourceVolume = volConData.getSourceVolume(dbCtx);
             Volume targetVolume = volConData.getTargetVolume(dbCtx);
             id = getId(
-                sourceVolume.getResource().getAssignedNode().getName().displayValue,
-                targetVolume.getResource().getAssignedNode().getName().displayValue,
+                sourceVolume.getAbsResource().getNode().getName().displayValue,
+                targetVolume.getAbsResource().getNode().getName().displayValue,
                 sourceVolume.getResourceDefinition().getName().displayValue,
                 sourceVolume.getVolumeDefinition().getVolumeNumber().value
             );
@@ -250,9 +251,9 @@ public class VolumeConnectionGenericDbDriver implements VolumeConnectionDatabase
     private String getId(Volume sourceVolume, Volume targetVolume)
     {
         return getId(
-            sourceVolume.getResource().getAssignedNode().getName().displayValue,
-            targetVolume.getResource().getAssignedNode().getName().displayValue,
-            sourceVolume.getResource().getDefinition().getName().displayValue,
+            sourceVolume.getAbsResource().getNode().getName().displayValue,
+            targetVolume.getAbsResource().getNode().getName().displayValue,
+            sourceVolume.getAbsResource().getDefinition().getName().displayValue,
             sourceVolume.getVolumeDefinition().getVolumeNumber().value
         );
     }
@@ -273,7 +274,7 @@ public class VolumeConnectionGenericDbDriver implements VolumeConnectionDatabase
     private String getVolumeTraceId(Volume volume)
     {
         return getVolumeId(
-            volume.getResource().getAssignedNode().getName().value,
+            volume.getAbsResource().getNode().getName().value,
             volume.getResourceDefinition().getName().value,
             volume.getVolumeDefinition().getVolumeNumber().value
         );

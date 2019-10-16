@@ -1,16 +1,18 @@
 package com.linbit.linstor.storage.interfaces.layers.drbd;
 
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public interface DrbdRscObject extends RscLayerObject
+public interface DrbdRscObject<RSC extends AbsResource<RSC>>
+    extends AbsRscLayerObject<RSC>
 {
     NodeId getNodeId();
 

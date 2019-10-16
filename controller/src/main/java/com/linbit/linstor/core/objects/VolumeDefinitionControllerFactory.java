@@ -7,12 +7,10 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -23,6 +21,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -33,7 +32,7 @@ public class VolumeDefinitionControllerFactory
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final CtrlSecurityObjects secObjs;
-    private final CtrlLayerDataHelper layerStackHelper;
+    private final CtrlRscLayerDataFactory layerStackHelper;
 
     @Inject
     public VolumeDefinitionControllerFactory(
@@ -42,7 +41,7 @@ public class VolumeDefinitionControllerFactory
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         CtrlSecurityObjects secObjsRef,
-        CtrlLayerDataHelper layerStackHelperRef
+        CtrlRscLayerDataFactory layerStackHelperRef
     )
     {
         driver = driverRef;
@@ -67,7 +66,7 @@ public class VolumeDefinitionControllerFactory
 
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        VolumeDefinition vlmDfnData = (VolumeDefinition) rscDfn.getVolumeDfn(accCtx, vlmNr);
+        VolumeDefinition vlmDfnData = rscDfn.getVolumeDfn(accCtx, vlmNr);
 
         if (vlmDfnData != null)
         {
@@ -89,11 +88,11 @@ public class VolumeDefinitionControllerFactory
         );
 
         driver.create(vlmDfnData);
-        ((ResourceDefinition) rscDfn).putVolumeDefinition(accCtx, vlmDfnData);
+        rscDfn.putVolumeDefinition(accCtx, vlmDfnData);
 
         // TODO: might be a good idea to create this object earlier
         LayerPayload payload = new LayerPayload();
-        payload.getDrbdVlmDfn().setMinorNr(minor);
+        payload.getDrbdVlmDfn().minorNr = minor;
         layerStackHelper.ensureVlmDfnLayerDataExits(vlmDfnData, "", payload);
 
         return vlmDfnData;

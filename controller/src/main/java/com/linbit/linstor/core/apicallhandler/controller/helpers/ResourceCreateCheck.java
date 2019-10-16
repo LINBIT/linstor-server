@@ -115,8 +115,8 @@ public class ResourceCreateCheck
         if (volumes.stream().anyMatch(
                 vlm -> execPrivileged(
                     () -> DeviceLayerKind.NVME.equals(
-                        vlm.getResource().getLayerData(accessContext).getLayerKind()) &&
-                        !vlm.getResource().isNvmeInitiator(accessContext)
+                        vlm.getAbsResource().getLayerData(accessContext).getLayerKind()) &&
+                        !vlm.getAbsResource().isNvmeInitiator(accessContext)
                 )
         ))
         {
@@ -127,8 +127,8 @@ public class ResourceCreateCheck
             volumes.stream().anyMatch(
                 vlm -> execPrivileged(
                     () -> DeviceLayerKind.NVME.equals(
-                        vlm.getResource().getLayerData(accessContext).getLayerKind()
-                    ) && vlm.getResource().isNvmeInitiator(accessContext)
+                        vlm.getAbsResource().getLayerData(accessContext).getLayerKind()
+                    ) && vlm.getAbsResource().isNvmeInitiator(accessContext)
                 )
             )
         )

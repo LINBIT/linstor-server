@@ -14,6 +14,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -52,7 +53,7 @@ public class VolumeFactory
         rsc.getObjProt().requireAccess(accCtx, AccessType.USE);
         Volume volData = null;
 
-        volData = (Volume) rsc.getVolume(vlmDfn.getVolumeNumber());
+        volData = rsc.getVolume(vlmDfn.getVolumeNumber());
 
         if (volData != null)
         {
@@ -65,14 +66,14 @@ public class VolumeFactory
             vlmDfn,
             StateFlagsBits.getMask(flags),
             driver,
+            new TreeMap<>(),
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider,
-            new TreeMap<>()
+            transMgrProvider
         );
         driver.create(volData);
-        ((Resource) rsc).putVolume(accCtx, volData);
-        ((VolumeDefinition) vlmDfn).putVolume(accCtx, volData);
+        rsc.putVolume(accCtx, volData);
+        vlmDfn.putVolume(accCtx, volData);
 
         return volData;
     }
@@ -88,7 +89,7 @@ public class VolumeFactory
         Volume vlmData;
         try
         {
-            vlmData = (Volume) rsc.getVolume(vlmDfn.getVolumeNumber());
+            vlmData = rsc.getVolume(vlmDfn.getVolumeNumber());
             if (vlmData == null)
             {
                 vlmData = new Volume(
@@ -97,13 +98,13 @@ public class VolumeFactory
                     vlmDfn,
                     StateFlagsBits.getMask(flags),
                     driver,
+                    new TreeMap<>(),
                     propsContainerFactory,
                     transObjFactory,
-                    transMgrProvider,
-                    new TreeMap<>()
+                    transMgrProvider
                 );
-                ((Resource) rsc).putVolume(accCtx, vlmData);
-                ((VolumeDefinition) vlmDfn).putVolume(accCtx, vlmData);
+                rsc.putVolume(accCtx, vlmData);
+                vlmDfn.putVolume(accCtx, vlmData);
 
                 vlmData.setAllocatedSize(accCtx, vlmDfn.getVolumeSize(accCtx));
                 // usable size depends on deviceLayer

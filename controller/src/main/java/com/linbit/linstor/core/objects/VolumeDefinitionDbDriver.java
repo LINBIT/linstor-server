@@ -9,6 +9,7 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.VolumeDefinition.InitMaps;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
@@ -23,7 +24,9 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 
+import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.RESOURCE_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.SNAPSHOT_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.UUID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.VLM_FLAGS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeDefinitions.VLM_NR;
@@ -75,6 +78,8 @@ public class VolumeDefinitionDbDriver extends
         setColumnSetter(VLM_SIZE, vlmDfn -> vlmDfn.getVolumeSize(dbCtxRef));
         setColumnSetter(VLM_FLAGS, vlmDfn -> vlmDfn.getFlags().getFlagsBits(dbCtxRef));
 
+        setColumnSetter(SNAPSHOT_NAME, ignored -> DFLT_SNAP_NAME_FOR_RSC);
+
         flagsDriver = generateFlagDriver(VLM_FLAGS, VolumeDefinition.Flags.class);
         volumeSizeDriver = generateSingleColumnDriver(
             VLM_SIZE,
@@ -103,44 +108,54 @@ public class VolumeDefinitionDbDriver extends
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
         MdException, RuntimeException
     {
+        final Pair<VolumeDefinition, InitMaps> ret;
 
-        final ResourceName rscName = raw.build(RESOURCE_NAME, ResourceName::new);
-        final VolumeNumber vlmNr;
-        final long vlmSize;
-        final long vlmFlags;
-        switch (getDbType())
+        if (!raw.get(SNAPSHOT_NAME).equals(DFLT_SNAP_NAME_FOR_RSC))
         {
-            case ETCD:
-                vlmNr = new VolumeNumber(Integer.parseInt(raw.get(VLM_NR)));
-                vlmSize = Long.parseLong(raw.get(VLM_SIZE));
-                vlmFlags = Long.parseLong(raw.get(VLM_FLAGS));
-                break;
-            case SQL:
-                vlmNr = new VolumeNumber(raw.get(VLM_NR));
-                vlmSize = raw.get(VLM_SIZE);
-                vlmFlags = raw.get(VLM_FLAGS);
-                break;
-            default:
-                throw new ImplementationError("Unknown database type: " + getDbType());
+            // this entry is a SnapshotVolumeDefinition, not a VolumeDefinition
+            ret = null;
         }
+        else
+        {
+            final ResourceName rscName = raw.build(RESOURCE_NAME, ResourceName::new);
+            final VolumeNumber vlmNr;
+            final long vlmSize;
+            final long vlmFlags;
+            switch (getDbType())
+            {
+                case ETCD:
+                    vlmNr = new VolumeNumber(Integer.parseInt(raw.get(VLM_NR)));
+                    vlmSize = Long.parseLong(raw.get(VLM_SIZE));
+                    vlmFlags = Long.parseLong(raw.get(VLM_FLAGS));
+                    break;
+                case SQL:
+                    vlmNr = new VolumeNumber(raw.get(VLM_NR));
+                    vlmSize = raw.get(VLM_SIZE);
+                    vlmFlags = raw.get(VLM_FLAGS);
+                    break;
+                default:
+                    throw new ImplementationError("Unknown database type: " + getDbType());
+            }
 
-        Map<String, Volume> vlmMap = new TreeMap<>();
-        return new Pair<>(
-            new VolumeDefinition(
-                raw.build(UUID, java.util.UUID::fromString),
-                parent.get(rscName),
-                vlmNr,
-                vlmSize,
-                vlmFlags,
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                vlmMap,
-                new TreeMap<>()
-            ),
-            new InitMapsImpl(vlmMap)
-        );
+            Map<String, Volume> vlmMap = new TreeMap<>();
+            ret = new Pair<>(
+                new VolumeDefinition(
+                    raw.build(UUID, java.util.UUID::fromString),
+                    parent.get(rscName),
+                    vlmNr,
+                    vlmSize,
+                    vlmFlags,
+                    this,
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider,
+                    vlmMap,
+                    new TreeMap<>()
+                ),
+                new InitMapsImpl(vlmMap)
+            );
+        }
+        return ret;
     }
 
     @Override

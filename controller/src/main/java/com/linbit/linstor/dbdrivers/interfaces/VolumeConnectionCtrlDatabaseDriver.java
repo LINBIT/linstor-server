@@ -13,7 +13,7 @@ import java.util.Map;
 public interface VolumeConnectionCtrlDatabaseDriver extends VolumeConnectionDatabaseDriver,
     ControllerDatabaseDriver<VolumeConnection,
         Void,
-        Map<Triple<NodeName, ResourceName, VolumeNumber>, ? extends Volume>>
+        Map<Triple<NodeName, ResourceName, VolumeNumber>, Volume>>
 {
 
 }

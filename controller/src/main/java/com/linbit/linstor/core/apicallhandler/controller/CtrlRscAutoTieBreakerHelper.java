@@ -22,7 +22,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
@@ -31,8 +31,8 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
@@ -60,7 +60,7 @@ import reactor.core.publisher.Flux;
 public class CtrlRscAutoTieBreakerHelper
 {
     private final SystemConfRepository systemConfRepository;
-    private final CtrlLayerDataHelper layerDataHelper;
+    private final CtrlRscLayerDataFactory layerDataHelper;
     private final NodeRepository nodeRepo;
     private final CtrlRscCrtApiHelper rscCrtApiHelper;
     private final Provider<AccessContext> peerCtx;
@@ -101,7 +101,7 @@ public class CtrlRscAutoTieBreakerHelper
         SystemConfRepository systemConfRepositoryRef,
         ScopeRunner scopeRunnerRef,
         NodeRepository nodeRepoRef,
-        CtrlLayerDataHelper layerDataHelperRef,
+        CtrlRscLayerDataFactory layerDataHelperRef,
         @PeerContext Provider<AccessContext> peerCtxRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
@@ -370,7 +370,7 @@ public class CtrlRscAutoTieBreakerHelper
 
         for (RscDfnLayerObject rscDfnData : rscDfn.getLayerData(peerAccCtx, DeviceLayerKind.DRBD).values())
         {
-            if (((DrbdRscDfnData) rscDfnData).getPeerSlots() <= currentCount)
+            if (((DrbdRscDfnData<Resource>) rscDfnData).getPeerSlots() <= currentCount)
             {
                 hasEveryoneEnoughPeerSlots = false;
                 break;
@@ -400,11 +400,14 @@ public class CtrlRscAutoTieBreakerHelper
                     }
                 }
 
-                RscLayerObject layerData = rsc.getLayerData(peerAccCtx);
-                Set<RscLayerObject> drbdDataSet = LayerRscUtils.getRscDataByProvider(layerData, DeviceLayerKind.DRBD);
-                for (RscLayerObject rlo : drbdDataSet)
+                AbsRscLayerObject<Resource> layerData = rsc.getLayerData(peerAccCtx);
+                Set<AbsRscLayerObject<Resource>> drbdDataSet = LayerRscUtils.getRscDataByProvider(
+                    layerData,
+                    DeviceLayerKind.DRBD
+                );
+                for (AbsRscLayerObject<Resource> rlo : drbdDataSet)
                 {
-                    if (((DrbdRscData) rlo).getPeerSlots() <= currentCount)
+                    if (((DrbdRscData<Resource>) rlo).getPeerSlots() <= currentCount)
                     {
                         hasEveryoneEnoughPeerSlots = false;
                         break;
@@ -487,7 +490,7 @@ public class CtrlRscAutoTieBreakerHelper
     {
         ResponseContext context = CtrlRscApiCallHandler.makeRscContext(
             ApiOperation.makeModifyOperation(),
-            tiebreaker.getAssignedNode().getName().getDisplayName(),
+            tiebreaker.getNode().getName().getDisplayName(),
             tiebreaker.getDefinition().getName().getDisplayName()
         );
 

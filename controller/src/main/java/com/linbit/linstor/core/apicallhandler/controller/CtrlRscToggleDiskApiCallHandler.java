@@ -37,16 +37,16 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
-import com.linbit.linstor.layer.DrbdLayerHelper;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.layer.resource.RscDrbdLayerHelper;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -106,8 +106,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final CtrlStorPoolResolveHelper ctrlStorPoolResolveHelper;
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
-    private final CtrlLayerDataHelper ctrlLayerStackHelper;
-    private final DrbdLayerHelper ctrlDrbdLayerStackHelper;
+    private final CtrlRscLayerDataFactory ctrlLayerStackHelper;
+    private final RscDrbdLayerHelper ctrlDrbdLayerStackHelper;
     private final ResponseConverter responseConverter;
     private final ResourceStateEvent resourceStateEvent;
     private final EventWaiter eventWaiter;
@@ -126,8 +126,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         CtrlStorPoolResolveHelper ctrlStorPoolResolveHelperRef,
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
-        CtrlLayerDataHelper ctrlLayerStackHelperRef,
-        DrbdLayerHelper ctrlDrbdLayerStackHelperRef,
+        CtrlRscLayerDataFactory ctrlLayerStackHelperRef,
+        RscDrbdLayerHelper ctrlDrbdLayerStackHelperRef,
         ResponseConverter responseConverterRef,
         ResourceStateEvent resourceStateEventRef,
         EventWaiter eventWaiterRef,
@@ -174,7 +174,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISK_REMOVE_REQUESTED);
             if (diskAddRequested || diskRemoveRequested)
             {
-                NodeName nodeName = rsc.getAssignedNode().getName();
+                NodeName nodeName = rsc.getNode().getName();
                 fluxes.add(updateAndAdjustDisk(nodeName, rscName, diskRemoveRequested, context));
             }
         }
@@ -194,7 +194,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return migrateFromNodeNameStr == null && !diskAddRequested ?
             Collections.emptySet() :
             Collections.singleton(Flux.from(waitForMigration(
-                rsc.getAssignedNode().getName(),
+                rsc.getNode().getName(),
                 rsc.getDefinition().getName(),
                 ctrlApiDataLoader.loadNode(migrateFromNodeNameStr, true).getName()
             )));
@@ -323,8 +323,12 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         // Resolve storage pool now so that nothing is committed if the storage pool configuration is invalid
 
-        Set<RscLayerObject> storRscDataSet = getResourceLayerDataPriveleged(rsc, DeviceLayerKind.STORAGE);
-        Set<RscLayerObject> drbdRscDataSet = getResourceLayerDataPriveleged(rsc, DeviceLayerKind.DRBD);
+        Set<AbsRscLayerObject<Resource>> storRscDataSet = getResourceLayerDataPriveleged(
+            rsc, DeviceLayerKind.STORAGE
+        );
+        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = getResourceLayerDataPriveleged(
+            rsc, DeviceLayerKind.DRBD
+        );
 
         Iterator<Volume> vlmIter = rsc.iterateVolumes();
         while (vlmIter.hasNext())
@@ -358,7 +362,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
                 ensureNoSnapshots(migrateFromRsc);
 
-                setMigrateFrom(rsc, migrateFromRsc.getAssignedNode().getName());
+                setMigrateFrom(rsc, migrateFromRsc.getNode().getName());
 
                 ctrlRscDeleteApiHelper.ensureNotInUse(migrateFromRsc);
             }
@@ -371,7 +375,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         responses.addEntry(ApiCallRcImpl.simpleEntry(
             ApiConsts.MODIFIED,
             action + " resource '" + rsc.getDefinition().getName().displayValue + "' " +
-                "on node '" + rsc.getAssignedNode().getName().displayValue + "' registered"
+                "on node '" + rsc.getNode().getName().displayValue + "' registered"
         ));
 
         return Flux
@@ -379,9 +383,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, context));
     }
 
-    private Set<RscLayerObject> getResourceLayerDataPriveleged(Resource rsc, DeviceLayerKind kind)
+    private Set<AbsRscLayerObject<Resource>> getResourceLayerDataPriveleged(Resource rsc, DeviceLayerKind kind)
     {
-        Set<RscLayerObject> rscDataSet;
+        Set<AbsRscLayerObject<Resource>> rscDataSet;
         try
         {
             rscDataSet = LayerRscUtils.getRscDataByProvider(rsc.getLayerData(apiCtx), kind);
@@ -393,7 +397,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return rscDataSet;
     }
 
-    private void setStorPoolPrivileged(VlmProviderObject vlmProviderObjectRef, StorPool storPool)
+    private void setStorPoolPrivileged(VlmProviderObject<Resource> vlmProviderObjectRef, StorPool storPool)
     {
         try
         {
@@ -409,13 +413,13 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
     }
 
-    private void updateMetaStorPoolPrivileged(DrbdVlmData drbdVlmDataRef)
+    private void updateMetaStorPoolPrivileged(DrbdVlmData<Resource> drbdVlmDataRef)
     {
         try
         {
             drbdVlmDataRef.setExternalMetaDataStorPool(
                 ctrlDrbdLayerStackHelper.getMetaStorPool(
-                    drbdVlmDataRef.getVolume(),
+                    (Volume) drbdVlmDataRef.getVolume(),
                     apiCtx
                 )
             );
@@ -474,7 +478,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             while (rscIterator.hasNext())
             {
                 Resource currentRsc = rscIterator.next();
-                Node node = currentRsc.getAssignedNode();
+                Node node = currentRsc.getNode();
                 if (node.getPeer(apiCtx).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
                 {
                     offlineWarnings.addEntry(ResponseUtils.makeNotConnectedWarning(node.getName()));
@@ -781,14 +785,16 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         try
         {
-            List<RscLayerObject> storageDataList = LayerUtils.getChildLayerDataByKind(
+            List<AbsRscLayerObject<Resource>> storageDataList = LayerUtils.getChildLayerDataByKind(
                 rscRef.getLayerData(peerAccCtx.get()),
                 DeviceLayerKind.STORAGE
             );
-            for (RscLayerObject rscLayerObject : storageDataList)
+            for (AbsRscLayerObject<Resource> rscLayerObject : storageDataList)
             {
-                List<VlmProviderObject> vlmDataList = new ArrayList<>(rscLayerObject.getVlmLayerObjects().values());
-                for (VlmProviderObject vlmData : vlmDataList)
+                List<VlmProviderObject<Resource>> vlmDataList = new ArrayList<>(
+                    rscLayerObject.getVlmLayerObjects().values()
+                );
+                for (VlmProviderObject<Resource> vlmData : vlmDataList)
                 {
                     rscLayerObject.remove(peerAccCtx.get(), vlmData.getVlmNr());
                 }
@@ -815,13 +821,13 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             for (SnapshotDefinition snapshotDfn : rsc.getDefinition().getSnapshotDfns(peerAccCtx.get()))
             {
-                Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getAssignedNode().getName());
+                Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getNode().getName());
                 if (snapshot != null)
                 {
                     throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_EXISTS_SNAPSHOT,
                         "Cannot migrate '" + rsc.getDefinition().getName() + "' " +
-                            "from '" + rsc.getAssignedNode().getName() + "' because snapshots are present " +
+                            "from '" + rsc.getNode().getName() + "' because snapshots are present " +
                             "and snapshots cannot be migrated"
                     ));
                 }
@@ -960,9 +966,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return props;
     }
 
-    static RscLayerObject getLayerData(AccessContext accCtx, Resource rsc)
+    static AbsRscLayerObject<Resource> getLayerData(AccessContext accCtx, Resource rsc)
     {
-        RscLayerObject layerData;
+        AbsRscLayerObject<Resource> layerData;
         try
         {
             layerData = rsc.getLayerData(accCtx);

@@ -82,6 +82,7 @@ public class StorPoolControllerFactory
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
+            new TreeMap<>(),
             new TreeMap<>()
         );
         driver.create(storPool);

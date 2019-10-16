@@ -10,12 +10,11 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -25,6 +24,7 @@ import com.linbit.utils.Triple;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 @Singleton
+@Deprecated
 public class SnapshotVolumeGenericDbDriver implements SnapshotVolumeDatabaseDriver
 {
     private static final String TBL_SNAPSHOT = DbConstants.TBL_SNAPSHOT_VOLUMES;
@@ -71,6 +72,7 @@ public class SnapshotVolumeGenericDbDriver implements SnapshotVolumeDatabaseDriv
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
 
+    private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
@@ -78,12 +80,14 @@ public class SnapshotVolumeGenericDbDriver implements SnapshotVolumeDatabaseDriv
     public SnapshotVolumeGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
+        PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
+        propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -92,30 +96,30 @@ public class SnapshotVolumeGenericDbDriver implements SnapshotVolumeDatabaseDriv
     @SuppressWarnings("checkstyle:magicnumber")
     public void create(SnapshotVolume snapshotVolume) throws DatabaseException
     {
-        try (PreparedStatement stmt = getConnection().prepareStatement(SV_INSERT))
-        {
-            errorReporter.logTrace("Creating SnapshotVolume %s", getId(snapshotVolume));
-
-            Snapshot snapshot = snapshotVolume.getSnapshot();
-            stmt.setString(1, snapshotVolume.getUuid().toString());
-            stmt.setString(2, snapshot.getNodeName().value);
-            stmt.setString(3, snapshot.getResourceName().value);
-            stmt.setString(4, snapshot.getSnapshotName().value);
-            stmt.setInt(5, snapshotVolume.getVolumeNumber().value);
-            stmt.setString(6, snapshotVolume.getStorPool(dbCtx).getName().value);
-
-            stmt.executeUpdate();
-
-            errorReporter.logTrace("SnapshotVolume created %s", getId(snapshotVolume));
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new DatabaseException(sqlExc);
-        }
-        catch (AccessDeniedException accessDeniedExc)
-        {
-            DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
-        }
+        // try (PreparedStatement stmt = getConnection().prepareStatement(SV_INSERT))
+        // {
+        // errorReporter.logTrace("Creating SnapshotVolume %s", getId(snapshotVolume));
+        //
+        // Snapshot snapshot = snapshotVolume.getAbsResource();
+        // stmt.setString(1, snapshotVolume.getUuid().toString());
+        // stmt.setString(2, snapshot.getNodeName().value);
+        // stmt.setString(3, snapshot.getResourceName().value);
+        // stmt.setString(4, snapshot.getSnapshotName().value);
+        // stmt.setInt(5, snapshotVolume.getVolumeNumber().value);
+        // stmt.setString(6, snapshotVolume.getStorPool(dbCtx).getName().value);
+        //
+        // stmt.executeUpdate();
+        //
+        // errorReporter.logTrace("SnapshotVolume created %s", getId(snapshotVolume));
+        // }
+        // catch (SQLException sqlExc)
+        // {
+        // throw new DatabaseException(sqlExc);
+        // }
+        // catch (AccessDeniedException accessDeniedExc)
+        // {
+        // DatabaseLoader.handleAccessDeniedException(accessDeniedExc);
+        // }
     }
 
     private SnapshotVolume restoreSnapshotVolume(
@@ -135,8 +139,10 @@ public class SnapshotVolumeGenericDbDriver implements SnapshotVolumeDatabaseDriv
                 java.util.UUID.fromString(resultSet.getString(SV_UUID)),
                 snapshot,
                 snapshotVolumeDefinition,
-                storPool,
-                this, transObjFactory, transMgrProvider
+                this,
+                propsContainerFactory,
+                transObjFactory,
+                transMgrProvider
             );
         }
         catch (SQLException sqlExc)
@@ -221,7 +227,7 @@ public class SnapshotVolumeGenericDbDriver implements SnapshotVolumeDatabaseDriv
         errorReporter.logTrace("Deleting SnapshotVolume %s", getId(snapshotVolume));
         try (PreparedStatement stmt = getConnection().prepareStatement(SV_DELETE))
         {
-            Snapshot snapshot = snapshotVolume.getSnapshot();
+            Snapshot snapshot = snapshotVolume.getAbsResource();
             SnapshotDefinition snapshotDefinition = snapshot.getSnapshotDefinition();
 
             stmt.setString(1, snapshot.getNodeName().value);

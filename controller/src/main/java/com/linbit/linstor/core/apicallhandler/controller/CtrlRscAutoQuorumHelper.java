@@ -12,7 +12,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -43,13 +43,13 @@ public class CtrlRscAutoQuorumHelper
     private static final String PROP_KEY_ON_NO_QUORUM = "on-no-quorum";
 
     private final SystemConfRepository systemConfRepository;
-    private final CtrlLayerDataHelper layerDataHelper;
+    private final CtrlRscLayerDataFactory layerDataHelper;
     private final Provider<AccessContext> peerCtx;
 
     @Inject
     public CtrlRscAutoQuorumHelper(
         SystemConfRepository systemConfRepositoryRef,
-        CtrlLayerDataHelper layerDataHelperRef,
+        CtrlRscLayerDataFactory layerDataHelperRef,
         @PeerContext Provider<AccessContext> peerCtxRef
     )
     {
@@ -280,7 +280,7 @@ public class CtrlRscAutoQuorumHelper
         Iterator<Resource> rscIt = rscDfn.iterateResource(accCtx);
         while (rscIt.hasNext())
         {
-            Node node = rscIt.next().getAssignedNode();
+            Node node = rscIt.next().getNode();
             if (!supportsQuorum(accCtx, node))
             {
                 ret.add(node);

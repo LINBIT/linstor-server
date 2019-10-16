@@ -2,8 +2,9 @@ package com.linbit.linstor.storage.data.provider.spdk;
 
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SpdkVlmPojo;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -18,16 +19,19 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Provider;
+
 import java.util.ArrayList;
 
-public class SpdkData extends AbsStorageVlmData implements SpdkProviderObject
+public class SpdkData<RSC extends AbsResource<RSC>>
+    extends AbsStorageVlmData<RSC>
+    implements SpdkProviderObject<RSC>
 {
     // not persisted, not serialized, stlt only
     private transient String volumeGroup;
 
     public SpdkData(
-        Volume vlmRef,
-        StorageRscData rscDataRef,
+        AbsVolume<RSC> vlmRef,
+        StorageRscData<RSC> rscDataRef,
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,

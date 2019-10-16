@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -40,7 +39,7 @@ public class SnapshotVolumeDefinitionSatelliteFactory
         AccessContext accCtx,
         UUID snapshotVolumeDefinitionUuid,
         SnapshotDefinition snapshotDfn,
-        VolumeNumber volumeNumber,
+        VolumeDefinition vlmDfn,
         long vlmSize,
         SnapshotVolumeDefinition.Flags[] flags
     )
@@ -49,19 +48,20 @@ public class SnapshotVolumeDefinitionSatelliteFactory
         SnapshotVolumeDefinition snapshotVolumeDefinition;
         try
         {
-            snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(accCtx, volumeNumber);
+            snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(accCtx, vlmDfn.getVolumeNumber());
             if (snapshotVolumeDefinition == null)
             {
                 snapshotVolumeDefinition = new SnapshotVolumeDefinition(
                     snapshotVolumeDefinitionUuid,
                     snapshotDfn,
-                    volumeNumber,
+                    vlmDfn,
                     vlmSize,
                     StateFlagsBits.getMask(flags),
                     driver,
                     propsContainerFactory,
                     transObjFactory,
                     transMgrProvider,
+                    new TreeMap<>(),
                     new TreeMap<>()
                 );
                 snapshotDfn.addSnapshotVolumeDefinition(accCtx, snapshotVolumeDefinition);

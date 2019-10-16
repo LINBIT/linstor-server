@@ -35,6 +35,11 @@ import com.linbit.linstor.security.ShutdownProtHolder;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.locks.LockGuard;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+
 import java.io.PrintStream;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,9 +47,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
+
 import org.slf4j.event.Level;
 
 /**
@@ -255,7 +258,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
     )
         throws Exception
     {
-        List<Lock> lockList = new LinkedList();
+        List<Lock> lockList = new LinkedList<>();
         LockGuard scopeLock = null;
         Lock rcfgRdLock = rcfgLock.readLock();
         rcfgRdLock.lock();
@@ -299,7 +302,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
                     Resource rscObj = getResource(accCtx, objName);
                     setObjInfo(
                         responseMsg,
-                        rscObj.getAssignedNode().getName().displayValue + "/" +
+                        rscObj.getNode().getName().displayValue + "/" +
                         rscObj.getDefinition().getName().displayValue,
                         CLS_RSC
                     );

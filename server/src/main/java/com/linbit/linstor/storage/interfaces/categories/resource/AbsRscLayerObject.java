@@ -4,13 +4,14 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.LayerObject;
 
 import javax.annotation.Nullable;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -19,27 +20,39 @@ import java.util.stream.Stream;
 /**
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface RscLayerObject extends LayerObject
+public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
+    extends LayerObject
 {
     int getRscLayerId();
 
-    @Nullable RscLayerObject getParent();
+    @Nullable
+    AbsRscLayerObject<RSC> getParent();
 
-    void setParent(RscLayerObject parentRscLayerObject) throws DatabaseException;
+    void setParent(AbsRscLayerObject<RSC> parentRscLayerObject) throws DatabaseException;
 
-    Set<RscLayerObject> getChildren();
+    Set<AbsRscLayerObject<RSC>> getChildren();
 
-    Resource getResource();
+    RSC getAbsResource();
 
     String getResourceNameSuffix();
 
     @Nullable RscDfnLayerObject getRscDfnLayerObject();
 
-    Map<VolumeNumber, ? extends VlmProviderObject> getVlmLayerObjects();
+    Map<VolumeNumber, ? extends VlmProviderObject<RSC>> getVlmLayerObjects();
 
-    default RscLayerObject getSingleChild()
+    RscLayerDataApi asPojo(AccessContext accCtx) throws AccessDeniedException;
+
+    void delete() throws DatabaseException;
+
+    void remove(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException, DatabaseException;
+
+    boolean checkFileSystem();
+
+    void disableCheckFileSystem();
+
+    default AbsRscLayerObject<RSC> getSingleChild()
     {
-        Set<RscLayerObject> children = getChildren();
+        Set<AbsRscLayerObject<RSC>> children = getChildren();
         if (children.size() != 1)
         {
             throw new ImplementationError("Exactly one child layer data expected but found: " +
@@ -48,10 +61,10 @@ public interface RscLayerObject extends LayerObject
         return getFirstChild();
     }
 
-    default RscLayerObject getFirstChild()
+    default AbsRscLayerObject<RSC> getFirstChild()
     {
-        Iterator<RscLayerObject> iterator = getChildren().iterator();
-        RscLayerObject ret = null;
+        Iterator<AbsRscLayerObject<RSC>> iterator = getChildren().iterator();
+        AbsRscLayerObject<RSC> ret = null;
         if (iterator.hasNext())
         {
             ret = iterator.next();
@@ -59,14 +72,14 @@ public interface RscLayerObject extends LayerObject
         return ret;
     }
 
-    default RscLayerObject getChildBySuffix(String suffixRef)
+    default AbsRscLayerObject<RSC> getChildBySuffix(String suffixRef)
     {
-        Iterator<RscLayerObject> iterator = getChildren().iterator();
-        RscLayerObject ret = null;
+        Iterator<AbsRscLayerObject<RSC>> iterator = getChildren().iterator();
+        AbsRscLayerObject<RSC> ret = null;
         String suffix = getResourceNameSuffix() + suffixRef;
         while (iterator.hasNext())
         {
-            RscLayerObject rscObj = iterator.next();
+            AbsRscLayerObject<RSC> rscObj = iterator.next();
             if (rscObj.getResourceNameSuffix().equals(suffix))
             {
                 ret = rscObj;
@@ -78,7 +91,7 @@ public interface RscLayerObject extends LayerObject
 
     default ResourceName getResourceName()
     {
-        return getResource().getDefinition().getName();
+        return getAbsResource().getResourceDefinition().getName();
     }
 
     default String getSuffixedResourceName()
@@ -91,23 +104,13 @@ public interface RscLayerObject extends LayerObject
         return getVlmLayerObjects().values().stream().anyMatch(VlmProviderObject::hasFailed);
     }
 
-    default Stream<? extends VlmProviderObject> streamVlmLayerObjects()
+    default Stream<? extends VlmProviderObject<RSC>> streamVlmLayerObjects()
     {
         return getVlmLayerObjects().values().stream();
     }
 
-    default VlmProviderObject getVlmProviderObject(VolumeNumber volumeNumber)
+    default <T extends VlmProviderObject<RSC>> T getVlmProviderObject(VolumeNumber volumeNumber)
     {
-        return getVlmLayerObjects().get(volumeNumber);
+        return (T) getVlmLayerObjects().get(volumeNumber);
     }
-
-    RscLayerDataApi asPojo(AccessContext accCtx) throws AccessDeniedException;
-
-    void delete() throws DatabaseException;
-
-    void remove(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException, DatabaseException;
-
-    boolean checkFileSystem();
-
-    void disableCheckFileSystem();
 }

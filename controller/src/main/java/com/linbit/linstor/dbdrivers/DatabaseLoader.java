@@ -15,6 +15,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.NetInterface;
@@ -59,14 +60,17 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.layer.snapshot.CtrlSnapLayerDataFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
 import com.linbit.utils.Triple;
 
@@ -135,7 +139,8 @@ public class DatabaseLoader implements DatabaseDriver
     private final StorageLayerCtrlDatabaseDriver storageLayerDriver;
     private final NvmeLayerCtrlDatabaseDriver nvmeLayerDriver;
     private final WritecacheLayerCtrlDatabaseDriver writecacheLayerDriver;
-    private final Provider<CtrlLayerDataHelper> ctrlLayerDataHelper;
+    private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
+    private final Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelper;
 
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
@@ -173,7 +178,8 @@ public class DatabaseLoader implements DatabaseDriver
         StorageLayerCtrlDatabaseDriver storageLayerDriverRef,
         NvmeLayerCtrlDatabaseDriver nvmeLayerDriverRef,
         WritecacheLayerCtrlDatabaseDriver writecacheLayerDriverRef,
-        Provider<CtrlLayerDataHelper> ctrlLayerDataHelperRef,
+        Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
+        Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.ResourceGroupMap rscGrpMapRef,
@@ -208,7 +214,9 @@ public class DatabaseLoader implements DatabaseDriver
         storageLayerDriver = storageLayerDriverRef;
         nvmeLayerDriver = nvmeLayerDriverRef;
         writecacheLayerDriver = writecacheLayerDriverRef;
-        ctrlLayerDataHelper = ctrlLayerDataHelperRef;
+        ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
+        ctrlSnapLayerDataHelper = ctrlSnapLayerDataHelperRef;
+
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         rscGrpMap = rscGrpMapRef;
@@ -324,16 +332,16 @@ public class DatabaseLoader implements DatabaseDriver
                 Collections.unmodifiableMap(rscDriver.loadAll(new Pair<>(tmpNodesMap, tmpRscDfnMap)));
             for (Resource rsc : loadedResources.keySet())
             {
-                loadedNodesMap.get(rsc.getAssignedNode()).getRscMap()
+                loadedNodesMap.get(rsc.getNode()).getRscMap()
                     .put(rsc.getDefinition().getName(), rsc);
                 loadedRscDfnsMap.get(rsc.getDefinition()).getRscMap()
-                    .put(rsc.getAssignedNode().getName(), rsc);
+                    .put(rsc.getNode().getName(), rsc);
             }
 
             // temporary resource map
             Map<Pair<NodeName, ResourceName>, Resource> tmpRscMap =
                 mapByName(loadedResources, rsc -> new Pair<>(
-                    rsc.getAssignedNode().getName(),
+                    rsc.getNode().getName(),
                     rsc.getDefinition().getName()
                 )
             );
@@ -375,16 +383,16 @@ public class DatabaseLoader implements DatabaseDriver
 
             for (Volume vlm : loadedVolumes.keySet())
             {
-                loadedResources.get(vlm.getResource()).getVlmMap()
+                loadedResources.get(vlm.getAbsResource()).getVlmMap()
                     .put(vlm.getVolumeDefinition().getVolumeNumber(), vlm);
                 loadedVlmDfnMap.get(vlm.getVolumeDefinition()).getVlmMap()
-                    .put(Resource.getStringId(vlm.getResource()), vlm);
+                    .put(Resource.getStringId(vlm.getAbsResource()), vlm);
             }
 
             // temporary volume map
             Map<Triple<NodeName, ResourceName, VolumeNumber>, Volume> tmpVlmMap =
                 mapByName(loadedVolumes, vlm -> new Triple<>(
-                    vlm.getResource().getAssignedNode().getName(),
+                    vlm.getAbsResource().getNode().getName(),
                     vlm.getResourceDefinition().getName(),
                     vlm.getVolumeDefinition().getVolumeNumber()
                 )
@@ -419,7 +427,9 @@ public class DatabaseLoader implements DatabaseDriver
 
             // loading snapshot volume definitions
             Map<SnapshotVolumeDefinition, SnapshotVolumeDefinition.InitMaps> loadedSnapshotVolumeDefinitions =
-                snapshotVolumeDefinitionDriver.loadAll(tmpSnapshotDfnMap);
+                snapshotVolumeDefinitionDriver.loadAll(
+                    new Pair<>(tmpSnapshotDfnMap, tmpVlmDfnMap)
+                );
             for (SnapshotVolumeDefinition snapshotVolumeDefinition : loadedSnapshotVolumeDefinitions.keySet())
             {
                 loadedSnapshotDfns.get(snapshotVolumeDefinition.getSnapshotDefinition())
@@ -458,15 +468,14 @@ public class DatabaseLoader implements DatabaseDriver
             // loading snapshot volumes
             List<SnapshotVolume> loadedSnapshotVolumes =
                 snapshotVolumeDriver.loadAllAsList(
-                    new Triple<>(
+                    new Pair<>(
                         tmpSnapshotMap,
-                        tmpSnapshotVlmDfnMap,
-                        tmpStorPoolMap
+                        tmpSnapshotVlmDfnMap
                     )
                 );
             for (SnapshotVolume snapshotVolume : loadedSnapshotVolumes)
             {
-                loadedSnapshots.get(snapshotVolume.getSnapshot()).getSnapshotVlmMap()
+                loadedSnapshots.get(snapshotVolume.getAbsResource()).getSnapshotVlmMap()
                     .put(snapshotVolume.getVolumeNumber(), snapshotVolume);
                 loadedSnapshotVolumeDefinitions.get(snapshotVolume.getSnapshotVolumeDefinition()).getSnapshotVlmMap()
                     .put(snapshotVolume.getNodeName(), snapshotVolume);
@@ -498,7 +507,7 @@ public class DatabaseLoader implements DatabaseDriver
             }
 
             // load layer objects
-            loadLayerObects(tmpRscDfnMap, tmpSnapshotMap, tmpStorPoolMapForLayers);
+            loadLayerObects(tmpRscDfnMap, tmpSnapshotDfnMap, tmpStorPoolMapForLayers);
 
             nodesMap.putAll(tmpNodesMap);
             rscDfnMap.putAll(tmpRscDfnMap);
@@ -547,7 +556,7 @@ public class DatabaseLoader implements DatabaseDriver
 
     private void loadLayerObects(
         Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef,
-        Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> tmpSnapshotMapRef,
+        Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> tmpSnapDfnMapRef,
         Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef
     )
         throws DatabaseException, AccessDeniedException
@@ -555,29 +564,51 @@ public class DatabaseLoader implements DatabaseDriver
         storageLayerDriver.fetchForLoadAll(tmpStorPoolMapRef);
 
         // load RscDfnLayerObjects and VlmDfnLayerObjects
-        drbdLayerDriver.loadLayerData(tmpRscDfnMapRef);
-        storageLayerDriver.loadLayerData(tmpRscDfnMapRef);
+        drbdLayerDriver.loadLayerData(tmpRscDfnMapRef, tmpSnapDfnMapRef);
+        storageLayerDriver.loadLayerData(tmpRscDfnMapRef, tmpSnapDfnMapRef);
         // no *DfnLayerObjects for nvme
         // no *DfnLayerObjects for luks
 
-        List<Resource> resourcesWithLayerData = loadRscLayerData(tmpRscDfnMapRef, tmpStorPoolMapRef);
+        List<Resource> resourcesWithLayerData = loadLayerData(
+            tmpStorPoolMapRef,
+            rli -> tmpRscDfnMapRef.get(rli.resourceName).getResource(dbCtx, rli.nodeName)
+
+        );
+
+        List<Snapshot> snapshotsWithLayerData = loadLayerData(
+            tmpStorPoolMapRef,
+            rli -> tmpSnapDfnMapRef.get(
+                new Pair<>(
+                    rli.resourceName,
+                    rli.snapshotName
+                )
+            ).getSnapshot(dbCtx, rli.nodeName)
+        );
 
         drbdLayerDriver.clearLoadCache();
         storageLayerDriver.clearLoadAllCache();
 
-        CtrlLayerDataHelper layerDataHelper = ctrlLayerDataHelper.get();
-        LayerPayload payload = new LayerPayload();
+        CtrlRscLayerDataFactory rscLayerDataHelper = ctrlRscLayerDataHelper.get();
         for (Resource rsc : resourcesWithLayerData)
         {
+            LayerPayload payload = new LayerPayload();
             // initialize all non-persisted, but later serialized variables
-            List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
-            layerDataHelper.ensureStackDataExists(rsc, layerStack, payload);
+            List<DeviceLayerKind> layerStack = LayerUtils.getLayerStack(rsc, dbCtx);
+            rscLayerDataHelper.ensureStackDataExists(rsc, layerStack, payload);
         }
+        // CtrlSnapLayerDataFactory snapLayerDataHelper = ctrlSnapLayerDataHelper.get();
+        // for (Snapshot snap : snapshotsWithLayerData)
+        // {
+        // LayerPayload payload = new LayerPayload();
+        // // initialize all non-persisted, but later serialized variables
+        // List<DeviceLayerKind> layerStack = LayerUtils.getLayerStack(snap, dbCtx);
+        // snapLayerDataHelper.ensureStackDataExists(snap, layerStack, payload);
+        // }
     }
 
-    private List<Resource> loadRscLayerData(
-        Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef,
-        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef
+    private <RSC extends AbsResource<RSC>> List<RSC> loadLayerData(
+        Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef,
+        ExceptionThrowingFunction<RscLayerInfo, RSC, AccessDeniedException> getter
     )
         throws DatabaseException, AccessDeniedException, ImplementationError
     {
@@ -586,9 +617,9 @@ public class DatabaseLoader implements DatabaseDriver
 
         Set<Integer> parentIds = null;
         boolean loadNext = true;
-        Map<Integer, Pair<RscLayerObject, Set<RscLayerObject>>> rscLayerObjectChildren = new HashMap<>();
+        Map<Integer, Pair<AbsRscLayerObject<RSC>, Set<AbsRscLayerObject<RSC>>>> rscLayerObjectChildren = new HashMap<>();
 
-        List<Resource> resourcesWithLayerData = new ArrayList<>();
+        List<RSC> resourcesWithLayerData = new ArrayList<>();
         while (loadNext)
         {
             // we need to load in a top-down fashion.
@@ -598,17 +629,17 @@ public class DatabaseLoader implements DatabaseDriver
             parentIds = new HashSet<>();
             for (RscLayerInfo rli : nextRscInfoToLoad)
             {
-                Pair<? extends RscLayerObject, Set<RscLayerObject>> rscLayerObjectPair;
-                ResourceDefinition rscDfn = tmpRscDfnMapRef.get(rli.resourceName);
-                Resource rsc = rscDfn.getResource(dbCtx, rli.nodeName);
+                Pair<? extends AbsRscLayerObject<RSC>, Set<AbsRscLayerObject<RSC>>> rscLayerObjectPair;
+                RSC rsc = getter.accept(rli);
 
                 resourcesWithLayerData.add(rsc);
 
-                RscLayerObject parent = null;
-                Set<RscLayerObject> currentRscLayerDatasChildren = null;
+                AbsRscLayerObject<RSC> parent = null;
+                Set<AbsRscLayerObject<RSC>> currentRscLayerDatasChildren = null;
                 if (rli.parentId != null)
                 {
-                    Pair<RscLayerObject, Set<RscLayerObject>> pair = rscLayerObjectChildren.get(rli.parentId);
+                    Pair<AbsRscLayerObject<RSC>, Set<AbsRscLayerObject<RSC>>> pair = rscLayerObjectChildren
+                        .get(rli.parentId);
 
                     parent = pair.objA;
                     currentRscLayerDatasChildren = pair.objB;
@@ -616,7 +647,7 @@ public class DatabaseLoader implements DatabaseDriver
                 switch (rli.kind)
                 {
                     case DRBD:
-                        rscLayerObjectPair = drbdLayerDriver.load(
+                        rscLayerObjectPair = drbdLayerDriver.<RSC> load(
                             rsc,
                             rli.id,
                             rli.rscSuffix,
@@ -660,7 +691,7 @@ public class DatabaseLoader implements DatabaseDriver
                     default:
                         throw new ImplementationError("Unhandled case for device kind '" + rli.kind + "'");
                 }
-                RscLayerObject rscLayerObject = rscLayerObjectPair.objA;
+                AbsRscLayerObject<RSC> rscLayerObject = rscLayerObjectPair.objA;
                 rscLayerObjectChildren.put(rli.id, new Pair<>(rscLayerObject, rscLayerObjectPair.objB));
                 if (parent == null)
                 {

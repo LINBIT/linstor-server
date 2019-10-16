@@ -169,9 +169,9 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerCtrlDatabase
         sfVlmDfnInfoCache = null;
     }
 
-    public VlmProviderObject load(
-        Volume vlmRef,
-        StorageRscData rscDataRef,
+    public <RSC extends AbsResource<RSC>> VlmProviderObject<RSC> load(
+        AbsVolume<RSC> vlmRef,
+        StorageRscData<RSC> rscDataRef,
         DeviceProviderKind kindRef,
         StorPool storPoolRef,
         StorageLayerDatabaseDriver storageLayerDbDriverRef
@@ -195,11 +195,11 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerCtrlDatabase
             );
         }
 
-        VlmProviderObject vlmData = null;
+        VlmProviderObject<RSC> vlmData = null;
         switch (kindRef)
         {
             case SWORDFISH_INITIATOR:
-                vlmData = new SfInitiatorData(
+                vlmData = new SfInitiatorData<>(
                     rscDataRef,
                     vlmRef,
                     sfVlmDfnData,
@@ -210,7 +210,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerCtrlDatabase
                 );
                 break;
             case SWORDFISH_TARGET:
-                vlmData = new SfTargetData(
+                vlmData = new SfTargetData<>(
                     vlmRef,
                     rscDataRef,
                     sfVlmDfnData,
@@ -283,28 +283,28 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerCtrlDatabase
     }
 
     @Override
-    public void persist(SfInitiatorData sfInitiatorDataRef)
+    public void persist(SfInitiatorData<?> sfInitiatorDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if SfInitiatorData will get a database table in future.
     }
 
     @Override
-    public void delete(SfInitiatorData sfInitiatorDataRef)
+    public void delete(SfInitiatorData<?> sfInitiatorDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if SfInitiatorData will get a database table in future.
     }
 
     @Override
-    public void persist(SfTargetData sfTargetDataRef)
+    public void persist(SfTargetData<?> sfTargetDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if SfTargetData will get a database table in future.
     }
 
     @Override
-    public void delete(SfTargetData sfTargetDataRef)
+    public void delete(SfTargetData<?> sfTargetDataRef)
     {
         // no-op - there is no special database table.
         // this method only exists if SfTargetData will get a database table in future.

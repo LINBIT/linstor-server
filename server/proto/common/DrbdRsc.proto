@@ -23,10 +23,10 @@ message DrbdRscDfn
     required uint32             peers_slots = 2;
     required uint32             al_stripes = 3;
     required int64              al_size = 4;
-    required uint32             port = 5;
+    optional uint32             port = 5;
     // has to correspond to a value of the linstor-java "TransportType" enum
     required string             transport_type = 6;
-    required string             secret = 7;
+    optional string             secret = 7;
     required bool               down = 8;
 }
 
@@ -49,6 +49,6 @@ message DrbdVlmDfn
     required string             rsc_name_suffix = 1;
     required uint32             vlm_nr = 2;
 
-    required int32              minor = 3;
+    optional int32              minor = 3;
 }
 

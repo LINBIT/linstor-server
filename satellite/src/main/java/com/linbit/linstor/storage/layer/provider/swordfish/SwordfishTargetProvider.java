@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -45,6 +46,7 @@ import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_VOLUMES;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
@@ -53,7 +55,7 @@ import com.fasterxml.jackson.jr.ob.api.CollectionBuilder;
 import com.fasterxml.jackson.jr.ob.api.MapBuilder;
 
 @Singleton
-public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
+public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData<Resource>>
 {
     private static final long POLL_VLM_CRT_TIMEOUT_DEFAULT = 600;
     private static final long POLL_VLM_CTR_MAX_TRIES_DEFAULT = 100;
@@ -84,7 +86,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     }
 
     @Override
-    protected void createImpl(SfTargetData vlmData)
+    protected void createImpl(SfTargetData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         try
@@ -120,7 +122,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     }
 
     @Override
-    protected void deleteImpl(SfTargetData vlmData)
+    protected void deleteImpl(SfTargetData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         try
@@ -170,7 +172,7 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
         );
     }
 
-    private void createSfVlm(SfTargetData vlmData)
+    private void createSfVlm(SfTargetData<Resource> vlmData)
         throws AccessDeniedException, StorageException, IOException, DatabaseException,
         InterruptedException, InvalidKeyException
     {
@@ -362,17 +364,17 @@ public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>
     }
 
     @Override
-    protected void setUsableSize(SfTargetData vlmData, long size) throws DatabaseException
+    protected void setUsableSize(SfTargetData<Resource> vlmData, long size) throws DatabaseException
     {
         // we don't have usable size... but we need allocated size
         vlmData.setAllocatedSize(size);
     }
 
     @Override
-    public void updateAllocatedSize(VlmProviderObject vlmObjRef)
+    public void updateAllocatedSize(VlmProviderObject<Resource> vlmObjRef)
         throws AccessDeniedException, DatabaseException, StorageException
     {
-        SfTargetData vlmData = (SfTargetData) vlmObjRef;
+        SfTargetData<Resource> vlmData = (SfTargetData<Resource>) vlmObjRef;
         vlmData.setAllocatedSize(
             vlmData.getParentAllocatedSizeOrElse(
                 () -> vlmData.getVlmDfnLayerObject().getVolumeDefinition().getVolumeSize(sysCtx)

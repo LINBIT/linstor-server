@@ -30,6 +30,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -162,13 +163,13 @@ public class CtrlVlmApiCallHandler
 
     public static String getVlmDescription(Volume vlm)
     {
-        return getVlmDescription(vlm.getResource(), vlm.getVolumeDefinition());
+        return getVlmDescription(vlm.getAbsResource(), vlm.getVolumeDefinition());
     }
 
     public static String getVlmDescription(Resource rsc, VolumeDefinition vlmDfn)
     {
         return getVlmDescription(
-            rsc.getAssignedNode().getName().displayValue,
+            rsc.getNode().getName().displayValue,
             rsc.getDefinition().getName().displayValue,
             vlmDfn.getVolumeNumber().value
         );
@@ -187,13 +188,13 @@ public class CtrlVlmApiCallHandler
 
     public static String getVlmDescriptionInline(Volume vlm)
     {
-        return getVlmDescriptionInline(vlm.getResource(), vlm.getVolumeDefinition());
+        return getVlmDescriptionInline(vlm.getAbsResource(), vlm.getVolumeDefinition());
     }
 
     public static String getVlmDescriptionInline(Resource rsc, VolumeDefinition vlmDfn)
     {
         return getVlmDescriptionInline(
-            rsc.getAssignedNode().getName().displayValue,
+            rsc.getNode().getName().displayValue,
             rsc.getDefinition().getName().displayValue,
             vlmDfn.getVolumeNumber().value
         );
