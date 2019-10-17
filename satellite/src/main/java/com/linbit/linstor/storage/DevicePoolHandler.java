@@ -13,6 +13,7 @@ import com.linbit.linstor.storage.utils.ZfsCommands;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -98,9 +99,18 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, VG_PREFIX + poolName));
                 apiCallRc.addEntries(createLVMThinPool(VG_PREFIX + poolName, poolName));
                 break;
+            case ZFS_THIN: // no differentiation between ZFS and ZFS_THIN pool. fall-through
             case ZFS:
                 apiCallRc.addEntries(createZPool(devicePaths, raidLevel, poolName));
                 break;
+
+                // the following cases make no sense, hence the fall-throughs
+            case DISKLESS: // fall-through
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
+            case FILE: // fall-through
+            case FILE_THIN: // fall-through
+            case SWORDFISH_INITIATOR: // fall-through
+            case SWORDFISH_TARGET: // fall-through
             default:
                 apiCallRc.addEntry(
                     ApiCallRcImpl.simpleEntry(
