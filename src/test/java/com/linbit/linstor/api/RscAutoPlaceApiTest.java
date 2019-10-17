@@ -594,6 +594,56 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
+    public void replicasOnDifferentWithValueGithub79Test() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED // rsc autoplace
+            )
+                .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+                .stltBuilder("node1")
+                    .setNodeProp("Aux/key", "val1")
+                    .addStorPool("stor", 10 * GB)
+                    .build()
+                .stltBuilder("node2")
+                    .setNodeProp("Aux/key", "val2")
+                    .addStorPool("stor", 10 * GB)
+                    .build()
+                .stltBuilder("node3")
+                    .setNodeProp("Aux/key", "val3")
+                    .addStorPool("stor", 9 * GB)
+                    .build()
+                .stltBuilder("node4")
+                    .setNodeProp("Aux/key", "val1") // same as "node1"
+                    .addStorPool("stor", 10 * GB)
+                    .build()
+                .stltBuilder("node5")
+                    .setNodeProp("Aux/key", "val2") // same as "node2"
+                    .addStorPool("stor", 10 * GB)
+                    .build()
+
+                .addReplicasOnDifferentNodeProp("Aux/key=val1")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .sorted((n1, n2) -> n1.getName().compareTo(n2.getName()))
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+
+        String nodePropVal = deployedNodes.get(0).getProps(GenericDbBase.SYS_CTX).getProp("Aux/key");
+
+        assertNotEquals("val1", nodePropVal);
+
+        assertEquals("node2", deployedNodes.get(0).getName().displayValue);
+        assertEquals("node3", deployedNodes.get(1).getName().displayValue);
+    }
+
+    @Test
     public void replicasOnDifferentWithValueTest() throws Exception
     {
         evaluateTest(
