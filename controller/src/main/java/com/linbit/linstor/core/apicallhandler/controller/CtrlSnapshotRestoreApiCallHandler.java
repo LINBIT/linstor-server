@@ -7,6 +7,8 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
@@ -37,11 +39,13 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
-import reactor.core.publisher.Flux;
+
+import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,7 +56,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.linbit.utils.StringUtils.firstLetterCaps;
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlSnapshotRestoreApiCallHandler
@@ -134,6 +138,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     )
     {
         Flux<ApiCallRc> deploymentResponses = Flux.just();
+        Flux<ApiCallRc> cleanupPropertiesFlux = Flux.empty();
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = new ResponseContext(
             new ApiOperation(ApiConsts.MASK_CRT, new OperationDescription("restore", "restoring")),
@@ -197,6 +202,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             }
 
             deploymentResponses = ctrlRscCrtApiHelper.deployResources(context, restoredResources);
+            cleanupPropertiesFlux = cleanupProperties(restoredResources);
 
             responseConverter.addWithOp(responses, context, ApiCallRcImpl
                 .entryBuilder(
@@ -218,13 +224,65 @@ public class CtrlSnapshotRestoreApiCallHandler
             responses = responseConverter.reportException(peer.get(), context, exc);
         }
 
+        final Flux<ApiCallRc> cleanupFlux = cleanupPropertiesFlux;
+
         return Flux.<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
-            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
+            .concatWith(cleanupFlux)
+            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> cleanupFlux)
             .onErrorResume(EventStreamTimeoutException.class,
-                ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))
+                ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context))
+                    .concatWith(cleanupFlux)
+            )
             .onErrorResume(EventStreamClosedException.class,
-                ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
+                ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context))
+                    .concatWith(cleanupFlux)
+            );
+    }
+
+    private Flux<ApiCallRc> cleanupProperties(List<Resource> restoredResourcesRef)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Cleanup restore-properties",
+            lockGuardFactory.createDeferred()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .build(),
+            () -> cleanupPropertiesInTransaction(restoredResourcesRef)
+        );
+    }
+
+    private Flux<ApiCallRc> cleanupPropertiesInTransaction(List<Resource> restoredResourcesRef)
+    {
+        try
+        {
+            AccessContext peerCtx = peerAccCtx.get();
+            for (Resource rsc : restoredResourcesRef)
+            {
+                Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
+                while (iterateVolumes.hasNext())
+                {
+                    Volume vlm = iterateVolumes.next();
+                    Props props = vlm.getProps(peerCtx);
+                    props.removeProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
+                    props.removeProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
+                }
+            }
+            ctrlTransactionHelper.commit();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "access volume properties",
+                ApiConsts.FAIL_ACC_DENIED_VLM
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        return Flux.empty();
     }
 
     private Resource restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinition toRscDfn, Node node)

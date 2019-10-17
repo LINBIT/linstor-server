@@ -43,6 +43,12 @@ public class ApiRcUtils
         tmpMap.put(ApiConsts.MASK_RSC_CONN, "RscConn");
         tmpMap.put(ApiConsts.MASK_VLM_CONN, "VlmConn");
         tmpMap.put(ApiConsts.MASK_NET_IF, "NetIf");
+        tmpMap.put(ApiConsts.MASK_CTRL_CONF, "ControllerConf");
+        tmpMap.put(ApiConsts.MASK_KVS, "Kvs");
+        tmpMap.put(ApiConsts.MASK_RSC_GRP, "RscGrp");
+        tmpMap.put(ApiConsts.MASK_SNAPSHOT, "Snapshot");
+        tmpMap.put(ApiConsts.MASK_STOR_POOL_DFN, "SnapshotDfn");
+        tmpMap.put(ApiConsts.MASK_VLM_GRP, "VlmGrp");
         RET_CODES_OBJ = Collections.unmodifiableMap(tmpMap);
 
         tmpMap = new HashMap<>();
