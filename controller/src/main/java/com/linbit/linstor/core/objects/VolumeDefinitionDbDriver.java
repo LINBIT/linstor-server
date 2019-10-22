@@ -35,8 +35,7 @@ import javax.inject.Singleton;
 
 import java.util.Map;
 import java.util.TreeMap;
-
-import com.google.common.base.Functions;
+import java.util.function.Function;
 
 @Singleton
 public class VolumeDefinitionDbDriver extends
@@ -80,7 +79,7 @@ public class VolumeDefinitionDbDriver extends
         volumeSizeDriver = generateSingleColumnDriver(
             VLM_SIZE,
             vlmDfn -> Long.toString(vlmDfn.getVolumeSize(dbCtxRef)),
-            Functions.identity()
+            Function.identity()
         );
     }
 

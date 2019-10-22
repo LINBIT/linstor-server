@@ -36,11 +36,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotVolum
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.Map;
 import java.util.TreeMap;
-
-import com.google.common.base.Functions;
+import java.util.function.Function;
 
 @Singleton
 public class SnapshotVolumeDefinitionDbDriver extends
@@ -85,7 +83,7 @@ public class SnapshotVolumeDefinitionDbDriver extends
         sizeDriver = generateSingleColumnDriver(
             VLM_SIZE,
             snapVlmDfn -> Long.toString(snapVlmDfn.getVolumeSize(dbCtxRef)),
-            Functions.identity()
+            Function.identity()
         );
     }
 
