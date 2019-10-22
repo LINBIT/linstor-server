@@ -72,13 +72,6 @@ public class ResourceCreateCheck
                     }
                     break;
                 case NVME_INITIATOR:
-                    if (hasNvmeInitiator)
-                    {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_EXISTS_NVME_INITIATOR_PER_RSC_DFN,
-                            "Only one NVMe Initiator per resource definition allowed!")
-                        );
-                    }
                     if (!hasNvmeTarget)
                     {
                         throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -97,13 +90,6 @@ public class ResourceCreateCheck
                     }
                     break;
                 case SWORDFISH_INITIATOR:
-                    if (hasSwordfishInitiator)
-                    {
-                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_EXISTS_SWORDFISH_INITIATOR_PER_RSC_DFN,
-                            "Only one Swordfish Initiator per resource definition allowed!")
-                        );
-                    }
                     if (!hasSwordfishTarget)
                     {
                         throw new ApiRcException(ApiCallRcImpl.simpleEntry(
