@@ -20,6 +20,8 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerOffline;
@@ -37,6 +39,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,39 +54,47 @@ public class CtrlNodeCrtApiCallHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlNodeApiCallHandler ctrlNodeApiCallHandler;
+    private final ResourceDefinitionRepository rscDfnRepo;
     private final Provider<CtrlAuthenticator> ctrlAuthenticator;
     private final ReconnectorTask reconnectorTask;
-
+    private final CtrlRscAutoHelper autoHelper;
 
     @Inject
     public CtrlNodeCrtApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef,
+        ResourceDefinitionRepository rscDfnRepoRef,
         Provider<CtrlAuthenticator> ctrlAuthenticatorRef,
-        ReconnectorTask reconnectorTaskRef
+        ReconnectorTask reconnectorTaskRef,
+        CtrlRscAutoHelper autoHelperRef
     )
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
         peerAccCtx = peerAccCtxRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
+        rscDfnRepo = rscDfnRepoRef;
         ctrlAuthenticator = ctrlAuthenticatorRef;
         reconnectorTask = reconnectorTaskRef;
+        autoHelper = autoHelperRef;
     }
 
     /**
@@ -181,7 +192,8 @@ public class CtrlNodeCrtApiCallHandler
                             FIRST_CONNECT_TIMEOUT_MILLIS
                         )
                         .concatMap(connected -> processConnectingResponse(node, connected))
-                   );
+                    )
+                    .concatWith(runAutoMagic(context));
             }
             else
             {
@@ -225,6 +237,40 @@ public class CtrlNodeCrtApiCallHandler
             }
         }
         return connectedFlux;
+    }
+
+    private Flux<ApiCallRc> runAutoMagic(ResponseContext context)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Auto-Quorum and -Tiebreaker after node create",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
+            () -> runAutoMagicInTransaction(context)
+        );
+    }
+
+    private Flux<ApiCallRc> runAutoMagicInTransaction(ResponseContext context)
+    {
+        ApiCallRcImpl apiCallRcImpl = new ApiCallRcImpl();
+        List<Flux<ApiCallRc>> autoFluxes = new ArrayList<>();
+        try
+        {
+            for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(peerAccCtx.get()).values())
+            {
+                autoFluxes.add(autoHelper.manage(apiCallRcImpl, context, rscDfn).getFlux());
+            }
+
+            ctrlTransactionHelper.commit();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "Running auto-quorum and -tiebreaker on new node",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return Flux.<ApiCallRc> just(apiCallRcImpl)
+            .concatWith(Flux.merge(autoFluxes));
     }
 
     public static void setOfflinePeer(Node node, AccessContext accCtx)

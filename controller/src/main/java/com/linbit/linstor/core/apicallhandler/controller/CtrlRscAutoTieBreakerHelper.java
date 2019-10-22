@@ -173,7 +173,10 @@ public class CtrlRscAutoTieBreakerHelper
                                 apiCallRcImpl.addEntries(
                                     ApiCallRcImpl.singleApiCallRc(
                                         ApiConsts.WARN_NOT_ENOUGH_NODES_FOR_TIE_BREAKER,
-                                        "Could not find suitable node to automatically create a tie breaking resource."
+                                        String.format(
+                                            "Could not find suitable node to automatically create a tie breaking resource for '%s'.",
+                                            rscDfn.getName().displayValue
+                                        )
                                     )
                                 );
                             }
@@ -193,7 +196,10 @@ public class CtrlRscAutoTieBreakerHelper
                                 apiCallRcImpl.addEntries(
                                     ApiCallRcImpl.singleApiCallRc(
                                         ApiConsts.INFO_TIE_BREAKER_CREATED,
-                                        "Tie breaker resource created on " + node.getName().displayValue
+                                        String.format("Tie breaker resource '%s' created on %s",
+                                            rscDfn.getName().displayValue,
+                                            node.getName().displayValue
+                                        )
                                     )
                                 );
 
