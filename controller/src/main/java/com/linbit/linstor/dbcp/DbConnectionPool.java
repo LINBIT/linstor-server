@@ -258,8 +258,14 @@ public class DbConnectionPool implements ControllerSQLDatabase
         if (!atomicStarted.getAndSet(true))
         {
             Properties props = new Properties();
-            props.setProperty("user", linstorConfig.getDB().getUser());
-            props.setProperty("password", linstorConfig.getDB().getPassword());
+            if (linstorConfig.getDB().getUser() != null)
+            {
+                props.setProperty("user", linstorConfig.getDB().getUser());
+            }
+            if (linstorConfig.getDB().getPassword() != null)
+            {
+                props.setProperty("password", linstorConfig.getDB().getPassword());
+            }
             ConnectionFactory connFactory = new DriverManagerConnectionFactory(dbConnectionUrl, props);
             PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
 

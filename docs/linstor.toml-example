@@ -5,6 +5,17 @@
   # jdbc connection url
   connection_url = "jdbc:h2:/var/lib/linstor/linstordb"
 
+  ## for etcd
+  ## do not set user field if no authentication required
+  # connection_url = "etcd://etcdhost:2379"
+
+  ## if you use TLS
+  # ca_certificate = "ca.pem"
+  # client_certificate = "client.pem"
+  # client_key_pcks8_pem = "client-key.pcks8"
+  ## set client_key_password if private key has a password
+  # client_key_password = "mysecret"
+
 [http]
   enabled = true
   listen_addr = "::"

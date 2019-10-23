@@ -37,17 +37,7 @@ public class DbEtcdInitializer implements DbInitializer
     {
         errorLog.logInfo("Initializing the etcd database");
 
-        String url;
-        String connectionUrl = linstorConfig.getDB().getConnectionUrl();
-        if (connectionUrl.toLowerCase().startsWith("etcd://"))
-        {
-            url = connectionUrl.substring("etcd://".length());
-        }
-        else
-        {
-            url = connectionUrl;
-        }
-        dbEtcd.initializeDataSource(url);
+        dbEtcd.initializeDataSource(linstorConfig.getDB().getConnectionUrl());
 
         dbEtcd.migrate("etcd");
     }

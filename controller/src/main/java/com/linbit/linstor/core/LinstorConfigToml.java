@@ -111,9 +111,13 @@ public class LinstorConfigToml
 
     public static class DB
     {
-        private String user = "linstor";
-        private String password = "linstor";
+        private String user;
+        private String password;
         private String connection_url = "jdbc:h2:/var/lib/linstor/linstordb";
+        private String ca_certificate;
+        private String client_certificate;
+        private String client_key_pcks8_pem;
+        private String client_key_password;
 
         public String getUser()
         {
@@ -128,6 +132,26 @@ public class LinstorConfigToml
         public String getConnectionUrl()
         {
             return connection_url;
+        }
+
+        public String getCACertificate()
+        {
+            return ca_certificate;
+        }
+
+        public String getClientCertificate()
+        {
+            return client_certificate;
+        }
+
+        public String getClientKeyPCKS8PEM()
+        {
+            return client_key_pcks8_pem;
+        }
+
+        public String getClientKeyPassword()
+        {
+            return client_key_password;
         }
     }
 

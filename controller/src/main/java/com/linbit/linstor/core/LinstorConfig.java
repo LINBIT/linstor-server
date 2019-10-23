@@ -322,8 +322,14 @@ public class LinstorConfig
         final String password)
     {
         Properties dbProps = new Properties();
-        dbProps.setProperty("user", user);
-        dbProps.setProperty("password", password);
+        if (user != null)
+        {
+            dbProps.setProperty("user", user);
+        }
+        if (password != null)
+        {
+            dbProps.setProperty("password", password);
+        }
         ConnectionFactory connFactory = new DriverManagerConnectionFactory(
             connUrl,
             dbProps

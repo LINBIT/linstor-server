@@ -1,37 +1,44 @@
 package com.linbit.linstor.dbcp.etcd;
 
-import static com.ibm.etcd.client.KeyUtils.bs;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
+import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_00_Init;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.io.Files;
 import com.ibm.etcd.api.RangeResponse;
 import com.ibm.etcd.client.EtcdClient;
 import com.ibm.etcd.client.KvStoreClient;
 import com.ibm.etcd.client.kv.KvClient;
+
+import static com.ibm.etcd.client.KeyUtils.bs;
 
 @Singleton
 public class DbEtcd implements ControllerETCDDatabase
 {
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "ETCD database handler";
+    private static final String ETCD_SCHEME = "etcd://";
 
     private AtomicBoolean atomicStarted = new AtomicBoolean(false);
 
+    private final ErrorReporter errorReporter;
+    private final LinstorConfigToml linstorConfigToml;
+
     private int dbTimeout = ControllerDatabase.DEFAULT_TIMEOUT;
-    private String connectionUrl;
     private KvStoreClient etcdClient;
 
     static
@@ -48,8 +55,12 @@ public class DbEtcd implements ControllerETCDDatabase
 
     @Inject
     public DbEtcd(
+        ErrorReporter errorReporterRef,
+        LinstorConfigToml linstorConfigTomlRef
     )
     {
+        errorReporter = errorReporterRef;
+        linstorConfigToml = linstorConfigTomlRef;
     }
 
     @Override
@@ -61,7 +72,6 @@ public class DbEtcd implements ControllerETCDDatabase
     @Override
     public void initializeDataSource(String dbConnectionUrl)
     {
-        connectionUrl = dbConnectionUrl;
         try
         {
             start();
@@ -110,7 +120,7 @@ public class DbEtcd implements ControllerETCDDatabase
         }
         catch (Exception exc)
         {
-            // FIXME: report using the Controller's ErrorReporter instance
+            errorReporter.reportError(exc);
         }
     }
 
@@ -123,7 +133,55 @@ public class DbEtcd implements ControllerETCDDatabase
     @Override
     public void start() throws SystemServiceStartException
     {
-        etcdClient = EtcdClient.forEndpoints(connectionUrl).withPlainText().build();
+        final String origConUrl = linstorConfigToml.getDB().getConnectionUrl();
+        final String connectionUrl = origConUrl.toLowerCase().startsWith(ETCD_SCHEME) ?
+            origConUrl.substring(ETCD_SCHEME.length()) : origConUrl;
+
+        EtcdClient.Builder builder = EtcdClient.forEndpoints(connectionUrl);
+
+        if (linstorConfigToml.getDB().getCACertificate() != null)
+        {
+            try
+            {
+                if (linstorConfigToml.getDB().getCACertificate() != null)
+                {
+                    builder.withCaCert(
+                        Files.asByteSource(new File(linstorConfigToml.getDB().getCACertificate()))
+                    );
+                }
+
+                if (linstorConfigToml.getDB().getClientCertificate() != null &&
+                    linstorConfigToml.getDB().getClientKeyPCKS8PEM() != null)
+                {
+                    builder.withTlsConfig(sslContextBuilder ->
+                        sslContextBuilder
+                            .keyManager(
+                                new File(linstorConfigToml.getDB().getClientCertificate()),
+                                new File(linstorConfigToml.getDB().getClientKeyPCKS8PEM()),
+                                linstorConfigToml.getDB().getClientKeyPassword()
+                            )
+                    );
+                }
+            }
+            catch (IOException exc)
+            {
+                throw new SystemServiceStartException("Error configuring secure etcd connection", exc);
+            }
+        }
+        else
+        {
+            builder.withPlainText();
+        }
+
+        if (linstorConfigToml.getDB().getUser() != null)
+        {
+            builder.withCredentials(
+                linstorConfigToml.getDB().getUser(),
+                linstorConfigToml.getDB().getPassword()
+            );
+        }
+
+        etcdClient = builder.build();
     }
 
     @Override
