@@ -96,11 +96,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         List<Flux<ApiCallRc>> fluxes = new ArrayList<>();
         Set<NodeName> nodeNamesToDelete = new TreeSet<>();
 
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        AutoHelperResult autoHelperResult = autoHelper.manage(responses, context, rscDfn);
-        fluxes.add(autoHelperResult.getFlux());
-
         Iterator<Resource> rscIter = rscDfn.iterateResource(apiCtx);
         while (rscIter.hasNext())
         {
