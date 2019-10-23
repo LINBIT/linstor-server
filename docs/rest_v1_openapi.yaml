@@ -23,7 +23,6 @@ info:
 
     * 1.0.10
       - Added `reports` array field to Volume object, contains ApiCallRcs for problems
-      - Added /v1/physical-storage endpoint
     * 1.0.9
       - Added supports_snapshots to StoragePool
     * 1.0.8
@@ -2996,57 +2995,57 @@ paths:
         '500':
           $ref: '#/components/responses/OperationFailed'
 
-  /v1/physical-storage:
-    get:
-      tags:
-        - developers
-      operationId: viewPhysicaStorage
-      summary: show physical storage on nodes, to be used with LINSTOR
-      description: Gives a grouped list of physical storage that can be turned into a LINSTOR storage-pool
-      parameters:
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: physical storage list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PhysicalStorage'
-        '500':
-          $ref: '#/components/responses/OperationFailed'
-  /v1/physical-storage/{node}:
-    post:
-      tags:
-        - developers
-      operationId: createDevicePool
-      summary: creates an LVM, LVM-thin or ZFS pool, optional VDO under it
-      description: |
-        Creates a LVM/LVM-thin, ZFS pool on the given device and if supported VDO(optional) under it.
-        logcal_size_kib parameter is only needed if LVM-thin or vdo is used is used.
-        Also note VDO can only used with LVM-fat.
-      parameters:
-        - $ref: '#/components/parameters/Node'
-      responses:
-        '201':
-          description: device pool created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiCallRc'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PhysicalStorageCreate'
-            example:
-              provider_kind: LVM_THIN
-              device_path: '/dev/sde'
-              pool_name: ssd_fast
-              logcal_size_kib: 5368709120
-              vdo_enable: false
+#  /v1/physical-storage:
+#    get:
+#      tags:
+#        - developers
+#      operationId: viewPhysicaStorage
+#      summary: show physical storage on nodes, to be used with LINSTOR
+#      description: Gives a grouped list of physical storage that can be turned into a LINSTOR storage-pool
+#      parameters:
+#        - $ref: '#/components/parameters/Offset'
+#        - $ref: '#/components/parameters/Limit'
+#      responses:
+#        '200':
+#          description: physical storage list
+#          content:
+#            application/json:
+#              schema:
+#                type: array
+#                items:
+#                  $ref: '#/components/schemas/PhysicalStorage'
+#        '500':
+#          $ref: '#/components/responses/OperationFailed'
+#  /v1/physical-storage/{node}:
+#    post:
+#      tags:
+#        - developers
+#      operationId: createDevicePool
+#      summary: creates an LVM, LVM-thin or ZFS pool, optional VDO under it
+#      description: |
+#        Creates a LVM/LVM-thin, ZFS pool on the given device and if supported VDO(optional) under it.
+#        logcal_size_kib parameter is only needed if LVM-thin or vdo is used is used.
+#        Also note VDO can only used with LVM-fat.
+#      parameters:
+#        - $ref: '#/components/parameters/Node'
+#      responses:
+#        '201':
+#          description: device pool created
+#          content:
+#            application/json:
+#              schema:
+#                $ref: '#/components/schemas/ApiCallRc'
+#      requestBody:
+#        content:
+#          application/json:
+#            schema:
+#              $ref: '#/components/schemas/PhysicalStorageCreate'
+#            example:
+#              provider_kind: LVM_THIN
+#              device_path: '/dev/sde'
+#              pool_name: ssd_fast
+#              logcal_size_kib: 5368709120
+#              vdo_enable: false
 
 
 components:
