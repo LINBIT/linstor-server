@@ -1,3 +1,98 @@
+linstor-server (1.2.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * eventprocessor: fix a deadlock on even closeConnection
+  * volume: don't fail if a single volume reports an error
+  * protoctrlstltserializer: rename builder parameter
+  * ctrlerrorlistapi: use method shortcut
+  * api-docu-rest: add missing FILE, FILE_THIN provider
+  * LinstorParsingUtils: asProviderKind check on null
+  * physical-storage: add REST to group and list not filtered physical storage
+  * physical-storage: provide model, serial and wwn info
+  * physical-storage: add creating of LVM(VDO)/LVM-thin/ZFS pools
+  * satellite: Remove API_HOSTNAME and API_PREPARE_DISKS
+  * extcmd: use logTrace instead of logDebug for command output
+  * stringutils: allow Collection<String> for concat()
+  * physical-storage: Fix multiple same size devices per node, support mul [...]
+  * fix incorrect Functions.identity() usage
+  * physical-storage: do not document /v1/physical-storage yet
+  * grizzly: improve http not found messages
+  * rest-api-docu: update 1.0.10 changelog
+
+  [ Gabor Hernadi ]
+  * FileThinProvider: fixed loop_device_mapping output
+  * Core interface cleanup: AutoSelectorConfig
+  * Core interface cleanup: KeyValueStore
+  * Core interface cleanup: Node
+  * Core interface cleanup: NetInterface
+  * Core interface cleanup: NodeConnection
+  * Core interface cleanup: Resource
+  * Core interface cleanup: ResourceConnection
+  * Core interface cleanup: ResourceDefinition
+  * Core interface cleanup: ResourceGroup
+  * Core interface cleanup: Snapshot
+  * Core interface cleanup: SnapshotDefinition
+  * Core interface cleanup: SnapshotVolume
+  * Core interface cleanup: SnapshotVolumeDefinition
+  * Core interface cleanup: StorPool
+  * Core interface cleanup: StorPoolDefinition
+  * Core interface cleanup: Volume
+  * Core interface cleanup: VolumeConnection
+  * Core interface cleanup: VolumeDefinition
+  * Core interface cleanup: VolumeGroup
+  * Cleanup: Added private constructor in rest-gen.py
+  * DrbdLayer: Fixing del-peer race condition
+  * Database: Fixed incorrect linking
+  * SnapshotDbDriver: Fixed possible NPE
+  * DrbdProxy: Whitelisted zstd compression type
+  * DrbdRsc: prevent repeated setting upToDate flag
+  * Snapshot: remove properties after restore
+  * Minor cleanup: Added neglectable missing switch-cases
+  * RetryTask: continues previous flux
+  * IntAuthResponse: Include versions of layer-tools
+  * Controller: Added AutoQuorum & TieBreaker feature
+  * ToggleDisk: Added support for auto-quorum and auto-tiebreaker
+  * AutoTiebreaker: Fixed minor bugs
+  * RetryResource: Fixed access to deleted resource
+  * DelayedApiRcException: Add exceptions as suppressedException
+  * ErrorReporter: also report suppressed exceptions
+  * CtrlRscCrt: fixed call of auto-logic
+  * AutoTiebreaker: Allow takeover
+  * AutoTiebreaker: added trigger for node create
+  * AutoTiebreaker: removed trigger when controller restarts
+  * Fixed unit tests
+
+  [ Robert Altnoeder ]
+  * Cleanup: A few small simplifications & optimizations
+  * Cleanup: Use isEmpty() instead of comparison with zero-length string
+  * Cleanup: Pass in correctly sized array
+  * Cleanup: Replaced string concatenation with append(...)
+  * Cleanup: Added private constructors
+  * Cleanup: Removed public modifiers from constructors of private inner & [...]
+  * Cleanup: Replaced instance reference to static constants with class re [...]
+  * Cleanup: Removed unused and duplicate imports
+  * Cleanup: Changed ByteBuffer allocation in SslTcpConnectorPeer
+  * Cleanup: Naming, style, scope and control flow fixes
+  * DebugCommands: Catch DatabaseException instead of SQLException
+  * Fixed authentication policy load error
+  * Use Boolean automatic unboxing where possible
+  * debug/HexViewer: Fixed duplicate format flag
+  * Fix Boolean unboxing: Boolean object can be a null reference
+  * NumberAlloc: Removed LoopGuard
+  * Simplified DynamicNumberPoolImpl
+  * BitmapPool: Removed statement only required for debugging
+
+  [ Rainer Laschober ]
+  * Code cleanup and small fix
+  * ResourceCreateCheck: Enable multiple NVMe initiators
+  * ResourceGroups: Filter list data on ctrl
+  * StoragePools: Filter list data on ctrl
+  * ResourceDefinitions: Filter list data on ctrl
+  * Nodes: Filter list data on ctrl
+  * Fix typos
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 24 Oct 2019 11:43:16 +0200
+
 linstor-server (1.1.2-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

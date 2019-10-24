@@ -1,6 +1,6 @@
 FROM centos:centos7 as builder
 
-ENV LINSTOR_VERSION 1.1.2
+ENV LINSTOR_VERSION 1.2.0
 
 ENV GRADLE_VERSION 4.4.1
 
@@ -37,7 +37,7 @@ RUN cd ${HOME} && \
 FROM quay.io/linbit/drbd-utils
 # this is/needs to be based on registry.access.redhat.com/ubi7/ubi
 
-ENV LINSTOR_VERSION 1.1.2
+ENV LINSTOR_VERSION 1.2.0
 ARG release=1
 
 LABEL name="linstor-satellite" \
