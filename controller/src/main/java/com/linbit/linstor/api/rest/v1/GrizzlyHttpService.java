@@ -12,9 +12,12 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ExceptionMapper;
-
+import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
@@ -305,55 +308,7 @@ public class GrizzlyHttpService implements SystemService
 
     private void registerExceptionMappers(ResourceConfig resourceConfig)
     {
-        resourceConfig.register(new ExceptionMapper<Exception>()
-        {
-            @Override
-            public javax.ws.rs.core.Response toResponse(Exception exc)
-            {
-                String errorReport = errorReporter.reportError(exc);
-                javax.ws.rs.core.Response.Status respStatus;
-
-                ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                if (exc instanceof ApiRcException)
-                {
-                    apiCallRc.addEntries(((ApiRcException) exc).getApiCallRc());
-                    respStatus = javax.ws.rs.core.Response.Status.BAD_REQUEST;
-                }
-                else if (exc instanceof JsonMappingException ||
-                    exc instanceof JsonParseException)
-                {
-                    apiCallRc.addEntry(
-                        ApiCallRcImpl.entryBuilder(
-                            ApiConsts.API_CALL_PARSE_ERROR,
-                            "Unable to parse input json."
-                        )
-                        .setDetails(exc.getMessage())
-                        .addErrorId(errorReport)
-                        .build()
-                    );
-                    respStatus = javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-                }
-                else
-                {
-                    apiCallRc.addEntry(
-                        ApiCallRcImpl.entryBuilder(
-                            ApiConsts.FAIL_UNKNOWN_ERROR,
-                            "An unknown error occurred."
-                        )
-                        .setDetails(exc.getMessage())
-                        .addErrorId(errorReport)
-                        .build()
-                    );
-                    respStatus = javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-                }
-
-                return javax.ws.rs.core.Response
-                    .status(respStatus)
-                    .type(MediaType.APPLICATION_JSON)
-                    .entity(ApiCallRcConverter.toJSON(apiCallRc))
-                    .build();
-            }
-        });
+        resourceConfig.register(new LinstorMapper(errorReporter));
     }
 
     @Override
@@ -456,5 +411,80 @@ public class GrizzlyHttpService implements SystemService
     public boolean isStarted()
     {
         return httpServer.isStarted();
+    }
+}
+
+@Provider
+class LinstorMapper implements ExceptionMapper<Exception>
+{
+    private final ErrorReporter errorReporter;
+
+    @Context
+    private UriInfo uriInfo;
+
+    LinstorMapper(
+        ErrorReporter errorReporterRef
+    )
+    {
+        errorReporter = errorReporterRef;
+    }
+
+    @Override
+    public javax.ws.rs.core.Response toResponse(Exception exc)
+    {
+        String errorReport = errorReporter.reportError(exc);
+        javax.ws.rs.core.Response.Status respStatus;
+
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        if (exc instanceof ApiRcException)
+        {
+            apiCallRc.addEntries(((ApiRcException) exc).getApiCallRc());
+            respStatus = javax.ws.rs.core.Response.Status.BAD_REQUEST;
+        }
+        else if (exc instanceof JsonMappingException ||
+            exc instanceof JsonParseException)
+        {
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.API_CALL_PARSE_ERROR,
+                    "Unable to parse input json."
+                )
+                    .setDetails(exc.getMessage())
+                    .addErrorId(errorReport)
+                    .build()
+            );
+            respStatus = javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+        }
+        else if (exc instanceof NotFoundException)
+        {
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    String.format("Path '/v1/%s' not found on server.", uriInfo.getPath())
+                )
+                    .setDetails(exc.getMessage())
+                    .build()
+            );
+            respStatus = javax.ws.rs.core.Response.Status.NOT_FOUND;
+        }
+        else
+        {
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An unknown error occurred."
+                )
+                    .setDetails(exc.getMessage())
+                    .addErrorId(errorReport)
+                    .build()
+            );
+            respStatus = javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+        }
+
+        return javax.ws.rs.core.Response
+            .status(respStatus)
+            .type(MediaType.APPLICATION_JSON)
+            .entity(ApiCallRcConverter.toJSON(apiCallRc))
+            .build();
     }
 }
