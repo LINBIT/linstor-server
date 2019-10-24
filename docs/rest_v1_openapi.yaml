@@ -23,6 +23,8 @@ info:
 
     * 1.0.10
       - Added `reports` array field to Volume object, contains ApiCallRcs for problems
+      - Changed `ResourceDefinitions` can now include `VolumeDefinitions` in `volume_definitions` field
+      - Added various filter query parameters
     * 1.0.9
       - Added supports_snapshots to StoragePool
     * 1.0.8
