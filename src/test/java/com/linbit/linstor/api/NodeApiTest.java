@@ -7,6 +7,7 @@ import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.DoNotSeedDefaultPeer;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
@@ -28,6 +29,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import com.google.inject.Key;
+import com.google.inject.testing.fieldbinder.Bind;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -37,6 +39,9 @@ public class NodeApiTest extends ApiTestBase
 {
     @Inject private Provider<CtrlNodeApiCallHandler> nodeApiCallHandlerProvider;
     @Inject private Provider<CtrlNodeCrtApiCallHandler> nodeCrtApiCallHandlerProvider;
+
+    @Bind @Mock
+    protected FreeCapacityFetcher freeCapacityFetcher;
 
     private NodeName testNodeName;
     private Node.Type testNodeType;

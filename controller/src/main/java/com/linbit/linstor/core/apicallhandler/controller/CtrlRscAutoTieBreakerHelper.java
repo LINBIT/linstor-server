@@ -325,7 +325,7 @@ public class CtrlRscAutoTieBreakerHelper
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "checking auto-quorum feature " + getRscDfnDescriptionInline(rscDfn),
+                "checking auto-quorum / auto-tiebreaker feature " + getRscDfnDescriptionInline(rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }

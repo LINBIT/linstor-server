@@ -95,6 +95,7 @@ import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import com.google.inject.util.Modules;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.DisableOnDebug;
@@ -289,6 +290,14 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     public void tearDown() throws Exception
     {
         commitAndCleanUp(true);
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception
+    {
+        // every test class must explicitly enable security if they want to test.
+        // we should change this default to MAC once the security mechanism works as intended.
+        SecurityLevel.set(SYS_CTX, SecurityLevel.NO_SECURITY, dbConnPool, null);
     }
 
     public void commitAndCleanUp(boolean inScope) throws Exception

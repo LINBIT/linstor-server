@@ -25,7 +25,8 @@ public class ResourceTest
             Resource.Flags.DISK_ADD_REQUESTED.flagValue |
             Resource.Flags.DISK_ADDING.flagValue |
             Resource.Flags.DISK_REMOVE_REQUESTED.flagValue |
-            Resource.Flags.DISK_REMOVING.flagValue;
+            Resource.Flags.DISK_REMOVING.flagValue |
+            Resource.Flags.TIE_BREAKER.flagValue;
         List<String> strList = Resource.Flags.toStringList(mask);
         assertEquals(Resource.Flags.values().length, strList.size());
 
@@ -37,7 +38,8 @@ public class ResourceTest
                     ApiConsts.FLAG_DISK_ADD_REQUESTED,
                     ApiConsts.FLAG_DISK_ADDING,
                     ApiConsts.FLAG_DISK_REMOVE_REQUESTED,
-                    ApiConsts.FLAG_DISK_REMOVING
+                    ApiConsts.FLAG_DISK_REMOVING,
+                    ApiConsts.FLAG_TIE_BREAKER
                 },
                 strList.toArray());
         assertEquals(mask, Resource.Flags.fromStringList(strList));
