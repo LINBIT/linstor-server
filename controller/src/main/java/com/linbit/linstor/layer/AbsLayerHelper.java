@@ -13,6 +13,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.CtrlLayerDataHelper.ChildResourceData;
 import com.linbit.linstor.layer.CtrlLayerDataHelper.LayerResult;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -27,6 +28,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
 import javax.inject.Provider;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -257,7 +259,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
 
         return new LayerResult(
             rscData,
-            getRscNameSuffixes(rscData)
+            getChildRsc(rscData)
         );
     }
 
@@ -270,10 +272,10 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
      * @throws AccessDeniedException
      */
     @SuppressWarnings("unused") // exceptions needed by implementations
-    protected List<String> getRscNameSuffixes(RSC rscDataRef)
+    protected List<ChildResourceData> getChildRsc(RSC rscDataRef)
         throws AccessDeniedException, InvalidKeyException
     {
-        return Arrays.asList(rscDataRef.getResourceNameSuffix());
+        return Arrays.asList(new ChildResourceData(""));
     }
 
     /**

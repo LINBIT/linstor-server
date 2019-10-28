@@ -14,6 +14,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.CtrlLayerDataHelper.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -34,7 +35,10 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 
 @Singleton
 class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObject, RscDfnLayerObject, VlmDfnLayerObject>
@@ -109,6 +113,13 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
             rscRef,
             rscNameSuffixRef
         );
+    }
+
+    @Override
+    protected List<ChildResourceData> getChildRsc(StorageRscData rscDataRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        return Collections.emptyList(); // no children.
     }
 
     @Override

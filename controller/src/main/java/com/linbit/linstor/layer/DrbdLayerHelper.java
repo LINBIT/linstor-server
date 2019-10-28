@@ -26,6 +26,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.CtrlLayerDataHelper.ChildResourceData;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -50,6 +51,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -349,7 +351,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
     }
 
     @Override
-    protected List<String> getRscNameSuffixes(DrbdRscData rscDataRef)
+    protected List<ChildResourceData> getChildRsc(DrbdRscData rscDataRef)
         throws AccessDeniedException, InvalidKeyException
     {
         boolean allVlmsUseInternalMetaData = true;
@@ -378,14 +380,11 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
             }
         }
 
-        List<String> ret;
-        if (allVlmsUseInternalMetaData)
+        List<ChildResourceData> ret = new ArrayList<>();
+        ret.add(new ChildResourceData("")); // always have data
+        if (!allVlmsUseInternalMetaData)
         {
-            ret = Arrays.asList("");
-        }
-        else
-        {
-            ret = Arrays.asList("", DrbdRscData.SUFFIX_META);
+            ret.add(new ChildResourceData(DrbdRscData.SUFFIX_META, DeviceLayerKind.STORAGE));
         }
 
         return ret;

@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -34,6 +35,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,7 +82,7 @@ public class CtrlLayerDataHelper
             while (layerData != null)
             {
                 ret.add(layerData.getLayerKind());
-                layerData = layerData.getFirstChild();
+                layerData = layerData.getChildBySuffix("");
             }
         }
         catch (AccessDeniedException exc)
@@ -212,23 +214,23 @@ public class CtrlLayerDataHelper
 
     public void ensureStackDataExists(
         Resource rscRef,
-        List<DeviceLayerKind> layerStackRef,
+        List<DeviceLayerKind> layerListRef,
         LayerPayload payload
     )
     {
         try
         {
-            List<DeviceLayerKind> layerStack;
-            if (layerStackRef == null || layerStackRef.isEmpty())
+            List<DeviceLayerKind> layerList = new ArrayList<>();
+            if (layerListRef == null || layerListRef.isEmpty())
             {
-                layerStack = getLayerStack(rscRef);
+                layerList = getLayerStack(rscRef);
             }
             else
             {
-                layerStack = layerStackRef;
+                layerList.addAll(layerListRef);
             }
 
-            if (layerStack.isEmpty())
+            if (layerList.isEmpty())
             {
                 throw new ImplementationError("Cannot create resource with empty layer list");
             }
@@ -236,48 +238,9 @@ public class CtrlLayerDataHelper
             RscLayerObject rootObj = null;
 
             List<LayerResult> currentLayerDataList = new ArrayList<>();
-            currentLayerDataList.add(new LayerResult(null, "")); // root object
+            currentLayerDataList.add(new LayerResult(null)); // root object
 
-            for (DeviceLayerKind kind : layerStack)
-            {
-                AbsLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(kind);
-                List<LayerResult> nextLayerData = new ArrayList<>();
-
-                /*
-                 * Having the result variable here is only a hack to be able to save the root object.
-                 * For the first entry of layerStack, currentLayerDataList will have exactly one element,
-                 * with exactly one entry in childRscNameSuffixes (namely "").
-                 * That means, for the first device layer kind, the following nested loops will only call
-                 * "ensureRscDataCreated" a single time, leaving lastResult pointing to the root object.
-                 */
-                LayerResult result = null;
-                for (LayerResult currentData : currentLayerDataList)
-                {
-                    for (String rscNameSuffix : currentData.childRscNameSuffixes)
-                    {
-                        RscLayerObject currentRscObj = currentData.rscObj;
-                        result = layerHelper.ensureRscDataCreated(
-                            rscRef,
-                            payload,
-                            rscNameSuffix,
-                            currentRscObj
-                        );
-                        nextLayerData.add(result);
-                        if (currentRscObj != null)
-                        {
-                            currentRscObj.getChildren().add(result.rscObj);
-                        }
-                    }
-                }
-
-                currentLayerDataList.clear();
-                currentLayerDataList.addAll(nextLayerData);
-
-                if (rootObj == null)
-                {
-                    rootObj = result.rscObj;
-                }
-            }
+            rootObj = ensureDataRec(rscRef, payload, layerList, new ChildResourceData(""), null);
 
             rscRef.setLayerData(apiCtx, rootObj);
         }
@@ -322,6 +285,53 @@ public class CtrlLayerDataHelper
                 exc
             );
         }
+    }
+
+    private RscLayerObject ensureDataRec(
+        Resource rscRef,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerStackRef,
+        ChildResourceData currentData,
+        RscLayerObject parentRscObj
+    ) throws InvalidKeyException, DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
+        ValueInUseException, LinStorException, InvalidNameException
+    {
+        DeviceLayerKind currentKind = layerStackRef.get(0);
+        List<DeviceLayerKind> childList = layerStackRef.subList(1, layerStackRef.size());
+
+        RscLayerObject ret;
+
+        if (currentData.skipUntilList.contains(currentKind))
+        {
+            AbsLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(currentKind);
+            LayerResult result = layerHelper.ensureRscDataCreated(
+                rscRef,
+                payloadRef,
+                currentData.rscNameSuffix,
+                parentRscObj
+            );
+
+            ret = result.rscObj;
+
+            for (ChildResourceData childRsc : result.childRsc)
+            {
+                result.rscObj.getChildren().add(
+                    ensureDataRec(
+                        rscRef,
+                        payloadRef,
+                        childList,
+                        childRsc,
+                        result.rscObj
+                    )
+                );
+            }
+        }
+        else
+        {
+            // pass through to next layer
+            ret = ensureDataRec(rscRef, payloadRef, childList, currentData, parentRscObj);
+        }
+        return ret;
     }
 
     public void resetStoragePools(Resource rscRef)
@@ -527,35 +537,65 @@ public class CtrlLayerDataHelper
         return isDiskless;
     }
 
-    /*
-     * TODO: attempt to fix the "DRBD external metadata above RAID"
-     * The idea would be to use instead of List<rscNameSuffix> something like
-     * List<Pair<RscNameSuffix, List<DeviceLayerKindsToSkipForThisRscData>>>
-     * so that DRBD layer can specify {"_meta", [RAID]}.
-     * If that works, the meta-data would be still go into one storPool (instead
-     * of being split while going through the RAID layer)
+    /**
+     * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
      */
     static class LayerResult
     {
         private RscLayerObject rscObj;
-        private List<String> childRscNameSuffixes = new ArrayList<>();
+        private List<ChildResourceData> childRsc = new ArrayList<>();
 
         LayerResult(RscLayerObject rscObjRef)
         {
             rscObj = rscObjRef;
-            childRscNameSuffixes.add(rscObjRef.getResourceNameSuffix());
+            childRsc.add(new ChildResourceData(""));
         }
 
-        LayerResult(RscLayerObject rscObjref, List<String> childRscNameSuffixesRef)
+        LayerResult(RscLayerObject rscObjref, List<ChildResourceData> childRscListRef)
         {
             rscObj = rscObjref;
-            childRscNameSuffixes.addAll(childRscNameSuffixesRef);
+            childRsc.addAll(childRscListRef);
         }
 
-        LayerResult(RscLayerObject rscObjRef, String... childRscNameSuffixesRef)
+        @Override
+        public String toString()
         {
-            rscObj = rscObjRef;
-            childRscNameSuffixes.addAll(Arrays.asList(childRscNameSuffixesRef));
+            return "LayerResult [rscObj=" + rscObj + ", childRsc=" + childRsc + "]";
         }
     }
+
+    static class ChildResourceData
+    {
+        public static final List<DeviceLayerKind> ANY_KIND = Collections.unmodifiableList(
+            Arrays.asList(DeviceLayerKind.values())
+        );
+
+        private final String rscNameSuffix;
+        private final List<DeviceLayerKind> skipUntilList = new ArrayList<>();
+
+        ChildResourceData(String rscNameSuffixRef)
+        {
+            rscNameSuffix = rscNameSuffixRef;
+            skipUntilList.addAll(ANY_KIND);
+        }
+
+        ChildResourceData(String rscNameSuffixRef, List<DeviceLayerKind> skipUntilListRef)
+        {
+            rscNameSuffix = rscNameSuffixRef;
+            skipUntilList.addAll(skipUntilListRef);
+        }
+
+        ChildResourceData(String rscNameSuffixRef, DeviceLayerKind... skipUntilKindsRef)
+        {
+            rscNameSuffix = rscNameSuffixRef;
+            skipUntilList.addAll(Arrays.asList(skipUntilKindsRef));
+        }
+
+        @Override
+        public String toString()
+        {
+            return "ChildResourceData [rscNameSuffix=" + rscNameSuffix + ", skipUntilList=" + skipUntilList + "]";
+        }
+    }
+
 }
