@@ -1,26 +1,27 @@
 package com.linbit.linstor.core;
 
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class SatelliteCmdlArguments extends LinStorCmdlArguments
 {
+    public static final String LS_KEEP_RES = "LS_KEEP_RES";
+    public static final String LS_PLAIN_PORT_OVERRIDE = "LS_PLAIN_PORT_OVERRIDE";
+    public static final String LS_OVERRIDE_NODE_NAME = "LS_OVERRIDE_NODE_NAME";
+    public static final String LS_BIND_ADDRESS = "LS_BIND_ADDRESS";
+
     private Pattern keepResPattern;
-    private boolean skipHostnameCheck;
-    private boolean skipDrbdCheck;
 
     private Integer plainPortOverride;
     private String bindAddress;
     private String overrideNodeName;
 
-    private String logLevel;
-
     public SatelliteCmdlArguments()
     {
-        keepResPattern = null;
-        skipHostnameCheck = false;
-        plainPortOverride = null;
-        overrideNodeName = null;
-        logLevel = null;
+        keepResPattern = getEnv(LS_KEEP_RES, Pattern::compile);
+        plainPortOverride = getEnv(LS_PLAIN_PORT_OVERRIDE, Integer::parseInt);
+        bindAddress = getEnv(LS_BIND_ADDRESS, Function.identity());
+        overrideNodeName = getEnv(LS_OVERRIDE_NODE_NAME, Function.identity());
     }
 
     public Pattern getKeepResPattern()
@@ -31,26 +32,6 @@ public class SatelliteCmdlArguments extends LinStorCmdlArguments
     public void setKeepResRegex(String keepResRegex)
     {
         keepResPattern = Pattern.compile(keepResRegex, Pattern.DOTALL);
-    }
-
-    public void setSkipHostnameCheck(boolean skipHostnameCheckRef)
-    {
-        skipHostnameCheck = skipHostnameCheckRef;
-    }
-
-    public boolean isSkipHostnameCheck()
-    {
-        return skipHostnameCheck;
-    }
-
-    public void setSkipDrbdCheck(boolean checkFlag)
-    {
-        skipDrbdCheck = checkFlag;
-    }
-
-    public boolean isSkipDrbdCheck()
-    {
-        return skipDrbdCheck;
     }
 
     public void setOverridePlainPort(Integer plainPortRef)
@@ -81,15 +62,5 @@ public class SatelliteCmdlArguments extends LinStorCmdlArguments
     public void setOverrideNodeName(String overrideNodeNameRef)
     {
         overrideNodeName = overrideNodeNameRef;
-    }
-
-    public String getLogLevel()
-    {
-        return logLevel;
-    }
-
-    public void setLogLevel(String logLevelRef)
-    {
-        logLevel = logLevelRef;
     }
 }

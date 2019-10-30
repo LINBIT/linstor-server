@@ -1,7 +1,9 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.InternalApiConsts;
+
 import java.io.File;
+
 import picocli.CommandLine;
 
 class SatelliteArgumentParser
@@ -10,6 +12,7 @@ class SatelliteArgumentParser
         description = "Configuration directory for the controller"
     )
     private String configurationDirectory = "./";
+
     @CommandLine.Option(names = {"-d", "--debug-console"}, description = "")
     private boolean debugConsole = false;
 
@@ -43,12 +46,13 @@ class SatelliteArgumentParser
     @CommandLine.Option(names = {"--port"}, description = "overrides the plain port")
     private Integer plainPort = null;
 
-    @CommandLine.Option(names = {"-s", "--skip-hostname-check"}, description = "skips the hostname check on the " +
-        "satellite when a controller assigns the nodename")
+    @CommandLine.Option(names = {"-s", "--skip-hostname-check"}, description = "deprecated. this argument will be silently ignored")
+    @Deprecated
     private boolean skipHostNameCheck = false;
 
     @CommandLine.Option(names = {"--skip-drbd-check"},
-                        description = "skips the check for a supported DRBD installation")
+                        description = "deprecated. this argument will be silently ignored.")
+    @Deprecated
     private boolean skipDrbdCheck = true;
 
     @CommandLine.Option(names = {"--bind-address"}, description = "overrides the bind address")
@@ -110,8 +114,6 @@ class SatelliteArgumentParser
             cArgs.setKeepResRegex(linArgParser.keepResourceRegex);
         }
         cArgs.setOverridePlainPort(linArgParser.plainPort);
-        cArgs.setSkipHostnameCheck(linArgParser.skipHostNameCheck);
-        cArgs.setSkipDrbdCheck(linArgParser.skipDrbdCheck);
         cArgs.setBindAddress(linArgParser.bindAddress);
         if (linArgParser.nodeName != null)
         {
