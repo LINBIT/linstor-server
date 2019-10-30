@@ -244,6 +244,8 @@ public final class Satellite
         {
             Path varDrbdPath = Paths.get(CoreModule.CONFIG_PATH);
             Files.createDirectories(varDrbdPath);
+            Files.createDirectories(Paths.get(CoreModule.BACKUP_PATH));
+
             final Pattern keepResPattern = satelliteCmdlArguments.getKeepResPattern();
             Function<Path, Boolean> keepFunc;
             if (keepResPattern != null)

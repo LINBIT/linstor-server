@@ -1,9 +1,5 @@
 package com.linbit.linstor.core;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.TypeLiteral;
-import com.google.inject.name.Names;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.crypto.LengthPadding;
@@ -28,11 +24,17 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.TypeLiteral;
+import com.google.inject.name.Names;
 
 public class CoreModule extends AbstractModule
 {
@@ -52,7 +54,7 @@ public class CoreModule extends AbstractModule
     // Path to the DRBD configuration files; this should be replaced by some meaningful constant or possibly
     // a value configurable in the cluster configuration
     public static final String CONFIG_PATH = "/var/lib/linstor.d";
-
+    public static final String BACKUP_PATH = "/var/lib/linstor.d/.backup";
 
     @Override
     protected void configure()

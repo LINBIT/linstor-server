@@ -243,6 +243,9 @@ public class DrbdLayer implements DeviceLayer
             deleteDrbd(drbdRscData);
             processChild(drbdRscData, snapshots, apiCallRc);
             adjustDrbd(drbdRscData, snapshots, apiCallRc, true);
+
+            // this should not be executed if adjusting the drbd resource fails
+            copyResFileToBackup(drbdRscData);
         }
         else
         if (
@@ -254,12 +257,19 @@ public class DrbdLayer implements DeviceLayer
             addDeletedMsg(drbdRscData, apiCallRc);
 
             processChild(drbdRscData, snapshots, apiCallRc);
+
+            // this should not be executed if deleting the drbd resource fails
+            deleteBackupResFile(drbdRscData);
         }
         else
         {
             adjustDrbd(drbdRscData, snapshots, apiCallRc, false);
             addAdjustedMsg(drbdRscData, apiCallRc);
+
+            // this should not be executed if adjusting the drbd resource fails
+            copyResFileToBackup(drbdRscData);
         }
+
     }
 
     private void addDeletedMsg(DrbdRscData drbdRscData, ApiCallRcImpl apiCallRc)
@@ -1121,6 +1131,50 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
+    private void copyResFileToBackup(DrbdRscData drbdRscData) throws StorageException
+    {
+        Path resFile = asResourceFile(drbdRscData, false);
+        Path backupFile = asBackupResourceFile(drbdRscData);
+        try
+        {
+            Files.copy(resFile, backupFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+        catch (IOException ioExc)
+        {
+            String ioErrorMsg = ioExc.getMessage();
+            if (ioErrorMsg == null)
+            {
+                ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
+                    "the I/O error";
+            }
+            throw new StorageException(
+                "Failed to create a backup of the resource file of resource '" + drbdRscData.getSuffixedResourceName() +
+                    "'",
+                getAbortMsg(drbdRscData),
+                null,
+                "- Check whether enough free space is available for the creation of the file\n" +
+                    "- Check whether the application has write access to the target directory\n" +
+                    "- Check whether the storage is operating flawlessly",
+                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                ioExc
+            );
+        }
+    }
+
+    private void deleteBackupResFile(DrbdRscData drbdRscDataRef) throws StorageException
+    {
+        Path resFile = asBackupResourceFile(drbdRscDataRef);
+        errorReporter.logTrace("Deleting res file from backup: %s ", resFile);
+        try
+        {
+            Files.deleteIfExists(resFile);
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException("IOException while removing resource file from backup", exc);
+        }
+    }
+
     private void condInitialOrSkipSync(DrbdRscData drbdRscData)
         throws AccessDeniedException, StorageException
     {
@@ -1269,6 +1323,14 @@ public class DrbdLayer implements DeviceLayer
         return Paths.get(
             CoreModule.CONFIG_PATH,
             drbdRscData.getSuffixedResourceName() + (temp ? DRBD_CONFIG_TMP_SUFFIX : DRBD_CONFIG_SUFFIX)
+        );
+    }
+
+    private Path asBackupResourceFile(DrbdRscData drbdRscData)
+    {
+        return Paths.get(
+            CoreModule.BACKUP_PATH,
+            drbdRscData.getSuffixedResourceName() + DRBD_CONFIG_SUFFIX
         );
     }
 
