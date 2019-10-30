@@ -188,6 +188,9 @@ public class ProtoDeserializationUtils
             case NVME:
                 kind = DeviceLayerKind.NVME;
                 break;
+            case WRITECACHE:
+                kind = DeviceLayerKind.WRITECACHE;
+                break;
             case UNKNOWN_LAYER: // fall-through
             case UNRECOGNIZED: // fall-through
             default:
@@ -264,7 +267,8 @@ public class ProtoDeserializationUtils
                     null
             ),
             null,
-            storPoolProto.getSnapshotSupported()
+            storPoolProto.getSnapshotSupported(),
+            storPoolProto.getIsPmem()
         );
     }
 
@@ -329,6 +333,9 @@ public class ProtoDeserializationUtils
                 break;
             case SPDK:
                 tool = ExtTools.SPDK;
+                break;
+            case WRITECACHE:
+                tool = ExtTools.WRITECACHE;
                 break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through

@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
@@ -77,8 +79,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
-
-import static java.util.stream.Collectors.toList;
 
 public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     implements CtrlStltSerializer.CtrlStltSerializerBuilder
@@ -654,6 +654,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .build()
                     )
                 .setSupportsSnapshots(supportsSnapshotsRef)
+                .setIsPmem(storPool.isPmem())
                 .build()
                 .writeDelimitedTo(baos);
         }

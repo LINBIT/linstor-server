@@ -32,6 +32,8 @@ import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
+import com.linbit.linstor.core.objects.WritecacheLayerETCDDriver;
+import com.linbit.linstor.core.objects.WritecacheLayerGenericDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
 import com.linbit.linstor.dbcp.DbInitializer;
@@ -87,6 +89,8 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.propscon.PropsConETCDDriver;
 import com.linbit.linstor.propscon.PropsConGenericDbDriver;
@@ -175,6 +179,8 @@ public class ControllerDbModule extends AbstractModule
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
                 bind(NvmeLayerCtrlDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerGenericDbDriver.class);
+                bind(WritecacheLayerCtrlDatabaseDriver.class).to(WritecacheLayerGenericDbDriver.class);
+                bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerGenericDbDriver.class);
                 break;
             case ETCD:
                 bind(ControllerDatabase.class).to(DbEtcd.class);
@@ -202,6 +208,8 @@ public class ControllerDbModule extends AbstractModule
                 bind(SwordfishLayerDatabaseDriver.class).to(SwordfishETCDDriver.class);
                 bind(NvmeLayerCtrlDatabaseDriver.class).to(NvmeLayerETCDDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerETCDDriver.class);
+                bind(WritecacheLayerCtrlDatabaseDriver.class).to(WritecacheLayerETCDDriver.class);
+                bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerETCDDriver.class);
                 break;
             default:
                 throw new RuntimeException("Unknown database type: " + dbType);

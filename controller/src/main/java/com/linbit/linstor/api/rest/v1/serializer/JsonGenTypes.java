@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.0.11";
+    public static final String REST_API_VERSION = "1.0.12";
 
     /**
      * Common api reply structure
@@ -322,6 +322,12 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class WritecacheResource
+    {
+        public List<WritecacheVolume> writecache_volumes = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ResourceLayer
     {
         public List<ResourceLayer> children = Collections.emptyList();
@@ -331,6 +337,7 @@ public class JsonGenTypes
         public LUKSResource luks;
         public StorageResource storage;
         public NVMEResource nvme;
+        public WritecacheResource writecache;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -459,6 +466,26 @@ public class JsonGenTypes
          * block device used by nvme
          */
         public String backing_device;
+        public Long allocated_size_kib;
+        public Long usable_size_kib;
+        /**
+         * String describing current volume state
+         */
+        public String disk_state;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class WritecacheVolume
+    {
+        public Integer volume_number;
+        /**
+         * block device path
+         */
+        public String device_path;
+        /**
+         * block device path used as cache device
+         */
+        public String device_path_cache;
         public Long allocated_size_kib;
         public Long usable_size_kib;
         /**

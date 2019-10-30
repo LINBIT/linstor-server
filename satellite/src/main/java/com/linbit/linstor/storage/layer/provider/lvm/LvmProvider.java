@@ -33,6 +33,7 @@ import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
+import com.linbit.linstor.storage.utils.PmemUtils;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -428,6 +429,16 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
         );
         StorageConfigReader.checkVolumeGroupEntry(extCmdFactory.create(), props);
         StorageConfigReader.checkToleranceFactor(props);
+    }
+
+    @Override
+    public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
+    {
+        List<String> pvs = LvmUtils.getPhysicalVolumes(extCmdFactory.create(), getVolumeGroup(storPoolRef));
+        if (PmemUtils.supportsDax(extCmdFactory.create(), pvs))
+        {
+            storPoolRef.setPmem(true);
+        }
     }
 
     private Set<String> getAffectedVolumeGroups(

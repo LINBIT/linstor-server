@@ -311,6 +311,36 @@ public class GeneratedDatabaseTables
         }
     }
 
+    public static class LayerWritecacheVolumes implements Table
+    {
+        private LayerWritecacheVolumes() { }
+
+        public static final Column LAYER_RESOURCE_ID = new Column(0, "LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final Column VLM_NR = new Column(1, "VLM_NR", Types.INTEGER, true, false);
+        public static final Column NODE_NAME = new Column(2, "NODE_NAME", Types.VARCHAR, false, false);
+        public static final Column POOL_NAME = new Column(3, "POOL_NAME", Types.VARCHAR, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            LAYER_RESOURCE_ID,
+            VLM_NR,
+            NODE_NAME,
+            POOL_NAME
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "LAYER_WRITECACHE_VOLUMES";
+        }
+    }
+
     public static class Nodes implements Table
     {
         private Nodes() { }
@@ -1200,6 +1230,7 @@ public class GeneratedDatabaseTables
     public static final LayerResourceIds LAYER_RESOURCE_IDS = new LayerResourceIds();
     public static final LayerStorageVolumes LAYER_STORAGE_VOLUMES = new LayerStorageVolumes();
     public static final LayerSwordfishVolumeDefinitions LAYER_SWORDFISH_VOLUME_DEFINITIONS = new LayerSwordfishVolumeDefinitions();
+    public static final LayerWritecacheVolumes LAYER_WRITECACHE_VOLUMES = new LayerWritecacheVolumes();
     public static final Nodes NODES = new Nodes();
     public static final NodeConnections NODE_CONNECTIONS = new NodeConnections();
     public static final NodeNetInterfaces NODE_NET_INTERFACES = new NodeNetInterfaces();
@@ -1274,6 +1305,10 @@ public class GeneratedDatabaseTables
         LayerSwordfishVolumeDefinitions.RESOURCE_NAME_SUFFIX.table = LAYER_SWORDFISH_VOLUME_DEFINITIONS;
         LayerSwordfishVolumeDefinitions.VLM_NR.table = LAYER_SWORDFISH_VOLUME_DEFINITIONS;
         LayerSwordfishVolumeDefinitions.VLM_ODATA.table = LAYER_SWORDFISH_VOLUME_DEFINITIONS;
+        LayerWritecacheVolumes.LAYER_RESOURCE_ID.table = LAYER_WRITECACHE_VOLUMES;
+        LayerWritecacheVolumes.VLM_NR.table = LAYER_WRITECACHE_VOLUMES;
+        LayerWritecacheVolumes.NODE_NAME.table = LAYER_WRITECACHE_VOLUMES;
+        LayerWritecacheVolumes.POOL_NAME.table = LAYER_WRITECACHE_VOLUMES;
         Nodes.UUID.table = NODES;
         Nodes.NODE_NAME.table = NODES;
         Nodes.NODE_DSP_NAME.table = NODES;

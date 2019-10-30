@@ -45,6 +45,7 @@ import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -133,6 +134,7 @@ public class ApplyRsc implements ApiCall
                 case LUKS:
                 case STORAGE:
                 case NVME:
+                case WRITECACHE:
                     rscDfnLayerDataApi = null;
                     break;
                 case UNKNOWN_LAYER: // fall-through

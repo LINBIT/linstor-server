@@ -1,12 +1,5 @@
 package com.linbit.linstor.storage.utils;
 
-import java.io.File;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
@@ -21,6 +14,15 @@ import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_PATH;
 import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_POOL_LV;
 import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_SIZE;
 import static com.linbit.linstor.storage.utils.LvmCommands.LVS_COL_VG;
+
+import java.io.File;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
@@ -272,5 +274,18 @@ public class LvmUtils
         {
             throw new StorageException("Volume group '" + volumeGroup + "' not found");
         }
+    }
+
+    public static List<String> getPhysicalVolumes(ExtCmd extCmd, String volumeGroup) throws StorageException
+    {
+        final OutputData output = LvmCommands.listPhysicalVolumes(extCmd, volumeGroup);
+        final String stdOut = new String(output.stdoutData);
+        final List<String> pvs = new ArrayList<>();
+        final String[] lines = stdOut.split("\n");
+        for (String line : lines)
+        {
+            pvs.add(line.trim());
+        }
+        return pvs;
     }
 }

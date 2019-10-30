@@ -274,11 +274,15 @@ public class StltApiCallHandlerUtils
                 storageExc
             ));
         }
+        catch (DatabaseException exc)
+        {
+            throw new ImplementationError(exc);
+        }
         return result;
     }
 
     public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
-        throws AccessDeniedException, StorageException
+        throws AccessDeniedException, StorageException, DatabaseException
     {
         storageLayer.checkStorPool(storPool);
         return new SpaceInfo(

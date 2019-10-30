@@ -95,28 +95,28 @@ public class NvmeLayerETCDDriver extends BaseEtcdDriver implements NvmeLayerCtrl
     }
 
     @Override
-    public void create(NvmeRscData drbdRscDataRef) throws DatabaseException
+    public void create(NvmeRscData nvmeRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeRscData will get a database table in future.
     }
 
     @Override
-    public void delete(NvmeRscData drbdRscDataRef) throws DatabaseException
+    public void delete(NvmeRscData nvmeRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeRscData will get a database table in future.
     }
 
     @Override
-    public void persist(NvmeVlmData drbdVlmDataRef) throws DatabaseException
+    public void persist(NvmeVlmData nvmeVlmDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeVlmData will get a database table in future.
     }
 
     @Override
-    public void delete(NvmeVlmData drbdVlmDataRef) throws DatabaseException
+    public void delete(NvmeVlmData nvmeVlmDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeVlmData will get a database table in future.

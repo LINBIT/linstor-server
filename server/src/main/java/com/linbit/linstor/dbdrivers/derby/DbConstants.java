@@ -48,6 +48,7 @@ public class DbConstants
     public static final String TBL_LAYER_LUKS_VOLUMES    = "LAYER_LUKS_VOLUMES";
     public static final String TBL_LAYER_SWORDFISH_VOLUME_DEFINITIONS = "LAYER_SWORDFISH_VOLUME_DEFINITIONS";
     public static final String TBL_LAYER_STORAGE_VOLUMES = "LAYER_STORAGE_VOLUMES";
+    public static final String TBL_LAYER_WRITECACHE_VOLUMES = "LAYER_WRITECACHE_VOLUMES";
     public static final String TBL_RESOURCE_GROUPS       = "RESOURCE_GROUPS";
     public static final String TBL_VOLUME_GROUPS         = "VOLUME_GROUPS";
 

@@ -16,6 +16,9 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
@@ -23,7 +26,6 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -33,6 +35,8 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
@@ -112,6 +116,9 @@ public abstract class AbsLayerRscDataMerger
                 break;
             case NVME:
                 rscMerger = this::mergeNvmeRscData;
+                break;
+            case WRITECACHE:
+                rscMerger = this::mergeWritecacheRscData;
                 break;
             default:
                 throw new ImplementationError("Unexpected layer kind: " + rscLayerDataPojo.getLayerKind());
@@ -477,6 +484,70 @@ public abstract class AbsLayerRscDataMerger
         }
     }
 
+    private WritecacheRscData mergeWritecacheRscData(
+        Resource rsc,
+        RscLayerDataApi rscDataPojo,
+        RscLayerObject parent,
+        boolean ignoredRemoteResource
+    )
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, InvalidNameException
+    {
+        WritecacheRscPojo writecacheRscPojo = (WritecacheRscPojo) rscDataPojo;
+
+        WritecacheRscData writecacheRscData = null;
+        if (parent == null)
+        {
+            writecacheRscData = (WritecacheRscData) rsc.getLayerData(apiCtx);
+        }
+        else
+        {
+            writecacheRscData = findChild(parent, rscDataPojo.getId());
+        }
+
+        if (writecacheRscData == null)
+        {
+            writecacheRscData = createWritecacheRscData(rsc, parent, writecacheRscPojo);
+        }
+
+        // do not iterate over rsc.volumes as those might have changed in the meantime
+        // see gitlab 368
+        for (WritecacheVlmPojo vlmPojo : writecacheRscPojo.getVolumeList())
+        {
+            VolumeNumber vlmNr = new VolumeNumber(vlmPojo.getVlmNr());
+            Volume vlm = rsc.getVolume(vlmNr);
+            if (vlm == null)
+            {
+                removeWritecacheVlm(writecacheRscData, vlmNr);
+            }
+            else
+            {
+                createOrMergeWritecacheVlm(vlm, writecacheRscData, vlmPojo);
+            }
+        }
+        return writecacheRscData;
+    }
+
+    private void createOrMergeWritecacheVlm(
+        Volume vlm,
+        WritecacheRscData writecacheRscData,
+        WritecacheVlmPojo vlmPojo
+    )
+        throws DatabaseException, AccessDeniedException, InvalidNameException
+    {
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+
+        WritecacheVlmData writecacheVlmData = writecacheRscData.getVlmLayerObjects().get(vlmNr);
+        if (writecacheVlmData == null)
+        {
+            createWritecacheVlm(vlm, writecacheRscData, vlmPojo, vlmNr);
+        }
+        else
+        {
+            mergeWritecacheVlm(vlmPojo, writecacheVlmData);
+        }
+    }
+
     protected StorPool getStoragePool(Volume vlmRef, VlmLayerDataApi vlmPojoRef, boolean remoteResourceRef)
         throws InvalidNameException, AccessDeniedException
     {
@@ -657,6 +728,29 @@ public abstract class AbsLayerRscDataMerger
 
     protected abstract void mergeNvmeVlm(NvmeVlmPojo vlmPojo, NvmeVlmData nvmeVlmData);
 
+    /*
+     * Writecache layer methods
+     */
+
+    protected abstract WritecacheRscData createWritecacheRscData(
+        Resource rsc,
+        RscLayerObject parent,
+        WritecacheRscPojo writecacheRscPojo
+    )
+        throws DatabaseException, AccessDeniedException;
+
+    protected abstract void removeWritecacheVlm(WritecacheRscData writecacheRscData, VolumeNumber vlmNr)
+        throws DatabaseException, AccessDeniedException;
+
+    protected abstract void createWritecacheVlm(
+        Volume vlm,
+        WritecacheRscData writecacheRscData,
+        WritecacheVlmPojo vlmPojoRef,
+        VolumeNumber vlmNr
+    ) throws AccessDeniedException, InvalidNameException;
+
+    protected abstract void mergeWritecacheVlm(WritecacheVlmPojo vlmPojo, WritecacheVlmData writecacheVlmData)
+        throws DatabaseException;
 
 
     protected abstract void updateParent(RscLayerObject rscDataRef, RscLayerObject parentRef) throws DatabaseException;

@@ -7,26 +7,28 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.DrbdRscPojo;
+import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
+import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
+import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
-import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
+import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileThinVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SpdkVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishTargetVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
-import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
-import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
-import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
-import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
@@ -43,6 +45,7 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlmDfn;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
+import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheVlm;
 import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
@@ -169,6 +172,29 @@ public class ProtoLayerUtils
                 }
             }
             break;
+            case WRITECACHE:
+            {
+                if (protoRscData.hasWritecache())
+                {
+                    WritecacheRscPojo writecacheRscPojo = new WritecacheRscPojo(
+                        protoRscData.getId(),
+                        new ArrayList<>(),
+                        protoRscData.getRscNameSuffix(),
+                        new ArrayList<>()
+                    );
+                    List<WritecacheVlmPojo> volumeList = writecacheRscPojo.getVolumeList();
+                    for (WritecacheVlm protoVlm : protoRscData.getWritecache().getVlmsList())
+                    {
+                        volumeList.add(extractWritecacheVlm(protoVlm, fullSyncId, updateId));
+                    }
+                    ret = writecacheRscPojo;
+                }
+                else
+                {
+                    ret = null;
+                }
+            }
+            break;
             case UNKNOWN_LAYER: // fall-through
             case UNRECOGNIZED: // fall-through
             default:
@@ -217,6 +243,9 @@ public class ProtoLayerUtils
             case NVME:
                 str = "NVME";
                 break;
+            case WRITECACHE:
+                str = "WRITECACHE";
+                break;
             case UNKNOWN_LAYER: // fall-through
             case UNRECOGNIZED: // fall-through
             default:
@@ -257,14 +286,17 @@ public class ProtoLayerUtils
                     rscDfnLayerDataApi = null;
                     break;
                 case NVME:
-                    rscDfnLayerDataApi = null; // TODO: not sure yet
+                    rscDfnLayerDataApi = null;
+                    break;
+                case WRITECACHE:
+                    rscDfnLayerDataApi = null;
                     break;
                 case UNKNOWN_LAYER: // fall-through
                 case UNRECOGNIZED: // fall-through
                 default:
                     throw new ImplementationError(
                         "Unknown resource definition layer (proto) kind: " + rscDfnLayerData.getLayerType()
-                        );
+                    );
             }
             ret.add(new Pair<>(layerType2layerString(rscDfnLayerData.getLayerType()), rscDfnLayerDataApi));
         }
@@ -307,7 +339,10 @@ public class ProtoLayerUtils
                     vlmDfnLayerDataApi = null;
                     break;
                 case NVME:
-                    vlmDfnLayerDataApi = null; // TODO: not sure yet
+                    vlmDfnLayerDataApi = null;
+                    break;
+                case WRITECACHE:
+                    vlmDfnLayerDataApi = null;
                     break;
                 case UNKNOWN_LAYER: // fall-through
                 case UNRECOGNIZED: // fall-through
@@ -524,6 +559,19 @@ public class ProtoLayerUtils
             protoNvmeVlm.getAllocatedSize(),
             protoNvmeVlm.getUsableSize(),
             protoNvmeVlm.getDiskState()
+        );
+    }
+
+    private static WritecacheVlmPojo extractWritecacheVlm(WritecacheVlm protoVlm, long fullSyncId, long updateId)
+    {
+        return new WritecacheVlmPojo(
+            protoVlm.getVlmNr(),
+            protoVlm.getDevicePathData(),
+            protoVlm.getDevicePathCache(),
+            protoVlm.getCacheStorPoolName(),
+            protoVlm.getAllocatedSize(),
+            protoVlm.getUsableSize(),
+            protoVlm.getDiskState()
         );
     }
 

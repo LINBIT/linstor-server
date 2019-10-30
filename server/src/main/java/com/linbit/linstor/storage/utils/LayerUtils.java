@@ -3,10 +3,12 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.NVME;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.WRITECACHE;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,11 +27,12 @@ public class LayerUtils
 
     static
     {
-        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME);
+        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE);
 
-        NODES.get(DRBD).addChildren(LUKS, STORAGE);
+        NODES.get(DRBD).addChildren(LUKS, STORAGE, WRITECACHE);
         NODES.get(LUKS).addChildren(STORAGE);
-        NODES.get(NVME).addChildren(LUKS, STORAGE);
+        NODES.get(NVME).addChildren(LUKS, STORAGE, WRITECACHE);
+        NODES.get(WRITECACHE).addChildren(LUKS, STORAGE);
 
         NODES.get(STORAGE).setAllowedEnd(true);
 

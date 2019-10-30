@@ -24,6 +24,9 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
+import static com.linbit.linstor.storage.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -33,11 +36,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
-
-import static com.linbit.linstor.storage.utils.SpdkCommands.SPDK_RPC_SCRIPT;
-import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 @Singleton
 public class SysFsHandler
@@ -60,6 +61,11 @@ public class SysFsHandler
     private final Map<String, String> cgroupBlkioThrottleWriteBpsDeviceMap;
     private final Map<VlmProviderObject, String> deviceMajorMinorMap;
     private final Props satelliteProps;
+
+    public static final String DEVNAME = "DEVNAME";
+    public static final String DEVTYPE = "DEVTYPE";
+    public static final String DEVTYPE_DISK = "disk";
+    public static final String DEVTYPE_PARTITION = "partition";
 
     @Inject
     public SysFsHandler(
@@ -247,27 +253,8 @@ public class SysFsHandler
         {
             if (majMin == null)
             {
-                String devicePath = vlmDataRef.getDevicePath();
-                if (devicePath != null)
-                {
-                    OutputData outputData = Commands.genericExecutor(
-                        extCmdFactory.create(),
-                        new String[] {
-                            "stat",
-                            "-L", // follow links
-                            "-c", "%t:%T",
-                            devicePath
-                        },
-                        "Failed to find major:minor of device " + devicePath,
-                        "Failed to find major:minor of device " + devicePath
-                    );
-                    majMin = new String(outputData.stdoutData).trim();
-                    String[] split = majMin.split(":");
-                    String major = Integer.toString(Integer.parseInt(split[0], BASE_HEX));
-                    String minor = Long.toString(Long.parseLong(split[1], BASE_HEX));
-                    majMin = major + ":" + minor;
-                    deviceMajorMinorMap.put(vlmDataRef, majMin);
-                }
+                majMin = queryMajMin(extCmdFactory, vlmDataRef.getDevicePath());
+                deviceMajorMinorMap.put(vlmDataRef, majMin);
             }
         }
         else
@@ -334,6 +321,72 @@ public class SysFsHandler
             );
     }
 
+    public static String queryMajMin(ExtCmdFactory extCmdFactory, String devicePath) throws StorageException
+    {
+        String majMin = null;
+        if (devicePath != null)
+        {
+            OutputData outputData = Commands.genericExecutor(
+                extCmdFactory.create(),
+                new String[]
+                {
+                    "stat",
+                    "-L", // follow links
+                    "-c", "%t:%T",
+                    devicePath
+                },
+                "Failed to find major:minor of device " + devicePath,
+                "Failed to find major:minor of device " + devicePath
+            );
+            majMin = new String(outputData.stdoutData).trim();
+            String[] split = majMin.split(":");
+            String major = Integer.toString(Integer.parseInt(split[0], BASE_HEX));
+            String minor = Long.toString(Long.parseLong(split[1], BASE_HEX));
+            majMin = major + ":" + minor;
+        }
+        return majMin;
+    }
+
+    public static Map<String, String> queryUevent(ExtCmdFactory extCmdFactory, String majMin) throws StorageException
+    {
+        OutputData outputData = Commands.genericExecutor(
+            extCmdFactory.create(),
+            new String[]
+            {
+                "cat",
+                "/sys/dev/block/" + majMin + "/uevent"
+            },
+            "Failed to query uevent of device '" + majMin + "'",
+            "Failed to query uevent of device '" + majMin + "'"
+        );
+        String outStr = new String(outputData.stdoutData);
+        Map<String, String> ret = new LinkedHashMap<>();
+
+        String[] lines = outStr.split("\n");
+        for (String line : lines)
+        {
+            String[] parts = line.trim().split("=");
+            ret.put(parts[0], parts[1]);
+        }
+
+        return ret;
+    }
+
+    public static boolean queryDaxSupport(ExtCmdFactory extCmdFactoryRef, String block) throws StorageException
+    {
+        OutputData outputData = Commands.genericExecutor(
+            extCmdFactoryRef.create(),
+            new String[]
+            {
+                "cat",
+                "/sys/block/" + block + "/queue/dax"
+            },
+            "Failed to query device '" + block + "' for dax support",
+            "Failed to query device '" + block + "' for dax support"
+        );
+        String out = new String(outputData.stdoutData).trim();
+        return out.equals("1");
+    }
 
     private interface Executor<T>
     {

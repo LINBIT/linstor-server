@@ -12,6 +12,8 @@ import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
+import static com.linbit.linstor.storage.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -22,8 +24,6 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.linbit.linstor.storage.utils.SpdkCommands.SPDK_RPC_SCRIPT;
 
 /**
  * Every {@link DeviceLayerKind} has a (possibly empty) list of {@link ExtTools}.
@@ -73,7 +73,8 @@ public class StltExtToolsChecker
             getLvmInfo(),
             getZfsInfo(),
             getNvmeInfo(),
-            getSpdkInfo()
+            getSpdkInfo(),
+            getWritecacheInfo()
         );
     }
 
@@ -138,6 +139,15 @@ public class StltExtToolsChecker
     private ExtToolsInfo getSpdkInfo()
     {
         return infoBy3MatchGroupPattern(SPDK_VERSION_PATTERN, ExtTools.SPDK, false, SPDK_RPC_SCRIPT, "get_spdk_version");
+    }
+
+    private ExtToolsInfo getWritecacheInfo()
+    {
+        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason("modinfo", "dm-writecache");
+        return stdoutOrErrorReason.map(
+            pair -> new ExtToolsInfo(ExtTools.WRITECACHE, true, null, null, null, Collections.emptyList()),
+            errorReson -> new ExtToolsInfo(ExtTools.WRITECACHE, false, null, null, null, errorReson)
+        );
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)

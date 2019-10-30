@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.12
+      - Added WritecacheResource and WritecacheVolume schemas.
     * 1.0.11
       - Added /v1/physical-storage endpoint, that lets you query and create lvm/zfs pools
       - Extended Node with list of supported providers and layers as well as lists of reasons for
@@ -59,7 +61,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.11
+  version: 1.0.12
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -3861,6 +3863,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NVMEVolume'
+    WritecacheResource:
+      type: object
+      properties:
+        writecache_volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WritecacheVolume'
     ResourceLayer:
       type: object
       properties:
@@ -3880,6 +3889,8 @@ components:
           $ref: '#/components/schemas/StorageResource'
         nvme:
           $ref: '#/components/schemas/NVMEResource'
+        writecache:
+          $ref: '#/components/schemas/WritecacheResource'
     ResourceState:
       type: object
       properties:
@@ -4037,6 +4048,28 @@ components:
         backing_device:
           type: string
           description: block device used by nvme
+        allocated_size_kib:
+          type: integer
+          format: int64
+        usable_size_kib:
+          type: integer
+          format: int64
+        disk_state:
+          type: string
+          description: String describing current volume state
+
+    WritecacheVolume:
+      type: object
+      properties:
+        volume_number:
+          type: integer
+          format: int32
+        device_path:
+          type: string
+          description: block device path
+        device_path_cache:
+          type: string
+          description: block device path used as cache device
         allocated_size_kib:
           type: integer
           format: int64

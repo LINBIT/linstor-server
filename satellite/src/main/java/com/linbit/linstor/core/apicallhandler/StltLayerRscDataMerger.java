@@ -19,6 +19,8 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -27,9 +29,9 @@ import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
+import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
@@ -45,6 +47,8 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
@@ -601,6 +605,77 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
         // ignoring devicePath
         // ignoring diskState
         // ignoring usableSize
+    }
+
+    @Override
+    protected WritecacheRscData createWritecacheRscData(
+        Resource rscRef,
+        RscLayerObject parentRef,
+        WritecacheRscPojo writecacheRscPojoRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        WritecacheRscData writecacheRscData;
+        writecacheRscData = layerDataFactory.createWritecacheRscData(
+            writecacheRscPojoRef.getId(),
+            rscRef,
+            writecacheRscPojoRef.getRscNameSuffix(),
+            parentRef
+        );
+        if (parentRef == null)
+        {
+            rscRef.setLayerData(apiCtx, writecacheRscData);
+        }
+        else
+        {
+            updateParent(writecacheRscData, parentRef);
+        }
+        return writecacheRscData;
+    }
+
+    @Override
+    protected void removeWritecacheVlm(WritecacheRscData writecacheRscDataRef, VolumeNumber vlmNrRef)
+        throws DatabaseException, AccessDeniedException
+    {
+        writecacheRscDataRef.remove(apiCtx, vlmNrRef);
+    }
+
+    @Override
+    protected void createWritecacheVlm(
+        Volume vlmRef,
+        WritecacheRscData writecacheRscDataRef,
+        WritecacheVlmPojo vlmPojo,
+        VolumeNumber vlmNrRef
+    ) throws AccessDeniedException, InvalidNameException
+    {
+        String cacheStorPoolNameStr = vlmPojo.getCacheStorPoolName();
+        StorPool cacheStorPool = vlmRef.getResource().getAssignedNode().getStorPool(
+            apiCtx,
+            new StorPoolName(cacheStorPoolNameStr)
+        );
+
+        WritecacheVlmData writecacheVlmData = layerDataFactory.createWritecacheVlmData(
+            vlmRef,
+            cacheStorPool,
+            writecacheRscDataRef
+        );
+        writecacheRscDataRef.getVlmLayerObjects().put(vlmNrRef, writecacheVlmData);
+    }
+
+    @Override
+    protected void mergeWritecacheVlm(
+        WritecacheVlmPojo vlmPojo,
+        WritecacheVlmData writecacheVlmData
+    )
+    {
+        // ignoring allocatedSize
+        // ignoring devicePath
+        // ignoring devicePathCache
+        // ignoring diskState
+        // ignoring exists
+        // ignoring identifier
+        // ignoring usableSize
+        // ignoring cacheStorPool (cannot be updated / changed)
     }
 
     @Override

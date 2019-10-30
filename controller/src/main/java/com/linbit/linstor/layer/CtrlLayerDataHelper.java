@@ -52,6 +52,7 @@ public class CtrlLayerDataHelper
     private final LuksLayerHelper luksLayerHelper;
     private final StorageLayerHelper storageLayerHelper;
     private final NvmeLayerHelper nvmeLayerHelper;
+    private final WritecacheLayerHelper writecacheLayerHelper;
 
     @Inject
     public CtrlLayerDataHelper(
@@ -61,7 +62,8 @@ public class CtrlLayerDataHelper
         DrbdLayerHelper drbdLayerHelperRef,
         LuksLayerHelper luksLayerHelperRef,
         StorageLayerHelper storageLayerHelperRef,
-        NvmeLayerHelper nvmeLayerHelperRef
+        NvmeLayerHelper nvmeLayerHelperRef,
+        WritecacheLayerHelper writecacheLayerHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -71,6 +73,7 @@ public class CtrlLayerDataHelper
         luksLayerHelper = luksLayerHelperRef;
         storageLayerHelper = storageLayerHelperRef;
         nvmeLayerHelper = nvmeLayerHelperRef;
+        writecacheLayerHelper = writecacheLayerHelperRef;
     }
 
     public List<DeviceLayerKind> getLayerStack(Resource rscRef)
@@ -436,6 +439,9 @@ public class CtrlLayerDataHelper
                 break;
             case NVME:
                 layerHelper = nvmeLayerHelper;
+                break;
+            case WRITECACHE:
+                layerHelper = writecacheLayerHelper;
                 break;
             case STORAGE:
                 layerHelper = storageLayerHelper;

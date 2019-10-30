@@ -20,4 +20,5 @@ message StorPool
     optional StorPoolFreeSpace free_space = 10;
     optional string free_space_mgr_name = 11;
     optional bool snapshot_supported = 12;
+    optional bool is_pmem = 13;
 }

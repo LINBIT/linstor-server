@@ -10,6 +10,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.layer.DeviceLayer;
 
 import java.util.Collection;
 import java.util.List;
@@ -61,5 +62,16 @@ public interface DeviceProvider
         throws AccessDeniedException, DatabaseException;
 
     void updateAllocatedSize(VlmProviderObject vlmObj)
+        throws AccessDeniedException, DatabaseException, StorageException;
+
+    /**
+     * Used to determine properties of the storage pool, i.e. if the storage pool is ontop of a pmem device
+     *
+     * @param storPoolRef
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     * @throws StorageException
+     */
+    void update(StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException, StorageException;
 }

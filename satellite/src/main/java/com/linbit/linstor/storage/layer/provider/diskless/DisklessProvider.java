@@ -9,6 +9,7 @@ import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -80,5 +81,11 @@ public class DisklessProvider implements DeviceProvider
     public Collection<StorPool> getChangedStorPools()
     {
         return Collections.emptyList();
+    }
+
+    @Override
+    public void update(StorPool storPoolRef)
+    {
+        // no-op
     }
 }

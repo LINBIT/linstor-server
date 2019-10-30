@@ -22,6 +22,7 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
+import com.linbit.linstor.storage.utils.PmemUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
 import com.linbit.linstor.storage.utils.ZfsUtils;
 import com.linbit.linstor.storage.utils.ZfsUtils.ZfsInfo;
@@ -30,6 +31,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -334,6 +336,32 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData>
         {
             throw new StorageException("no zpool found with name '" + zpoolName + "'");
         }
+    }
+
+    @Override
+    public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
+    {
+        List<String> pvs = ZfsUtils.getPhysicalVolumes(extCmdFactory.create(), getZpoolOnlyName(storPoolRef));
+        if (PmemUtils.supportsDax(extCmdFactory.create(), pvs))
+        {
+            storPoolRef.setPmem(true);
+        }
+    }
+
+    protected String getZpoolOnlyName(StorPool storPoolRef) throws AccessDeniedException, StorageException
+    {
+        String zpoolName = getZPool(storPoolRef);
+        if (zpoolName == null)
+        {
+            throw new StorageException("Unset zfs dataset for " + storPoolRef);
+        }
+
+        int idx = zpoolName.indexOf(File.separator);
+        if (idx == -1)
+        {
+            idx = zpoolName.length();
+        }
+        return zpoolName.substring(0, idx);
     }
 
     @Override

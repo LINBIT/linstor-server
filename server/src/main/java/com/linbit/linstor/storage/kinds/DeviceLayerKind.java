@@ -21,6 +21,10 @@ public enum DeviceLayerKind
         false,
         ExtTools.NVME
     ),
+    WRITECACHE(
+        true,
+        ExtTools.WRITECACHE
+    ),
     STORAGE(true);
     private final ExtTools[] startupVerifications;
 

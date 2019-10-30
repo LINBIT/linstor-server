@@ -1,15 +1,15 @@
 package com.linbit.linstor.storage.utils;
 
-import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
-
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.RaidLevel;
-import com.linbit.linstor.storage.layer.provider.utils.Commands.RetryHandler;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
+import com.linbit.linstor.storage.layer.provider.utils.Commands.RetryHandler;
 import com.linbit.linstor.storage.layer.provider.utils.RetryIfDeviceBusy;
 import com.linbit.utils.StringUtils;
+
+import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
 
 import java.io.File;
 import java.util.List;
@@ -460,7 +460,31 @@ public class LvmCommands
         );
     }
 
+    public static OutputData listPhysicalVolumes(ExtCmd extCmdRef, String volumeGroupRef) throws StorageException
+    {
+        final String failMsg = "Failed to get physical devices for volume group: " + volumeGroupRef;
+        return genericExecutor(
+            extCmdRef,
+            StringUtils.concat(
+                new String[]
+                {
+                    "pvdisplay",
+                    "--columns",
+                    "-o",
+                    "pv_name",
+                    "-S",
+                    "vg_name=" + volumeGroupRef,
+                    "--noheadings",
+                    "--nosuffix"
+                }
+            ),
+            failMsg,
+            failMsg
+        );
+    }
+
     private LvmCommands()
     {
     }
+
 }

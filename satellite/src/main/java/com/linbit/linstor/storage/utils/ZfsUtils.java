@@ -8,8 +8,10 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -251,5 +253,22 @@ public class ZfsUtils
             );
         }
         return totalSizes;
+    }
+
+    public static List<String> getPhysicalVolumes(ExtCmd extCmd, String zPoolRef) throws StorageException
+    {
+        List<String> devices = new ArrayList<>();
+
+        OutputData out = ZfsCommands.getPhysicalDevices(extCmd, zPoolRef);
+        String outStr = new String(out.stdoutData);
+        String[] lines = outStr.split("\n");
+        // first line is only the name of the zpool
+        for (int idx = 1; idx < lines.length; ++idx)
+        {
+            String line = lines[idx].trim();
+            String[] subColumns = line.split("\t");
+            devices.add(subColumns[0]);
+        }
+        return devices;
     }
 }

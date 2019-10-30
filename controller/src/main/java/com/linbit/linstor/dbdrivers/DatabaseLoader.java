@@ -58,6 +58,7 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionCtrlDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.VolumeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -133,6 +134,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final LuksLayerCtrlDatabaseDriver luksLayerDriver;
     private final StorageLayerCtrlDatabaseDriver storageLayerDriver;
     private final NvmeLayerCtrlDatabaseDriver nvmeLayerDriver;
+    private final WritecacheLayerCtrlDatabaseDriver writecacheLayerDriver;
     private final Provider<CtrlLayerDataHelper> ctrlLayerDataHelper;
 
     private final CoreModule.NodesMap nodesMap;
@@ -170,6 +172,7 @@ public class DatabaseLoader implements DatabaseDriver
         LuksLayerCtrlDatabaseDriver luksLayerDriverRef,
         StorageLayerCtrlDatabaseDriver storageLayerDriverRef,
         NvmeLayerCtrlDatabaseDriver nvmeLayerDriverRef,
+        WritecacheLayerCtrlDatabaseDriver writecacheLayerDriverRef,
         Provider<CtrlLayerDataHelper> ctrlLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -204,6 +207,7 @@ public class DatabaseLoader implements DatabaseDriver
         luksLayerDriver = luksLayerDriverRef;
         storageLayerDriver = storageLayerDriverRef;
         nvmeLayerDriver = nvmeLayerDriverRef;
+        writecacheLayerDriver = writecacheLayerDriverRef;
         ctrlLayerDataHelper = ctrlLayerDataHelperRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
@@ -642,6 +646,15 @@ public class DatabaseLoader implements DatabaseDriver
                             rli.id,
                             rli.rscSuffix,
                             parent
+                        );
+                        break;
+                    case WRITECACHE:
+                        rscLayerObjectPair = writecacheLayerDriver.load(
+                            rsc,
+                            rli.id,
+                            rli.rscSuffix,
+                            parent,
+                            tmpStorPoolMapRef
                         );
                         break;
                     default:

@@ -4,8 +4,8 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
-import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.SpdkUtils;
 import com.linbit.utils.StringUtils;
@@ -112,6 +112,27 @@ public class Commands
             "Failed to wipeFs of " + devicePath,
             "Failed to wipeFs of " + devicePath
         );
+    }
+
+    public static long getDeviceSizeInSectors(
+        ExtCmd extCmd,
+        String devicePath
+    )
+        throws StorageException
+    {
+        OutputData output = genericExecutor(
+            extCmd,
+            new String[]
+            {
+                "blockdev",
+                "--getsz",
+                devicePath
+            },
+            "Failed to get device size of " + devicePath,
+            "Failed to get device size of " + devicePath
+        );
+        String outRaw = new String(output.stdoutData);
+        return Long.parseLong(outRaw.trim());
     }
 
     public static long getBlockSizeInKib(

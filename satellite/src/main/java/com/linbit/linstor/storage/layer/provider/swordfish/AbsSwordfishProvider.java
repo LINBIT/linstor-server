@@ -32,7 +32,12 @@ import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.storage.utils.SwordfishConsts;
 
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DATA;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.KIB;
+
 import javax.inject.Provider;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,10 +45,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DATA;
-import static com.linbit.linstor.storage.utils.SwordfishConsts.KIB;
 
 
 // TODO: create custom SwordFish communication objects and use a JSON serializer / deserializer
@@ -446,6 +447,12 @@ public abstract class AbsSwordfishProvider<LAYER_DATA extends VlmProviderObject>
         {
             throw new ImplementationError("Invalid hardcoded props key", exc);
         }
+    }
+
+    @Override
+    public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
+    {
+        // ignore, currently no support to check if swordfish is based on pmem or nor
     }
 
     @SuppressWarnings("unchecked")

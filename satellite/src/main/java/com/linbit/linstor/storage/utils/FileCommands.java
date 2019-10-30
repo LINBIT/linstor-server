@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
+
 import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
 
 import java.io.IOException;
@@ -138,6 +139,21 @@ public class FileCommands
             },
             "Failed to fetch pool free space",
             "Failed to fetch free space of storage pool '" + storageDirectory + "'"
+        );
+    }
+
+    public static OutputData getSourceDevice(ExtCmd extCmd, Path storageDirectoryRef)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "df",
+                "--output=source",
+                storageDirectoryRef.toString()
+            },
+            null,
+            null
         );
     }
 

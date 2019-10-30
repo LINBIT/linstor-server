@@ -96,22 +96,33 @@ public class FileUtils
 
     public static long getPoolCapacity(ExtCmd extCmd, Path storageDirectoryRef) throws StorageException
     {
-        return parseSimpleDfOutput(FileCommands.getTotalCapacity(extCmd, storageDirectoryRef));
+        return parseSimpleDfOutputAsLong(FileCommands.getTotalCapacity(extCmd, storageDirectoryRef));
     }
 
     public static long getFreeSpace(ExtCmd extCmd, Path storageDirectoryRef) throws StorageException
     {
-        return parseSimpleDfOutput(FileCommands.getFreeSpace(extCmd, storageDirectoryRef));
+        return parseSimpleDfOutputAsLong(FileCommands.getFreeSpace(extCmd, storageDirectoryRef));
     }
 
-    private static long parseSimpleDfOutput(OutputData outputData)
+    public static String getSourceDevice(ExtCmd extCmd, Path storageDirectoryRef) throws StorageException
     {
-        String outStr = new String(outputData.stdoutData);
-        String data = outStr.split("\n")[1]; // [0] is the header
+        return parseSimpleDfOutputAsString(FileCommands.getSourceDevice(extCmd, storageDirectoryRef));
+    }
+
+    private static long parseSimpleDfOutputAsLong(OutputData outputData)
+    {
+        String sizeStr = parseSimpleDfOutputAsString(outputData);
         return SizeConv.convert(
-            Long.parseLong(data.trim()),
+            Long.parseLong(sizeStr),
             SizeUnit.UNIT_B,
             SizeUnit.UNIT_KiB
         );
+    }
+
+    private static String parseSimpleDfOutputAsString(OutputData outputData)
+    {
+        String outStr = new String(outputData.stdoutData);
+        String data = outStr.split("\n")[1]; // [0] is the header
+        return data.trim();
     }
 }

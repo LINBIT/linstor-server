@@ -70,6 +70,8 @@ public class StorPool extends BaseTransactionObject
      */
     private final TransactionSimpleObject<StorPool, Boolean> supportsSnapshots;
 
+    private final TransactionSimpleObject<StorPool, Boolean> isPmem;
+
     private ApiCallRcImpl reports;
 
     StorPool(
@@ -107,6 +109,7 @@ public class StorPool extends BaseTransactionObject
             providerKindRef.isSnapshotSupported(),
             null
         );
+        isPmem = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         reports = new ApiCallRcImpl();
 
@@ -189,6 +192,16 @@ public class StorPool extends BaseTransactionObject
         return vlmProviderMap.values();
     }
 
+    public boolean isPmem()
+    {
+        return isPmem.get();
+    }
+
+    public void setPmem(boolean pmemRef) throws DatabaseException
+    {
+        isPmem.set(pmemRef);
+    }
+
     public FreeSpaceTracker getFreeSpaceTracker()
     {
         return freeSpaceTracker;
@@ -203,7 +216,7 @@ public class StorPool extends BaseTransactionObject
             storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
             node.removeStorPool(accCtx, this);
-            ((StorPoolDefinition) storPoolDef).removeStorPool(accCtx, this);
+            storPoolDef.removeStorPool(accCtx, this);
             freeSpaceTracker.remove(accCtx, this);
 
             props.delete();
@@ -333,7 +346,8 @@ public class StorPool extends BaseTransactionObject
             Optional.ofNullable(freeSpaceRef),
             Optional.ofNullable(totalSpaceRef),
             getReports(),
-            supportsSnapshots.get()
+            supportsSnapshots.get(),
+            isPmem.get()
         );
     }
 

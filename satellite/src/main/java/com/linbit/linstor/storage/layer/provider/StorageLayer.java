@@ -330,10 +330,11 @@ public class StorageLayer implements DeviceLayer
         );
     }
 
-    public void checkStorPool(StorPool storPool) throws StorageException, AccessDeniedException
+    public void checkStorPool(StorPool storPool) throws StorageException, AccessDeniedException, DatabaseException
     {
         DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
         deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
         deviceProvider.checkConfig(storPool);
+        deviceProvider.update(storPool);
     }
 }

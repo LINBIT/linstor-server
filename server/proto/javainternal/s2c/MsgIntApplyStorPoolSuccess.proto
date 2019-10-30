@@ -9,4 +9,5 @@ message MsgIntApplyStorPoolSuccess
     string stor_pool_name = 1;
     common.StorPoolFreeSpace free_space = 2;
     bool supports_snapshots = 3;
+    bool is_pmem = 4;
 }

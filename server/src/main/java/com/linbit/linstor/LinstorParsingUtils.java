@@ -331,6 +331,9 @@ public class LinstorParsingUtils
             case "NVME":
                 kind = DeviceLayerKind.NVME;
                 break;
+            case "WRITECACHE":
+                kind = DeviceLayerKind.WRITECACHE;
+                break;
             default:
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

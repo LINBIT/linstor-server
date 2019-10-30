@@ -16,6 +16,7 @@ import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -26,6 +27,8 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
@@ -61,6 +64,7 @@ public class LayerDataFactory
     private final DrbdLayerDatabaseDriver drbdDbDriver;
     private final StorageLayerDatabaseDriver storageDbDriver;
     private final NvmeLayerDatabaseDriver nvmeDbDriver;
+    private final WritecacheLayerDatabaseDriver writecacheDbDriver;
     private final SwordfishLayerDatabaseDriver swordfishDbDriver;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
@@ -75,6 +79,7 @@ public class LayerDataFactory
         DrbdLayerDatabaseDriver drbdDbDriverRef,
         StorageLayerDatabaseDriver storageDbDriverRef,
         NvmeLayerDatabaseDriver nvmeDbDriverRef,
+        WritecacheLayerDatabaseDriver writecacheDbDriverRef,
         SwordfishLayerDatabaseDriver swordfishDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
@@ -88,6 +93,7 @@ public class LayerDataFactory
         drbdDbDriver = drbdDbDriverRef;
         storageDbDriver = storageDbDriverRef;
         nvmeDbDriver = nvmeDbDriverRef;
+        writecacheDbDriver = writecacheDbDriverRef;
         swordfishDbDriver = swordfishDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
@@ -322,6 +328,46 @@ public class LayerDataFactory
         return new NvmeVlmData(
             vlm,
             rscData,
+            transObjFactory,
+            transMgrProvider
+        );
+    }
+
+    public WritecacheRscData createWritecacheRscData(
+        int rscLayerId,
+        Resource rsc,
+        String rscNameSuffix,
+        RscLayerObject parentData
+    )
+        throws DatabaseException
+    {
+        WritecacheRscData writecacheRscData = new WritecacheRscData(
+            rscLayerId,
+            rsc,
+            parentData,
+            new HashSet<>(),
+            rscNameSuffix,
+            writecacheDbDriver,
+            new TreeMap<>(),
+            transObjFactory,
+            transMgrProvider
+        );
+        resourceLayerIdDatabaseDriver.persist(writecacheRscData);
+        writecacheDbDriver.persist(writecacheRscData);
+        return writecacheRscData;
+    }
+
+    public WritecacheVlmData createWritecacheVlmData(
+        Volume vlm,
+        StorPool cacheStorPool,
+        WritecacheRscData rscData
+    )
+    {
+        return new WritecacheVlmData(
+            vlm,
+            rscData,
+            cacheStorPool,
+            writecacheDbDriver,
             transObjFactory,
             transMgrProvider
         );

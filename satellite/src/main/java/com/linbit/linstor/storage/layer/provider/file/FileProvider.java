@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.SysFsHandler;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -28,6 +29,7 @@ import com.linbit.linstor.storage.utils.FileCommands;
 import com.linbit.linstor.storage.utils.FileUtils;
 import com.linbit.linstor.storage.utils.FileUtils.FileInfo;
 import com.linbit.linstor.storage.utils.LosetupCommands;
+import com.linbit.linstor.storage.utils.PmemUtils;
 import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
@@ -610,6 +612,22 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
             {
                 throw new ImplementationError(exc);
             }
+        }
+    }
+
+    @Override
+    public void update(StorPool storPool) throws AccessDeniedException, DatabaseException, StorageException
+    {
+        Props props = DeviceLayerUtils.getNamespaceStorDriver(
+            storPool.getProps(storDriverAccCtx)
+        );
+        String dirStr = props.getProp(StorageConstants.CONFIG_FILE_DIRECTORY_KEY);
+        Path storageDirectory = Paths.get(dirStr);
+
+        String dev = FileUtils.getSourceDevice(extCmdFactory.create(), storageDirectory);
+        if (PmemUtils.supportsDax(extCmdFactory.create(), dev))
+        {
+            storPool.setPmem(true);
         }
     }
 

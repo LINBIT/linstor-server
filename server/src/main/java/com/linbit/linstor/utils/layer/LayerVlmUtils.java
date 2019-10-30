@@ -24,7 +24,6 @@ public class LayerVlmUtils
     public static Set<StorPool> getStorPoolSet(Volume vlm, AccessContext accCtx)
         throws AccessDeniedException
     {
-        Set<StorPool> storPools = new TreeSet<>();
 
         VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
 
@@ -32,6 +31,12 @@ public class LayerVlmUtils
             vlm.getResource().getLayerData(accCtx),
             DeviceLayerKind.STORAGE
         );
+        return getStoragePools(vlmNr, storageRscDataSet);
+    }
+
+    private static Set<StorPool> getStoragePools(VolumeNumber vlmNr, Set<RscLayerObject> storageRscDataSet)
+    {
+        Set<StorPool> storPools = new TreeSet<>();
         for (RscLayerObject rscData : storageRscDataSet)
         {
             VlmProviderObject vlmProviderObject = rscData.getVlmProviderObject(vlmNr);
@@ -50,8 +55,17 @@ public class LayerVlmUtils
                 storPools.add(vlmProviderObject.getStorPool());
             }
         }
-
         return storPools;
+    }
+
+    public static Set<StorPool> getStorPoolSet(VlmProviderObject vlmData, AccessContext accCtx)
+    {
+        return getStoragePools(
+            vlmData.getVlmNr(), LayerRscUtils.getRscDataByProvider(
+            vlmData.getRscLayerObject(),
+                DeviceLayerKind.STORAGE
+            )
+        );
     }
 
     public static Map<String, StorPool> getStorPoolMap(
@@ -90,4 +104,5 @@ public class LayerVlmUtils
     private LayerVlmUtils()
     {
     }
+
 }

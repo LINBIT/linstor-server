@@ -7,5 +7,6 @@ public enum ExtTools
     LVM,
     ZFS,
     NVME,
-    SPDK
+    SPDK,
+    WRITECACHE
 }

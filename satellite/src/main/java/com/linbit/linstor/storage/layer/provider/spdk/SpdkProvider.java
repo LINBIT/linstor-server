@@ -8,7 +8,12 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.*;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -30,13 +35,19 @@ import com.linbit.linstor.storage.utils.SpdkUtils;
 import com.linbit.linstor.storage.utils.SpdkUtils.LvsInfo;
 import com.linbit.linstor.transaction.TransactionMgr;
 
+import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.io.File;
-import java.util.*;
 
-import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Singleton
 public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
@@ -420,6 +431,12 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
             volumeGroups.add(getVolumeGroup(snapVlm.getStorPool(storDriverAccCtx)));
         }
         return volumeGroups;
+    }
+
+    @Override
+    public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
+    {
+        // TODO: we need to implement a check for pmem here. something like LvmProvider.update does
     }
 
     @Override

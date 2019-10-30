@@ -16,13 +16,15 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -34,6 +36,8 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
@@ -367,7 +371,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
     @Override
     protected void createNvmeVlm(Volume vlmRef, NvmeRscData nvmeRscDataRef, VolumeNumber vlmNrRef)
     {
-        throw new ImplementationError("Missing luks volume from satellite");
+        throw new ImplementationError("Missing nvme volume from satellite");
     }
 
     @Override
@@ -384,6 +388,46 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         nvmeVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
         nvmeVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         nvmeVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
+    }
+
+    @Override
+    protected WritecacheRscData createWritecacheRscData(
+        Resource rscRef,
+        RscLayerObject parentRef,
+        WritecacheRscPojo writecacheRscPojoRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        throw new ImplementationError("Received unknown writecache resource from satellite");
+    }
+
+    @Override
+    protected void createWritecacheVlm(
+        Volume vlmRef,
+        WritecacheRscData writecacheRscDataRef,
+        WritecacheVlmPojo vlmPojo,
+        VolumeNumber vlmNrRef
+    )
+    {
+        throw new ImplementationError("Missing writecache volume from satellite");
+    }
+
+    @Override
+    protected void removeWritecacheVlm(WritecacheRscData writecacheRscDataRef, VolumeNumber vlmNrRef)
+        throws DatabaseException, AccessDeniedException
+    {
+        // ignored. A parent volume might have more volumes in one of its children than in an other one
+    }
+
+    @Override
+    protected void mergeWritecacheVlm(WritecacheVlmPojo vlmPojoRef, WritecacheVlmData writecacheVlmDataRef)
+        throws DatabaseException
+    {
+        writecacheVlmDataRef.setAllocatedSize(vlmPojoRef.getAllocatedSize());
+        writecacheVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
+        writecacheVlmDataRef.setCacheDevice(vlmPojoRef.getDevicePathCache());
+        writecacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
+        writecacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
 }

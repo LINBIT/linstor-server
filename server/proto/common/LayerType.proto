@@ -10,4 +10,5 @@ enum LayerType
     LUKS = 2;
     STORAGE = 3;
     NVME = 4;
+    WRITECACHE = 5;
 }
