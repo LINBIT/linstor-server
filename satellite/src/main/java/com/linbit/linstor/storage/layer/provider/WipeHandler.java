@@ -5,12 +5,12 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
+import com.linbit.utils.ExceptionThrowingConsumer;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
-import java.util.function.Consumer;
 
 @Singleton
 public class WipeHandler
@@ -52,7 +52,8 @@ public class WipeHandler
         }
     }
 
-    public void asyncWipe(String devicePath, Consumer<String> wipeFinishedNotifier)
+    public void asyncWipe(String devicePath, ExceptionThrowingConsumer<String, StorageException> wipeFinishedNotifier)
+        throws StorageException
     {
         // TODO: this step should be asynchron
 

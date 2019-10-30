@@ -260,39 +260,51 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData>
         throws StorageException, DatabaseException
     {
         String devicePath = fileData.getDevicePath();
-
         Path storageDirectory = fileData.getStorageDirectory();
-        // just make sure to not colide with any other ongoing wipe-lv-name
-        String newId = String.format(FORMAT_ID_WIPE_IN_PROGRESS, UUID.randomUUID().toString());
-        FileCommands.rename(
-            storageDirectory,
-            oldId,
-            newId
-        );
 
-        wipeHandler.asyncWipe(
-            devicePath,
-            ignored ->
-            {
-                try
+        if (true)
+        {
+            wipeHandler.quickWipe(devicePath);
+            LosetupCommands.detach(extCmdFactory.create(), devicePath);
+            FileCommands.delete(
+                storageDirectory,
+                oldId
+            );
+            fileData.setExists(false);
+        }
+        else
+        {
+            // TODO use this path once async wiping is implemened
+
+            // just make sure to not colide with any other ongoing wipe-lv-name
+            String newId = String.format(FORMAT_ID_WIPE_IN_PROGRESS, UUID.randomUUID().toString());
+            FileCommands.rename(
+                storageDirectory,
+                oldId,
+                newId
+            );
+
+            wipeHandler.asyncWipe(
+                devicePath,
+                ignored ->
                 {
-                    LosetupCommands.detach(extCmdFactory.create(), devicePath);
-                    FileCommands.delete(
-                        storageDirectory,
-                        newId
-                    );
-                    fileData.setExists(false);
+                    try
+                    {
+                        LosetupCommands.detach(extCmdFactory.create(), devicePath);
+                        FileCommands.delete(
+                            storageDirectory,
+                            newId
+                        );
+                        fileData.setExists(false);
+                    }
+                    catch (DatabaseException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
                 }
-                catch (DatabaseException exc)
-                {
-                    throw new ImplementationError(exc);
-                }
-                catch (StorageException exc)
-                {
-                    errorReporter.reportError(exc);
-                }
-            }
-        );
+            );
+        }
+
         LOSETUP_DEVICES.remove(devicePath);
     }
 

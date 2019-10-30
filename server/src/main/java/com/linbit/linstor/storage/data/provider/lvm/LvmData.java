@@ -25,6 +25,7 @@ public class LvmData extends AbsStorageVlmData implements LvmProviderObject
 {
     // not persisted, not serialized, stlt only
     private transient String volumeGroup;
+    private transient String attributes;
 
     public LvmData(
         Volume vlmRef,
@@ -88,6 +89,16 @@ public class LvmData extends AbsStorageVlmData implements LvmProviderObject
     public void setVolumeGroup(String volumeGroupRef)
     {
         volumeGroup = volumeGroupRef;
+    }
+
+    public String getAttributes()
+    {
+        return attributes;
+    }
+
+    public void setAttributes(String attributesRef)
+    {
+        attributes = attributesRef;
     }
 
     @Override

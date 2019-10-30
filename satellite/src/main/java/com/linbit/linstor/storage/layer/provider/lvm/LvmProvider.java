@@ -46,6 +46,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Singleton
 public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
@@ -54,10 +55,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     public static final String FORMAT_RSC_TO_LVM_ID = "%s%s_%05d";
     // snapshots look like FORMAT_RSC_TO_LVM_ID + "_%s". should not cause naming conflict
-    private static final String FORMAT_LVM_ID_WIPE_IN_PROGRESS = "%s-linstor_wiping_in_progress";
+    private static final String FORMAT_LVM_ID_WIPE_IN_PROGRESS = "%s-linstor_wiping_in_progress-%d";
     private static final String FORMAT_DEV_PATH = "/dev/%s/%s";
 
     private static final String DFLT_LVCREATE_TYPE = "linear";
+
+    private static final AtomicLong DELETED_ID = new AtomicLong(0);
 
     protected LvmProvider(
         ErrorReporter errorReporter,
@@ -178,6 +181,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             vlmData.setAllocatedSize(-1);
             // vlmData.setUsableSize(-1);
             vlmData.setDevicePath(null);
+            vlmData.setAttributes(null);
         }
         else
         {
@@ -187,6 +191,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
             vlmData.setIdentifier(info.identifier);
             vlmData.setAllocatedSize(info.size);
             vlmData.setUsableSize(info.size);
+            vlmData.setAttributes(info.attributes);
         }
     }
 
@@ -262,36 +267,45 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
 
     @Override
     protected void deleteLvImpl(LvmData vlmData, String oldLvmId)
-        throws StorageException, DatabaseException
+        throws StorageException, DatabaseException, AccessDeniedException
     {
-        // just make sure to not colide with any other ongoing wipe-lv-name
-        String newLvmId = String.format(
-            FORMAT_LVM_ID_WIPE_IN_PROGRESS,
-            asLvIdentifier(vlmData)
-        );
-
         String devicePath = vlmData.getDevicePath();
-        // devicePath is the "current" devicePath. as we will rename it right now
-        // we will have to adjust the devicePath
-        int lastIndexOf = devicePath.lastIndexOf(oldLvmId);
-        devicePath = devicePath.substring(0, lastIndexOf) + newLvmId;
-
         String volumeGroup = vlmData.getVolumeGroup();
 
-        LvmCommands.rename(
-            extCmdFactory.create(),
-            volumeGroup,
-            oldLvmId,
-            newLvmId
-        );
+        if (true)
+        {
+            wipeHandler.quickWipe(devicePath);
+            LvmCommands.delete(extCmdFactory.create(), volumeGroup, oldLvmId);
+            vlmData.setExists(false);
+        }
+        else
+        {
+            // TODO use this path once async wiping is implemented
 
-        vlmData.setExists(false);
+            // devicePath is the "current" devicePath. as we will rename it right now
+            // we will have to adjust the devicePath
+            int lastIndexOf = devicePath.lastIndexOf(oldLvmId);
 
-        wipeHandler.asyncWipe(
-            devicePath,
-            ignored ->
-            {
-                try
+            // just make sure to not colide with any other ongoing wipe-lv-name
+            String newLvmId = String.format(
+                FORMAT_LVM_ID_WIPE_IN_PROGRESS,
+                asLvIdentifier(vlmData),
+                DELETED_ID.incrementAndGet()
+            );
+            devicePath = devicePath.substring(0, lastIndexOf) + newLvmId;
+
+            LvmCommands.rename(
+                extCmdFactory.create(),
+                volumeGroup,
+                oldLvmId,
+                newLvmId
+            );
+
+            vlmData.setExists(false);
+
+            wipeHandler.asyncWipe(
+                devicePath,
+                ignored ->
                 {
                     LvmCommands.delete(
                         extCmdFactory.create(),
@@ -299,12 +313,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData>
                         newLvmId
                     );
                 }
-                catch (StorageException exc)
-                {
-                    errorReporter.reportError(exc);
-                }
-            }
-        );
+            );
+        }
     }
 
     @Override
