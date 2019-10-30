@@ -1,7 +1,5 @@
 package com.linbit.linstor.storage.layer.provider.swordfish;
 
-import com.fasterxml.jackson.jr.ob.impl.CollectionBuilder;
-import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -29,6 +27,21 @@ import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.linstor.storage.utils.SwordfishConsts;
 
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ALLOCATED_BYTES;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY_BYTES;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CAPACITY_SOURCES;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_GUARANTEED_BYTES;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ODATA_ID;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_PROVIDING_POOLS;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.KIB;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_BASE;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_MONITOR;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_POOLS;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_STORAGE_SERVICES;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_TASKS;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_TASK_SERVICE;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_VOLUMES;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -36,7 +49,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 
-import static com.linbit.linstor.storage.utils.SwordfishConsts.*;
+import com.fasterxml.jackson.jr.ob.api.CollectionBuilder;
+import com.fasterxml.jackson.jr.ob.api.MapBuilder;
 
 @Singleton
 public class SwordfishTargetProvider extends AbsSwordfishProvider<SfTargetData>

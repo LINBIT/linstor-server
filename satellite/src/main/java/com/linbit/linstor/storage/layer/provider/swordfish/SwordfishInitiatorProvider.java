@@ -1,6 +1,5 @@
 package com.linbit.linstor.storage.layer.provider.swordfish;
 
-import com.fasterxml.jackson.jr.ob.impl.MapBuilder;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
@@ -31,6 +30,29 @@ import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
 
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ALLOWABLE_VALUES;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_CONNECTED_ENTITIES;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DURABLE_NAME;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_DURABLE_NAME_FORMAT;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ENDPOINTS;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ENTITY_ROLE;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_IDENTIFIERS;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_INTEL_RACK_SCALE;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_LINKS;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_ODATA_ID;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_OEM;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_PARAMETERS;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_KEY_RESOURCE;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_VALUE_NQN;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.JSON_VALUE_TARGET;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.PATTERN_NQN;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ACTIONS;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_ATTACH_RESOURCE_ACTION_INFO;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_BASE;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_COMPOSED_NODE_ATTACH_RESOURCE;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_COMPOSED_NODE_DETACH_RESOURCE;
+import static com.linbit.linstor.storage.utils.SwordfishConsts.SF_NODES;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -41,7 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
-import static com.linbit.linstor.storage.utils.SwordfishConsts.*;
+import com.fasterxml.jackson.jr.ob.api.MapBuilder;
 
 @Singleton
 public class SwordfishInitiatorProvider extends AbsSwordfishProvider<SfInitiatorData>
