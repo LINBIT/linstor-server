@@ -250,7 +250,7 @@ public class CtrlApiCallHandler
      * @param layerStackStrList
      * @param newRscPeerSlotsRef
      */
-    public ApiCallRc modifyRscDfn(
+    public Flux<ApiCallRc> modifyRscDfn(
         UUID rscDfnUuid,
         String rscName,
         Integer port,
@@ -261,10 +261,10 @@ public class CtrlApiCallHandler
         Short newRscPeerSlotsRef
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
         {
-            apiCallRc = rscDfnApiCallHandler.modifyRscDfn(
+            flux = rscDfnApiCallHandler.modify(
                 rscDfnUuid,
                 rscName,
                 port,
@@ -275,7 +275,7 @@ public class CtrlApiCallHandler
                 newRscPeerSlotsRef
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     public ArrayList<ResourceDefinitionApi> listResourceDefinitions()

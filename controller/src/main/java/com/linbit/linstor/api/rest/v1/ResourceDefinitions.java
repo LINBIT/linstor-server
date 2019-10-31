@@ -25,6 +25,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -153,28 +154,30 @@ public class ResourceDefinitions
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{rscName}")
-    public Response modifyResourceDefinition(
+    public void modifyResourceDefinition(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request), () ->
-        {
-            JsonGenTypes.ResourceDefinitionModify modifyData =
-                objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionModify.class);
-            ApiCallRc apiCallRc = ctrlApiCallHandler.modifyRscDfn(
-                null,
-                rscName,
-                modifyData.drbd_port,
-                modifyData.override_props,
-                new HashSet<>(modifyData.delete_props),
-                new HashSet<>(modifyData.delete_namespaces),
-                modifyData.layer_stack,
-                modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue()
-            );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
-        }, true);
+        JsonGenTypes.ResourceDefinitionModify modifyData =
+            objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionModify.class);
+
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyRscDfn(
+            null,
+            rscName,
+            modifyData.drbd_port,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces),
+            modifyData.layer_stack,
+            modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue()
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
     }
 
     @DELETE
