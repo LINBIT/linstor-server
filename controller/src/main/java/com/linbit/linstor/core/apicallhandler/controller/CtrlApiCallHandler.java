@@ -1193,7 +1193,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ApiCallRc modifyVlm(
+    public Flux<ApiCallRc> modifyVlm(
         UUID uuidRef,
         String nodeNameRef,
         String rscNameRef,
@@ -1203,10 +1203,10 @@ public class CtrlApiCallHandler
         Set<String> deleteNamespacesRef
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP))
         {
-            apiCallRc = vlmApiCallHandler.modifyVolume(
+            flux = vlmApiCallHandler.modify(
                 uuidRef,
                 nodeNameRef,
                 rscNameRef,
@@ -1216,7 +1216,7 @@ public class CtrlApiCallHandler
                 deleteNamespacesRef
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     public List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames)
