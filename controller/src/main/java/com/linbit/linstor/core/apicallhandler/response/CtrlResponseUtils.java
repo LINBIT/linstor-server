@@ -88,7 +88,7 @@ public class CtrlResponseUtils
      * Any {@link ApiRcException} errors are suppressed and converted into normal responses.
      * If any errors were suppressed, a token {@link DelayedApiRcException} error is emitted when all sources complete.
      */
-    private static Flux<ApiCallRc> mergeExtractingApiRcExceptions(
+    public static Flux<ApiCallRc> mergeExtractingApiRcExceptions(
         Publisher<? extends Publisher<ApiCallRc>> sources)
     {
         return Flux

@@ -13,15 +13,19 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.objects.VolumeGroupControllerFactory;
@@ -31,21 +35,29 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuardFactory;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler.getRscGrpDescriptionInline;
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_GRP_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlVlmGrpApiCallHandler
@@ -59,6 +71,9 @@ public class CtrlVlmGrpApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResponseConverter responseConverter;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
     @Inject
     public CtrlVlmGrpApiCallHandler(
@@ -70,7 +85,10 @@ public class CtrlVlmGrpApiCallHandler
         VolumeGroupControllerFactory volumeGroupControllerFactoryRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -82,6 +100,9 @@ public class CtrlVlmGrpApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         responseConverter = responseConverterRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
     }
 
     public <T extends VolumeGroupApi> List<VolumeGroup> createVlmGrps(
@@ -197,66 +218,111 @@ public class CtrlVlmGrpApiCallHandler
         return ret;
     }
 
-    public ApiCallRc modify(
-        String rscGrpNameRef,
-        int vlmNrRef,
-        Map<String, String> overridePropsRef,
-        HashSet<String> deletePropKeysRef,
-        HashSet<String> deleteNamespacesRef
+    public Flux<ApiCallRc> modify(
+        String rscGrpNameStr,
+        int vlmNrInt,
+        Map<String, String> overrideProps,
+        HashSet<String> deletePropKeys,
+        HashSet<String> deleteNamespaces
     )
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeVolumeGroupContext(
+            ApiOperation.makeModifyOperation(),
+            rscGrpNameStr,
+            vlmNrInt
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Modify volume group",
+                lockGuardFactory.buildDeferred(
+                    WRITE,
+                    NODES_MAP, RSC_DFN_MAP, STOR_POOL_DFN_MAP, RSC_GRP_MAP
+                ),
+                () -> modifyVlmGrpInTransaction(
+                    rscGrpNameStr,
+                    vlmNrInt,
+                    overrideProps,
+                    deletePropKeys,
+                    deleteNamespaces
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> modifyVlmGrpInTransaction(
+        String rscGrpNameStr,
+        int vlmNrInt,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deleteNamespaces
+    )
+    {
+        List<Flux<Flux<ApiCallRc>>> fluxes = new ArrayList<>();
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
 
         Map<String, String> objRefs = new TreeMap<>();
-        objRefs.put(ApiConsts.KEY_VLM_GRP, rscGrpNameRef);
+        objRefs.put(ApiConsts.KEY_VLM_GRP, rscGrpNameStr);
 
         ResponseContext context = new ResponseContext(
             ApiOperation.makeCreateOperation(),
-            "Volume groups for " + getRscGrpDescriptionInline(rscGrpNameRef),
-            "volume groups for " + getRscGrpDescriptionInline(rscGrpNameRef),
+            "Volume groups for " + getRscGrpDescriptionInline(rscGrpNameStr),
+            "volume groups for " + getRscGrpDescriptionInline(rscGrpNameStr),
             ApiConsts.MASK_VLM_GRP,
             objRefs
         );
         try
         {
-            VolumeGroup vlmGrp = ctrlApiDataLoader.loadVlmGrp(rscGrpNameRef, vlmNrRef, true);
+            VolumeGroup vlmGrp = ctrlApiDataLoader.loadVlmGrp(rscGrpNameStr, vlmNrInt, true);
             Props props = vlmGrp.getProps(peerAccCtx.get());
             ctrlPropsHelper.fillProperties(
                 LinStorObject.VOLUME_DEFINITION,
-                overridePropsRef,
+                overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_VLM_GRP
             );
             ctrlPropsHelper.remove(
                 LinStorObject.VOLUME_DEFINITION,
                 props,
-                deletePropKeysRef,
-                deleteNamespacesRef
+                deletePropKeys,
+                deleteNamespaces
             );
 
             ctrlTransactionHelper.commit();
 
+            ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStr, true);
+
             responseConverter.addWithOp(
-                responses,
+                apiCallRcs,
                 context,
                 ApiSuccessUtils.defaultModifiedEntry(
-                    vlmGrp.getUuid(), getVlmGrpDescriptionInline(rscGrpNameRef, vlmGrp.getVolumeNumber().value)
+                    rscGrp.getUuid(), getRscGrpDescriptionInline(rscGrp)
                 )
             );
+
+            for (ResourceDefinition rscDfn : rscGrp.getRscDfns(peerAccCtx.get()))
+            {
+                fluxes.add(Flux.just(ctrlSatelliteUpdateCaller
+                    .updateSatellites(rscDfn, Flux.empty())
+                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                ));
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "modify " + getVlmGrpDescriptionInline(rscGrpNameRef, vlmNrRef),
+                "modify " + getVlmGrpDescriptionInline(rscGrpNameStr, vlmNrInt),
                 ApiConsts.FAIL_ACC_DENIED_VLM_GRP
             );
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
-        return responses;
+
+        return Flux.just((ApiCallRc) apiCallRcs)
+            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(Flux.merge(fluxes)));
     }
 
     public ApiCallRc delete(String rscGrpNameRef, int vlmNrRef)

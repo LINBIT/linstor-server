@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import reactor.core.publisher.Flux;
+
 @Singleton
 public class CtrlApiCallHandler
 {
@@ -1270,7 +1272,7 @@ public class CtrlApiCallHandler
         return listVolumeGroups;
     }
 
-    public ApiCallRc modifyVolumeGroup(
+    public Flux<ApiCallRc> modifyVolumeGroup(
         String rscGrpNameRef,
         int vlmNrRef,
         Map<String, String> overrideProps,
@@ -1278,10 +1280,10 @@ public class CtrlApiCallHandler
         HashSet<String> deleteNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
         {
-            apiCallRc = vlmGrpApiCallHandler.modify(
+            flux = vlmGrpApiCallHandler.modify(
                 rscGrpNameRef,
                 vlmNrRef,
                 overrideProps,
@@ -1289,7 +1291,7 @@ public class CtrlApiCallHandler
                 deleteNamespaces
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     public ApiCallRc deleteVolumeGroup(

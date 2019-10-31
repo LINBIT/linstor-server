@@ -19,6 +19,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import reactor.core.publisher.Flux;
 
 @Path("resource-groups/{rscName}/volume-groups")
 @Produces(MediaType.APPLICATION_JSON)
@@ -138,8 +141,9 @@ public class VolumeGroups
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{volume_number}")
-    public Response modifyVolumeGroup(
+    public void modifyVolumeGroup(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
         @PathParam("volume_number") int volumeNumber,
         String jsonData
@@ -150,20 +154,16 @@ public class VolumeGroups
             JsonGenTypes.VolumeGroupModify.class
         );
 
-        return requestHelper.doInScope(
-            requestHelper.createContext(ApiConsts.API_MOD_VLM_GRP, request),
-            () -> ApiCallRcConverter.toResponse(
-                ctrlApiCallHandler.modifyVolumeGroup(
-                    rscName,
-                    volumeNumber,
-                    modifyData.override_props,
-                    new HashSet<>(modifyData.delete_props),
-                    new HashSet<>(modifyData.delete_namespaces)
-                ),
-                Response.Status.OK
-            ),
-            true
-        );
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyVolumeGroup(
+            rscName,
+            volumeNumber,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces)
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_GRP, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
     }
 
 
