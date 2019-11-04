@@ -243,48 +243,43 @@ public class StoragePools
     @PUT
     @Path("{storPoolName}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response modifyStorPool(
+    public void modifyStorPool(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("storPoolName") String storPoolName,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL, request), () ->
-            {
-                JsonGenTypes.StoragePoolDefinitionModify modifyData = objectMapper
-                    .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
+        JsonGenTypes.StoragePoolDefinitionModify modifyData = objectMapper
+            .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
 
-                return ApiCallRcConverter.toResponse(
-                    ctrlStorPoolApiCallHandler.modifyStorPool(
-                        null,
-                        nodeName,
-                        storPoolName,
-                        modifyData.override_props,
-                        new HashSet<>(modifyData.delete_props),
-                        new HashSet<>(modifyData.delete_namespaces)
-                    ),
-                    Response.Status.OK
-                );
-            },
-            true
-        );
+        Flux<ApiCallRc> flux = ctrlStorPoolApiCallHandler.modify(
+            null,
+            nodeName,
+            storPoolName,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces)
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
     }
 
     @DELETE
     @Path("{storPoolName}")
-    public Response deleteStorPool(
+    public void deleteStorPool(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("storPoolName") String storPoolName
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request), () ->
-                ApiCallRcConverter.toResponse(
-                    ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName),
-                    Response.Status.OK
-                ),
-            true
-        );
+        Flux<ApiCallRc> flux = ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
     }
 }

@@ -526,7 +526,7 @@ public class CtrlApiCallHandler
      * @param deletePropKeysRef
      *            optional
      */
-    public ApiCallRc modifyStorPool(
+    public Flux<ApiCallRc> modifyStorPool(
         UUID storPoolUuid,
         String nodeName,
         String storPoolName,
@@ -535,7 +535,7 @@ public class CtrlApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
 
         Map<String, String> overrideProps = overridePropsRef;
         Set<String> deletePropKeys = deletePropKeysRef;
@@ -549,7 +549,7 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, STOR_POOL_DFN_MAP))
         {
-            apiCallRc = storPoolApiCallHandler.modifyStorPool(
+            flux = storPoolApiCallHandler.modify(
                 storPoolUuid,
                 nodeName,
                 storPoolName,
@@ -558,7 +558,7 @@ public class CtrlApiCallHandler
                 deletePropNamespaces
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     /**
@@ -567,21 +567,21 @@ public class CtrlApiCallHandler
      * The {@link StorPool} is only deleted once the corresponding satellite
      * confirms that it has undeployed (deleted) the {@link StorPool}.
      */
-    public ApiCallRc deleteStoragePool(
+    public Flux<ApiCallRc> deleteStoragePool(
         String nodeName,
         String storPoolName
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, STOR_POOL_DFN_MAP))
         {
-            apiCallRc = storPoolApiCallHandler.deleteStorPool(
+            flux = storPoolApiCallHandler.deleteStorPool(
                 nodeName,
                 storPoolName
             );
         }
 
-        return apiCallRc;
+        return flux;
     }
 
     /**
