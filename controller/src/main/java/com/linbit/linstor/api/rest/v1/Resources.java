@@ -208,29 +208,29 @@ public class Resources
 
     @PUT
     @Path("{nodeName}")
-    public Response modifyResource(
+    public void modifyResource(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("rscName") String rscName,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_RSC, request), () ->
-        {
-            JsonGenTypes.ResourceModify modifyData = objectMapper
-                .readValue(jsonData, JsonGenTypes.ResourceModify.class);
-            return ApiCallRcConverter.toResponse(
-                ctrlApiCallHandler.modifyRsc(
-                    null,
-                    nodeName,
-                    rscName,
-                    modifyData.override_props,
-                    new HashSet<>(modifyData.delete_props),
-                    new HashSet<>(modifyData.delete_namespaces)
-                ),
-                Response.Status.OK
-            );
-        }, true);
+        JsonGenTypes.ResourceModify modifyData = objectMapper
+            .readValue(jsonData, JsonGenTypes.ResourceModify.class);
+
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyRsc(
+            null,
+            nodeName,
+            rscName,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces)
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
     }
 
     @DELETE

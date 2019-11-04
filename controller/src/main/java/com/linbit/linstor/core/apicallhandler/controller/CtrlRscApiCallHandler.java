@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.ApiContext;
@@ -11,8 +9,9 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -34,13 +33,17 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuardFactory;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -52,6 +55,10 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 
+import reactor.core.publisher.Flux;
+
+import static java.util.stream.Collectors.toList;
+
 @Singleton
 public class CtrlRscApiCallHandler
 {
@@ -62,10 +69,12 @@ public class CtrlRscApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final NodeRepository nodeRepository;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlRscApiCallHandler(
@@ -76,10 +85,12 @@ public class CtrlRscApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         NodeRepository nodeRepositoryRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -89,28 +100,61 @@ public class CtrlRscApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         nodeRepository = nodeRepositoryRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
-    public ApiCallRc modifyResource(
+    public Flux<ApiCallRc> modify(
         UUID rscUuid,
         String nodeNameStr,
         String rscNameStr,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deletePropNamespacesRef
+        Set<String> deletePropNamespaces
     )
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeRscContext(
             ApiOperation.makeModifyOperation(),
             nodeNameStr,
             rscNameStr
         );
 
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Modify resource",
+                lockGuardFactory.buildDeferred(
+                    WRITE,
+                    NODES_MAP, RSC_DFN_MAP, STOR_POOL_DFN_MAP
+                ),
+                () -> modifyInTransaction(
+                    rscUuid,
+                    nodeNameStr,
+                    rscNameStr,
+                    overrideProps,
+                    deletePropKeys,
+                    deletePropNamespaces,
+                    context
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> modifyInTransaction(
+        UUID rscUuid,
+        String nodeNameStr,
+        String rscNameStr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespacesRef,
+        ResponseContext context
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         try
         {
             Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
@@ -144,16 +188,19 @@ public class CtrlRscApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rsc));
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+            responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 rsc.getUuid(), getRscDescriptionInline(rsc)));
+
+            flux = ctrlSatelliteUpdateCaller
+                .updateSatellites(rsc.getDefinition(), Flux.empty())
+                .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return responses;
+        return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
     }
 
     ResourceList listResources(

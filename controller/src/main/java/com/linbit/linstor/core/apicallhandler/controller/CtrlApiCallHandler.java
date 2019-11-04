@@ -330,7 +330,7 @@ public class CtrlApiCallHandler
      * @param rscName
      *            required
      */
-    public ApiCallRc modifyRsc(
+    public Flux<ApiCallRc> modifyRsc(
         UUID rscUuid,
         String nodeName,
         String rscName,
@@ -339,7 +339,7 @@ public class CtrlApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> apiCallRc;
         Map<String, String> overrideProps = overridePropsRef;
         Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
@@ -354,7 +354,7 @@ public class CtrlApiCallHandler
             LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP)
         )
         {
-            apiCallRc = rscApiCallHandler.modifyResource(
+            apiCallRc = rscApiCallHandler.modify(
                 rscUuid,
                 nodeName,
                 rscName,
@@ -363,6 +363,7 @@ public class CtrlApiCallHandler
                 deletePropNamespaces
             );
         }
+
         return apiCallRc;
     }
 
