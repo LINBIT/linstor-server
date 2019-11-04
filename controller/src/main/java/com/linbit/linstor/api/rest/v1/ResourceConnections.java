@@ -13,15 +13,19 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import reactor.core.publisher.Flux;
 
 @Path("resource-definitions/{rscName}/resource-connections")
 @Produces(MediaType.APPLICATION_JSON)
@@ -94,43 +98,32 @@ public class ResourceConnections
 
     @PUT
     @Path("{nodeA}/{nodeB}")
-    public Response modifyResourceConnection(
+    public void modifyResourceConnection(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
         @PathParam("nodeA") String nodeA,
         @PathParam("nodeB") String nodeB,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(ApiConsts.API_MOD_RSC_CONN, request, () ->
-        {
-            JsonGenTypes.ResourceConnectionModify rscConnModify = objectMapper.readValue(
-                jsonData,
-                JsonGenTypes.ResourceConnectionModify.class
-            );
-            ApiCallRc apiCallRc = ctrlApiCallHandler.modifyRscConn(
-                null,
-                nodeA,
-                nodeB,
-                rscName,
-                rscConnModify.override_props,
-                new HashSet<>(rscConnModify.delete_props),
-                new HashSet<>(rscConnModify.delete_namespaces)
-            );
+        JsonGenTypes.ResourceConnectionModify rscConnModify = objectMapper.readValue(
+            jsonData,
+            JsonGenTypes.ResourceConnectionModify.class
+        );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
-        }, true);
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyRscConn(
+            null,
+            nodeA,
+            nodeB,
+            rscName,
+            rscConnModify.override_props,
+            new HashSet<>(rscConnModify.delete_props),
+            new HashSet<>(rscConnModify.delete_namespaces)
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_CONN, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
     }
-
-//    @DELETE
-//    @Path("{nodeA}/{nodeB}")
-//    public Response deleteResourceConnection(
-//        @Context Request request,
-//        @PathParam("rscName") String rscName,
-//        @PathParam("nodeA") String nodeA,
-//        @PathParam("nodeB") String nodeB
-//    )
-//    {
-//    }
-
 }

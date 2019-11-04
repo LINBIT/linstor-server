@@ -696,14 +696,14 @@ public class CtrlApiCallHandler
      * @param rscConnPropsMap
      *            optional, recommended
      */
-    public ApiCallRc createResourceConnection(
+    public Flux<ApiCallRc> createResourceConnection(
         String nodeName1,
         String nodeName2,
         String rscName,
         Map<String, String> rscConnPropsMap
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         Map<String, String> rscConnProps = rscConnPropsMap;
         if (rscConnProps == null)
         {
@@ -711,14 +711,14 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP))
         {
-            apiCallRc = rscConnApiCallHandler.createResourceConnection(
+            flux = rscConnApiCallHandler.createResourceConnection(
                 nodeName1,
                 nodeName2,
                 rscName,
                 rscConnProps
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     /**
@@ -737,7 +737,7 @@ public class CtrlApiCallHandler
      * @param deletePropKeysRef
      *            optional
      */
-    public ApiCallRc modifyRscConn(
+    public Flux<ApiCallRc> modifyRscConn(
         UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
@@ -747,7 +747,7 @@ public class CtrlApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
 
         Map<String, String> overrideProps = overridePropsRef;
         Set<String> deletePropKeys = deletePropKeysRef;
@@ -761,7 +761,7 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP))
         {
-            apiCallRc = rscConnApiCallHandler.modifyRscConnection(
+            flux = rscConnApiCallHandler.modify(
                 rscConnUuid,
                 nodeName1,
                 nodeName2,
@@ -771,7 +771,7 @@ public class CtrlApiCallHandler
                 deletePropNamespaces
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     /**
@@ -784,22 +784,22 @@ public class CtrlApiCallHandler
      * @param rscName
      *            required
      */
-    public ApiCallRc deleteResourceConnection(
+    public Flux<ApiCallRc> deleteResourceConnection(
         String nodeName1,
         String nodeName2,
         String rscName
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP))
         {
-            apiCallRc = rscConnApiCallHandler.deleteResourceConnection(
+            flux = rscConnApiCallHandler.deleteResourceConnection(
                 nodeName1,
                 nodeName2,
                 rscName
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     /**
