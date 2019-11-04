@@ -11,12 +11,14 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
@@ -31,19 +33,25 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.locks.LockGuardFactory;
 
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 class CtrlStorPoolDfnApiCallHandler
@@ -54,10 +62,12 @@ class CtrlStorPoolDfnApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final StorPoolDefinitionControllerFactory storPoolDefinitionFactory;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     CtrlStorPoolDfnApiCallHandler(
@@ -67,10 +77,12 @@ class CtrlStorPoolDfnApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         StorPoolDefinitionControllerFactory storPoolDefinitionFactoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         apiCtx = apiCtxRef;
@@ -79,10 +91,12 @@ class CtrlStorPoolDfnApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         storPoolDefinitionFactory = storPoolDefinitionFactoryRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -118,7 +132,7 @@ class CtrlStorPoolDfnApiCallHandler
         return responses;
     }
 
-    public ApiCallRc modifyStorPoolDfn(
+    public Flux<ApiCallRc> modify(
         UUID storPoolDfnUuid,
         String storPoolNameStr,
         Map<String, String> overrideProps,
@@ -126,11 +140,38 @@ class CtrlStorPoolDfnApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolDfnContext(
             ApiOperation.makeModifyOperation(),
             storPoolNameStr
         );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Modify storage-pool-definition",
+                lockGuardFactory.buildDeferred(WRITE, NODES_MAP, STOR_POOL_DFN_MAP),
+                () -> modifyInTransaction(
+                    storPoolDfnUuid,
+                    storPoolNameStr,
+                    overrideProps,
+                    deletePropKeys,
+                    deletePropNamespaces,
+                    context
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> modifyInTransaction(
+        UUID storPoolDfnUuid,
+        String storPoolNameStr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces,
+        ResponseContext context
+    )
+    {
+        List<Flux<Flux<ApiCallRc>>> fluxes = new ArrayList<>();
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
 
         try
         {
@@ -153,16 +194,18 @@ class CtrlStorPoolDfnApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            responseConverter.addWithDetail(responses, context, updateSatellites(storPoolDfn));
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+            responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 storPoolDfn.getUuid(), getStorPoolDfnDescriptionInline(storPoolDfn)));
+
+            fluxes = updateSatellites(storPoolDfn);
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return responses;
+        return Flux.just((ApiCallRc) apiCallRcs)
+            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(Flux.merge(fluxes)));
     }
 
     public ApiCallRc deleteStorPoolDfn(String storPoolNameStr)
@@ -354,17 +397,16 @@ class CtrlStorPoolDfnApiCallHandler
         return props;
     }
 
-    private ApiCallRc updateSatellites(StorPoolDefinition storPoolDfn)
+    private List<Flux<Flux<ApiCallRc>>> updateSatellites(StorPoolDefinition storPoolDfn)
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
+        List<Flux<Flux<ApiCallRc>>> fluxes = new ArrayList<>();
 
         try
         {
             Iterator<StorPool> iterateStorPools = storPoolDfn.iterateStorPools(apiCtx);
             while (iterateStorPools.hasNext())
             {
-                StorPool storPool = iterateStorPools.next();
-                responses.addEntries(ctrlSatelliteUpdater.updateSatellite(storPool));
+                fluxes.add(Flux.just(ctrlSatelliteUpdateCaller.updateSatellite(iterateStorPools.next())));
             }
         }
         catch (AccessDeniedException accDeniedExc)
@@ -372,7 +414,7 @@ class CtrlStorPoolDfnApiCallHandler
             throw new ImplementationError(accDeniedExc);
         }
 
-        return responses;
+        return fluxes;
     }
 
     public static String getStorPoolDfnDescription(String storPoolName)

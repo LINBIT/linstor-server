@@ -448,7 +448,7 @@ public class CtrlApiCallHandler
      * @param deletePropKeysRef
      *            optional
      */
-    public ApiCallRc modifyStorPoolDfn(
+    public Flux<ApiCallRc> modifyStorPoolDfn(
         UUID storPoolDfnUuid,
         String storPoolName,
         Map<String, String> overridePropsRef,
@@ -456,7 +456,7 @@ public class CtrlApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> apiCallRc;
 
         Map<String, String> overrideProps = overridePropsRef;
         Set<String> deletePropKeys = deletePropKeysRef;
@@ -470,7 +470,7 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, STOR_POOL_DFN_MAP))
         {
-            apiCallRc = storPoolDfnApiCallHandler.modifyStorPoolDfn(
+            apiCallRc = storPoolDfnApiCallHandler.modify(
                 storPoolDfnUuid,
                 storPoolName,
                 overrideProps,

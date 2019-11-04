@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
@@ -16,10 +17,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +30,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+import reactor.core.publisher.Flux;
 
 @Path("storage-pool-definitions")
 @Produces(MediaType.APPLICATION_JSON)
@@ -112,28 +116,27 @@ public class StoragePoolDefinitions
 
     @PUT
     @Path("{storagePool}")
-    public Response modifyStoragePoolDefinition(
+    public void modifyStoragePoolDefinition(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("storagePool") String storagePoolName,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request), () ->
-        {
-            JsonGenTypes.StoragePoolDefinitionModify data = objectMapper
-                .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
+        JsonGenTypes.StoragePoolDefinitionModify data = objectMapper
+            .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
 
-            return ApiCallRcConverter.toResponse(
-                ctrlApiCallHandler.modifyStorPoolDfn(
-                    null,
-                    storagePoolName,
-                    data.override_props,
-                    new HashSet<>(data.delete_props),
-                    new HashSet<>(data.delete_namespaces)
-                ),
-                Response.Status.OK
-            );
-        }, true);
+            Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyStorPoolDfn(
+                null,
+                storagePoolName,
+                data.override_props,
+                new HashSet<>(data.delete_props),
+                new HashSet<>(data.delete_namespaces)
+            )
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
     }
 
     @DELETE
