@@ -126,7 +126,7 @@ public class CtrlApiCallHandler
      * @param deleteNamespaces
      * @return
      */
-    public ApiCallRc modifyNode(
+    public Flux<ApiCallRc> modifyNode(
         UUID nodeUuid,
         String nodeName,
         String nodeType,
@@ -135,10 +135,10 @@ public class CtrlApiCallHandler
         Set<String> deleteNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP))
         {
-            apiCallRc = nodeApiCallHandler.modifyNode(
+            flux = nodeApiCallHandler.modify(
                 nodeUuid,
                 nodeName,
                 nodeType,
@@ -147,7 +147,7 @@ public class CtrlApiCallHandler
                 deleteNamespaces
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     public ApiCallRc reconnectNode(

@@ -150,25 +150,27 @@ public class Nodes
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{nodeName}")
-    public Response modifyNode(
+    public void modifyNode(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_NODE, request), () ->
-        {
-            JsonGenTypes.NodeModify modifyData = objectMapper.readValue(jsonData, JsonGenTypes.NodeModify.class);
-            ApiCallRc apiCallRc = ctrlApiCallHandler.modifyNode(
-                null,
-                nodeName,
-                modifyData.node_type,
-                modifyData.override_props,
-                new HashSet<>(modifyData.delete_props),
-                new HashSet<>(modifyData.delete_namespaces)
-            );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
-        }, true);
+        JsonGenTypes.NodeModify modifyData = objectMapper.readValue(jsonData, JsonGenTypes.NodeModify.class);
+
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyNode(
+            null,
+            nodeName,
+            modifyData.node_type,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces)
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_NODE, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
     }
 
     @DELETE

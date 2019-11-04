@@ -15,8 +15,9 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.SwordfishTargetProcessManager;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -47,14 +48,17 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.tasks.ReconnectorTask;
+import com.linbit.locks.LockGuardFactory;
 
 import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
+import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater.findNodesToContact;
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -64,6 +68,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Scheduler;
 
 @Singleton
@@ -76,7 +81,7 @@ public class CtrlNodeApiCallHandler
     private final NodeControllerFactory nodeFactory;
     private final NetInterfaceFactory netInterfaceFactory;
     private final NodeRepository nodeRepository;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final SatelliteConnector satelliteConnector;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
@@ -86,6 +91,8 @@ public class CtrlNodeApiCallHandler
     private final SwordfishTargetProcessManager sfTargetProcessMgr;
     private final ReconnectorTask reconnectorTask;
     private final Scheduler scheduler;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -96,7 +103,7 @@ public class CtrlNodeApiCallHandler
         NodeControllerFactory nodeFactoryRef,
         NetInterfaceFactory netInterfaceFactoryRef,
         NodeRepository nodeRepositoryRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         SatelliteConnector satelliteConnectorRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
@@ -105,7 +112,9 @@ public class CtrlNodeApiCallHandler
         @Named(NumberPoolModule.SF_TARGET_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef,
         SwordfishTargetProcessManager sfTargetProcessMgrRef,
         ReconnectorTask reconnectorTaskRef,
-        Scheduler schedulerRef
+        Scheduler schedulerRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         apiCtx = apiCtxRef;
@@ -115,7 +124,7 @@ public class CtrlNodeApiCallHandler
         nodeFactory = nodeFactoryRef;
         netInterfaceFactory = netInterfaceFactoryRef;
         nodeRepository = nodeRepositoryRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         satelliteConnector = satelliteConnectorRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
@@ -125,6 +134,8 @@ public class CtrlNodeApiCallHandler
         sfTargetProcessMgr = sfTargetProcessMgrRef;
         reconnectorTask = reconnectorTaskRef;
         scheduler = schedulerRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
     Node createNodeImpl(
@@ -336,7 +347,7 @@ public class CtrlNodeApiCallHandler
         return netIf;
     }
 
-    public ApiCallRc modifyNode(
+    public Flux<ApiCallRc> modify(
         UUID nodeUuid,
         String nodeNameStr,
         String nodeTypeStr,
@@ -345,11 +356,40 @@ public class CtrlNodeApiCallHandler
         Set<String> deleteNamespaces
     )
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeContext(
             ApiOperation.makeModifyOperation(),
             nodeNameStr
         );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Modify node",
+                lockGuardFactory.buildDeferred(WRITE, NODES_MAP),
+                () -> modifyInTransaction(
+                    nodeUuid,
+                    nodeNameStr,
+                    nodeTypeStr,
+                    overrideProps,
+                    deletePropKeys,
+                    deleteNamespaces,
+                    context
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> modifyInTransaction(
+        UUID nodeUuid,
+        String nodeNameStr,
+        String nodeTypeStr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deleteNamespaces,
+        ResponseContext context
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
 
         try
         {
@@ -382,17 +422,22 @@ public class CtrlNodeApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            responseConverter.addWithDetail(
-                responses, context, ctrlSatelliteUpdater.updateSatellites(node));
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+            responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 node.getUuid(), getNodeDescriptionInline(node)));
+
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                node.getUuid(),
+                nodeName,
+                findNodesToContact(apiCtx, node)
+            )
+            .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return responses;
+        return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
     }
 
     public ApiCallRc reconnectNode(

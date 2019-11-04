@@ -366,14 +366,14 @@ public class NodeApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return nodeApiCallHandlerProvider.get().modifyNode(
+            return nodeApiCallHandlerProvider.get().modify(
                 nodeUuid,
                 nodeName,
                 nodeType,
                 overrideProps,
                 deletePropKeys,
                 deletePropNamespaces
-            );
+            ).blockFirst();
         }
     }
 
