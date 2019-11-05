@@ -44,6 +44,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.helper.ReadyForPrimaryNotifier;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
@@ -761,7 +762,18 @@ public class DrbdLayer implements DeviceLayer
             );
             drbdVlmData.setMetaDataIsNew(true);
 
-            if (VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true))
+            boolean skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true);
+            if (!skipInitSync)
+            {
+                skipInitSync = VolumeUtils.getStorageDevices(
+                    drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA)
+                )
+                    .stream()
+                    .map(VlmProviderObject::getProviderKind)
+                    .allMatch(kind -> kind == DeviceProviderKind.ZFS || kind == DeviceProviderKind.ZFS_THIN);
+            }
+
+            if (skipInitSync)
             {
                 String currentGi = null;
                 try
