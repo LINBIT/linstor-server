@@ -291,7 +291,9 @@ public class CtrlLayerDataHelper
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_POOL_EXHAUSTED_RSC_LAYER_ID,
                     "Too many layered resources!"
-                ),
+                )
+                .setCause("Port allocation failed!")
+                .setCorrection("Adjust TcpPortAutoRange!"),
                 exc
             );
         }
