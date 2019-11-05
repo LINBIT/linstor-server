@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceDefinition;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
@@ -25,6 +26,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -147,7 +149,7 @@ public class ResourceDefinitions
                 rscDfnCreate.drbd_peer_slots == null ? null : rscDfnCreate.drbd_peer_slots.shortValue(),
                 rscDfnCreate.resource_definition.resource_group_name
             );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
     }
 
@@ -177,7 +179,7 @@ public class ResourceDefinitions
         )
         .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE
@@ -190,6 +192,6 @@ public class ResourceDefinitions
         Flux<ApiCallRc> flux = ctrlRscDfnDeleteApiCallHandler.deleteResourceDefinition(rscName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_RSC_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 }

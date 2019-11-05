@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.rest.v1;
+package com.linbit.linstor.api.rest.v1.utils;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiConsts;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class ApiCallRcConverter
+public class ApiCallRcRestUtils
 {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ApiCallData
@@ -57,7 +58,7 @@ public class ApiCallRcConverter
         }
     }
 
-    static String toJSON(ApiCallRc apiCallRc)
+    public static String toJSON(ApiCallRc apiCallRc)
     {
         ObjectMapper objectMapper = new ObjectMapper();
         ArrayList<ApiCallData> jsonData = new ArrayList<>();
@@ -88,7 +89,7 @@ public class ApiCallRcConverter
         return ret;
     }
 
-    static Response toResponse(ApiCallRc apiCallRc, Response.Status successStatus)
+    public static Response toResponse(ApiCallRc apiCallRc, Response.Status successStatus)
     {
         Response.Status status = successStatus;
         HashMap<String, String> header = new HashMap<>();
@@ -130,7 +131,7 @@ public class ApiCallRcConverter
         return builder.entity(toJSON(apiCallRc)).type(MediaType.APPLICATION_JSON).build();
     }
 
-    static void handleJsonParseException(IOException ioexc, AsyncResponse asyncResponse)
+    public static void handleJsonParseException(IOException ioexc, AsyncResponse asyncResponse)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         apiCallRc.addEntry(
@@ -139,24 +140,24 @@ public class ApiCallRcConverter
                 .build()
         );
         asyncResponse.resume(
-            ApiCallRcConverter.toResponse(
+            ApiCallRcRestUtils.toResponse(
                 apiCallRc,
                 Response.Status.BAD_REQUEST
             )
         );
     }
 
-    static Mono<Response> mapToMonoResponse(Flux<ApiCallRc> fluxApiCalls)
+    public static Mono<Response> mapToMonoResponse(Flux<ApiCallRc> fluxApiCalls)
     {
         return mapToMonoResponse(fluxApiCalls, Response.Status.OK);
     }
 
-    static Mono<Response> mapToMonoResponse(Flux<ApiCallRc> fluxApiCalls, Response.Status status)
+    public static Mono<Response> mapToMonoResponse(Flux<ApiCallRc> fluxApiCalls, Response.Status status)
     {
         return fluxApiCalls
             .collectList()
             .map(apiCallRcList ->
-                ApiCallRcConverter.toResponse(
+                ApiCallRcRestUtils.toResponse(
                     new ApiCallRcImpl(apiCallRcList.stream().flatMap(
                         apiCallRc -> apiCallRc.getEntries().stream()
                     ).collect(Collectors.toList())),
@@ -165,7 +166,7 @@ public class ApiCallRcConverter
             );
     }
 
-    private ApiCallRcConverter()
+    private ApiCallRcRestUtils()
     {
     }
 }

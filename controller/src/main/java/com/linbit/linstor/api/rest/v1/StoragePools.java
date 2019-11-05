@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
@@ -33,6 +34,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -181,7 +183,7 @@ public class StoragePools
 
                     resp = Response
                         .status(Response.Status.NOT_FOUND)
-                        .entity(ApiCallRcConverter.toJSON(apiCallRc))
+                        .entity(ApiCallRcRestUtils.toJSON(apiCallRc))
                         .type(MediaType.APPLICATION_JSON)
                         .build();
                 }
@@ -231,12 +233,12 @@ public class StoragePools
 
             requestHelper.doFlux(
                 asyncResponse,
-                ApiCallRcConverter.mapToMonoResponse(responses, Response.Status.CREATED)
+                ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
             );
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 
@@ -265,7 +267,7 @@ public class StoragePools
         )
         .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE
@@ -280,6 +282,6 @@ public class StoragePools
         Flux<ApiCallRc> flux = ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 }

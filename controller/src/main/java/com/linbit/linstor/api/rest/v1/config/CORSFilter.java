@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.rest.v1;
+package com.linbit.linstor.api.rest.v1.config;
 
 import java.io.IOException;
 import javax.ws.rs.container.ContainerRequestContext;

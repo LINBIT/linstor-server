@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlQueryMaxVlmSizeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 
@@ -16,6 +17,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -65,7 +67,7 @@ public class QueryMaxVlmSize
                 Response resp;
                 if (apiCallRcWith.hasApiCallRc())
                 {
-                    resp = ApiCallRcConverter.toResponse(
+                    resp = ApiCallRcRestUtils.toResponse(
                         apiCallRcWith.getApiCallRc(),
                         Response.Status.INTERNAL_SERVER_ERROR
                     );

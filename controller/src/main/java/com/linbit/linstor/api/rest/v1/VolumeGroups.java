@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 
@@ -134,7 +135,7 @@ public class VolumeGroups
                 )
             );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
     }
 
@@ -163,7 +164,7 @@ public class VolumeGroups
         )
         .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_GRP, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
 
@@ -177,7 +178,7 @@ public class VolumeGroups
     {
         return requestHelper.doInScope(
             requestHelper.createContext(ApiConsts.API_DEL_VLM_GRP, request),
-            () -> ApiCallRcConverter.toResponse(
+            () -> ApiCallRcRestUtils.toResponse(
                 ctrlApiCallHandler.deleteVolumeGroup(rscName, volumeNumber),
                 Response.Status.OK
             ),

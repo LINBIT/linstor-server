@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 
@@ -22,6 +23,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -107,7 +109,7 @@ public class StoragePoolDefinitions
             JsonGenTypes.StoragePoolDefinition data = objectMapper
                 .readValue(jsonData, JsonGenTypes.StoragePoolDefinition.class);
 
-            return ApiCallRcConverter.toResponse(
+            return ApiCallRcRestUtils.toResponse(
                 ctrlApiCallHandler.createStoragePoolDefinition(data.storage_pool_name, data.props),
                 Response.Status.CREATED
             );
@@ -136,7 +138,7 @@ public class StoragePoolDefinitions
             )
             .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE
@@ -148,7 +150,7 @@ public class StoragePoolDefinitions
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL_DFN, request), () ->
         {
-            return ApiCallRcConverter.toResponse(
+            return ApiCallRcRestUtils.toResponse(
                 ctrlApiCallHandler.deleteStoragePoolDefinition(storagePoolName),
                 Response.Status.OK
             );

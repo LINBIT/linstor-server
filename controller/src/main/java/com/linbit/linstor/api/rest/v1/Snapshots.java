@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
@@ -139,12 +140,12 @@ public class Snapshots
 
             requestHelper.doFlux(
                 asyncResponse,
-                ApiCallRcConverter.mapToMonoResponse(responses, Response.Status.CREATED)
+                ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
             );
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 
@@ -160,6 +161,6 @@ public class Snapshots
         Flux<ApiCallRc> responses = ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(rscName, snapName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_SNAPSHOT, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(responses));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(responses));
     }
 }

@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyDisableApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyEnableApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyModifyApiCallHandler;
@@ -72,11 +73,11 @@ public class DrbdProxy
                 proxyEnable.port
             ).subscriberContext(requestHelper.createContext(ApiConsts.API_ENABLE_DRBD_PROXY, request));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 
@@ -97,7 +98,7 @@ public class DrbdProxy
             rscName
         ).subscriberContext(requestHelper.createContext(ApiConsts.API_DISABLE_DRBD_PROXY, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 
     @PUT
@@ -121,7 +122,7 @@ public class DrbdProxy
                 proxyModify.compression_props
             );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
 }

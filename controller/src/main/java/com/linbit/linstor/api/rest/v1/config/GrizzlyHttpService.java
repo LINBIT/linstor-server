@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.rest.v1;
+package com.linbit.linstor.api.rest.v1.config;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -8,6 +8,7 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -19,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
@@ -528,7 +530,7 @@ class LinstorMapper implements ExceptionMapper<Exception>
         return javax.ws.rs.core.Response
             .status(respStatus)
             .type(MediaType.APPLICATION_JSON)
-            .entity(ApiCallRcConverter.toJSON(apiCallRc))
+            .entity(ApiCallRcRestUtils.toJSON(apiCallRc))
             .build();
     }
 }

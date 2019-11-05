@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.rest.v1;
+package com.linbit.linstor.api.rest.v1.config;
 
 import com.google.inject.Injector;
 import org.glassfish.hk2.api.ServiceLocator;

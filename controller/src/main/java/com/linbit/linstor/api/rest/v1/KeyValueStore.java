@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 
 import javax.inject.Inject;
@@ -100,7 +101,7 @@ public class KeyValueStore
                 JsonGenTypes.KeyValueStoreModify.class
             );
 
-            return ApiCallRcConverter.toResponse(ctrlApiCallHandler.modifyKvs(
+            return ApiCallRcRestUtils.toResponse(ctrlApiCallHandler.modifyKvs(
                 null,
                 instanceName,
                 modifyKeyValueStore.override_props,
@@ -118,7 +119,7 @@ public class KeyValueStore
     )
     {
         return requestHelper.doInScope(ApiConsts.API_DEL_KVS, request, () ->
-            ApiCallRcConverter.toResponse(
+            ApiCallRcRestUtils.toResponse(
                 ctrlApiCallHandler.deleteKvs(null, instanceName), Response.Status.OK
             ), true);
     }

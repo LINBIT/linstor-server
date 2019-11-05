@@ -4,6 +4,7 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPhysicalStorageApiCallHandler;
 
 import javax.inject.Inject;
@@ -122,12 +123,12 @@ public class PhysicalStorage
 
             requestHelper.doFlux(
                 asyncResponse,
-                ApiCallRcConverter.mapToMonoResponse(responses, Response.Status.CREATED)
+                ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
             );
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 }

@@ -18,7 +18,7 @@ import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
-import com.linbit.linstor.api.rest.v1.GrizzlyHttpService;
+import com.linbit.linstor.api.rest.v1.config.GrizzlyHttpService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.objects.Node;
