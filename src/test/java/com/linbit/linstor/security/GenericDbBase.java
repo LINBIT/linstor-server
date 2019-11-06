@@ -7,6 +7,7 @@ import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerLinstorModule;
+import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -201,7 +202,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @BeforeClass
     public static void setUpBeforeClass()
-        throws DatabaseException, SQLException, InvalidNameException
+        throws DatabaseException, SQLException, InvalidNameException, InitializationException
     {
         if (dbConnPool == null)
         {

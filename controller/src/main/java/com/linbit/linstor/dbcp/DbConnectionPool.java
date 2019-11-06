@@ -31,6 +31,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATI
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -48,9 +49,7 @@ import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.FlywayException;
 import org.flywaydb.core.api.configuration.Configuration;
-import org.flywaydb.core.api.configuration.FluentConfiguration;
 
 /**
  * JDBC pool
@@ -196,16 +195,21 @@ public class DbConnectionPool implements ControllerSQLDatabase
     }
 
     @Override
-    public void migrate(String dbType)
+    public void migrate(String dbType) throws InitializationException
     {
         migrate(dbType, false);
     }
 
-    public void migrate(String dbType, boolean withStartupVer)
+    public void migrate(String dbType, boolean withStartupVer) throws InitializationException
     {
         setTransactionIsolation(dbType);
 
-        FluentConfiguration flywayConfig = Flyway.configure()
+        if (withStartupVer)
+        {
+            checkMinVersion();
+        }
+
+        Flyway.configure()
             .schemas(DATABASE_SCHEMA_NAME)
             .dataSource(dataSource)
             .table(SCHEMA_HISTORY_TABLE_NAME)
@@ -213,105 +217,110 @@ public class DbConnectionPool implements ControllerSQLDatabase
             .outOfOrder(true)
             // Pass the DB type to the migrations
             .placeholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, dbType))
-            .locations(LinstorMigration.class.getPackage().getName());
-
-        try
-        {
-            if (withStartupVer)
-            {
-                checkMinVersion();
-            }
-
-            flywayConfig.load().migrate();
-        }
-        catch (Exception exc)
-        {
-            throw new FlywayException("Migration failed!", exc);
-        }
+            .locations(LinstorMigration.class.getPackage().getName())
+            .load()
+            .migrate();
     }
 
-    private void checkMinVersion() throws SQLException, InitializationException
+    private void checkMinVersion() throws InitializationException
     {
-        DatabaseMetaData databaseMetaData = new org.flywaydb.core.api.migration.Context()
+        try
         {
-            @Override
-            public Configuration getConfiguration()
+            DatabaseMetaData databaseMetaData = new org.flywaydb.core.api.migration.Context()
             {
-                return null;
+                @Override
+                public Configuration getConfiguration()
+                {
+                    return null;
+                }
+
+                @Override
+                public Connection getConnection()
+                {
+                    Connection ret;
+                    try
+                    {
+                        ret = dataSource.getConnection();
+                    }
+                    catch (SQLException sqlExc)
+                    {
+                        throw new LinStorDBRuntimeException("Failed to set transaction isolation", sqlExc);
+                    }
+                    return ret;
+                }
+            }
+                .getConnection().getMetaData();
+
+            String dbProductName = databaseMetaData.getDatabaseProductName();
+            String dbProductVersion = databaseMetaData.getDatabaseProductVersion();
+
+            // check if minimum version requirements of certain databases are satisfied
+            int[] dbProductMinVersion = null;
+            switch (DatabaseInfo.getDbProduct(dbProductName, dbProductVersion))
+            {
+                case H2:
+                    dbProductMinVersion = H2_MIN_VERSION;
+                    break;
+                case DERBY:
+                    dbProductMinVersion = DERBY_MIN_VERSION;
+                    break;
+                case DB2:
+                    dbProductMinVersion = DB2_MIN_VERSION;
+                    break;
+                case POSTGRESQL:
+                    dbProductMinVersion = POSTGRES_MIN_VERSION;
+                    break;
+                case MYSQL:
+                    dbProductMinVersion = MYSQL_MIN_VERSION;
+                    break;
+                case MARIADB:
+                    dbProductMinVersion = MARIADB_MIN_VERSION;
+                    break;
+                case INFORMIX:
+                    dbProductMinVersion = INFORMIX_MIN_VERSION;
+                    break;
+                case ASE: // fall-through
+                case DB2_I: // fall-through
+                case DB2_Z: // fall-through
+                case ETCD: // fall-through
+                case MSFT_SQLSERVER: // fall-through
+                case ORACLE_RDBMS: // fall-through
+                case UNKNOWN: // fall-through
+                default:
+                    // currently no other databases with minimum version requirement
+                    break;
             }
 
-            @Override
-            public Connection getConnection()
+            if (dbProductMinVersion != null)
             {
-                Connection ret;
-                try
+                String[] currVersionSplit = dbProductVersion.split("\\.");
+                int currVersionMajor = Integer.parseInt(currVersionSplit[0]);
+                int currVersionMinor = Integer.parseInt(currVersionSplit[1]);
+                int minVersionMajor = dbProductMinVersion[0];
+                int minVersionMinor = dbProductMinVersion[1];
+
+                if (
+                    currVersionMajor < minVersionMajor ||
+                        currVersionMajor == minVersionMajor && currVersionMinor < minVersionMinor
+                )
                 {
-                    ret = dataSource.getConnection();
+                    throw new InitializationException(
+                        StringUtils.join(
+                            "",
+                            "Currently installed version (",
+                            currVersionMajor + "." + currVersionMinor,
+                            ") of database '", dbProductName,
+                            "' is older than the required minimum version (",
+                            minVersionMajor + "." + minVersionMinor, ")!"
+                        )
+                    );
                 }
-                catch (SQLException sqlExc)
-                {
-                    throw new LinStorDBRuntimeException("Failed to set transaction isolation", sqlExc);
-                }
-                return ret;
+                // else: everything is fine so we can proceed with the migration process
             }
         }
-        .getConnection().getMetaData();
-
-        String dbProductName = databaseMetaData.getDatabaseProductName();
-        String dbProductVersion = databaseMetaData.getDatabaseProductVersion();
-
-        // check if minimum version requirements of certain databases are satisfied
-        int[] dbProductMinVersion = null;
-        switch (DatabaseInfo.getDbProduct(dbProductName, dbProductVersion))
+        catch (SQLException sqlExc)
         {
-            case H2:
-                dbProductMinVersion = H2_MIN_VERSION;
-                break;
-            case DERBY:
-                dbProductMinVersion = DERBY_MIN_VERSION;
-                break;
-            case DB2:
-                dbProductMinVersion = DB2_MIN_VERSION;
-                break;
-            case POSTGRESQL:
-                dbProductMinVersion = POSTGRES_MIN_VERSION;
-                break;
-            case MYSQL:
-                dbProductMinVersion = MYSQL_MIN_VERSION;
-                break;
-            case MARIADB:
-                dbProductMinVersion = MARIADB_MIN_VERSION;
-                break;
-            case INFORMIX:
-                dbProductMinVersion = INFORMIX_MIN_VERSION;
-                break;
-            default:
-                // currently no other databases with minimum version requirement
-                break;
-        }
-
-        if (dbProductMinVersion != null)
-        {
-            String[] currVersionSplit = dbProductVersion.split("\\.");
-            int currVersionMajor = Integer.parseInt(currVersionSplit[0]);
-            int currVersionMinor = Integer.parseInt(currVersionSplit[1]);
-            int minVersionMajor = dbProductMinVersion[0];
-            int minVersionMinor = dbProductMinVersion[1];
-
-            if (currVersionMajor < minVersionMajor ||
-                currVersionMajor == minVersionMajor && currVersionMinor < minVersionMinor)
-            {
-                throw new InitializationException(
-                    StringUtils.join("",
-                        "Currently installed version (",
-                        currVersionMajor + "." + currVersionMinor,
-                        ") of database '", dbProductName,
-                        "' is older than the required minimum version (",
-                        minVersionMajor + "." + minVersionMinor, ")!"
-                    )
-                );
-            }
-            // else: everything is fine so we can proceed with the migration process
+            throw new InitializationException("Failed to verify minimal database version!", sqlExc);
         }
     }
 
