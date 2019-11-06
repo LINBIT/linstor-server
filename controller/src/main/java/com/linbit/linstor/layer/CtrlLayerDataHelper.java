@@ -290,10 +290,15 @@ public class CtrlLayerDataHelper
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_POOL_EXHAUSTED_RSC_LAYER_ID,
-                    "Too many layered resources!"
+                    "No TCP/IP port number could be allocated for the resource"
                 )
-                .setCause("Port allocation failed!")
-                .setCorrection("Adjust TcpPortAutoRange!"),
+                .setCause("The pool of free TCP/IP port numbers is exhausted")
+                .setCorrection(
+                    "- Adjust the TcpPortAutoRange controller configuration value to extend the range\n" +
+                    "  of TCP/IP port numbers used for automatic allocation\n" +
+                    "- Delete unused resource definitions that occupy TCP/IP port numbers from the range\n" +
+                    "  used for automatic allocation\n"
+                ),
                 exc
             );
         }
