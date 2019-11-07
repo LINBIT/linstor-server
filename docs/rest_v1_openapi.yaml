@@ -529,7 +529,12 @@ paths:
         - `StorDriver/ThinPool` - regex[`[a-zA-Z0-9_-]+`]
         - `StorDriver/ZPool` - regex[`[a-zA-Z0-9_/-]+`]
         - `StorDriver/ZPoolThin` - regex[`[a-zA-Z0-9_/-]+`]
+        - `StorDriver/FileDir` - regex[`.*`]
         - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Preferred network interface to use
+
+        - `NVMe/PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Preferred network interface to use
 
@@ -610,8 +615,8 @@ paths:
       parameters:
         - name: resource_definitions
           in: query
-          description: Filter only for the specified resource definitions, if not specified
-            no filtering.
+          description: Filter only for the specified resource definitions, if not
+            specified no filtering.
           schema:
             type: array
             items:
@@ -688,6 +693,7 @@ paths:
             * zlib
             * lzma
             * lz4
+            * zstd
 
         - `FileSystem/Type` - enum
 
@@ -725,6 +731,18 @@ paths:
         - `sys/fs/blkio_throttle_write` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
+        - `DrbdOptions/auto-quorum` - enum
+
+            Enables automatic setting of the 'quroum' and 'on-no-quroum' property
+
+            * io-error
+            * suspend-io
+            * disabled
+
+        - `DrbdOptions/auto-add-quorum-tiebreaker` - boolean_true_false
+
+            Enables automatic management (creation and deletion) of tie breaking resource
 
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
@@ -1841,7 +1859,8 @@ paths:
       parameters:
         - name: resource_groups
           in: query
-          description: Filter only for the specified resource groups, if not specified no filtering.
+          description: Filter only for the specified resource groups, if not specified
+            no filtering.
           schema:
             type: array
             items:
@@ -2108,7 +2127,8 @@ paths:
         Creates a new resource-definition and auto-deploys if configured to do so.
       responses:
         '201':
-          description: resource-definition created and auto-deployed if configured accordingly
+          description: resource-definition created and auto-deployed if configured
+            accordingly
           content:
             application/json:
               schema:
@@ -2365,6 +2385,26 @@ paths:
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
 
+        - `SearchDomain` - string
+
+            Search domain node names, if no FQDN is given.
+
+        - `ExtCmdWaitTimeout` - long
+
+            Wait timeout for an external command in milliseconds
+
+        - `DrbdOptions/auto-quorum` - enum
+
+            Enables automatic setting of the 'quroum' and 'on-no-quroum' property
+
+            * io-error
+            * suspend-io
+            * disabled
+
+        - `DrbdOptions/auto-add-quorum-tiebreaker` - boolean_true_false
+
+            Enables automatic management (creation and deletion) of tie breaking resource
+
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -2604,6 +2644,7 @@ paths:
 
         - `DrbdOptions/ProxyCompression/numa-threshold` - range[`0-253`]
         - `DrbdOptions/ProxyCompression/level` - range[`1-9`]
+        - `DrbdOptions/ProxyCompression/level` - range[`1-22`]
       responses:
         '200':
           description: drbd proxy properties modified
@@ -4274,7 +4315,7 @@ components:
         - device_paths
       properties:
         provider_kind:
-            $ref: '#/components/schemas/ProviderKind'
+          $ref: '#/components/schemas/ProviderKind'
         device_paths:
           type: array
           items:
@@ -4285,7 +4326,7 @@ components:
             RAID level to use for pool.
           enum:
             - JBOD
-          default: "JBOD"
+          default: JBOD
         pool_name:
           type: string
         vdo_enable:
