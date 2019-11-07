@@ -228,6 +228,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerCtrlDatabase
             case ZFS_THIN:
             case FILE:
             case FILE_THIN:
+            case SPDK:
             default:
                 throw new LinStorDBRuntimeException("Invalid DeviceProviderKind: '" + kindRef + "'");
         }

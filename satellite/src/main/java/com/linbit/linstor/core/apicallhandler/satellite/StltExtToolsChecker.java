@@ -23,6 +23,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.linbit.linstor.storage.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+
 /**
  * Every {@link DeviceLayerKind} has a (possibly empty) list of {@link ExtTools}.
  * Only if all verifications of a list are passed, the satellite will report to being able to have
@@ -43,6 +45,8 @@ public class StltExtToolsChecker
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern NVME_VERSION_PATTERN = Pattern
         .compile("(?:nvme version\\s*)(\\d+)\\.(\\d+)");
+    private static final Pattern SPDK_VERSION_PATTERN = Pattern
+            .compile("(?:\\s*version\\s*)?(\\d+)\\.(\\d+)");
 
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
@@ -68,7 +72,8 @@ public class StltExtToolsChecker
             getCryptSetupInfo(),
             getLvmInfo(),
             getZfsInfo(),
-            getNvmeInfo()
+            getNvmeInfo(),
+            getSpdkInfo()
         );
     }
 
@@ -128,6 +133,11 @@ public class StltExtToolsChecker
     private ExtToolsInfo getNvmeInfo()
     {
         return infoBy3MatchGroupPattern(NVME_VERSION_PATTERN, ExtTools.NVME, false, "nvme", "version");
+    }
+
+    private ExtToolsInfo getSpdkInfo()
+    {
+        return infoBy3MatchGroupPattern(SPDK_VERSION_PATTERN, ExtTools.SPDK, false, SPDK_RPC_SCRIPT, "get_spdk_version");
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)

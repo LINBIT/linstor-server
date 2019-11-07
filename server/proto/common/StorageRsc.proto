@@ -30,6 +30,7 @@ message StorageVlm
     optional SwordfishInitiator  sf_init = 13;
     optional FileVlm             file = 14;
     optional FileThinVlm         file_thin = 15;
+    optional SpdkVlm             spdk = 16;
 }
 
 message StorageVlmDfn
@@ -44,6 +45,11 @@ message DisklessVlm
 }
 
 message LvmVlm
+{
+    // currently no special payload
+}
+
+message SpdkVlm
 {
     // currently no special payload
 }

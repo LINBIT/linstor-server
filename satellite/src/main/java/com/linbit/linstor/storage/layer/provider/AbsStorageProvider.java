@@ -2,6 +2,7 @@ package com.linbit.linstor.storage.layer.provider;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.fsevent.FileObserver;
 import com.linbit.fsevent.FileSystemWatch;
@@ -36,6 +37,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.utils.DmStatCommands;
 import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
+import com.linbit.linstor.storage.utils.SpdkCommands;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.ExceptionThrowingSupplier;
@@ -56,6 +58,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmData> implements DeviceProvider
 {
@@ -369,7 +373,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 DmStatCommands.create(extCmdFactory.create(), devicePath);
             }
 
-            if (!snapRestore)
+            if (!snapRestore && !devicePath.startsWith(SPDK_PATH_PREFIX))
             {
                 wipeHandler.quickWipe(devicePath);
             }
@@ -701,6 +705,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private void waitUntilDeviceCreated(String devicePath, long waitTimeoutAfterCreateMillis)
         throws StorageException
     {
+        if (devicePath.startsWith(SPDK_PATH_PREFIX)) {
+            // wait not required, just confirming LV existence
+            SpdkCommands.lvsByName(extCmdFactory.create(), devicePath.split(SPDK_PATH_PREFIX)[1]);
+            return;
+        }
+
         final Object syncObj = new Object();
         FileObserver fileObserver = new FileObserver()
         {

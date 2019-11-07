@@ -17,6 +17,7 @@ import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.SpdkVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishTargetVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
@@ -466,6 +467,9 @@ public class ProtoLayerUtils
             case FILE_THIN:
                 ret = new FileThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
+            case SPDK:
+                ret = new SpdkVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:
                 throw new ImplementationError(
@@ -494,6 +498,7 @@ public class ProtoLayerUtils
             case DISKLESS: // fall-trough
             case LVM: // fall-trough
             case LVM_THIN: // fall-trough
+            case SPDK: // fall-trough
             case ZFS: // fall-trough
             case ZFS_THIN: // fall-trough
             case FILE: // fall-through

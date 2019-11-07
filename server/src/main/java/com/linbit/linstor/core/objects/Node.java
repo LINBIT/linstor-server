@@ -857,7 +857,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.ZFS,
                 DeviceProviderKind.ZFS_THIN,
                 DeviceProviderKind.FILE,
-                DeviceProviderKind.FILE_THIN
+                DeviceProviderKind.FILE_THIN,
+                DeviceProviderKind.SPDK
             )
         ),
         COMBINED(
@@ -870,7 +871,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.ZFS,
                 DeviceProviderKind.ZFS_THIN,
                 DeviceProviderKind.FILE,
-                DeviceProviderKind.FILE_THIN
+                DeviceProviderKind.FILE_THIN,
+                DeviceProviderKind.SPDK
             )
         ),
         AUXILIARY(4, Collections.emptyList()),

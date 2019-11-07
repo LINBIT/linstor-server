@@ -191,6 +191,9 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
                 case FILE_THIN:
                     vlmData = layerDataFactory.createFileData(vlm, rscData, kind, storPool);
                     break;
+                case SPDK:
+                    vlmData = layerDataFactory.createSpdkData(vlm, rscData, storPool);
+                    break;
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
                 default:
                     throw new ImplementationError("Unexpected kind: " + kind);

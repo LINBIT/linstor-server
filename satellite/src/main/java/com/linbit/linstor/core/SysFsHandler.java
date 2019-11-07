@@ -18,6 +18,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
@@ -35,6 +36,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static com.linbit.linstor.storage.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
+
 @Singleton
 public class SysFsHandler
 {
@@ -45,6 +49,9 @@ public class SysFsHandler
 
     private static final String THROTTLE_READ_BPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.read_bps_device";
     private static final String THROTTLE_WRITE_BPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.write_bps_device";
+
+    private static final String SPDK_THROTTLE_READ_MBPS = "--r_mbytes_per_sec";
+    private static final String SPDK_THROTTLE_WRITE_MBPS = "--w_mbytes_per_sec";
 
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
@@ -95,12 +102,21 @@ public class SysFsHandler
                 true,
                 vlmData ->
                 {
-                    String majMin = getMajorMinor(vlmData);
-                    if (majMin != null)
+                    String identifier;
+                    if (vlmData instanceof SpdkData)
+                    {
+                        identifier = vlmData.getDevicePath();
+                    }
+                    else
+                    {
+                        identifier = getMajorMinor(vlmData);
+                    }
+
+                    if (identifier != null)
                     {
                         // cleaning up throttle caches
-                        cgroupBlkioThrottleReadBpsDeviceMap.remove(majMin);
-                        cgroupBlkioThrottleWriteBpsDeviceMap.remove(majMin);
+                        cgroupBlkioThrottleReadBpsDeviceMap.remove(identifier);
+                        cgroupBlkioThrottleWriteBpsDeviceMap.remove(identifier);
 
                         deviceMajorMinorMap.remove(vlmData);
                     }
@@ -120,19 +136,28 @@ public class SysFsHandler
                 true,
                 vlmData ->
                 {
-                    String majMin = getMajorMinor(vlmData);
-                    if (majMin != null)
+                    String identifier;
+                    if (vlmData instanceof SpdkData)
+                    {
+                        identifier = vlmData.getDevicePath();
+                    }
+                    else
+                    {
+                        identifier = getMajorMinor(vlmData);
+                    }
+
+                    if (identifier != null)
                     {
                         setThrottle(
                             vlmData,
-                            majMin,
+                            identifier,
                             ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
                             cgroupBlkioThrottleReadBpsDeviceMap,
                             THROTTLE_READ_BPS_DEVICE
                         );
                         setThrottle(
                             vlmData,
-                            majMin,
+                            identifier,
                             ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE,
                             cgroupBlkioThrottleWriteBpsDeviceMap,
                             THROTTLE_WRITE_BPS_DEVICE
@@ -145,7 +170,7 @@ public class SysFsHandler
 
     private void setThrottle(
         VlmProviderObject vlmDataRef,
-        String majMinRef,
+        String identifier,
         String apiKey,
         Map<String, String> deviceThrottleMap,
         String sysFsPath
@@ -178,25 +203,39 @@ public class SysFsHandler
             apiKey,
             ApiConsts.NAMESPC_SYS_FS
         );
-        String knownThrottle = deviceThrottleMap.get(majMinRef);
+        String knownThrottle = deviceThrottleMap.get(identifier);
 
         if (expectedThrottle == null && knownThrottle != null)
         {
-            setSysFs(sysFsPath, majMinRef + " 0");
-            deviceThrottleMap.remove(majMinRef);
+            if (vlmDataRef instanceof SpdkData)
+            {
+                setSpdkIO(identifier, apiKey, "0");
+            }
+            else
+            {
+                setSysFs(sysFsPath, identifier + " 0");
+            }
+            deviceThrottleMap.remove(identifier);
         }
         else if (
             expectedThrottle != null &&
             (knownThrottle == null || !knownThrottle.equals(expectedThrottle))
         )
         {
-            setSysFs(sysFsPath, majMinRef + " " + expectedThrottle);
-            deviceThrottleMap.put(majMinRef, expectedThrottle);
+            if (vlmDataRef instanceof SpdkData)
+            {
+                setSpdkIO(identifier, apiKey, expectedThrottle);
+            }
+            else
+            {
+                setSysFs(sysFsPath, identifier + " " + expectedThrottle);
+            }
+            deviceThrottleMap.put(identifier, expectedThrottle);
         }
         else
         {
             errorReporter.logTrace(
-                "SysFs: '%s' for %s already has expected value of %s", sysFsPath, majMinRef, expectedThrottle
+                "SysFs: '%s' for %s already has expected value of %s", sysFsPath, identifier, expectedThrottle
             );
         }
     }
@@ -270,6 +309,28 @@ public class SysFsHandler
         {
             throw new StorageException("Failed to write '" + data + "' to path " + path);
         }
+    }
+
+    private void setSpdkIO(String path, String key, String data) throws StorageException
+    {
+            String parameter = SPDK_THROTTLE_READ_MBPS;
+            if (key == ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE)
+            {
+                parameter = SPDK_THROTTLE_WRITE_MBPS;
+            }
+
+            Commands.genericExecutor(
+                    extCmdFactory.create(),
+                    new String[] {
+                            SPDK_RPC_SCRIPT,
+                            "set_bdev_qos_limit",
+                            path.split(SPDK_PATH_PREFIX)[1],
+                            parameter,
+                            String.valueOf(Integer.valueOf(data) / 1024 / 1024) // bytes to megabytes
+                    },
+                    "Failed to set " + key + " of device " + path,
+                    "Failed to set " + key + " of device " + path
+            );
     }
 
 

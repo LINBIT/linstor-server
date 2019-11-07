@@ -17,6 +17,7 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SWORDFISH_INIT
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SWORDFISH_TARGET;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SPDK;
 
 import java.util.List;
 
@@ -176,6 +177,21 @@ public class StorageRscPojo implements RscLayerDataApi
         )
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, LVM);
+        }
+    }
+
+    public static class SpdkVlmPojo extends AbsVlmProviderPojo
+    {
+        public SpdkVlmPojo(
+                int vlmNrRef,
+                String devicePathRef,
+                long allocatedSizeRef,
+                long usableSizeRef,
+                String diskStateRef,
+                StorPoolApi storPoolApiRef
+        )
+        {
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, SPDK);
         }
     }
 

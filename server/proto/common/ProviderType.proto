@@ -16,4 +16,5 @@ enum ProviderType
     SWORDFISH_INITIATOR = 7;
     FILE = 8;
     FILE_THIN = 9;
+    SPDK = 10;
 }

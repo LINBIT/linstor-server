@@ -39,6 +39,7 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
+import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
@@ -226,6 +227,22 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger
         lvmData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         lvmData.setDevicePath(vlmPojoRef.getDevicePath());
         lvmData.setUsableSize(vlmPojoRef.getUsableSize());
+    }
+
+    @Override
+    protected VlmProviderObject createSpdkVlmData(Volume vlmRef, StorageRscData storRscDataRef, StorPool storPoolRef)
+            throws DatabaseException
+    {
+        throw new ImplementationError("Received unknown spdk storage volume from satellite");
+    }
+
+    @Override
+    protected void mergeSpdkVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
+    {
+        SpdkData spdkData = (SpdkData) vlmDataRef;
+        spdkData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
+        spdkData.setDevicePath(vlmPojoRef.getDevicePath());
+        spdkData.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override

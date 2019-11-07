@@ -38,6 +38,7 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
+import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
@@ -393,6 +394,20 @@ public abstract class AbsLayerRscDataMerger
                     mergeFileData(vlmPojo, vlmData);
                 }
                 break;
+            case SPDK:
+                if (vlmData == null || !(vlmData instanceof SpdkData))
+                {
+                    if (vlmData != null)
+                    {
+                        removeStorageVlm(storRscData, vlmNr);
+                    }
+                    vlmData = createSpdkVlmData(vlm, storRscData, storPool);
+                }
+                else
+                {
+                    mergeSpdkVlmData(vlmPojo, vlmData);
+                }
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unexpected DeviceProviderKind: " + vlmPojo.getProviderKind());
@@ -568,6 +583,11 @@ public abstract class AbsLayerRscDataMerger
 
     protected abstract LvmThinData createLvmThinVlmData(Volume vlm, StorageRscData storRscData, StorPool storPool)
         throws DatabaseException;
+
+    protected abstract VlmProviderObject createSpdkVlmData(Volume vlm, StorageRscData storRscData, StorPool storPool)
+            throws DatabaseException;
+
+    protected abstract void mergeSpdkVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject vlmData) throws DatabaseException;
 
     protected abstract void mergeLvmThinVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject vlmData)
         throws DatabaseException;
