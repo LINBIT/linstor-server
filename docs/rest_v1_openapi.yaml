@@ -3295,11 +3295,11 @@ components:
         storage_providers:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/ProviderKind'
         resource_layers:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/LayerType'
         unsupported_providers:
           type: object
           additionalProperties:
