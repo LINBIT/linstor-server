@@ -224,6 +224,7 @@ public class SwordfishETCDDriver extends BaseEtcdDriver implements SwordfishLaye
             case ZFS_THIN:
             case FILE:
             case FILE_THIN:
+            case SPDK:
             default:
                 throw new LinStorDBRuntimeException("Invalid DeviceProviderKind: '" + kindRef + "'");
         }

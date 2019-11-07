@@ -7,9 +7,13 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.utils.SpdkUtils;
 import com.linbit.utils.StringUtils;
 
 import java.io.IOException;
+import java.util.Arrays;
+
+import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 public class Commands
 {
@@ -116,6 +120,11 @@ public class Commands
     )
         throws StorageException
     {
+
+        if (devicePath.startsWith(SPDK_PATH_PREFIX)) {
+            return SpdkUtils.getBlockSizeByName(extCmd, devicePath.split(SPDK_PATH_PREFIX)[1]);
+        }
+
         OutputData output = genericExecutor(
             extCmd,
             new String[]

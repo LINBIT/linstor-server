@@ -426,6 +426,19 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
     }
 
     @Override
+    protected VlmProviderObject createSpdkVlmData(Volume vlmRef, StorageRscData storRscDataRef, StorPool storPoolRef)
+            throws DatabaseException {
+        return layerDataFactory.createSpdkData(vlmRef, storRscDataRef, storPoolRef);
+    }
+
+    @Override
+    protected void mergeSpdkVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject vlmData) throws DatabaseException {
+        // ignoring allocatedSize
+        // ignoring devicePath
+        // ignoring usableSize
+    }
+
+    @Override
     protected void mergeLvmThinVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject vlmDataRef) throws DatabaseException
     {
         // ignoring allocatedSize

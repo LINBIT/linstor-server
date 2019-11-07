@@ -6,5 +6,6 @@ public enum ExtTools
     CRYPT_SETUP,
     LVM,
     ZFS,
-    NVME
+    NVME,
+    SPDK
 }

@@ -53,7 +53,9 @@ import java.util.TreeSet;
 @Singleton
 public class NvmeUtils
 {
-    public static final String NVME_SUBSYSTEM_PREFIX = "LS-NVMe_";
+    // public static final String NVME_SUBSYSTEM_PREFIX = "LS-NVMe_";
+    public static final String STANDARD_NVME_SUBSYSTEM_PREFIX = "nqn.2018-02.linbit.linstor:"; // NQN format aligned to the NVMe Spec
+    public static final String NVME_SUBSYSTEM_PREFIX = STANDARD_NVME_SUBSYSTEM_PREFIX;
     private static final String NVMET_PATH = "/sys/kernel/config/nvmet/";
     public static final String NVME_SUBSYSTEMS_PATH = NVMET_PATH + "subsystems/";
     private static final String NVME_PORTS_PATH = NVMET_PATH + "ports/";

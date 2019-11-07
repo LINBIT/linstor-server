@@ -79,6 +79,7 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.FileThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.SpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishInitiator;
@@ -855,6 +856,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case FILE_THIN:
                 type = ProviderType.FILE_THIN;
                 break;
+            case SPDK:
+                type = ProviderType.SPDK;
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unknown storage driver: " + deviceProviderKindRef);
@@ -1042,6 +1046,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 break;
             case ZFS:
                 ret = ExternalTools.ZFS;
+                break;
+            case SPDK:
+                ret = ExternalTools.SPDK;
                 break;
             default:
                 throw new RuntimeException("Not implemented.");
@@ -1383,6 +1390,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case FILE_THIN:
                     builder.setFileThin(FileThinVlm.newBuilder().build());
+                    break;
+                case SPDK:
+                    builder.setSpdk(SpdkVlm.newBuilder().build());
                     break;
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 default:

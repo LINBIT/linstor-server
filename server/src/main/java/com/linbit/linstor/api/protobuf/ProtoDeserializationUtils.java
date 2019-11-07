@@ -136,6 +136,9 @@ public class ProtoDeserializationUtils
                 case FILE_THIN:
                     kind = DeviceProviderKind.FILE_THIN;
                     break;
+                case SPDK:
+                    kind = DeviceProviderKind.SPDK;
+                    break;
                 case UNKNOWN_PROVIDER: // fall-through
                 case UNRECOGNIZED: // fall-through
                 default:
@@ -323,6 +326,9 @@ public class ProtoDeserializationUtils
                 break;
             case ZFS:
                 tool = ExtTools.ZFS;
+                break;
+            case SPDK:
+                tool = ExtTools.SPDK;
                 break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through

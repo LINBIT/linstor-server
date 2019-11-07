@@ -6,6 +6,7 @@ import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.storage.LvmDriverKind;
 import com.linbit.linstor.storage.LvmThinDriverKind;
+import com.linbit.linstor.storage.SpdkDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
 import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
@@ -90,6 +91,15 @@ public enum DeviceProviderKind
         true,
         true,
         new FileThinDriverKind()
+    ),
+    SPDK(
+        false,
+        false,
+        true,
+        true,
+        false,
+        new SpdkDriverKind(),
+        ExtTools.SPDK
     ),
     FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER(
         false,

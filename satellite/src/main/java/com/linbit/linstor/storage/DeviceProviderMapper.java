@@ -9,6 +9,7 @@ import com.linbit.linstor.storage.layer.provider.file.FileProvider;
 import com.linbit.linstor.storage.layer.provider.file.FileThinProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
+import com.linbit.linstor.storage.layer.provider.spdk.SpdkProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorProvider;
 import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishTargetProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
@@ -32,6 +33,7 @@ public class DeviceProviderMapper
     private final DisklessProvider disklessProvider;
     private final FileProvider fileProvider;
     private final FileThinProvider fileThinProvider;
+    private final SpdkProvider spdkProvider;
     private final List<DeviceProvider> driverList;
 
     @Inject
@@ -44,7 +46,8 @@ public class DeviceProviderMapper
         SwordfishInitiatorProvider sfInitProviderRef,
         DisklessProvider disklessProviderRef,
         FileProvider fileProviderRef,
-        FileThinProvider fileThinProviderRef
+        FileThinProvider fileThinProviderRef,
+        SpdkProvider spdkProviderRef
     )
     {
         lvmProvider = lvmProviderRef;
@@ -56,6 +59,7 @@ public class DeviceProviderMapper
         disklessProvider = disklessProviderRef;
         fileProvider = fileProviderRef;
         fileThinProvider = fileThinProviderRef;
+        spdkProvider = spdkProviderRef;
 
         driverList = Arrays.asList(
             lvmProvider,
@@ -66,7 +70,8 @@ public class DeviceProviderMapper
             sfInitProvider,
             disklessProvider,
             fileProvider,
-            fileThinProvider
+            fileThinProvider,
+            spdkProvider
         );
     }
 
@@ -111,6 +116,9 @@ public class DeviceProviderMapper
                 break;
             case FILE_THIN:
                 devProvider = fileThinProvider;
+                break;
+            case SPDK:
+                devProvider = spdkProvider;
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 throw new ImplementationError("A volume from a layer was asked for its provider type");

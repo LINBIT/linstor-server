@@ -19,24 +19,24 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
-import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEMS_PATH;
-import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.*;
 
 /**
  * Class for managing NVMe Target and Initiator
@@ -51,18 +51,21 @@ public class NvmeLayer implements DeviceLayer
     private final AccessContext sysCtx;
     private final Provider<DeviceHandler> resourceProcessorProvider;
     private final NvmeUtils nvmeUtils;
+    private final NvmeSpdkUtils nvmeSpdkUtils;
 
     @Inject
     public NvmeLayer(
         ErrorReporter errorReporterRef,
         @DeviceManagerContext AccessContext workerCtxRef,
         NvmeUtils nvmeUtilsRef,
+        NvmeSpdkUtils nvmeSpdkUtilsRef,
         Provider<DeviceHandler> resourceProcessorRef
     )
     {
         errorReporter = errorReporterRef;
         sysCtx = workerCtxRef;
         nvmeUtils = nvmeUtilsRef;
+        nvmeSpdkUtils = nvmeSpdkUtilsRef;
         resourceProcessorProvider = resourceProcessorRef;
     }
 
@@ -127,6 +130,89 @@ public class NvmeLayer implements DeviceLayer
         // target
         else
         {
+            boolean nvmeSpdk = false;
+            RscLayerObject rscLayerObject = nvmeRscData.getSingleChild();
+            for (VlmProviderObject vlmProviderObject : rscLayerObject.getVlmLayerObjects().values()){
+                if (vlmProviderObject instanceof SpdkData){
+                    nvmeSpdk = true;
+                    break;
+                }
+            }
+
+            if (nvmeSpdk)
+            {
+                nvmeRscData.setExists(nvmeSpdkUtils.isTargetConfigured(nvmeRscData));
+
+                if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+                {
+                    // delete target resource
+                    if (nvmeRscData.exists())
+                    {
+                        nvmeSpdkUtils.deleteTargetRsc(nvmeRscData, sysCtx);
+                        resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+                    }
+                    else
+                    {
+                        errorReporter.logDebug(
+                                "NVMe target resource '%s' already in expected state, nothing to be done.",
+                                nvmeRscData.getSuffixedResourceName()
+                        );
+                    }
+                }
+                else
+                {
+                    // update volumes
+                    if (nvmeRscData.exists())
+                    {
+                        final ExtCmd extCmd = nvmeSpdkUtils.getExtCmdFactory().create();
+                        final String subsystemName = STANDARD_NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName();
+
+                        try
+                        {
+                            errorReporter.logDebug(
+                                    "NVMe: updating target volumes: " +
+                                            STANDARD_NVME_SUBSYSTEM_PREFIX + nvmeRscData.getSuffixedResourceName()
+                            );
+
+                            List<NvmeVlmData> newVolumes = new ArrayList<>();
+                            for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                            {
+                                if (nvmeVlmData.getVolume().getFlags().isSet(sysCtx, Volume.Flags.DELETE))
+                                {
+                                    nvmeSpdkUtils.deleteSpdkNamespace(nvmeVlmData, subsystemName);
+                                }
+                                else
+                                {
+                                    newVolumes.add(nvmeVlmData);
+                                }
+                            }
+
+                            resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+
+                            for (NvmeVlmData nvmeVlmData : newVolumes)
+                            {
+                                nvmeSpdkUtils.createSpdkNamespace(nvmeVlmData, subsystemName);
+                            }
+                        }
+                        catch (IOException | ChildProcessTimeoutException exc)
+                        {
+                            throw new StorageException("Failed to update NVMe target!", exc);
+                        }
+                        catch (AccessDeniedException exc)
+                        {
+                            throw new ImplementationError(exc);
+                        }
+                    }
+                    // create
+                    else
+                    {
+                        resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+                        nvmeSpdkUtils.createTargetRsc(nvmeRscData, sysCtx);
+                    }
+                }
+            }
+            else //non-SPDK NVMeoF Target
+            {
             nvmeRscData.setExists(nvmeUtils.isTargetConfigured(nvmeRscData));
 
             if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
@@ -196,6 +282,7 @@ public class NvmeLayer implements DeviceLayer
                     resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                     nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
                 }
+            }
             }
         }
     }

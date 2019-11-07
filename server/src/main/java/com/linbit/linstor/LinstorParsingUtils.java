@@ -323,6 +323,7 @@ public class LinstorParsingUtils
                 break;
             case "STORAGE": // fall-through
             case "LVM": // fall-through
+            case "SPDK": // fall-through
             case "ZFS": // fall-through
             case "SWORDFISH":
                 kind = DeviceLayerKind.STORAGE;
@@ -405,6 +406,9 @@ public class LinstorParsingUtils
                 break;
             case "FILE_THIN":
                 kind = DeviceProviderKind.FILE_THIN;
+                break;
+            case "SPDK":
+                kind = DeviceProviderKind.SPDK;
                 break;
             default:
                 throw new ApiRcException(

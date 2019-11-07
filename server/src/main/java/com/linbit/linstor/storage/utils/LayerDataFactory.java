@@ -31,6 +31,7 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
+import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
@@ -362,6 +363,25 @@ public class LayerDataFactory
         );
         storageDbDriver.persist(lvmThinData);
         return lvmThinData;
+    }
+
+    public SpdkData createSpdkData(
+            Volume vlm,
+            StorageRscData rscData,
+            StorPool storPoolRef
+    )
+            throws DatabaseException
+    {
+        SpdkData spdkData = new SpdkData(
+                vlm,
+                rscData,
+                storPoolRef,
+                storageDbDriver,
+                transObjFactory,
+                transMgrProvider
+        );
+        storageDbDriver.persist(spdkData);
+        return spdkData;
     }
 
     public SfInitiatorData createSfInitData(

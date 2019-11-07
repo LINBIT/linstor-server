@@ -28,6 +28,7 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
+import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -299,6 +300,16 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                     this,
                     transObjFactory,
                     transMgrProvider
+                );
+                break;
+            case SPDK:
+                vlmProviderObj = new SpdkData(
+                        vlmRef,
+                        rscDataRef,
+                        vlmInfo.storPool,
+                        this,
+                        transObjFactory,
+                        transMgrProvider
                 );
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
