@@ -19,9 +19,11 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -88,7 +90,7 @@ public class CtrlVlmApiCallHandler
             Props props = ctrlPropsHelper.getProps(vlm);
 
             ctrlPropsHelper.fillProperties(LinStorObject.VOLUME, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_VLM);
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespacesRef);
+            ctrlPropsHelper.remove(LinStorObject.VOLUME, props, deletePropKeys, deletePropNamespacesRef);
 
             ctrlTransactionHelper.commit();
 

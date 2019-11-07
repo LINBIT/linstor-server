@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.ApiContext;
@@ -20,9 +22,9 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionKey;
-import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
@@ -38,6 +40,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,8 +51,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
-
-import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlRscApiCallHandler
@@ -139,7 +140,7 @@ public class CtrlRscApiCallHandler
             );
 
             ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespacesRef);
+            ctrlPropsHelper.remove(LinStorObject.RESOURCE, props, deletePropKeys, deletePropNamespacesRef);
 
             ctrlTransactionHelper.commit();
 

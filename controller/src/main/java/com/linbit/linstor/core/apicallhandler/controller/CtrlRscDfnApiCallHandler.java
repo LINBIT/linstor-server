@@ -336,9 +336,18 @@ public class CtrlRscDfnApiCallHandler
             {
                 Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
 
-                ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, overrideProps,
-                    rscDfnProps, ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
-                ctrlPropsHelper.remove(rscDfnProps, deletePropKeys, deletePropNamespacesRef);
+                ctrlPropsHelper.fillProperties(
+                    LinStorObject.RESOURCE_DEFINITION,
+                    overrideProps,
+                    rscDfnProps,
+                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+                );
+                ctrlPropsHelper.remove(
+                    LinStorObject.RESOURCE_DEFINITION,
+                    rscDfnProps,
+                    deletePropKeys,
+                    deletePropNamespacesRef
+                );
             }
 
             if (!layerStackStrListRef.isEmpty())

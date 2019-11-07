@@ -29,6 +29,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -188,7 +189,7 @@ class CtrlRscConnectionApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN,
                 keysIgnored
             );
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.remove(LinStorObject.RSC_CONN, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

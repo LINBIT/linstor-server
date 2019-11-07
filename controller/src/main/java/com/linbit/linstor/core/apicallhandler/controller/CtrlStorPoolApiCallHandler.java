@@ -34,6 +34,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -121,7 +122,7 @@ public class CtrlStorPoolApiCallHandler
                 props,
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.remove(LinStorObject.STORAGEPOOL, props, deletePropKeys, deletePropNamespaces);
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(

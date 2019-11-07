@@ -149,7 +149,7 @@ class CtrlStorPoolDfnApiCallHandler
 
             ctrlPropsHelper.fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, overrideProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.remove(LinStorObject.STORAGEPOOL_DEFINITION, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

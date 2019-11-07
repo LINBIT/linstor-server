@@ -58,6 +58,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -307,6 +308,7 @@ public class CtrlRscGrpApiCallHandler
                     ApiConsts.FAIL_ACC_DENIED_RSC_GRP
                 );
                 ctrlPropsHelper.remove(
+                    LinStorObject.RESOURCE_DEFINITION,
                     rscDfnGrpProps,
                     deletePropKeysRef,
                     deleteNamespacesRef
@@ -316,7 +318,7 @@ public class CtrlRscGrpApiCallHandler
             if (autoApiRef != null)
             {
                 AutoSelectorConfig autoPlaceConfig =
-                    (AutoSelectorConfig) rscGrpData.getAutoPlaceConfig();
+                    rscGrpData.getAutoPlaceConfig();
                 Integer newReplicaCount = autoApiRef.getReplicaCount();
                 autoPlaceConfig.applyChanges(autoApiRef);
 

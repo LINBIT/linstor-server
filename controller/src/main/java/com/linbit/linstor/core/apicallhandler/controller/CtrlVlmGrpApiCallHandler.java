@@ -9,8 +9,8 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
-import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -227,7 +227,12 @@ public class CtrlVlmGrpApiCallHandler
                 props,
                 ApiConsts.FAIL_ACC_DENIED_VLM_GRP
             );
-            ctrlPropsHelper.remove(props, deletePropKeysRef, deleteNamespacesRef);
+            ctrlPropsHelper.remove(
+                LinStorObject.VOLUME_DEFINITION,
+                props,
+                deletePropKeysRef,
+                deleteNamespacesRef
+            );
 
             ctrlTransactionHelper.commit();
 

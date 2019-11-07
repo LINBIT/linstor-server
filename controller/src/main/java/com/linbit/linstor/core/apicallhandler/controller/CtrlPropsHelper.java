@@ -29,10 +29,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Singleton
 public class CtrlPropsHelper
@@ -366,15 +369,67 @@ public class CtrlPropsHelper
         {
             props.setProp(entry.getKey(), entry.getValue());
         }
-        remove(props, deletePropKeys, deleteNamespaces);
+        removeUnconditional(props, deletePropKeys, deleteNamespaces);
     }
 
     public void remove(
+        LinStorObject linstorObj,
         Props props,
         Collection<String> deletePropKeys,
         Collection<String> deleteNamespaces
     )
         throws AccessDeniedException, InvalidKeyException, DatabaseException
+    {
+        List<String> ignoredKeys = Arrays.asList(ApiConsts.NAMESPC_AUXILIARY + "/");
+
+        for (String key : deletePropKeys)
+        {
+            boolean isPropWhitelisted = propsWhiteList.isAllowed(linstorObj, ignoredKeys, key, null, false);
+            if (isPropWhitelisted)
+            {
+                props.removeProp(key);
+            }
+            else
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl
+                        .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property key")
+                        .setCause("The key '" + key + "' is not whitelisted.")
+                        .build()
+                );
+            }
+        }
+        for (String deleteNamespace : deleteNamespaces)
+        {
+            Props namespace = props.getNamespace(deleteNamespace).orElse(null);
+            if (namespace != null)
+            {
+                Set<String> keySet = namespace.keySet();
+                for (String key : keySet)
+                {
+                    boolean isPropWhitelisted = propsWhiteList.isAllowed(linstorObj, ignoredKeys, key, null, false);
+                    if (!isPropWhitelisted)
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl
+                                .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property key")
+                                .setCause("The key '" + key + "' is not whitelisted.")
+                                .build()
+                        );
+                    }
+                }
+                props.removeNamespace(deleteNamespace);
+            }
+            // else, noop
+        }
+    }
+
+    public void removeUnconditional(
+        Props props,
+        Collection<String> deletePropKeys,
+        Collection<String> deleteNamespaces
+    )
+        throws InvalidKeyException, AccessDeniedException, DatabaseException
     {
         for (String key : deletePropKeys)
         {
@@ -385,4 +440,5 @@ public class CtrlPropsHelper
             props.removeNamespace(deleteNamespace);
         }
     }
+
 }

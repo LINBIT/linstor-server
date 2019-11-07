@@ -54,6 +54,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -369,14 +370,14 @@ public class CtrlNodeApiCallHandler
 
             Props props = ctrlPropsHelper.getProps(node);
             ctrlPropsHelper.fillProperties(LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE);
-            ctrlPropsHelper.remove(props, deletePropKeys, deleteNamespaces);
+            ctrlPropsHelper.remove(LinStorObject.NODE, props, deletePropKeys, deleteNamespaces);
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
-                    apiCtx,
-                    node,
-                    overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
-                    ApiConsts.MASK_NODE
+                apiCtx,
+                node,
+                overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+                ApiConsts.MASK_NODE
             );
 
             ctrlTransactionHelper.commit();
