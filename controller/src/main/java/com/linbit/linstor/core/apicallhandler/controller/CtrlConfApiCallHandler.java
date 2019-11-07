@@ -706,6 +706,25 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
+    boolean passphraseExists() throws AccessDeniedException
+    {
+        Props namespace = systemConfRepository.getCtrlConfForView(peerAccCtx.get()).getNamespace(NAMESPACE_ENCRYPTED)
+            .orElse(null);
+
+        boolean exists = false;
+        if (namespace != null)
+        {
+            String masterHashStr = namespace.getProp(KEY_CRYPT_HASH);
+            String encryptedMasterKeyStr = namespace.getProp(KEY_CRYPT_KEY);
+            String passphraseSaltStr = namespace.getProp(KEY_PASSPHRASE_SALT);
+
+            exists = masterHashStr != null &&
+                encryptedMasterKeyStr != null &&
+                passphraseSaltStr != null;
+        }
+        return exists;
+    }
+
     private void setPassphraseImpl(String newPassphrase, byte[] masterKey)
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException, LinStorException
     {

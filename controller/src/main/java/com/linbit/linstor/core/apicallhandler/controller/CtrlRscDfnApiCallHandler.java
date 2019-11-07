@@ -61,6 +61,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.helpers.External
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -90,6 +91,7 @@ public class CtrlRscDfnApiCallHandler
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlLayerDataHelper ctrlLayerStackHelper;
+    private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -108,7 +110,8 @@ public class CtrlRscDfnApiCallHandler
         CtrlSecurityObjects secObjsRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlLayerDataHelper ctrlLayerStackHelperRef
+        CtrlLayerDataHelper ctrlLayerStackHelperRef,
+        CtrlConfApiCallHandler ctrlConfApiCallHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -127,6 +130,7 @@ public class CtrlRscDfnApiCallHandler
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
         ctrlLayerStackHelper = ctrlLayerStackHelperRef;
+        ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -238,11 +242,13 @@ public class CtrlRscDfnApiCallHandler
         return responses;
     }
 
-    private void warnIfMasterKeyIsNotSet(ApiCallRcImpl responsesRef)
+    private void warnIfMasterKeyIsNotSet(ApiCallRcImpl responsesRef) throws AccessDeniedException
     {
         byte[] masterKey = secObjs.getCryptKey();
         if ((masterKey == null || masterKey.length == 0))
         {
+            boolean passphraseExists = ctrlConfApiCallHandler.passphraseExists();
+
             String warnMsg = "The master key has not yet been set. Creating volume definitions within \n" +
                 "an encrypted resource definition will fail!";
 
@@ -253,7 +259,10 @@ public class CtrlRscDfnApiCallHandler
                     ApiConsts.WARN_NOT_FOUND_CRYPT_KEY,
                     warnMsg
                 )
-                .setCorrection("Create or enter the master passphrase, or remove the luks layer from the stack")
+                    .setCorrection(
+                        (passphraseExists ? "Enter " : "Create ") +
+                            " the master passphrase, or remove the luks layer from the stack"
+                    )
                 .build()
             );
         }
