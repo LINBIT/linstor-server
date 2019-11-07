@@ -1,3 +1,33 @@
+linstor-server (1.2.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * etcd-tls: enable all options to use etcd with tls
+  * gradle: update to jackson 2.10.0
+  * rest-api-doc: update property documentation
+  * rest-api: Fix query-max-vlm-size api call, expected incorrect post data
+
+  [ Roland Kammerer ]
+  * docker,satellite: add cryptsetup
+
+  [ Gabor Hernadi ]
+  * Added environment variables
+  * DRBD: additionally copy .res files to backup dir
+  * LvmProvider: disabled unimplemented async wiping
+  * Snapshot-restore: actually deleting hanging properties
+  * Drbd: Skip initial sync on ZFS
+  * Encryption API: improved correction message
+  * Props: Added whitelist check for delete
+  * Rest: Changed type for supported providers / layers in yaml
+
+  [ Rainer Laschober ]
+  * Correct error message
+  * Rest: Add un-/supported providers and layers to Node
+
+  [ Robert Altnoeder ]
+  * Further improved error message for failed TCP/IP port number allocation
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 07 Nov 2019 12:54:27 +0100
+
 linstor-server (1.2.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
