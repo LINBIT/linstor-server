@@ -31,7 +31,6 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATI
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -66,12 +65,9 @@ public class DbConnectionPool implements ControllerSQLDatabase
     private int dbTimeout = ControllerDatabase.DEFAULT_TIMEOUT;
     private int dbMaxOpen = ControllerSQLDatabase.DEFAULT_MAX_OPEN_STMT;
 
-    public static final int DEFAULT_MIN_IDLE_CONNECTIONS =  10;
-    public static final int DEFAULT_MAX_IDLE_CONNECTIONS = 100;
-    public static final int DEFAULT_IDLE_TIMEOUT = 1 * 60 * 60 * 1000; // 1 hour in ms
-
-    private int minIdleConnections = DEFAULT_MIN_IDLE_CONNECTIONS;
-    private int maxIdleConnections = DEFAULT_MAX_IDLE_CONNECTIONS;
+    private static final int DEFAULT_MIN_IDLE_CONNECTIONS =  10;
+    private static final int DEFAULT_MAX_IDLE_CONNECTIONS = 100;
+    private static final int DEFAULT_IDLE_TIMEOUT = 1 * 60 * 60 * 1000; // 1 hour in ms
 
     private PoolingDataSource<PoolableConnection> dataSource = null;
 
@@ -393,8 +389,8 @@ public class DbConnectionPool implements ControllerSQLDatabase
             PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
 
             GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-            poolConfig.setMinIdle(minIdleConnections);
-            poolConfig.setMaxIdle(maxIdleConnections);
+            poolConfig.setMinIdle(DEFAULT_MIN_IDLE_CONNECTIONS);
+            poolConfig.setMaxIdle(DEFAULT_MAX_IDLE_CONNECTIONS);
             poolConfig.setBlockWhenExhausted(true);
             poolConfig.setFairness(true);
             GenericObjectPool<PoolableConnection> connPool = new GenericObjectPool<>(poolConnFactory, poolConfig);

@@ -22,7 +22,7 @@ public class DatabaseInfo
     }
 
     public static final int[] H2_MIN_VERSION = {1, 4};
-    public static final int[] DERBY_MIN_VERSION = {10, 14};
+    public static final int[] DERBY_MIN_VERSION = {10, 13};
     public static final int[] DB2_MIN_VERSION = {11, 1};
     public static final int[] POSTGRES_MIN_VERSION = {9, 4};
     public static final int[] MYSQL_MIN_VERSION = {5, 7};
