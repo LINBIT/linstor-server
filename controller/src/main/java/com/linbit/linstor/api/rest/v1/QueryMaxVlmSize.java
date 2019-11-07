@@ -16,7 +16,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -50,58 +49,52 @@ public class QueryMaxVlmSize
         @Suspended AsyncResponse asyncResponse,
         String jsonData
     )
+        throws JsonProcessingException
     {
-        try
-        {
-            Json.AutoSelectFilterData selectFilterData = objectMapper.readValue(
-                jsonData,
-                Json.AutoSelectFilterData.class
-            );
+        JsonGenTypes.AutoSelectFilter selectFilterData = objectMapper.readValue(
+            jsonData,
+            JsonGenTypes.AutoSelectFilter.class
+        );
 
-            Mono<Response> flux = ctrlQueryMaxVlmSizeApiCallHandler.queryMaxVlmSize(
-                selectFilterData
-            )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_QRY_MAX_VLM_SIZE, request))
-                .flatMap(apiCallRcWith ->
+        Mono<Response> flux = ctrlQueryMaxVlmSizeApiCallHandler.queryMaxVlmSize(
+            new Json.AutoSelectFilterData(selectFilterData)
+        )
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_QRY_MAX_VLM_SIZE, request))
+            .flatMap(apiCallRcWith ->
+            {
+                Response resp;
+                if (apiCallRcWith.hasApiCallRc())
                 {
-                    Response resp;
-                    if (apiCallRcWith.hasApiCallRc())
+                    resp = ApiCallRcConverter.toResponse(
+                        apiCallRcWith.getApiCallRc(),
+                        Response.Status.INTERNAL_SERVER_ERROR
+                    );
+                }
+                else
+                {
+                    List<MaxVlmSizeCandidatePojo> maxVlmSizeCandidates = apiCallRcWith.getValue();
+                    JsonGenTypes.MaxVolumeSizes maxVolumeSizesData =
+                        Json.pojoToMaxVolumeSizes(maxVlmSizeCandidates);
+                    maxVolumeSizesData.default_max_oversubscription_ratio =
+                        FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
+
+                    try
                     {
-                        resp = ApiCallRcConverter.toResponse(
-                            apiCallRcWith.getApiCallRc(),
-                            Response.Status.INTERNAL_SERVER_ERROR
-                        );
+                        resp = Response
+                            .status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(maxVolumeSizesData))
+                            .build();
                     }
-                    else
+                    catch (JsonProcessingException exc)
                     {
-                        List<MaxVlmSizeCandidatePojo> maxVlmSizeCandidates = apiCallRcWith.getValue();
-                        JsonGenTypes.MaxVolumeSizes maxVolumeSizesData =
-                            Json.pojoToMaxVolumeSizes(maxVlmSizeCandidates);
-                        maxVolumeSizesData.default_max_oversubscription_ratio =
-                            FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
-
-                        try
-                        {
-                            resp = Response
-                                .status(Response.Status.OK)
-                                .entity(objectMapper.writeValueAsString(maxVolumeSizesData))
-                                .build();
-                        }
-                        catch (JsonProcessingException exc)
-                        {
-                            exc.printStackTrace();
-                            resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                        }
+                        exc.printStackTrace();
+                        resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
                     }
+                }
 
-                    return Mono.just(resp);
-                }).next();
+                return Mono.just(resp);
+            }).next();
 
-            requestHelper.doFlux(asyncResponse, flux);
-        }
-        catch (IOException ioExc)
-        {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
-        }
+        requestHelper.doFlux(asyncResponse, flux);
     }
 }
