@@ -144,7 +144,7 @@ public class CtrlRscAutoTieBreakerHelper
                         {
                             if (isFlagSet(rsc, Resource.Flags.DELETE))
                             {
-                                if (isFlagSet(rsc, Resource.Flags.DISKLESS))
+                                if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
                                 {
                                     takeover = rsc;
                                     break;
@@ -390,7 +390,7 @@ public class CtrlRscAutoTieBreakerHelper
                     rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE)
                 )
                 {
-                    if (rscFlags.isSet(peerAccCtx, Resource.Flags.DISKLESS))
+                    if (rscFlags.isSet(peerAccCtx, Resource.Flags.DRBD_DISKLESS))
                     {
                         disklessDrbdCount++;
                     }

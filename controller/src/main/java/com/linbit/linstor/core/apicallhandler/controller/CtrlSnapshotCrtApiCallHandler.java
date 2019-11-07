@@ -23,6 +23,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotControllerFactory;
@@ -40,6 +41,7 @@ import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
@@ -552,7 +554,9 @@ public class CtrlSnapshotCrtApiCallHandler
         boolean isDiskless;
         try
         {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS);
+            StateFlags<Flags> stateFlags = rsc.getStateFlags();
+            isDiskless = stateFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) ||
+                stateFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         }
         catch (AccessDeniedException implError)
         {

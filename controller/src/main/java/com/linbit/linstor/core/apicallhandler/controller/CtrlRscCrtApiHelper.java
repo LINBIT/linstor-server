@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.compat.CompatibilityUtils;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -26,6 +27,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
@@ -44,6 +46,8 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -184,6 +188,19 @@ public class CtrlRscCrtApiHelper
             {
                 layerStack.add(DeviceLayerKind.STORAGE);
                 warnAddedStorageLayer(responses);
+            }
+        }
+
+        // compatibility
+        if (FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS))
+        {
+            if (layerStack.isEmpty())
+            {
+                flags |= Resource.Flags.DRBD_DISKLESS.flagValue;
+            }
+            else
+            {
+                flags |= CompatibilityUtils.mapDisklessFlagToNvmeOrDrbd(layerStack).flagValue;
             }
         }
 
@@ -658,10 +675,15 @@ public class CtrlRscCrtApiHelper
         boolean allDiskless = true;
         try
         {
-            Iterator<Resource> rscIter = rscDfn.iterateResource(peerAccCtx.get());
+            AccessContext accCtx = peerAccCtx.get();
+            Iterator<Resource> rscIter = rscDfn.iterateResource(accCtx);
             while (rscIter.hasNext())
             {
-                if (!rscIter.next().getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.DISKLESS))
+                StateFlags<Flags> stateFlags = rscIter.next().getStateFlags();
+                if (
+                    !stateFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS)  &&
+                    !stateFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR)
+                )
                 {
                     allDiskless = false;
                 }

@@ -453,7 +453,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                             ctrlRscCrtApiHelper.createResourceDb(
                                 disklessNode.getName().displayValue,
                                 rscNameStr,
-                                Resource.Flags.DISKLESS.flagValue,
+                                Resource.Flags.DRBD_DISKLESS.flagValue | Resource.Flags.NVME_INITIATOR.flagValue,
                                 rscPropsMap,
                                 Collections.emptyList(),
                                 null,

@@ -21,11 +21,12 @@ public class ResourceTest
     {
         final long mask = Resource.Flags.CLEAN.flagValue |
             Resource.Flags.DELETE.flagValue |
-            Resource.Flags.DISKLESS.flagValue |
             Resource.Flags.DISK_ADD_REQUESTED.flagValue |
             Resource.Flags.DISK_ADDING.flagValue |
             Resource.Flags.DISK_REMOVE_REQUESTED.flagValue |
             Resource.Flags.DISK_REMOVING.flagValue |
+            Resource.Flags.DRBD_DISKLESS.flagValue |
+            Resource.Flags.NVME_INITIATOR.flagValue |
             Resource.Flags.TIE_BREAKER.flagValue;
         List<String> strList = Resource.Flags.toStringList(mask);
         assertEquals(Resource.Flags.values().length, strList.size());
@@ -50,13 +51,13 @@ public class ResourceTest
     {
         {
             final long mask = Resource.Flags.CLEAN.flagValue |
-                Resource.Flags.DISKLESS.flagValue;
+                Resource.Flags.DRBD_DISKLESS.flagValue;
             List<String> strList = Resource.Flags.toStringList(mask);
 
             assertArrayEquals(
                 new String[]
                 {
-                    ApiConsts.FLAG_CLEAN, ApiConsts.FLAG_DISKLESS
+                    ApiConsts.FLAG_CLEAN, ApiConsts.FLAG_DRBD_DISKLESS
                 },
                 strList.toArray()
             );

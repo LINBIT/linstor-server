@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -24,11 +25,13 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -78,21 +81,7 @@ public class CtrlLayerDataHelper
 
     public List<DeviceLayerKind> getLayerStack(Resource rscRef)
     {
-        List<DeviceLayerKind> ret = new ArrayList<>();
-        try
-        {
-            RscLayerObject layerData = rscRef.getLayerData(apiCtx);
-            while (layerData != null)
-            {
-                ret.add(layerData.getLayerKind());
-                layerData = layerData.getChildBySuffix("");
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return ret;
+        return LayerRscUtils.getLayerStack(rscRef, apiCtx);
     }
 
     /**
@@ -483,7 +472,7 @@ public class CtrlLayerDataHelper
                 accCtxRef,
                 rscRef,
                 vlmDfn,
-                rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS),
+                isDiskless(rscRef),
                 false
             ).getValue();
 
@@ -520,7 +509,9 @@ public class CtrlLayerDataHelper
         boolean isDiskless;
         try
         {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS);
+            StateFlags<Flags> stateFlags = rsc.getStateFlags();
+            isDiskless = stateFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) ||
+                stateFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         }
         catch (AccessDeniedException implError)
         {

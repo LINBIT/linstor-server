@@ -2,6 +2,7 @@ package com.linbit.linstor.dbdrivers.etcd;
 
 import static com.ibm.etcd.client.KeyUtils.bs;
 
+import com.linbit.linstor.dbcp.migration.UsedByMigration;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 
@@ -20,7 +21,9 @@ import com.ibm.etcd.client.kv.KvClient;
 
 public class EtcdUtils
 {
+    @UsedByMigration
     public static final String PATH_DELIMITER = "/";
+    @UsedByMigration
     public static final String PK_DELIMITER = ":";
     public static final String LINSTOR_PREFIX = "LINSTOR" + PATH_DELIMITER;
 
@@ -146,6 +149,7 @@ public class EtcdUtils
         return ret;
     }
 
+    @UsedByMigration
     public static String extractPrimaryKey(String key)
     {
         // key is something like

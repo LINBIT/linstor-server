@@ -254,7 +254,10 @@ public class ResourceDefinition extends BaseTransactionObject
         int count = 0;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
-            if (rsc.getStateFlags().isUnset(accCtx, Resource.Flags.DISKLESS))
+            StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
+            if (
+                stateFlags.isUnset(accCtx, Resource.Flags.DRBD_DISKLESS) &&
+                stateFlags.isUnset(accCtx, Resource.Flags.NVME_INITIATOR))
             {
                 count++;
             }
@@ -364,7 +367,9 @@ public class ResourceDefinition extends BaseTransactionObject
         boolean hasDiskless = false;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
-            hasDiskless = rsc.getStateFlags().isSet(accCtx, Resource.Flags.DISKLESS);
+            StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
+            hasDiskless = stateFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS) ||
+                stateFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR);
             if (hasDiskless)
             {
                 break;
@@ -378,8 +383,12 @@ public class ResourceDefinition extends BaseTransactionObject
         boolean hasDisklessNotDeleting = false;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
-            if (rsc.getStateFlags().isSet(accCtx, Resource.Flags.DISKLESS) &&
-                rsc.getStateFlags().isUnset(accCtx, Resource.Flags.DELETE))
+            StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
+            if (
+                (stateFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS) ||
+                 stateFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR)
+                ) &&
+                stateFlags.isUnset(accCtx, Resource.Flags.DELETE))
             {
                 hasDisklessNotDeleting = true;
                 break;
@@ -464,7 +473,7 @@ public class ResourceDefinition extends BaseTransactionObject
         layerStorage.remove(new Pair<>(kind, rscNameSuffixRef)).delete();
         for (VolumeDefinition vlmDfn : volumeMap.values())
         {
-            ((VolumeDefinition) vlmDfn).removeLayerData(accCtx, kind, rscNameSuffixRef);
+            vlmDfn.removeLayerData(accCtx, kind, rscNameSuffixRef);
         }
     }
 

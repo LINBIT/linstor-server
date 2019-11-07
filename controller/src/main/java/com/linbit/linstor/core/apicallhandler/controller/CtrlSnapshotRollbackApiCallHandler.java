@@ -443,7 +443,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         boolean diskless;
         try
         {
-            diskless = rsc.isDiskless(peerAccCtx.get());
+            AccessContext accCtx = peerAccCtx.get();
+            diskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -546,7 +547,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         boolean diskless;
         try
         {
-            diskless = rsc.isDiskless(apiCtx);
+            diskless = rsc.isDrbdDiskless(apiCtx) || rsc.isNvmeInitiator(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

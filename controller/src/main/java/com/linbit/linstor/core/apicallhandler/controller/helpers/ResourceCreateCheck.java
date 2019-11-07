@@ -116,7 +116,7 @@ public class ResourceCreateCheck
                 vlm -> execPrivileged(
                     () -> DeviceLayerKind.NVME.equals(
                         vlm.getResource().getLayerData(accessContext).getLayerKind()) &&
-                        !vlm.getResource().isDiskless(accessContext)
+                        !vlm.getResource().isNvmeInitiator(accessContext)
                 )
         ))
         {
@@ -128,7 +128,7 @@ public class ResourceCreateCheck
                 vlm -> execPrivileged(
                     () -> DeviceLayerKind.NVME.equals(
                         vlm.getResource().getLayerData(accessContext).getLayerKind()
-                    ) && vlm.getResource().isDiskless(accessContext)
+                    ) && vlm.getResource().isNvmeInitiator(accessContext)
                 )
             )
         )
@@ -168,14 +168,14 @@ public class ResourceCreateCheck
             () -> rscDfn.streamResource(accessContext)).anyMatch(
                 rsc -> execPrivileged(
                     () -> rsc.getLayerData(accessContext).getLayerKind().equals(DeviceLayerKind.NVME) &&
-                        !rsc.isDiskless(accessContext)
+                    !rsc.isNvmeInitiator(accessContext)
                 )
         );
         hasNvmeInitiator = execPrivileged(
             () -> rscDfn.streamResource(accessContext)).anyMatch(
                 rsc -> execPrivileged(
                     () -> rsc.getLayerData(accessContext).getLayerKind().equals(DeviceLayerKind.NVME) &&
-                        rsc.isDiskless(accessContext)
+                    rsc.isNvmeInitiator(accessContext)
                 )
         );
         hasSwordfishTarget = execPrivileged(

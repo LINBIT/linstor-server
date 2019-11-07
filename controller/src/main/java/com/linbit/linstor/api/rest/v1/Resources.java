@@ -127,6 +127,21 @@ public class Resources
 
         ResourceWithPayload(JsonGenTypes.ResourceCreate rsc, String rscName)
         {
+            if (rsc.resource.flags.contains(ApiConsts.FLAG_DISKLESS))
+            {
+                for (String layer : rsc.layer_list)
+                {
+                    if (layer.equalsIgnoreCase("drbd"))
+                    {
+                        rsc.resource.flags.add(ApiConsts.FLAG_DRBD_DISKLESS);
+                    }
+                    if (layer.equalsIgnoreCase("nvme"))
+                    {
+                        rsc.resource.flags.add(ApiConsts.FLAG_NVME_INITIATOR);
+                    }
+                }
+            }
+
             rscPayload = rsc;
             rscPayload.resource.name = rscName;
         }

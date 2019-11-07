@@ -13,6 +13,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeControllerFactory;
@@ -22,6 +23,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -247,8 +249,6 @@ public class CtrlVlmCrtApiHelper
         return isSet;
     }
 
-
-
     private long getVolumeSizePrivileged(VolumeDefinition vlmDfn)
     {
         long volumeSize;
@@ -268,7 +268,9 @@ public class CtrlVlmCrtApiHelper
         boolean isDiskless;
         try
         {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS);
+            StateFlags<Flags> stateFlags = rsc.getStateFlags();
+            isDiskless = stateFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) ||
+                stateFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         }
         catch (AccessDeniedException implError)
         {

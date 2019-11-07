@@ -301,7 +301,7 @@ public class DrbdLayer implements DeviceLayer
         throws AccessDeniedException, StorageException, ResourceException, VolumeException, DatabaseException
     {
         if (
-            !drbdRscData.getResource().isDiskless(workerCtx) ||
+            !drbdRscData.getResource().isDrbdDiskless(workerCtx) ||
                 drbdRscData.getResource().getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING)
         )
         {
@@ -423,7 +423,7 @@ public class DrbdLayer implements DeviceLayer
 
             // hasMetaData needs to be run after child-resource processed
             List<DrbdVlmData> createMetaData = new ArrayList<>();
-            if (!drbdRscData.getResource().isDiskless(workerCtx))
+            if (!drbdRscData.getResource().isDrbdDiskless(workerCtx))
             {
                 // do not try to create meta data while the resource is diskless....
                 for (DrbdVlmData drbdVlmData : checkMetaData)
@@ -458,12 +458,12 @@ public class DrbdLayer implements DeviceLayer
                     }
                 }
 
-                if (!drbdRscData.getResource().isDiskless(workerCtx))
+                if (!drbdRscData.getResource().isDrbdDiskless(workerCtx))
                 {
                     for (DrbdRscData otherRsc : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
                     {
                         if (!otherRsc.equals(drbdRscData) && // skip local rsc
-                            !otherRsc.getResource().isDiskless(workerCtx) && // skip remote diskless resources
+                            !otherRsc.getResource().isDrbdDiskless(workerCtx) && // skip remote diskless resources
                                 otherRsc.getResource().getStateFlags().isSet(workerCtx, Resource.Flags.DELETE)
                         )
                         {
@@ -551,7 +551,7 @@ public class DrbdLayer implements DeviceLayer
     {
         List<DrbdVlmData> checkMetaData = new ArrayList<>();
         Resource rsc = drbdRscData.getResource();
-        if (!rsc.isDiskless(workerCtx) ||
+        if (!rsc.isDrbdDiskless(workerCtx) ||
                 rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING)
         )
         {
@@ -1045,7 +1045,7 @@ public class DrbdLayer implements DeviceLayer
         //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
         drbdRscData.setAdjustRequired(true);
 
-        boolean isRscDisklessFlagSet = localResource.getStateFlags().isSet(workerCtx, Resource.Flags.DISKLESS);
+        boolean isRscDisklessFlagSet = localResource.getStateFlags().isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
 
         Iterator<DrbdVlmData> drbdVlmDataIter = drbdRscData.getVlmLayerObjects().values().iterator();
         while (drbdVlmDataIter.hasNext())
@@ -1196,7 +1196,7 @@ public class DrbdLayer implements DeviceLayer
             ResourceDefinition rscDfn = rsc.getDefinition();
 
             if (rscDfn.getProps(workerCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
-                    rsc.getStateFlags().isUnset(workerCtx, Resource.Flags.DISKLESS)
+                    rsc.getStateFlags().isUnset(workerCtx, Resource.Flags.DRBD_DISKLESS)
             )
             {
                 boolean alreadyInitialized = !allVlmsMetaDataNew(drbdRscData);

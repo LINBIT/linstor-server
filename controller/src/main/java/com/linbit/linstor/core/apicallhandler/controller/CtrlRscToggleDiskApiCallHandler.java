@@ -891,7 +891,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             rsc.getStateFlags().enableFlags(
                 apiCtx,
-                Resource.Flags.DISKLESS,
+                Resource.Flags.DRBD_DISKLESS,
                 Resource.Flags.DISK_REMOVING
             );
         }
@@ -919,7 +919,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             rscData.getStateFlags().disableFlags(
                 apiCtx,
-                Resource.Flags.DISKLESS,
+                Resource.Flags.DRBD_DISKLESS,
                 Resource.Flags.DISK_ADDING,
                 Resource.Flags.DISK_ADD_REQUESTED
             );

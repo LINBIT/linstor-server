@@ -6,10 +6,10 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -27,12 +27,12 @@ import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
-import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -184,7 +184,11 @@ public class CtrlRscCrtApiCallHandler
             else
             {
                 autoHelper.removeTiebreakerFlag(tiebreaker);
-                if (!FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DISKLESS))
+                boolean isDiskless =
+                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DISKLESS) || // needed for compatibility
+                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DRBD_DISKLESS) ||
+                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.NVME_INITIATOR);
+                if (!isDiskless)
                 {
                     // target resource is diskful
                     autoFlux.add(

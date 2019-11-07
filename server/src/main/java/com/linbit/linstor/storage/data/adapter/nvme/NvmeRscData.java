@@ -94,9 +94,9 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
         parent.set(parentObj);
     }
 
-    public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
+    public boolean isInitiator(AccessContext accCtx) throws AccessDeniedException
     {
-        return rsc.getStateFlags().isSet(accCtx, Resource.Flags.DISKLESS);
+        return rsc.getStateFlags().isSet(accCtx, Resource.Flags.NVME_INITIATOR);
     }
 
     @Override

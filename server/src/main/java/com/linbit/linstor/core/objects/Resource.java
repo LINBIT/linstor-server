@@ -291,11 +291,11 @@ public class Resource extends BaseTransactionObject
     /**
      * Whether peers should treat this resource as diskless.
      */
-    public boolean disklessForPeers(AccessContext accCtx)
+    public boolean disklessForDrbdPeers(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
-        return flags.isSet(accCtx, Flags.DISKLESS) &&
+        return flags.isSet(accCtx, Flags.DRBD_DISKLESS) &&
             flags.isUnset(accCtx, Flags.DISK_ADDING) &&
             flags.isUnset(accCtx, Flags.DISK_REMOVING);
     }
@@ -391,9 +391,14 @@ public class Resource extends BaseTransactionObject
         return createPrimary;
     }
 
-    public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
+    public boolean isDrbdDiskless(AccessContext accCtx) throws AccessDeniedException
     {
-        return getStateFlags().isSet(accCtx, Flags.DISKLESS);
+        return getStateFlags().isSet(accCtx, Flags.DRBD_DISKLESS);
+    }
+
+    public boolean isNvmeInitiator(AccessContext accCtx) throws AccessDeniedException
+    {
+        return getStateFlags().isSet(accCtx, Flags.NVME_INITIATOR);
     }
 
     public ResourceApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
@@ -545,11 +550,18 @@ public class Resource extends BaseTransactionObject
     {
         CLEAN(1L << 0),
         DELETE(1L << 1),
+        @Deprecated
         DISKLESS(1L << 2),
         DISK_ADD_REQUESTED(1L << 3),
         DISK_ADDING(1L << 4),
         DISK_REMOVE_REQUESTED(1L << 5),
-        DISK_REMOVING(1L << 6), TIE_BREAKER(DISKLESS.flagValue | 1L << 7);
+        DISK_REMOVING(1L << 6),
+
+        DRBD_DISKLESS(DISKLESS.flagValue | 1L << 8),
+        // DO NOT rename TIE_BREAKER to DRBD_TIE_BREAKER for compatibility reasons
+        TIE_BREAKER(DRBD_DISKLESS.flagValue | 1L << 7),
+
+        NVME_INITIATOR(DISKLESS.flagValue | 1L << 9);
 
         public final long flagValue;
 

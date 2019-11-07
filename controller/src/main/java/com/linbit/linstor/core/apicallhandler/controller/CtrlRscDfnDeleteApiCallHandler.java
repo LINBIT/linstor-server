@@ -18,6 +18,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
@@ -25,6 +26,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
@@ -396,7 +398,9 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         boolean isDiskless;
         try
         {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS);
+            StateFlags<Flags> stateFlags = rsc.getStateFlags();
+            isDiskless = stateFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) ||
+                stateFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         }
         catch (AccessDeniedException exc)
         {

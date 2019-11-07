@@ -242,7 +242,7 @@ public class CtrlRscAutoQuorumHelper
                 rscFlags.isUnset(peerCtx.get(), Resource.Flags.DELETE)
             )
             {
-                if (rscFlags.isSet(peerCtx.get(), Resource.Flags.DISKLESS))
+                if (rscFlags.isSet(peerCtx.get(), Resource.Flags.DRBD_DISKLESS))
                 {
                     disklessDrbdCount++;
                 }

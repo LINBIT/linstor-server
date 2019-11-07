@@ -230,7 +230,7 @@ public class CtrlRscAutoHelper
         {
             StateFlags<Flags> flags = tiebreakerRef.getStateFlags();
             flags.disableFlags(peerAccCtx.get(), Resource.Flags.TIE_BREAKER);
-            flags.enableFlags(peerAccCtx.get(), Resource.Flags.DISKLESS);
+            flags.enableFlags(peerAccCtx.get(), Resource.Flags.DRBD_DISKLESS);
         }
         catch (AccessDeniedException exc)
         {

@@ -2,7 +2,6 @@ package com.linbit.linstor.storage.layer.adapter.nvme;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
-import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
@@ -25,16 +24,18 @@ import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
+import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEMS_PATH;
+import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
-import static com.linbit.linstor.storage.layer.adapter.nvme.NvmeUtils.*;
 
 /**
  * Class for managing NVMe Target and Initiator
@@ -93,7 +94,8 @@ public class NvmeLayer implements DeviceLayer
     {
         NvmeRscData nvmeRscData = (NvmeRscData) rscData;
 
-        if (nvmeRscData.isDiskless(sysCtx))
+        // initiator
+        if (nvmeRscData.isInitiator(sysCtx))
         {
             // Initiator
 

@@ -834,8 +834,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 assertEquals(1, node.getResourceCount()); // just to be sure
                 try
                 {
-                    return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME)).getStateFlags()
-                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DISKLESS);
+                    return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME))
+                        .getStateFlags()
+                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DRBD_DISKLESS);
                 }
                 catch (AccessDeniedException | InvalidNameException exc)
                 {
@@ -949,8 +950,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 assertEquals(1, node.getResourceCount()); // just to be sure
                 try
                 {
-                    return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME)).getStateFlags()
-                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DISKLESS);
+                    return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME))
+                        .getStateFlags()
+                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DRBD_DISKLESS);
                 }
                 catch (AccessDeniedException | InvalidNameException exc)
                 {

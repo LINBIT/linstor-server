@@ -255,8 +255,8 @@ public class ConfFileBuilder
                 // or if it is a connection between two diskless nodes
                 if (
                     peerRsc.getStateFlags().isUnset(accCtx, Resource.Flags.DELETE) &&
-                        !(peerRsc.disklessForPeers(accCtx) &&
-                            localRsc.getStateFlags().isSet(accCtx, Resource.Flags.DISKLESS))
+                        !(peerRsc.disklessForDrbdPeers(accCtx) &&
+                            localRsc.getStateFlags().isSet(accCtx, Resource.Flags.DRBD_DISKLESS))
                 )
                 {
                     appendLine("");
@@ -836,11 +836,11 @@ public class ConfFileBuilder
             if ((!isPeerRsc && vlmData.getBackingDevice() == null) ||
                 (isPeerRsc &&
                 // FIXME: vlmData.getRscLayerObject().getFlags should be used here
-                     vlmData.getVolume().getResource().disklessForPeers(accCtx)
+                     vlmData.getVolume().getResource().disklessForDrbdPeers(accCtx)
                 ) ||
                 (!isPeerRsc &&
                 // FIXME: vlmData.getRscLayerObject().getFlags should be used here
-                     vlmData.getVolume().getResource().isDiskless(accCtx)
+                     vlmData.getVolume().getResource().isDrbdDiskless(accCtx)
                 )
             )
             {

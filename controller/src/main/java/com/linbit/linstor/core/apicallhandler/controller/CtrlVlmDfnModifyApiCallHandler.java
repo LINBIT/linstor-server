@@ -331,7 +331,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         else
         {
             Optional<Volume> drbdResizeVlm = streamVolumesPrivileged(vlmDfn)
-                .filter(this::isDiskful)
+                .filter(this::isDrbdDiskful)
                 .findAny();
             drbdResizeVlm.ifPresent(this::markVlmDrbdResize);
 
@@ -351,12 +351,12 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         return flux;
     }
 
-    private boolean isDiskful(Volume vlm)
+    private boolean isDrbdDiskful(Volume vlm)
     {
         boolean diskless;
         try
         {
-            diskless = vlm.getResource().isDiskless(apiCtx);
+            diskless = vlm.getResource().isDrbdDiskless(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

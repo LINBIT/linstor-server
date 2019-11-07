@@ -388,9 +388,13 @@ public class ConfFileBuilderTest
 
         when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.DELETE)))
             .thenReturn(!resourceDeleted);
-        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.DISKLESS)))
+        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.DRBD_DISKLESS)))
             .thenReturn(!diskless);
-        when(rscStateFlags.isSet(any(AccessContext.class), eq(Resource.Flags.DISKLESS)))
+        when(rscStateFlags.isSet(any(AccessContext.class), eq(Resource.Flags.DRBD_DISKLESS)))
+            .thenReturn(diskless);
+        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.NVME_INITIATOR)))
+            .thenReturn(!diskless);
+        when(rscStateFlags.isSet(any(AccessContext.class), eq(Resource.Flags.NVME_INITIATOR)))
             .thenReturn(diskless);
 
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
@@ -415,7 +419,7 @@ public class ConfFileBuilderTest
         when(resource.iterateVolumes()).thenAnswer(makeIteratorAnswer(volume));
         when(resource.streamVolumes()).thenAnswer(makeStreamAnswer(volume));
         when(resource.getProps(accessContext)).thenReturn(rscProps);
-        when(resource.disklessForPeers(accessContext)).thenReturn(diskless);
+        when(resource.disklessForDrbdPeers(accessContext)).thenReturn(diskless);
 
         when(assignedNode.getProps(accessContext)).thenReturn(nodeProps);
 
@@ -457,7 +461,7 @@ public class ConfFileBuilderTest
                 null, // copied from rscDfnData
                 null, // copied from rscDfnData
                 null, // copied from rscDfnData
-                resource.isDiskless(accessContext) ?
+                resource.isDrbdDiskless(accessContext) ?
                     DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue : 0,
                 DRBD_LAYER_NO_OP_DRIVER,
                 transObjFactory,
