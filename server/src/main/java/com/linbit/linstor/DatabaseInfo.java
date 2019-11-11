@@ -21,12 +21,12 @@ public class DatabaseInfo
         ETCD
     }
 
-    public static final int[] H2_MIN_VERSION = {1, 4};
-    public static final int[] DERBY_MIN_VERSION = {10, 13};
-    public static final int[] DB2_MIN_VERSION = {11, 1};
-    public static final int[] POSTGRES_MIN_VERSION = {9, 4};
-    public static final int[] MYSQL_MIN_VERSION = {5, 7};
-    public static final int[] MARIADB_MIN_VERSION = {10, 2};
+    public static final int[] H2_MIN_VERSION = {1, 2};
+    public static final int[] DERBY_MIN_VERSION = {10, 11};
+    public static final int[] DB2_MIN_VERSION = {9, 7};
+    public static final int[] POSTGRES_MIN_VERSION = {9, 0};
+    public static final int[] MYSQL_MIN_VERSION = {5, 1};
+    public static final int[] MARIADB_MIN_VERSION = {5, 1};
     public static final int[] INFORMIX_MIN_VERSION = {12, 10};
 
     private static final String ID_H2       = "H2";
