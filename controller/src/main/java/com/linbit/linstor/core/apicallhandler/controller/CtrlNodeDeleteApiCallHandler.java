@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -26,6 +24,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -43,7 +42,6 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,6 +53,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
+
+import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionListener
@@ -69,6 +69,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     private final ResponseConverter responseConverter;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
+    private final CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandler;
 
     @Inject
     public CtrlNodeDeleteApiCallHandler(
@@ -81,7 +82,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -94,6 +96,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        ctrlSnapshotDeleteApiCallHandler = ctrlSnapshotDeleteApiCallHandlerRef;
     }
 
     @Override
@@ -161,16 +164,9 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             );
             responseFlux = Flux.just(responses);
         }
-        else if (hasSnapshots(node))
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_EXISTS_SNAPSHOT,
-                "Cannot delete '" + nodeName + "' because it has snapshots."
-            ));
-        }
         else
         {
-            // store to avoid deleted node acess
+            // store to avoid deleted node access
             UUID nodeUuid = node.getUuid();
             String nodeDescription = firstLetterCaps(getNodeDescriptionInline(node));
 
@@ -215,6 +211,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
                 responseFlux = Flux
                     .<ApiCallRc>just(responses)
+                    .concatWith(Flux.merge(deleteSnapshotsPrivileged(node)))
                     .concatWith(Flux.merge(resourceDeletionResponses));
             }
         }
@@ -355,7 +352,6 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         boolean canDelete = node.getResourceCount() == 0;
         if (canDelete)
         {
-
             // If the node has no resources, then there should not be any volumes referenced
             // by the storage pool -- double check
             Iterator<StorPool> storPoolIterator = getStorPoolIteratorPrivileged(node);
@@ -406,22 +402,28 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         }
     }
 
-    private boolean hasSnapshots(Node node)
+    private List<Flux<ApiCallRc>> deleteSnapshotsPrivileged(Node node)
     {
-        boolean hasSnapshots;
+        List<Flux<ApiCallRc>> fluxes = new ArrayList<>();
+
         try
         {
-            hasSnapshots = node.hasSnapshots(peerAccCtx.get());
+            for (Snapshot snapshot : node.getSnapshots(apiCtx))
+            {
+                fluxes.add(ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(
+                    snapshot.getResourceName().getName(), snapshot.getSnapshotName().getName()));
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "check whether '" + node.getName().displayValue + "' has snapshots",
+                "get all snapshots of '" + node.getName().displayValue,
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
-        return hasSnapshots;
+
+        return fluxes;
     }
 
     private Peer getPeerPrivileged(Node node)
