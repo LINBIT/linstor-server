@@ -293,25 +293,22 @@ public class CtrlApiCallHandler
      * @param rscName
      *            required
      */
-    public ApiCallRc createVlmDfns(
+    public Flux<ApiCallRc> createVlmDfns(
         String rscName,
-        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithCrtPayloadApiListRef
+        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithCrtPayloadApiList
     )
     {
-        ApiCallRc apiCallRc;
-        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiList = vlmDfnWithCrtPayloadApiListRef;
+        Flux<ApiCallRc> flux;
+        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiList = vlmDfnWithCrtPayloadApiList;
         if (vlmDfnWithPayloadApiList == null)
         {
             vlmDfnWithPayloadApiList = Collections.emptyList();
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
         {
-            apiCallRc = vlmDfnApiCallHandler.createVolumeDefinitions(
-                rscName,
-                vlmDfnWithPayloadApiList
-            );
+            flux = vlmDfnApiCallHandler.createVolumeDefinitions(rscName, vlmDfnWithPayloadApiList);
         }
-        return apiCallRc;
+        return flux;
     }
 
     /**

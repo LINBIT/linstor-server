@@ -15,14 +15,18 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -32,19 +36,27 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Base64;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 class CtrlVlmDfnApiCallHandler
@@ -64,6 +76,10 @@ class CtrlVlmDfnApiCallHandler
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final LengthPadding cryptoLenPad;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
+
 
     @Inject
     CtrlVlmDfnApiCallHandler(
@@ -79,7 +95,10 @@ class CtrlVlmDfnApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        LengthPadding cryptoLenPadRef
+        LengthPadding cryptoLenPadRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -95,15 +114,16 @@ class CtrlVlmDfnApiCallHandler
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
         cryptoLenPad = cryptoLenPadRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
     }
 
-    ApiCallRc createVolumeDefinitions(
+    Flux<ApiCallRc> createVolumeDefinitions(
         String rscNameStr,
-        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiListRef
+        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiList
     )
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
         Map<String, String> objRefs = new TreeMap<>();
         objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
 
@@ -114,10 +134,30 @@ class CtrlVlmDfnApiCallHandler
             ApiConsts.MASK_VLM_DFN,
             objRefs
         );
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Create volume definitions",
+                lockGuardFactory.buildDeferred(WRITE, RSC_DFN_MAP),
+                () -> createVlmDfnsInTransaction(
+                    context,
+                    rscNameStr,
+                    vlmDfnWithPayloadApiList
+                )
+            ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> createVlmDfnsInTransaction(
+        ResponseContext context,
+        String rscNameStr,
+        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiList
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
 
         try
         {
-            if (vlmDfnWithPayloadApiListRef.isEmpty())
+            if (vlmDfnWithPayloadApiList.isEmpty())
             {
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(
@@ -138,8 +178,9 @@ class CtrlVlmDfnApiCallHandler
                 rscList.add(iterateResource.next());
             }
 
-            List<VolumeDefinition> vlmDfnsCreated = createVlmDfns(responses, rscDfn, vlmDfnWithPayloadApiListRef);
+            List<VolumeDefinition> vlmDfnsCreated = createVlmDfns(apiCallRcs, rscDfn, vlmDfnWithPayloadApiList);
 
+            Set<NodeName> nodeNames = new TreeSet<>();
             for (VolumeDefinition vlmDfn : vlmDfnsCreated)
             {
                 for (Resource rsc : rscList)
@@ -149,6 +190,7 @@ class CtrlVlmDfnApiCallHandler
                         vlmDfn,
                         null
                     );
+                    nodeNames.add(rsc.getNode().getName());
                 }
             }
 
@@ -156,16 +198,26 @@ class CtrlVlmDfnApiCallHandler
 
             for (VolumeDefinition vlmDfn : vlmDfnsCreated)
             {
-                responseConverter.addWithOp(responses, context, createVlmDfnCrtSuccessEntry(vlmDfn, rscNameStr));
+                responseConverter.addWithOp(apiCallRcs, context, createVlmDfnCrtSuccessEntry(vlmDfn, rscNameStr));
             }
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
+
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+                .transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rscDfn.getName(),
+                        nodeNames,
+                        "Created volume for resource {1} on {0}",
+                        null
+                    )
+                );
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return responses;
+        return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
     }
 
     List<VolumeDefinition> createVlmDfns(
@@ -208,7 +260,8 @@ class CtrlVlmDfnApiCallHandler
         {
             long size = vlmDfnApiRef.getVlmDfn().getSize();
 
-            VolumeDefinition.Flags[] vlmDfnInitFlags = VolumeDefinition.Flags.restoreFlags(vlmDfnApiRef.getVlmDfn().getFlags());
+            VolumeDefinition.Flags[] vlmDfnInitFlags =
+                VolumeDefinition.Flags.restoreFlags(vlmDfnApiRef.getVlmDfn().getFlags());
 
             vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
                 peerAccCtx.get(),
@@ -284,7 +337,11 @@ class CtrlVlmDfnApiCallHandler
         return iterator;
     }
 
-    private VolumeNumber getOrGenerateVlmNr(VolumeDefinitionApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)
+    private VolumeNumber getOrGenerateVlmNr(
+        VolumeDefinitionApi vlmDfnApi,
+        ResourceDefinition rscDfn,
+        AccessContext accCtx
+    )
     {
         VolumeNumber vlmNr;
         try

@@ -145,24 +145,33 @@ public class VolumeDefinitions
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createVolumeDefinition(
+    public void createVolumeDefinition(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
         String dataJson
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_VLM_DFN, request), () ->
+        try
         {
             JsonGenTypes.VolumeDefinitionCreate vlmDfnData = objectMapper.readValue(
                 dataJson,
                 JsonGenTypes.VolumeDefinitionCreate.class
             );
+
             List<VolumeDefinitionWtihCreationPayload> vlmList = new ArrayList<>();
             vlmList.add(new VlmDfnCreationWithPayload(vlmDfnData));
-            ApiCallRc apiCallRc = ctrlApiCallHandler.createVlmDfns(rscName, vlmList);
 
-            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
-        }, true);
+            Flux<ApiCallRc> flux = ctrlApiCallHandler.createVlmDfns(rscName, vlmList).subscriberContext(
+                requestHelper.createContext(ApiConsts.API_CRT_VLM_DFN, request)
+            );
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
+        catch (IOException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
     }
 
     @PUT
