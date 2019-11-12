@@ -10,7 +10,6 @@ import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
@@ -383,19 +382,19 @@ public class CtrlAutoStorPoolSelector
 
                         // filter nodes that have the same value of a given aux property or a specified value
                         Map<String, String> props = new HashMap<>();
-                        for (String propEntrySame : repOnSameFilter)
+                        for (String propFilterEntry : repOnSameFilter)
                         {
-                            Tuple2<String, Optional<String>> propTupleSame = parsePropTuple(propEntrySame);
+                            Tuple2<String, Optional<String>> propFilterTuple = parsePropTuple(propFilterEntry);
                             String nodePropVal =
-                                candidateNode.getProps(peerAccCtx.get()).getProp(propTupleSame.getT1());
+                                candidateNode.getProps(peerAccCtx.get()).getProp(propFilterTuple.getT1());
 
-                            boolean hasPrefPropVal = propTupleSame.getT2().isPresent();
+                            boolean hasPrefPropVal = propFilterTuple.getT2().isPresent();
 
                             if (!hasPrefPropVal && nodePropVal != null ||
-                                hasPrefPropVal && propTupleSame.getT2().get().equals(nodePropVal)
+                                hasPrefPropVal && propFilterTuple.getT2().get().equals(nodePropVal)
                             )
                             {
-                                props.put(propTupleSame.getT1(), nodePropVal);
+                                props.put(propFilterTuple.getT1(), nodePropVal);
                             }
                         }
 
@@ -408,29 +407,46 @@ public class CtrlAutoStorPoolSelector
                         /* 2. replicas-on-different */
 
                         // filter nodes that have a different value of a given aux property or miss a specified value
-                        for (String propEntryDiff : repOnDiffFilter)
+                        for (String propFilterEntry : repOnDiffFilter)
                         {
-                            Tuple2<String, Optional<String>> propTupleDiff = parsePropTuple(propEntryDiff);
-                            String nodePropVal =
-                                candidateNode.getProps(peerAccCtx.get()).getProp(propTupleDiff.getT1());
+                            Tuple2<String, Optional<String>> propFilterTuple = parsePropTuple(propFilterEntry);
+                            String propFilterKey = propFilterTuple.getT1();
+                            String propFilterVal = propFilterTuple.getT2().isPresent() ?
+                                propFilterTuple.getT2().get() : null;
 
+                            String nodePropVal = candidateNode.getProps(peerAccCtx.get()).getProp(propFilterKey);
+
+                            boolean hasNodePropVal = false;
                             Node nodeToRemove = null;
-                            for (Node alreadyChosenNode : nodesRepOnDiff)
+                            for (Node filteredNode : nodesRepOnDiff)
                             {
-                                if (existsPropValInFilteredNodes(alreadyChosenNode, propTupleDiff.getT1(), nodePropVal))
+                                hasNodePropVal = hasNodePropVal(filteredNode, propFilterKey, nodePropVal);
+                                if (hasNodePropVal)
                                 {
-                                    // only one such node can be found as we do not add nodes with same property values
-                                    if (nodeComparator.compare(candidateNode, alreadyChosenNode) > 0)
+                                    if (nodeComparator.compare(candidateNode, filteredNode) > 0)
                                     {
-                                        nodeToRemove = alreadyChosenNode;
-                                        break;
+                                        nodeToRemove = filteredNode;
                                     }
+                                    // only one such node can be found as we do not add nodes with same property values
+                                    break;
                                 }
                             }
-                            nodesRepOnDiff.remove(nodeToRemove);
 
+                            /*
+                            add node to the filtered list if at least one of the following conditions are fulfilled:
+                                * current candidate node lacks the whole property
+                                * current candidate node is a better choice a previously filtered one with the same
+                                  property value
+                                * specific value for the filter is given and
+                                  the current candidate node does not have a property with this value
+                                * specific value for the filter is not given and
+                                  the current candidate node does not have the same value of the given property
+                                  as another already filtered node
+                            */
                             if (nodePropVal == null ||
-                                !(propTupleDiff.getT2().isPresent() && propTupleDiff.getT2().get().equals(nodePropVal))
+                                nodesRepOnDiff.remove(nodeToRemove) ||
+                                propFilterVal != null && !propFilterVal.equals(nodePropVal) ||
+                                propFilterVal == null && !hasNodePropVal
                             )
                             {
                                 nodesRepOnDiff.add(candidateNode);
@@ -518,16 +534,19 @@ public class CtrlAutoStorPoolSelector
         return ret;
     }
 
-    private boolean existsPropValInFilteredNodes(Node alreadyChosenNode, String propKey, String nodePropVal)
+    private boolean hasNodePropVal(Node node, String propKey, String nodePropVal)
     {
         boolean propValExists = false;
-        try
+        if (nodePropVal != null)
         {
-            propValExists = alreadyChosenNode.getProps(peerAccCtx.get()).getProp(propKey).equals(nodePropVal);
-        }
-        catch (AccessDeniedException exc)
-        {
-            // do not add
+            try
+            {
+                propValExists = node.getProps(peerAccCtx.get()).getProp(propKey).equals(nodePropVal);
+            }
+            catch (AccessDeniedException exc)
+            {
+                // do not add
+            }
         }
         return propValExists;
     }
