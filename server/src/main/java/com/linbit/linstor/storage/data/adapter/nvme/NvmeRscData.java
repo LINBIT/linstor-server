@@ -29,6 +29,7 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
 {
     private boolean exists = false;
     private boolean failed = false;
+    private boolean spdk = false;
 
     public NvmeRscData(
         int rscLayerIdRef,
@@ -128,6 +129,16 @@ public class NvmeRscData extends AbsRscData<NvmeVlmData>
     public void setExists(boolean existsRef)
     {
         exists = existsRef;
+    }
+
+    public boolean isSpdk()
+    {
+        return spdk;
+    }
+
+    public void setSpdk(boolean spdkRef)
+    {
+        spdk = spdkRef;
     }
 
     @Override
