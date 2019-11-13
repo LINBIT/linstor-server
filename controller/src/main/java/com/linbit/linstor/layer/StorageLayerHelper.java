@@ -102,7 +102,8 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        RscLayerObject parentObjectRef
+        RscLayerObject parentObjectRef,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
@@ -116,7 +117,10 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
     }
 
     @Override
-    protected List<ChildResourceData> getChildRsc(StorageRscData rscDataRef)
+    protected List<ChildResourceData> getChildRsc(
+        StorageRscData rscDataRef,
+        List<DeviceLayerKind> layerListRef
+    )
         throws AccessDeniedException, InvalidKeyException
     {
         return Collections.emptyList(); // no children.
@@ -139,7 +143,8 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
     protected VlmProviderObject createVlmLayerData(
         StorageRscData rscData,
         Volume vlm,
-        LayerPayload payload
+        LayerPayload payload,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
@@ -215,7 +220,12 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
     }
 
     @Override
-    protected void mergeVlmData(VlmProviderObject vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
+    protected void mergeVlmData(
+        VlmProviderObject vlmDataRef,
+        Volume vlmRef,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
         throws InvalidKeyException, InvalidNameException, DatabaseException, ValueOutOfRangeException,
             ExhaustedPoolException, ValueInUseException, LinStorException
     {
@@ -239,7 +249,8 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
                 vlmData = createVlmLayerData(
                     storageRscData,
                     vlmRef,
-                    payloadRef
+                    payloadRef,
+                    layerListRef
                 );
                 VolumeNumber vlmNr = vlmData.getVlmNr();
                 storageRscData.remove(apiCtx, vlmNr);
@@ -293,5 +304,11 @@ class StorageLayerHelper extends AbsLayerHelper<StorageRscData, VlmProviderObjec
         {
             rscDataRef.remove(apiCtx, vlmNr);
         }
+    }
+
+    @Override
+    protected boolean isExpectedToProvideDevice(StorageRscData storageRscData) throws AccessDeniedException
+    {
+        return true;
     }
 }

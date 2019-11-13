@@ -40,7 +40,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 @Singleton
@@ -106,7 +106,8 @@ class WritecacheLayerHelper
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        RscLayerObject parentObjectRef
+        RscLayerObject parentObjectRef,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
@@ -136,7 +137,8 @@ class WritecacheLayerHelper
     protected WritecacheVlmData createVlmLayerData(
         WritecacheRscData writecacheRscData,
         Volume vlm,
-        LayerPayload payload
+        LayerPayload payload,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException
@@ -146,21 +148,36 @@ class WritecacheLayerHelper
     }
 
     @Override
-    protected void mergeVlmData(WritecacheVlmData vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
+    protected void mergeVlmData(
+        WritecacheVlmData vlmDataRef,
+        Volume vlmRef,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
         throws AccessDeniedException, InvalidKeyException
     {
         // nothing to do
     }
 
     @Override
-    protected List<ChildResourceData> getChildRsc(WritecacheRscData rscDataRef)
+    protected List<ChildResourceData> getChildRsc(
+        WritecacheRscData rscDataRef,
+        List<DeviceLayerKind> layerListRef
+    )
         throws AccessDeniedException, InvalidKeyException
     {
         // always return data and cache child
-        return Arrays.asList(
-            new ChildResourceData(WritecacheRscData.SUFFIX_DATA),
-            new ChildResourceData(WritecacheRscData.SUFFIX_CACHE, DeviceLayerKind.STORAGE)
-        );
+        List<ChildResourceData> children = new ArrayList<>();
+        children.add(new ChildResourceData(WritecacheRscData.SUFFIX_DATA));
+
+        boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
+        boolean isNvmeInitiator = rscDataRef.getResource().getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        if (!isNvmeBelow || isNvmeInitiator)
+        {
+            children.add(new ChildResourceData(WritecacheRscData.SUFFIX_CACHE, DeviceLayerKind.STORAGE));
+        }
+
+        return children;
     }
 
     @Override
@@ -186,6 +203,12 @@ class WritecacheLayerHelper
     protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, DatabaseException
     {
         // no-op
+    }
+
+    @Override
+    protected boolean isExpectedToProvideDevice(WritecacheRscData writecacheRscData) throws AccessDeniedException
+    {
+        return true;
     }
 
     private StorPool getCacheStorPool(Volume vlm) throws InvalidKeyException, AccessDeniedException

@@ -132,19 +132,17 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
     /**
      * Creates a {@link RscLayerObject} if needed and wraps it in a LayerResult which additional contains
      * a list of resource name suffixes for the lower layers.
-     *
      * The {@link RscLayerObject} is created if:
      * <ul>
-     *  <li>the given {@link Resource} has no layer data as root data</li>
-     *  <li>the parent object is not null and has a child that would match the object this method would create</li>
+     * <li>the given {@link Resource} has no layer data as root data</li>
+     * <li>the parent object is not null and has a child that would match the object this method would create</li>
      * </ul>
-     *
      * In case the desired object already exists, the object will be updated if possible according to the data taken
      * from the payload.
-     *
      * If the object does not exist a new object is created and added to the parent object's list of children,
      * unless the parent object is null of course.
      *
+     * @param layerList
      * @param layerStackRef
      * @throws LinStorException
      * @throws InvalidKeyException
@@ -155,7 +153,8 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        RscLayerObject parentObjectRef
+        RscLayerObject parentObjectRef,
+        List<DeviceLayerKind> layerList
     )
         throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
             ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
@@ -189,7 +188,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
 
         if (rscData == null)
         {
-            rscData = createRscData(rscRef, payloadRef, rscNameSuffixRef, parentObjectRef);
+            rscData = createRscData(rscRef, payloadRef, rscNameSuffixRef, parentObjectRef, layerList);
         }
         else
         {
@@ -241,13 +240,13 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
                 {
                     vlmLayerObjects.put(
                         vlmNr,
-                        createVlmLayerData(rscData, vlm, payloadRef)
+                        createVlmLayerData(rscData, vlm, payloadRef, layerList)
                     );
                 }
             }
             else
             {
-                mergeVlmData(vlmData, vlm, payloadRef);
+                mergeVlmData(vlmData, vlm, payloadRef, layerList);
             }
             existingVlmsDataToBeDeleted.remove(vlmNr);
         }
@@ -259,7 +258,7 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
 
         return new LayerResult(
             rscData,
-            getChildRsc(rscData)
+            getChildRsc(rscData, layerList)
         );
     }
 
@@ -267,12 +266,13 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
      * Only returns the current rscData's resource name suffix by default
      *
      * @param rscDataRef
+     * @param layerListRef
      * @return
      * @throws InvalidKeyException
      * @throws AccessDeniedException
      */
     @SuppressWarnings("unused") // exceptions needed by implementations
-    protected List<ChildResourceData> getChildRsc(RSC rscDataRef)
+    protected List<ChildResourceData> getChildRsc(RSC rscDataRef, List<DeviceLayerKind> layerListRef)
         throws AccessDeniedException, InvalidKeyException
     {
         return Arrays.asList(new ChildResourceData(""));
@@ -294,11 +294,14 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
         return null;
     }
 
+    protected abstract boolean isExpectedToProvideDevice(RSC rsc) throws AccessDeniedException;
+
     protected abstract RSC createRscData(
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        RscLayerObject parentObjectRef
+        RscLayerObject parentObjectRef,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException;
@@ -340,7 +343,8 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
     protected abstract VLM createVlmLayerData(
         RSC rscDataRef,
         Volume vlm,
-        LayerPayload payloadRef
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException;
@@ -348,7 +352,8 @@ abstract class AbsLayerHelper<RSC extends RscLayerObject, VLM extends VlmProvide
     protected abstract void mergeVlmData(
         VLM vlmDataRef,
         Volume vlm,
-        LayerPayload payloadRef
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, InvalidKeyException, InvalidNameException, DatabaseException,
         ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException, LinStorException;

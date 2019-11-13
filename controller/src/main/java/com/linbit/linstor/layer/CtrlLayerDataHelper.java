@@ -300,22 +300,32 @@ public class CtrlLayerDataHelper
                 rscRef,
                 payloadRef,
                 currentData.rscNameSuffix,
-                parentRscObj
+                parentRscObj,
+                childList
             );
 
-            ret = result.rscObj;
-
-            for (ChildResourceData childRsc : result.childRsc)
+            if (result == null)
             {
-                result.rscObj.getChildren().add(
-                    ensureDataRec(
+                ret = null;
+            }
+            else
+            {
+                ret = result.rscObj;
+
+                for (ChildResourceData childRsc : result.childRsc)
+                {
+                    RscLayerObject childRscLayerData = ensureDataRec(
                         rscRef,
                         payloadRef,
                         childList,
                         childRsc,
                         result.rscObj
-                    )
-                );
+                    );
+                    if (childRscLayerData != null)
+                    {
+                        result.rscObj.getChildren().add(childRscLayerData);
+                    }
+                }
             }
         }
         else

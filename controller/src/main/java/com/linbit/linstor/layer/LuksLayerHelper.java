@@ -36,6 +36,8 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.List;
+
 @Singleton
 class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLayerObject, VlmDfnLayerObject>
 {
@@ -107,7 +109,8 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        RscLayerObject parentObjectRef
+        RscLayerObject parentObjectRef,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
@@ -137,7 +140,8 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
     protected LuksVlmData createVlmLayerData(
         LuksRscData luksRscData,
         Volume vlm,
-        LayerPayload payload
+        LayerPayload payload,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException
@@ -169,7 +173,12 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
     }
 
     @Override
-    protected void mergeVlmData(LuksVlmData vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
+    protected void mergeVlmData(
+        LuksVlmData vlmDataRef,
+        Volume vlmRef,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
         throws AccessDeniedException, InvalidKeyException
     {
         // nothing to do
@@ -179,5 +188,11 @@ class LuksLayerHelper extends AbsLayerHelper<LuksRscData, LuksVlmData, RscDfnLay
     protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, DatabaseException
     {
         // nothing to do
+    }
+
+    @Override
+    protected boolean isExpectedToProvideDevice(LuksRscData luksRscData)
+    {
+        return true;
     }
 }

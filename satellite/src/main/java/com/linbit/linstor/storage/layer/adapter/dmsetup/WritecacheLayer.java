@@ -50,6 +50,7 @@ public class WritecacheLayer implements DeviceLayer
      * Maps the ApiConsts.KEY_WRITECACHE_OPTS* to the actual argument keys
      */
     private static final Map<String, String> OPTS_LUT;
+    private static final String DFLT_CACHE_SIZE = "5%";
 
     private final AccessContext storDriverAccCtx;
     private final DeviceProviderMapper deviceProviderMapper;
@@ -159,15 +160,24 @@ public class WritecacheLayer implements DeviceLayer
             cacheSize = Long.parseLong(cacheSizeStr);
         }
         vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA).setUsableSize(vlmDataRef.getUsableSize());
-        vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE).setUsableSize(cacheSize);
+        VlmProviderObject cacheVlmChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
+        if (cacheVlmChild != null)
+        {
+            cacheVlmChild.setUsableSize(cacheSize);
+        }
 
         vlmData.setAllocatedSize(vlmDataRef.getUsableSize() + cacheSize);
     }
 
     @Override
-    public void process(RscLayerObject rscLayerDataRef, Collection<Snapshot> snapshotsRef, ApiCallRcImpl apiCallRcRef)
+    public LayerProcessResult process(
+        RscLayerObject rscLayerDataRef,
+        Collection<Snapshot> snapshotsRef,
+        ApiCallRcImpl apiCallRcRef
+    )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
+        LayerProcessResult ret;
         WritecacheRscData rscData = (WritecacheRscData) rscLayerDataRef;
         boolean deleteFlagSet = rscData.getResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE);
         if (deleteFlagSet)
@@ -179,18 +189,28 @@ public class WritecacheLayer implements DeviceLayer
             }
         }
 
-        resourceProcessorProvider.get().process(
+        LayerProcessResult dataResult = resourceProcessorProvider.get().process(
             rscData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA),
             snapshotsRef,
             apiCallRcRef
         );
-        resourceProcessorProvider.get().process(
-            rscData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE),
-            snapshotsRef,
-            apiCallRcRef
-        );
+        LayerProcessResult metaResult;
+        RscLayerObject cacheRscChild = rscData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
+        if (cacheRscChild == null)
+        {
+            // we might be an imaginary layer above an NVMe target which does not need a cache...
+            metaResult = LayerProcessResult.NO_DEVICES_PROVIDED;
+        }
+        else
+        {
+            metaResult = resourceProcessorProvider.get().process(
+                cacheRscChild,
+                snapshotsRef,
+                apiCallRcRef
+            );
+        }
 
-        if (!deleteFlagSet)
+        if (!deleteFlagSet && dataResult == LayerProcessResult.SUCCESS && metaResult == LayerProcessResult.SUCCESS)
         {
             for (WritecacheVlmData vlmData : rscData.getVlmLayerObjects().values())
             {
@@ -283,7 +303,10 @@ public class WritecacheLayer implements DeviceLayer
                             dmsetupOptsSb.append(value).append(" ");
                         }
                     }
-                    dmsetupOptsSb.setLength(dmsetupOptsSb.length() - 1); // cut the last " "
+                    if (dmsetupOptsSb.length() > 0)
+                    {
+                        dmsetupOptsSb.setLength(dmsetupOptsSb.length() - 1); // cut the last " "
+                    }
                     String dmsetupOptsStr = dmsetupOptsSb.toString();
                     int dmsetupOpsCounts = MkfsUtils.shellSplit(dmsetupOptsStr).size();
 
@@ -306,7 +329,13 @@ public class WritecacheLayer implements DeviceLayer
                     vlmData.setExists(true);
                 }
             }
+            ret = LayerProcessResult.SUCCESS;
         }
+        else
+        {
+            ret = LayerProcessResult.NO_DEVICES_PROVIDED;
+        }
+        return ret;
     }
 
     @Override
@@ -344,7 +373,7 @@ public class WritecacheLayer implements DeviceLayer
     private String getCacheSize(Volume vlmRef) throws InvalidKeyException, AccessDeniedException
     {
         return getPrioProps(vlmRef).getProp(
-            ApiConsts.KEY_WRITECACHE_SIZE, ApiConsts.NAMESPC_WRITECACHE
+            ApiConsts.KEY_WRITECACHE_SIZE, ApiConsts.NAMESPC_WRITECACHE, DFLT_CACHE_SIZE
         ).trim();
     }
 

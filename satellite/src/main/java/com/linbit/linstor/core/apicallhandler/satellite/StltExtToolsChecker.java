@@ -18,6 +18,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -133,7 +134,20 @@ public class StltExtToolsChecker
 
     private ExtToolsInfo getNvmeInfo()
     {
-        return infoBy3MatchGroupPattern(NVME_VERSION_PATTERN, ExtTools.NVME, false, "nvme", "version");
+        ExtToolsInfo ret;
+
+        List<String> modprobeFailures = new ArrayList<>();
+        check(modprobeFailures, "modprobe", "nvmet_rdma");
+        check(modprobeFailures, "modprobe", "nvme_rdma");
+        if (!modprobeFailures.isEmpty())
+        {
+            ret = new ExtToolsInfo(ExtTools.NVME, false, null, null, null, modprobeFailures);
+        }
+        else
+        {
+            ret = infoBy3MatchGroupPattern(NVME_VERSION_PATTERN, ExtTools.NVME, false, "nvme", "version");
+        }
+        return ret;
     }
 
     private ExtToolsInfo getSpdkInfo()
@@ -199,6 +213,15 @@ public class StltExtToolsChecker
         );
     }
 
+    private void check(List<String> resultErrors, String... commandParts)
+    {
+        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(commandParts);
+        stdoutOrErrorReason.map(
+            ignore -> true, // addAll also returns boolean, just to make the <T> of the map method happy
+            failList -> resultErrors.addAll(failList)
+        );
+
+    }
 
     private Either<Pair<String, String>, List<String>> getStdoutOrErrorReason(String... cmds)
     {

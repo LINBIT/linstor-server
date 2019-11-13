@@ -50,7 +50,7 @@ public interface DeviceLayer
      * @throws AccessDeniedException
      * @throws DatabaseException
      */
-    void process(
+    LayerProcessResult process(
         RscLayerObject rscLayerData,
         Collection<Snapshot> snapshots,
         ApiCallRcImpl apiCallRc
@@ -81,5 +81,10 @@ public interface DeviceLayer
         void notifyFreeSpacesChanged(Map<StorPool, SpaceInfo> spaceInfoMapRef);
 
         void notifyResourceFailed(Resource rsc, ApiCallRc apiCallRc);
+    }
+
+    public enum LayerProcessResult
+    {
+        SUCCESS, NO_DEVICES_PROVIDED
     }
 }

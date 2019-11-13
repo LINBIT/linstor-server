@@ -86,7 +86,6 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
         nodeId = nodeIdRef;
         drbdDbDriver = dbDriverRef;
 
-
         flags = transObjFactory.createStateFlagsImpl(
             rsc.getObjProt(),
             this,

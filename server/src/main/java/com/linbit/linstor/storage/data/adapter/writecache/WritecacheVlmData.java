@@ -19,7 +19,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -59,15 +59,17 @@ public class WritecacheVlmData extends BaseTransactionObject implements Writecac
         super(transMgrProvider);
         vlm = Objects.requireNonNull(vlmRef);
         rscData = Objects.requireNonNull(rscDataRef);
-        cacheStorPool = Objects.requireNonNull(cacheStorPoolRef);
+        cacheStorPool = cacheStorPoolRef; // might be null for peer nodes
 
         unmodStates = Collections.emptyList();
 
-        transObjs = Arrays.asList(
-            vlm,
-            rscData,
-            cacheStorPool
-        );
+        transObjs = new ArrayList<>();
+        transObjs.add(vlm);
+        transObjs.add(rscData);
+        if (cacheStorPool != null)
+        {
+            transObjs.add(cacheStorPool);
+        }
     }
 
     @Override

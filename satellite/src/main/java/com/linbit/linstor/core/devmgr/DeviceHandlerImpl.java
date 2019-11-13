@@ -36,6 +36,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.layer.DeviceLayer.LayerProcessResult;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
@@ -680,7 +681,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void process(
+    public LayerProcessResult process(
         RscLayerObject rscLayerData,
         Collection<Snapshot> snapshots,
         ApiCallRcImpl apiCallRc
@@ -695,7 +696,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             rscLayerData.getSuffixedResourceName()
         );
 
-        nextLayer.process(rscLayerData, snapshots, apiCallRc);
+        LayerProcessResult processResult = nextLayer.process(rscLayerData, snapshots, apiCallRc);
 
         if (rscLayerData.hasFailed())
         {
@@ -707,6 +708,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             nextLayer.getName(),
             rscLayerData.getSuffixedResourceName()
         );
+        return processResult;
     }
 
     public void updateGrossSizeForChildren(Resource rsc) throws AccessDeniedException, DatabaseException

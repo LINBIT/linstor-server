@@ -89,9 +89,10 @@ public class NvmeLayer implements DeviceLayer
      * @param apiCallRc ApiCallRcImpl responses, passed on to {@link DeviceHandler}
      */
     @Override
-    public void process(RscLayerObject rscData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+    public LayerProcessResult process(RscLayerObject rscData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
+        LayerProcessResult ret;
         NvmeRscData nvmeRscData = (NvmeRscData) rscData;
 
         // initiator
@@ -128,6 +129,7 @@ public class NvmeLayer implements DeviceLayer
                     nvmeRscData.getSuffixedResourceName()
                 );
             }
+            ret = LayerProcessResult.SUCCESS;
         }
         else
         {
@@ -190,8 +192,10 @@ public class NvmeLayer implements DeviceLayer
                             }
                         }
 
-                        resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+                        LayerProcessResult layerProcessResult = resourceProcessorProvider.get()
+                            .process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
 
+                        if (layerProcessResult == LayerProcessResult.SUCCESS)
                         for (NvmeVlmData nvmeVlmData : newVolumes)
                         {
                             if (nvmeRscData.isSpdk())
@@ -216,11 +220,17 @@ public class NvmeLayer implements DeviceLayer
                 else
                 {
                     // Create volumes
-                    resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
-                    nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
+                    LayerProcessResult layerProcessResult = resourceProcessorProvider.get()
+                        .process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
+                    if (layerProcessResult == LayerProcessResult.SUCCESS)
+                    {
+                        nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
+                    }
                 }
             }
+            ret = LayerProcessResult.NO_DEVICES_PROVIDED;
         }
+        return ret;
     }
 
     @Override

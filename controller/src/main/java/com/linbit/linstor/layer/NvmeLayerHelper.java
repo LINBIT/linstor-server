@@ -29,6 +29,8 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.List;
+
 @Singleton
 class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLayerObject, VlmDfnLayerObject>
 {
@@ -91,7 +93,8 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        RscLayerObject parentObjectRef
+        RscLayerObject parentObjectRef,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
@@ -118,7 +121,12 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
     }
 
     @Override
-    protected NvmeVlmData createVlmLayerData(NvmeRscData nvmeRscData, Volume vlm, LayerPayload payload)
+    protected NvmeVlmData createVlmLayerData(
+        NvmeRscData nvmeRscData,
+        Volume vlm,
+        LayerPayload payload,
+        List<DeviceLayerKind> layerListRef
+    )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException
     {
@@ -126,7 +134,12 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
     }
 
     @Override
-    protected void mergeVlmData(NvmeVlmData vlmDataRef, Volume vlmRef, LayerPayload payloadRef)
+    protected void mergeVlmData(
+        NvmeVlmData vlmDataRef,
+        Volume vlmRef,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
         throws AccessDeniedException, InvalidKeyException
     {
         // nothing to do
@@ -136,5 +149,11 @@ class NvmeLayerHelper extends AbsLayerHelper<NvmeRscData, NvmeVlmData, RscDfnLay
     protected void resetStoragePools(RscLayerObject rscDataRef) throws AccessDeniedException, DatabaseException
     {
         // nothing to do
+    }
+
+    @Override
+    protected boolean isExpectedToProvideDevice(NvmeRscData nvmeRscData) throws AccessDeniedException
+    {
+        return nvmeRscData.getResource().getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
     }
 }

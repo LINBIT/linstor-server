@@ -184,7 +184,8 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
         Resource rscRef,
         LayerPayload payloadRef,
         String rscNameSuffixRef,
-        RscLayerObject parentObjectRef
+        RscLayerObject parentObjectRef,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
@@ -248,7 +249,8 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
     protected DrbdVlmData createVlmLayerData(
         DrbdRscData drbdRscData,
         Volume vlm,
-        LayerPayload payload
+        LayerPayload payload,
+        List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException, InvalidKeyException
@@ -313,7 +315,12 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
     }
 
     @Override
-    protected void mergeVlmData(DrbdVlmData drbdVlmData, Volume vlmRef, LayerPayload payloadRef)
+    protected void mergeVlmData(
+        DrbdVlmData drbdVlmData,
+        Volume vlmRef,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
         throws AccessDeniedException, InvalidKeyException
     {
         // no-op
@@ -351,7 +358,10 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
     }
 
     @Override
-    protected List<ChildResourceData> getChildRsc(DrbdRscData rscDataRef)
+    protected List<ChildResourceData> getChildRsc(
+        DrbdRscData rscDataRef,
+        List<DeviceLayerKind> layerListRef
+    )
         throws AccessDeniedException, InvalidKeyException
     {
         boolean allVlmsUseInternalMetaData = true;
@@ -382,7 +392,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
 
         List<ChildResourceData> ret = new ArrayList<>();
         ret.add(new ChildResourceData("")); // always have data
-        if (!allVlmsUseInternalMetaData)
+        if (!allVlmsUseInternalMetaData && rsc.getStateFlags().isUnset(apiCtx, Resource.Flags.DRBD_DISKLESS))
         {
             ret.add(new ChildResourceData(DrbdRscData.SUFFIX_META, DeviceLayerKind.STORAGE));
         }
@@ -460,6 +470,12 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
             throw new ImplementationError("Invalid hardcoded property key");
         }
         return metaStorPool;
+    }
+
+    @Override
+    protected boolean isExpectedToProvideDevice(DrbdRscData drbdRscData)
+    {
+        return true;
     }
 
     private NodeId getNodeId(Integer nodeIdIntRef, DrbdRscDfnData drbdRscDfnData)

@@ -184,7 +184,11 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void process(RscLayerObject rscLayerData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+    public LayerProcessResult process(
+        RscLayerObject rscLayerData,
+        Collection<Snapshot> snapshots,
+        ApiCallRcImpl apiCallRc
+    )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
         Map<DeviceProvider, List<VlmProviderObject>> groupedVolumes =
@@ -250,6 +254,8 @@ public class StorageLayer implements DeviceLayer
                 }
             }
         }
+
+        return LayerProcessResult.SUCCESS;
     }
 
     public long getFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException

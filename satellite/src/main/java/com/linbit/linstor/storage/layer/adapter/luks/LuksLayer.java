@@ -123,9 +123,11 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public void process(RscLayerObject rscData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
+    public LayerProcessResult process(RscLayerObject rscData, Collection<Snapshot> snapshots, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
+        LayerProcessResult ret;
+
         LuksRscData luksRscData = (LuksRscData) rscData;
         boolean deleteRsc = luksRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE);
 
@@ -133,16 +135,16 @@ public class LuksLayer implements DeviceLayer
             luksRscData.getVlmLayerObjects().values().stream().collect(
                 Collectors.partitioningBy(luksVlmData ->
                 {
-                    boolean ret;
+                    boolean isDeleted;
                     try
                     {
-                        ret = deleteRsc || luksVlmData.getVolume().getFlags().isSet(sysCtx, Volume.Flags.DELETE);
+                        isDeleted = deleteRsc || luksVlmData.getVolume().getFlags().isSet(sysCtx, Volume.Flags.DELETE);
                     }
                     catch (AccessDeniedException exc)
                     {
                         throw new ImplementationError(exc);
                     }
-                    return ret;
+                    return isDeleted;
                 }
             )
         );
@@ -172,59 +174,71 @@ public class LuksLayer implements DeviceLayer
                 }
             }
 
-            resourceProcessorProvider.get().process(
+            LayerProcessResult processResult = resourceProcessorProvider.get().process(
                 rscData.getSingleChild(),
                 snapshots,
                 apiCallRc
             );
 
-            for (LuksVlmData vlmData : groupedByDeleteFlag.get(false))
+            if (processResult == LayerProcessResult.SUCCESS)
             {
-                String identifier = getIdentifier(vlmData);
-
-                boolean isOpen = cryptSetup.isOpen(identifier);
-
-                vlmData.setBackingDevice(vlmData.getSingleChild().getDevicePath());
-
-                boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
-
-                if (!alreadyLuks)
+                for (LuksVlmData vlmData : groupedByDeleteFlag.get(false))
                 {
-                    String providedDev = cryptSetup.createLuksDevice(
-                        vlmData.getBackingDevice(),
-                        vlmData.getDecryptedPassword(),
-                        identifier
+                    String identifier = getIdentifier(vlmData);
+
+                    boolean isOpen = cryptSetup.isOpen(identifier);
+
+                    vlmData.setBackingDevice(vlmData.getSingleChild().getDevicePath());
+
+                    boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
+
+                    if (!alreadyLuks)
+                    {
+                        String providedDev = cryptSetup.createLuksDevice(
+                            vlmData.getBackingDevice(),
+                            vlmData.getDecryptedPassword(),
+                            identifier
+                        );
+                        vlmData.setDevicePath(providedDev);
+                    }
+                    else
+                    {
+                        /*
+                         * TODO: this step should not be necessary
+                         * currently it is, because LayeredResourceHelper re-creates the LuksVlmData
+                         * in every iteration. Once those data live longer (or are restored from props)
+                         * the next command can be removed
+                         */
+                        vlmData.setDevicePath(cryptSetup.getLuksVolumePath(identifier));
+                    }
+
+                    if (!isOpen)
+                    {
+                        cryptSetup
+                            .openLuksDevice(vlmData.getBackingDevice(), identifier, vlmData.getDecryptedPassword());
+                    }
+
+                    vlmData.setAllocatedSize(
+                        Commands.getBlockSizeInKib(
+                            extCmdFactory.create(),
+                            vlmData.getBackingDevice()
+                        )
                     );
-                    vlmData.setDevicePath(providedDev);
-                }
-                else
-                {
-                    /*
-                     * TODO: this step should not be necessary
-                     *
-                     * currently it is, because LayeredResourceHelper re-creates the LuksVlmData
-                     * in every iteration. Once those data live longer (or are restored from props)
-                     * the next command can be removed
-                     */
-                    vlmData.setDevicePath(cryptSetup.getLuksVolumePath(identifier));
-                }
+                    vlmData.setUsableSize(
+                        Commands.getBlockSizeInKib(
+                            extCmdFactory.create(),
+                            vlmData.getDevicePath()
+                        )
+                    );
 
-                if (!isOpen)
-                {
-                    cryptSetup.openLuksDevice(vlmData.getBackingDevice(), identifier, vlmData.getDecryptedPassword());
+                    vlmData.setOpened(true);
+                    vlmData.setFailed(false);
                 }
-
-                vlmData.setAllocatedSize(Commands.getBlockSizeInKib(
-                    extCmdFactory.create(),
-                    vlmData.getBackingDevice()
-                ));
-                vlmData.setUsableSize(Commands.getBlockSizeInKib(
-                    extCmdFactory.create(),
-                    vlmData.getDevicePath()
-                ));
-
-                vlmData.setOpened(true);
-                vlmData.setFailed(false);
+                ret = LayerProcessResult.SUCCESS;
+            }
+            else
+            {
+                ret = processResult;
             }
         }
         else
@@ -238,7 +252,9 @@ public class LuksLayer implements DeviceLayer
             {
                 vlmData.setFailed(true);
             }
+            ret = LayerProcessResult.NO_DEVICES_PROVIDED;
         }
+        return ret;
     }
 
     private String getIdentifier(LuksVlmData vlmData)

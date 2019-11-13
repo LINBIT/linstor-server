@@ -8,6 +8,7 @@ import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.layer.DeviceLayer.LayerProcessResult;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 
@@ -20,7 +21,7 @@ public interface DeviceHandler
         Collection<Snapshot> snapshots
     );
 
-    void process(
+    LayerProcessResult process(
         RscLayerObject rscLayerData,
         Collection<Snapshot> snapshots,
         ApiCallRcImpl apiCallRc

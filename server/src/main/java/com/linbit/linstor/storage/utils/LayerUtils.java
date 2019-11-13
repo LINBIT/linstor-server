@@ -21,7 +21,7 @@ import java.util.TreeSet;
 
 public class LayerUtils
 {
-    private static final LayerNode TOPMOST_NODE = new LayerNode();
+    private static final LayerNode TOPMOST_NODE = new LayerNode(null);
 
     private static final Map<DeviceLayerKind, LayerNode> NODES = new HashMap<>();
 
@@ -29,14 +29,14 @@ public class LayerUtils
     {
         TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE);
 
-        NODES.get(DRBD).addChildren(LUKS, STORAGE, WRITECACHE);
+        NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE);
         NODES.get(LUKS).addChildren(STORAGE);
         NODES.get(NVME).addChildren(LUKS, STORAGE, WRITECACHE);
-        NODES.get(WRITECACHE).addChildren(LUKS, STORAGE);
+        NODES.get(WRITECACHE).addChildren(NVME, LUKS, STORAGE);
 
         NODES.get(STORAGE).setAllowedEnd(true);
 
-        ensureAllRulesEndWithStorage();
+        ensureAllRulesHaveAllowedEnd();
     }
 
     public static boolean isLayerKindStackAllowed(List<DeviceLayerKind> kindList)
@@ -73,51 +73,74 @@ public class LayerUtils
         return allowed;
     }
 
-    private static void ensureAllRulesEndWithStorage()
+    private static void ensureAllRulesHaveAllowedEnd()
     {
-        if (!NODES.get(STORAGE).successor.isEmpty())
+        Set<LayerNode> allowedEndNodes = new HashSet<>();
+        Set<LayerNode> nodesToCheck = new HashSet<>();
+        for (LayerNode node : NODES.values())
         {
-            throw new ImplementationError("STORAGE is not allowed to have children!");
+            if (node.endAllowed)
+            {
+                allowedEndNodes.add(node);
+            }
+            else
+            {
+                nodesToCheck.add(node);
+            }
         }
-        for (DeviceLayerKind kind : TOPMOST_NODE.successor.keySet())
-        {
-            ensureAllRulesEndWithStorage(new LinkedList<>(), kind);
-        }
-    }
 
-    private static void ensureAllRulesEndWithStorage(LinkedList<DeviceLayerKind> kindList, DeviceLayerKind kindRef)
-    {
-        kindList.add(kindRef);
-        LayerNode layerNode = NODES.get(kindRef);
-        if (layerNode == null)
+        int lastCheckCount = NODES.size();
+        while (lastCheckCount != nodesToCheck.size())
         {
-            throw new ImplementationError("Unknown kind: " + kindRef + " " + kindList);
+            Set<LayerNode> nextNodesToCheck = new HashSet<>();
+            for (LayerNode node : nodesToCheck)
+            {
+                boolean allowed = false;
+                for (LayerNode successor : node.successor.values())
+                {
+                    if (allowedEndNodes.contains(successor))
+                    {
+                        allowedEndNodes.add(node);
+                        allowed = true;
+                        break;
+                    }
+                }
+                if (!allowed)
+                {
+                    nextNodesToCheck.add(node);
+                }
+            }
+            nodesToCheck = nextNodesToCheck;
+            lastCheckCount = nodesToCheck.size();
         }
-        if (!kindRef.equals(STORAGE))
+
+        if (!nodesToCheck.isEmpty())
         {
-            Set<DeviceLayerKind> children = layerNode.successor.keySet();
-            if (children.isEmpty())
+            List<String> nodeDevs = new ArrayList<>();
+            for (LayerNode node : nodesToCheck)
             {
-                throw new ImplementationError(kindList + " not ending with STORAGE layer");
+                nodeDevs.add(node.kind.name());
             }
-            for (DeviceLayerKind child : children)
-            {
-                ensureAllRulesEndWithStorage(kindList, child);
-            }
+            throw new ImplementationError("Kind(s) " + nodeDevs + " do not have allowed ending");
         }
-        kindList.removeLast();
     }
 
     private static class LayerNode
     {
         private Map<DeviceLayerKind, LayerNode> successor = new HashMap<>();
         private boolean endAllowed = false;
+        private DeviceLayerKind kind;
+
+        public LayerNode(DeviceLayerKind kindRef)
+        {
+            kind = kindRef;
+        }
 
         private LayerNode addChildren(DeviceLayerKind... kinds)
         {
             for (DeviceLayerKind kind : kinds)
             {
-                successor.put(kind, NODES.computeIfAbsent(kind, (ignore) -> new LayerNode()));
+                successor.put(kind, NODES.computeIfAbsent(kind, (ignore) -> new LayerNode(kind)));
             }
             return this;
         }

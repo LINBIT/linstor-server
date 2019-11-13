@@ -54,6 +54,8 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.utils.layer.DrbdLayerUtils;
+import com.linbit.utils.AccessUtils;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
@@ -413,21 +415,32 @@ public class CtrlRscCrtApiHelper
             List<Mono<ApiCallRc>> resourceReadyResponses = new ArrayList<>();
             for (Resource rsc : deployedResources)
             {
-                NodeName nodeName = rsc.getAssignedNode().getName();
-                if (containsDrbdLayerData(rsc))
+                if (
+                    AccessUtils.execPrivileged(
+                        () -> DrbdLayerUtils.isAnyDrbdResourceExpected(apiCtx, rsc)
+                    )
+                )
                 {
-                    resourceReadyResponses.add(eventWaiter
-                        .waitForStream(
-                            resourceStateEvent.get(),
-                            ObjectIdentifier.resource(nodeName, rscName)
-                        )
-                        .skipUntil(UsageState::getResourceReady)
-                        .next()
-                        .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
-                        .onErrorResume(PeerNotConnectedException.class, ignored -> Mono.just(
-                            ApiCallRcImpl.singletonApiCallRc(ResponseUtils.makeNotConnectedWarning(nodeName))
-                        ))
-                    );
+                    NodeName nodeName = rsc.getAssignedNode().getName();
+                    if (containsDrbdLayerData(rsc))
+                    {
+                        resourceReadyResponses.add(
+                            eventWaiter
+                                .waitForStream(
+                                    resourceStateEvent.get(),
+                                    // TODO if anything is allowed above DRBD, this resource-name must be adjusted
+                                    ObjectIdentifier.resource(nodeName, rscName)
+                                )
+                                .skipUntil(UsageState::getResourceReady)
+                                .next()
+                                .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
+                                .onErrorResume(
+                                    PeerNotConnectedException.class, ignored -> Mono.just(
+                                        ApiCallRcImpl.singletonApiCallRc(ResponseUtils.makeNotConnectedWarning(nodeName))
+                                    )
+                                )
+                        );
+                    }
                 }
             }
             readyResponses = Flux.merge(resourceReadyResponses);
@@ -448,7 +461,6 @@ public class CtrlRscCrtApiHelper
             )
             .concatWith(readyResponses);
     }
-
 
     public ApiCallRc makeResourceDidNotAppearMessage(ResponseContext context)
     {

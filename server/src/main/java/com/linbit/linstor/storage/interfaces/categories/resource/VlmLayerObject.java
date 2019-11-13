@@ -31,7 +31,13 @@ public interface VlmLayerObject extends VlmProviderObject
 
     default VlmProviderObject getChildBySuffix(String suffixRef)
     {
-        return getRscLayerObject().getChildBySuffix(suffixRef).getVlmProviderObject(getVlmNr());
+        RscLayerObject childBySuffix = getRscLayerObject().getChildBySuffix(suffixRef);
+        VlmProviderObject ret = null;
+        if (childBySuffix != null)
+        {
+            ret = childBySuffix.getVlmProviderObject(getVlmNr());
+        }
+        return ret;
     }
 
     /*
