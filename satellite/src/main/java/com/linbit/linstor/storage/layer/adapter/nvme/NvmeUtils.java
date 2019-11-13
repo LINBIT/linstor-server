@@ -48,6 +48,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -189,21 +190,14 @@ public class NvmeUtils
                     errorReporter.logDebug("NVMe: creating new ports directory on target");
 
                     // get existing port directories and compute next available index
-                    OutputData output = extCmdFactory.create()
-                        .exec("/bin/bash", "-c", "ls -m --color=never " + NVME_PORTS_PATH);
-                    ExtCmdUtils.checkExitCode(
-                        output,
-                        StorageException::new,
-                        "Failed to list files!"
-                    );
-                    String outputStr = new String(output.stdoutData);
-                    if (outputStr.trim().isEmpty())
+                    String[] portDirs = new File(NVME_PORTS_PATH).list();
+                    if (portDirs.length == 0)
                     {
                         portIdx = "1";
                     }
                     else
                     {
-                        String[] portDirs = outputStr.split(", ");
+                        Arrays.sort(portDirs);
                         portIdx = Integer.toString(
                             Integer.parseInt(portDirs[portDirs.length - 1].trim()) + 1
                         );
@@ -211,9 +205,7 @@ public class NvmeUtils
 
                     Path portsPath = Paths.get(NVME_PORTS_PATH + portIdx);
                     Files.createDirectories(portsPath);
-                    Files.write(
-                        portsPath.resolve("addr_traddr"), ipAddr.getAddress().getBytes()
-                    );
+                    Files.write(portsPath.resolve("addr_traddr"), ipAddr.getAddress().getBytes());
 
                     // set the transport type and port
                     String transportType = nvmePrioProps.getProp(ApiConsts.KEY_TR_TYPE);
@@ -296,21 +288,19 @@ public class NvmeUtils
                     );
                 }
 
-                OutputData output = extCmdFactory.create().exec(
-                    "rm", NVME_PORTS_PATH + portIdx + "/subsystems/" + subsystemName
-                );
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to remove symbolic link!");
+                if (!(new File(NVME_PORTS_PATH + portIdx + "/subsystems/" + subsystemName).delete()))
+                {
+                    throw new StorageException("Failed to remove symbolic link!");
+                }
 
                 // delete ports directory
-                output = extCmdFactory.create().exec(
-                    "/bin/bash", "-c", "ls -m --color=never " + NVME_PORTS_PATH + portIdx + "/subsystems"
-                );
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to list files!");
-
-                if (new String(output.stdoutData).trim().isEmpty())
+                File subsysDir = new File(NVME_PORTS_PATH + portIdx + "/subsystems");
+                if (!subsysDir.exists())
                 {
-                    output = extCmdFactory.create().exec("rmdir", NVME_PORTS_PATH + portIdx);
-                    ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete ports directory!");
+                    if (!(new File(NVME_PORTS_PATH + portIdx).delete()))
+                    {
+                        throw new StorageException("Failed to delete ports directory!");
+                    }
                 }
 
                 for (NvmeVlmData nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
@@ -320,8 +310,10 @@ public class NvmeUtils
                 }
 
                 // delete subsystem directory
-                output = extCmdFactory.create().exec("rmdir", subsystemDirectory);
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete subsystem directory!");
+                if (!(new File(subsystemDirectory).delete()))
+                {
+                    throw new StorageException("Failed to delete subsystem directory!");
+                }
             }
             nvmeRscData.setExists(false);
         }
