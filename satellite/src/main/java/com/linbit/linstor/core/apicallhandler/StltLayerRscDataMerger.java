@@ -427,7 +427,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger
 
     @Override
     protected VlmProviderObject createSpdkVlmData(Volume vlmRef, StorageRscData storRscDataRef, StorPool storPoolRef)
-            throws DatabaseException {
+            throws DatabaseException
+    {
         return layerDataFactory.createSpdkData(vlmRef, storRscDataRef, storPoolRef);
     }
 

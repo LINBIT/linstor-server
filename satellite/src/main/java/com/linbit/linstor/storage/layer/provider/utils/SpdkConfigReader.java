@@ -59,9 +59,9 @@ public class SpdkConfigReader
                     null
                 );
             }
-
-            SpdkUtils.checkVgExists(extCmd, volumeGroup); // throws an exception
-            // if volume group does not exist
+            
+            // throws an exception if volume group does not exist
+            SpdkUtils.checkVgExists(extCmd, volumeGroup);
         }
     }
 
@@ -98,12 +98,11 @@ public class SpdkConfigReader
                 "Specify a tolerance factor within the range of 1 - " + Integer.MAX_VALUE,
                 null,
                 rangeExc
-                );
+            );
         }
         catch (InvalidKeyException exc)
         {
             throw new ImplementationError("Invalid hardcoded storPool prop key", exc);
         }
     }
-
 }

@@ -105,10 +105,10 @@ public class Commands
         return genericExecutor(
             extCmd,
             new String[]
-                {
-                    "wipefs", "-a", "-f",
-                    devicePath
-                },
+            {
+                "wipefs", "-a", "-f",
+                devicePath
+            },
             "Failed to wipeFs of " + devicePath,
             "Failed to wipeFs of " + devicePath
         );
@@ -120,28 +120,32 @@ public class Commands
     )
         throws StorageException
     {
-
-        if (devicePath.startsWith(SPDK_PATH_PREFIX)) {
-            return SpdkUtils.getBlockSizeByName(extCmd, devicePath.split(SPDK_PATH_PREFIX)[1]);
+        long sizeKiB;
+        if (devicePath.startsWith(SPDK_PATH_PREFIX))
+        {
+            sizeKiB = SpdkUtils.getBlockSizeByName(extCmd, devicePath.split(SPDK_PATH_PREFIX)[1]);
         }
-
-        OutputData output = genericExecutor(
-            extCmd,
-            new String[]
+        else
+        {
+            OutputData output = genericExecutor(
+                extCmd,
+                new String[]
                 {
                     "blockdev",
                     "--getsize64",
                     devicePath
                 },
-            "Failed to get block size of " + devicePath,
-            "Failed to get block size of " + devicePath
-        );
-        String outRaw = new String(output.stdoutData);
-        return SizeConv.convert(
-            Long.parseLong(outRaw.trim()),
-            SizeUnit.UNIT_B,
-            SizeUnit.UNIT_KiB
-        );
+                "Failed to get block size of " + devicePath,
+                "Failed to get block size of " + devicePath
+            );
+            String outRaw = new String(output.stdoutData);
+            sizeKiB = SizeConv.convert(
+                Long.parseLong(outRaw.trim()),
+                SizeUnit.UNIT_B,
+                SizeUnit.UNIT_KiB
+            );
+        }
+        return sizeKiB;
     }
 
     public static class NoRetryHandler implements RetryHandler

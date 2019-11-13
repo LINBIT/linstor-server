@@ -76,43 +76,47 @@ public class SpdkUtils
         final HashMap<String, LvsInfo> infoByIdentifier = new HashMap<>();
 
         Iterator<JsonNode> elements = getJsonElements(SpdkCommands.lvs(ec));
-        while (elements.hasNext()) {
+        while (elements.hasNext())
+        {
             JsonNode element = elements.next();
 
-            if (!element.path(SPDK_PRODUCK_NAME).asText().equals(SPDK_LOGICAL_VOLUME)) {
-                continue;
-            }
-
-            final String vgStr = SpdkUtils.getVgNameFromUuid(ec, element.path(SPDK_DRIVER_SPECIFIC).path(SPDK_LVOL).path(SPDK_LVOL_STORE_UUID).asText());
-            if (!volumeGroups.contains(vgStr)) {
-                continue;
-            }
-
-            Iterator<JsonNode> aliases = element.path(SPDK_ALIASES).elements();
-            String path_alias = "";
-            while(aliases.hasNext()){
-                JsonNode alias = aliases.next();
-                path_alias = alias.asText();
-            }
-
-            final String identifier = path_alias.split("/")[1]; // 0 is Volume Group, 1 is Logical Volume
-            final String path = String.format(SPDK_PATH_PREFIX + "%s/%s", vgStr, identifier);
-            final long size = element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_NUM_BLOCKS).asLong();
-            final float dataPercent = SPDK_DEFAULT_DATA_PERCENT;
-            final String attributes = null;
-            final String thinPoolStr = null;
-
-                final LvsInfo state = new LvsInfo(
-                    vgStr,
-                    thinPoolStr,
-                    identifier,
-                    path,
-                    size,
-                    dataPercent,
-                    attributes
+            if (element.path(SPDK_PRODUCK_NAME).asText().equals(SPDK_LOGICAL_VOLUME))
+            {
+                final String vgStr = SpdkUtils.getVgNameFromUuid(
+                    ec,
+                    element.path(SPDK_DRIVER_SPECIFIC).path(SPDK_LVOL).path(SPDK_LVOL_STORE_UUID).asText()
                 );
-                infoByIdentifier.put(vgStr + File.separator + identifier, state);
+                if (volumeGroups.contains(vgStr))
+                {
+                    Iterator<JsonNode> aliases = element.path(SPDK_ALIASES).elements();
+                    String path_alias = "";
+
+                    while (aliases.hasNext())
+                    {
+                        JsonNode alias = aliases.next();
+                        path_alias = alias.asText();
+                    }
+
+                    final String identifier = path_alias.split("/")[1]; // 0 is Volume Group, 1 is Logical Volume
+                    final String path = String.format(SPDK_PATH_PREFIX + "%s/%s", vgStr, identifier);
+                    final long size = element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_NUM_BLOCKS).asLong();
+                    final float dataPercent = SPDK_DEFAULT_DATA_PERCENT;
+                    final String attributes = null;
+                    final String thinPoolStr = null;
+
+                    final LvsInfo state = new LvsInfo(
+                        vgStr,
+                        thinPoolStr,
+                        identifier,
+                        path,
+                        size,
+                        dataPercent,
+                        attributes
+                    );
+                    infoByIdentifier.put(vgStr + File.separator + identifier, state);
+                }
             }
+        }
 
         return infoByIdentifier;
     }
@@ -123,15 +127,16 @@ public class SpdkUtils
         final Map<String, Long> result = new HashMap<>();
 
         Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
-        while (elements.hasNext()) {
+        while (elements.hasNext())
+        {
             JsonNode element = elements.next();
-            if (!volumeGroups.contains(element.path(SPDK_NAME).asText())) {
-                continue;
-            }
-            result.put(
+            if (volumeGroups.contains(element.path(SPDK_NAME).asText()))
+            {
+                result.put(
                     element.path(SPDK_NAME).asText(),
                     element.path(SPDK_BLOCK_SIZE).asLong() //in KiB
-            );
+                );
+            }
         }
         return result;
     }
@@ -139,7 +144,8 @@ public class SpdkUtils
     public static Long getBlockSizeByName(ExtCmd extCmd, String name) throws StorageException
     {
         Iterator<JsonNode> elements = getJsonElements(SpdkCommands.lvsByName(extCmd, name));
-        while (elements.hasNext()) {
+        while (elements.hasNext())
+        {
             JsonNode element = elements.next();
             return element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_NUM_BLOCKS).asLong();
         }
@@ -151,16 +157,16 @@ public class SpdkUtils
         final Map<String, Long> result = new HashMap<>();
 
         Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
-        while (elements.hasNext()) {
+        while (elements.hasNext())
+        {
             JsonNode element = elements.next();
-            if (!volumeGroups.contains(element.path(SPDK_NAME).asText())) {
-                continue;
-            }
-
-            result.put(
+            if (volumeGroups.contains(element.path(SPDK_NAME).asText()))
+            {
+                result.put(
                     element.path(SPDK_NAME).asText(),
                     element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_TOTAL_DATA_CLUSTERS).asLong() // KiB
-            );
+                );
+            }
         }
         return result;
     }
@@ -170,30 +176,31 @@ public class SpdkUtils
         final Map<String, Long> result = new HashMap<>();
 
         Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
-        while (elements.hasNext()) {
+        while (elements.hasNext())
+        {
             JsonNode element = elements.next();
-
-            if (!volumeGroups.contains(element.path(SPDK_NAME).asText())) {
-                continue;
-            }
-            result.put(
+            if (volumeGroups.contains(element.path(SPDK_NAME).asText()))
+            {
+                result.put(
                     element.path(SPDK_NAME).asText(),
                     element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_FREE_CLUSTERS).asLong() //bytes to KiB
-            );
+                );
+            }
         }
         return result;
     }
-
 
     public static void checkVgExists(ExtCmd extCmd, String volumeGroup) throws StorageException
     {
         boolean found = false;
 
         Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
-        while (elements.hasNext()) {
+        while (elements.hasNext())
+        {
             JsonNode element = elements.next();
 
-            if (element.path(SPDK_NAME).asText().equals(volumeGroup.trim())) {
+            if (element.path(SPDK_NAME).asText().equals(volumeGroup.trim()))
+            {
                 found = true;
                 break;
             }
@@ -206,63 +213,78 @@ public class SpdkUtils
 
     public static String getVgNameFromUuid(ExtCmd extCmd, String volumeGroup) throws StorageException
     {
+        String vgName = null;
         Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
-        while (elements.hasNext()) {
+        while (elements.hasNext())
+        {
             JsonNode element = elements.next();
 
-            if (element.path(SPDK_UUID).asText().equals(volumeGroup.trim())) {
-                return element.path(SPDK_NAME).asText();
+            if (element.path(SPDK_UUID).asText().equals(volumeGroup.trim()))
+            {
+                vgName = element.path(SPDK_NAME).asText();
+                break;
             }
         }
-        throw new StorageException("getVgNameFromUuid Volume group '" + volumeGroup + "' not found");
+        if (vgName == null)
+        {
+            throw new StorageException("getVgNameFromUuid Volume group '" + volumeGroup + "' not found");
+        }
+        return vgName;
     }
 
     public static boolean checkTargetExists(ExtCmd extCmd, String nqn) throws StorageException
     {
+        boolean targetExists = false;
         Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getNvmfSubsystems(extCmd));
-        while (elements.hasNext()) {
+        while (elements.hasNext() && !targetExists)
+        {
             JsonNode element = elements.next();
 
-            if (element.path(SPDK_NQN).asText().equals(nqn)) {
-                return true;
+            if (element.path(SPDK_NQN).asText().equals(nqn))
+            {
+                targetExists = true;
             }
         }
-        return false;
+        return targetExists;
     }
 
     public static boolean checkNamespaceExists(ExtCmd extCmd, String nqn, int nsid) throws StorageException
     {
+        boolean namespaceExists = false;
         Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getNvmfSubsystems(extCmd));
-        while (elements.hasNext()) {
+        while (elements.hasNext() && !namespaceExists)
+        {
             JsonNode element = elements.next();
 
-            if (!element.path(SPDK_NQN).asText().equals(nqn)) {
-                continue;
-            }
-
-            Iterator<JsonNode> namespaces = element.path(SPDK_NAMESPACES).elements();
-            while (namespaces.hasNext()) {
-                JsonNode namespace = namespaces.next();
-                if (namespace.path(SPDK_NSID).asInt() == nsid)
+            if (element.path(SPDK_NQN).asText().equals(nqn))
+            {
+                Iterator<JsonNode> namespaces = element.path(SPDK_NAMESPACES).elements();
+                while (namespaces.hasNext() && !namespaceExists)
                 {
-                    return true;
+                    JsonNode namespace = namespaces.next();
+                    if (namespace.path(SPDK_NSID).asInt() == nsid)
+                    {
+                        namespaceExists = true;
+                    }
                 }
             }
         }
-        return false;
+        return namespaceExists;
     }
 
     private static Iterator<JsonNode> getJsonElements(OutputData output)
-            throws StorageException
+        throws StorageException
     {
         JsonNode rootNode = null;
         ObjectMapper objectMapper = new ObjectMapper();
 
-        try {
+        try
+        {
             rootNode = objectMapper.readTree(output.stdoutData);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new StorageException("Exception while parsing SPDK response");
+        }
+        catch (IOException ioExc)
+        {
+            throw new StorageException("I/O error while parsing SPDK response");
         }
 
         return rootNode.elements();

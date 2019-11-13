@@ -366,19 +366,19 @@ public class LayerDataFactory
     }
 
     public SpdkData createSpdkData(
-            Volume vlm,
-            StorageRscData rscData,
-            StorPool storPoolRef
+        Volume vlm,
+        StorageRscData rscData,
+        StorPool storPoolRef
     )
             throws DatabaseException
     {
         SpdkData spdkData = new SpdkData(
-                vlm,
-                rscData,
-                storPoolRef,
-                storageDbDriver,
-                transObjFactory,
-                transMgrProvider
+            vlm,
+            rscData,
+            storPoolRef,
+            storageDbDriver,
+            transObjFactory,
+            transMgrProvider
         );
         storageDbDriver.persist(spdkData);
         return spdkData;

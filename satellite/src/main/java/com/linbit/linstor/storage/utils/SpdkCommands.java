@@ -14,13 +14,15 @@ import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericEx
 
 public class SpdkCommands
 {
-    public static final String SPDK_RPC_SCRIPT = "rpc.py"; // requires "/usr/bin/rpc.py" symlink to "spdk-19.07/scripts/rpc.py" script in host OS
+     // requires "/usr/bin/rpc.py" symlink to "spdk-19.07/scripts/rpc.py" script in host OS
+    public static final String SPDK_RPC_SCRIPT = "rpc.py";
 
     public static OutputData lvs(ExtCmd extCmd) throws StorageException
     {
         return genericExecutor(
             extCmd,
-            new String[] {
+            new String[]
+            {
                 SPDK_RPC_SCRIPT,
                 "get_bdevs"
             },
@@ -33,11 +35,12 @@ public class SpdkCommands
     {
         return genericExecutor(
                 extCmd,
-                new String[] {
-                        SPDK_RPC_SCRIPT,
-                        "get_bdevs",
-                        "--name",
-                        name
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "get_bdevs",
+                    "--name",
+                    name
                 },
                 "Failed to list bdevs",
                 "Failed to query 'get_bdevs' info"
@@ -48,7 +51,8 @@ public class SpdkCommands
     {
         return genericExecutor(
             extCmd,
-            new String[] {
+            new String[]
+            {
                 SPDK_RPC_SCRIPT,
                 "get_lvol_stores"
             },
@@ -68,8 +72,9 @@ public class SpdkCommands
     {
         return genericExecutor(
             extCmd,
-            new String[] {
-                 SPDK_RPC_SCRIPT,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
                 "construct_lvol_bdev",
                 vlmId,
                 String.valueOf(size/1024), // KiB
@@ -77,7 +82,7 @@ public class SpdkCommands
             },
             "Failed to create lvol bdev",
             "Failed to create new lvol bdev'" + vlmId + "' in lovl store '" + volumeGroup +
-                "' with size " + size + "mb"
+            "' with size " + size + "mb"
         );
     }
 
@@ -94,19 +99,20 @@ public class SpdkCommands
         return genericExecutor(
             extCmd,
             StringUtils.concat(
-                    new String[] {
-                        SPDK_RPC_SCRIPT,
-                        "construct_lvol_bdev",
-                        vlmId,
-                        String.valueOf(size/1024), // KiB
-                        "--lvs-name", volumeGroup,
-                        "--thin-provision"
-                    },
-                    additionalParameters
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "construct_lvol_bdev",
+                    vlmId,
+                    String.valueOf(size/1024), // KiB
+                    "--lvs-name", volumeGroup,
+                    "--thin-provision"
+                },
+                additionalParameters
             ),
             "Failed to create lvol bdev",
             "Failed to create new lvol bdev'" + vlmId + "' in lovl store '" + volumeGroup +
-                    "' with size " + size + "mb"
+            "' with size " + size + "mb"
         );
     }
 
@@ -115,7 +121,8 @@ public class SpdkCommands
     {
         return genericExecutor(
             extCmd,
-            new String[] {
+            new String[]
+            {
                 SPDK_RPC_SCRIPT,
                 "destroy_lvol_bdev",
                 volumeGroup + File.separator + vlmId
@@ -148,7 +155,8 @@ public class SpdkCommands
     {
         return genericExecutor(
             extCmd,
-            new String[] {
+            new String[]
+            {
                 SPDK_RPC_SCRIPT,
                 "rename_lvol_bdev",
                 volumeGroup + File.separator + vlmCurrentId,
@@ -187,56 +195,54 @@ public class SpdkCommands
             throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[] {
-                        SPDK_RPC_SCRIPT,
-                        "nvmf_create_transport",
-                        "--trtype",
-                        type
-                },
-                "Failed to create transport'" + type,
-                "Failed to create transport' '" + type + "'",
-
-
-        new Commands.SkipExitCodeRetryHandler()
-        {
-            @Override
-            public boolean retry(OutputData outputData)
+            extCmd,
+            new String[]
             {
-                return false;
-            }
-
-            @Override
-            public boolean skip(OutputData outData)
+                SPDK_RPC_SCRIPT,
+                "nvmf_create_transport",
+                "--trtype",
+                type
+            },
+            "Failed to create transport'" + type,
+            "Failed to create transport' '" + type + "'",
+            new Commands.SkipExitCodeRetryHandler()
             {
-                boolean skip = false;
-
-                byte[] stdoutData = outData.stdoutData;
-                String output = new String(stdoutData);
-
-                if (output.contains("already exists"))
+                @Override
+                public boolean retry(OutputData outputData)
                 {
-                    // transport type RDMA is already present
-                    skip = true;
+                    return false;
                 }
-                return skip;
+
+                @Override
+                public boolean skip(OutputData outData)
+                {
+                    boolean skip = false;
+
+                    byte[] stdoutData = outData.stdoutData;
+                    String output = new String(stdoutData);
+
+                    if (output.contains("already exists"))
+                    {
+                        // transport type RDMA is already present
+                        skip = true;
+                    }
+                    return skip;
+                }
             }
-        }
         );
     }
 
     public static OutputData getNvmfSubsystems(ExtCmd extCmd) throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[] {
-                        SPDK_RPC_SCRIPT,
-                        "get_nvmf_subsystems"
-                },
-                "Failed to query nvmf subsystems",
-                "Failed to query nvmf subsystems"
+            extCmd,
+            new String[]
+            {
+                    SPDK_RPC_SCRIPT,
+                    "get_nvmf_subsystems"
+            },
+            "Failed to query nvmf subsystems",
+            "Failed to query nvmf subsystems"
         );
     }
-
-
 }

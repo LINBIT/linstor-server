@@ -705,12 +705,20 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private void waitUntilDeviceCreated(String devicePath, long waitTimeoutAfterCreateMillis)
         throws StorageException
     {
-        if (devicePath.startsWith(SPDK_PATH_PREFIX)) {
+        if (!devicePath.startsWith(SPDK_PATH_PREFIX))
+        {
+            waitUntilNonSpdkCreated(devicePath, waitTimeoutAfterCreateMillis);
+        }
+        else
+        {
             // wait not required, just confirming LV existence
             SpdkCommands.lvsByName(extCmdFactory.create(), devicePath.split(SPDK_PATH_PREFIX)[1]);
-            return;
         }
+    }
 
+    private void waitUntilNonSpdkCreated(String devicePath, long waitTimeoutAfterCreateMillis)
+        throws StorageException
+    {
         final Object syncObj = new Object();
         FileObserver fileObserver = new FileObserver()
         {

@@ -269,16 +269,16 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
 
         vlmData.setExists(false);
 
-        //SPDK by default wipes a lvol bdev during deletion, unless this option was disabled in lvol store
+        // SPDK by default wipes a lvol bdev during deletion, unless this option was disabled in lvol store
         try
         {
             SpdkCommands.delete(
-                    extCmdFactory.create(),
-                    volumeGroup,
-                    newSpdkId
+                extCmdFactory.create(),
+                volumeGroup,
+                newSpdkId
             );
         }
-                catch (StorageException exc)
+        catch (StorageException exc)
         {
             errorReporter.reportError(exc);
         }
@@ -338,9 +338,9 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData>
         try
         {
             volumeGroup = DeviceLayerUtils.getNamespaceStorDriver(
-                    storPool.getProps(storDriverAccCtx)
-                )
-                .getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
+                storPool.getProps(storDriverAccCtx)
+            )
+            .getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
         }
         catch (InvalidKeyException | AccessDeniedException exc)
         {

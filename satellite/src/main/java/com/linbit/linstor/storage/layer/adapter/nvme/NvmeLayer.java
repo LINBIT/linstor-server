@@ -93,25 +93,26 @@ public class NvmeLayer implements DeviceLayer
     {
         NvmeRscData nvmeRscData = (NvmeRscData) rscData;
 
-        // initiator
         if (nvmeRscData.isDiskless(sysCtx))
         {
+            // Initiator
+
             // reading a NVMe Target resource associated with a NVMe Initiator to determine if they belong to SPDK
             final Resource targetRsc = nvmeUtils.getTargetResource(nvmeRscData, sysCtx);
             nvmeRscData.setSpdk(nvmeUtils.isSpdkResource(targetRsc.getLayerData(sysCtx)));
 
             nvmeUtils.setDevicePaths(nvmeRscData, nvmeRscData.exists());
 
-            // disconnect
             if (nvmeRscData.exists() && nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
             {
+                // disconnect
                 nvmeUtils.disconnect(nvmeRscData);
             }
-            // connect
-            else if (!nvmeRscData.exists() &&
-                !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE)
-            )
+            else
+            if (!nvmeRscData.exists() &&
+                !nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
             {
+                // connect
                 nvmeUtils.connect(nvmeRscData, sysCtx);
                 if (!nvmeUtils.setDevicePaths(nvmeRscData, true))
                 {
@@ -126,9 +127,10 @@ public class NvmeLayer implements DeviceLayer
                 );
             }
         }
-        // target
         else
         {
+            // Target
+
             // SPDK is only used if all involved volumes belong to SPDK
             nvmeRscData.setSpdk(nvmeUtils.isSpdkResource(nvmeRscData));
 
@@ -136,9 +138,9 @@ public class NvmeLayer implements DeviceLayer
 
             if (nvmeRscData.getResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
             {
-                // delete target resource
                 if (nvmeRscData.exists())
                 {
+                    // delete target resource
                     nvmeUtils.deleteTargetRsc(nvmeRscData, sysCtx);
                     resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                 }
@@ -152,9 +154,9 @@ public class NvmeLayer implements DeviceLayer
             }
             else
             {
-                // update volumes
                 if (nvmeRscData.exists())
                 {
+                    // Update volumes
                     final String subsystemName = nvmeUtils.getNvmeSubsystemPrefix(nvmeRscData)
                             + nvmeRscData.getSuffixedResourceName();
                     final String subsystemDirectory = NVME_SUBSYSTEMS_PATH + subsystemName;
@@ -209,9 +211,9 @@ public class NvmeLayer implements DeviceLayer
                         throw new ImplementationError(exc);
                     }
                 }
-                // create
                 else
                 {
+                    // Create volumes
                     resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshots, apiCallRc);
                     nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
                 }

@@ -183,12 +183,12 @@ public class StorageRscPojo implements RscLayerDataApi
     public static class SpdkVlmPojo extends AbsVlmProviderPojo
     {
         public SpdkVlmPojo(
-                int vlmNrRef,
-                String devicePathRef,
-                long allocatedSizeRef,
-                long usableSizeRef,
-                String diskStateRef,
-                StorPoolApi storPoolApiRef
+            int vlmNrRef,
+            String devicePathRef,
+            long allocatedSizeRef,
+            long usableSizeRef,
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
         )
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, SPDK);
