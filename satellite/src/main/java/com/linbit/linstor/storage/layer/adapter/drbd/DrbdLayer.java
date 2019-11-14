@@ -1241,7 +1241,7 @@ public class DrbdLayer implements DeviceLayer
             ResourceDefinition rscDfn = rsc.getDefinition();
 
             if (rscDfn.getProps(workerCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
-                    rsc.getStateFlags().isUnset(workerCtx, Resource.Flags.DRBD_DISKLESS)
+                    !rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DRBD_DISKLESS)
             )
             {
                 boolean alreadyInitialized = !allVlmsMetaDataNew(drbdRscData);

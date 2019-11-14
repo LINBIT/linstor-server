@@ -256,8 +256,8 @@ public class ResourceDefinition extends BaseTransactionObject
         {
             StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
             if (
-                stateFlags.isUnset(accCtx, Resource.Flags.DRBD_DISKLESS) &&
-                stateFlags.isUnset(accCtx, Resource.Flags.NVME_INITIATOR))
+                !stateFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS) &&
+                !stateFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR))
             {
                 count++;
             }

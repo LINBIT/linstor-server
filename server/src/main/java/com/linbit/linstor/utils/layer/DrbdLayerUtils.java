@@ -42,7 +42,9 @@ public class DrbdLayerUtils
         }
         else
         {
-            if (rscFlags.isUnset(accCtx, Resource.Flags.NVME_INITIATOR))
+            boolean hasNvmeBelow = !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.NVME).isEmpty();
+            boolean isNvmeTarget = !rscFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR);
+            if (hasNvmeBelow && isNvmeTarget)
             {
                 // target NVME will never return a device, so drbd will never exist
                 isDevExpected = false;

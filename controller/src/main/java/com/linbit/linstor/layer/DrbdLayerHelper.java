@@ -392,7 +392,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
 
         List<ChildResourceData> ret = new ArrayList<>();
         ret.add(new ChildResourceData("")); // always have data
-        if (!allVlmsUseInternalMetaData && rsc.getStateFlags().isUnset(apiCtx, Resource.Flags.DRBD_DISKLESS))
+        if (!allVlmsUseInternalMetaData && !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS))
         {
             ret.add(new ChildResourceData(DrbdRscData.SUFFIX_META, DeviceLayerKind.STORAGE));
         }
@@ -450,7 +450,7 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
             String metaStorPoolStr = prioProps.getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
             if (
                 isExternalMetaDataPool(metaStorPoolStr) &&
-                rsc.getStateFlags().isUnset(accCtx, Resource.Flags.DRBD_DISKLESS)
+                !rsc.getStateFlags().isSet(accCtx, Resource.Flags.DRBD_DISKLESS)
             )
             {
                 metaStorPool = node.getStorPool(accCtx, new StorPoolName(metaStorPoolStr));
