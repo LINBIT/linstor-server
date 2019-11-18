@@ -15,7 +15,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.TcpConnectorPeer.ReadState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import java.nio.channels.*;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -482,17 +481,26 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         ListIterator<Peer> listIterator = peersWithFinishedMessages.listIterator();
                         while (listIterator.hasNext())
                         {
-                            boolean finished = true;
-                            Peer peer = listIterator.next();
-                            if (peer.hasNextMsgIn())
+                            try
                             {
-                                msgProcessor.processMessage(peer.nextCurrentMsgIn(), this, peer);
-                                finished = false;
-                            }
+                                boolean finished = true;
+                                Peer peer = listIterator.next();
+                                if (peer.hasNextMsgIn())
+                                {
+                                    msgProcessor.processMessage(peer.nextCurrentMsgIn(), this, peer);
+                                    finished = false;
+                                }
 
-                            if (finished)
+                                if (finished)
+                                {
+                                    listIterator.remove();
+                                }
+                            }
+                            catch (CancelledKeyException ignored)
                             {
-                                listIterator.remove();
+                                // Selection key no longer valid
+                                // Cleaned up by the next select() or selectNow() operation
+
                             }
                         }
 
@@ -503,7 +511,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         serverSelector.selectNow();
                     }
                 }
-                catch (CancelledKeyException exc)
+                catch (CancelledKeyException ignored)
                 {
                     // Selection key no longer valid
                     // Cleaned up by the next select() or selectNow() operation
@@ -981,11 +989,19 @@ public class TcpConnectorService implements Runnable, TcpConnector
         if (client != null)
         {
             connObserver.connectionClosed(client, allowReconnect, shuttingDown);
-            if (client.isConnected(false))
+            try
             {
-                client.connectionClosing();
+                if (client.isConnected(false))
+                {
+                    client.connectionClosing();
+                }
+            }
+            catch (CancelledKeyException ignored)
+            {
+                // connectionClosing() calls interestOps on the selection Key, which may fail
             }
         }
+
         try
         {
             SelectableChannel channel = currentKey.channel();
