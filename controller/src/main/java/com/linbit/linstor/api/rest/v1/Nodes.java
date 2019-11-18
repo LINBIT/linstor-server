@@ -156,21 +156,27 @@ public class Nodes
         @PathParam("nodeName") String nodeName,
         String jsonData
     )
-        throws IOException
     {
-        JsonGenTypes.NodeModify modifyData = objectMapper.readValue(jsonData, JsonGenTypes.NodeModify.class);
+        try
+        {
+            JsonGenTypes.NodeModify modifyData = objectMapper.readValue(jsonData, JsonGenTypes.NodeModify.class);
 
-        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyNode(
-            null,
-            nodeName,
-            modifyData.node_type,
-            modifyData.override_props,
-            new HashSet<>(modifyData.delete_props),
-            new HashSet<>(modifyData.delete_namespaces)
-        )
-        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_NODE, request));
+            Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyNode(
+                null,
+                nodeName,
+                modifyData.node_type,
+                modifyData.override_props,
+                new HashSet<>(modifyData.delete_props),
+                new HashSet<>(modifyData.delete_namespaces)
+            )
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_NODE, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 
     @DELETE

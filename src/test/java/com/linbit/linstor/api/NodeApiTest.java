@@ -366,14 +366,18 @@ public class NodeApiTest extends ApiTestBase
         @Override
         public ApiCallRc executeApiCall()
         {
-            return nodeApiCallHandlerProvider.get().modify(
+            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            nodeApiCallHandlerProvider.get().modify(
                 nodeUuid,
                 nodeName,
                 nodeType,
                 overrideProps,
                 deletePropKeys,
                 deletePropNamespaces
-            ).blockFirst();
+            )
+            .subscriberContext(subscriberContext())
+            .toStream().forEach(apiCallRc::addEntries);
+            return apiCallRc;
         }
     }
 
