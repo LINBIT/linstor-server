@@ -15,6 +15,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.TcpConnectorPeer.ReadState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import java.nio.channels.*;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -452,53 +453,62 @@ public class TcpConnectorService implements Runnable, TcpConnector
         {
             try
             {
-                if (peersWithFinishedMessages.isEmpty())
+                try
                 {
-                    // Block until I/O operations are ready to be performed
-                    // on at least one of the channels, or until the selection
-                    // operation is interrupted (e.g., using wakeup())
-                    int selectCount = serverSelector.select();
-
-                    synchronized (syncObj)
+                    if (peersWithFinishedMessages.isEmpty())
                     {
-                        // wait for the syncObj to get released
+                        // Block until I/O operations are ready to be performed
+                        // on at least one of the channels, or until the selection
+                        // operation is interrupted (e.g., using wakeup())
+                        int selectCount = serverSelector.select();
+
+                        synchronized (syncObj)
+                        {
+                            // wait for the syncObj to get released
+                        }
+
+                        // Ensure making some progress in the case that
+                        // the blocking select() call is repeatedly interrupted
+                        // (e.g., using wakeup()) before having selected any
+                        // channels
+                        if (selectCount <= 0)
+                        {
+                            serverSelector.selectNow();
+                        }
                     }
-
-                    // Ensure making some progress in the case that
-                    // the blocking select() call is repeatedly interrupted
-                    // (e.g., using wakeup()) before having selected any
-                    // channels
-                    if (selectCount <= 0)
+                    else
                     {
+
+                        ListIterator<Peer> listIterator = peersWithFinishedMessages.listIterator();
+                        while (listIterator.hasNext())
+                        {
+                            boolean finished = true;
+                            Peer peer = listIterator.next();
+                            if (peer.hasNextMsgIn())
+                            {
+                                msgProcessor.processMessage(peer.nextCurrentMsgIn(), this, peer);
+                                finished = false;
+                            }
+
+                            if (finished)
+                            {
+                                listIterator.remove();
+                            }
+                        }
+
+                        // we tried to process one message from each waiting peer.
+                        // now we see if we have new operations (read, write, accept, connect)
+                        // if peers still have more messages, they have to wait until the next
+                        // loop-cycle (fair scheduling).
                         serverSelector.selectNow();
                     }
                 }
-                else
+                catch (CancelledKeyException exc)
                 {
-
-                    ListIterator<Peer> listIterator = peersWithFinishedMessages.listIterator();
-                    while (listIterator.hasNext())
-                    {
-                        boolean finished = true;
-                        Peer peer = listIterator.next();
-                        if (peer.hasNextMsgIn())
-                        {
-                            msgProcessor.processMessage(peer.nextCurrentMsgIn(), this, peer);
-                            finished = false;
-                        }
-
-                        if (finished)
-                        {
-                            listIterator.remove();
-                        }
-                    }
-
-                    // we tried to process one message from each waiting peer.
-                    // now we see if we have new operations (read, write, accept, connect)
-                    // if peers still have more messages, they have to wait until the next
-                    // loop-cycle (fair scheduling).
-                    serverSelector.selectNow();
+                    // Selection key no longer valid
+                    // Cleaned up by the next select() or selectNow() operation
                 }
+
 
                 Iterator<SelectionKey> keysIter = serverSelector.selectedKeys().iterator();
                 while (keysIter.hasNext())
