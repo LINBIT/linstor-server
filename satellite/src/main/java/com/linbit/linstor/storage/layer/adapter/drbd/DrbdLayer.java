@@ -196,7 +196,12 @@ public class DrbdLayer implements DeviceLayer
                 drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
 
                 drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(netSize);
-                drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META).setUsableSize(extMdSize);
+                VlmProviderObject metaChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META);
+                if (metaChild != null)
+                {
+                    // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
+                    metaChild.setUsableSize(extMdSize);
+                }
             }
             else
             {

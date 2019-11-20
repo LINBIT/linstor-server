@@ -6,6 +6,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -174,7 +175,16 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         }
         else
         {
-            metaDiskPath = getChildBySuffix(DrbdRscData.SUFFIX_META).getDevicePath();
+            VlmProviderObject childVlm = getChildBySuffix(DrbdRscData.SUFFIX_META);
+            if (childVlm != null)
+            {
+                // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
+                metaDiskPath = childVlm.getDevicePath();
+            }
+            else
+            {
+                metaDiskPath = null;
+            }
         }
         return metaDiskPath;
     }

@@ -392,7 +392,12 @@ public class DrbdLayerHelper extends AbsLayerHelper<DrbdRscData, DrbdVlmData, Dr
 
         List<ChildResourceData> ret = new ArrayList<>();
         ret.add(new ChildResourceData("")); // always have data
-        if (!allVlmsUseInternalMetaData && !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS))
+
+        boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
+        boolean isNvmeInitiator = rscDataRef.getResource().getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        boolean isDrbdDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
+
+        if (!allVlmsUseInternalMetaData && !isDrbdDiskless && (!isNvmeBelow || isNvmeInitiator))
         {
             ret.add(new ChildResourceData(DrbdRscData.SUFFIX_META, DeviceLayerKind.STORAGE));
         }
