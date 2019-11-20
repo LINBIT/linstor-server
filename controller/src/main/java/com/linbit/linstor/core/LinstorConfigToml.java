@@ -116,7 +116,13 @@ public class LinstorConfigToml
         private String connection_url = "jdbc:h2:/var/lib/linstor/linstordb";
         private String ca_certificate;
         private String client_certificate;
+
+        /**
+         * Typo in linstor version 1.2.1
+         */
+        @Deprecated
         private String client_key_pcks8_pem;
+        private String client_key_pkcs8_pem;
         private String client_key_password;
 
         public String getUser()
@@ -144,9 +150,9 @@ public class LinstorConfigToml
             return client_certificate;
         }
 
-        public String getClientKeyPCKS8PEM()
+        public String getClientKeyPKCS8PEM()
         {
-            return client_key_pcks8_pem;
+            return client_key_pkcs8_pem != null ? client_key_pkcs8_pem : client_key_pcks8_pem;
         }
 
         public String getClientKeyPassword()

@@ -151,13 +151,13 @@ public class DbEtcd implements ControllerETCDDatabase
                 }
 
                 if (linstorConfigToml.getDB().getClientCertificate() != null &&
-                    linstorConfigToml.getDB().getClientKeyPCKS8PEM() != null)
+                    linstorConfigToml.getDB().getClientKeyPKCS8PEM() != null)
                 {
                     builder.withTlsConfig(sslContextBuilder ->
                         sslContextBuilder
                             .keyManager(
                                 new File(linstorConfigToml.getDB().getClientCertificate()),
-                                new File(linstorConfigToml.getDB().getClientKeyPCKS8PEM()),
+                                new File(linstorConfigToml.getDB().getClientKeyPKCS8PEM()),
                                 linstorConfigToml.getDB().getClientKeyPassword()
                             )
                     );
