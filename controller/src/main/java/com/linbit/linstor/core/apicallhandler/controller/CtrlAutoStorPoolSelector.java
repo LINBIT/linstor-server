@@ -455,14 +455,13 @@ public class CtrlAutoStorPoolSelector
                     }
 
                     // sort the nodes so that the most preferred nodes are chosen first
-                    List<Node> nodesRepOnSameOrdered = nodesRepOnSame.stream()
-                        .sorted(nodeComparator.reversed())
-                        .collect(Collectors.toCollection(ArrayList::new));
+                    nodesRepOnSame.sort(nodeComparator.reversed());
 
                     // make sure that all other nodes in the list have the same value
                     // by removing nodes with a different one
                     Map<String, String> prefPropValsMap = new HashMap<>();
-                    for (Node nodeRepOnSame : nodesRepOnSameOrdered)
+                    Node nodeToRemove = null;
+                    for (Node nodeRepOnSame : nodesRepOnSame)
                     {
                         for (String propEntrySame : repOnSameFilter)
                         {
@@ -481,11 +480,12 @@ public class CtrlAutoStorPoolSelector
                             if (!nodeRepOnSame.getProps(peerAccCtx.get()).getProp(prefPropValsEntry.getKey())
                                 .equals(prefPropValsEntry.getValue()))
                             {
-                                nodesRepOnSame.remove(nodeRepOnSame);
+                                nodeToRemove = nodeRepOnSame;
                                 break;
                             }
                         }
                     }
+                    nodesRepOnSame.remove(nodeToRemove);
 
                     // if both filters are present check for intersections of the filtered nodes first
                     if (!repOnSameFilter.isEmpty() && !repOnDiffFilter.isEmpty())

@@ -1,13 +1,5 @@
 package com.linbit.linstor.api;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -47,7 +39,6 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 
 import javax.inject.Inject;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,6 +61,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
 public class RscAutoPlaceApiTest extends ApiTestBase
@@ -757,6 +756,52 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         {
             assertEquals("1", deployedNodes.get(idx).getProps(GenericDbBase.SYS_CTX).getProp("Aux/A"));
         }
+    }
+
+    @Test
+    public void replicasCombinedGithub89Test() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 100 * GB)
+            .stltBuilder("m13c12")
+                .addStorPool("thindata", null, 179 * GB, 900 * GB, LVM_THIN)
+                .setNodeProp("Aux/moonshot", "13")
+                .setNodeProp("Aux/opennebula-1", "true")
+                .build()
+            .stltBuilder("m14c21")
+                .addStorPool("thindata", null, 203 * GB, 900 * GB, LVM_THIN)
+                .setNodeProp("Aux/moonshot", "14")
+                .setNodeProp("Aux/opennebula-1", "true")
+                .build()
+            .stltBuilder("m10c12")
+                .addStorPool("thindata", null, 900 * GB, 900 * GB, LVM_THIN)
+                .setNodeProp("Aux/moonshot", "10")
+                .setNodeProp("Aux/opennebula-1", "true")
+                .build()
+            .stltBuilder("m15c12")
+                .addStorPool("thindata", null, 900 * GB, 900 * GB, LVM_THIN)
+                .setNodeProp("Aux/moonshot", "15")
+                .setNodeProp("Aux/opennebula-1", "true")
+                .build()
+
+            .addReplicasOnSameNodeProp("Aux/opennebula-1")
+            .addReplicasOnDifferentNodeProp("Aux/moonshot")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getAssignedNode)
+            .collect(Collectors.toList());
+
+        assertEquals(2, deployedNodes.size());
+        assertEquals("m10c12", deployedNodes.get(0).getName().displayValue);
+        assertEquals("m15c12", deployedNodes.get(1).getName().displayValue);
     }
 
     @Test
@@ -1480,19 +1525,20 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize)
             throws Exception
         {
-            return addStorPool(storPoolName, null, storPoolSize, LVM);
+            return addStorPool(storPoolName, null, storPoolSize, storPoolSize, LVM);
         }
 
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize, DeviceProviderKind provider)
             throws Exception
         {
-            return addStorPool(storPoolName, null, storPoolSize, provider);
+            return addStorPool(storPoolName, null, storPoolSize, storPoolSize, provider);
         }
 
         SatelliteBuilder addStorPool(
             String storPoolName,
             String freeSpaceMgrName,
-            long storPoolSize,
+            long freeSpace,
+            long totalCapacity,
             DeviceProviderKind providerKind
         )
             throws Exception
@@ -1529,7 +1575,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 fsm
             );
 
-            storPool.getFreeSpaceTracker().setCapacityInfo(GenericDbBase.SYS_CTX, storPoolSize, storPoolSize);
+            storPool.getFreeSpaceTracker().setCapacityInfo(GenericDbBase.SYS_CTX, freeSpace, totalCapacity);
 
             commitAndCleanUp(true);
 
