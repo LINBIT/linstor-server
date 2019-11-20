@@ -16,6 +16,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -52,6 +53,7 @@ public class WritecacheLayer implements DeviceLayer
     private static final Map<String, String> OPTS_LUT;
     private static final String DFLT_CACHE_SIZE = "5%";
 
+    private final ErrorReporter errorReporter;
     private final AccessContext storDriverAccCtx;
     private final DeviceProviderMapper deviceProviderMapper;
     private final ExtCmdFactory extCmdFactory;
@@ -74,6 +76,7 @@ public class WritecacheLayer implements DeviceLayer
 
     @Inject
     public WritecacheLayer(
+        ErrorReporter errorReporterRef,
         @DeviceManagerContext AccessContext storDriverAccCtxRef,
         DeviceProviderMapper deviceProviderMapperRef,
         ExtCmdFactory extCmdFactoryRef,
@@ -81,6 +84,7 @@ public class WritecacheLayer implements DeviceLayer
         StltConfigAccessor stltConfAccessorRef
     )
     {
+        errorReporter = errorReporterRef;
         storDriverAccCtx = storDriverAccCtxRef;
         deviceProviderMapper = deviceProviderMapperRef;
         extCmdFactory = extCmdFactoryRef;
@@ -98,6 +102,7 @@ public class WritecacheLayer implements DeviceLayer
     public void prepare(Set<RscLayerObject> rscDataListRef, Set<Snapshot> affectedSnapshotsRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
+        errorReporter.logTrace("Writecache: listing all 'writecache' devices");
         Set<String> dmDeviceNames = DmSetupUtils.list(extCmdFactory.create(), "writecache");
 
         for (RscLayerObject rscDataObj : rscDataListRef)
@@ -184,8 +189,24 @@ public class WritecacheLayer implements DeviceLayer
         {
             for (WritecacheVlmData vlmData : rscData.getVlmLayerObjects().values())
             {
-                DmSetupUtils.remove(extCmdFactory.create(), vlmData.getIdentifier());
-                vlmData.setExists(false);
+                if (vlmData.exists())
+                {
+                    errorReporter.logDebug(
+                        "Writecache: removing %s (%s)",
+                        vlmData.getIdentifier(),
+                        vlmData.getDevicePath()
+                    );
+                    DmSetupUtils.remove(extCmdFactory.create(), vlmData.getIdentifier());
+                    vlmData.setExists(false);
+                }
+                else
+                {
+                    errorReporter.logDebug(
+                        "Writecache: noop when removing %s (%s), as it does not exist",
+                        vlmData.getIdentifier(),
+                        vlmData.getDevicePath()
+                    );
+                }
             }
         }
 
@@ -199,6 +220,7 @@ public class WritecacheLayer implements DeviceLayer
         if (cacheRscChild == null)
         {
             // we might be an imaginary layer above an NVMe target which does not need a cache...
+            errorReporter.logDebug("Writecache: no devices provided to upper layer");
             metaResult = LayerProcessResult.NO_DEVICES_PROVIDED;
         }
         else
@@ -235,7 +257,6 @@ public class WritecacheLayer implements DeviceLayer
                     VlmProviderObject cacheChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
                     boolean considerCacheAsPmem = false;
                     {
-
                         boolean allStorPoolsPmem = true;
                         boolean onePmem = false;
                         Set<StorPool> storPoolSet = LayerVlmUtils.getStorPoolSet(cacheChild, storDriverAccCtx);
@@ -250,6 +271,11 @@ public class WritecacheLayer implements DeviceLayer
                                 allStorPoolsPmem = false;
                             }
                         }
+                        errorReporter.logTrace(
+                            "Writecache: at least one pmem: %s, all pmem: %s",
+                            onePmem,
+                            allStorPoolsPmem
+                        );
 
                         if (!allStorPoolsPmem && onePmem)
                         {
@@ -264,6 +290,13 @@ public class WritecacheLayer implements DeviceLayer
                         {
                             considerCacheAsPmem = true;
                         }
+                        errorReporter.logDebug(
+                            "Writecache: considering used storage pool%s as pmem: %s",
+                            storPoolSet.size() == 1 ?
+                               " [" + storPoolSet.iterator().next().getName().displayValue +"]" :
+                                "s " + storPoolSet,
+                            considerCacheAsPmem
+                        );
                     }
 
                     Map<String, String> dmsetupOptsMap = prioProps.renderRelativeMap(
@@ -327,6 +360,7 @@ public class WritecacheLayer implements DeviceLayer
                         )
                     );
                     vlmData.setExists(true);
+                    errorReporter.logDebug("Writecache: device (%s) created", vlmData.getDevicePath());
                 }
             }
             ret = LayerProcessResult.SUCCESS;
