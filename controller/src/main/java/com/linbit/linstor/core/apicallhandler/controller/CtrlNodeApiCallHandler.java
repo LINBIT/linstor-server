@@ -188,7 +188,7 @@ public class CtrlNodeApiCallHandler
             if (getActiveStltConn(node) == null)
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.WARN_NO_STLT_CONN_DEFINED,
+                    ApiConsts.FAIL_NO_STLT_CONN_DEFINED,
                     "No satellite connection defined for " + getNodeDescriptionInline(nodeNameStr)
                 ));
             }
