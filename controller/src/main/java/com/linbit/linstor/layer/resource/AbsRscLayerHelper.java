@@ -285,17 +285,20 @@ public abstract class AbsRscLayerHelper<
             VolumeNumber vlmNr = snapVlmData.getVlmNr();
             Volume vlm = rsc.getVolume(vlmNr);
 
-            ensureVolumeDefinitonDataCopiedFromSnapshot(
-                vlm.getVolumeDefinition(),
-                snapVlmData
-            );
+            if (vlm != null && vlmMap.get(vlmNr) == null)
+            {
+                ensureVolumeDefinitonDataCopiedFromSnapshot(
+                    vlm.getVolumeDefinition(),
+                    snapVlmData
+                );
 
-            VLM_LO vlmData = restoreVlmData(
-                vlm,
-                rscData,
-                fromSnapDataRef.getVlmProviderObject(vlmNr)
-            );
-            vlmMap.put(vlmNr, vlmData);
+                VLM_LO vlmData = restoreVlmData(
+                    vlm,
+                    rscData,
+                    fromSnapDataRef.getVlmProviderObject(vlmNr)
+                );
+                vlmMap.put(vlmNr, vlmData);
+            }
         }
 
         return rscData;
@@ -312,7 +315,10 @@ public abstract class AbsRscLayerHelper<
         if (rscDfnData == null)
         {
             rscDfnData = restoreRscDfnData(rscDfn, fromSnapData);
-            rscDfn.setLayerData(apiCtx, rscDfnData);
+            if (rscDfnData != null)
+            {
+                rscDfn.setLayerData(apiCtx, rscDfnData);
+            }
         }
         return rscDfnData;
     }
@@ -331,7 +337,10 @@ public abstract class AbsRscLayerHelper<
         if (vlmDfnData == null)
         {
             vlmDfnData = restoreVlmDfnData(vlmDfn, snapVlmData);
-            vlmDfn.setLayerData(apiCtx, vlmDfnData);
+            if (vlmDfnData != null)
+            {
+                vlmDfn.setLayerData(apiCtx, vlmDfnData);
+            }
         }
         return vlmDfnData;
     }

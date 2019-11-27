@@ -29,6 +29,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionControllerFactory;
@@ -37,7 +38,6 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -92,6 +92,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlRscLayerDataFactory layerStackHelper;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     public CtrlSnapshotCrtApiCallHandler(
@@ -108,7 +109,8 @@ public class CtrlSnapshotCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlRscLayerDataFactory layerStackHelperRef
+        CtrlRscLayerDataFactory layerStackHelperRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -125,6 +127,7 @@ public class CtrlSnapshotCrtApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         layerStackHelper = layerStackHelperRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     /**
@@ -178,6 +181,10 @@ public class CtrlSnapshotCrtApiCallHandler
             snapshotName,
             new SnapshotDefinition.Flags[] {}
         );
+        ctrlPropsHelper.copy(
+            ctrlPropsHelper.getProps(rscDfn),
+            ctrlPropsHelper.getProps(snapshotDfn)
+        );
 
         ensureSnapshotsViable(rscDfn);
 
@@ -192,27 +199,10 @@ public class CtrlSnapshotCrtApiCallHandler
             SnapshotVolumeDefinition snapshotVlmDfn = createSnapshotVlmDfnData(snapshotDfn, vlmDfn);
             snapshotVolumeDefinitions.add(snapshotVlmDfn);
 
-            Map<String, String> vlmDfnProps = getVlmDfnProps(vlmDfn).map();
-            Map<String, String> snapshotVlmDfnProps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
-
-            boolean isEncrypted = isEncrypted(vlmDfn);
-            if (isEncrypted)
-            {
-                String cryptPasswd = vlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
-                if (cryptPasswd == null)
-                {
-                    throw new ImplementationError("Encrypted volume definition without crypt passwd found");
-                }
-
-                markEncrypted(snapshotVlmDfn);
-                snapshotVlmDfnProps.put(
-                    ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
-                    cryptPasswd
-                );
-            }
-
-            copyProp(vlmDfnProps, snapshotVlmDfnProps, ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
-            copyProp(vlmDfnProps, snapshotVlmDfnProps, ApiConsts.KEY_DRBD_CURRENT_GI);
+            ctrlPropsHelper.copy(
+                ctrlPropsHelper.getProps(vlmDfn),
+                ctrlPropsHelper.getProps(snapshotVlmDfn)
+            );
         }
 
         boolean resourceFound = false;
@@ -438,11 +428,21 @@ public class CtrlSnapshotCrtApiCallHandler
     )
     {
         Snapshot snapshot = createSnapshot(snapshotDfn, rsc);
+        ctrlPropsHelper.copy(
+            ctrlPropsHelper.getProps(rsc),
+            ctrlPropsHelper.getProps(snapshot)
+        );
+
         setSuspendResource(snapshot);
 
         for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitions)
         {
-            createSnapshotVolume(rsc, snapshot, snapshotVolumeDefinition);
+            SnapshotVolume snapVlm = createSnapshotVolume(rsc, snapshot, snapshotVolumeDefinition);
+
+            ctrlPropsHelper.copy(
+                ctrlPropsHelper.getProps(rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber())),
+                ctrlPropsHelper.getProps(snapVlm)
+            );
         }
     }
 
@@ -453,7 +453,6 @@ public class CtrlSnapshotCrtApiCallHandler
         {
             Resource currentRsc = rscIterator.next();
             ensureDriversSupportSnapshots(currentRsc);
-            ensureInternalMetaDisks(currentRsc);
             ctrlSnapshotHelper.ensureSatelliteConnected(
                 currentRsc,
                 "Snapshots cannot be created when the corresponding satellites are not connected."
@@ -510,39 +509,6 @@ public class CtrlSnapshotCrtApiCallHandler
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
-        }
-    }
-
-    private void ensureInternalMetaDisks(Resource rsc)
-    {
-        Iterator<Volume> vlmIterator = rsc.iterateVolumes();
-        while (vlmIterator.hasNext())
-        {
-            Volume vlm = vlmIterator.next();
-
-            List<String> metaDiskPaths = getDrbdMetaDiskPath(vlm);
-            boolean hasInvalidMetaDisk = false;
-            for (String metaDiskPath : metaDiskPaths)
-            {
-                if (!metaDiskPath.equals("internal"))
-                {
-                    hasInvalidMetaDisk = true;
-                    break;
-                }
-            }
-            if (hasInvalidMetaDisk)
-            {
-                throw new ApiRcException(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
-                        "Snapshot with external meta-disk not supported."
-                    )
-                    .setDetails("Volume " + vlm.getVolumeDefinition().getVolumeNumber().value +
-                        " on node " + rsc.getNode().getName().displayValue +
-                        " has meta disk path '" + metaDiskPaths + "'")
-                    .build()
-                );
-            }
         }
     }
 
@@ -655,19 +621,6 @@ public class CtrlSnapshotCrtApiCallHandler
         return snapshotVlmDfn;
     }
 
-    private void copyProp(
-        Map<String, String> vlmDfnProps,
-        Map<String, String> snapshotVlmDfnProps,
-        String propKey
-    )
-    {
-        String propValue = vlmDfnProps.get(propKey);
-        if (propValue != null)
-        {
-            snapshotVlmDfnProps.put(propKey, propValue);
-        }
-    }
-
     private Snapshot createSnapshot(SnapshotDefinition snapshotDfn, Resource rsc)
     {
         String snapshotNameStr = snapshotDfn.getName().displayValue;
@@ -712,15 +665,16 @@ public class CtrlSnapshotCrtApiCallHandler
         return snapshot;
     }
 
-    private void createSnapshotVolume(
+    private SnapshotVolume createSnapshotVolume(
         Resource rsc,
         Snapshot snapshot,
         SnapshotVolumeDefinition snapshotVolumeDefinition
     )
     {
+        SnapshotVolume snapVlm;
         try
         {
-            snapshotVolumeControllerFactory.create(
+            snapVlm = snapshotVolumeControllerFactory.create(
                 peerAccCtx.get(),
                 rsc,
                 snapshot,
@@ -754,6 +708,7 @@ public class CtrlSnapshotCrtApiCallHandler
         {
             throw new ApiDatabaseException(sqlExc);
         }
+        return snapVlm;
     }
 
     private void setSuspendResource(Snapshot snapshot)
@@ -770,42 +725,6 @@ public class CtrlSnapshotCrtApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
             );
         }
-    }
-
-    private Props getVlmDfnProps(VolumeDefinition vlmDfn)
-    {
-        Props props;
-        try
-        {
-            props = vlmDfn.getProps(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access the properties of " + getVlmDfnDescriptionInline(vlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
-            );
-        }
-        return props;
-    }
-
-    private Props getSnapshotVlmDfnProps(SnapshotVolumeDefinition snapshotVlmDfn)
-    {
-        Props props;
-        try
-        {
-            props = snapshotVlmDfn.getProps(peerAccCtx.get());
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access the properties of " + getSnapshotVlmDfnDescriptionInline(snapshotVlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
-            );
-        }
-        return props;
     }
 
     private List<String> getDrbdMetaDiskPath(Volume vlm)

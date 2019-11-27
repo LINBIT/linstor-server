@@ -234,6 +234,36 @@ public class StorageLayer implements DeviceLayer
             {
                 snapVlmList = Collections.emptyList();
             }
+
+            /*
+             * Issue:
+             * We might be in a path where we should take a snapshot of a DRBD resource.
+             * If this DRBD resource has external meta-data, we have the following problem:
+             * We are on one of two scenarios (might be more if combined with other layers):
+             * 1) we are in the ""-path (data)
+             * 2) we are in the ".meta"-path (meta-data)
+             * In whichever case we are, we also have the order to take a snapshot.
+             * The current snapVlmList will contain both, "" and ".meta" snapLayerData for both
+             * cases.
+             * That means that in the first case we only give the DeviceProvider the rscData of
+             * "", but the order to create snapshot of "" AND ".meta". The second case obviously
+             * also has a similar issue.
+             *
+             * As a first approach we filter here those snapLayerData which have a corresponding
+             * rscLayerData. This solves the above mentioned issue
+             *
+             * However, this alone is not good enough, because i.e. deleting a snapshot
+             * does not require any rscLayerData, which means the filtering from the mentioned
+             * approach will filter all snapLayerData which prevents us from deleting
+             * snapshots ever again.
+             *
+             * Therefore we add an exception. If the list of rscLayerData is empty, we do not
+             * filter anything, as those operations *should* only cause resource-independent
+             * operations, which are fine for all "*"-paths
+             */
+
+            snapVlmList = filterSnapVlms(vlmDataList, snapVlmList);
+
             devProvider.process(vlmDataList, snapVlmList, apiCallRc);
 
             for (VlmProviderObject<Resource> vlmData : vlmDataList)
@@ -251,6 +281,36 @@ public class StorageLayer implements DeviceLayer
         }
 
         return LayerProcessResult.SUCCESS;
+    }
+
+    private List<VlmProviderObject<Snapshot>> filterSnapVlms(
+        List<VlmProviderObject<Resource>> vlmDataListRef,
+        List<VlmProviderObject<Snapshot>> snapVlmListRef
+    )
+    {
+        List<VlmProviderObject<Snapshot>> ret;
+        if (vlmDataListRef.isEmpty())
+        {
+            // no filter
+            ret = snapVlmListRef;
+        }
+        else
+        {
+            Set<String> suffixedRscNameSet = new HashSet<>();
+            for (VlmProviderObject<Resource> vlmData : vlmDataListRef)
+            {
+                suffixedRscNameSet.add(vlmData.getRscLayerObject().getSuffixedResourceName());
+            }
+            ret = new ArrayList<>();
+            for (VlmProviderObject<Snapshot> snapVlmData : snapVlmListRef)
+            {
+                if (suffixedRscNameSet.contains(snapVlmData.getRscLayerObject().getSuffixedResourceName()))
+                {
+                    ret.add(snapVlmData);
+                }
+            }
+        }
+        return ret;
     }
 
     public long getFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException

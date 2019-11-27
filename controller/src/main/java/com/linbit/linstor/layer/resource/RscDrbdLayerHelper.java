@@ -524,7 +524,7 @@ public class RscDrbdLayerHelper extends
             snapDfnData.getAlStripeSize(),
             null,
             snapDfnData.getTransportType(),
-            null
+            SecretGenerator.generateSharedSecret()
         );
     }
 
@@ -569,7 +569,7 @@ public class RscDrbdLayerHelper extends
             vlmDfnRef,
             fromSnapVlmDataRef.getRscLayerObject().getAbsResource().getSnapshotName(),
             resourceNameSuffix,
-            null,
+            null, // auto assign minor nr
             vlmDfnRef.getResourceDefinition().getLayerData(
                 apiCtx,
                 DeviceLayerKind.DRBD,

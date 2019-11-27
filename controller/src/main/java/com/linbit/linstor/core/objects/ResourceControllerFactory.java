@@ -97,7 +97,7 @@ public class ResourceControllerFactory
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
         Resource rscData = createEmptyResource(accCtx, rscDfn, node, new Resource.Flags[0]);
-        layerStackHelper.restoreFromSnapshot(rscData, snapLayerData);
+        layerStackHelper.copyLayerData(snapLayerData, rscData);
 
         return rscData;
     }

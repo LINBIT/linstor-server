@@ -52,7 +52,7 @@ public class LayerVlmUtils
                  *      one has external meta-data, the other has internal
                  *
                  *  this will create 2 STORAGE resources ("", and ".meta")
-                 *      "" will have 2 vlmProviderObjects (as usual
+                 *      "" will have 2 vlmProviderObjects (as usual)
                  *      ".meta" will only have 1 vlmProviderObject, as the other has internal metadata
                  */
                 storPools.add(vlmProviderObject.getStorPool());
@@ -83,7 +83,7 @@ public class LayerVlmUtils
         );
     }
 
-    public static <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> Map<String, StorPool> getStorPoolMap(
+    public static <RSC extends AbsResource<RSC>> Map<String, StorPool> getStorPoolMap(
         RSC rsc,
         VolumeNumber vlmNr,
         AccessContext accCtx
@@ -98,10 +98,24 @@ public class LayerVlmUtils
             );
             for (AbsRscLayerObject<RSC> storageRsc : storageRscList)
             {
-                storPoolMap.put(
-                    storageRsc.getResourceNameSuffix(),
-                    storageRsc.getVlmProviderObject(vlmNr).getStorPool()
-                );
+                VlmProviderObject<RSC> storageVlmData = storageRsc.getVlmProviderObject(vlmNr);
+                if (storageVlmData != null)
+                {
+                    /*
+                     *  storageVlmData is null in the following usecase:
+                     *
+                     *  DRBD with 2 volumes,
+                     *      one has external meta-data, the other has internal
+                     *
+                     *  this will create 2 STORAGE resources ("", and ".meta")
+                     *      "" will have 2 storageVlmData (as usual)
+                     *      ".meta" will only have 1 storageVlmData, as the other has internal metadata
+                     */
+                    storPoolMap.put(
+                        storageRsc.getResourceNameSuffix(),
+                        storageVlmData.getStorPool()
+                    );
+                }
             }
         }
         catch (AccessDeniedException accDeniedExc)

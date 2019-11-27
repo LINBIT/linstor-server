@@ -17,6 +17,10 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -33,8 +37,11 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 @Singleton
@@ -257,6 +264,106 @@ public class CtrlPropsHelper
         return props;
     }
 
+    public Props getProps(SnapshotDefinition snapDfn)
+    {
+        return getProps(peerAccCtx.get(), snapDfn);
+    }
+
+    public Props getProps(AccessContext accCtx, SnapshotDefinition snapDfn)
+    {
+        Props props;
+        try
+        {
+            props = snapDfn.getProps(accCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access properties for snapshot definition, resource name: '" +
+                    snapDfn.getResourceName().displayValue + "', snapshot name: '" +
+                    snapDfn.getName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
+        return props;
+    }
+
+    public Props getProps(SnapshotVolumeDefinition snapVlmDfn)
+    {
+        return getProps(peerAccCtx.get(), snapVlmDfn);
+    }
+
+    public Props getProps(AccessContext accCtx, SnapshotVolumeDefinition snapVlmDfn)
+    {
+        Props props;
+        try
+        {
+            props = snapVlmDfn.getProps(accCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access properties for snapshot definition, resource name: '" +
+                    snapVlmDfn.getResourceName().displayValue + "', snapshot name: '" +
+                    snapVlmDfn.getSnapshotName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
+        return props;
+    }
+
+    public Props getProps(Snapshot snap)
+    {
+        return getProps(peerAccCtx.get(), snap);
+    }
+
+    public Props getProps(AccessContext accCtx, Snapshot snap)
+    {
+        Props props;
+        try
+        {
+            props = snap.getProps(accCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access properties for snapshot definition, resource name: '" +
+                    snap.getResourceName().displayValue + "', snapshot name: '" +
+                    snap.getSnapshotName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
+        return props;
+    }
+
+    public Props getProps(SnapshotVolume snapVlm)
+    {
+        return getProps(peerAccCtx.get(), snapVlm);
+    }
+
+    public Props getProps(AccessContext accCtx, SnapshotVolume snapVlm)
+    {
+        Props props;
+        try
+        {
+            props = snapVlm.getProps(accCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access properties for snapshot definition, resource name: '" +
+                    snapVlm.getResourceName().displayValue + "', snapshot name: '" +
+                    snapVlm.getSnapshotName().displayValue + "'",
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
+        return props;
+    }
+
     public void fillProperties(
         LinStorObject linstorObj,
         Map<String, String> sourceProps,
@@ -441,4 +548,45 @@ public class CtrlPropsHelper
         }
     }
 
+    public void copy(Props fromProps, Props toProps)
+    {
+        copy(fromProps, toProps, false, true);
+    }
+
+    /**
+     * @param sourceProp
+     *     source Props
+     * @param destinationProps
+     *     destination Props
+     * @param retain
+     *     if true, all properties in destination will be removed that do not exist in
+     *     the source props
+     * @param override
+     *     if true, source properties will override existing destination properties
+     */
+    public void copy(Props sourceProp, Props destinationProps, boolean retain, boolean override)
+    {
+        Map<String, String> srcMap = sourceProp.map();
+        Map<String, String> dstMap = destinationProps.map();
+
+        Set<String> keysToDelete;
+        if (retain)
+        {
+            keysToDelete = new HashSet<>(dstMap.keySet());
+        }
+        else
+        {
+            keysToDelete = Collections.emptySet();
+        }
+        for (Entry<String, String> srcEntry : srcMap.entrySet())
+        {
+            String key = srcEntry.getKey();
+            if (override || !dstMap.containsKey(key))
+            {
+                dstMap.put(key, srcEntry.getValue());
+            }
+            keysToDelete.remove(key);
+        }
+        dstMap.keySet().removeAll(keysToDelete);
+    }
 }

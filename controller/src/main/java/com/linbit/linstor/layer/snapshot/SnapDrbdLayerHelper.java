@@ -93,7 +93,7 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
             snapVlmDfn.getVolumeDefinition(),
             snapVlmDfn.getSnapshotName(),
             rscNameSuffix,
-            null, // not saving minor nr
+            DrbdVlmDfnData.SNAPSHOT_MINOR,
             snapVlmDfn.getSnapshotDefinition().getLayerData(apiCtx, DRBD, rscNameSuffix)
         );
     }

@@ -72,6 +72,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscAutoHelper autoHelper;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     public CtrlSnapshotRestoreApiCallHandler(
@@ -85,7 +86,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlRscAutoHelper ctrlRscAutoHelperRef
+        CtrlRscAutoHelper ctrlRscAutoHelperRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -99,6 +101,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         peerAccCtx = peerAccCtxRef;
         lockGuardFactory = lockGuardFactoryRef;
         autoHelper = ctrlRscAutoHelperRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     private ResponseContext makeSnapshotRestoreContext(String rscNameStr)
@@ -170,6 +173,11 @@ public class CtrlSnapshotRestoreApiCallHandler
             }
 
             ctrlSnapshotHelper.ensureSnapshotSuccessful(fromSnapshotDfn);
+
+            ctrlPropsHelper.copy(
+                ctrlPropsHelper.getProps(fromSnapshotDfn),
+                ctrlPropsHelper.getProps(toRscDfn)
+            );
 
             Set<Resource> restoredResources = new TreeSet<>();
 
@@ -298,10 +306,17 @@ public class CtrlSnapshotRestoreApiCallHandler
     {
         Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);
 
+        boolean copyIntoVlmDfn = toRscDfn.getResourceCount() == 0;
+
         Resource rsc = ctrlRscCrtApiHelper.createResourceFromSnapshot(
             toRscDfn,
             node,
             snapshot
+        );
+
+        ctrlPropsHelper.copy(
+            ctrlPropsHelper.getProps(snapshot),
+            ctrlPropsHelper.getProps(rsc)
         );
 
         Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(toRscDfn);
@@ -319,6 +334,14 @@ public class CtrlSnapshotRestoreApiCallHandler
                     ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_VLM_DFN,
                     "Snapshot does not contain required volume number " + volumeNumber
                 ));
+            }
+
+            if (copyIntoVlmDfn)
+            {
+                ctrlPropsHelper.copy(
+                    ctrlPropsHelper.getProps(fromSnapshotVlmDfn),
+                    ctrlPropsHelper.getProps(toVlmDfn)
+                );
             }
 
             long snapshotVolumeSize = fromSnapshotVlmDfn.getVolumeSize(peerAccCtx.get());
@@ -340,22 +363,20 @@ public class CtrlSnapshotRestoreApiCallHandler
                 throw new ImplementationError("Expected snapshot volume missing");
             }
 
-            Map<String, StorPool> storPool = LayerVlmUtils.getStorPoolMap(rsc, volumeNumber, peerAccCtx.get());
+            Map<String, StorPool> storPool = LayerVlmUtils.getStorPoolMap(snapshot, volumeNumber, peerAccCtx.get());
+            Volume toVlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null);
 
-            Volume vlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null);
-            Props vlmProps = vlm.getProps(peerAccCtx.get());
-            vlmProps.setProp(
-                ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue);
-            vlmProps.setProp(
-                ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT, fromSnapshotVlmDfn.getSnapshotName().displayValue);
-            String overrideId = fromSnapshotVlmDfn.getProps(
-                peerAccCtx.get()).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID
+            Props vlmProps = ctrlPropsHelper.getProps(toVlm);
+            ctrlPropsHelper.copy(
+                ctrlPropsHelper.getProps(fromSnapshotVolume),
+                vlmProps
             );
-            if (overrideId != null)
-            {
-                vlmProps.setProp(
-                    ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID, overrideId);
-            }
+            vlmProps.setProp(
+                ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE, fromSnapshotVlmDfn.getResourceName().displayValue
+            );
+            vlmProps.setProp(
+                ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT, fromSnapshotVlmDfn.getSnapshotName().displayValue
+            );
         }
 
         return rsc;

@@ -431,12 +431,6 @@ public class CtrlRscLayerDataFactory
         return storPool;
     }
 
-    public void restoreFromSnapshot(Resource rscDataRef, AbsRscLayerObject<Snapshot> snapLayerDataRef)
-    {
-        // TODO Auto-generated method stub
-        throw new ImplementationError("Not implemented yet");
-    }
-
     public void copyLayerData(
         AbsRscLayerObject<Snapshot> fromSnapshot,
         Resource toResource
