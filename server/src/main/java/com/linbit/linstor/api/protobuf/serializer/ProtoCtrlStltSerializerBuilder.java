@@ -2,8 +2,8 @@ package com.linbit.linstor.api.protobuf.serializer;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -48,6 +48,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgReqPhysicalDevicesOuterClass.MsgReqPhysicalDevices;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyNodeSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
@@ -468,6 +469,28 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setRscName(rscName)
                 .setRscUuid(rscUuid)
                 .setAlreadyInitialized(alreadyInitialized)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public ProtoCtrlStltSerializerBuilder notifyNodeApplied(Node node)
+    {
+        try
+        {
+            MsgIntApplyNodeSuccessOuterClass.MsgIntApplyNodeSuccess.newBuilder()
+                .setNodeId(
+                    IntObjectId.newBuilder()
+                        .setUuid(node.getUuid().toString())
+                        .setName(node.getName().displayValue)
+                        .build()
+                )
                 .build()
                 .writeDelimitedTo(baos);
         }

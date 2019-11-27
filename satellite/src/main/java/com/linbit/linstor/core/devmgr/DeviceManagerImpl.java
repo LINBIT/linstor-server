@@ -9,6 +9,7 @@ import com.linbit.drbd.DrbdVersion;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -56,11 +57,12 @@ import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
 import com.linbit.utils.Either;
 
+import static com.linbit.linstor.api.ApiConsts.MODIFIED;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -101,7 +103,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceGroupMap rscGrpMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
@@ -120,6 +121,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     // Tracks objects that are waiting to be updated with data received from the controller
     private final UpdateBundle rcvPendingBundle = new StltUpdateTrackerImpl.UpdateBundle();
 
+    // Tracks nodes that need to be dispatched to a device handler and the sinks that should receive responses
+    private final Map<NodeName, List<FluxSink<ApiCallRc>>> pendingDispatchNodes = new TreeMap<>();
+
     // Tracks resources that need to be dispatched to a device handler and the sinks that should receive responses
     private final Map<ResourceName, List<FluxSink<ApiCallRc>>> pendingDispatchRscs = new TreeMap<>();
 
@@ -135,7 +139,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private final AtomicBoolean shutdownFlag    = new AtomicBoolean(false);
     private final AtomicBoolean collectUpdateNofiticationForceWakeFlag = new AtomicBoolean(false);
 
-    private final Map<ResourceName, ApiCallRc> dispatchResponses = new TreeMap<>();
+    private final Map<NodeName, ApiCallRc> dispatchNodeResponses = new TreeMap<>();
+    private final Map<ResourceName, ApiCallRc> dispatchRscResponses = new TreeMap<>();
 
     private final Set<ResourceName> deletedRscSet = new TreeSet<>();
     private final Set<VolumeDefinition.Key> deletedVlmSet = new TreeSet<>();
@@ -189,7 +194,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceGroupMap rscGrpMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
@@ -214,7 +218,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         nodesMap = nodesMapRef;
         rscGrpMap = rscGrpMapRef;
         rscDfnMap = rscDfnMapRef;
-        storPoolDfnMap = storPoolDfnMapRef;
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
@@ -245,7 +248,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     /**
      * Dispatch resources and/or snapshots to a specific handler depending on type
      */
-    void dispatchResources(
+    private void dispatchResources(
         Set<Resource> resourcesToDispatch,
         Set<Snapshot> snapshotsToDispatch,
         SyncPoint phaseLock
@@ -329,7 +332,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     {
         synchronized (sched)
         {
-            markPendingDispatch(rcvPendingBundle.controllerUpdate.orElse(null), rscSet);
+            markPendingRscDispatch(rcvPendingBundle.controllerUpdate.orElse(null), rscSet);
             rcvPendingBundle.controllerUpdate = Optional.empty();
             sched.notify();
         }
@@ -342,7 +345,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         {
             for (NodeName nodeName : nodeSet)
             {
-                markPendingDispatch(rcvPendingBundle.nodeUpdates.remove(nodeName), rscSet);
+                UpdateNotification updateNot = rcvPendingBundle.nodeUpdates.remove(nodeName);
+
+                markPendingRscDispatch(updateNot, rscSet);
+                markPendingNodeDispatch(updateNot, nodeName);
             }
             if (rcvPendingBundle.isEmpty())
             {
@@ -364,7 +370,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             {
                 UpdateNotification updateNotification = rcvPendingBundle.storPoolUpdates.remove(storPoolName);
 
-                markPendingDispatch(updateNotification, rscSet);
+                markPendingRscDispatch(updateNotification, rscSet);
 
                 List<FluxSink<ApiCallRc>> responseSinks = updateNotification == null ?
                     Collections.emptyList() :
@@ -388,7 +394,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         {
             for (Resource.ResourceKey resourceKey : rscKeySet)
             {
-                markPendingDispatch(
+                markPendingRscDispatch(
                     rcvPendingBundle.rscUpdates.remove(resourceKey),
                     rscKeySet.stream().map(Resource.ResourceKey::getResourceName).collect(Collectors.toSet())
                 );
@@ -407,7 +413,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         {
             for (SnapshotDefinition.Key snapshotKey : snapshotKeySet)
             {
-                markPendingDispatch(
+                markPendingRscDispatch(
                     rcvPendingBundle.snapshotUpdates.remove(snapshotKey),
                     snapshotKeySet.stream().map(SnapshotDefinition.Key::getResourceName).collect(Collectors.toSet())
                 );
@@ -419,7 +425,23 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
-    private void markPendingDispatch(
+    private void markPendingNodeDispatch(
+        UpdateNotification updateNotification,
+        NodeName nodeName
+    )
+    {
+        List<FluxSink<ApiCallRc>> responseSink = updateNotification == null ?
+            Collections.emptyList() :
+            updateNotification.getResponseSinks();
+
+        List<FluxSink<ApiCallRc>> responseSinks =
+            pendingDispatchNodes.computeIfAbsent(nodeName, ignored -> new ArrayList<>());
+
+        responseSinks.addAll(responseSink);
+        pendingResponseSinks.addAll(responseSink);
+    }
+
+    private void markPendingRscDispatch(
         UpdateNotification updateNotification,
         Set<ResourceName> rscSet
     )
@@ -441,7 +463,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     {
         synchronized (sched)
         {
-            markPendingDispatch(null, Collections.singleton(name));
+            markPendingRscDispatch(null, Collections.singleton(name));
             sched.notify();
         }
     }
@@ -451,7 +473,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     {
         synchronized (sched)
         {
-            markPendingDispatch(null, rscSet);
+            markPendingRscDispatch(null, rscSet);
             sched.notify();
         }
     }
@@ -658,7 +680,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     updPendingBundle,
                     svcCondFlag,
                     collectUpdateNofiticationForceWakeFlag,
-                    waitUpdFlag.get() && pendingDispatchRscs.isEmpty()
+                    waitUpdFlag.get() && pendingDispatchRscs.isEmpty() && pendingDispatchNodes.isEmpty()
                 );
                 if (svcCondFlag.get())
                 {
@@ -727,14 +749,17 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private void phaseDispatchDeviceHandlers(SyncPoint phaseLock)
         throws AccessDeniedException
     {
-        errLog.logTrace("Dispatching resources to device handlers");
+        errLog.logTrace("Dispatching nodes and resources to device handlers");
 
+        Map<NodeName, List<FluxSink<ApiCallRc>>> dispatchNodes;
         Map<ResourceName, List<FluxSink<ApiCallRc>>> dispatchRscs;
         List<FluxSink<ApiCallRc>> responseSinks;
         synchronized (sched)
         {
             // Add any dispatch requests that were received
             // into the dispatch set and clear the dispatch requests
+            dispatchNodes = new TreeMap<>(pendingDispatchNodes);
+            pendingDispatchNodes.clear();
             dispatchRscs = new TreeMap<>(pendingDispatchRscs);
             pendingDispatchRscs.clear();
             responseSinks = new ArrayList<>(pendingResponseSinks);
@@ -745,7 +770,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         // ((DrbdDeviceHandler) drbdHnd).debugListSatelliteObjects();
         // END DEBUG
 
-        if (!dispatchRscs.isEmpty() || !responseSinks.isEmpty())
+        if (!dispatchNodes.isEmpty() || !dispatchRscs.isEmpty() || !responseSinks.isEmpty())
         {
             Lock reconfWrLock = reconfigurationLock.writeLock();
             Lock nodesWrLock = nodesMapLock.writeLock();
@@ -773,6 +798,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 boolean haveMasterKey = stltSecObj.getCryptKey() != null;
 
                 abortDevHndFlag = false;
+
+                /* DISPATCH RESOURCES AND SNAPSHOTS */
 
                 Set<Resource> resourcesToDispatch = new TreeSet<>();
                 Set<Snapshot> snapshotsToDispatch = new TreeSet<>();
@@ -858,7 +885,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         break;
                     }
                 }
-
                 dispatchResources(resourcesToDispatch, snapshotsToDispatch, phaseLock);
 
                 if (abortDevHndFlag)
@@ -872,10 +898,35 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 phaseLock.await();
                 errLog.logTrace("All dispatched resource handlers finished");
 
-                respondToController(dispatchRscs, responseSinks);
+                /* DISPATCH NODES */
+
+                Set<Node> nodesToDelete = new TreeSet<>();
+                for (NodeName nodeName : dispatchNodes.keySet())
+                {
+                    synchronized (sched)
+                    {
+                        dispatchNodeResponses.put(
+                            nodeName,
+                            ApiCallRcImpl.singleApiCallRc(MODIFIED, "Node changes applied.")
+                        );
+                    }
+                }
+
+                if (abortDevHndFlag)
+                {
+                    errLog.logTrace("Stopped dispatching node handlers due to abort request");
+                }
+
+                errLog.logTrace("Waiting for queued node handlers to finish");
+                // Wait until the phase advances from the current phase number after all
+                // device handlers have finished
+                phaseLock.await();
+                errLog.logTrace("All dispatched node handlers finished");
+
+                respondToController(dispatchNodes, dispatchRscs, responseSinks);
 
                 // Cleanup deleted objects
-                deletedObjectsCleanup(remoteResourcesToDelete);
+                deletedObjectsCleanup(nodesToDelete, remoteResourcesToDelete);
             }
             finally
             {
@@ -892,16 +943,33 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     private void respondToController(
+        Map<NodeName, List<FluxSink<ApiCallRc>>> dispatchNodes,
         Map<ResourceName, List<FluxSink<ApiCallRc>>> dispatchRscs,
         List<FluxSink<ApiCallRc>> responseSinks
     )
     {
         synchronized (sched)
         {
-            for (Entry<ResourceName, ApiCallRc> dispatchResponseEntry : dispatchResponses.entrySet())
+            for (Entry<NodeName, ApiCallRc> dispatchNodeResponseEntry : dispatchNodeResponses.entrySet())
             {
-                ResourceName resourceName = dispatchResponseEntry.getKey();
-                ApiCallRc response = dispatchResponseEntry.getValue();
+                NodeName nodeName = dispatchNodeResponseEntry.getKey();
+                ApiCallRc response = dispatchNodeResponseEntry.getValue();
+                List<FluxSink<ApiCallRc>> sinks = dispatchNodes.get(nodeName);
+
+                if (sinks != null)
+                {
+                    for (FluxSink<ApiCallRc> sink : sinks)
+                    {
+                        sink.next(response);
+                    }
+                }
+            }
+            dispatchNodeResponses.clear();
+
+            for (Entry<ResourceName, ApiCallRc> dispatchRscResponseEntry : dispatchRscResponses.entrySet())
+            {
+                ResourceName resourceName = dispatchRscResponseEntry.getKey();
+                ApiCallRc response = dispatchRscResponseEntry.getValue();
                 List<FluxSink<ApiCallRc>> sinks = dispatchRscs.get(resourceName);
 
                 if (sinks != null)
@@ -912,7 +980,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     }
                 }
             }
-            dispatchResponses.clear();
+            dispatchRscResponses.clear();
 
             for (FluxSink<ApiCallRc> responseSink : responseSinks)
             {
@@ -921,7 +989,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
-    private void deletedObjectsCleanup(Set<Resource> remoteResourcesToDeleteRef)
+    private void deletedObjectsCleanup(Set<Node> nodesToDelete, Set<Resource> remoteResourcesToDelete)
         throws AccessDeniedException
     {
         final Set<NodeName> localDelNodeSet = new TreeSet<>();
@@ -1032,7 +1100,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     }
                 }
 
-                for (Resource remoteRsc : remoteResourcesToDeleteRef)
+                for (Resource remoteRsc : remoteResourcesToDelete)
                 {
 
                     if (!remoteRsc.isDeleted())
@@ -1083,6 +1151,17 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         }
                     }
                 }
+
+                // delete nodes
+                for (Node node : nodesToDelete)
+                {
+                    if (!node.isDeleted())
+                    {
+                        node.delete(wrkCtx);
+                        nodesMap.remove(node.getName());
+                    }
+                }
+
                 transMgrProvider.get().commit();
             }
             finally
@@ -1202,7 +1281,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         // Remember the response and to send combined responses after DeviceHandler instances have finished
         synchronized (sched)
         {
-            dispatchResponses.put(resourceName, response);
+            dispatchRscResponses.put(resourceName, response);
         }
     }
 

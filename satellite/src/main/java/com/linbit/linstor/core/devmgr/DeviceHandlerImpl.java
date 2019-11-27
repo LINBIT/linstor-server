@@ -14,6 +14,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.SysFsHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
@@ -42,6 +43,8 @@ import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
+
+import static com.linbit.linstor.InternalApiConsts.API_NOTIFY_NODE_APPLIED;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

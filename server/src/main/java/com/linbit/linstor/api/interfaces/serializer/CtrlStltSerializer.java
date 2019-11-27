@@ -77,11 +77,11 @@ public interface CtrlStltSerializer extends CommonSerializer
         /*
          * Satellite -> Controller
          */
+        CtrlStltSerializerBuilder notifyNodeApplied(Node node);
         CtrlStltSerializerBuilder notifyResourceApplied(
             Resource resource,
             Map<StorPool, SpaceInfo> freeSpaceMap
         );
-
         CtrlStltSerializerBuilder notifyResourceFailed(
             Resource resource,
             ApiCallRc apiCallRc
