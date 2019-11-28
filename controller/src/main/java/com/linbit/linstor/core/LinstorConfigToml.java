@@ -163,11 +163,29 @@ public class LinstorConfigToml
 
     public static class Logging
     {
+        public enum RestAccessLogMode {
+            append,
+            rotatehourly,
+            rotatedaily,
+            nolog;
+        }
         private String level = "info";
+        private String rest_access_log_path = "rest-access.log";
+        private RestAccessLogMode rest_access_log_mode = RestAccessLogMode.append;
 
         public String getLevel()
         {
             return level;
+        }
+
+        public String getRestAccessLogPath()
+        {
+            return rest_access_log_path;
+        }
+
+        public RestAccessLogMode getRestAccessLogMode()
+        {
+            return rest_access_log_mode;
         }
     }
 

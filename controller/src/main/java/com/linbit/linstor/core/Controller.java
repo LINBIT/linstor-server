@@ -361,7 +361,9 @@ public final class Controller
                     keyStorePath,
                     keyStorePassword,
                     trustStorePath,
-                    trustStorePassword
+                    trustStorePassword,
+                    linstorConfig.getLogging().getRestAccessLogPath(),
+                    linstorConfig.getLogging().getRestAccessLogMode()
                 );
                 systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
             }

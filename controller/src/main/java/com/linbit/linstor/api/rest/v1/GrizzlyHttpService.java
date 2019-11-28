@@ -8,6 +8,7 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -57,6 +59,8 @@ public class GrizzlyHttpService implements SystemService
     private Path trustStoreFile;
     private String trustStorePassword;
     private ResourceConfig v1ResourceConfig;
+    private Path restAccessLogPath;
+    private LinstorConfigToml.Logging.RestAccessLogMode restAccessLogMode;
     private final ControllerDatabase ctrlDb;
     private final Map<ServiceName, SystemService> systemServiceMap;
 
@@ -75,7 +79,9 @@ public class GrizzlyHttpService implements SystemService
         Path keyStoreFileRef,
         String keyStorePasswordRef,
         Path trustStoreFileRef,
-        String trustStorePasswordRef
+        String trustStorePasswordRef,
+        String restAccessLogPathRef,
+        LinstorConfigToml.Logging.RestAccessLogMode restAccessLogModeRef
     )
     {
         errorReporter = errorReporterRef;
@@ -86,6 +92,8 @@ public class GrizzlyHttpService implements SystemService
         keyStorePassword = keyStorePasswordRef;
         trustStoreFile = trustStoreFileRef;
         trustStorePassword = trustStorePasswordRef;
+        restAccessLogPath = Paths.get(restAccessLogPathRef);
+        restAccessLogMode = restAccessLogModeRef;
         v1ResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
         v1ResourceConfig.register(new CORSFilter());
         registerExceptionMappers(v1ResourceConfig);
@@ -238,10 +246,6 @@ public class GrizzlyHttpService implements SystemService
 
     private void initGrizzly(final String bindAddress, final String httpsBindAddress)
     {
-        final AccessLogBuilder builder = new AccessLogBuilder(
-            errorReporter.getLogDirectory().resolve("rest-access.log").toFile()
-        );
-
         if (keyStoreFile != null)
         {
             final URI httpsUri = URI.create(String.format("https://%s/v1/", httpsBindAddress));
@@ -285,9 +289,6 @@ public class GrizzlyHttpService implements SystemService
             enableCompression(httpsServer);
 
             addRootHandler(httpsServer);
-
-            builder.instrument(httpServer.getServerConfiguration());
-            builder.instrument(httpsServer.getServerConfiguration());
         }
         else
         {
@@ -299,11 +300,54 @@ public class GrizzlyHttpService implements SystemService
             );
 
             addRootHandler(httpServer);
-
-            builder.instrument(httpServer.getServerConfiguration());
         }
 
-        enableCompression(httpServer);
+        // configure access logging
+        if (restAccessLogMode == null)
+        {
+            errorReporter.logWarning("Unknown rest_access_log_mode set, fallback to append");
+            restAccessLogMode = LinstorConfigToml.Logging.RestAccessLogMode.append;
+        }
+
+        if (restAccessLogMode != LinstorConfigToml.Logging.RestAccessLogMode.nolog)
+        {
+            final Path accessLogPath = restAccessLogPath.isAbsolute() ?
+                restAccessLogPath : errorReporter.getLogDirectory().resolve(restAccessLogPath);
+            final AccessLogBuilder builder = new AccessLogBuilder(accessLogPath.toFile());
+
+            switch (restAccessLogMode)
+            {
+                case rotatehourly:
+                    errorReporter.logDebug("Rest-access log set to rotate hourly.");
+                    builder.rotatedHourly();
+                    break;
+                case rotatedaily:
+                    errorReporter.logDebug("Rest-access log set to rotate daily.");
+                    builder.rotatedDaily();
+                    break;
+                case append:
+                case nolog:
+                default:
+            }
+
+            if (httpServer != null)
+            {
+                builder.instrument(httpServer.getServerConfiguration());
+            }
+            if (httpsServer != null)
+            {
+                builder.instrument(httpsServer.getServerConfiguration());
+            }
+        }
+        else
+        {
+            errorReporter.logDebug("Rest-access log turned off.");
+        }
+
+        if (httpServer != null)
+        {
+            enableCompression(httpServer);
+        }
     }
 
     private void registerExceptionMappers(ResourceConfig resourceConfig)
