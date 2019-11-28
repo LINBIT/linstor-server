@@ -571,18 +571,25 @@ public class DatabaseLoader implements DatabaseDriver
 
         List<Resource> resourcesWithLayerData = loadLayerData(
             tmpStorPoolMapRef,
-            rli -> tmpRscDfnMapRef.get(rli.resourceName).getResource(dbCtx, rli.nodeName)
-
+            rli ->
+            {
+                // snamshotName != null means this is a snapshot, not a resource.
+                return rli.snapshotName != null ? null
+                    : tmpRscDfnMapRef.get(rli.resourceName).getResource(dbCtx, rli.nodeName);
+            }
         );
 
         List<Snapshot> snapshotsWithLayerData = loadLayerData(
             tmpStorPoolMapRef,
-            rli -> tmpSnapDfnMapRef.get(
-                new Pair<>(
-                    rli.resourceName,
-                    rli.snapshotName
-                )
-            ).getSnapshot(dbCtx, rli.nodeName)
+            rli ->{
+                SnapshotDefinition snapshotDefinition = tmpSnapDfnMapRef.get(
+                    new Pair<>(
+                        rli.resourceName,
+                        rli.snapshotName
+                    )
+                );
+                return snapshotDefinition == null ? null : snapshotDefinition.getSnapshot(dbCtx, rli.nodeName);
+            }
         );
 
         drbdLayerDriver.clearLoadCache();
@@ -632,78 +639,82 @@ public class DatabaseLoader implements DatabaseDriver
                 Pair<? extends AbsRscLayerObject<RSC>, Set<AbsRscLayerObject<RSC>>> rscLayerObjectPair;
                 RSC rsc = getter.accept(rli);
 
-                resourcesWithLayerData.add(rsc);
+                if (rsc != null)
+                {
+                    // rsc will be null if the getter for a snapshot finds a resource and vice versa
+                    resourcesWithLayerData.add(rsc);
 
-                AbsRscLayerObject<RSC> parent = null;
-                Set<AbsRscLayerObject<RSC>> currentRscLayerDatasChildren = null;
-                if (rli.parentId != null)
-                {
-                    Pair<AbsRscLayerObject<RSC>, Set<AbsRscLayerObject<RSC>>> pair = rscLayerObjectChildren
-                        .get(rli.parentId);
+                    AbsRscLayerObject<RSC> parent = null;
+                    Set<AbsRscLayerObject<RSC>> currentRscLayerDatasChildren = null;
+                    if (rli.parentId != null)
+                    {
+                        Pair<AbsRscLayerObject<RSC>, Set<AbsRscLayerObject<RSC>>> pair = rscLayerObjectChildren
+                            .get(rli.parentId);
 
-                    parent = pair.objA;
-                    currentRscLayerDatasChildren = pair.objB;
-                }
-                switch (rli.kind)
-                {
-                    case DRBD:
-                        rscLayerObjectPair = drbdLayerDriver.<RSC> load(
-                            rsc,
-                            rli.id,
-                            rli.rscSuffix,
-                            parent,
-                            tmpStorPoolMapRef
-                        );
-                        break;
-                    case LUKS:
-                        rscLayerObjectPair = luksLayerDriver.load(
-                            rsc,
-                            rli.id,
-                            rli.rscSuffix,
-                            parent
-                        );
-                        break;
-                    case STORAGE:
-                        rscLayerObjectPair = storageLayerDriver.load(
-                            rsc,
-                            rli.id,
-                            rli.rscSuffix,
-                            parent
-                        );
-                        break;
-                    case NVME:
-                        rscLayerObjectPair = nvmeLayerDriver.load(
-                            rsc,
-                            rli.id,
-                            rli.rscSuffix,
-                            parent
-                        );
-                        break;
-                    case WRITECACHE:
-                        rscLayerObjectPair = writecacheLayerDriver.load(
-                            rsc,
-                            rli.id,
-                            rli.rscSuffix,
-                            parent,
-                            tmpStorPoolMapRef
-                        );
-                        break;
-                    default:
-                        throw new ImplementationError("Unhandled case for device kind '" + rli.kind + "'");
-                }
-                AbsRscLayerObject<RSC> rscLayerObject = rscLayerObjectPair.objA;
-                rscLayerObjectChildren.put(rli.id, new Pair<>(rscLayerObject, rscLayerObjectPair.objB));
-                if (parent == null)
-                {
-                    rsc.setLayerData(dbCtx, rscLayerObject);
-                }
-                else
-                {
-                    currentRscLayerDatasChildren.add(rscLayerObject);
-                }
+                        parent = pair.objA;
+                        currentRscLayerDatasChildren = pair.objB;
+                    }
+                    switch (rli.kind)
+                    {
+                        case DRBD:
+                            rscLayerObjectPair = drbdLayerDriver.<RSC> load(
+                                rsc,
+                                rli.id,
+                                rli.rscSuffix,
+                                parent,
+                                tmpStorPoolMapRef
+                            );
+                            break;
+                        case LUKS:
+                            rscLayerObjectPair = luksLayerDriver.load(
+                                rsc,
+                                rli.id,
+                                rli.rscSuffix,
+                                parent
+                            );
+                            break;
+                        case STORAGE:
+                            rscLayerObjectPair = storageLayerDriver.load(
+                                rsc,
+                                rli.id,
+                                rli.rscSuffix,
+                                parent
+                            );
+                            break;
+                        case NVME:
+                            rscLayerObjectPair = nvmeLayerDriver.load(
+                                rsc,
+                                rli.id,
+                                rli.rscSuffix,
+                                parent
+                            );
+                            break;
+                        case WRITECACHE:
+                            rscLayerObjectPair = writecacheLayerDriver.load(
+                                rsc,
+                                rli.id,
+                                rli.rscSuffix,
+                                parent,
+                                tmpStorPoolMapRef
+                            );
+                            break;
+                        default:
+                            throw new ImplementationError("Unhandled case for device kind '" + rli.kind + "'");
+                    }
+                    AbsRscLayerObject<RSC> rscLayerObject = rscLayerObjectPair.objA;
+                    rscLayerObjectChildren.put(rli.id, new Pair<>(rscLayerObject, rscLayerObjectPair.objB));
+                    if (parent == null)
+                    {
+                        rsc.setLayerData(dbCtx, rscLayerObject);
+                    }
+                    else
+                    {
+                        currentRscLayerDatasChildren.add(rscLayerObject);
+                    }
 
-                // rli will be the parent for the next iteration
-                parentIds.add(rli.id);
+                    // rli will be the parent for the next iteration
+                    parentIds.add(rli.id);
+                }
             }
         }
         return resourcesWithLayerData;
