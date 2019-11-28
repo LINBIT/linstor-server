@@ -40,7 +40,9 @@ public class ResourceTest
                     ApiConsts.FLAG_DISK_ADDING,
                     ApiConsts.FLAG_DISK_REMOVE_REQUESTED,
                     ApiConsts.FLAG_DISK_REMOVING,
-                    ApiConsts.FLAG_TIE_BREAKER
+                    ApiConsts.FLAG_DRBD_DISKLESS,
+                    ApiConsts.FLAG_TIE_BREAKER,
+                    ApiConsts.FLAG_NVME_INITIATOR
                 },
                 strList.toArray());
         assertEquals(mask, Resource.Flags.fromStringList(strList));
@@ -57,7 +59,7 @@ public class ResourceTest
             assertArrayEquals(
                 new String[]
                 {
-                    ApiConsts.FLAG_CLEAN, ApiConsts.FLAG_DRBD_DISKLESS
+                    ApiConsts.FLAG_CLEAN, ApiConsts.FLAG_DISKLESS, ApiConsts.FLAG_DRBD_DISKLESS
                 },
                 strList.toArray()
             );
