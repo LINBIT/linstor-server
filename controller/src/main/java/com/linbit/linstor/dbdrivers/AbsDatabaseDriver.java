@@ -174,7 +174,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         if (objProt == null)
         {
             throw new ImplementationError(
-                table.getName() + "'s DB entry exists, but is missing an entry in ObjProt table!" + objProtPath,
+                table.getName() + "'s DB entry exists, but is missing an entry in ObjProt table! " + objProtPath,
                 null
             );
         }

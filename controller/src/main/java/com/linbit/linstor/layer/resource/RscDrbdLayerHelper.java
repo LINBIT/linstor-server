@@ -543,7 +543,7 @@ public class RscDrbdLayerHelper extends
             resourceNameSuffix
         );
 
-        return layerDataFactory.createDrbdRscData(
+        DrbdRscData<Resource> drbdRscData = layerDataFactory.createDrbdRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,
             resourceNameSuffix,
@@ -555,6 +555,8 @@ public class RscDrbdLayerHelper extends
             drbdSnapData.getAlStripeSize(),
             drbdSnapData.getFlags().getFlagsBits(apiCtx)
         );
+        drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
+        return drbdRscData;
     }
 
     @Override

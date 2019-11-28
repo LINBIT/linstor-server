@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.objects;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.AccessToDeletedDataException;
@@ -39,6 +41,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import javax.inject.Provider;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,8 +55,6 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.FluxSink;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  *
@@ -409,6 +410,14 @@ public class Node extends BaseTransactionObject
         return snapshotMap.values();
     }
 
+    public Iterator<Snapshot> iterateSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return snapshotMap.values().iterator();
+    }
 
     public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
     {

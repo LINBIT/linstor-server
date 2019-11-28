@@ -243,6 +243,8 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
         copySnapshotsIntoResources(dbCon);
         copySnapshotVolumesIntoVolumes(dbCon);
 
+        createObjectProtectionForSnapshotDefinitions(dbCon);
+
         createLayerDataForSnapshots(dbCon);
 
         dropTable(dbCon, TBL_SNAP_VLM);
@@ -905,7 +907,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
         );
         final String insertLSV = generateInsertStmt(
             TBL_LAYER_S_V,
-            CLM_LAYER_RSC_ID, CLM_PROVIDER_KIND, CLM_NODE_NAME, CLM_STOR_POOL_NAME
+            CLM_LAYER_RSC_ID, CLM_VLM_NR, CLM_PROVIDER_KIND, CLM_NODE_NAME, CLM_STOR_POOL_NAME
         );
         final String insertLSFVD = generateInsertStmt(
             TBL_LAYER_SF_VD,

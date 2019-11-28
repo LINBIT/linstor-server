@@ -7,6 +7,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -140,6 +141,15 @@ public class DbNumberPoolInitializer
 
                     allocate(rscLayerData);
                 }
+                Iterator<Snapshot> iterateSnapshots = curNode.iterateSnapshots(initCtx);
+                while (iterateSnapshots.hasNext())
+                {
+                    Snapshot snapshot = iterateSnapshots.next();
+                    AbsRscLayerObject<?> rscLayerData = snapshot.getLayerData(initCtx);
+
+                    allocate(rscLayerData);
+                }
+
             }
         }
         catch (AccessDeniedException | ValueInUseException exc)
