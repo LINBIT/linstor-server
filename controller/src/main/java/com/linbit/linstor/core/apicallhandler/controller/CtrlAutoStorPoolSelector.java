@@ -385,16 +385,17 @@ public class CtrlAutoStorPoolSelector
                         for (String propFilterEntry : repOnSameFilter)
                         {
                             Tuple2<String, Optional<String>> propFilterTuple = parsePropTuple(propFilterEntry);
-                            String nodePropVal =
-                                candidateNode.getProps(peerAccCtx.get()).getProp(propFilterTuple.getT1());
+                            String propFilterKey = propFilterTuple.getT1();
+                            Optional<String> propFilterVal = propFilterTuple.getT2();
+                            String nodePropVal = candidateNode.getProps(peerAccCtx.get()).getProp(propFilterKey);
 
-                            boolean hasPrefPropVal = propFilterTuple.getT2().isPresent();
+                            boolean hasPrefPropVal = propFilterVal.isPresent();
 
                             if (!hasPrefPropVal && nodePropVal != null ||
-                                hasPrefPropVal && propFilterTuple.getT2().get().equals(nodePropVal)
+                                hasPrefPropVal && propFilterVal.get().equals(nodePropVal)
                             )
                             {
-                                props.put(propFilterTuple.getT1(), nodePropVal);
+                                props.put(propFilterKey, nodePropVal);
                             }
                         }
 
@@ -460,18 +461,21 @@ public class CtrlAutoStorPoolSelector
                     // make sure that all other nodes in the list have the same value
                     // by removing nodes with a different one
                     Map<String, String> prefPropValsMap = new HashMap<>();
-                    Node nodeToRemove = null;
+                    List<Node> nodesToRemove = new ArrayList<>();
                     for (Node nodeRepOnSame : nodesRepOnSame)
                     {
                         for (String propEntrySame : repOnSameFilter)
                         {
                             Tuple2<String, Optional<String>> propTuple = parsePropTuple(propEntrySame);
-                            String nodePropVal =
-                                nodeRepOnSame.getProps(peerAccCtx.get()).getProp(propTuple.getT1());
+                            String propKey = propTuple.getT1();
+                            Optional<String> propVal = propTuple.getT2();
 
-                            if (!propTuple.getT2().isPresent() && !prefPropValsMap.containsKey(propTuple.getT1()))
+                            if (!propVal.isPresent() && !prefPropValsMap.containsKey(propKey))
                             {
-                                prefPropValsMap.put(propTuple.getT1(), nodePropVal);
+                                prefPropValsMap.put(
+                                    propKey,
+                                    nodeRepOnSame.getProps(peerAccCtx.get()).getProp(propKey)
+                                );
                             }
                         }
 
@@ -480,12 +484,12 @@ public class CtrlAutoStorPoolSelector
                             if (!nodeRepOnSame.getProps(peerAccCtx.get()).getProp(prefPropValsEntry.getKey())
                                 .equals(prefPropValsEntry.getValue()))
                             {
-                                nodeToRemove = nodeRepOnSame;
+                                nodesToRemove.add(nodeRepOnSame);
                                 break;
                             }
                         }
                     }
-                    nodesRepOnSame.remove(nodeToRemove);
+                    nodesRepOnSame.removeAll(nodesToRemove);
 
                     // if both filters are present check for intersections of the filtered nodes first
                     if (!repOnSameFilter.isEmpty() && !repOnDiffFilter.isEmpty())
@@ -510,6 +514,7 @@ public class CtrlAutoStorPoolSelector
                         .sorted(nodeComparator.reversed())
                         .collect(Collectors.toCollection(ArrayList::new));
                 }
+
 
                 // add filtered candidates
                 addCandidate(
