@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 
 public class DmSetupUtils
 {
+    private static final String DM_SETUP_MESSAGE_FLUSH = "flush";
+
     private static final Pattern DM_SETUP_LS_PATTERN = Pattern.compile(
         "^([^\\s]+)\\s+\\(([0-9]+)(?::\\s|,\\s)([0-9]+)\\)$",
         Pattern.MULTILINE
@@ -121,6 +123,39 @@ public class DmSetupUtils
             },
             "Failed to create writecache device",
             "Failed to create writecache device"
+        );
+    }
+
+    public static void flush(
+        ExtCmdFactory extCmdFactory,
+        String device
+    )
+        throws StorageException
+    {
+        message(extCmdFactory, device, 0L, DM_SETUP_MESSAGE_FLUSH);
+    }
+
+    public static void message(
+        ExtCmdFactory extCmdFactory,
+        String device,
+        Long sector,
+        String message
+    )
+        throws StorageException
+    {
+        String sectorStr = sector == null ? "0" : sector.toString();
+        Commands.genericExecutor(
+            extCmdFactory.create(),
+            new String[]
+            {
+                "dmsetup",
+                "message",
+                device,
+                sectorStr,
+                message
+            },
+            "'dmsetup message' returned unexpected exit code",
+            "Failed to send message '" + message + "' to device " + device + " (sector: " + sectorStr + ")"
         );
     }
 }

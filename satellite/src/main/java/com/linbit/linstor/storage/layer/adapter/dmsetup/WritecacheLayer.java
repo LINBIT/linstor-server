@@ -215,6 +215,21 @@ public class WritecacheLayer implements DeviceLayer
             }
         }
 
+        for (Snapshot snap : snapshotListRef)
+        {
+            if (snap.getSuspendResource(storDriverAccCtx))
+            {
+                for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
+                {
+                    if (vlmData.exists())
+                    {
+                        DmSetupUtils.flush(extCmdFactory, vlmData.getDevicePath());
+                    }
+                }
+                break;
+            }
+        }
+
         LayerProcessResult dataResult = resourceProcessorProvider.get().process(
             rscData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA),
             snapshotListRef,
