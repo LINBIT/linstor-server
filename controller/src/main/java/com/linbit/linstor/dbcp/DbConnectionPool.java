@@ -289,29 +289,40 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
             if (dbProductMinVersion != null)
             {
-                String[] currVersionSplit = dbProductVersion.split("\\.");
-                int currVersionMajor = Integer.parseInt(currVersionSplit[0]);
-                int currVersionMinor = Integer.parseInt(currVersionSplit[1]);
-                int minVersionMajor = dbProductMinVersion[0];
-                int minVersionMinor = dbProductMinVersion[1];
+                final String[] versionNumberSplit = dbProductVersion.split("\\s");
+                if (versionNumberSplit.length > 0)
+                {
+                    String[] currVersionSplit = versionNumberSplit[0].split("\\.");
+                    int currVersionMajor = Integer.parseInt(currVersionSplit[0]);
+                    int currVersionMinor = Integer.parseInt(currVersionSplit[1]);
+                    int minVersionMajor = dbProductMinVersion[0];
+                    int minVersionMinor = dbProductMinVersion[1];
 
-                if (
-                    currVersionMajor < minVersionMajor ||
-                        currVersionMajor == minVersionMajor && currVersionMinor < minVersionMinor
-                )
+                    if (
+                        currVersionMajor < minVersionMajor ||
+                            currVersionMajor == minVersionMajor && currVersionMinor < minVersionMinor
+                    )
+                    {
+                        throw new InitializationException(
+                            StringUtils.join(
+                                "",
+                                "Currently installed version (",
+                                currVersionMajor + "." + currVersionMinor,
+                                ") of database '", dbProductName,
+                                "' is older than the required minimum version (",
+                                minVersionMajor + "." + minVersionMinor, ")!"
+                            )
+                        );
+                    }
+                    // else: everything is fine so we can proceed with the migration process
+                }
+                else
                 {
                     throw new InitializationException(
-                        StringUtils.join(
-                            "",
-                            "Currently installed version (",
-                            currVersionMajor + "." + currVersionMinor,
-                            ") of database '", dbProductName,
-                            "' is older than the required minimum version (",
-                            minVersionMajor + "." + minVersionMinor, ")!"
-                        )
+                        "Failed to verify minimal database version! You can try to run linstor-controller without " +
+                        "database version check"
                     );
                 }
-                // else: everything is fine so we can proceed with the migration process
             }
         }
         catch (SQLException sqlExc)
