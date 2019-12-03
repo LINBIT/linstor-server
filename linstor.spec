@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.2.1
+Version: 1.3.0
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -8,6 +8,9 @@ BuildArch: noarch
 %define LS_PREFIX /usr/share/linstor-server
 %define FIREWALLD_SERVICES /usr/lib/firewalld/services
 %define NAME_VERS %{name}-server-%{version}
+
+# Prevent brp-java-repack-jars from being run.
+%define __jar_repack %{nil} 
 
 Group: System Environment/Daemons
 License: GPLv2+
@@ -131,6 +134,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Thu Dec 3 2019 Rene Peinthor <rene.peinthor@linbit.com> 1.3.0-1
+- New upstream release. SPDK support, bug fixes.
+
 * Thu Nov 7 2019 Rene Peinthor <rene.peinthor@linbit.com> 1.2.1-1
 - New upstream release. ETCD-ssl support, bug fixes.
 
