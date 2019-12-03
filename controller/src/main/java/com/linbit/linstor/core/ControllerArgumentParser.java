@@ -51,9 +51,9 @@ class ControllerArgumentParser
     private boolean usageHelpRequested;
 
     @CommandLine.Option(
-        names = {"-s", "--db-startup-verification"},
-        description = "Toggle startup verification that checks the version of databases supported by Linstor")
-    private boolean toggleDbStartupVerification = true;
+        names = {"--disable-db-version-check"},
+        description = "Disable database version version checks supported by Linstor")
+    private boolean disableDbVersionCheck = false;
 
     static ControllerCmdlArguments parseCommandLine(String[] args)
     {
@@ -136,7 +136,7 @@ class ControllerArgumentParser
             cArgs.setLogLevel(linArgParser.logLevel);
         }
 
-        cArgs.setToggleDbStartupVerification(linArgParser.toggleDbStartupVerification);
+        cArgs.setDbStartupVerification(!linArgParser.disableDbVersionCheck);
 
         return cArgs;
     }

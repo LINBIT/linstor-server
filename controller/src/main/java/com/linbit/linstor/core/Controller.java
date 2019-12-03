@@ -231,7 +231,7 @@ public final class Controller
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
-            dbInitializer.initialize(cArgs.isToggleDbStartupVerification());
+            dbInitializer.initialize(cArgs.isDbStartupVerification());
 
             // Object protection loading has a hidden dependency on initializing the security objects
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).
