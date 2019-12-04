@@ -665,10 +665,7 @@ public class DrbdLayer implements DeviceLayer
     )
         throws ResourceException
     {
-        boolean shouldSuspend = snapshotList.stream()
-            .anyMatch(snap ->
-            AccessUtils.execPrivileged(() -> snap.getSuspendResource(workerCtx))
-            );
+        boolean shouldSuspend = drbdRscData.exists() && drbdRscData.getSuspendIo();
 
         if (!drbdRscData.isSuspended() && shouldSuspend)
         {

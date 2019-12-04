@@ -77,7 +77,8 @@ public class WritecacheRscData<RSC extends AbsResource<RSC>>
             rscLayerId,
             getChildrenPojos(accCtxRef),
             rscSuffix,
-            vlmPojos
+            vlmPojos,
+            suspend.get()
         );
     }
 
@@ -88,7 +89,7 @@ public class WritecacheRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    protected void deleteVlmFromDatabase(WritecacheVlmData vlmRef) throws DatabaseException
+    protected void deleteVlmFromDatabase(WritecacheVlmData<RSC> vlmRef) throws DatabaseException
     {
         writecacheDbDriver.delete(vlmRef);
     }

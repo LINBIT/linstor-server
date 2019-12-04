@@ -50,6 +50,7 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
@@ -245,6 +246,13 @@ public class CtrlSnapshotCrtApiCallHandler
             ));
         }
 
+        Iterator<Resource> rscIterator = ctrlSnapshotHelper.iterateResource(rscDfn);
+        while (rscIterator.hasNext())
+        {
+            Resource rsc = rscIterator.next();
+            setSuspend(rsc, true);
+        }
+
         ctrlTransactionHelper.commit();
 
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -255,6 +263,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
+                .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
@@ -374,10 +383,14 @@ public class CtrlSnapshotCrtApiCallHandler
             unsetSuspendResourcePrivileged(snapshot);
         }
 
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
+        resumeIoPrivileged(rscDfn);
+
         ctrlTransactionHelper.commit();
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
+                .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
                 .transform(responses -> CtrlResponseUtils.combineResponses(
                     responses,
                     rscName,
@@ -433,7 +446,7 @@ public class CtrlSnapshotCrtApiCallHandler
             ctrlPropsHelper.getProps(snapshot)
         );
 
-        setSuspendResource(snapshot);
+        setSuspend(snapshot);
 
         for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitions)
         {
@@ -711,7 +724,8 @@ public class CtrlSnapshotCrtApiCallHandler
         return snapVlm;
     }
 
-    private void setSuspendResource(Snapshot snapshot)
+    @Deprecated
+    private void setSuspend(Snapshot snapshot)
     {
         try
         {
@@ -724,6 +738,26 @@ public class CtrlSnapshotCrtApiCallHandler
                 "set resource suspension for " + getSnapshotDescriptionInline(snapshot),
                 ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
             );
+        }
+    }
+
+    private void setSuspend(Resource rsc, boolean suspend)
+    {
+        try
+        {
+            rsc.getLayerData(peerAccCtx.get()).setSuspendIo(suspend);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "set resource suspension for " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
         }
     }
 
@@ -886,6 +920,7 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
+    @Deprecated
     private void unsetSuspendResourcePrivileged(Snapshot snapshot)
     {
         try
@@ -895,6 +930,27 @@ public class CtrlSnapshotCrtApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ImplementationError(accDeniedExc);
+        }
+    }
+
+    private void resumeIoPrivileged(ResourceDefinition rscDfn)
+    {
+        try
+        {
+            Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+            while (rscIt.hasNext())
+            {
+                Resource rsc= rscIt.next();
+                rsc.getLayerData(apiCtx).setSuspendIo(false);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
         }
     }
 

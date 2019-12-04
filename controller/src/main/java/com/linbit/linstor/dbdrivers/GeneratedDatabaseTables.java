@@ -230,6 +230,7 @@ public class GeneratedDatabaseTables
         public static final Column LAYER_RESOURCE_PARENT_ID = new Column(4, "LAYER_RESOURCE_PARENT_ID", Types.INTEGER, false, true);
         public static final Column LAYER_RESOURCE_SUFFIX = new Column(5, "LAYER_RESOURCE_SUFFIX", Types.VARCHAR, false, false);
         public static final Column SNAPSHOT_NAME = new Column(6, "SNAPSHOT_NAME", Types.VARCHAR, false, false);
+        public static final Column LAYER_RESOURCE_SUSPENDED = new Column(7, "LAYER_RESOURCE_SUSPENDED", Types.BOOLEAN, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -239,7 +240,8 @@ public class GeneratedDatabaseTables
             LAYER_RESOURCE_KIND,
             LAYER_RESOURCE_PARENT_ID,
             LAYER_RESOURCE_SUFFIX,
-            SNAPSHOT_NAME
+            SNAPSHOT_NAME,
+            LAYER_RESOURCE_SUSPENDED
         };
 
         @Override
@@ -1183,6 +1185,7 @@ public class GeneratedDatabaseTables
         LayerResourceIds.LAYER_RESOURCE_PARENT_ID.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.LAYER_RESOURCE_SUFFIX.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.SNAPSHOT_NAME.table = LAYER_RESOURCE_IDS;
+        LayerResourceIds.LAYER_RESOURCE_SUSPENDED.table = LAYER_RESOURCE_IDS;
         LayerStorageVolumes.LAYER_RESOURCE_ID.table = LAYER_STORAGE_VOLUMES;
         LayerStorageVolumes.VLM_NR.table = LAYER_STORAGE_VOLUMES;
         LayerStorageVolumes.PROVIDER_KIND.table = LAYER_STORAGE_VOLUMES;

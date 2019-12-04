@@ -1,11 +1,5 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.objects.Node;
@@ -15,6 +9,12 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {
@@ -120,5 +120,6 @@ public interface CtrlStltSerializer extends CommonSerializer
             long vdoLogicalSizeKib,
             long vdoSlabSizeKib
         );
+
     }
 }

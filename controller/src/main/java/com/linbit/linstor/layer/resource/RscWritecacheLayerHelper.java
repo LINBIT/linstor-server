@@ -1,7 +1,6 @@
 package com.linbit.linstor.layer.resource;
 
 import com.linbit.ExhaustedPoolException;
-import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
@@ -71,7 +70,7 @@ class RscWritecacheLayerHelper
             // its type is Class<WritecacheRscData> (without nested types), but that is not enough as the
             // super constructor wants a Class<RSC_PO>, where RSC_PO is WritecacheRscData<Resource>.
             (Class<WritecacheRscData<Resource>>) ((Object) WritecacheRscData.class),
-            DeviceLayerKind.NVME,
+            DeviceLayerKind.WRITECACHE,
             rscLayerDataFactory
         );
     }

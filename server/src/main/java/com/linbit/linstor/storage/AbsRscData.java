@@ -43,6 +43,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected final TransactionMap<VolumeNumber, VLM_TYPE> vlmMap;
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> parent;
     protected final TransactionSet<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> children;
+    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, Boolean> suspend;
 
     // volatile satellite only
     private boolean checkFileSystem;
@@ -68,6 +69,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         parent = transObjFactory.createTransactionSimpleObject(this, parentRef, dbDriverRef.getParentDriver());
         children = transObjFactory.createTransactionSet(this, childrenRef, null);
         vlmMap = transObjFactory.createTransactionMap(vlmProviderObjectsRef, null);
+        suspend = transObjFactory.createTransactionSimpleObject(this, false, dbDriverRef.getSuspendDriver());
 
         checkFileSystem = true;
 
@@ -167,6 +169,18 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
             childrenPojos.add(rscLayerObject.asPojo(accCtx));
         }
         return childrenPojos;
+    }
+
+    @Override
+    public void setSuspendIo(boolean suspendRef) throws DatabaseException
+    {
+        suspend.set(suspendRef);
+    }
+
+    @Override
+    public boolean getSuspendIo()
+    {
+        return suspend.get();
     }
 
     @Override

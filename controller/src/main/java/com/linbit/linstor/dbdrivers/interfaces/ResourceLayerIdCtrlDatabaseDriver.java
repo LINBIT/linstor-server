@@ -19,6 +19,7 @@ public interface ResourceLayerIdCtrlDatabaseDriver extends ResourceLayerIdDataba
         public final Integer parentId;
         public final DeviceLayerKind kind;
         public final String rscSuffix;
+        public final boolean suspended;
 
         public RscLayerInfo(
             NodeName nodeNameRef,
@@ -27,7 +28,8 @@ public interface ResourceLayerIdCtrlDatabaseDriver extends ResourceLayerIdDataba
             int idRef,
             Integer parentIdRef,
             DeviceLayerKind kindRef,
-            String rscSuffixRef
+            String rscSuffixRef,
+            boolean suspendedRef
         )
         {
             nodeName = nodeNameRef;
@@ -37,6 +39,7 @@ public interface ResourceLayerIdCtrlDatabaseDriver extends ResourceLayerIdDataba
             parentId = parentIdRef;
             kind = kindRef;
             rscSuffix = rscSuffixRef;
+            suspended = suspendedRef;
         }
     }
 

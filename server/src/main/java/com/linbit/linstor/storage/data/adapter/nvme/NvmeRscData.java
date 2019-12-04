@@ -162,7 +162,8 @@ public class NvmeRscData<RSC extends AbsResource<RSC>>
             rscLayerId,
             getChildrenPojos(accCtx),
             getResourceNameSuffix(),
-            vlmPojos
+            vlmPojos,
+            suspend.get()
         );
     }
 }

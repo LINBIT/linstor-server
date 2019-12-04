@@ -161,6 +161,7 @@ public class DbConstants
     public static final String LAYER_RESOURCE_KIND = "LAYER_RESOURCE_KIND";
     public static final String LAYER_RESOURCE_PARENT_ID = "LAYER_RESOURCE_PARENT_ID";
     public static final String LAYER_RESOURCE_SUFFIX = "LAYER_RESOURCE_SUFFIX";
+    public static final String LAYER_RESOURCE_SUSPENDED = "LAYER_RESOURCE_SUSPENDED";
 
     // LAYER_DRBD_RESOURCES column names
     public static final String AL_STRIPES      = "AL_STRIPES";

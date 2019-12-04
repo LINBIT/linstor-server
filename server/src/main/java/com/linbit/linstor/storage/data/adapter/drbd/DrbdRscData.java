@@ -275,7 +275,8 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             alStripes,
             alStripeSize,
             flags.getFlagsBits(accCtx),
-            vlmPojos
+            vlmPojos,
+            suspend.get()
         );
     }
 }

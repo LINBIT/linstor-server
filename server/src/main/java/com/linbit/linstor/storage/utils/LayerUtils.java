@@ -213,7 +213,7 @@ public class LayerUtils
             while (layerData != null)
             {
                 ret.add(layerData.getLayerKind());
-                layerData = layerData.getFirstChild();
+                layerData = layerData.getChildBySuffix("");
             }
         }
         catch (AccessDeniedException exc)

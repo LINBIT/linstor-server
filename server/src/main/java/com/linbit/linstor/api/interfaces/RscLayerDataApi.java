@@ -17,6 +17,8 @@ public interface RscLayerDataApi
 
     DeviceLayerKind getLayerKind();
 
+    boolean getSuspend();
+
     <T extends VlmLayerDataApi> List<T> getVolumeList();
 
     default <T extends VlmLayerDataApi> Map<Integer, T> getVolumeMap()

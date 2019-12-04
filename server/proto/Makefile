@@ -8,7 +8,7 @@ JAVAOUT=$(JAVABASEOUT)/com/linbit
 JAVASUFF=OuterClass.java
 JAVAS=$(patsubst %,$(JAVAOUT)/%$(JAVASUFF),$(JAVANOEND))
 PROTOC=protoc
-PROTOC_JAVA_OPT=lite:
+PROTOC_JAVA_OPT=
 
 all: proto
 

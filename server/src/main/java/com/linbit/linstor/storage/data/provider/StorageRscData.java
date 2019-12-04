@@ -90,7 +90,8 @@ public class StorageRscData<RSC extends AbsResource<RSC>>
             rscLayerId,
             getChildrenPojos(accCtxRef),
             rscSuffix,
-            vlmPojos
+            vlmPojos,
+            suspend.get()
         );
     }
 }

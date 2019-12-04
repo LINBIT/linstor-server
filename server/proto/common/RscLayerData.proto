@@ -21,4 +21,6 @@ message RscLayerData
     optional StorageRsc         storage = 8;
     optional NvmeRsc            nvme = 9;
     optional WritecacheRsc      writecache = 10;
+
+    required bool               suspend = 11;
 }

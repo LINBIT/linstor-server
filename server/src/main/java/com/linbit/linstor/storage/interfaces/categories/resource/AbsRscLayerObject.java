@@ -50,6 +50,10 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
 
     void disableCheckFileSystem();
 
+    void setSuspendIo(boolean suspend) throws DatabaseException;
+
+    boolean getSuspendIo();
+
     default AbsRscLayerObject<RSC> getSingleChild()
     {
         Set<AbsRscLayerObject<RSC>> children = getChildren();

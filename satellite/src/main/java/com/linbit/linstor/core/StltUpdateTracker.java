@@ -6,9 +6,9 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 
-import reactor.core.publisher.Flux;
-
 import java.util.UUID;
+
+import reactor.core.publisher.Flux;
 
 public interface StltUpdateTracker
 {

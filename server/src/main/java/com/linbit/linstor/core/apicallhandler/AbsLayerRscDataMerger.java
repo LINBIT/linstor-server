@@ -127,6 +127,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             parent,
             remoteResourceRef
         );
+        // rscLayerObject.setSuspendIo(rscLayerDataPojo.getSuspend());
 
         for (RscLayerDataApi childRscPojo : rscLayerDataPojo.getChildren())
         {

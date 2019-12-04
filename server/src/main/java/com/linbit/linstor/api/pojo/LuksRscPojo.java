@@ -12,6 +12,7 @@ public class LuksRscPojo implements RscLayerDataApi
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
+    private final boolean suspend;
 
     private final List<LuksVlmPojo> vlms;
 
@@ -19,13 +20,15 @@ public class LuksRscPojo implements RscLayerDataApi
         int idRef,
         List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
-        List<LuksVlmPojo> vlmsRef
+        List<LuksVlmPojo> vlmsRef,
+        boolean suspendRef
     )
     {
         id = idRef;
         children = childrenRef;
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
+        suspend = suspendRef;
     }
 
     @Override
@@ -50,6 +53,12 @@ public class LuksRscPojo implements RscLayerDataApi
     public String getRscNameSuffix()
     {
         return rscNameSuffix;
+    }
+
+    @Override
+    public boolean getSuspend()
+    {
+        return suspend;
     }
 
     @Override

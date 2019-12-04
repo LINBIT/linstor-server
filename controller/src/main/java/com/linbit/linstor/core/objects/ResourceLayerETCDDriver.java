@@ -21,6 +21,7 @@ import com.linbit.linstor.transaction.TransactionMgrETCD;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_KIND;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_PARENT_ID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUFFIX;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUSPENDED;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.NODE_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.RESOURCE_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.SNAPSHOT_NAME;
@@ -39,6 +40,7 @@ public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceL
 {
     private final ErrorReporter errorReporter;
     private final SingleColumnDatabaseDriver<AbsRscData<?, VlmProviderObject<?>>, AbsRscLayerObject<?>> parentDriver;
+    private final SingleColumnDatabaseDriver<AbsRscData<?, VlmProviderObject<?>>, Boolean> suspendDriver;
 
     @Inject
     public ResourceLayerETCDDriver(ErrorReporter errorReporterRef, Provider<TransactionMgrETCD> transMgrProviderRef)
@@ -68,6 +70,22 @@ public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceL
                     .put(LAYER_RESOURCE_PARENT_ID, Integer.toString(rscData.getParent().getRscLayerId()));
             }
         };
+
+        suspendDriver = (rscData, newSuspend) ->
+        {
+            boolean oldSuspend = rscData.getSuspendIo();
+            errorReporter.logTrace(
+                "Updating %s's suspend io from [%s] to [%s] %s",
+                rscData.getClass().getSimpleName(),
+                Boolean.toString(oldSuspend),
+                newSuspend.toString(),
+                getId(rscData)
+            );
+
+            namespace(GeneratedDatabaseTables.LAYER_RESOURCE_IDS, Integer.toString(rscData.getRscLayerId()))
+                .put(LAYER_RESOURCE_SUSPENDED, newSuspend.toString());
+
+        };
     }
 
     @Override
@@ -85,6 +103,7 @@ public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceL
                 String snapNameStr = allIds.get(EtcdUtils.buildKey(SNAPSHOT_NAME, layerId));
                 SnapshotName snapName = snapNameStr == null ? null : new SnapshotName(snapNameStr);
 
+                String suspendedStr = allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_SUSPENDED, layerId));
                 ret.add(
                     new RscLayerInfo(
                         new NodeName(allIds.get(EtcdUtils.buildKey(NODE_NAME, layerId))),
@@ -93,7 +112,8 @@ public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceL
                         Integer.parseInt(layerId),
                         parentIdStr != null && !parentIdStr.isEmpty() ? Integer.parseInt(parentIdStr) : null,
                         DeviceLayerKind.valueOf(allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_KIND, layerId))),
-                        allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_SUFFIX, layerId))
+                        allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_SUFFIX, layerId)),
+                        suspendedStr == null ? false : Boolean.parseBoolean(suspendedStr)
                     )
                 );
             }
@@ -117,7 +137,8 @@ public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceL
             .put(NODE_NAME, absRsc.getNode().getName().value)
             .put(RESOURCE_NAME, rscData.getResourceName().value)
             .put(LAYER_RESOURCE_KIND, rscData.getLayerKind().name())
-            .put(LAYER_RESOURCE_SUFFIX, rscData.getResourceNameSuffix());
+            .put(LAYER_RESOURCE_SUFFIX, rscData.getResourceNameSuffix())
+            .put(LAYER_RESOURCE_SUSPENDED, Boolean.toString(rscData.getSuspendIo()));
         if (rscData.getParent() != null)
         {
             namespace.put(LAYER_RESOURCE_PARENT_ID, Integer.toString(rscData.getParent().getRscLayerId()));
@@ -146,6 +167,12 @@ public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceL
         // SingleColumnDatatbaseDriver does not use anything of that T. The reason it still needs to be declared as T
         // is the usage of the implementation of the layer-specific resource data.
         return (SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>>) ((Object) parentDriver);
+    }
+
+    @Override
+    public <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>> SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean> getSuspendDriver()
+    {
+        return (SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean>) ((Object) suspendDriver);
     }
 
     public static String getId(AbsRscLayerObject<?> rscData)

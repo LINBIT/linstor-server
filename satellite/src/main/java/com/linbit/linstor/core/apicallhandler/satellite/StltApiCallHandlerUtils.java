@@ -21,12 +21,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
-import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -144,6 +141,7 @@ public class StltApiCallHandlerUtils
             for (Entry<DeviceProvider, List<StorPool>> entry : storPoolsPerDeviceProvider.entrySet())
             {
                 DeviceProvider deviceProvider = entry.getKey();
+
                 List<VlmProviderObject<Resource>> vlmDataList = new ArrayList<>();
 
                 for (StorPool storPool : entry.getValue())
@@ -153,14 +151,7 @@ public class StltApiCallHandlerUtils
                         Volume vlm = (Volume) vlmProviderObject.getVolume();
                         if (resourceFilter.isEmpty() || resourceFilter.contains(vlm.getResourceDefinition().getName()))
                         {
-                            List<AbsRscLayerObject<Resource>> rscLayerData = LayerUtils.getChildLayerDataByKind(
-                                vlm.getAbsResource().getLayerData(apiCtx),
-                                DeviceLayerKind.STORAGE
-                            );
-                            for (AbsRscLayerObject<Resource> rlo : rscLayerData)
-                            {
-                                vlmDataList.add(rlo.getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber()));
-                            }
+                            vlmDataList.add(vlmProviderObject);
                         }
                     }
                 }

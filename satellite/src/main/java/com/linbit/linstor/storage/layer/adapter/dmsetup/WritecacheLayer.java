@@ -215,18 +215,21 @@ public class WritecacheLayer implements DeviceLayer
             }
         }
 
-        for (Snapshot snap : snapshotListRef)
+        if (rscLayerDataRef.getAbsResource().getLayerData(storDriverAccCtx).getSuspendIo())
         {
-            if (snap.getSuspendResource(storDriverAccCtx))
+            /*
+             * rsc.getLayerData is either the same reference as our local rscLayerDataRef OR
+             * it is the root-layerData.
+             * In case of suspendIO, only the root-layerData gets the suspendIO set.
+             * However, even if root-layerData != rscLayerDataRef, we still want to flush
+             * our write-cache.
+             */
+            for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
             {
-                for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
+                if (vlmData.exists())
                 {
-                    if (vlmData.exists())
-                    {
-                        DmSetupUtils.flush(extCmdFactory, vlmData.getDevicePath());
-                    }
+                    DmSetupUtils.flush(extCmdFactory, vlmData.getDevicePath());
                 }
-                break;
             }
         }
 

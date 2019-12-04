@@ -22,6 +22,7 @@ public class DrbdRscPojo implements RscLayerDataApi
     private final long alStripeSize;
     private final long flags;
     private final List<DrbdVlmPojo> vlms;
+    private final boolean suspend;
 
     public DrbdRscPojo(
         int idRef,
@@ -33,7 +34,8 @@ public class DrbdRscPojo implements RscLayerDataApi
         int alStripesRef,
         long alStripeSizeRef,
         long flagsRef,
-        List<DrbdVlmPojo> vlmsRef
+        List<DrbdVlmPojo> vlmsRef,
+        boolean suspendRef
     )
     {
         id = idRef;
@@ -46,6 +48,7 @@ public class DrbdRscPojo implements RscLayerDataApi
         alStripeSize = alStripeSizeRef;
         flags = flagsRef;
         vlms = vlmsRef;
+        suspend = suspendRef;
     }
 
     @Override
@@ -100,6 +103,12 @@ public class DrbdRscPojo implements RscLayerDataApi
     public long getFlags()
     {
         return flags;
+    }
+
+    @Override
+    public boolean getSuspend()
+    {
+        return suspend;
     }
 
     @Override

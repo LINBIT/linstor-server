@@ -20,6 +20,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_KIND;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_PARENT_ID;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_SUFFIX;
+import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_SUSPENDED;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.NODE_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.RESOURCE_NAME;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.SNAPSHOT_NAME;
@@ -45,7 +46,8 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDataba
         LAYER_RESOURCE_ID;
     private static final String ALL_FIELDS =
         PK_FIELDS + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + SNAPSHOT_NAME + ", " +
-        LAYER_RESOURCE_PARENT_ID + ", " + LAYER_RESOURCE_KIND + ", " + LAYER_RESOURCE_SUFFIX;
+            LAYER_RESOURCE_PARENT_ID + ", " + LAYER_RESOURCE_KIND + ", " + LAYER_RESOURCE_SUFFIX + ", " +
+            LAYER_RESOURCE_SUSPENDED;
 
     private static final String SELECT_ALL =
         " SELECT " + ALL_FIELDS +
@@ -64,11 +66,15 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDataba
         " UPDATE " + TBL_LAYER_RESOURCE_IDS +
         " SET " + LAYER_RESOURCE_PARENT_ID + " = ? " +
         " WHERE " + PK_FIELDS.replaceAll(",", " = ? AND") + " = ?";
+    private static final String UPDATE_SUSPENDED = " UPDATE " + TBL_LAYER_RESOURCE_IDS +
+        " SET " + LAYER_RESOURCE_SUSPENDED + " = ? " +
+        " WHERE " + PK_FIELDS.replaceAll(",", " = ? AND") + " = ?";
 
     private final ErrorReporter errorReporter;
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     private final SingleColumnDatabaseDriver<AbsRscData<?, VlmProviderObject<?>>, AbsRscLayerObject<?>> parentDriver;
+    private final SingleColumnDatabaseDriver<AbsRscData<?, VlmProviderObject<?>>, Boolean> suspendDriver;
 
     @Inject
     public ResourceLayerIdGenericDbDriver(
@@ -79,6 +85,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDataba
         errorReporter = errorReporterRef;
         transMgrProvider = transMgrProviderRef;
         parentDriver = new ParentDriver();
+        suspendDriver = new SuspendDriver();
     }
 
     @Override
@@ -116,7 +123,8 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDataba
                         resultSet.getInt(LAYER_RESOURCE_ID),
                         parentId,
                         DeviceLayerKind.valueOf(resultSet.getString(LAYER_RESOURCE_KIND)),
-                        resultSet.getString(LAYER_RESOURCE_SUFFIX)
+                        resultSet.getString(LAYER_RESOURCE_SUFFIX),
+                        resultSet.getBoolean(LAYER_RESOURCE_SUSPENDED)
                     );
 
                     ret.add(rscInfoData);
@@ -163,6 +171,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDataba
             }
             stmt.setString(6, rscData.getLayerKind().name());
             stmt.setString(7, rscData.getResourceNameSuffix());
+            stmt.setBoolean(8, rscData.getSuspendIo());
 
             stmt.executeUpdate();
             errorReporter.logTrace("LayerResourceId created %s", getId(rscData));
@@ -205,6 +214,13 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDataba
         // SingleColumnDatatbaseDriver does not use anything of that T. The reason it still needs to be declared as T
         // is the usage of the implementation of the layer-specific resource data.
         return (SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>>) ((Object) parentDriver);
+    }
+
+    @Override
+    public <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>> SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean> getSuspendDriver()
+    {
+        // TODO Auto-generated method stub
+        return (SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean>) ((Object) suspendDriver);
     }
 
     private Connection getConnection()
@@ -277,6 +293,42 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDataba
                 rscData.getClass().getSimpleName(),
                 oldParentData == null ? null : oldParentData.getRscLayerId(),
                 newParentData == null ? null : newParentData.getRscLayerId(),
+                getId(rscData)
+            );
+        }
+    }
+
+    private class SuspendDriver implements SingleColumnDatabaseDriver<AbsRscData<?, VlmProviderObject<?>>, Boolean>
+    {
+        @Override
+        @SuppressWarnings("checkstyle:magicnumber")
+        public void update(AbsRscData<?, VlmProviderObject<?>> rscData, Boolean newSuspend)
+            throws DatabaseException
+        {
+            boolean oldSuspend = rscData.getSuspendIo();
+            errorReporter.logTrace(
+                "Updating %s's suspend io from [%s] to [%s] %s",
+                rscData.getClass().getSimpleName(),
+                Boolean.toString(oldSuspend),
+                newSuspend,
+                getId(rscData)
+            );
+            try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_SUSPENDED))
+            {
+                stmt.setBoolean(1, newSuspend);
+                stmt.setInt(2, rscData.getRscLayerId());
+
+                stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
+            errorReporter.logTrace(
+                "%s's suspended io updated from [%s] to [%s] %s",
+                rscData.getClass().getSimpleName(),
+                Boolean.toString(oldSuspend),
+                newSuspend.toString(),
                 getId(rscData)
             );
         }

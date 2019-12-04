@@ -12,6 +12,7 @@ public class WritecacheRscPojo implements RscLayerDataApi
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
+    private final boolean suspend;
 
     private final List<WritecacheVlmPojo> vlms;
 
@@ -19,7 +20,8 @@ public class WritecacheRscPojo implements RscLayerDataApi
         int idRef,
         List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
-        List<WritecacheVlmPojo> vlmsRef
+        List<WritecacheVlmPojo> vlmsRef,
+        boolean suspendRef
     )
     {
         super();
@@ -27,6 +29,7 @@ public class WritecacheRscPojo implements RscLayerDataApi
         children = childrenRef;
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
+        suspend = suspendRef;
     }
 
     @Override
@@ -51,6 +54,12 @@ public class WritecacheRscPojo implements RscLayerDataApi
     public DeviceLayerKind getLayerKind()
     {
         return DeviceLayerKind.WRITECACHE;
+    }
+
+    @Override
+    public boolean getSuspend()
+    {
+        return suspend;
     }
 
     @Override

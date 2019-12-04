@@ -26,6 +26,7 @@ public class StorageRscPojo implements RscLayerDataApi
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
+    private final boolean suspend;
 
     private final List<VlmLayerDataApi> vlms;
 
@@ -33,13 +34,15 @@ public class StorageRscPojo implements RscLayerDataApi
         int idRef,
         List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
-        List<VlmLayerDataApi> vlmsRef
+        List<VlmLayerDataApi> vlmsRef,
+        boolean suspendRef
     )
     {
         id = idRef;
         children = childrenRef;
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
+        suspend = suspendRef;
     }
 
     @Override
@@ -64,6 +67,12 @@ public class StorageRscPojo implements RscLayerDataApi
     public String getRscNameSuffix()
     {
         return rscNameSuffix;
+    }
+
+    @Override
+    public boolean getSuspend()
+    {
+        return suspend;
     }
 
     @Override

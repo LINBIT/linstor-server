@@ -151,6 +151,7 @@ public class CtrlSnapLayerDataFactory
                 break;
             case WRITECACHE:
                 layerHelper = writecacheLayerHelper;
+                break;
             default:
                 throw new ImplementationError("Unknown device layer kind '" + kind + "'");
         }

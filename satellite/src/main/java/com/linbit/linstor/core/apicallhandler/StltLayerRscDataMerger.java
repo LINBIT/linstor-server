@@ -183,6 +183,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             DrbdRscFlags.restoreFlags(drbdRscPojoRef.getFlags())
         );
         updateParent(drbdRscDataRef, parentRef);
+        drbdRscDataRef.setSuspendIo(drbdRscPojoRef.getSuspend());
     }
 
     @Override
