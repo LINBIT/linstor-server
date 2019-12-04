@@ -649,6 +649,13 @@ public class Node extends BaseTransactionObject
             }
 
             // Shallow copy the collection because elements may be removed from it
+            ArrayList<NetInterface> netIfs = new ArrayList<>(netInterfaceMap.values());
+            for (NetInterface netIf : netIfs)
+            {
+                netIf.delete(accCtx);
+            }
+
+            // Shallow copy the collection because elements may be removed from it
             ArrayList<StorPool> storPools = new ArrayList<>(storPoolMap.values());
             for (StorPool storPool : storPools)
             {
