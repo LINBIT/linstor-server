@@ -17,6 +17,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -192,6 +193,29 @@ public class CtrlStorPoolApiCallHandler
         String storPoolNameStr
     )
     {
+        ResponseContext context = makeStorPoolContext(
+            ApiOperation.makeModifyOperation(),
+            nodeNameStr,
+            storPoolNameStr
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Delete storage-pool",
+                lockGuardFactory.buildDeferred(WRITE, NODES_MAP, STOR_POOL_DFN_MAP),
+                () -> deleteStorPoolInTransaction(
+                    nodeNameStr,
+                    storPoolNameStr
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    public Flux<ApiCallRc> deleteStorPoolInTransaction(
+        String nodeNameStr,
+        String storPoolNameStr
+    )
+    {
         Flux<ApiCallRc> flux = Flux.empty();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolContext(
@@ -263,13 +287,14 @@ public class CtrlStorPoolApiCallHandler
             else
             {
                 UUID storPoolUuid = storPool.getUuid(); // cache storpool uuid to avoid access deleted storpool
+                final Node storPoolNode = storPool.getNode();
                 delete(storPool);
                 ctrlTransactionHelper.commit();
 
                 responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultDeletedEntry(
                     storPoolUuid, getStorPoolDescription(nodeNameStr, storPoolNameStr)));
 
-                flux = ctrlSatelliteUpdateCaller.updateSatellite(storPool);
+                flux = ctrlSatelliteUpdateCaller.updateSatellite(storPoolUuid, storPoolNameStr, storPoolNode);
             }
         }
         catch (Exception | ImplementationError exc)

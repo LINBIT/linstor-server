@@ -199,7 +199,11 @@ public class CtrlSatelliteUpdateCaller
 
     public Flux<ApiCallRc> updateSatellite(final StorPool storPool)
     {
-        final Node node = storPool.getNode();
+        return updateSatellite(storPool.getUuid(), storPool.getName().displayValue, storPool.getNode());
+    }
+
+    public Flux<ApiCallRc> updateSatellite(final UUID storPoolUuid, final String storPoolName, final Node node)
+    {
         NodeName nodeName = node.getName();
 
         Flux<ApiCallRc> response;
@@ -220,8 +224,8 @@ public class CtrlSatelliteUpdateCaller
                         internalComSerializer
                             .headerlessBuilder()
                             .changedStorPool(
-                                storPool.getUuid(),
-                                storPool.getName().displayValue
+                                storPoolUuid,
+                                storPoolName
                             )
                             .build()
                     )
