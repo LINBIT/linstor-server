@@ -9,6 +9,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils.execPrivileged;
@@ -30,6 +31,7 @@ import java.util.List;
 public class ResourceCreateCheck
 {
     private AccessContext accessContext;
+    private boolean hasDrbd;
     private boolean hasNvmeTarget;
     private boolean hasNvmeInitiator;
     private boolean hasSwordfishTarget;
@@ -63,7 +65,7 @@ public class ResourceCreateCheck
             switch (resourceRole)
             {
                 case NVME_TARGET:
-                    if (hasNvmeTarget)
+                    if (hasNvmeTarget && !hasDrbd)
                     {
                         throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_EXISTS_NVME_TARGET_PER_RSC_DFN,
@@ -113,11 +115,10 @@ public class ResourceCreateCheck
         ResourceRole ret = null;
 
         if (volumes.stream().anyMatch(
-                vlm -> execPrivileged(
-                    () -> DeviceLayerKind.NVME.equals(
-                        vlm.getAbsResource().getLayerData(accessContext).getLayerKind()) &&
-                        !vlm.getAbsResource().isNvmeInitiator(accessContext)
-                )
+            vlm -> execPrivileged(
+                    () -> LayerRscUtils.getLayerStack(vlm.getAbsResource(), accessContext).contains(DeviceLayerKind.NVME) &&
+                    !vlm.getAbsResource().isNvmeInitiator(accessContext)
+            )
         ))
         {
             ret = ResourceRole.NVME_TARGET;
@@ -126,9 +127,8 @@ public class ResourceCreateCheck
         if (
             volumes.stream().anyMatch(
                 vlm -> execPrivileged(
-                    () -> DeviceLayerKind.NVME.equals(
-                        vlm.getAbsResource().getLayerData(accessContext).getLayerKind()
-                    ) && vlm.getAbsResource().isNvmeInitiator(accessContext)
+                    () -> LayerRscUtils.getLayerStack(vlm.getAbsResource(), accessContext).contains(DeviceLayerKind.NVME) &&
+                        vlm.getAbsResource().isNvmeInitiator(accessContext)
                 )
             )
         )
@@ -167,17 +167,18 @@ public class ResourceCreateCheck
         hasNvmeTarget = execPrivileged(
             () -> rscDfn.streamResource(accessContext)).anyMatch(
                 rsc -> execPrivileged(
-                    () -> rsc.getLayerData(accessContext).getLayerKind().equals(DeviceLayerKind.NVME) &&
+                    () -> LayerRscUtils.getLayerStack(rsc, accessContext).contains(DeviceLayerKind.NVME) &&
                     !rsc.isNvmeInitiator(accessContext)
                 )
         );
         hasNvmeInitiator = execPrivileged(
             () -> rscDfn.streamResource(accessContext)).anyMatch(
                 rsc -> execPrivileged(
-                    () -> rsc.getLayerData(accessContext).getLayerKind().equals(DeviceLayerKind.NVME) &&
+                    () -> LayerRscUtils.getLayerStack(rsc, accessContext).contains(DeviceLayerKind.NVME) &&
                     rsc.isNvmeInitiator(accessContext)
                 )
         );
+        hasDrbd = execPrivileged(() -> !rscDfn.getLayerData(accessContext, DeviceLayerKind.DRBD).isEmpty());
         hasSwordfishTarget = execPrivileged(
             () -> rscDfn.streamResource(accessContext))
                 .flatMap(tmpRsc -> tmpRsc.streamVolumes())

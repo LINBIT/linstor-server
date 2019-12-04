@@ -61,6 +61,7 @@ public class InternalApiConsts
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
+    public static final String PROP_NVME_TARGET_NODE_NAME = "NvmeTargetNodeName";
 
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;

@@ -1,10 +1,13 @@
 package com.linbit.linstor.layer.resource;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -16,6 +19,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
@@ -26,13 +31,18 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 @Singleton
 class RscNvmeLayerHelper extends AbsRscLayerHelper<
@@ -108,6 +118,80 @@ class RscNvmeLayerHelper extends AbsRscLayerHelper<
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
+        Props rscProps = rscRef.getProps(apiCtx);
+        if (rscProps.getProp(InternalApiConsts.PROP_NVME_TARGET_NODE_NAME) == null &&
+            rscRef.isNvmeInitiator(apiCtx))
+        {
+            ResourceDefinition rscDfn = rscRef.getDefinition();
+            Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+
+            HashMap<AbsRscLayerObject<Resource>, Integer> initCountPerTarget = new HashMap<>();
+
+            while (rscIt.hasNext())
+            {
+                Resource otherRsc = rscIt.next();
+                if (!otherRsc.equals(rscRef))
+                {
+                    Set<AbsRscLayerObject<Resource>> otherNvmeDataSet = LayerRscUtils.getRscDataByProvider(
+                        otherRsc.getLayerData(apiCtx),
+                        DeviceLayerKind.NVME
+                    );
+                    if (otherRsc.isNvmeInitiator(apiCtx))
+                    {
+                        for (AbsRscLayerObject<Resource> otherNvmeData : otherNvmeDataSet)
+                        {
+                            Integer count = initCountPerTarget.get(otherNvmeDataSet);
+                            if (count == null)
+                            {
+                                initCountPerTarget.put(otherNvmeData, 1);
+                            }
+                            else
+                            {
+                                initCountPerTarget.put(otherNvmeData, count + 1);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (AbsRscLayerObject<Resource> otherNvmeData : otherNvmeDataSet)
+                        {
+                            if (!initCountPerTarget.containsKey(otherNvmeData))
+                            {
+                                initCountPerTarget.put(otherNvmeData, 0);
+                            }
+                        }
+                    }
+                }
+            }
+
+            int lowestCount = Integer.MAX_VALUE;
+            AbsRscLayerObject<Resource> targetWithLowestInitCount = null;
+            for (Entry<AbsRscLayerObject<Resource>, Integer> entry : initCountPerTarget.entrySet())
+            {
+                if (lowestCount > entry.getValue())
+                {
+                    lowestCount = entry.getValue();
+                    targetWithLowestInitCount = entry.getKey();
+                }
+            }
+
+            if (targetWithLowestInitCount == null)
+            {
+                throw new ApiException("No available nvme target found");
+            }
+
+            try
+            {
+                rscProps.setProp(
+                    InternalApiConsts.PROP_NVME_TARGET_NODE_NAME,
+                    targetWithLowestInitCount.getAbsResource().getNode().getName().displayValue
+                );
+            }
+            catch (InvalidKeyException | InvalidValueException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
         return layerDataFactory.createNvmeRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,

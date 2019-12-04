@@ -6,10 +6,12 @@ import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdUtils;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -356,9 +358,15 @@ public class NvmeUtils
             }
 
             String ipAddr = getIpAddr(// TODO: check on controller
-                rscDfn.streamResource(accCtx).filter(
-                    rsc -> !rsc.equals(nvmeRscData.getAbsResource())
-                ).findFirst().orElseThrow(() -> new StorageException("Target resource not found!")),
+                rscDfn.getResource(
+                    accCtx,
+                    new NodeName(
+                        nvmeRscData
+                            .getAbsResource()
+                            .getProps(accCtx)
+                            .getProp(InternalApiConsts.PROP_NVME_TARGET_NODE_NAME)
+                    )
+                ),
                 accCtx
             ).getAddress();
 
