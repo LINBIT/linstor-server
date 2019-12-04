@@ -230,7 +230,7 @@ public class Resources
         )
         .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE

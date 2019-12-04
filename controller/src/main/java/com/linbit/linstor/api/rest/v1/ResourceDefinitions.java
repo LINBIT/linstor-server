@@ -177,7 +177,7 @@ public class ResourceDefinitions
         )
         .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE

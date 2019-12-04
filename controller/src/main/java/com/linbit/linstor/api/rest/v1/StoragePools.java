@@ -265,7 +265,7 @@ public class StoragePools
         )
         .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE
@@ -280,6 +280,6 @@ public class StoragePools
         Flux<ApiCallRc> flux = ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
     }
 }

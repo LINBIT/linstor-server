@@ -163,7 +163,7 @@ public class VolumeGroups
         )
         .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_GRP, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
     }
 
 

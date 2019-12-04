@@ -136,7 +136,7 @@ public class StoragePoolDefinitions
             )
             .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE

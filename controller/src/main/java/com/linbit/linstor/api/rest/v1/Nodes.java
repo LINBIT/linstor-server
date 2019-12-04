@@ -171,7 +171,7 @@ public class Nodes
             )
             .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_NODE, request));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.OK));
         }
         catch (IOException ioExc)
         {
