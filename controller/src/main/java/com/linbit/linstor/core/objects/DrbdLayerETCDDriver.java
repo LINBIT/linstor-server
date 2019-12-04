@@ -347,7 +347,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
         DrbdRscData rscData,
         Map<VolumeNumber, DrbdVlmData> vlmMap,
         Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> storPoolMapRef
-    )
+    ) throws DatabaseException
     {
         Resource rsc = rscData.getResource();
         NodeName currentNodeName = rsc.getAssignedNode().getName();

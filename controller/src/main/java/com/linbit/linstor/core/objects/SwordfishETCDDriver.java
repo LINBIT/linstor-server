@@ -96,6 +96,7 @@ public class SwordfishETCDDriver extends BaseEtcdDriver implements SwordfishLaye
     }
 
     public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef)
+        throws DatabaseException
     {
         sfVlmDfnInfoCache = new HashMap<>();
 

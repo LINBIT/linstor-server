@@ -109,6 +109,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
 
     @Override
     public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef)
+        throws DatabaseException
     {
         cachedStorVlmInfoByRscLayerId = new HashMap<>();
 
