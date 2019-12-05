@@ -1,3 +1,19 @@
+linstor-server (1.3.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * Fix storage pool delete
+  * rest-api: use http.OK instead of CREATED for modify operations
+  * etcd-transaction: throw a DatabaseException instead of grpc exception
+  * etcd: fix missing netinterface delete on node delete
+  * rest-api: 1.0.12 enable /physical-storage endpoint
+  * nvmelayer: fix copy paste bug
+
+  [ Gabor Hernadi ]
+  * Db: Added migration for orphaned drbd layer data
+  * ETCD: added missing migrations
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 05 Dec 2019 13:05:39 +0100
+
 linstor-server (1.3.0-1) experimental; urgency=medium
 
   [ Rainer Laschober ]

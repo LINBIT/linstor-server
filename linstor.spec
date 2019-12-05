@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.3.0
+Version: 1.3.1
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -10,7 +10,7 @@ BuildArch: noarch
 %define NAME_VERS %{name}-server-%{version}
 
 # Prevent brp-java-repack-jars from being run.
-%define __jar_repack %{nil} 
+%define __jar_repack %{nil}
 
 Group: System Environment/Daemons
 License: GPLv2+
@@ -134,7 +134,10 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
-* Thu Dec 3 2019 Rene Peinthor <rene.peinthor@linbit.com> 1.3.0-1
+* Thu Dec 5 2019 Rene Peinthor <rene.peinthor@linbit.com> 1.3.1-1
+- New upstream release. ETCD-migrations, REST-API fixes, bug fixes.
+
+* Tue Dec 3 2019 Rene Peinthor <rene.peinthor@linbit.com> 1.3.0-1
 - New upstream release. SPDK support, bug fixes.
 
 * Thu Nov 7 2019 Rene Peinthor <rene.peinthor@linbit.com> 1.2.1-1
