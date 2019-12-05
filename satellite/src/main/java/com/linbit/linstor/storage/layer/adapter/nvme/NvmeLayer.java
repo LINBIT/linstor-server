@@ -194,7 +194,7 @@ public class NvmeLayer implements DeviceLayer
                         {
                             if (nvmeRscData.isSpdk())
                             {
-                                nvmeUtils.deleteSpdkNamespace(nvmeVlmData, subsystemName);
+                                nvmeUtils.createSpdkNamespace(nvmeVlmData, subsystemName);
                             }
                             else
                             {
