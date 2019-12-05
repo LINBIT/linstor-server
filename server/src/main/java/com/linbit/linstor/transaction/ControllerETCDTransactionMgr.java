@@ -9,7 +9,7 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.TreeMap;
 
 import com.ibm.etcd.api.KeyValue;
 import com.ibm.etcd.api.RangeResponse;
@@ -168,7 +168,7 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
     }
 
     @Override
-    public Map<String, String> readTable(String keyRef, boolean recursiveRef)
+    public TreeMap<String, String> readTable(String keyRef, boolean recursiveRef)
     {
         /*
          * mostly copied from EtcdUtils which is in the controller server
@@ -181,7 +181,7 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
         }
         RangeResponse rspRow = request.sync();
 
-        HashMap<String, String> rowMap = new HashMap<>();
+        TreeMap<String, String> rowMap = new TreeMap<>();
         for (KeyValue keyValue : rspRow.getKvsList())
         {
             // final String recKey = keyValue.getKey().toStringUtf8();

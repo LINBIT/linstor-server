@@ -30,12 +30,12 @@ public class EtcdUtils
     }
 
     public static String buildKey(
-        Table table,
+        String tableName,
         String... pks
     )
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(LINSTOR_PREFIX).append(table.getName()).append(PATH_DELIMITER);
+        sb.append(LINSTOR_PREFIX).append(tableName).append(PATH_DELIMITER);
         if (pks.length > 0)
         {
             for (String pk : pks)
@@ -50,6 +50,23 @@ public class EtcdUtils
             sb.append(PATH_DELIMITER);
         }
         return sb.toString();
+    }
+
+    public static String buildKey(
+        Table table,
+        String... pks
+    )
+    {
+        return buildKey(table.getName(), pks);
+    }
+
+    public static String buildKey(
+        String tableName,
+        String columnName,
+        String... pks
+    )
+    {
+        return buildKey(tableName, pks) + columnName;
     }
 
     public static String buildKey(

@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbcp.etcd;
 
+import static com.ibm.etcd.client.KeyUtils.bs;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -7,15 +9,24 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.core.LinstorConfigToml;
+import com.linbit.linstor.dbcp.migration.etcd.EtcdMigration;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_00_Init;
+import com.linbit.linstor.dbcp.migration.etcd.Migration_01_DelEmptyRscExtNames;
+import com.linbit.linstor.dbcp.migration.etcd.Migration_02_AutoQuorumAndTiebreaker;
+import com.linbit.linstor.dbcp.migration.etcd.Migration_03_DelProp_SnapshotRestore;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
+import com.linbit.linstor.transaction.ControllerETCDTransactionMgrGenerator;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.common.io.Files;
@@ -23,8 +34,6 @@ import com.ibm.etcd.api.RangeResponse;
 import com.ibm.etcd.client.EtcdClient;
 import com.ibm.etcd.client.KvStoreClient;
 import com.ibm.etcd.client.kv.KvClient;
-
-import static com.ibm.etcd.client.KeyUtils.bs;
 
 @Singleton
 public class DbEtcd implements ControllerETCDDatabase
@@ -94,13 +103,43 @@ public class DbEtcd implements ControllerETCDDatabase
         // do manual data migration and initial data
         String dbhistoryVersionKey = EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version";
 
-        RangeResponse dbVersResp = etcdClient.getKvClient().get(bs(dbhistoryVersionKey)).sync();
+        ControllerETCDTransactionMgrGenerator gen = new ControllerETCDTransactionMgrGenerator(this);
+        ControllerETCDTransactionMgr etcdTx = gen.startTransaction();
+
+        KvClient kvClient = etcdClient.getKvClient();
+        RangeResponse dbVersResp = kvClient.get(bs(dbhistoryVersionKey)).sync();
         int dbVersion = dbVersResp.getCount() > 0 ?
             Integer.parseInt(dbVersResp.getKvs(0).getValue().toStringUtf8()) : 0;
 
         if (dbVersion == 0)
         {
-            Migration_00_Init.migrate(etcdClient.getKvClient());
+            Migration_00_Init.migrate(kvClient);
+            dbVersion++;
+        }
+        Map<Integer, EtcdMigrationMethod> migrations = new TreeMap<>();
+        migrations.put(1, Migration_01_DelEmptyRscExtNames::migrate);
+        migrations.put(2, Migration_02_AutoQuorumAndTiebreaker::migrate);
+        migrations.put(3, Migration_03_DelProp_SnapshotRestore::migrate);
+
+        for (; dbVersion <= migrations.size(); dbVersion++)
+        {
+            EtcdMigrationMethod migrationMethod = migrations.get(dbVersion);
+            if (migrationMethod == null)
+            {
+                throw new ImplementationError(
+                    "missing migration from dbVersion " +
+                        (dbVersion - 1) + " -> " + dbVersion
+                );
+            }
+            migrationMethod.migrate(etcdTx);
+
+            etcdTx.getTransaction().put(
+                EtcdMigration.putReq(
+                    EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + dbVersion + 1
+                )
+            );
+
+            etcdTx.commit();
         }
     }
 
@@ -222,5 +261,10 @@ public class DbEtcd implements ControllerETCDDatabase
         {
             throw new DatabaseException("ETCD database reported 0 entries ");
         }
+    }
+
+    private interface EtcdMigrationMethod
+    {
+        void migrate(ControllerETCDTransactionMgr txMgr);
     }
 }

@@ -16,7 +16,7 @@ public class ControllerETCDTransactionMgrGenerator implements TransactionMgrGene
     }
 
     @Override
-    public TransactionMgr startTransaction()
+    public ControllerETCDTransactionMgr startTransaction()
     {
         return new ControllerETCDTransactionMgr(controllerDatabase);
     }
