@@ -21,10 +21,8 @@ info:
 
     Changelog:
 
-    * 1.0.12
-      - Added /v1/physical-storage endpoint, that lets you query and create lvm/zfs pools
-      - Updated properties
     * 1.0.11
+      - Added /v1/physical-storage endpoint, that lets you query and create lvm/zfs pools
       - Extended Node with list of supported providers and layers as well as lists of reasons for
         unsupported providers and layers
     * 1.0.10
@@ -61,7 +59,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.12
+  version: 1.0.11
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
