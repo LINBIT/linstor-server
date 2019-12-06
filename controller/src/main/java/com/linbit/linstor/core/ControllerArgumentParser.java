@@ -60,6 +60,7 @@ class ControllerArgumentParser
         ControllerArgumentParser linArgParser = new ControllerArgumentParser();
         CommandLine cmd = new CommandLine(linArgParser);
         cmd.setCommandName("Controller");
+        cmd.setOverwrittenOptionsAllowed(true);
 
         try
         {

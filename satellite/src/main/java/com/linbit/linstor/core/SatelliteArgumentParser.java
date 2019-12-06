@@ -66,6 +66,7 @@ class SatelliteArgumentParser
         SatelliteArgumentParser linArgParser = new SatelliteArgumentParser();
         CommandLine cmd = new CommandLine(linArgParser);
         cmd.setCommandName("Satellite");
+        cmd.setOverwrittenOptionsAllowed(true);
 
         try
         {
