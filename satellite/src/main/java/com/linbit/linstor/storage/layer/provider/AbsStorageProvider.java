@@ -270,15 +270,20 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
          * before the resource-deletion, the snapshot will never gets deleted because the resource-deletion
          * will fail before the snapshot-deletion-attempt.
          */
-        deleteSnapshots((List<LAYER_SNAP_DATA>) groupedSnapshotVolumesByDeletingFlag.get(true), apiCallRc);
+
+        // intentional type erasure
+        Object typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(true);
+        deleteSnapshots((List<LAYER_SNAP_DATA>) typeErasedList, apiCallRc);
 
         createVolumes(vlmsToCreate, apiCallRc);
         resizeVolumes(vlmsToResize, apiCallRc);
         deleteVolumes(vlmsToDelete, apiCallRc);
 
+        // intentional type erasure
+        typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(false);
         takeSnapshots(
             volumesLut,
-            (List<LAYER_SNAP_DATA>) groupedSnapshotVolumesByDeletingFlag.get(false),
+            (List<LAYER_SNAP_DATA>) typeErasedList,
             apiCallRc
         );
 
