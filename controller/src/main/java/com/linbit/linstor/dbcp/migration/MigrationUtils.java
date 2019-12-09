@@ -142,7 +142,7 @@ public class MigrationUtils
                 {
                     sql.append(" DEFAULT '").append(defaultValRef).append("'");
                 }
-                if (afterColumn != null)
+                if (database.equals(DbProduct.H2) && afterColumn != null) // we only need this for our own H2 setup
                 {
                     sql.append(" AFTER ").append(afterColumn);
                 }
