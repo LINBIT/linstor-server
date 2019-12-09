@@ -137,7 +137,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         for (String composedPk : composedPkList)
         {
             Object[] rawObjects = new Object[columns.length];
-            String[] pks = composedPk.split(EtcdUtils.PK_DELIMITER);
+            String[] pks = EtcdUtils.splitPks(composedPk, false);
 
             int pkIdx = 0;
 
@@ -166,7 +166,6 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
             {
                 loadedObjectsMap.put(pair.objA, pair.objB);
             }
-            loadedObjectsMap.put(pair.objA, pair.objB);
         }
 
         return loadedObjectsMap;

@@ -142,7 +142,7 @@ public class DbEtcd implements ControllerETCDDatabase
 
                 etcdTx.getTransaction().put(
                     EtcdMigration.putReq(
-                        EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + dbVersion + 1
+                        EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + (dbVersion + 1)
                     )
                 );
 

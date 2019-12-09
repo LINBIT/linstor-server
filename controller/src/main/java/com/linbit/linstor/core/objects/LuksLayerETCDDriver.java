@@ -101,7 +101,7 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
         Set<String> composedKeySet = EtcdUtils.getComposedPkList(luksVlmByIdMap);
         for (String composedKey : composedKeySet)
         {
-            String[] pks = composedKey.split(EtcdUtils.PK_DELIMITER);
+            String[] pks = EtcdUtils.splitPks(composedKey, false);
             VolumeNumber vlmNr;
             try
             {

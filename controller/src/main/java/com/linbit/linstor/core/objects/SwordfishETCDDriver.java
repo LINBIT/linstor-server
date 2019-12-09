@@ -109,7 +109,7 @@ public class SwordfishETCDDriver extends BaseEtcdDriver implements SwordfishLaye
         {
             for (String composedPk : composedPksSet)
             {
-                String[] pks = composedPk.split(EtcdUtils.PK_DELIMITER);
+                String[] pks = EtcdUtils.splitPks(composedPk, false);
 
                 String rscNameStr = pks[LayerSwordfishVolumeDefinitions.RESOURCE_NAME.getIndex()];
                 String rscNameSuffix = pks[LayerSwordfishVolumeDefinitions.RESOURCE_NAME_SUFFIX.getIndex()];

@@ -41,7 +41,7 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
                     String rscName;
                     {
                         String composedKey = EtcdUtils.extractPrimaryKey(key);
-                        String[] split = composedKey.split(EtcdUtils.PK_DELIMITER);
+                        String[] split = EtcdUtils.splitPks(composedKey, false);
                         nodeName = split[0];
                         rscName = split[1];
                     }
@@ -86,8 +86,8 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
                     new Pair<>(
                         layerRscHolder.nodeName,
                         layerRscHolder.rscName
-                        )
-                    );
+                    )
+                );
                 long flag = rscKeyAndFlag.b;
                 if ((flag & FLAG_DISKLESS) == FLAG_DISKLESS)
                 {
@@ -120,6 +120,43 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
         {
             a = aRef;
             b = bRef;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((a == null) ? 0 : a.hashCode());
+            result = prime * result + ((b == null) ? 0 : b.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Pair other = (Pair) obj;
+            if (a == null)
+            {
+                if (other.a != null)
+                    return false;
+            }
+            else if (!a.equals(other.a))
+                return false;
+            if (b == null)
+            {
+                if (other.b != null)
+                    return false;
+            }
+            else if (!b.equals(other.b))
+                return false;
+            return true;
         }
     }
 

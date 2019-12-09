@@ -109,7 +109,7 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
         {
             for (String composedPk : composedPkSet)
             {
-                String[] pks = composedPk.split(EtcdUtils.PK_DELIMITER);
+                String[] pks = EtcdUtils.splitPks(composedPk, false);
 
                 vlmNrInt = Integer.parseInt(pks[LayerWritecacheVolumes.VLM_NR.getIndex()]);
                 String cacheStorPoolNameStr = get(etcdVlmMap, LayerWritecacheVolumes.POOL_NAME, pks);

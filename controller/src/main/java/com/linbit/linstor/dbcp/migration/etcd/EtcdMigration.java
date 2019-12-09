@@ -53,6 +53,6 @@ public abstract class EtcdMigration
     @UsedByMigration
     public static String getColumnName(String etcdKeyRef)
     {
-        return etcdKeyRef.substring(etcdKeyRef.lastIndexOf(EtcdUtils.PATH_DELIMITER));
+        return etcdKeyRef.substring(etcdKeyRef.lastIndexOf(EtcdUtils.PATH_DELIMITER) + 1);
     }
 }

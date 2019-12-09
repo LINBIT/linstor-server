@@ -300,14 +300,16 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * RESOURCE_DEFINITIONS:
          * PK_RD (RESOURCE_NAME)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_RSC_DFN);
+        addSnapNameColumn(dbCon, dbProduct, TBL_RSC_DFN, CLM_RSC_NAME);
         SQLUtils.executeStatement(
             dbCon,
-            MigrationUtils.addColumn(dbProduct, TBL_RSC_DFN, CLM_SNAP_DSP_NAME, VARCHAR_48, false, DFLT_SNAP_NAME)
+            MigrationUtils.addColumn(
+                dbProduct, TBL_RSC_DFN, CLM_SNAP_DSP_NAME, VARCHAR_48, false, DFLT_SNAP_NAME, CLM_RSC_DSP_NAME
+            )
         );
         SQLUtils.executeStatement(
             dbCon,
-            MigrationUtils.addColumn(dbProduct, TBL_RSC_DFN, CLM_PARENT_UUID, CHAR_36, true, null)
+            MigrationUtils.addColumn(dbProduct, TBL_RSC_DFN, CLM_PARENT_UUID, CHAR_36, true, null, null)
         );
         // make RSC_DSP_NAME nullable
         SQLUtils.executeStatement(
@@ -383,7 +385,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * FK_R_NODES (NODE_NAME)
          * FK_R_RSC_DFNS (RESOURCE_NAME)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_RSC);
+        addSnapNameColumn(dbCon, dbProduct, TBL_RSC, CLM_RSC_NAME);
         recreatePrimaryKey(dbCon, dbProduct, TBL_RSC, PK_R, CLM_NODE_NAME, CLM_RSC_NAME, CLM_SNAP_NAME);
         // foreign key from RESOURCES to NODES can be left untouched
         recreateForeignKey(dbCon, dbProduct, TBL_RSC, FK_R_RD, TBL_RSC_DFN, CLM_RSC_NAME, CLM_SNAP_NAME);
@@ -397,7 +399,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * FK_RC_RSCS_DST (NODE_NAME_DST, RESOURCE_NAME)
          * FK_RC_RSCS_SRC (NODE_NAME_SRC, RESOURCE_NAME)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_RSC_CON);
+        addSnapNameColumn(dbCon, dbProduct, TBL_RSC_CON, CLM_RSC_NAME);
         recreatePrimaryKey(
             dbCon,
             dbProduct,
@@ -437,7 +439,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * PK_VD (RESOURCE_NAME, VLM_NR)
          * FK_VD_RSC_DFN (RESOURCE_NAME)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_VLM_DFN);
+        addSnapNameColumn(dbCon, dbProduct, TBL_VLM_DFN, CLM_RSC_NAME);
         recreatePrimaryKey(dbCon, dbProduct, TBL_VLM_DFN, PK_VD, CLM_RSC_NAME, CLM_SNAP_NAME, CLM_VLM_NR);
         recreateForeignKey(dbCon, dbProduct, TBL_VLM_DFN, FK_VD_RD, TBL_RSC_DFN, CLM_RSC_NAME, CLM_SNAP_NAME);
     }
@@ -450,7 +452,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * FK_V_RSCS (NODE_NAME, RESOURCE_NAME)
          * FK_V_VLM_DFNS (RESOURCE_NAME, VLM_NR)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_VLM);
+        addSnapNameColumn(dbCon, dbProduct, TBL_VLM, CLM_RSC_NAME);
         recreatePrimaryKey(dbCon, dbProduct, TBL_VLM, PK_V, CLM_NODE_NAME, CLM_RSC_NAME, CLM_SNAP_NAME, CLM_VLM_NR);
         recreateForeignKey(dbCon, dbProduct, TBL_VLM, FK_V_R, TBL_RSC, CLM_NODE_NAME, CLM_RSC_NAME, CLM_SNAP_NAME);
         recreateForeignKey(dbCon, dbProduct, TBL_VLM, FK_V_VD, TBL_VLM_DFN, CLM_RSC_NAME, CLM_SNAP_NAME, CLM_VLM_NR);
@@ -464,7 +466,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * FK_VC_VLMS_DST (NODE_NAME_DST, RESOURCE_NAME, VLM_NR)
          * FK_VC_VLMS_SRC (NODE_NAME_SRC, RESOURCE_NAME, VLM_NR)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_VLM_CON);
+        addSnapNameColumn(dbCon, dbProduct, TBL_VLM_CON, CLM_RSC_NAME);
         recreatePrimaryKey(
             dbCon,
             dbProduct,
@@ -504,7 +506,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * PK_LRI (LAYER_RESOURCE_ID)
          * FK_LRI_RESOURCES (NODE_NAME, RESOURCE_NAME)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_LAYER_IDS);
+        addSnapNameColumn(dbCon, dbProduct, TBL_LAYER_IDS, CLM_RSC_NAME);
         // PK does not need to be updated
         recreateForeignKey(
             dbCon, dbProduct, TBL_LAYER_IDS, FK_LRI_R_FIXED, TBL_RSC, CLM_NODE_NAME, CLM_RSC_NAME, CLM_SNAP_NAME
@@ -518,7 +520,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * PK_LDRD (RESOURCE_NAME, RESOURCE_NAME_SUFFIX)
          * FK_LDRD_RD (RESOURCE_NAME)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_LAYER_DRBD_RD);
+        addSnapNameColumn(dbCon, dbProduct, TBL_LAYER_DRBD_RD, CLM_RSC_NAME_SUFFIX);
         recreatePrimaryKey(
             dbCon, dbProduct, TBL_LAYER_DRBD_RD, PK_LDRD, CLM_RSC_NAME, CLM_RSC_NAME_SUFFIX, CLM_SNAP_NAME
         );
@@ -544,7 +546,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * FK_LDVD_VD (RESOURCE_NAME, VLM_NR)
          * FK_LDRD_VD (RESOURCE_NAME, VLM_NR)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_LAYER_DRBD_VD);
+        addSnapNameColumn(dbCon, dbProduct, TBL_LAYER_DRBD_VD, CLM_RSC_NAME_SUFFIX);
         recreatePrimaryKey(
             dbCon, dbProduct, TBL_LAYER_DRBD_VD, PK_LDVD, CLM_RSC_NAME, CLM_RSC_NAME_SUFFIX, CLM_SNAP_NAME, CLM_VLM_NR
         );
@@ -565,7 +567,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          * PK_LSVD (RESOURCE_NAME, RESOURCE_NAME_SUFFIX, VLM_NR)
          * FK_LSFVD_VD (RESOURCE_NAME, VLM_NR)
          */
-        addSnapNameColumn(dbCon, dbProduct, TBL_LAYER_SF_VD);
+        addSnapNameColumn(dbCon, dbProduct, TBL_LAYER_SF_VD, CLM_RSC_NAME);
         // not using recreatePK method as we are also fixing wrong abbreviation
         SQLUtils.executeStatement(
             dbCon,
@@ -594,11 +596,20 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
      * @param table
      * @throws SQLException
      */
-    private void addSnapNameColumn(Connection dbCon, DbProduct dbProduct, String table) throws SQLException
+    private void addSnapNameColumn(Connection dbCon, DbProduct dbProduct, String table, String afterColumn)
+        throws SQLException
     {
         SQLUtils.executeStatement(
             dbCon,
-            MigrationUtils.addColumn(dbProduct, table, CLM_SNAP_NAME, VARCHAR_48, false, DFLT_SNAP_NAME)
+            MigrationUtils.addColumn(
+                dbProduct,
+                table,
+                CLM_SNAP_NAME,
+                VARCHAR_48,
+                false,
+                DFLT_SNAP_NAME,
+                afterColumn
+            )
         );
     }
 

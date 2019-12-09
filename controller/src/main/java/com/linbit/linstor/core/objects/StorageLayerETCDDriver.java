@@ -122,7 +122,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
         {
             for (String composedPk : composedPkSet)
             {
-                String[] pks = composedPk.split(EtcdUtils.PK_DELIMITER);
+                String[] pks = EtcdUtils.splitPks(composedPk, false);
 
                 rscLayerId = Integer.parseInt(pks[LayerStorageVolumes.LAYER_RESOURCE_ID.getIndex()]);
                 int vlmNr = Integer.parseInt(pks[LayerStorageVolumes.VLM_NR.getIndex()]);

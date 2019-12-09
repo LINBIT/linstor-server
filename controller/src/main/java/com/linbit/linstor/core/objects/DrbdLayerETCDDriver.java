@@ -156,7 +156,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
             Set<String> composedPkSet = EtcdUtils.getComposedPkList(allDrbdRscDfnMap);
             for (String composedPk : composedPkSet)
             {
-                String[] pks = EtcdUtils.splitPks(composedPk, true);
+                String[] pks = EtcdUtils.splitPks(composedPk, false);
                 String rscDfnStr = pks[LayerDrbdResourceDefinitions.RESOURCE_NAME.getIndex()];
                 String rscNameSuffix = pks[LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX.getIndex()];
                 String snapDfnStr = pks[LayerDrbdResourceDefinitions.SNAPSHOT_NAME.getIndex()];
@@ -242,7 +242,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
             Set<String> vlmDfnComposedKeySet = EtcdUtils.getComposedPkList(allDrbdVlmDfnMap);
             for (String vlmDfnComposedKey : vlmDfnComposedKeySet)
             {
-                String[] pks = vlmDfnComposedKey.split(EtcdUtils.PK_DELIMITER);
+                String[] pks = EtcdUtils.splitPks(vlmDfnComposedKey, false);
                 String rscName = pks[LayerDrbdVolumeDefinitions.RESOURCE_NAME.getIndex()];
                 String rscNameSuffix = pks[LayerDrbdVolumeDefinitions.RESOURCE_NAME_SUFFIX.getIndex()];
                 String snapDfnStr = pks[LayerDrbdVolumeDefinitions.SNAPSHOT_NAME.getIndex()];
@@ -605,7 +605,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
             Set<String> composedPkSet = EtcdUtils.getComposedPkList(drbdVlmMap);
             for (String composedPk : composedPkSet)
             {
-                String[] pks = composedPk.split(EtcdUtils.PK_DELIMITER);
+                String[] pks = EtcdUtils.splitPks(composedPk, false);
 
                 vlmNrInt = Integer.parseInt(pks[LayerDrbdVolumes.VLM_NR.getIndex()]);
                 String extMetaStorPoolNameStr = get(drbdVlmMap, LayerDrbdVolumes.POOL_NAME, pks);

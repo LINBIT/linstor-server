@@ -5,6 +5,8 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
 
+import static com.linbit.linstor.dbdrivers.etcd.EtcdUtils.PK_DELIMITER;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -111,22 +114,44 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
 
     public static void migrate(ControllerETCDTransactionMgr txMgr) throws JsonMappingException, JsonProcessingException
     {
+        Function<String, String> simpleExtend = name -> name + PK_DELIMITER;
+        Function<String, String> simpleDuplicate = name -> name.replace(PK_DELIMITER, PK_DELIMITER + PK_DELIMITER);
         addEmptySnapshotNameEntry(
             txMgr,
-            TBL_RSC_DFN,
-            TBL_RSC,
-            TBL_RSC_CON,
-            TBL_VLM_DFN,
-            TBL_VLM,
-            TBL_VLM_CON,
-            TBL_LAYER_IDS,
-            TBL_LAYER_DRBD_R,
-            TBL_LAYER_DRBD_RD,
-            TBL_LAYER_DRBD_V,
-            TBL_LAYER_DRBD_VD,
-            TBL_LAYER_SF_VD
+            new Pair<>(TBL_RSC_DFN, simpleExtend),
+            new Pair<>(TBL_RSC, simpleExtend),
+            new Pair<>(TBL_RSC_CON, simpleExtend),
+            new Pair<>(TBL_VLM_DFN, simpleDuplicate),
+            new Pair<>(TBL_VLM,
+                name -> {
+                    // nodeName, rscName, [snapName, ] vlmNr
+                    String[] split = EtcdUtils.splitPks(name, false);
+                    return join(PK_DELIMITER, split[0], split[1], DFLT_SNAP_NAME, split[2]);
+            }),
+            new Pair<>(TBL_VLM_CON,
+                name -> {
+                    // nodeNameSrc, nodeNameDst, rscName, [snapName, ] vlmNr
+                    String[] split = EtcdUtils.splitPks(name, false);
+                    return join(PK_DELIMITER, split[0], split[1], split[2], DFLT_SNAP_NAME, split[3]);
+                }
+            ),
+            new Pair<>(TBL_LAYER_IDS, Function.identity()), // snapname is not part of PK
+            new Pair<>(TBL_LAYER_DRBD_RD, simpleDuplicate),
+            new Pair<>(TBL_LAYER_DRBD_VD,
+                name -> {
+                    // rscName, [snapName, ]rscNameSuffix, vlmNr
+                    String[] split = EtcdUtils.splitPks(name, false);
+                    return join(PK_DELIMITER, split[0], DFLT_SNAP_NAME, split[1], split[2]);
+                }),
+            new Pair<>(TBL_LAYER_SF_VD,
+                name -> {
+                    // rscNAme, [snapName, ] rscNameSuffix, vlmNr
+                    String[] split = EtcdUtils.splitPks(name, false);
+                    return join(PK_DELIMITER, split[0], DFLT_SNAP_NAME, split[1], split[2]);
+                }
+            )
         );
-        addEmptySnapshotDisplayName(txMgr, TBL_RSC_DFN);
+        addEmptySnapshotDisplayName(txMgr, new Pair<>(TBL_RSC_DFN, simpleExtend));
 
         copySnapshotDefinitionsIntoResourceDefinitions(txMgr);
         copySnapshotVolumeDefinitionsIntoVolumeDefinitions(txMgr);
@@ -140,39 +165,66 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         deleteSnapshotTables(txMgr);
     }
 
-
     private static void addEmptySnapshotNameEntry(
         ControllerETCDTransactionMgr txMgr,
-        String... tables
+        Pair<String, Function<String, String>>... tables
     )
     {
         addEmptyColumn(txMgr, CLM_SNAP_NAME, tables);
     }
 
-    private static void addEmptySnapshotDisplayName(ControllerETCDTransactionMgr txMgr, String... tables)
+    private static void addEmptySnapshotDisplayName(
+        ControllerETCDTransactionMgr txMgr,
+        Pair<String, Function<String, String>>... tables
+    )
     {
         addEmptyColumn(txMgr, CLM_SNAP_DSP_NAME, tables);
     }
 
-    private static void addEmptyColumn(ControllerETCDTransactionMgr txMgr, String columnName, String... tables)
+    private static void addEmptyColumn(
+        ControllerETCDTransactionMgr txMgr,
+        String columnName,
+        Pair<String, Function<String, String>>... pairsRef
+    )
     {
         FluentTxnOps<?> tx = txMgr.getTransaction();
-        for (String table : tables)
+        for (Pair<String, Function<String, String>> pair : pairsRef)
         {
-            String key = "LINSTOR/" + table;
-            Set<String> pks = EtcdUtils.getComposedPkList(txMgr.readTable(key, true));
+            String key = "LINSTOR/" + pair.a;
+
+            TreeMap<String, String> readTable = txMgr.readTable(key, true);
+            Set<String> pks = EtcdUtils.getComposedPkList(readTable);
+
             for (String pk : pks)
             {
                 tx.put(
                     putReq(
                         EtcdUtils.buildKeyStr(
-                            table,
+                            pair.a,
                             columnName,
-                            pk
+                            pair.b.apply(pk)
                         ),
                         DFLT_SNAP_NAME
                     )
                 );
+            }
+            for (Entry<String, String> oldEntry : readTable.entrySet())
+            {
+                String oldKey = oldEntry.getKey();
+                String oldComposedKey = EtcdUtils.extractPrimaryKey(oldKey);
+                String oldClm = getColumnName(oldKey);
+                tx.delete(delReq(oldKey, false));
+                tx.delete(delReq(EtcdUtils.buildKeyStr(pair.a, oldClm, oldComposedKey), false));
+                tx.put(
+                    putReq(
+                        EtcdUtils.buildKeyStr(
+                            pair.a,
+                            oldClm,
+                            pair.b.apply(oldComposedKey)
+                            ),
+                        oldEntry.getValue()
+                        )
+                    );
             }
         }
     }
@@ -205,10 +257,10 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
 
             String col = getColumnName(entryKey);
 
-            String rscName = EtcdUtils.splitPks(
+            String[] pk = EtcdUtils.splitPks(
                 EtcdUtils.extractPrimaryKey(entryKey), // RESOURCE_NAME,SNAPSHOT_NAME
-                true
-            )[0];
+                false
+            );
 
             boolean copyData = true;
             switch (col)
@@ -219,20 +271,20 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
 
                     tx.put(
                         putReq(
-                            EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_PARENT_UUID, rscName),
-                            rscDfnNameToUuid.get(rscName)
+                            EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_PARENT_UUID, pk),
+                            rscDfnNameToUuid.get(pk[0])
                         )
                     );
 
                     tx.put(
                         putReq(
-                            EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_LAYER_KIND, rscName),
+                            EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_LAYER_STACK, pk),
                             "'[]'"
                         )
                     );
                     tx.put(
                         putReq(
-                            EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_RSC_GRP_NAME, rscName),
+                            EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_RSC_GRP_NAME, pk),
                             InternalApiConsts.DEFAULT_RSC_GRP_NAME.toUpperCase()
                         )
                     );
@@ -241,7 +293,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                     // rename SNAPSHOT_FLAGS to RESOURCE_FLAGS
                     tx.put(
                         putReq(
-                            EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_RSC_FLAGS, rscName),
+                            EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_RSC_FLAGS, pk),
                             entryValue
                         )
                     );
@@ -252,7 +304,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             }
             if (copyData)
             {
-                tx.put(putReq(EtcdUtils.buildKeyStr(TBL_RSC_DFN, col, rscName), entryValue));
+                tx.put(putReq(EtcdUtils.buildKeyStr(TBL_RSC_DFN, col, pk), entryValue));
             }
         }
     }
@@ -267,27 +319,22 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             String entryValue = entry.getValue();
 
             // RESOURCE_NAME, SNAPSHOT_NAME, VLM_NR
-            String[] composedPk = EtcdUtils.splitPks(EtcdUtils.extractPrimaryKey(entryKey), true);
+            String[] composedPk = EtcdUtils.splitPks(EtcdUtils.extractPrimaryKey(entryKey), false);
             String col = getColumnName(entryKey);
-
-            String[] vlmDfnPk = new String[]
-            {
-                composedPk[0], composedPk[2] // skip SNAPSHOT_NAME
-            };
 
             if (CLM_SNAP_FLAGS.equals(col))
             {
                 // rename SNAPSHOT_FLAGS to VLM_FLAGS
                 tx.put(
                     putReq(
-                        EtcdUtils.buildKeyStr(TBL_VLM_DFN, CLM_VLM_FLAGS, vlmDfnPk),
+                        EtcdUtils.buildKeyStr(TBL_VLM_DFN, CLM_VLM_FLAGS, composedPk),
                         entryValue
                     )
                 );
             }
             else
             {
-                tx.put(putReq(EtcdUtils.buildKeyStr(TBL_VLM_DFN, col, vlmDfnPk), entryValue));
+                tx.put(putReq(EtcdUtils.buildKeyStr(TBL_VLM_DFN, col, composedPk), entryValue));
             }
         }
     }
@@ -306,13 +353,8 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             String entryValue = entry.getValue();
 
             // NODE_NAME, RESOURCE_NAME, SNAPSHOT_NAME
-            String[] composedPk = EtcdUtils.splitPks(EtcdUtils.extractPrimaryKey(entryKey), true);
+            String[] composedPk = EtcdUtils.splitPks(EtcdUtils.extractPrimaryKey(entryKey), false);
             String col = getColumnName(entryKey);
-
-            String[] rscPk = new String[]
-            {
-                composedPk[0], composedPk[1] // skip SNAPSHOT_NAME
-            };
 
             boolean copyData = true;
             switch (col)
@@ -321,7 +363,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                     // rename SNAPSHOT_FLAGS to RESOURCE_FLAGS
                     tx.put(
                         putReq(
-                            EtcdUtils.buildKeyStr(TBL_RSC, CLM_RSC_FLAGS, rscPk),
+                            EtcdUtils.buildKeyStr(TBL_RSC, CLM_RSC_FLAGS, composedPk),
                             entryValue
                         )
                     );
@@ -346,7 +388,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
 
             if (copyData)
             {
-                tx.put(putReq(EtcdUtils.buildKeyStr(TBL_RSC, col, rscPk), entryValue));
+                tx.put(putReq(EtcdUtils.buildKeyStr(TBL_RSC, col, composedPk), entryValue));
             }
         }
     }
@@ -362,13 +404,8 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             String entryValue = entry.getValue();
 
             // NODE_NAME, RESOURCE_NAME, SNAPSHOT_NAME, VLM_NR
-            String[] composedPk = EtcdUtils.splitPks(EtcdUtils.extractPrimaryKey(entryKey), true);
+            String[] composedPk = EtcdUtils.splitPks(EtcdUtils.extractPrimaryKey(entryKey), false);
             String col = getColumnName(entryKey);
-
-            String[] vlmPk = new String[]
-            {
-                composedPk[0], composedPk[1], composedPk[3] // skip SNAPSHOT_NAME
-            };
 
             boolean copyData = true;
             switch (col)
@@ -379,7 +416,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
 
                     tx.put(
                         putReq(
-                            EtcdUtils.buildKeyStr(TBL_VLM, CLM_VLM_FLAGS, vlmPk),
+                            EtcdUtils.buildKeyStr(TBL_VLM, CLM_VLM_FLAGS, composedPk),
                             "0"
                         )
                     );
@@ -388,7 +425,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                     // rename SNAPSHOT_FLAGS to VOLUME_FLAGS
                     tx.put(
                         putReq(
-                            EtcdUtils.buildKeyStr(TBL_VLM, CLM_VLM_FLAGS, vlmPk),
+                            EtcdUtils.buildKeyStr(TBL_VLM, CLM_VLM_FLAGS, composedPk),
                             entryValue
                         )
                     );
@@ -407,7 +444,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             }
             if (copyData)
             {
-                tx.put(putReq(EtcdUtils.buildKeyStr(TBL_RSC_DFN, col, vlmPk), entryValue));
+                tx.put(putReq(EtcdUtils.buildKeyStr(TBL_VLM, col, composedPk), entryValue));
             }
         }
     }
@@ -428,10 +465,13 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         {
             String[] composedKey = EtcdUtils.splitPks(
                 EtcdUtils.extractPrimaryKey(entry.getKey()), // RESOURCE_NAME,SNAPSHOT_NAME
-                true
+                false
             );
 
-            String objProtPath = "/snapshotdefinitions/" + composedKey[0] + EtcdUtils.PK_DELIMITER + composedKey[1];
+            String objProtPath = "/snapshotdefinitions/" +
+                composedKey[0] +
+                EtcdUtils.PATH_DELIMITER + // NOT PK_DELIMITER...
+                composedKey[1];
             for (String clm : pubRolesForObjProtColms)
             {
                 tx.put(
@@ -482,7 +522,8 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                 String col = getColumnName(entry.getKey());
                 if (CLM_DRIVER_NAME.equals(col))
                 {
-                    String[] composedKey = EtcdUtils.splitPks(entry.getKey(), false);
+                    String pk = EtcdUtils.extractPrimaryKey(entry.getKey());
+                    String[] composedKey = EtcdUtils.splitPks(pk, false);
                     storPoolToKind.put(new Key(composedKey[0], composedKey[1]), entry.getValue());
                 }
             }
@@ -602,7 +643,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             tx,
             TBL_LAYER_DRBD_RD,
             join(
-                EtcdUtils.PK_DELIMITER,
+                PK_DELIMITER,
                 rscName,
                 DFLT_RSC_NAME_SUFFIX,
                 snapName
@@ -626,7 +667,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             tx,
             TBL_LAYER_DRBD_VD,
             join(
-                EtcdUtils.PK_DELIMITER,
+                PK_DELIMITER,
                 rscName,
                 DFLT_RSC_NAME_SUFFIX,
                 snapName,
@@ -691,7 +732,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         write(
             tx,
             TBL_LAYER_DRBD_V,
-            parentId.toString() + EtcdUtils.PK_DELIMITER + vlmNr,
+            parentId.toString() + PK_DELIMITER + vlmNr,
             relativeMap
         );
     }
@@ -709,7 +750,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         write(
             tx,
             TBL_LAYER_LUKS_V,
-            parentIdRef.toString() + EtcdUtils.PK_DELIMITER + vlmNr,
+            parentIdRef.toString() + PK_DELIMITER + vlmNr,
             relativeMap
         );
     }
@@ -754,7 +795,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         relativeMap.put(CLM_NODE_NAME, nodeName);
         relativeMap.put(CLM_STOR_POOL_NAME, storPoolName);
 
-        write(tx, TBL_LAYER_S_V, parentId + EtcdUtils.PK_DELIMITER + vlmNr, relativeMap);
+        write(tx, TBL_LAYER_S_V, parentId + PK_DELIMITER + vlmNr, relativeMap);
     }
 
     private static void write(
@@ -849,5 +890,17 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
     private static class SnapVlmInfo
     {
         private String storPoolName;
+    }
+
+    private static class Pair<A, B>
+    {
+        A a;
+        B b;
+
+        public Pair(A aRef, B bRef)
+        {
+            a = aRef;
+            b = bRef;
+        }
     }
 }

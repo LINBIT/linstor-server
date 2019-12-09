@@ -172,9 +172,16 @@ public class EtcdUtils
             endIdx = composedPkRef.indexOf(PK_DELIMITER, startIdx);
             if (endIdx != -1)
             {
-                if (startIdx == endIdx && emptyStringAsNull)
+                if (startIdx == endIdx)
                 {
-                    pks.add(null);
+                    if (emptyStringAsNull)
+                    {
+                        pks.add(null);
+                    }
+                    else
+                    {
+                        pks.add("");
+                    }
                 }
                 else
                 {
