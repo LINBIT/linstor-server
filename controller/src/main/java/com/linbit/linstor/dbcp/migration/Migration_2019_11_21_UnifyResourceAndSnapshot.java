@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigration
 {
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final String PK_RD = "PK_RD";
@@ -45,6 +46,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
     private static final String PK_LSFVD_FIXED = "PK_LSFVD";
 
     private static final String FK_R_RD = "FK_R_RSC_DFNS";
+    private static final String FK_R_NODES = "FK_R_NODES";
     private static final String FK_RC_R_SRC = "FK_RC_RSCS_SRC";
     private static final String FK_RC_R_DST = "FK_RC_RSCS_DST";
     private static final String FK_VD_RD = "FK_VD_RSC_DFN";
@@ -61,6 +63,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
 
     private static final String CHK_RD_DSP_NAME = "CHK_RD_DSP_NAME";
 
+    private static final String TBL_NODES = "NODES";
     private static final String TBL_RSC_DFN = "RESOURCE_DEFINITIONS";
     private static final String TBL_RSC = "RESOURCES";
     private static final String TBL_RSC_CON = "RESOURCE_CONNECTIONS";
@@ -271,6 +274,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
         dropForeignKey(dbCon, dbProduct, TBL_RSC_CON, FK_RC_R_SRC);
         dropForeignKey(dbCon, dbProduct, TBL_RSC_CON, FK_RC_R_DST);
         dropForeignKey(dbCon, dbProduct, TBL_RSC, FK_R_RD);
+        dropForeignKey(dbCon, dbProduct, TBL_RSC, FK_R_NODES);
         dropForeignKey(dbCon, dbProduct, TBL_VLM_CON, FK_VC_V_DST);
         dropForeignKey(dbCon, dbProduct, TBL_VLM_CON, FK_VC_V_SRC);
         dropForeignKey(dbCon, dbProduct, TBL_VLM_DFN, FK_VD_RD);
@@ -288,7 +292,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
     private void dropForeignKey(Connection dbCon, DbProduct dbProduct, String table, String fkName)
         throws SQLException
     {
-        SQLUtils.executeStatement(
+        SQLUtils.runSql(
             dbCon,
             MigrationUtils.dropColumnConstraintForeignKey(dbProduct, table, fkName)
         );
@@ -387,7 +391,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
          */
         addSnapNameColumn(dbCon, dbProduct, TBL_RSC, CLM_RSC_NAME);
         recreatePrimaryKey(dbCon, dbProduct, TBL_RSC, PK_R, CLM_NODE_NAME, CLM_RSC_NAME, CLM_SNAP_NAME);
-        // foreign key from RESOURCES to NODES can be left untouched
+        recreateForeignKey(dbCon, dbProduct, TBL_RSC, FK_R_NODES, TBL_NODES, CLM_NODE_NAME);
         recreateForeignKey(dbCon, dbProduct, TBL_RSC, FK_R_RD, TBL_RSC_DFN, CLM_RSC_NAME, CLM_SNAP_NAME);
     }
 
@@ -571,7 +575,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
         // not using recreatePK method as we are also fixing wrong abbreviation
         SQLUtils.executeStatement(
             dbCon,
-            MigrationUtils.dropColumnConstraintCheck(dbCon, dbProduct, TBL_LAYER_SF_VD, PK_LSFVD_OLD)
+            MigrationUtils.dropColumnConstraintPrimaryKey(dbProduct, TBL_LAYER_SF_VD, PK_LSFVD_OLD)
         );
         SQLUtils.executeStatement(
             dbCon,

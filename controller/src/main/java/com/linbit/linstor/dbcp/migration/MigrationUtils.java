@@ -121,6 +121,20 @@ public class MigrationUtils
 
         String type = replaceTypesByDialect(database, typeRef);
         database.name();
+
+        String defaultVal = null;
+        if (defaultValRef != null)
+        {
+            if (!typeRef.equals("BOOL") && !typeRef.equals("BOOLEAN"))
+            {
+                defaultVal = "'" + defaultValRef + "'";
+            }
+            else
+            {
+                defaultVal = defaultValRef;
+            }
+
+        }
         switch (database)
         {
             case ASE:
@@ -144,7 +158,7 @@ public class MigrationUtils
                 sql.append(" NULL");
                 if (defaultValRef != null)
                 {
-                    sql.append(" DEFAULT '").append(defaultValRef).append("'");
+                    sql.append(" DEFAULT ").append(defaultVal);
                 }
                 if (database.equals(DbProduct.H2) && afterColumn != null) // we only need this for our own H2 setup
                 {
@@ -335,7 +349,12 @@ public class MigrationUtils
         switch (dbProductRef)
         {
             case MARIADB:
-                sql = String.format("ALTER TABLE %s DROP FOREIGN KEY %s;", table, constraintName);
+                sql = String.format(
+                    "ALTER TABLE %s DROP FOREIGN KEY %s;\n" +
+                        "ALTER TABLE %s DROP KEY IF EXISTS %s;",
+                    table, constraintName,
+                    table, constraintName
+                );
                 break;
             case ASE:
             case DB2:
