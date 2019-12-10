@@ -344,7 +344,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
         // recreate RSC_DSP_NAME check
         SQLUtils.executeStatement(
             dbCon,
-            MigrationUtils.dropColumnConstraint(dbProduct, TBL_RSC_DFN, CHK_RD_DSP_NAME)
+            MigrationUtils.dropColumnConstraintCheck(dbCon, dbProduct, TBL_RSC_DFN, CHK_RD_DSP_NAME)
         );
         SQLUtils.executeStatement(
             dbCon,
@@ -571,7 +571,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
         // not using recreatePK method as we are also fixing wrong abbreviation
         SQLUtils.executeStatement(
             dbCon,
-            MigrationUtils.dropColumnConstraint(dbProduct, TBL_LAYER_SF_VD, PK_LSFVD_OLD)
+            MigrationUtils.dropColumnConstraintCheck(dbCon, dbProduct, TBL_LAYER_SF_VD, PK_LSFVD_OLD)
         );
         SQLUtils.executeStatement(
             dbCon,

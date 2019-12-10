@@ -24,14 +24,17 @@ public class SQLUtils
         throws SQLException
     {
         int ret = 0;
-        try (PreparedStatement stmt = con.prepareStatement(statement))
+        if (statement != null)
         {
-            ret = stmt.executeUpdate();
-        }
-        catch (SQLException throwable)
-        {
-            System.err.println("Error: " + statement);
-            throw throwable;
+            try (PreparedStatement stmt = con.prepareStatement(statement))
+            {
+                ret = stmt.executeUpdate();
+            }
+            catch (SQLException throwable)
+            {
+                System.err.println("Error: " + statement);
+                throw throwable;
+            }
         }
         return ret;
     }

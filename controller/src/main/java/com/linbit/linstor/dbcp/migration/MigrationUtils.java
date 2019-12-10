@@ -14,11 +14,15 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.common.io.Resources;
 
 public class MigrationUtils
 {
+    private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))");
+
     public static final String META_COL_TABLE_NAME = "TABLE_NAME";
     public static final String META_COL_COLUMN_NAME = "COLUMN_NAME";
 
@@ -354,16 +358,73 @@ public class MigrationUtils
         return sql;
     }
 
-    public static String dropColumnConstraint(
+    public static String dropColumnConstraintCheck(
+        Connection dbConRef,
         DbProduct dbProductRef,
         String table,
         String constraintName
-    )
+    ) throws SQLException, ImplementationError
     {
         String sql = null;
         switch (dbProductRef)
         {
             case MARIADB:
+                int[] version = getVersion(dbConRef.getMetaData().getDatabaseProductVersion());
+                if (version[0] >= 10 && version[1] >= 2 && version.length == 3 && version[2] >= 1)
+                {
+                    sql = String.format("ALTER TABLE %s DROP CONSTRAINT IF EXISTS %s;", table, constraintName);
+                }
+                else
+                {
+                    // mariadb does not support dropping check-constraints, but also ignored adding them.
+                    // we should be fine
+                    // sql = null is fine, the executor has to take care of it
+                }
+                break;
+            case ASE:
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case H2:
+            case INFORMIX:
+            case MSFT_SQLSERVER:
+            case MYSQL:
+            case ORACLE_RDBMS:
+            case POSTGRESQL:
+                sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s;", table, constraintName);
+                break;
+            case ETCD: // fall-through
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
+        }
+        return sql;
+    }
+
+    public static String dropColumnConstraintUnique(
+        Connection dbConRef,
+        DbProduct dbProductRef,
+        String table,
+        String constraintName
+    ) throws SQLException, ImplementationError
+    {
+        String sql = null;
+        switch (dbProductRef)
+        {
+            case MARIADB:
+                int[] version = getVersion(dbConRef.getMetaData().getDatabaseProductVersion());
+                if (version[0] >= 10 && version[1] >= 2 && version.length == 3 && version[2] >= 1)
+                {
+                    sql = String.format("ALTER TABLE %s DROP CONSTRAINT IF EXISTS %s;", table, constraintName);
+                }
+                else
+                {
+                    // mariadb does not support dropping unique-constraints, but also ignored adding them.
+                    // we should be fine
+                    // sql = null is fine, the executor has to take care of it
+                }
+                break;
             case ASE:
             case DB2:
             case DB2_I:
@@ -550,5 +611,30 @@ public class MigrationUtils
                 throw new ImplementationError("Unexpected database type: " + dbProductRef);
         }
         return sql;
+    }
+
+    private static int[] getVersion (String str) {
+        int[] ret;
+        Matcher matcher = VERSION_PATTERN.matcher(str);
+        if (matcher.find())
+        {
+            String grp1 = matcher.group(1);
+            String grp2 = matcher.group(2);
+            String grp3 = matcher.group(3);
+
+            boolean hasGrp3 = grp3 != null && !grp3.trim().isEmpty();
+            ret = new int[hasGrp3 ? 3 : 2];
+            ret[0] = Integer.parseInt(grp1);
+            ret[1] = Integer.parseInt(grp2);
+            if (hasGrp3)
+            {
+                ret[2] = Integer.parseInt(grp3);
+            }
+        }
+        else
+        {
+            throw new ImplementationError("Failed to determine version from given string: " + str);
+        }
+        return ret;
     }
 }
