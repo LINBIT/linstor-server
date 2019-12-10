@@ -604,9 +604,21 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
         int vlmNrInt = -1;
         try
         {
-            Map<String, String> drbdVlmMap = namespace(GeneratedDatabaseTables.LAYER_DRBD_VOLUMES)
-                .get(true);
+
+            String etcdKey = EtcdUtils.buildKey(
+                GeneratedDatabaseTables.LAYER_DRBD_VOLUMES,
+                Integer.toString(rscData.getRscLayerId())
+            );
+            // we did not specify the full PK, only the rscLayerId. PK should be something like
+            // <rscId>:<vlmNr>
+            // however, the returned etcdKey is something like "LINSTOR/<table>/<rscId>/"
+            // as we are using the --prefix, we need to cut away the last '/' in order to get all
+            // volumes of this <rscId>
+            etcdKey = etcdKey.substring(0, etcdKey.length() - EtcdUtils.PATH_DELIMITER.length());
+
+            Map<String, String> drbdVlmMap = namespace(etcdKey).get(true);
             Set<String> composedPkSet = EtcdUtils.getComposedPkList(drbdVlmMap);
+
             for (String composedPk : composedPkSet)
             {
                 String[] pks = EtcdUtils.splitPks(composedPk, false);

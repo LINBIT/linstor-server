@@ -92,12 +92,18 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
             transObjFactory,
             transMgrProvider
         );
-
-        Map<String, String> luksVlmByIdMap = namespace(
+        String etcdKey = EtcdUtils.buildKey(
             GeneratedDatabaseTables.LAYER_LUKS_VOLUMES,
-            Integer.toString(id)
-        )
-            .get(true);
+            Integer.toString(rscData.getRscLayerId())
+        );
+        // we did not specify the full PK, only the rscLayerId. PK should be something like
+        // <rscId>:<vlmNr>
+        // however, the returned etcdKey is something like "LINSTOR/<table>/<rscId>/"
+        // as we are using the --prefix, we need to cut away the last '/' in order to get all
+        // volumes of this <rscId>
+        etcdKey = etcdKey.substring(0, etcdKey.length() - EtcdUtils.PATH_DELIMITER.length());
+
+        Map<String, String> luksVlmByIdMap = namespace(etcdKey).get(true);
         Set<String> composedKeySet = EtcdUtils.getComposedPkList(luksVlmByIdMap);
         for (String composedKey : composedKeySet)
         {

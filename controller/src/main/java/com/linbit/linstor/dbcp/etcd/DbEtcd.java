@@ -28,7 +28,6 @@ import javax.inject.Singleton;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -119,17 +118,27 @@ public class DbEtcd implements ControllerETCDDatabase
             Migration_00_Init.migrate(kvClient);
             dbVersion++;
         }
-        Map<Integer, EtcdMigrationMethod> migrations = new TreeMap<>();
+        TreeMap<Integer, EtcdMigrationMethod> migrations = new TreeMap<>();
         migrations.put(1, Migration_01_DelEmptyRscExtNames::migrate);
         migrations.put(2, Migration_02_AutoQuorumAndTiebreaker::migrate);
         migrations.put(3, Migration_03_DelProp_SnapshotRestore::migrate);
-        migrations.put(4, Migration_04_DisklessFlagSplit::migrate);
-        migrations.put(5, Migration_05_UnifyResourcesAndSnapshots::migrate);
+        // we introduced a bug where instead of writing (3+1) we accidentally written
+        // ("3" + "1").
+        migrations.put(31, Migration_04_DisklessFlagSplit::migrate);
+        migrations.put(32, Migration_05_UnifyResourcesAndSnapshots::migrate);
 
         try
         {
-            for (; dbVersion <= migrations.size(); dbVersion++)
+            int highestKey = migrations.lastKey();
+            for (; dbVersion <= highestKey; dbVersion++)
             {
+                if (dbVersion == 4)
+                {
+                    // we introduced a bug where instead of writing (3+1) we accidentally written
+                    // ("3" + "1").
+                    dbVersion = 31;
+                }
+
                 EtcdMigrationMethod migrationMethod = migrations.get(dbVersion);
                 if (migrationMethod == null)
                 {
