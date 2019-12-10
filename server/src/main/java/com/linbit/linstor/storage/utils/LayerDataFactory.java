@@ -5,6 +5,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
@@ -175,8 +176,10 @@ public class LayerDataFactory
 
     public <RSC extends AbsResource<RSC>> DrbdVlmDfnData<RSC> createDrbdVlmDfnData(
         VolumeDefinition vlmDfn,
+        ResourceName rscName,
         SnapshotName snapName,
         String resourceNameSuffix,
+        VolumeNumber vlmNr,
         Integer minorNrInt,
         DrbdRscDfnData<RSC> drbdRscDfnData
     )
@@ -184,8 +187,10 @@ public class LayerDataFactory
     {
         DrbdVlmDfnData<RSC> drbdVlmDfnData = new DrbdVlmDfnData<>(
             vlmDfn,
+            rscName,
             snapName,
             resourceNameSuffix,
+            vlmNr,
             minorNrInt,
             minorPool,
             drbdRscDfnData,

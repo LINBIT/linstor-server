@@ -166,6 +166,12 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     }
 
     @Override
+    public long getVolumeSize(AccessContext dbCtxRef) throws AccessDeniedException
+    {
+        return getSnapshotVolumeDefinition().getVolumeSize(dbCtxRef);
+    }
+
+    @Override
     public VolumeDefinition getVolumeDefinition()
     {
         return getSnapshotVolumeDefinition().getVolumeDefinition();

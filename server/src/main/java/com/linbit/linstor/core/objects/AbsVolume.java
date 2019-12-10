@@ -117,4 +117,6 @@ public abstract class AbsVolume<RSC extends AbsResource<RSC>>
         throws AccessDeniedException, DatabaseException;
 
     public abstract VolumeNumber getVolumeNumber();
+
+    public abstract long getVolumeSize(AccessContext dbCtxRef) throws AccessDeniedException;
 }

@@ -264,8 +264,10 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
 
                     DrbdVlmDfnData<Resource> drbdVlmDfnData = new DrbdVlmDfnData<Resource>(
                         vlmDfn,
+                        rscDfn.getName(),
                         null,
                         rscNameSuffix,
+                        vlmDfn.getVolumeNumber(),
                         minor,
                         minorPool,
                         vlmDfn.getResourceDefinition().<DrbdRscDfnData<Resource>> getLayerData(
@@ -300,8 +302,10 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                     }
                     DrbdVlmDfnData<Snapshot> drbdSnapVlmDfnData = new DrbdVlmDfnData<Snapshot>(
                         snapVlmDfn.getVolumeDefinition(),
+                        snapDfn.getResourceName(),
                         snapVlmDfn.getSnapshotName(),
                         rscNameSuffix,
+                        snapVlmDfn.getVolumeNumber(),
                         DrbdVlmDfnData.SNAPSHOT_MINOR,
                         minorPool,
                         snapVlmDfn.getSnapshotDefinition().<DrbdRscDfnData<Snapshot>> getLayerData(
@@ -879,10 +883,10 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
     {
         return namespace(
             GeneratedDatabaseTables.LAYER_DRBD_VOLUME_DEFINITIONS,
-            drbdVlmDfnDataRef.getVolumeDefinition().getResourceDefinition().getName().value,
+            drbdVlmDfnDataRef.getResourceName().value,
             drbdVlmDfnDataRef.getRscNameSuffix(),
             snapshotNameToEctdKey(drbdVlmDfnDataRef.getSnapshotName()),
-            Integer.toString(drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber().value)
+            Integer.toString(drbdVlmDfnDataRef.getVolumeNumber().value)
         );
     }
 
@@ -923,7 +927,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
         return "(ResName=" + drbdVlmDfnData.getResourceName() +
             ", ResNameSuffix=" + drbdVlmDfnData.getRscNameSuffix() +
             ", SnapName=" + drbdVlmDfnData.getSnapshotName() +
-            ", VlmNr=" + drbdVlmDfnData.getVolumeDefinition().getVolumeNumber().value + ")";
+            ", VlmNr=" + drbdVlmDfnData.getVolumeNumber().value + ")";
     }
 
     private class RscFlagsDriver implements StateFlagsPersistence<DrbdRscData<?>>

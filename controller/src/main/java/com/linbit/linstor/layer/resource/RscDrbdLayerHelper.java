@@ -184,8 +184,10 @@ public class RscDrbdLayerHelper extends
         );
         return layerDataFactory.createDrbdVlmDfnData(
             vlmDfn,
+            vlmDfn.getResourceDefinition().getName(),
             null,
             rscNameSuffix,
+            vlmDfn.getVolumeNumber(),
             payload.drbdVlmDfn.minorNr,
             drbdRscDfnData
         );
@@ -569,8 +571,10 @@ public class RscDrbdLayerHelper extends
         String resourceNameSuffix = fromSnapVlmDataRef.getRscLayerObject().getResourceNameSuffix();
         return layerDataFactory.createDrbdVlmDfnData(
             vlmDfnRef,
+            vlmDfnRef.getResourceDefinition().getName(),
             fromSnapVlmDataRef.getRscLayerObject().getAbsResource().getSnapshotName(),
             resourceNameSuffix,
+            vlmDfnRef.getVolumeNumber(),
             null, // auto assign minor nr
             vlmDfnRef.getResourceDefinition().getLayerData(
                 apiCtx,

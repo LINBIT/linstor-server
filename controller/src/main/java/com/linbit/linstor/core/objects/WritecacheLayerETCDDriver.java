@@ -125,7 +125,7 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
                 ).objA;
 
                 vlmMap.put(
-                    vlm.getVolumeDefinition().getVolumeNumber(),
+                    vlm.getVolumeNumber(),
                     new WritecacheVlmData<>(
                         vlm,
                         writecacheRscData,

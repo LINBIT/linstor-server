@@ -352,6 +352,12 @@ public class Volume extends AbsVolume<Resource>
         return volumeDfn.getVolumeNumber();
     }
 
+    @Override
+    public long getVolumeSize(AccessContext dbCtxRef) throws AccessDeniedException
+    {
+        return volumeDfn.getVolumeSize(dbCtxRef);
+    }
+
     public static String getVolumeKey(Volume volume)
     {
         NodeName nodeName = volume.absRsc.node.getName();

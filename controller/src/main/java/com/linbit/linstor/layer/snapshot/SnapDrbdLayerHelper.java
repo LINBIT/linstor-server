@@ -91,8 +91,10 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
     {
         return layerDataFactory.createDrbdVlmDfnData(
             snapVlmDfn.getVolumeDefinition(),
+            snapVlmDfn.getResourceName(),
             snapVlmDfn.getSnapshotName(),
             rscNameSuffix,
+            snapVlmDfn.getVolumeNumber(),
             DrbdVlmDfnData.SNAPSHOT_MINOR,
             snapVlmDfn.getSnapshotDefinition().getLayerData(apiCtx, DRBD, rscNameSuffix)
         );

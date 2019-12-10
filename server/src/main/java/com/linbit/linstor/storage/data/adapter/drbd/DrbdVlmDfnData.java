@@ -24,7 +24,6 @@ import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
-import java.util.Objects;
 
 public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     extends BaseTransactionObject
@@ -34,6 +33,8 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
 
     // unmodifiable data, once initialized
     private final VolumeDefinition vlmDfn;
+    private final VolumeNumber vlmNr;
+    private final ResourceName rscName;
     private final SnapshotName snapName;
     private final MinorNumber minorNr;
     private final String suffixedResourceName;
@@ -42,10 +43,13 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     private final DynamicNumberPool minorPool;
     private final DrbdRscDfnData<RSC> drbdRscDfn;
 
+
     public DrbdVlmDfnData(
-        VolumeDefinition vlmDfnRef,
+        @Nullable VolumeDefinition vlmDfnRef,
+        ResourceName rscNameRef,
         @Nullable SnapshotName snapNameRef,
         String resourceNameSuffixRef,
+        VolumeNumber vlmNrRef,
         Integer minorRef,
         DynamicNumberPool minorPoolRef,
         DrbdRscDfnData<RSC> drbdRscDfnRef,
@@ -55,13 +59,15 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
         throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
         super(transMgrProvider);
-        vlmDfn = Objects.requireNonNull(vlmDfnRef);
+        vlmDfn = vlmDfnRef;
+        vlmNr = vlmNrRef;
+        rscName = rscNameRef;
         snapName = snapNameRef;
         resourceNameSuffix = resourceNameSuffixRef;
         minorPool = minorPoolRef;
         drbdRscDfn = drbdRscDfnRef;
         dbDriver = dbDriverRef;
-        suffixedResourceName = vlmDfnRef.getResourceDefinition().getName().displayValue +
+        suffixedResourceName = rscName.displayValue +
             (snapName == null ? "" : snapName.displayValue) + resourceNameSuffixRef;
 
         if (minorRef == null)
@@ -99,7 +105,7 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     @Override
     public ResourceName getResourceName()
     {
-        return vlmDfn.getResourceDefinition().getName();
+        return rscName;
     }
 
     @Override
@@ -111,7 +117,7 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     @Override
     public VolumeNumber getVolumeNumber()
     {
-        return vlmDfn.getVolumeNumber();
+        return vlmNr;
     }
 
     @Override
@@ -147,7 +153,7 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     {
         return new DrbdVlmDfnPojo(
             resourceNameSuffix,
-            vlmDfn.getVolumeNumber().value,
+            vlmNr.value,
             minorNr == null ? null : minorNr.value
         );
     }

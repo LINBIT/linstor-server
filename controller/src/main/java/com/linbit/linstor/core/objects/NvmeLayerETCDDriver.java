@@ -87,7 +87,7 @@ public class NvmeLayerETCDDriver extends BaseEtcdDriver implements NvmeLayerCtrl
         for (AbsVolume<RSC> vlm : absRsc.streamVolumes().collect(Collectors.toList()))
         {
             vlmMap.put(
-                vlm.getVolumeDefinition().getVolumeNumber(),
+                vlm.getVolumeNumber(),
                 new NvmeVlmData<>(vlm, nvmeRscData, transObjFactory, transMgrProvider)
             );
         }

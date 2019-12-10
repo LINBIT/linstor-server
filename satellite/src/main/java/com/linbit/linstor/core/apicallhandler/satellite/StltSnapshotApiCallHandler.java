@@ -211,6 +211,7 @@ class StltSnapshotApiCallHandler
                     snapshotVlmDfnApi.getUuid(),
                     snapshotDfn,
                     rscDfn.getVolumeDfn(apiCtx, volumeNumber),
+                    volumeNumber,
                     snapshotVlmDfnApi.getSize(),
                     snapshotVlmDfnFlags
                 );

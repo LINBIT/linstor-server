@@ -150,7 +150,7 @@ public class WritecacheLayerGenericDbDriver implements WritecacheLayerCtrlDataba
                     ).objA;
 
                     vlmMap.put(
-                        vlm.getVolumeDefinition().getVolumeNumber(),
+                        vlm.getVolumeNumber(),
                         new WritecacheVlmData<>(
                             vlm,
                             writecacheRscData,

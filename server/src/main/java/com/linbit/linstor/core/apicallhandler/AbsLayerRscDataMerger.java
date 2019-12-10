@@ -196,8 +196,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, InvalidNameException
     {
-        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+        VolumeNumber vlmNr = vlm.getVolumeNumber();
 
         DrbdVlmDfnData<RSC> drbdVlmDfnData = mergeOrCreateDrbdVlmDfnData(vlm, vlmPojo.getDrbdVlmDfn());
 
@@ -301,8 +300,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws AccessDeniedException, DatabaseException, InvalidNameException
     {
-        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+        VolumeNumber vlmNr = vlm.getVolumeNumber();
 
         StorPool storPool = getStoragePool(vlm, vlmPojo, remoteResourceRef);
         VlmProviderObject<RSC> vlmData = storRscData.getVlmLayerObjects().get(vlmNr);

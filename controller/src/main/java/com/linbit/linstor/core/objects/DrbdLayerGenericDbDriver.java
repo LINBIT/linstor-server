@@ -445,8 +445,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
 
                             DrbdVlmDfnData<Resource> drbdVlmDfnData = new DrbdVlmDfnData<>(
                                 vlmDfn,
+                                rscDfn.getName(),
                                 null,
                                 rscNameSuffix,
+                                vlmDfn.getVolumeNumber(),
                                 minor,
                                 minorPool,
                                 vlmDfn.getResourceDefinition().<DrbdRscDfnData<Resource>> getLayerData(
@@ -477,8 +479,10 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
 
                             DrbdVlmDfnData<Snapshot> drbdSnapVlmDfnData = new DrbdVlmDfnData<>(
                                 snapVlmDfn.getVolumeDefinition(),
+                                snapDfn.getResourceName(),
                                 snapVlmDfn.getSnapshotName(),
                                 rscNameSuffix,
+                                snapVlmDfn.getVolumeNumber(),
                                 DrbdVlmDfnData.SNAPSHOT_MINOR,
                                 minorPool,
                                 snapVlmDfn.getSnapshotDefinition().<DrbdRscDfnData<Snapshot>>getLayerData(
@@ -773,7 +777,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
                         if (drbdsnapVlmDfnData != null)
                         {
                             vlmMap.put(
-                                vlm.getVolumeDefinition().getVolumeNumber(),
+                                vlm.getVolumeNumber(),
                                 (DrbdVlmData<RSC>) new DrbdVlmData<Snapshot>(
                                     vlm,
                                     (DrbdRscData<Snapshot>) rscData,
@@ -932,7 +936,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
         errorReporter.logTrace("Creating DrbdVlmDfnData %s", getId(drbdVlmDfnDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM_DFN))
         {
-            stmt.setString(1, drbdVlmDfnDataRef.getVolumeDefinition().getResourceDefinition().getName().value);
+            stmt.setString(1, drbdVlmDfnDataRef.getResourceName().value);
             stmt.setString(2, drbdVlmDfnDataRef.getRscNameSuffix());
             SnapshotName snapName = drbdVlmDfnDataRef.getSnapshotName();
             if (snapName == null)
@@ -943,7 +947,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
             {
                 stmt.setString(3, snapName.value);
             }
-            stmt.setInt(4, drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber().value);
+            stmt.setInt(4, drbdVlmDfnDataRef.getVolumeNumber().value);
             MinorNumber minorNr = drbdVlmDfnDataRef.getMinorNr();
             if (minorNr == null)
             {
@@ -1031,7 +1035,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
         errorReporter.logTrace("Deleting DrbdVlmDfnData %s", getId(drbdVlmDfnDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM_DFN))
         {
-            stmt.setString(1, drbdVlmDfnDataRef.getVolumeDefinition().getResourceDefinition().getName().value);
+            stmt.setString(1, drbdVlmDfnDataRef.getResourceName().value);
             stmt.setString(2, drbdVlmDfnDataRef.getRscNameSuffix());
             SnapshotName snapName = drbdVlmDfnDataRef.getSnapshotName();
             if (snapName == null)
@@ -1042,7 +1046,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
             {
                 stmt.setString(3, snapName.value);
             }
-            stmt.setInt(4, drbdVlmDfnDataRef.getVolumeDefinition().getVolumeNumber().value);
+            stmt.setInt(4, drbdVlmDfnDataRef.getVolumeNumber().value);
 
             stmt.executeUpdate();
             errorReporter.logTrace("DrbdVlmDfnData deleted %s", getId(drbdVlmDfnDataRef));
@@ -1121,7 +1125,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
     private String getId(DrbdVlmDfnData<?> drbdVlmDfnData)
     {
         return "(SuffResName=" + drbdVlmDfnData.getSuffixedResourceName() +
-            ", VlmNr=" + drbdVlmDfnData.getVolumeDefinition().getVolumeNumber().value +
+            ", VlmNr=" + drbdVlmDfnData.getVolumeNumber().value +
             ")";
     }
 

@@ -489,8 +489,10 @@ public class ConfFileBuilderTest
 
                 DrbdVlmDfnData<Resource> drbdVlmDfnData = new DrbdVlmDfnData<>(
                     vlm.getVolumeDefinition(),
+                    vlm.getResourceDefinition().getName(),
                     null,
                     "",
+                    vlm.getVolumeNumber(),
                     99,
                     mockedMinorPool,
                     rscDfnData,

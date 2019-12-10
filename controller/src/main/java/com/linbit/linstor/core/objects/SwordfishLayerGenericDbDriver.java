@@ -181,7 +181,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerCtrlDatabase
             new Triple<>(
                 rscDataRef.getResourceName().displayValue,
                 rscDataRef.getResourceNameSuffix(),
-                vlmRef.getVolumeDefinition().getVolumeNumber().value
+                vlmRef.getVolumeNumber().value
             )
         );
         if (sfVlmDfnData == null)
@@ -190,7 +190,7 @@ public class SwordfishLayerGenericDbDriver implements SwordfishLayerCtrlDatabase
                 String.format(
                     "No cached entry for swordfish volume definition! RscId: %d, VlmNr: %d",
                     rscDataRef.getRscLayerId(),
-                    vlmRef.getVolumeDefinition().getVolumeNumber().value
+                    vlmRef.getVolumeNumber().value
                 )
             );
         }

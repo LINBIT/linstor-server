@@ -62,6 +62,7 @@ public class SnapshotVolumeDefinitionControllerFactory
             UUID.randomUUID(),
             snapshotDfn,
             vlmDfn,
+            vlmDfn.getVolumeNumber(),
             volSize,
             StateFlagsBits.getMask(initFlags),
             driver,

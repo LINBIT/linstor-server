@@ -79,7 +79,7 @@ public class DisklessData<RSC extends AbsResource<RSC>>
     public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         return new DisklessVlmPojo(
-            vlm.getVolumeDefinition().getVolumeNumber().value,
+            vlm.getVolumeNumber().value,
             getDevicePath(),
             getAllocatedSize(),
             getUsableSize(),

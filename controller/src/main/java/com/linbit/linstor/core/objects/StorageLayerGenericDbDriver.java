@@ -281,7 +281,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
                 vlmProviderObj = new DisklessData<>(
                     vlmRef,
                     rscDataRef,
-                    vlmRef.getVolumeDefinition().getVolumeSize(dbCtx),
+                    vlmRef.getVolumeSize(dbCtx),
                     vlmInfo.storPool,
                     this,
                     transObjFactory,

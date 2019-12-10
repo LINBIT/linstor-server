@@ -71,13 +71,16 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
     private final TransactionSimpleObject<SnapshotVolumeDefinition, Boolean> deleted;
 
     private final VolumeDefinition vlmDfn;
+    private final VolumeNumber vlmNr;
 
     private final TransactionMap<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
+
 
     public SnapshotVolumeDefinition(
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
         VolumeDefinition vlmDfnRef,
+        VolumeNumber vlmNrRef,
         long volSize,
         long initFlags,
         SnapshotVolumeDefinitionDatabaseDriver dbDriverRef,
@@ -95,7 +98,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
 
         objId = objIdRef;
         snapshotDfn = snapshotDfnRef;
-        vlmDfn.getVolumeNumber();
+        vlmNr = vlmNrRef;
         dbDriver = dbDriverRef;
 
         dbgInstanceId = UUID.randomUUID();
@@ -104,7 +107,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
             PropsContainer.buildPath(
                 snapshotDfnRef.getResourceName(),
                 snapshotDfnRef.getName(),
-                vlmDfnRef.getVolumeNumber()
+                vlmNrRef
             )
         );
 
@@ -156,7 +159,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
     public VolumeNumber getVolumeNumber()
     {
         checkDeleted();
-        return vlmDfn.getVolumeNumber();
+        return vlmNr;
     }
 
     public void addSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
@@ -285,7 +288,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
         {
             getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
-            snapshotDfn.removeSnapshotVolumeDefinition(accCtx, vlmDfn.getVolumeNumber());
+            snapshotDfn.removeSnapshotVolumeDefinition(accCtx, vlmNr);
 
             snapshotVlmDfnProps.delete();
 

@@ -211,8 +211,10 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         {
             drbdVlmDfnData = layerDataFactory.createDrbdVlmDfnData(
                 vlmDfn,
+                vlmDfn.getResourceDefinition().getName(),
                 null,
                 drbdVlmDfnPojoRef.getRscNameSuffix(),
+                vlmDfn.getVolumeNumber(),
                 drbdVlmDfnPojoRef.getMinorNr(),
                 vlmDfn.getResourceDefinition().getLayerData(
                     apiCtx,

@@ -203,8 +203,10 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
         {
             drbdVlmDfnData = layerDataFactory.createDrbdVlmDfnData(
                 snapVlmDfn.getVolumeDefinition(),
+                snapVlmDfn.getResourceName(),
                 snapVlmDfn.getSnapshotName(),
                 drbdVlmDfnPojoRef.getRscNameSuffix(),
+                snapVlmDfn.getVolumeNumber(),
                 DrbdVlmDfnData.SNAPSHOT_MINOR,
                 snapVlmDfn.getSnapshotDefinition().getLayerData(
                     apiCtx,

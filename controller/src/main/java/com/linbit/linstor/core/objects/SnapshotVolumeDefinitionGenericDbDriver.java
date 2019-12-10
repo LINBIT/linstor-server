@@ -160,6 +160,7 @@ public class SnapshotVolumeDefinitionGenericDbDriver implements SnapshotVolumeDe
                 java.util.UUID.fromString(resultSet.getString(SVD_UUID)),
                 snapshotDefinition,
                 vlmDfn,
+                vlmDfn.getVolumeNumber(), // this class should be deprecated and no longer used
                 volSize,
                 resultSet.getLong(SVD_FLAGS),
                 this,

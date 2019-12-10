@@ -153,6 +153,7 @@ public class SnapshotVolumeDefinitionDbDriver extends
                         )
                     ),
                     parentObjs.objB.get(new Pair<>(rscName, vlmNr)),
+                    vlmNr,
                     vlmSize,
                     flags,
                     this,
