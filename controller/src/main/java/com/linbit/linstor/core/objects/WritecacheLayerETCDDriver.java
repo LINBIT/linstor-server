@@ -38,6 +38,9 @@ import java.util.TreeMap;
 @Singleton
 public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements WritecacheLayerCtrlDatabaseDriver
 {
+    private static final int PK_V_LRI_ID_IDX = 0;
+    private static final int PK_V_VLM_NR_IDX = 1;
+
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
     private final ResourceLayerIdDatabaseDriver idDriver;
@@ -111,7 +114,7 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
             {
                 String[] pks = EtcdUtils.splitPks(composedPk, false);
 
-                vlmNrInt = Integer.parseInt(pks[LayerWritecacheVolumes.VLM_NR.getIndex()]);
+                vlmNrInt = Integer.parseInt(pks[PK_V_VLM_NR_IDX]);
                 String cacheStorPoolNameStr = get(etcdVlmMap, LayerWritecacheVolumes.POOL_NAME, pks);
 
                 VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);

@@ -35,6 +35,9 @@ import java.util.TreeMap;
 @Singleton
 public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrlDatabaseDriver
 {
+    private final static int PK_V_LRI_ID_IDX = 0;
+    private final static int PK_V_VLM_NR_IDX = 1;
+
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
     private final ResourceLayerIdDatabaseDriver idDriver;
@@ -111,12 +114,12 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
             VolumeNumber vlmNr;
             try
             {
-                vlmNr = new VolumeNumber(Integer.parseInt(pks[LayerLuksVolumes.VLM_NR.getIndex()]));
+                vlmNr = new VolumeNumber(Integer.parseInt(pks[PK_V_VLM_NR_IDX]));
             }
             catch (ValueOutOfRangeException exc)
             {
                 throw new LinStorDBRuntimeException(
-                    "Failed to restore stored volume number " + pks[LayerLuksVolumes.VLM_NR.getIndex()]
+                    "Failed to restore stored volume number " + pks[PK_V_VLM_NR_IDX]
                 );
             }
             vlmDataMap.put(

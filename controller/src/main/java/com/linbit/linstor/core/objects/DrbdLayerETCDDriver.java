@@ -67,6 +67,19 @@ import java.util.TreeMap;
 public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrlDatabaseDriver
 {
     private static final String NULL = ":null";
+
+    private static final int PK_RD_RSC_NAME_IDX = 0;
+    private static final int PK_RD_RSC_NAME_SUFFIX_IDX = 1;
+    private static final int PK_RD_SNAP_NAME_IDX = 2;
+
+    private static final int PK_VD_RSC_NAME_IDX = 0;
+    private static final int PK_VD_RSC_NAME_SUFFIX_IDX = 1;
+    private static final int PK_VD_SNAP_NAME_IDX = 2;
+    private static final int PK_VD_VLM_NR_IDX = 3;
+
+    private static final int PK_V_LRI_ID_IDX = 0;
+    private static final int PK_V_LRI_VLM_NR_IDX = 1;
+
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
     private final ResourceLayerIdDatabaseDriver idDriver;
@@ -157,9 +170,9 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
             for (String composedPk : composedPkSet)
             {
                 String[] pks = EtcdUtils.splitPks(composedPk, false);
-                String rscDfnStr = pks[LayerDrbdResourceDefinitions.RESOURCE_NAME.getIndex()];
-                String rscNameSuffix = pks[LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX.getIndex()];
-                String snapDfnStr = pks[LayerDrbdResourceDefinitions.SNAPSHOT_NAME.getIndex()];
+                String rscDfnStr = pks[PK_RD_RSC_NAME_IDX];
+                String rscNameSuffix = pks[PK_RD_RSC_NAME_SUFFIX_IDX];
+                String snapDfnStr = pks[PK_RD_SNAP_NAME_IDX];
 
                 ResourceName rscName = new ResourceName(rscDfnStr);
 
@@ -243,10 +256,10 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
             for (String vlmDfnComposedKey : vlmDfnComposedKeySet)
             {
                 String[] pks = EtcdUtils.splitPks(vlmDfnComposedKey, false);
-                String rscName = pks[LayerDrbdVolumeDefinitions.RESOURCE_NAME.getIndex()];
-                String rscNameSuffix = pks[LayerDrbdVolumeDefinitions.RESOURCE_NAME_SUFFIX.getIndex()];
-                String snapDfnStr = pks[LayerDrbdVolumeDefinitions.SNAPSHOT_NAME.getIndex()];
-                int vlmNr = Integer.parseInt(pks[LayerDrbdVolumeDefinitions.VLM_NR.getIndex()]);
+                String rscName = pks[PK_VD_RSC_NAME_IDX];
+                String rscNameSuffix = pks[PK_VD_RSC_NAME_SUFFIX_IDX];
+                String snapDfnStr = pks[PK_VD_SNAP_NAME_IDX];
+                int vlmNr = Integer.parseInt(pks[PK_VD_VLM_NR_IDX]);
 
                 if (snapDfnStr == null || snapDfnStr.isEmpty())
                 {
@@ -623,7 +636,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
             {
                 String[] pks = EtcdUtils.splitPks(composedPk, false);
 
-                vlmNrInt = Integer.parseInt(pks[LayerDrbdVolumes.VLM_NR.getIndex()]);
+                vlmNrInt = Integer.parseInt(pks[PK_V_LRI_VLM_NR_IDX]);
                 String extMetaStorPoolNameStr = get(drbdVlmMap, LayerDrbdVolumes.POOL_NAME, pks);
 
                 VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);

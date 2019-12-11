@@ -136,7 +136,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         Set<String> composedPkList = EtcdUtils.getComposedPkList(dataMap);
         for (String composedPk : composedPkList)
         {
-            Object[] rawObjects = new Object[columns.length];
+            Map<String, Object> rawObjects = new TreeMap<>();
             String[] pks = EtcdUtils.splitPks(composedPk, false);
 
             int pkIdx = 0;
@@ -145,7 +145,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
             {
                 if (col.isPk())
                 {
-                    rawObjects[col.getIndex()] = pks[pkIdx++];
+                    rawObjects.put(col.getName(), pks[pkIdx++]);
                 }
                 else
                 {
@@ -155,7 +155,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                     {
                         throw new LinStorDBRuntimeException("Column was unexpectedly null. " + colKey);
                     }
-                    rawObjects[col.getIndex()] = colData;
+                    rawObjects.put(col.getName(), colData);
                 }
             }
             Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(new RawParameters(table, rawObjects), parents);

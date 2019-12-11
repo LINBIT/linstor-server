@@ -41,6 +41,10 @@ import java.util.Set;
 @Singleton
 public class SwordfishETCDDriver extends BaseEtcdDriver implements SwordfishLayerCtrlDatabaseDriver
 {
+    private static final int PK_VD_RSC_NAME_IDX = 0;
+    private static final int PK_VD_RSC_NAME_SUFFIX_IDX = 1;
+    private static final int PK_VD_VLM_NR_IDX = 2;
+
     private static final String DUMMY_VALUE = "intentional-null-value";
 
     private final AccessContext dbCtx;
@@ -49,8 +53,6 @@ public class SwordfishETCDDriver extends BaseEtcdDriver implements SwordfishLaye
 
     private final SingleColumnDatabaseDriver<SfVlmDfnData, String> vlmDfnOdataDriver;
     private Map<Triple<String, String, Integer>, SfVlmDfnData> sfVlmDfnInfoCache;
-
-
 
     @Inject
     public SwordfishETCDDriver(
@@ -111,9 +113,9 @@ public class SwordfishETCDDriver extends BaseEtcdDriver implements SwordfishLaye
             {
                 String[] pks = EtcdUtils.splitPks(composedPk, false);
 
-                String rscNameStr = pks[LayerSwordfishVolumeDefinitions.RESOURCE_NAME.getIndex()];
-                String rscNameSuffix = pks[LayerSwordfishVolumeDefinitions.RESOURCE_NAME_SUFFIX.getIndex()];
-                int vlmNrInt = Integer.parseInt(pks[LayerSwordfishVolumeDefinitions.VLM_NR.getIndex()]);
+                String rscNameStr = pks[PK_VD_RSC_NAME_IDX];
+                String rscNameSuffix = pks[PK_VD_RSC_NAME_SUFFIX_IDX];
+                int vlmNrInt = Integer.parseInt(pks[PK_VD_VLM_NR_IDX]);
 
                 String odata = allSfVlmDfnMap.get(
                     EtcdUtils.buildKey(LayerSwordfishVolumeDefinitions.VLM_ODATA, pks)

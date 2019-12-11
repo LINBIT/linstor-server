@@ -55,6 +55,9 @@ import java.util.TreeMap;
 @Singleton
 public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLayerCtrlDatabaseDriver
 {
+    private final static int PK_V_LRI_ID_IDX = 0;
+    private final static int PK_V_VLM_NR_IDX = 1;
+
     private final ErrorReporter errorReporter;
     private final ResourceLayerIdDatabaseDriver rscIdDriver;
     private final TransactionObjectFactory transObjFactory;
@@ -124,8 +127,8 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
             {
                 String[] pks = EtcdUtils.splitPks(composedPk, false);
 
-                rscLayerId = Integer.parseInt(pks[LayerStorageVolumes.LAYER_RESOURCE_ID.getIndex()]);
-                int vlmNr = Integer.parseInt(pks[LayerStorageVolumes.VLM_NR.getIndex()]);
+                rscLayerId = Integer.parseInt(pks[PK_V_LRI_ID_IDX]);
+                int vlmNr = Integer.parseInt(pks[PK_V_VLM_NR_IDX]);
 
                 List<StorVlmInfoData> infoList = cachedStorVlmInfoByRscLayerId.get(rscLayerId);
                 if (infoList == null)

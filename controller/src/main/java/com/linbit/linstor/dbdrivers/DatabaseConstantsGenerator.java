@@ -125,7 +125,6 @@ public final class DatabaseConstantsGenerator
 
             appendEmptyLine();
             generateHolderClass(COLUMN_HOLDER_NAME, new String[][] {
-                {"int", "index"},
                 {"String", "name"},
                 {"int", "sqlType"},
                 {"boolean", "isPk"},
@@ -169,21 +168,30 @@ public final class DatabaseConstantsGenerator
                 null
             ))
             {
+                StringBuilder pkColumnBuilder = new StringBuilder();
+                StringBuilder nonPkColumnBuilder = new StringBuilder();
+
                 ArrayList<String> currentColumnNames = new ArrayList<>();
-                int index = 0;
                 while (columns.next())
                 {
                     final String colName = columns.getString("COLUMN_NAME");
+                    if (primaryKeys.contains(colName))
+                    {
+                        activeBuilder.push(pkColumnBuilder);
+                    }
+                    else
+                    {
+                        activeBuilder.push(nonPkColumnBuilder);
+                    }
                     appendLine(
-                        "public static final Column %s = new Column(%d, \"%s\", Types.%s, %s, %s);",
+                        "public static final Column %s = new Column(\"%s\", Types.%s, %s, %s);",
                             colName,
-                            index,
                             colName,
                             columns.getString("TYPE_NAME"),
                             Boolean.toString(primaryKeys.contains(colName)),
                             Boolean.toString(columns.getString("IS_NULLABLE").equalsIgnoreCase("yes"))
                         );
-                    ++index;
+                    activeBuilder.pop();
                     columnNames.add(colName);
                     currentColumnNames.add(colName);
 
@@ -191,6 +199,15 @@ public final class DatabaseConstantsGenerator
                     appendLine("%s.%s.table = %s;", tableClassName, colName, tableName);
                     activeBuilder.pop();
                 }
+                appendLine("// Primary Key%s", primaryKeys.size() > 1 ? "s" : "");
+                append(pkColumnBuilder.toString().trim() + "\n"); // trim should cut leading indentation, but it also
+                                                                  // cuts trailing newline
+                if (!nonPkColumnBuilder.toString().trim().isEmpty())
+                {
+                    appendEmptyLine();
+                    append(nonPkColumnBuilder.toString().trim() + "\n");
+                }
+
                 appendEmptyLine();
                 appendLine("public static final Column[] ALL = new Column[]");
                 try (IndentLevel allColumns = new IndentLevel("{", "};", true, true))

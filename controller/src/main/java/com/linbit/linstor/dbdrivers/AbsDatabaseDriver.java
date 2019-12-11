@@ -227,9 +227,9 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     public static class RawParameters
     {
         private final Table table;
-        private final Object[] rawParameters;
+        private final Map<String, Object> rawParameters;
 
-        public RawParameters(Table tableRef, Object[] rawParametersRef)
+        public RawParameters(Table tableRef, Map<String, Object> rawParametersRef)
         {
             table = tableRef;
             rawParameters = rawParametersRef;
@@ -238,7 +238,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         @SuppressWarnings("unchecked")
         public <T> T get(Column col)
         {
-            return (T) rawParameters[col.getIndex()];
+            return (T) rawParameters.get(col.getName());
         }
 
         public <T, R, EXC extends Exception> R build(
