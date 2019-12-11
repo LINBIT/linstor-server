@@ -104,6 +104,8 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(createZPool(devicePaths, raidLevel, poolName));
                 break;
 
+            case SPDK: // not implemented (yet) -> fall-through
+
                 // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
