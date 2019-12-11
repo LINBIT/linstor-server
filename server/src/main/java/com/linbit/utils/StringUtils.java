@@ -46,6 +46,19 @@ public class StringUtils
         return join(col, ",");
     }
 
+    /**
+     * Convenience method delegating the call to {@link #join(String, Object...)} in a
+     * typesafe way
+     *
+     * @param delimiter
+     * @param array
+     * @return
+     */
+    public static String join(String delimiter, String... array)
+    {
+        return join(delimiter, (Object[]) array);
+    }
+
     public static String join(String delimiter, Object... array)
     {
         StringBuilder sb = new StringBuilder();
