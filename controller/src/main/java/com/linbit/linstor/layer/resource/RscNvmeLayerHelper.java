@@ -31,7 +31,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -42,7 +41,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 
 @Singleton
 class RscNvmeLayerHelper extends AbsRscLayerHelper<
@@ -125,48 +123,40 @@ class RscNvmeLayerHelper extends AbsRscLayerHelper<
             ResourceDefinition rscDfn = rscRef.getDefinition();
             Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
 
-            HashMap<AbsRscLayerObject<Resource>, Integer> initCountPerTarget = new HashMap<>();
+            HashMap<String, Integer> initCountPerTarget = new HashMap<>();
 
             while (rscIt.hasNext())
             {
                 Resource otherRsc = rscIt.next();
                 if (!otherRsc.equals(rscRef))
                 {
-                    Set<AbsRscLayerObject<Resource>> otherNvmeDataSet = LayerRscUtils.getRscDataByProvider(
-                        otherRsc.getLayerData(apiCtx),
-                        DeviceLayerKind.NVME
-                    );
                     if (otherRsc.isNvmeInitiator(apiCtx))
                     {
-                        for (AbsRscLayerObject<Resource> otherNvmeData : otherNvmeDataSet)
+                        String othersTarget = otherRsc.getProps(apiCtx)
+                            .getProp(InternalApiConsts.PROP_NVME_TARGET_NODE_NAME);
+                        Integer count = initCountPerTarget.get(othersTarget);
+                        if (count == null)
                         {
-                            Integer count = initCountPerTarget.get(otherNvmeDataSet);
-                            if (count == null)
-                            {
-                                initCountPerTarget.put(otherNvmeData, 1);
-                            }
-                            else
-                            {
-                                initCountPerTarget.put(otherNvmeData, count + 1);
-                            }
+                            initCountPerTarget.put(othersTarget, 1);
+                        }
+                        else
+                        {
+                            initCountPerTarget.put(othersTarget, count + 1);
                         }
                     }
                     else
                     {
-                        for (AbsRscLayerObject<Resource> otherNvmeData : otherNvmeDataSet)
+                        if (!initCountPerTarget.containsKey(otherRsc.getNode().getName().displayValue))
                         {
-                            if (!initCountPerTarget.containsKey(otherNvmeData))
-                            {
-                                initCountPerTarget.put(otherNvmeData, 0);
-                            }
+                            initCountPerTarget.put(otherRsc.getNode().getName().displayValue, 0);
                         }
                     }
                 }
             }
 
             int lowestCount = Integer.MAX_VALUE;
-            AbsRscLayerObject<Resource> targetWithLowestInitCount = null;
-            for (Entry<AbsRscLayerObject<Resource>, Integer> entry : initCountPerTarget.entrySet())
+            String targetWithLowestInitCount = null;
+            for (Entry<String, Integer> entry : initCountPerTarget.entrySet())
             {
                 if (lowestCount > entry.getValue())
                 {
@@ -184,7 +174,7 @@ class RscNvmeLayerHelper extends AbsRscLayerHelper<
             {
                 rscProps.setProp(
                     InternalApiConsts.PROP_NVME_TARGET_NODE_NAME,
-                    targetWithLowestInitCount.getAbsResource().getNode().getName().displayValue
+                    targetWithLowestInitCount
                 );
             }
             catch (InvalidKeyException | InvalidValueException exc)
