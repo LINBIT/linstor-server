@@ -31,6 +31,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATI
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -399,7 +400,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
             ConnectionFactory connFactory = new DriverManagerConnectionFactory(dbConnectionUrl, props);
             PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
 
-            GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+            GenericObjectPoolConfig<PoolableConnection> poolConfig = new GenericObjectPoolConfig<>();
             poolConfig.setMinIdle(DEFAULT_MIN_IDLE_CONNECTIONS);
             poolConfig.setMaxIdle(DEFAULT_MAX_IDLE_CONNECTIONS);
             poolConfig.setBlockWhenExhausted(true);

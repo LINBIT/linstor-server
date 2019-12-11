@@ -336,7 +336,7 @@ public class LinstorConfig
         );
         PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
 
-        GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+        GenericObjectPoolConfig<PoolableConnection> poolConfig = new GenericObjectPoolConfig<PoolableConnection>();
         poolConfig.setBlockWhenExhausted(true);
         poolConfig.setFairness(true);
 

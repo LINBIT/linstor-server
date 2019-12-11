@@ -310,7 +310,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                 );
                 break;
             case SPDK:
-                vlmProviderObj = new SpdkData(
+                vlmProviderObj = new SpdkData<>(
                         vlmRef,
                         rscDataRef,
                         vlmInfo.storPool,

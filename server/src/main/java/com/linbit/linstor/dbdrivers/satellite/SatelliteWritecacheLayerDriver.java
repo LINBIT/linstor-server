@@ -26,25 +26,25 @@ public class SatelliteWritecacheLayerDriver implements WritecacheLayerDatabaseDr
     }
 
     @Override
-    public void persist(WritecacheRscData writecacheRscDataRef)
+    public void persist(WritecacheRscData<?> writecacheRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(WritecacheRscData writecacheRscDataRef)
+    public void delete(WritecacheRscData<?> writecacheRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(WritecacheVlmData writecacheVlmDataRef)
+    public void persist(WritecacheVlmData<?> writecacheVlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(WritecacheVlmData writecacheVlmDataRef)
+    public void delete(WritecacheVlmData<?> writecacheVlmDataRef)
     {
         // no-op
     }

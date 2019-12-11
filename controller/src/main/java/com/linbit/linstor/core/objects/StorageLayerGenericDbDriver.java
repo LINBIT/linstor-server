@@ -328,7 +328,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
                 );
                 break;
             case SPDK:
-                vlmProviderObj = new SpdkData(
+                vlmProviderObj = new SpdkData<>(
                         vlmRef,
                         rscDataRef,
                         vlmInfo.storPool,

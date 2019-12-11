@@ -649,7 +649,7 @@ public class NvmeUtils
      * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
      * @param subsystemName String containing NVMe subsystem name
      */
-    public void createSpdkNamespace(NvmeVlmData nvmeVlmData, String subsystemName)
+    public void createSpdkNamespace(NvmeVlmData<Resource> nvmeVlmData, String subsystemName)
         throws IOException, StorageException, ChildProcessTimeoutException
     {
         if (!SpdkUtils.checkNamespaceExists(extCmdFactory.create(), subsystemName,
@@ -677,7 +677,7 @@ public class NvmeUtils
      * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
      * @param subsystemName
      */
-    public void deleteSpdkNamespace(NvmeVlmData nvmeVlmData, String subsystemName)
+    public void deleteSpdkNamespace(NvmeVlmData<Resource> nvmeVlmData, String subsystemName)
         throws IOException, ChildProcessTimeoutException, StorageException
     {
         final int namespaceNr = nvmeVlmData.getVlmNr().getValue() + 1;
@@ -702,7 +702,7 @@ public class NvmeUtils
      * @param nvmeRscData NvmeRscData, Resource object containing the needed flag for this method
      * @return          String with NVME subsystem prefix
      */
-    public static String getNvmeSubsystemPrefix(NvmeRscData nvmeRscData)
+    public static String getNvmeSubsystemPrefix(NvmeRscData<?> nvmeRscData)
     {
         return nvmeRscData.isSpdk() ? STANDARD_NVME_SUBSYSTEM_PREFIX : NVME_SUBSYSTEM_PREFIX;
     }
@@ -751,7 +751,13 @@ public class NvmeUtils
      * @param port          String, default: 4420
      * @return              List<String> of discovered subsystem names
      */
-    private List<String> discover(NvmeRscData nvmeRscData, String transportType, String ipAddr, String port, String nodeName)
+    private List<String> discover(
+        NvmeRscData<Resource> nvmeRscData,
+        String transportType,
+        String ipAddr,
+        String port,
+        String nodeName
+    )
         throws StorageException
     {
         List<String> subsystemNames = new ArrayList<>();

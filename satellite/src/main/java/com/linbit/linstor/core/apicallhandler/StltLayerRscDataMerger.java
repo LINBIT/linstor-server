@@ -476,7 +476,9 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
-    protected void mergeSpdkVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject vlmData) throws DatabaseException {
+    protected void mergeSpdkVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject<Resource> vlmData)
+        throws DatabaseException
+    {
         // ignoring allocatedSize
         // ignoring devicePath
         // ignoring usableSize

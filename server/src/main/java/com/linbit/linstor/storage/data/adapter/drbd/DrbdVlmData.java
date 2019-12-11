@@ -177,7 +177,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
         }
         else
         {
-            VlmProviderObject childVlm = getChildBySuffix(DrbdRscData.SUFFIX_META);
+            VlmProviderObject<RSC> childVlm = getChildBySuffix(DrbdRscData.SUFFIX_META);
             if (childVlm != null)
             {
                 // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
