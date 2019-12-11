@@ -26,7 +26,6 @@ public class Migration_2019_03_06_ResourceDfn_ExternalName extends LinstorMigrat
                     "RESOURCE_EXTERNAL_NAME",
                     "BLOB",
                     true,
-                    null,
                     null
                 )
             );
