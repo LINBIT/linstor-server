@@ -12,6 +12,7 @@ import com.linbit.utils.StringUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 
 import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
@@ -98,19 +99,21 @@ public class Commands
 
     public static OutputData wipeFs(
         ExtCmd extCmd,
-        String devicePath
+        Collection<String> devicePaths
     )
         throws StorageException
     {
         return genericExecutor(
             extCmd,
-            new String[]
-            {
-                "wipefs", "-a", "-f",
-                devicePath
-            },
-            "Failed to wipeFs of " + devicePath,
-            "Failed to wipeFs of " + devicePath
+            StringUtils.concat(
+                new String[]
+                {
+                    "wipefs", "-a", "-f"
+                },
+                devicePaths
+            ),
+            "Failed to wipeFs of " + String.join(", ", devicePaths),
+            "Failed to wipeFs of " + String.join(", ", devicePaths)
         );
     }
 
