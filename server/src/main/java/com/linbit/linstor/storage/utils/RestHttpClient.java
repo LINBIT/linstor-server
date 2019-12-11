@@ -122,11 +122,11 @@ public class RestHttpClient implements RestClient
             try (CloseableHttpResponse response = httpClient.execute(req);)
             {
                 byte[] responseContent = readContent(response);
-                Map<String, String> sfHeaders = new HashMap<>();
+                Map<String, String> headers = new HashMap<>();
                 Header[] msgHeaders = response.getAllHeaders();
                 for (Header header : msgHeaders)
                 {
-                    sfHeaders.put(header.getName(), header.getValue());
+                    headers.put(header.getName(), header.getValue());
                 }
 
                 Map<String, Object> respRoot;
@@ -144,7 +144,7 @@ public class RestHttpClient implements RestClient
                 restResponse = new RestHttpResponse(
                     request,
                     statusCode,
-                    sfHeaders,
+                    headers,
                     respRoot
                 );
                 if (!request.expectedRcs.contains(statusCode))

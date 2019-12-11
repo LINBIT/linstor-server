@@ -41,8 +41,6 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -347,34 +345,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
                 else
                 {
                     mergeLvmThinVlmData(vlmPojo, vlmData);
-                }
-                break;
-            case SWORDFISH_INITIATOR:
-                if (vlmData == null || !(vlmData instanceof SfInitiatorData))
-                {
-                    if (vlmData != null)
-                    {
-                        removeStorageVlm(storRscData, vlmNr);
-                    }
-                    vlmData = createSfInitVlmData(vlm, storRscData, vlmPojo, storPool);
-                }
-                else
-                {
-                    mergeSfInitVlmData(vlmPojo, vlmData);
-                }
-                break;
-            case SWORDFISH_TARGET:
-                if (vlmData == null || !(vlmData instanceof SfTargetData))
-                {
-                    if (vlmData != null)
-                    {
-                        removeStorageVlm(storRscData, vlmNr);
-                    }
-                    vlmData = createSfTargetVlmData(vlm, storRscData, vlmPojo, storPool);
-                }
-                else
-                {
-                    mergeSfTargetVlmData(vlmPojo, vlmData);
                 }
                 break;
             case ZFS: // fall-through
@@ -697,28 +667,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         throws DatabaseException;
 
     protected abstract void mergeLvmThinVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)
-        throws DatabaseException;
-
-    protected abstract VlmProviderObject<RSC> createSfInitVlmData(
-        AbsVolume<RSC> vlm,
-        StorageRscData<RSC> storRscData,
-        VlmLayerDataApi vlmPojo,
-        StorPool storPool
-    )
-        throws DatabaseException, AccessDeniedException;
-
-    protected abstract void mergeSfInitVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)
-        throws DatabaseException;
-
-    protected abstract VlmProviderObject<RSC> createSfTargetVlmData(
-        AbsVolume<RSC> vlm,
-        StorageRscData<RSC> storRscData,
-        VlmLayerDataApi vlmPojo,
-        StorPool storPool
-    )
-        throws DatabaseException, AccessDeniedException;
-
-    protected abstract void mergeSfTargetVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)
         throws DatabaseException;
 
     protected abstract VlmProviderObject<RSC> createZfsData(

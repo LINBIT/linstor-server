@@ -62,7 +62,6 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     private final ResourceLayerIdDatabaseDriver rscIdDriver;
     private final TransactionObjectFactory transObjFactory;
     private final AccessContext dbCtx;
-    private final SwordfishETCDDriver sfDbDriver;
 
     private final SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool> storPoolDriver;
 
@@ -74,8 +73,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
         ErrorReporter errorReporterRef,
         Provider<TransactionMgrETCD> transMgrProviderRef,
         TransactionObjectFactory transObjFactoryRef,
-        ResourceLayerIdDatabaseDriver rscIdDriverRef,
-        SwordfishETCDDriver sfDbDriverRef
+        ResourceLayerIdDatabaseDriver rscIdDriverRef
     )
     {
         super(transMgrProviderRef);
@@ -83,7 +81,6 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
         errorReporter = errorReporterRef;
         transObjFactory = transObjFactoryRef;
         rscIdDriver = rscIdDriverRef;
-        sfDbDriver = sfDbDriverRef;
 
         storPoolDriver = (parent, storPool) ->
         {
@@ -107,8 +104,6 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     {
         cachedStorVlmInfoByRscLayerId.clear();
         cachedStorVlmInfoByRscLayerId = null;
-
-        sfDbDriver.clearLoadAllCache();
     }
 
     @Override
@@ -290,10 +285,6 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                     transMgrProvider
                 );
                 break;
-            case SWORDFISH_INITIATOR: // fall-through
-            case SWORDFISH_TARGET:
-                vlmProviderObj = sfDbDriver.load(vlmRef, rscDataRef, vlmInfo.kind, vlmInfo.storPool, this);
-                break;
             case ZFS: // fall-trough
             case ZFS_THIN:
                 vlmProviderObj = new ZfsData<>(
@@ -356,7 +347,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     )
         throws DatabaseException
     {
-        sfDbDriver.loadLayerData(rscDfnMap);
+        // no-op - no provider needs special resource- or volume-definition prefetching
     }
 
     @Override

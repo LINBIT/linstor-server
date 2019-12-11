@@ -43,8 +43,6 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -303,48 +301,6 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         lvmThinData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         lvmThinData.setDevicePath(vlmPojoRef.getDevicePath());
         lvmThinData.setUsableSize(vlmPojoRef.getUsableSize());
-    }
-
-    @Override
-    protected VlmProviderObject<Resource> createSfInitVlmData(
-        AbsVolume<Resource> vlmRef,
-        StorageRscData<Resource> storRscDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        throw new ImplementationError("Received unknown swordfish initiator storage volume from satellite");
-    }
-
-    @Override
-    protected void mergeSfInitVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
-        throws DatabaseException
-    {
-        SfInitiatorData<Resource> sfInitData = (SfInitiatorData<Resource>) vlmDataRef;
-        sfInitData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
-        sfInitData.setDevicePath(vlmPojoRef.getDevicePath());
-        sfInitData.setUsableSize(vlmPojoRef.getUsableSize());
-    }
-
-    @Override
-    protected VlmProviderObject<Resource> createSfTargetVlmData(
-        AbsVolume<Resource> vlmRef,
-        StorageRscData<Resource> storRscDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException
-    {
-        throw new ImplementationError("Received unknown swordfish target storage volume from satellite");
-    }
-
-    @Override
-    protected void mergeSfTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
-        throws DatabaseException
-    {
-        SfTargetData<Resource> sfTargetData = (SfTargetData<Resource>) vlmDataRef;
-        sfTargetData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
     }
 
     @Override

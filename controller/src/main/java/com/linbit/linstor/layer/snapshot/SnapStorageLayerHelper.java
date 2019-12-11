@@ -122,9 +122,6 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
             case LVM_THIN:
                 snapVlmData = layerDataFactory.createLvmThinData(snapVlmRef, snapDataRef, storPool);
                 break;
-            case SWORDFISH_INITIATOR:
-            case SWORDFISH_TARGET:
-                throw new ImplementationError("Snapshots are not supported for swordfish-setup");
             case ZFS: // fall-through
             case ZFS_THIN:
                 snapVlmData = layerDataFactory.createZfsData(snapVlmRef, snapDataRef, providerKind, storPool);

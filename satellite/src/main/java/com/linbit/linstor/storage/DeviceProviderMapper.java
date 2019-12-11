@@ -1,9 +1,7 @@
 package com.linbit.linstor.storage;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 import com.linbit.linstor.storage.layer.provider.diskless.DisklessProvider;
@@ -12,8 +10,6 @@ import com.linbit.linstor.storage.layer.provider.file.FileThinProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
 import com.linbit.linstor.storage.layer.provider.spdk.SpdkProvider;
-import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorProvider;
-import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishTargetProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsThinProvider;
 
@@ -30,8 +26,6 @@ public class DeviceProviderMapper
     private final LvmThinProvider lvmThinProvider;
     private final ZfsProvider zfsProvider;
     private final ZfsThinProvider zfsThinProvider;
-    private final SwordfishTargetProvider sfTargetProvider;
-    private final SwordfishInitiatorProvider sfInitProvider;
     private final DisklessProvider disklessProvider;
     private final FileProvider fileProvider;
     private final FileThinProvider fileThinProvider;
@@ -44,8 +38,6 @@ public class DeviceProviderMapper
         LvmThinProvider lvmThinProviderRef,
         ZfsProvider zfsProviderRef,
         ZfsThinProvider zfsThinProviderRef,
-        SwordfishTargetProvider sfTargetProviderRef,
-        SwordfishInitiatorProvider sfInitProviderRef,
         DisklessProvider disklessProviderRef,
         FileProvider fileProviderRef,
         FileThinProvider fileThinProviderRef,
@@ -56,8 +48,6 @@ public class DeviceProviderMapper
         lvmThinProvider = lvmThinProviderRef;
         zfsProvider = zfsProviderRef;
         zfsThinProvider = zfsThinProviderRef;
-        sfTargetProvider = sfTargetProviderRef;
-        sfInitProvider = sfInitProviderRef;
         disklessProvider = disklessProviderRef;
         fileProvider = fileProviderRef;
         fileThinProvider = fileThinProviderRef;
@@ -68,8 +58,6 @@ public class DeviceProviderMapper
             lvmThinProvider,
             zfsProvider,
             zfsThinProvider,
-            sfTargetProvider,
-            sfInitProvider,
             disklessProvider,
             fileProvider,
             fileThinProvider,
@@ -97,12 +85,6 @@ public class DeviceProviderMapper
                 break;
             case LVM_THIN:
                 devProvider = lvmThinProvider;
-                break;
-            case SWORDFISH_INITIATOR:
-                devProvider = sfInitProvider;
-                break;
-            case SWORDFISH_TARGET:
-                devProvider = sfTargetProvider;
                 break;
             case ZFS:
                 devProvider = zfsProvider;

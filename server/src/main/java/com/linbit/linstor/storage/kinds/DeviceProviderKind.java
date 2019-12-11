@@ -1,16 +1,14 @@
 package com.linbit.linstor.storage.kinds;
 
+import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.storage.FileDriverKind;
 import com.linbit.linstor.storage.FileThinDriverKind;
-import com.linbit.linstor.storage.StorageDriverKind;
-import com.linbit.linstor.storage.DisklessDriverKind;
 import com.linbit.linstor.storage.LvmDriverKind;
 import com.linbit.linstor.storage.LvmThinDriverKind;
 import com.linbit.linstor.storage.SpdkDriverKind;
+import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
-import com.linbit.linstor.storage.SwordfishInitiatorDriverKind;
-import com.linbit.linstor.storage.SwordfishTargetDriverKind;
 
 public enum DeviceProviderKind
 {
@@ -57,24 +55,6 @@ public enum DeviceProviderKind
         true,
         new ZfsThinDriverKind(),
         ExtTools.ZFS
-    ),
-    SWORDFISH_TARGET(
-        false,
-        false,
-        false,
-        true,
-        false,
-        new SwordfishTargetDriverKind()
-    // no startup verifications
-    ),
-    SWORDFISH_INITIATOR(
-        false,
-        false,
-        false,
-        false,
-        false,
-        new SwordfishInitiatorDriverKind()
-    // no startup verifications
     ),
     FILE(
         true,

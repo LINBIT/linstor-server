@@ -133,7 +133,6 @@ public final class Controller
     private final DebugConsoleCreator debugConsoleCreator;
     private final ControllerNetComInitializer controllerNetComInitializer;
 
-    private final SwordfishTargetProcessManager swordfishTargetProcessManager;
     private final WhitelistProps whitelistProps;
 
     private RetryResourcesTask retryResourcesTask;
@@ -163,7 +162,6 @@ public final class Controller
         LogArchiveTask logArchiveTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
-        SwordfishTargetProcessManager swordfishTargetProcessManagerRef,
         WhitelistProps whitelistPropsRef,
         LinstorConfigToml linstorConfigRef
     )
@@ -189,7 +187,6 @@ public final class Controller
         retryResourcesTask = retryResourcesTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
-        swordfishTargetProcessManager = swordfishTargetProcessManagerRef;
         whitelistProps = whitelistPropsRef;
         linstorConfig = linstorConfigRef;
     }
@@ -253,8 +250,6 @@ public final class Controller
             );
 
             whitelistProps.overrideDrbdProperties();
-
-            swordfishTargetProcessManager.initialize();
 
             connectToKnownNodes(errorReporter, initCtx);
 

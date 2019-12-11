@@ -20,7 +20,6 @@ import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseD
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
@@ -45,7 +44,6 @@ import com.linbit.linstor.dbdrivers.satellite.SatelliteSnapshotVlmDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteStorPoolDfnDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteStorPoolDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteStorageLayerDriver;
-import com.linbit.linstor.dbdrivers.satellite.SatelliteSwordfishLayerDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteVlmGrpDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteVolConDfnDriver;
 import com.linbit.linstor.dbdrivers.satellite.SatelliteVolDfnDriver;
@@ -92,7 +90,6 @@ public class SatelliteDbModule extends AbstractModule
         bind(DrbdLayerDatabaseDriver.class).to(SatelliteDrbdLayerDriver.class);
         bind(LuksLayerDatabaseDriver.class).to(SatelliteLuksDriver.class);
         bind(StorageLayerDatabaseDriver.class).to(SatelliteStorageLayerDriver.class);
-        bind(SwordfishLayerDatabaseDriver.class).to(SatelliteSwordfishLayerDriver.class);
         bind(NvmeLayerDatabaseDriver.class).to(SatelliteNvmeLayerDriver.class);
         bind(WritecacheLayerDatabaseDriver.class).to(SatelliteWritecacheLayerDriver.class);
     }

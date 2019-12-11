@@ -61,8 +61,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
             Node.Type nodeType = node.getNodeType(accCtx);
             if (
                 nodeType.equals(Node.Type.SATELLITE) ||
-                nodeType.equals(Node.Type.COMBINED) ||
-                nodeType.equals(Node.Type.SWORDFISH_TARGET)
+                nodeType.equals(Node.Type.COMBINED)
             )
             {
                 NetInterface activeStltConn = node.getActiveStltConn(accCtx);

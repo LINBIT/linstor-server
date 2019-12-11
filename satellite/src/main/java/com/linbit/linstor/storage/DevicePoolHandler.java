@@ -111,8 +111,6 @@ public class DevicePoolHandler
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             case FILE: // fall-through
             case FILE_THIN: // fall-through
-            case SWORDFISH_INITIATOR: // fall-through
-            case SWORDFISH_TARGET: // fall-through
             default:
                 apiCallRc.addEntry(
                     ApiCallRcImpl.simpleEntry(

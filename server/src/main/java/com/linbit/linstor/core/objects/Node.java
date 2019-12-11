@@ -869,7 +869,6 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.DISKLESS,
                 DeviceProviderKind.LVM,
                 DeviceProviderKind.LVM_THIN,
-                DeviceProviderKind.SWORDFISH_INITIATOR,
                 DeviceProviderKind.ZFS,
                 DeviceProviderKind.ZFS_THIN,
                 DeviceProviderKind.FILE,
@@ -883,7 +882,6 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.DISKLESS,
                 DeviceProviderKind.LVM,
                 DeviceProviderKind.LVM_THIN,
-                DeviceProviderKind.SWORDFISH_INITIATOR,
                 DeviceProviderKind.ZFS,
                 DeviceProviderKind.ZFS_THIN,
                 DeviceProviderKind.FILE,
@@ -891,12 +889,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.SPDK
             )
         ),
-        AUXILIARY(4, Collections.emptyList()),
-        SWORDFISH_TARGET(
-            5,
-            Arrays.asList(
-                DeviceProviderKind.SWORDFISH_TARGET
-            )
+        AUXILIARY(
+            4, Collections.emptyList()
         );
 
         private final int flag;

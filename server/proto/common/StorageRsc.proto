@@ -26,8 +26,6 @@ message StorageVlm
     optional LvmThinVlm          lvm_thin = 9;
     optional ZfsVlm              zfs = 10;
     optional ZfsThinVlm          zfs_thin = 11;
-    optional SwordfishTarget     sf_target = 12;
-    optional SwordfishInitiator  sf_init = 13;
     optional FileVlm             file = 14;
     optional FileThinVlm         file_thin = 15;
     optional SpdkVlm             spdk = 16;
@@ -36,7 +34,6 @@ message StorageVlm
 message StorageVlmDfn
 {
     required ProviderType    provider_kind = 1;
-    optional SwordfishVlmDfn swordfish = 2;
 }
 
 message DisklessVlm
@@ -69,16 +66,6 @@ message ZfsThinVlm
     // currently no special payload
 }
 
-message SwordfishTarget
-{
-    required SwordfishVlmDfn    sf_vlm_dfn = 1;
-}
-
-message SwordfishInitiator
-{
-    required SwordfishVlmDfn    sf_vlm_dfn = 1;
-}
-
 message FileVlm
 {
     // currently no special payload
@@ -87,14 +74,4 @@ message FileVlm
 message FileThinVlm
 {
     // currently no special payload
-}
-
-// By design there will be a SwordfishInitiator AND a SwordfishTarget refering to the same SwordfishVlmDfn. The pair of suffixed_rsc_name and vlm_nr is the primary key.
-// If multiple DrbdVlmDfns share the same pair of suffixed_rsc_name and vlm_nr but differ in the other settings, it is an implementation error
-message SwordfishVlmDfn
-{
-    required string         rsc_name_suffix = 1;
-    required uint32         vlm_nr = 2;
-
-    optional string         vlmOdata = 3;
 }

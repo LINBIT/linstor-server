@@ -85,9 +85,6 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishInitiator;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishTarget;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsVlm;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass;
@@ -108,8 +105,6 @@ import com.linbit.linstor.proto.responses.MsgEventOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
-import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -849,12 +844,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case LVM_THIN:
                 type = ProviderType.LVM_THIN;
                 break;
-            case SWORDFISH_INITIATOR:
-                type = ProviderType.SWORDFISH_INITIATOR;
-                break;
-            case SWORDFISH_TARGET:
-                type = ProviderType.SWORDFISH_TARGET;
-                break;
             case ZFS:
                 type = ProviderType.ZFS;
                 break;
@@ -1406,38 +1395,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case ZFS_THIN:
                     builder.setZfsThin(ZfsThinVlm.newBuilder().build());
-                    break;
-                case SWORDFISH_INITIATOR:
-                    {
-                        SfVlmDfnData sfVlmDfnData = ((SfInitiatorData<Resource>) vlmPojo).getVlmDfnLayerObject();
-                        builder.setSfInit(
-                            SwordfishInitiator.newBuilder()
-                                .setSfVlmDfn(
-                                    SwordfishVlmDfn.newBuilder()
-                                        .setRscNameSuffix(sfVlmDfnData.getRscNameSuffix())
-                                        .setVlmNr(sfVlmDfnData.getVolumeNumber().value)
-                                        .setVlmOdata(sfVlmDfnData.getVlmOdata())
-                                        .build()
-                                )
-                                .build()
-                        );
-                    }
-                    break;
-                case SWORDFISH_TARGET:
-                    {
-                        SfVlmDfnData sfVlmDfnData = ((SfInitiatorData<Resource>) vlmPojo).getVlmDfnLayerObject();
-                        builder.setSfTarget(
-                            SwordfishTarget.newBuilder()
-                                .setSfVlmDfn(
-                                    SwordfishVlmDfn.newBuilder()
-                                        .setRscNameSuffix(sfVlmDfnData.getRscNameSuffix())
-                                        .setVlmNr(sfVlmDfnData.getVolumeNumber().value)
-                                        .setVlmOdata(sfVlmDfnData.getVlmOdata())
-                                        .build()
-                                )
-                                .build()
-                            );
-                    }
                     break;
                 case FILE:
                     builder.setFile(FileVlm.newBuilder().build());

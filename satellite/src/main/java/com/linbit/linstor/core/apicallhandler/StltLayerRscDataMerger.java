@@ -17,8 +17,6 @@ import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
@@ -33,7 +31,6 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.core.types.TcpPortNumber;
@@ -52,9 +49,7 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
@@ -497,64 +492,6 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
-    protected VlmProviderObject<Resource> createSfInitVlmData(
-        AbsVolume<Resource> vlmRef,
-        StorageRscData<Resource> storRscDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        VlmProviderObject<Resource> vlmData = layerDataFactory.createSfInitData(
-            (Volume) vlmRef,
-            storRscDataRef,
-            restoreSfVlmDfn(
-                vlmRef.getVolumeDefinition(),
-                ((SwordfishInitiatorVlmPojo) vlmPojoRef).getVlmDfn()
-            ),
-            storPoolRef
-        );
-        return vlmData;
-    }
-
-    @Override
-    protected void mergeSfInitVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
-        throws DatabaseException
-    {
-        // ignoring allocatedSize
-        // ignoring devicePath
-        // ignoring usableSize
-    }
-
-    @Override
-    protected VlmProviderObject<Resource> createSfTargetVlmData(
-        AbsVolume<Resource> vlmRef,
-        StorageRscData<Resource> storRscDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        VlmProviderObject<Resource> vlmData = layerDataFactory.createSfTargetData(
-            (Volume) vlmRef,
-            storRscDataRef,
-            restoreSfVlmDfn(
-                vlmRef.getVolumeDefinition(),
-                ((SwordfishInitiatorVlmPojo) vlmPojoRef).getVlmDfn()
-            ),
-            storPoolRef
-        );
-        return vlmData;
-    }
-
-    @Override
-    protected void mergeSfTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
-        throws DatabaseException
-    {
-        // ignoring allocatedSize
-    }
-
-    @Override
     protected VlmProviderObject<Resource> createZfsData(
         AbsVolume<Resource> vlmRef,
         StorageRscData<Resource> storRscDataRef,
@@ -754,41 +691,5 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         {
             newParent.getChildren().add(child);
         }
-    }
-
-    private SfVlmDfnData restoreSfVlmDfn(
-        VolumeDefinition vlmDfn,
-        SwordfishVlmDfnPojo vlmDfnPojo
-    )
-        throws AccessDeniedException, DatabaseException
-    {
-        SfVlmDfnData sfVlmDfnData;
-        VlmDfnLayerObject vlmDfnLayerData = vlmDfn.getLayerData(
-            apiCtx,
-            DeviceLayerKind.STORAGE,
-            vlmDfnPojo.getRscNameSuffix()
-        );
-        if (vlmDfnLayerData == null)
-        {
-            sfVlmDfnData = layerDataFactory.createSfVlmDfnData(
-                vlmDfn,
-                vlmDfnPojo.getVlmOdata(),
-                vlmDfnPojo.getRscNameSuffix()
-            );
-            vlmDfn.setLayerData(apiCtx, sfVlmDfnData);
-        }
-        else
-        {
-            if (!(vlmDfnLayerData instanceof SfVlmDfnData))
-            {
-                throw new ImplementationError(
-                    "Unexpected VolumeDefinition layer object. Swordfish expected, but got " +
-                        vlmDfnLayerData.getClass().getSimpleName()
-                );
-            }
-            sfVlmDfnData = (SfVlmDfnData) vlmDfnLayerData;
-            sfVlmDfnData.setVlmOdata(vlmDfnPojo.getVlmOdata());
-        }
-        return sfVlmDfnData;
     }
 }

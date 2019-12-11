@@ -22,9 +22,6 @@ import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SpdkVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishInitiatorVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishTargetVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.SwordfishVlmDfnPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
@@ -43,7 +40,6 @@ import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlmDfn;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
 import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheVlm;
 import com.linbit.utils.Pair;
@@ -445,56 +441,6 @@ public class ProtoLayerUtils
             case LVM_THIN:
                 ret = new LvmThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
-            case SWORDFISH_INITIATOR:
-                {
-                    if (protoVlm.hasSfInit())
-                    {
-                        SwordfishVlmDfn protoSfVlmDfn = protoVlm.getSfInit().getSfVlmDfn();
-                        ret = new SwordfishInitiatorVlmPojo(
-                            new SwordfishVlmDfnPojo(
-                                protoSfVlmDfn.getRscNameSuffix(),
-                                protoSfVlmDfn.getVlmNr(),
-                                protoSfVlmDfn.getVlmOdata()
-                            ),
-                            devicePath,
-                            allocatedSize,
-                            usableSize,
-                            diskState,
-                            storPoolApi
-                        );
-                    }
-                    else
-                    {
-                        throw new ImplementationError(
-                            "Expected swordfish initiator data not set. vlm nr :" + protoVlm.getVlmNr()
-                        );
-                    }
-                }
-                break;
-            case SWORDFISH_TARGET:
-                {
-                    if (protoVlm.hasSfTarget())
-                    {
-                        SwordfishVlmDfn protoSfVlmDfn = protoVlm.getSfTarget().getSfVlmDfn();
-                        ret = new SwordfishTargetVlmPojo(
-                            new SwordfishVlmDfnPojo(
-                                protoSfVlmDfn.getRscNameSuffix(),
-                                protoSfVlmDfn.getVlmNr(),
-                                protoSfVlmDfn.getVlmOdata()
-                            ),
-                            allocatedSize,
-                            usableSize,
-                            storPoolApi
-                        );
-                    }
-                    else
-                    {
-                        throw new ImplementationError(
-                            "Expected swordfish target data not set. vlm nr :" + protoVlm.getVlmNr()
-                        );
-                    }
-                }
-                break;
             case ZFS:
                 ret = new ZfsVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
@@ -526,15 +472,6 @@ public class ProtoLayerUtils
         VlmDfnLayerDataApi vlmDfnApi;
         switch (storageVlmDfnRef.getProviderKind())
         {
-            case SWORDFISH_INITIATOR: // fall-trough
-            case SWORDFISH_TARGET:
-                SwordfishVlmDfn protoSfVlmDfn = storageVlmDfnRef.getSwordfish();
-                vlmDfnApi = new SwordfishVlmDfnPojo(
-                    protoSfVlmDfn.getRscNameSuffix(),
-                    protoSfVlmDfn.getVlmNr(),
-                    protoSfVlmDfn.getVlmOdata()
-                );
-                break;
             case DISKLESS: // fall-trough
             case LVM: // fall-trough
             case LVM_THIN: // fall-trough

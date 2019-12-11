@@ -92,7 +92,6 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
     private final ErrorReporter errorReporter;
     private final AccessContext dbCtx;
     private final ResourceLayerIdDatabaseDriver rscIdDriver;
-    private final SwordfishLayerGenericDbDriver sfDbDriver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
@@ -105,7 +104,6 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext accCtx,
         ResourceLayerIdDatabaseDriver rscIdDriverRef,
-        SwordfishLayerGenericDbDriver sfDbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
@@ -113,7 +111,6 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
         errorReporter = errorReporterRef;
         dbCtx = accCtx;
         rscIdDriver = rscIdDriverRef;
-        sfDbDriver = sfDbDriverRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
 
@@ -192,8 +189,6 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
     {
         cachedStorVlmInfoByRscLayerId.clear();
         cachedStorVlmInfoByRscLayerId = null;
-
-        sfDbDriver.clearLoadAllCache();
     }
 
     @Override
@@ -202,7 +197,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
         Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> snapDfnMap
     ) throws DatabaseException
     {
-        sfDbDriver.loadLayerData(rscDfnMap);
+        // no-op - no provider needs special resource- or volume-definition prefetching
     }
 
     @Override
@@ -307,10 +302,6 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
                     transObjFactory,
                     transMgrProvider
                 );
-                break;
-            case SWORDFISH_INITIATOR: // fall-through
-            case SWORDFISH_TARGET:
-                vlmProviderObj = sfDbDriver.load(vlmRef, rscDataRef, vlmInfo.kind, vlmInfo.storPool, this);
                 break;
             case ZFS: // fall-trough
             case ZFS_THIN:

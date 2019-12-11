@@ -9,12 +9,9 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
-import com.linbit.linstor.core.SwordfishTargetProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -40,8 +37,6 @@ import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.numberpool.DynamicNumberPool;
-import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -50,15 +45,14 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuardFactory;
 
-import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater.findNodesToContact;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -87,8 +81,6 @@ public class CtrlNodeApiCallHandler
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final StorPoolHelper storPoolHelper;
-    private final DynamicNumberPool sfTargetPortPool;
-    private final SwordfishTargetProcessManager sfTargetProcessMgr;
     private final ReconnectorTask reconnectorTask;
     private final Scheduler scheduler;
     private final ScopeRunner scopeRunner;
@@ -109,8 +101,6 @@ public class CtrlNodeApiCallHandler
         Provider<Peer> peerRef,
         StorPoolHelper storPoolHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        @Named(NumberPoolModule.SF_TARGET_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef,
-        SwordfishTargetProcessManager sfTargetProcessMgrRef,
         ReconnectorTask reconnectorTaskRef,
         Scheduler schedulerRef,
         ScopeRunner scopeRunnerRef,
@@ -130,8 +120,6 @@ public class CtrlNodeApiCallHandler
         peer = peerRef;
         storPoolHelper = storPoolHelperRef;
         peerAccCtx = peerAccCtxRef;
-        sfTargetPortPool = sfTargetPortPoolRef;
-        sfTargetProcessMgr = sfTargetProcessMgrRef;
         reconnectorTask = reconnectorTaskRef;
         scheduler = schedulerRef;
         scopeRunner = scopeRunnerRef;
@@ -235,78 +223,6 @@ public class CtrlNodeApiCallHandler
             }
         }
         return node;
-    }
-
-    public ApiCallRc createSwordfishTargetNode(String nodeNameStr, Map<String, String> propsMap)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeNodeContext(
-            ApiOperation.makeRegisterOperation(),
-            nodeNameStr
-        );
-
-        try
-        {
-            boolean retry = true;
-            while (retry)
-            {
-                retry = false;
-                Node node = null;
-                try
-                {
-                    int sfTargetPort = sfTargetPortPool.autoAllocate();
-
-                    List<NetInterfaceApi> netIfs = new ArrayList<>();
-                    netIfs.add(
-                        new NetInterfacePojo(
-                            UUID.randomUUID(),
-                            DEFAULT_NETIF,
-                            "127.0.0.1",
-                            sfTargetPort,
-                            ApiConsts.VAL_NETCOM_TYPE_PLAIN
-                        )
-                    );
-                    node = createNodeImpl(
-                        nodeNameStr,
-                        Node.Type.SWORDFISH_TARGET.name(),
-                        netIfs,
-                        propsMap,
-                        responses,
-                        context,
-                        true,
-                        false
-                    );
-                    sfTargetProcessMgr.startLocalSatelliteProcess(node);
-
-                    ctrlTransactionHelper.commit();
-                }
-                catch (PortAlreadyInUseException exc)
-                {
-                    /*
-                     * By rolling back the transaction, we undo the node-creation.
-                     * The process was not started either.
-                     * The only thing that remains from our previous try is the port-allocation
-                     * of sfTargetPortPool, which should remember that the just tried port is
-                     * unavailable.
-                     *
-                     * The only thing we have to do here is to retry the node-creation, with a new
-                     * port number
-                     */
-                    ctrlTransactionHelper.rollback();
-                    if (node != null)
-                    {
-                        reconnectorTask.removePeer(node.getPeer(apiCtx));
-                    }
-                    retry = true;
-                }
-            }
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
     }
 
     private void setActiveStltConn(Node node, NetInterface netIf)
@@ -653,17 +569,6 @@ public class CtrlNodeApiCallHandler
                     )
                     .setCause("The current node has at least one storage pool with a storage driver " +
                         "that is not compatible with node type '" + nodeTypeStr + "'")
-                    .build()
-                );
-            }
-            if (Node.Type.SWORDFISH_TARGET.equals(nodeType) && node.streamNetInterfaces(apiCtx).count() != 1)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.entryBuilder(
-                        ApiConsts.FAIL_INVLD_NODE_TYPE,
-                        "Failed to change node type"
-                    )
-                    .setCause("A node with type 'swordfish_target' is only allowed to have 1 network interface")
                     .build()
                 );
             }

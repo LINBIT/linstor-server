@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.13
+      - Removed support for swordfish
     * 1.0.12
       - Added WritecacheResource and WritecacheVolume schemas.
     * 1.0.11
@@ -61,7 +63,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.12
+  version: 1.0.13
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -267,13 +269,6 @@ paths:
             * external
             * internal
 
-        - `StorDriver/SwordfishComposedNodeName` - regex[`.*`]
-        - `StorDriver/SwordfishStorSvc` - regex[`.*`]
-        - `StorDriver/SwordfishUserName` - regex[`.*`]
-        - `StorDriver/SwordfishUserPw` - regex[`.*`]
-        - `StorDriver/SwordfishUrl` - regex[`.*`]
-        - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
         - `sys/fs/blkio_throttle_read` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
@@ -588,15 +583,6 @@ paths:
 
             Preferred network interface to use
 
-        - `StorDriver/SwordfishStorPool` - regex[`.*`]
-        - `StorDriver/SwordfishVolumeCreateTimeout` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishVolumeCreateRetries` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishAttachVolumeTimeout` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishAttachVolumeRetries` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishGrepNvmeUuidTimeout` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishGrepNvmeUuidRetries` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
         - `StorDriver/LvcreateType` - enum
             * linear
             * striped
@@ -2490,11 +2476,6 @@ paths:
 
             Enable dmstats on lvm create
 
-        - `StorDriver/SwordfishUserName` - regex[`.*`]
-        - `StorDriver/SwordfishUserPw` - regex[`.*`]
-        - `StorDriver/SwordfishUrl` - regex[`.*`]
-        - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
         - `GlobSeqApiCalls` - boolean_true_false
 
             Globally sequentialize all ctrl -> stlt api calls
@@ -3455,7 +3436,6 @@ components:
             - Satellite
             - Combined
             - Auxiliary
-            - SWORDFISH_TARGET
         flags:
           type: array
           items:
@@ -3561,8 +3541,6 @@ components:
         - LVM_THIN
         - ZFS
         - ZFS_THIN
-        - SWORDFISH_TARGET
-        - SWORDFISH_INITIATOR
         - FILE
         - FILE_THIN
         - SPDK

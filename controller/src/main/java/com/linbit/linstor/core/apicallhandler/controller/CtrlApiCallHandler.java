@@ -28,6 +28,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -160,16 +161,6 @@ public class CtrlApiCallHandler
             apiCallRc = nodeApiCallHandler.reconnectNode(
                 nodes
             );
-        }
-        return apiCallRc;
-    }
-
-    public ApiCallRc createSwordfishTargetNode(String nodeName, Map<String, String> props)
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP))
-        {
-            apiCallRc = nodeApiCallHandler.createSwordfishTargetNode(nodeName, props);
         }
         return apiCallRc;
     }

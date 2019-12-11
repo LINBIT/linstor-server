@@ -471,46 +471,6 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     }
 
     @Override
-    protected VlmProviderObject<Snapshot> createSfInitVlmData(
-        AbsVolume<Snapshot> vlmRef,
-        StorageRscData<Snapshot> storSnapDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        return null; // snapshots not supported in swordfish-setups
-    }
-
-    @Override
-    protected void mergeSfInitVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Snapshot> vlmDataRef)
-        throws DatabaseException
-    {
-        // ignoring allocatedSize
-        // ignoring devicePath
-        // ignoring usableSize
-    }
-
-    @Override
-    protected VlmProviderObject<Snapshot> createSfTargetVlmData(
-        AbsVolume<Snapshot> vlmRef,
-        StorageRscData<Snapshot> storSnapDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        return null; // snapshots not supported in swordfish-setups
-    }
-
-    @Override
-    protected void mergeSfTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Snapshot> vlmDataRef)
-        throws DatabaseException
-    {
-        // ignoring allocatedSize
-    }
-
-    @Override
     protected VlmProviderObject<Snapshot> createZfsData(
         AbsVolume<Snapshot> vlmRef,
         StorageRscData<Snapshot> storSnapDataRef,

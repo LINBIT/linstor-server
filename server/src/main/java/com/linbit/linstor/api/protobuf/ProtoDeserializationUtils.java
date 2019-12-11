@@ -118,12 +118,6 @@ public class ProtoDeserializationUtils
                 case LVM_THIN:
                     kind = DeviceProviderKind.LVM_THIN;
                     break;
-                case SWORDFISH_INITIATOR:
-                    kind = DeviceProviderKind.SWORDFISH_INITIATOR;
-                    break;
-                case SWORDFISH_TARGET:
-                    kind = DeviceProviderKind.SWORDFISH_TARGET;
-                    break;
                 case ZFS:
                     kind = DeviceProviderKind.ZFS;
                     break;

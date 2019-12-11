@@ -24,7 +24,6 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -167,34 +166,6 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         {
             switch (kind)
             {
-                case SWORDFISH_INITIATOR:
-                    {
-                        SfVlmDfnData vlmDfnData = ensureSfVlmDfnExists(
-                            vlm.getVolumeDefinition(),
-                            rscData.getResourceNameSuffix()
-                        );
-                        vlmData = layerDataFactory.createSfInitData(
-                        vlm,
-                            rscData,
-                            vlmDfnData,
-                            storPool
-                        );
-                    }
-                    break;
-                case SWORDFISH_TARGET:
-                    {
-                        SfVlmDfnData vlmDfnData = ensureSfVlmDfnExists(
-                            vlm.getVolumeDefinition(),
-                            rscData.getResourceNameSuffix()
-                        );
-                        vlmData = layerDataFactory.createSfTargetData(
-                            vlm,
-                            rscData,
-                            vlmDfnData,
-                            storPool
-                        );
-                    }
-                    break;
                 case DISKLESS:
                     vlmData = layerDataFactory.createDisklessData(
                         vlm,
@@ -272,36 +243,6 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                 vlmDataRef.setStorPool(apiCtx, newStorPool);
             }
         }
-    }
-
-    private SfVlmDfnData ensureSfVlmDfnExists(
-        VolumeDefinition vlmDfn,
-        String rscNameSuffix
-    )
-        throws AccessDeniedException, DatabaseException
-    {
-        VlmDfnLayerObject vlmDfnData = vlmDfn.getLayerData(
-            apiCtx,
-            DeviceLayerKind.STORAGE,
-            rscNameSuffix
-        );
-        if (vlmDfnData == null)
-        {
-            vlmDfnData = layerDataFactory.createSfVlmDfnData(
-                vlmDfn,
-                null,
-                rscNameSuffix
-            );
-            vlmDfn.setLayerData(apiCtx, vlmDfnData);
-        }
-        if (!(vlmDfnData instanceof SfVlmDfnData))
-        {
-            throw new ImplementationError(
-                "Unexpected type of volume definition storage data: " +
-                    vlmDfnData.getClass().getSimpleName()
-            );
-        }
-        return (SfVlmDfnData) vlmDfnData;
     }
 
     @Override
@@ -392,9 +333,6 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             case LVM_THIN:
                 vlmData = layerDataFactory.createLvmThinData(vlmRef, storRscData, storPool);
                 break;
-            case SWORDFISH_INITIATOR:
-            case SWORDFISH_TARGET:
-                throw new ImplementationError("Restoring from snapshots is not supported for swordfish-setup");
             case ZFS:
             case ZFS_THIN:
                 vlmData = layerDataFactory.createZfsData(vlmRef, storRscData, providerKind, storPool);

@@ -113,13 +113,13 @@ public class GeneratedDatabaseTables
         {
             RESOURCE_NAME,
             RESOURCE_NAME_SUFFIX,
-            SNAPSHOT_NAME,
             PEER_SLOTS,
             AL_STRIPES,
             AL_STRIPE_SIZE,
             TCP_PORT,
             TRANSPORT_TYPE,
-            SECRET
+            SECRET,
+            SNAPSHOT_NAME
         };
 
         @Override
@@ -174,8 +174,8 @@ public class GeneratedDatabaseTables
         // Primary Keys
         public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
         public static final Column RESOURCE_NAME_SUFFIX = new Column("RESOURCE_NAME_SUFFIX", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
         public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
 
         public static final Column VLM_MINOR_NR = new Column("VLM_MINOR_NR", Types.INTEGER, false, true);
 
@@ -183,9 +183,9 @@ public class GeneratedDatabaseTables
         {
             RESOURCE_NAME,
             RESOURCE_NAME_SUFFIX,
-            SNAPSHOT_NAME,
             VLM_NR,
-            VLM_MINOR_NR
+            VLM_MINOR_NR,
+            SNAPSHOT_NAME
         };
 
         @Override
@@ -240,10 +240,10 @@ public class GeneratedDatabaseTables
 
         public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, false, false);
         public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, false, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, false, false);
         public static final Column LAYER_RESOURCE_KIND = new Column("LAYER_RESOURCE_KIND", Types.VARCHAR, false, false);
         public static final Column LAYER_RESOURCE_PARENT_ID = new Column("LAYER_RESOURCE_PARENT_ID", Types.INTEGER, false, true);
         public static final Column LAYER_RESOURCE_SUFFIX = new Column("LAYER_RESOURCE_SUFFIX", Types.VARCHAR, false, false);
+        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, false, false);
         public static final Column LAYER_RESOURCE_SUSPENDED = new Column("LAYER_RESOURCE_SUSPENDED", Types.BOOLEAN, false, false);
 
         public static final Column[] ALL = new Column[]
@@ -251,10 +251,10 @@ public class GeneratedDatabaseTables
             LAYER_RESOURCE_ID,
             NODE_NAME,
             RESOURCE_NAME,
-            SNAPSHOT_NAME,
             LAYER_RESOURCE_KIND,
             LAYER_RESOURCE_PARENT_ID,
             LAYER_RESOURCE_SUFFIX,
+            SNAPSHOT_NAME,
             LAYER_RESOURCE_SUSPENDED
         };
 
@@ -302,40 +302,6 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "LAYER_STORAGE_VOLUMES";
-        }
-    }
-
-    public static class LayerSwordfishVolumeDefinitions implements Table
-    {
-        private LayerSwordfishVolumeDefinitions() { }
-
-        // Primary Keys
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
-        public static final Column RESOURCE_NAME_SUFFIX = new Column("RESOURCE_NAME_SUFFIX", Types.VARCHAR, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
-
-        public static final Column VLM_ODATA = new Column("VLM_ODATA", Types.VARCHAR, false, true);
-
-        public static final Column[] ALL = new Column[]
-        {
-            RESOURCE_NAME,
-            SNAPSHOT_NAME,
-            RESOURCE_NAME_SUFFIX,
-            VLM_NR,
-            VLM_ODATA
-        };
-
-        @Override
-        public Column[] values()
-        {
-            return ALL;
-        }
-
-        @Override
-        public String getName()
-        {
-            return "LAYER_SWORDFISH_VOLUME_DEFINITIONS";
         }
     }
 
@@ -556,8 +522,8 @@ public class GeneratedDatabaseTables
             UUID,
             NODE_NAME,
             RESOURCE_NAME,
-            SNAPSHOT_NAME,
-            RESOURCE_FLAGS
+            RESOURCE_FLAGS,
+            SNAPSHOT_NAME
         };
 
         @Override
@@ -593,9 +559,9 @@ public class GeneratedDatabaseTables
             NODE_NAME_SRC,
             NODE_NAME_DST,
             RESOURCE_NAME,
-            SNAPSHOT_NAME,
             FLAGS,
-            TCP_PORT
+            TCP_PORT,
+            SNAPSHOT_NAME
         };
 
         @Override
@@ -621,24 +587,24 @@ public class GeneratedDatabaseTables
 
         public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
         public static final Column RESOURCE_DSP_NAME = new Column("RESOURCE_DSP_NAME", Types.VARCHAR, false, true);
-        public static final Column SNAPSHOT_DSP_NAME = new Column("SNAPSHOT_DSP_NAME", Types.VARCHAR, false, false);
         public static final Column RESOURCE_FLAGS = new Column("RESOURCE_FLAGS", Types.BIGINT, false, false);
         public static final Column LAYER_STACK = new Column("LAYER_STACK", Types.VARCHAR, false, false);
         public static final Column RESOURCE_EXTERNAL_NAME = new Column("RESOURCE_EXTERNAL_NAME", Types.BLOB, false, true);
         public static final Column RESOURCE_GROUP_NAME = new Column("RESOURCE_GROUP_NAME", Types.VARCHAR, false, false);
+        public static final Column SNAPSHOT_DSP_NAME = new Column("SNAPSHOT_DSP_NAME", Types.VARCHAR, false, false);
         public static final Column PARENT_UUID = new Column("PARENT_UUID", Types.CHAR, false, true);
 
         public static final Column[] ALL = new Column[]
         {
             UUID,
             RESOURCE_NAME,
-            SNAPSHOT_NAME,
             RESOURCE_DSP_NAME,
-            SNAPSHOT_DSP_NAME,
             RESOURCE_FLAGS,
             LAYER_STACK,
             RESOURCE_EXTERNAL_NAME,
             RESOURCE_GROUP_NAME,
+            SNAPSHOT_NAME,
+            SNAPSHOT_DSP_NAME,
             PARENT_UUID
         };
 
@@ -1047,8 +1013,8 @@ public class GeneratedDatabaseTables
         // Primary Keys
         public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, true, false);
         public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
         public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
 
         public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
         public static final Column VLM_FLAGS = new Column("VLM_FLAGS", Types.BIGINT, false, false);
@@ -1058,9 +1024,9 @@ public class GeneratedDatabaseTables
             UUID,
             NODE_NAME,
             RESOURCE_NAME,
-            SNAPSHOT_NAME,
             VLM_NR,
-            VLM_FLAGS
+            VLM_FLAGS,
+            SNAPSHOT_NAME
         };
 
         @Override
@@ -1084,8 +1050,8 @@ public class GeneratedDatabaseTables
         public static final Column NODE_NAME_SRC = new Column("NODE_NAME_SRC", Types.VARCHAR, true, false);
         public static final Column NODE_NAME_DST = new Column("NODE_NAME_DST", Types.VARCHAR, true, false);
         public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
         public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
 
         public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
 
@@ -1095,8 +1061,8 @@ public class GeneratedDatabaseTables
             NODE_NAME_SRC,
             NODE_NAME_DST,
             RESOURCE_NAME,
-            SNAPSHOT_NAME,
-            VLM_NR
+            VLM_NR,
+            SNAPSHOT_NAME
         };
 
         @Override
@@ -1118,8 +1084,8 @@ public class GeneratedDatabaseTables
 
         // Primary Keys
         public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
         public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
 
         public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
         public static final Column VLM_SIZE = new Column("VLM_SIZE", Types.BIGINT, false, false);
@@ -1129,10 +1095,10 @@ public class GeneratedDatabaseTables
         {
             UUID,
             RESOURCE_NAME,
-            SNAPSHOT_NAME,
             VLM_NR,
             VLM_SIZE,
-            VLM_FLAGS
+            VLM_FLAGS,
+            SNAPSHOT_NAME
         };
 
         @Override
@@ -1186,7 +1152,6 @@ public class GeneratedDatabaseTables
     public static final LayerLuksVolumes LAYER_LUKS_VOLUMES = new LayerLuksVolumes();
     public static final LayerResourceIds LAYER_RESOURCE_IDS = new LayerResourceIds();
     public static final LayerStorageVolumes LAYER_STORAGE_VOLUMES = new LayerStorageVolumes();
-    public static final LayerSwordfishVolumeDefinitions LAYER_SWORDFISH_VOLUME_DEFINITIONS = new LayerSwordfishVolumeDefinitions();
     public static final LayerWritecacheVolumes LAYER_WRITECACHE_VOLUMES = new LayerWritecacheVolumes();
     public static final Nodes NODES = new Nodes();
     public static final NodeConnections NODE_CONNECTIONS = new NodeConnections();
@@ -1226,43 +1191,38 @@ public class GeneratedDatabaseTables
         LayerDrbdResources.NODE_ID.table = LAYER_DRBD_RESOURCES;
         LayerDrbdResourceDefinitions.RESOURCE_NAME.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
-        LayerDrbdResourceDefinitions.SNAPSHOT_NAME.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdResourceDefinitions.PEER_SLOTS.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdResourceDefinitions.AL_STRIPES.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdResourceDefinitions.AL_STRIPE_SIZE.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdResourceDefinitions.TCP_PORT.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdResourceDefinitions.TRANSPORT_TYPE.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdResourceDefinitions.SECRET.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
+        LayerDrbdResourceDefinitions.SNAPSHOT_NAME.table = LAYER_DRBD_RESOURCE_DEFINITIONS;
         LayerDrbdVolumes.LAYER_RESOURCE_ID.table = LAYER_DRBD_VOLUMES;
         LayerDrbdVolumes.VLM_NR.table = LAYER_DRBD_VOLUMES;
         LayerDrbdVolumes.NODE_NAME.table = LAYER_DRBD_VOLUMES;
         LayerDrbdVolumes.POOL_NAME.table = LAYER_DRBD_VOLUMES;
         LayerDrbdVolumeDefinitions.RESOURCE_NAME.table = LAYER_DRBD_VOLUME_DEFINITIONS;
         LayerDrbdVolumeDefinitions.RESOURCE_NAME_SUFFIX.table = LAYER_DRBD_VOLUME_DEFINITIONS;
-        LayerDrbdVolumeDefinitions.SNAPSHOT_NAME.table = LAYER_DRBD_VOLUME_DEFINITIONS;
         LayerDrbdVolumeDefinitions.VLM_NR.table = LAYER_DRBD_VOLUME_DEFINITIONS;
         LayerDrbdVolumeDefinitions.VLM_MINOR_NR.table = LAYER_DRBD_VOLUME_DEFINITIONS;
+        LayerDrbdVolumeDefinitions.SNAPSHOT_NAME.table = LAYER_DRBD_VOLUME_DEFINITIONS;
         LayerLuksVolumes.LAYER_RESOURCE_ID.table = LAYER_LUKS_VOLUMES;
         LayerLuksVolumes.VLM_NR.table = LAYER_LUKS_VOLUMES;
         LayerLuksVolumes.ENCRYPTED_PASSWORD.table = LAYER_LUKS_VOLUMES;
         LayerResourceIds.LAYER_RESOURCE_ID.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.NODE_NAME.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.RESOURCE_NAME.table = LAYER_RESOURCE_IDS;
-        LayerResourceIds.SNAPSHOT_NAME.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.LAYER_RESOURCE_KIND.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.LAYER_RESOURCE_PARENT_ID.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.LAYER_RESOURCE_SUFFIX.table = LAYER_RESOURCE_IDS;
+        LayerResourceIds.SNAPSHOT_NAME.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.LAYER_RESOURCE_SUSPENDED.table = LAYER_RESOURCE_IDS;
         LayerStorageVolumes.LAYER_RESOURCE_ID.table = LAYER_STORAGE_VOLUMES;
         LayerStorageVolumes.VLM_NR.table = LAYER_STORAGE_VOLUMES;
         LayerStorageVolumes.PROVIDER_KIND.table = LAYER_STORAGE_VOLUMES;
         LayerStorageVolumes.NODE_NAME.table = LAYER_STORAGE_VOLUMES;
         LayerStorageVolumes.STOR_POOL_NAME.table = LAYER_STORAGE_VOLUMES;
-        LayerSwordfishVolumeDefinitions.RESOURCE_NAME.table = LAYER_SWORDFISH_VOLUME_DEFINITIONS;
-        LayerSwordfishVolumeDefinitions.SNAPSHOT_NAME.table = LAYER_SWORDFISH_VOLUME_DEFINITIONS;
-        LayerSwordfishVolumeDefinitions.RESOURCE_NAME_SUFFIX.table = LAYER_SWORDFISH_VOLUME_DEFINITIONS;
-        LayerSwordfishVolumeDefinitions.VLM_NR.table = LAYER_SWORDFISH_VOLUME_DEFINITIONS;
-        LayerSwordfishVolumeDefinitions.VLM_ODATA.table = LAYER_SWORDFISH_VOLUME_DEFINITIONS;
         LayerWritecacheVolumes.LAYER_RESOURCE_ID.table = LAYER_WRITECACHE_VOLUMES;
         LayerWritecacheVolumes.VLM_NR.table = LAYER_WRITECACHE_VOLUMES;
         LayerWritecacheVolumes.NODE_NAME.table = LAYER_WRITECACHE_VOLUMES;
@@ -1294,24 +1254,24 @@ public class GeneratedDatabaseTables
         Resources.UUID.table = RESOURCES;
         Resources.NODE_NAME.table = RESOURCES;
         Resources.RESOURCE_NAME.table = RESOURCES;
-        Resources.SNAPSHOT_NAME.table = RESOURCES;
         Resources.RESOURCE_FLAGS.table = RESOURCES;
+        Resources.SNAPSHOT_NAME.table = RESOURCES;
         ResourceConnections.UUID.table = RESOURCE_CONNECTIONS;
         ResourceConnections.NODE_NAME_SRC.table = RESOURCE_CONNECTIONS;
         ResourceConnections.NODE_NAME_DST.table = RESOURCE_CONNECTIONS;
         ResourceConnections.RESOURCE_NAME.table = RESOURCE_CONNECTIONS;
-        ResourceConnections.SNAPSHOT_NAME.table = RESOURCE_CONNECTIONS;
         ResourceConnections.FLAGS.table = RESOURCE_CONNECTIONS;
         ResourceConnections.TCP_PORT.table = RESOURCE_CONNECTIONS;
+        ResourceConnections.SNAPSHOT_NAME.table = RESOURCE_CONNECTIONS;
         ResourceDefinitions.UUID.table = RESOURCE_DEFINITIONS;
         ResourceDefinitions.RESOURCE_NAME.table = RESOURCE_DEFINITIONS;
-        ResourceDefinitions.SNAPSHOT_NAME.table = RESOURCE_DEFINITIONS;
         ResourceDefinitions.RESOURCE_DSP_NAME.table = RESOURCE_DEFINITIONS;
-        ResourceDefinitions.SNAPSHOT_DSP_NAME.table = RESOURCE_DEFINITIONS;
         ResourceDefinitions.RESOURCE_FLAGS.table = RESOURCE_DEFINITIONS;
         ResourceDefinitions.LAYER_STACK.table = RESOURCE_DEFINITIONS;
         ResourceDefinitions.RESOURCE_EXTERNAL_NAME.table = RESOURCE_DEFINITIONS;
         ResourceDefinitions.RESOURCE_GROUP_NAME.table = RESOURCE_DEFINITIONS;
+        ResourceDefinitions.SNAPSHOT_NAME.table = RESOURCE_DEFINITIONS;
+        ResourceDefinitions.SNAPSHOT_DSP_NAME.table = RESOURCE_DEFINITIONS;
         ResourceDefinitions.PARENT_UUID.table = RESOURCE_DEFINITIONS;
         ResourceGroups.UUID.table = RESOURCE_GROUPS;
         ResourceGroups.RESOURCE_GROUP_NAME.table = RESOURCE_GROUPS;
@@ -1365,21 +1325,21 @@ public class GeneratedDatabaseTables
         Volumes.UUID.table = VOLUMES;
         Volumes.NODE_NAME.table = VOLUMES;
         Volumes.RESOURCE_NAME.table = VOLUMES;
-        Volumes.SNAPSHOT_NAME.table = VOLUMES;
         Volumes.VLM_NR.table = VOLUMES;
         Volumes.VLM_FLAGS.table = VOLUMES;
+        Volumes.SNAPSHOT_NAME.table = VOLUMES;
         VolumeConnections.UUID.table = VOLUME_CONNECTIONS;
         VolumeConnections.NODE_NAME_SRC.table = VOLUME_CONNECTIONS;
         VolumeConnections.NODE_NAME_DST.table = VOLUME_CONNECTIONS;
         VolumeConnections.RESOURCE_NAME.table = VOLUME_CONNECTIONS;
-        VolumeConnections.SNAPSHOT_NAME.table = VOLUME_CONNECTIONS;
         VolumeConnections.VLM_NR.table = VOLUME_CONNECTIONS;
+        VolumeConnections.SNAPSHOT_NAME.table = VOLUME_CONNECTIONS;
         VolumeDefinitions.UUID.table = VOLUME_DEFINITIONS;
         VolumeDefinitions.RESOURCE_NAME.table = VOLUME_DEFINITIONS;
-        VolumeDefinitions.SNAPSHOT_NAME.table = VOLUME_DEFINITIONS;
         VolumeDefinitions.VLM_NR.table = VOLUME_DEFINITIONS;
         VolumeDefinitions.VLM_SIZE.table = VOLUME_DEFINITIONS;
         VolumeDefinitions.VLM_FLAGS.table = VOLUME_DEFINITIONS;
+        VolumeDefinitions.SNAPSHOT_NAME.table = VOLUME_DEFINITIONS;
         VolumeGroups.UUID.table = VOLUME_GROUPS;
         VolumeGroups.RESOURCE_GROUP_NAME.table = VOLUME_GROUPS;
         VolumeGroups.VLM_NR.table = VOLUME_GROUPS;

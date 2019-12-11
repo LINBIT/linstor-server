@@ -17,7 +17,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -37,9 +36,6 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -67,7 +63,6 @@ public class LayerDataFactory
     private final StorageLayerDatabaseDriver storageDbDriver;
     private final NvmeLayerDatabaseDriver nvmeDbDriver;
     private final WritecacheLayerDatabaseDriver writecacheDbDriver;
-    private final SwordfishLayerDatabaseDriver swordfishDbDriver;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
 
@@ -82,7 +77,6 @@ public class LayerDataFactory
         StorageLayerDatabaseDriver storageDbDriverRef,
         NvmeLayerDatabaseDriver nvmeDbDriverRef,
         WritecacheLayerDatabaseDriver writecacheDbDriverRef,
-        SwordfishLayerDatabaseDriver swordfishDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
 
@@ -96,7 +90,6 @@ public class LayerDataFactory
         storageDbDriver = storageDbDriverRef;
         nvmeDbDriver = nvmeDbDriverRef;
         writecacheDbDriver = writecacheDbDriverRef;
-        swordfishDbDriver = swordfishDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
 
@@ -442,70 +435,6 @@ public class LayerDataFactory
         storageDbDriver.persist(spdkData);
         return spdkData;
     }
-
-    public <RSC extends AbsResource<RSC>> SfInitiatorData<RSC> createSfInitData(
-        AbsVolume<RSC> vlmRef,
-        StorageRscData<RSC> storRscDataRef,
-        SfVlmDfnData sfVlmDfnData,
-        StorPool storPoolRef
-    )
-        throws DatabaseException
-    {
-        SfInitiatorData<RSC> sfInitiatorData = new SfInitiatorData<>(
-            storRscDataRef,
-            vlmRef,
-            sfVlmDfnData,
-            storPoolRef,
-            storageDbDriver,
-            transObjFactory,
-            transMgrProvider
-        );
-        storageDbDriver.persist(sfInitiatorData);
-        swordfishDbDriver.persist(sfInitiatorData);
-        return sfInitiatorData;
-    }
-
-    public <RSC extends AbsResource<RSC>> SfTargetData<RSC> createSfTargetData(
-        AbsVolume<RSC> vlm,
-        StorageRscData<RSC> rscData,
-        SfVlmDfnData sfVlmDfnData,
-        StorPool storPoolRef
-    )
-        throws DatabaseException
-    {
-        SfTargetData<RSC> sfTargetData = new SfTargetData<RSC>(
-            vlm,
-            rscData,
-            sfVlmDfnData,
-            storPoolRef,
-            storageDbDriver,
-            transObjFactory,
-            transMgrProvider
-        );
-        storageDbDriver.persist(sfTargetData);
-        swordfishDbDriver.persist(sfTargetData);
-        return sfTargetData;
-    }
-
-    public SfVlmDfnData createSfVlmDfnData(
-        VolumeDefinition volumeDefinitionRef,
-        String vlmOdata,
-        String suffixedResourceName
-    )
-        throws DatabaseException
-    {
-        SfVlmDfnData sfVlmDfnData = new SfVlmDfnData(
-            volumeDefinitionRef,
-            vlmOdata,
-            suffixedResourceName,
-            swordfishDbDriver,
-            transObjFactory,
-            transMgrProvider
-        );
-        swordfishDbDriver.persist(sfVlmDfnData);
-        return sfVlmDfnData;
-    }
-
 
     public <RSC extends AbsResource<RSC>> ZfsData<RSC> createZfsData(
         AbsVolume<RSC> vlm,

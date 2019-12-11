@@ -33,7 +33,6 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
@@ -100,29 +99,21 @@ public class CtrlRscLayerDataFactory
         List<DeviceLayerKind> layerStack;
         try
         {
-            boolean hasSwordfish = hasSwordfishKind(accCtxRef, rscRef);
-            if (hasSwordfish)
+            // drbd + (luks) + storage
+            if (needsLuksLayer(accCtxRef, rscRef))
             {
-                layerStack = Arrays.asList(DeviceLayerKind.STORAGE);
+                layerStack = Arrays.asList(
+                    DeviceLayerKind.DRBD,
+                    DeviceLayerKind.LUKS,
+                    DeviceLayerKind.STORAGE
+                );
             }
             else
             {
-                // drbd + (luks) + storage
-                if (needsLuksLayer(accCtxRef, rscRef))
-                {
-                    layerStack = Arrays.asList(
-                        DeviceLayerKind.DRBD,
-                        DeviceLayerKind.LUKS,
-                        DeviceLayerKind.STORAGE
-                    );
-                }
-                else
-                {
-                    layerStack = Arrays.asList(
-                        DeviceLayerKind.DRBD,
-                        DeviceLayerKind.STORAGE
-                    );
-                }
+                layerStack = Arrays.asList(
+                    DeviceLayerKind.DRBD,
+                    DeviceLayerKind.STORAGE
+                );
             }
         }
         catch (AccessDeniedException exc)
@@ -547,37 +538,6 @@ public class CtrlRscLayerDataFactory
             }
         }
         return needsLuksLayer;
-    }
-
-    protected boolean hasSwordfishKind(AccessContext accCtxRef, Resource rscRef)
-        throws AccessDeniedException
-    {
-        boolean foundSwordfishKind = false;
-
-        Iterator<VolumeDefinition> iterateVolumeDfn = rscRef.getDefinition().iterateVolumeDfn(apiCtx);
-        while (iterateVolumeDfn.hasNext())
-        {
-            VolumeDefinition vlmDfn = iterateVolumeDfn.next();
-            StorPool storPool = storPoolResolveHelper.resolveStorPool(
-                accCtxRef,
-                rscRef,
-                vlmDfn,
-                isDiskless(rscRef),
-                false
-            ).getValue();
-
-            if (storPool != null)
-            {
-                DeviceProviderKind kind = storPool.getDeviceProviderKind();
-                if (kind.equals(DeviceProviderKind.SWORDFISH_INITIATOR) ||
-                    kind.equals(DeviceProviderKind.SWORDFISH_TARGET))
-                {
-                    foundSwordfishKind = true;
-                    break;
-                }
-            }
-        }
-        return foundSwordfishKind;
     }
 
     private boolean isDiskAddRequested(Resource rsc)

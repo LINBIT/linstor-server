@@ -302,9 +302,7 @@ public class CtrlRscCrtApiHelper
                         DeviceProviderKind devProviderKind = storageVlm.getStorPool().getDeviceProviderKind();
                         switch (devProviderKind)
                         {
-                            case DISKLESS: // fall-through
-                            case SWORDFISH_INITIATOR: // fall-through
-                            case SWORDFISH_TARGET:
+                            case DISKLESS:
                                 // ignored
                                 break;
                             case LVM: // fall-through
@@ -355,11 +353,10 @@ public class CtrlRscCrtApiHelper
         }
         catch (AccessDeniedException exc)
         {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_ACC_DENIED_VLM_DFN,
-                    "Linstor currently only allows one swordfish target per resource definition"
-                )
+            throw new ApiAccessDeniedException(
+                exc,
+                "setting properties on volume",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
         catch (InvalidKeyException | InvalidValueException exc)

@@ -26,8 +26,6 @@ import com.linbit.linstor.core.objects.StorPoolDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorageLayerETCDDriver;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver;
-import com.linbit.linstor.core.objects.SwordfishETCDDriver;
-import com.linbit.linstor.core.objects.SwordfishLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
@@ -79,8 +77,6 @@ import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionCtrlDatabaseDri
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeCtrlDatabaseDriver;
@@ -171,8 +167,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdGenericDbDriver.class);
                 bind(StorageLayerCtrlDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerGenericDbDriver.class);
-                bind(SwordfishLayerCtrlDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
-                bind(SwordfishLayerDatabaseDriver.class).to(SwordfishLayerGenericDbDriver.class);
                 bind(DrbdLayerCtrlDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
                 bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerGenericDbDriver.class);
                 bind(LuksLayerCtrlDatabaseDriver.class).to(LuksLayerGenericDbDriver.class);
@@ -204,8 +198,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerETCDDriver.class);
                 bind(StorageLayerCtrlDatabaseDriver.class).to(StorageLayerETCDDriver.class);
                 bind(StorageLayerDatabaseDriver.class).to(StorageLayerETCDDriver.class);
-                bind(SwordfishLayerCtrlDatabaseDriver.class).to(SwordfishETCDDriver.class);
-                bind(SwordfishLayerDatabaseDriver.class).to(SwordfishETCDDriver.class);
                 bind(NvmeLayerCtrlDatabaseDriver.class).to(NvmeLayerETCDDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerETCDDriver.class);
                 bind(WritecacheLayerCtrlDatabaseDriver.class).to(WritecacheLayerETCDDriver.class);
