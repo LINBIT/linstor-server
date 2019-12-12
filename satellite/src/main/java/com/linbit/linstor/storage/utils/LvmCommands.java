@@ -12,6 +12,7 @@ import com.linbit.utils.StringUtils;
 import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -436,6 +437,17 @@ public class LvmCommands
         );
     }
 
+    public static OutputData pvRemove(ExtCmd extCmd, Collection<String> devicePaths) throws StorageException
+    {
+        final String failMsg = "Failed to pvremove on device(s): " + String.join(", ", devicePaths);
+        return genericExecutor(
+            extCmd,
+            StringUtils.concat(new String[] {"pvremove"}, devicePaths),
+            failMsg,
+            failMsg
+        );
+    }
+
     public static OutputData vgCreate(
         ExtCmd extCmd,
         final String vgName,
@@ -477,6 +489,22 @@ public class LvmCommands
                     "--nosuffix"
                 }
             ),
+            failMsg,
+            failMsg
+        );
+    }
+
+
+    public static OutputData vgRemove(
+        ExtCmd extCmd,
+        final String vgName
+    )
+        throws StorageException
+    {
+        final String failMsg = "Failed to vgremove on volume group: " + vgName;
+        return genericExecutor(
+            extCmd,
+            new String[]{"vgremove", vgName},
             failMsg,
             failMsg
         );

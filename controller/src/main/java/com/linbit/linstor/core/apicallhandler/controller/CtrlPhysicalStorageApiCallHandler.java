@@ -6,7 +6,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -151,6 +150,20 @@ public class CtrlPhysicalStorageApiCallHandler
         }
     }
 
+    public static String getDevicePoolName(final String devicePoolName, final List<String> devicePaths)
+    {
+        String poolName = devicePoolName;
+        if (devicePoolName == null || devicePoolName.isEmpty())
+        {
+            final String devicePath = devicePaths != null && !devicePaths.isEmpty() ? devicePaths.get(0) : "unknown";
+            // create pool name
+            final int lastSlash = devicePath.lastIndexOf('/');
+            poolName = "linstor_" + (lastSlash > 0 ? devicePath.substring(lastSlash + 1) : devicePath);
+        }
+
+        return poolName;
+    }
+
     public Flux<ApiCallRc> createDevicePool(
         String nodeNameStr,
         List<String> devicePaths,
@@ -202,14 +215,7 @@ public class CtrlPhysicalStorageApiCallHandler
             throw new ApiException("Field 'device_paths' is null or empty.");
         }
 
-        String poolName = poolNameArg;
-        if (poolNameArg == null || poolNameArg.isEmpty())
-        {
-            final String devicePath = devicePaths.get(0);
-            // create pool name
-            final int lastSlash = devicePath.lastIndexOf('/');
-            poolName = "linstor_" + (lastSlash > 0 ? devicePath.substring(lastSlash + 1) : devicePath);
-        }
+        String poolName = getDevicePoolName(poolNameArg, devicePaths);
 
         try
         {
@@ -225,6 +231,62 @@ public class CtrlPhysicalStorageApiCallHandler
                             vdoEnabled,
                             vdoLogicalSizeKib,
                             vdoSlabSize
+                        ).build()
+                )
+                .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
+                .map(answer -> CtrlSatelliteUpdateCaller.deserializeApiCallRc(node.getName(), answer));
+        }
+        catch (AccessDeniedException accExc)
+        {
+            throw new ApiAccessDeniedException(
+                accExc,
+                "get peer from node",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+
+        return response;
+    }
+
+    public Flux<ApiCallRc> deleteDevicePool(
+        String nodeNameStr,
+        List<String> devicePaths,
+        DeviceProviderKind providerKindRef,
+        String poolName
+    )
+    {
+        return scopeRunner.fluxInTransactionlessScope(
+            "DeleteDevicePool",
+            lockGuardFactory.buildDeferred(LockGuardFactory.LockType.READ, LockGuardFactory.LockObj.NODES_MAP),
+            () -> deleteDevicePoolInScope(
+                nodeNameStr,
+                devicePaths,
+                providerKindRef,
+                poolName
+            )
+        );
+    }
+
+    private Flux<ApiCallRc> deleteDevicePoolInScope(
+        String nodeNameStr,
+        List<String> devicePaths,
+        DeviceProviderKind providerKindRef,
+        String poolName
+    )
+    {
+        Flux<ApiCallRc> response;
+        Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
+
+        try
+        {
+            response = node.getPeer(peerAccCtx.get())
+                .apiCall(
+                    InternalApiConsts.API_DELETE_DEVICE_POOL,
+                    ctrlStltSerializer.headerlessBuilder()
+                        .deleteDevicePool(
+                            devicePaths,
+                            providerKindRef,
+                            poolName
                         ).build()
                 )
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())

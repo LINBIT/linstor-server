@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.0.13";
+    public static final String REST_API_VERSION = "1.0.12";
 
     /**
      * Common api reply structure
@@ -821,6 +821,19 @@ public class JsonGenTypes
         public String wwn;
     }
 
+    /**
+     * This structured is used for create physical-storage
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class PhysicalStorageStoragePoolCreate
+    {
+        /**
+         * Name of the linstor storage pool
+         */
+        public String name;
+        public Map<String, String> props = Collections.emptyMap();
+    }
+
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PhysicalStorageCreate
     {
@@ -834,6 +847,10 @@ public class JsonGenTypes
         public boolean vdo_enable = false;
         public int vdo_slab_size_kib = 0;
         public int vdo_logical_size_kib = 0;
+        /**
+         * If specified a linstor storage pool will also be created using this device pool
+         */
+        public PhysicalStorageStoragePoolCreate with_storage_pool;
     }
 
     private JsonGenTypes()

@@ -8,6 +8,8 @@ import java.util.Set;
 
 public class LvmThinDriverKind implements StorageDriverKind
 {
+    public static final String VG_PREFIX = "linstor_";
+
     @Override
     public String getDriverName()
     {

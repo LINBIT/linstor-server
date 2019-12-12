@@ -37,6 +37,7 @@ import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass.IntSnapsh
 import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgDeleteDevicePoolOuterClass.MsgDeleteDevicePool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyControllerOuterClass.MsgIntApplyController;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedNodeOuterClass.MsgIntApplyDeletedNode;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedRscOuterClass.MsgIntApplyDeletedRsc;
@@ -714,6 +715,32 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
 
             msgCreateDevicePoolBuilder
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializer.CtrlStltSerializerBuilder deleteDevicePool(
+        List<String> devicePaths,
+        DeviceProviderKind providerKindRef,
+        String poolName
+    )
+    {
+        try
+        {
+            MsgDeleteDevicePool.Builder msgDeleteDevicePoolBuilder =
+                MsgDeleteDevicePool.newBuilder()
+                    .addAllDevicePaths(devicePaths)
+                    .setProviderKind(asProviderType(providerKindRef))
+                    .setPoolName(poolName);
+
+            msgDeleteDevicePoolBuilder
                 .build()
                 .writeDelimitedTo(baos);
         }

@@ -21,10 +21,10 @@ info:
 
     Changelog:
 
-    * 1.0.13
-      - Removed support for swordfish
     * 1.0.12
       - Added WritecacheResource and WritecacheVolume schemas.
+      - Removed support for swordfish
+      - Added `with_storage_pool` to PhysicalStorageCreate post request, allowing to create linstor storage pools too
     * 1.0.11
       - Added /v1/physical-storage endpoint, that lets you query and create lvm/zfs pools
       - Extended Node with list of supported providers and layers as well as lists of reasons for
@@ -63,7 +63,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.13
+  version: 1.0.12
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -4510,6 +4510,15 @@ components:
           type: string
         wwn:
           type: string
+    PhysicalStorageStoragePoolCreate:
+      type: object
+      description: This structured is used for create physical-storage
+      properties:
+        name:
+          type: string
+          description: Name of the linstor storage pool
+        props:
+            $ref: '#/components/schemas/Properties'
     PhysicalStorageCreate:
       type: object
       required:
@@ -4542,3 +4551,6 @@ components:
           type: integer
           format: uint64
           default: 0
+        with_storage_pool:
+          description: If specified a linstor storage pool will also be created using this device pool
+          $ref: '#/components/schemas/PhysicalStorageStoragePoolCreate'

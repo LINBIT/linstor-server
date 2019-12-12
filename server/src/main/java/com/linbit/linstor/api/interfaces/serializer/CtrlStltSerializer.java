@@ -121,5 +121,10 @@ public interface CtrlStltSerializer extends CommonSerializer
             long vdoSlabSizeKib
         );
 
+        CtrlStltSerializerBuilder deleteDevicePool(
+            List<String> devicePaths,
+            DeviceProviderKind providerKindRef,
+            String poolName
+        );
     }
 }

@@ -303,6 +303,24 @@ public class ZfsCommands
         );
     }
 
+    public static OutputData deleteZPool(
+        ExtCmd extCmd,
+        final String zpoolName
+    ) throws StorageException
+    {
+        final String failMsg = "Failed to destroy zpool: " + zpoolName;
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "zpool",
+                "destroy",
+                zpoolName
+            },
+            failMsg,
+            failMsg
+        );
+    }
+
     public static OutputData getPhysicalDevices(ExtCmd extCmdRef, String zPoolRef) throws StorageException
     {
         final String failMsg = "Failed to query physical devices for zpool: " + zPoolRef;
