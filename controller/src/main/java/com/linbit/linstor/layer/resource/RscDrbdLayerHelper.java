@@ -267,6 +267,12 @@ public class RscDrbdLayerHelper extends
         return needsChild;
     }
 
+    private boolean isDrbdDiskless(AbsRscLayerObject<Resource> childRscDataRef) throws AccessDeniedException
+    {
+        return childRscDataRef.getAbsResource().getStateFlags()
+            .isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
+    }
+
     @Override
     protected DrbdVlmData<Resource> createVlmLayerData(
         DrbdRscData<Resource> drbdRscData,
@@ -282,7 +288,11 @@ public class RscDrbdLayerHelper extends
             drbdRscData.getResourceNameSuffix(),
             payload
         );
-        StorPool extMetaStorPool = getExternalMetaDiskStorPool(vlm);
+        StorPool extMetaStorPool = null;
+        if (needsMetaData(drbdRscData, layerListRef))
+        {
+            extMetaStorPool = getExternalMetaDiskStorPool(vlm);
+        }
         DrbdVlmData<Resource> drbdVlmData = layerDataFactory.createDrbdVlmData(
             vlm,
             extMetaStorPool,
@@ -384,6 +394,30 @@ public class RscDrbdLayerHelper extends
     )
         throws AccessDeniedException, InvalidKeyException
     {
+        List<ChildResourceData> ret = new ArrayList<>();
+
+        if (isDrbdDiskless(rscDataRef))
+        {
+            ret.add(new ChildResourceData("", DeviceLayerKind.STORAGE));
+        }
+        else
+        {
+            ret.add(new ChildResourceData(""));
+        }
+
+        if (needsMetaData(rscDataRef, layerListRef))
+        {
+            ret.add(new ChildResourceData(DrbdRscData.SUFFIX_META, DeviceLayerKind.STORAGE));
+        }
+
+        return ret;
+    }
+
+    private boolean needsMetaData(
+        DrbdRscData<Resource> rscDataRef,
+        List<DeviceLayerKind> layerListRef
+    ) throws AccessDeniedException
+    {
         boolean allVlmsUseInternalMetaData = true;
         Resource rsc = rscDataRef.getAbsResource();
         ResourceDefinition rscDfn = rsc.getDefinition();
@@ -410,20 +444,12 @@ public class RscDrbdLayerHelper extends
             }
         }
 
-        List<ChildResourceData> ret = new ArrayList<>();
-        ret.add(new ChildResourceData("")); // always have data
-
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
         boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
             .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         boolean isDrbdDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
 
-        if (!allVlmsUseInternalMetaData && !isDrbdDiskless && (!isNvmeBelow || isNvmeInitiator))
-        {
-            ret.add(new ChildResourceData(DrbdRscData.SUFFIX_META, DeviceLayerKind.STORAGE));
-        }
-
-        return ret;
+        return !allVlmsUseInternalMetaData && !isDrbdDiskless && (!isNvmeBelow || isNvmeInitiator);
     }
 
     @Override

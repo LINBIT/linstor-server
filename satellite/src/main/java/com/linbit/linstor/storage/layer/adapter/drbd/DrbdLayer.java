@@ -188,34 +188,39 @@ public class DrbdLayer implements DeviceLayer
 
             long netSize = drbdVlmData.getUsableSize();
 
-            if (drbdVlmData.isUsingExternalMetaData())
+            boolean isDiskless = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags()
+                .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
+            if (!isDiskless)
             {
-                long extMdSize = new MetaData().getExternalMdSize(
-                    netSize,
-                    peerSlots,
-                    DrbdLayer.FIXME_AL_STRIPES,
-                    DrbdLayer.FIXME_AL_STRIPE_SIZE
-                );
-                drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
-
-                drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(netSize);
-                VlmProviderObject<Resource> metaChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META);
-                if (metaChild != null)
+                if (drbdVlmData.isUsingExternalMetaData())
                 {
-                    // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
-                    metaChild.setUsableSize(extMdSize);
+                    long extMdSize = new MetaData().getExternalMdSize(
+                        netSize,
+                        peerSlots,
+                        DrbdLayer.FIXME_AL_STRIPES,
+                        DrbdLayer.FIXME_AL_STRIPE_SIZE
+                    );
+                    drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
+
+                    drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(netSize);
+                    VlmProviderObject<Resource> metaChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META);
+                    if (metaChild != null)
+                    {
+                        // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
+                        metaChild.setUsableSize(extMdSize);
+                    }
                 }
-            }
-            else
-            {
-                long grossSize = new MetaData().getGrossSize(
-                    netSize,
-                    peerSlots,
-                    DrbdLayer.FIXME_AL_STRIPES,
-                    DrbdLayer.FIXME_AL_STRIPE_SIZE
-                );
-                drbdVlmData.setAllocatedSize(grossSize);
-                drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(grossSize);
+                else
+                {
+                    long grossSize = new MetaData().getGrossSize(
+                        netSize,
+                        peerSlots,
+                        DrbdLayer.FIXME_AL_STRIPES,
+                        DrbdLayer.FIXME_AL_STRIPE_SIZE
+                    );
+                    drbdVlmData.setAllocatedSize(grossSize);
+                    drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(grossSize);
+                }
             }
         }
         catch (InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException |

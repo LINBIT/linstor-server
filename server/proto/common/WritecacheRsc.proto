@@ -17,6 +17,6 @@ message WritecacheVlm
     optional int64          allocated_size = 4;
     optional int64          usable_size = 5;
     optional string         disk_state = 6;
-    required string         cache_stor_pool_name = 7;
+    optional string         cache_stor_pool_name = 7;
 }
 

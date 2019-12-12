@@ -199,7 +199,14 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     @Override
     public String getBackingDevice()
     {
-        return getChildBySuffix(DrbdRscData.SUFFIX_DATA).getDevicePath();
+        VlmProviderObject<RSC> childBySuffix = getChildBySuffix(DrbdRscData.SUFFIX_DATA);
+        String devicePath = null;
+        if (childBySuffix != null)
+        {
+            // null when diskless
+            devicePath = childBySuffix.getDevicePath();
+        }
+        return devicePath;
     }
 
     @Override

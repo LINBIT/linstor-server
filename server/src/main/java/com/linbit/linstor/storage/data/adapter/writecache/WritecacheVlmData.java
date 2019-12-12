@@ -208,7 +208,7 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
             getVlmNr().value,
             devicePathData,
             devicePathCache,
-            cacheStorPool.getName().displayValue,
+            cacheStorPool == null ? null : cacheStorPool.getName().displayValue,
             allocatedSize,
             usableSize,
             diskState

@@ -379,9 +379,10 @@ public class Volume extends AbsVolume<Resource>
         {
             AbsRscLayerObject<Resource> rscLayerObject = rscLayersToExpand.removeFirst();
             VlmProviderObject<Resource> vlmProvider = rscLayerObject.getVlmLayerObjects().get(vlmNr);
+
             if (vlmProvider != null)
             {
-                // vlmProvider is null is a layer (like DRBD) does not need for all volumes backing vlmProvider
+                // vlmProvider is null as a layer (like DRBD) does not need for all volumes backing vlmProvider
                 // (like in the case of mixed internal and external meta-data)
                 layerDataList.add(
                     new Pair<>(
@@ -392,7 +393,7 @@ public class Volume extends AbsVolume<Resource>
             }
 
             // deprecated - only for compatibility with old versions
-            if (rscLayerObject.getResourceNameSuffix().isEmpty()) // for "" resources vlmProvider always have to exist
+            if (compatStorPool == null && rscLayerObject.getResourceNameSuffix().isEmpty())
             {
                 compatStorPool = vlmProvider.getStorPool();
             }

@@ -1439,8 +1439,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             WritecacheVlm.Builder protoVlmBuilder = WritecacheVlm.newBuilder()
                 .setVlmNr(vlmPojo.getVlmNr())
                 .setAllocatedSize(vlmPojo.getAllocatedSize())
-                .setUsableSize(vlmPojo.getUsableSize())
-                .setCacheStorPoolName(vlmPojo.getCacheStorPoolName());
+                .setUsableSize(vlmPojo.getUsableSize());
             if (vlmPojo.getDevicePath() != null)
             {
                 protoVlmBuilder.setDevicePathData(vlmPojo.getDevicePath());
@@ -1452,6 +1451,10 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             if (vlmPojo.getDiskState() != null)
             {
                 protoVlmBuilder.setDiskState(vlmPojo.getDiskState());
+            }
+            if (vlmPojo.getCacheStorPoolName() != null)
+            {
+                protoVlmBuilder.setCacheStorPoolName(vlmPojo.getCacheStorPoolName());
             }
 
             return protoVlmBuilder.build();

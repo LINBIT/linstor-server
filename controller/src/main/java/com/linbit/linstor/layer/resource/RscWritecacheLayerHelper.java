@@ -151,8 +151,12 @@ class RscWritecacheLayerHelper
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException, LinStorException
     {
-
-        return layerDataFactory.createWritecacheVlmData(vlm, getCacheStorPool(vlm), writecacheRscData);
+        StorPool cacheStorPool = null;
+        if (needsCacheDevice(writecacheRscData, layerListRef))
+        {
+            cacheStorPool = getCacheStorPool(vlm);
+        }
+        return layerDataFactory.createWritecacheVlmData(vlm, cacheStorPool, writecacheRscData);
     }
 
     @Override
@@ -178,15 +182,22 @@ class RscWritecacheLayerHelper
         List<ChildResourceData> children = new ArrayList<>();
         children.add(new ChildResourceData(WritecacheRscData.SUFFIX_DATA));
 
-        boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
-        boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
-            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-        if (!isNvmeBelow || isNvmeInitiator)
+        if (needsCacheDevice(rscDataRef, layerListRef))
         {
             children.add(new ChildResourceData(WritecacheRscData.SUFFIX_CACHE, DeviceLayerKind.STORAGE));
         }
 
         return children;
+    }
+
+    private boolean needsCacheDevice(WritecacheRscData<Resource> rscDataRef, List<DeviceLayerKind> layerListRef)
+        throws AccessDeniedException
+    {
+        boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
+        boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
+            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        boolean needsCacheDevice = !isNvmeBelow || isNvmeInitiator;
+        return needsCacheDevice;
     }
 
     @Override

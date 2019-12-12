@@ -124,6 +124,7 @@ public class WritecacheLayer implements DeviceLayer
                     {
                         if (String.format(FORMAT_DEV_PATH, dmDev).equals(devicePath))
                         {
+                            errorReporter.logTrace("Writecache: device exists: %s, nothing to do", devicePath);
                             exists = true;
                             break;
                         }
@@ -135,6 +136,10 @@ public class WritecacheLayer implements DeviceLayer
                 vlmData.setIdentifier(identifier);
                 if (!exists)
                 {
+                    errorReporter.logTrace(
+                        "Writecache: device not found. Will be created for identifier: %s",
+                        identifier
+                    );
                     vlmData.setDevicePath(null);
                 }
             }

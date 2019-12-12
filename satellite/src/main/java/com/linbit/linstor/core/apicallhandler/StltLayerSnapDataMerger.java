@@ -645,10 +645,14 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     ) throws AccessDeniedException, InvalidNameException
     {
         String cacheStorPoolNameStr = vlmPojoRef.getCacheStorPoolName();
-        StorPool cacheStorPool = vlmRef.getAbsResource().getNode().getStorPool(
-            apiCtx,
-            new StorPoolName(cacheStorPoolNameStr)
-        );
+        StorPool cacheStorPool = null;
+        if (cacheStorPoolNameStr != null && !cacheStorPoolNameStr.trim().isEmpty())
+        {
+            cacheStorPool = vlmRef.getAbsResource().getNode().getStorPool(
+                apiCtx,
+                new StorPoolName(cacheStorPoolNameStr)
+            );
+        }
 
         WritecacheVlmData<Snapshot> writecacheVlmData = layerDataFactory.createWritecacheVlmData(
             vlmRef,
