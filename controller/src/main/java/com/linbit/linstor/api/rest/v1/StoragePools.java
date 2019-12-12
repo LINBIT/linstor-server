@@ -227,7 +227,8 @@ public class StoragePools
                 storPoolData.storage_pool_name,
                 LinstorParsingUtils.asProviderKind(storPoolData.provider_kind),
                 storPoolData.free_space_mgr_name,
-                storPoolData.props
+                storPoolData.props,
+                Flux.empty()
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_STOR_POOL, request));
 
