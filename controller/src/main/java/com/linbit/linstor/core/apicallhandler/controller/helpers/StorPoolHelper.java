@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
@@ -111,6 +112,12 @@ public class StorPoolHelper
                 )
                 .build(),
                 alreadyExistsExc
+            );
+        }
+        catch (InvalidNameException invlExc)
+        {
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_INVLD_STOR_POOL_NAME, invlExc.getMessage())
             );
         }
         catch (DatabaseException sqlExc)

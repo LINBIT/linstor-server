@@ -748,7 +748,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     }
 
     protected FreeSpaceMgr getFreeSpaceMgr(StorPoolDefinition storPoolDfn, Node node)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidNameException
     {
         return freeSpaceMgrFactory.getInstance(
             SYS_CTX, new FreeSpaceMgrName(node.getName(), storPoolDfn.getName())
