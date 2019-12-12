@@ -34,7 +34,29 @@ public interface DeviceLayer
     )
         throws StorageException, AccessDeniedException, DatabaseException;
 
-    void updateGrossSize(VlmProviderObject<Resource> vlmData)
+    /**
+     * The layer implementing this method can assume that its usable size is already set.
+     * The implementation is expected to update its own allocated size.
+     * The implementation is expected to call an update*Size method for the next layer
+     *
+     * @param vlmData
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     */
+    void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException;
+
+    /**
+     * The layer implementing this method can assume that its allocated size is already set.
+     * The implementation is expected to update its own usable size.
+     * The implementation might lower its allocated size if the layer below provides less usable size.
+     * The implementation is expected to call an update*Size method for the next layer
+     *
+     * @param vlmData
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     */
+    void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
         throws AccessDeniedException, DatabaseException;
 
     /**

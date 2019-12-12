@@ -34,8 +34,8 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
     private final StorPool cacheStorPool;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize;
-    private long usableSize;
+    private long allocatedSize = -1;
+    private long usableSize = -1;
     private @Nullable String devicePathData;
     private @Nullable String devicePathCache;
     private String backingDevice;
@@ -97,6 +97,7 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
         return allocatedSize;
     }
 
+    @Override
     public void setAllocatedSize(long allocatedSizeRef)
     {
         allocatedSize = allocatedSizeRef;

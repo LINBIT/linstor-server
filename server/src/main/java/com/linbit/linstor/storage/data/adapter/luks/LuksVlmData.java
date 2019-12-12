@@ -34,8 +34,8 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     private final TransactionSimpleObject<LuksVlmData<?>, byte[]> encryptedPassword;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize;
-    private long usableSize;
+    private long allocatedSize = UNINITIALIZED_SIZE;
+    private long usableSize = UNINITIALIZED_SIZE;
     private @Nullable String devicePath;
     private String backingDevice;
     private String diskState;
@@ -118,6 +118,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         return allocatedSize;
     }
 
+    @Override
     public void setAllocatedSize(long allocatedSizeRef)
     {
         allocatedSize = allocatedSizeRef;

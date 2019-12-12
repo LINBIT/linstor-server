@@ -173,25 +173,26 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject<Resource> vlmData)
+    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
         throws AccessDeniedException, DatabaseException
     {
+        DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
+        String peerSlotsProp = vlmData.getVolume().getAbsResource()
+            .getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
+        // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
+        // as an unexpected exception in dispatchResource()
+        short peerSlots = peerSlotsProp == null ? InternalApiConsts.DEFAULT_PEER_SLOTS
+            : Short.parseShort(peerSlotsProp);
+
         try
         {
-            DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
-            String peerSlotsProp = vlmData.getVolume().getAbsResource()
-                .getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
-            // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
-            // as an unexpected exception in dispatchResource()
-            short peerSlots = peerSlotsProp == null ?
-                InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
-
-            long netSize = drbdVlmData.getUsableSize();
-
             boolean isDiskless = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags()
                 .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
             if (!isDiskless)
             {
+                long netSize = drbdVlmData.getUsableSize();
+
+                VlmProviderObject<Resource> dataChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA);
                 if (drbdVlmData.isUsingExternalMetaData())
                 {
                     long extMdSize = new MetaData().getExternalMdSize(
@@ -200,15 +201,19 @@ public class DrbdLayer implements DeviceLayer
                         DrbdLayer.FIXME_AL_STRIPES,
                         DrbdLayer.FIXME_AL_STRIPE_SIZE
                     );
-                    drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
 
-                    drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(netSize);
+                    dataChild.setUsableSize(netSize);
+                    resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChild);
+
                     VlmProviderObject<Resource> metaChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META);
                     if (metaChild != null)
                     {
                         // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
                         metaChild.setUsableSize(extMdSize);
+                        resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(metaChild);
                     }
+
+                    drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
                 }
                 else
                 {
@@ -218,13 +223,94 @@ public class DrbdLayer implements DeviceLayer
                         DrbdLayer.FIXME_AL_STRIPES,
                         DrbdLayer.FIXME_AL_STRIPE_SIZE
                     );
+                    dataChild.setUsableSize(grossSize);
+                    resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChild);
+
                     drbdVlmData.setAllocatedSize(grossSize);
-                    drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(grossSize);
                 }
             }
         }
-        catch (InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException |
-            MinAlSizeException | MaxAlSizeException | AlStripesException | PeerCountException exc)
+        catch (
+            InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException | MinAlSizeException
+            | MaxAlSizeException | AlStripesException | PeerCountException exc
+        )
+        {
+            throw new ImplementationError(exc);
+        }
+
+    }
+
+    @Override
+    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException
+    {
+        DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
+        String peerSlotsProp = vlmData.getVolume().getAbsResource()
+            .getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
+        // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
+        // as an unexpected exception in dispatchResource()
+        short peerSlots = peerSlotsProp == null ? InternalApiConsts.DEFAULT_PEER_SLOTS
+            : Short.parseShort(peerSlotsProp);
+
+        try
+        {
+            boolean isDiskless = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags()
+                .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
+            if (!isDiskless)
+            {
+                // let next layer calculate
+                VlmProviderObject<Resource> dataChildVlmData = drbdVlmData.getChildBySuffix(
+                    DrbdRscData.SUFFIX_DATA
+                );
+                dataChildVlmData.setAllocatedSize(drbdVlmData.getAllocatedSize());
+                resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(dataChildVlmData);
+
+                long grossSize = dataChildVlmData.getUsableSize();
+
+                if (drbdVlmData.isUsingExternalMetaData())
+                {
+                    // calculate extMetaSize
+                    long extMdSize;
+
+                    VlmProviderObject<Resource> metaChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META);
+                    if (metaChild != null)
+                    {
+                        // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
+                        extMdSize = new MetaData().getExternalMdSize(
+                            grossSize,
+                            peerSlots,
+                            DrbdLayer.FIXME_AL_STRIPES,
+                            DrbdLayer.FIXME_AL_STRIPE_SIZE
+                        );
+
+                        // even if we are updating fromAllocated, extMetaData still needs to be calculated fromUsable
+                        metaChild.setUsableSize(extMdSize);
+                        resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(metaChild);
+                    }
+                    else
+                    {
+                        extMdSize = 0;
+                    }
+                    drbdVlmData.setUsableSize(grossSize);
+                    drbdVlmData.setAllocatedSize(grossSize + extMdSize);
+                }
+                else
+                {
+                    long netSize = new MetaData().getNetSize(
+                        grossSize,
+                        peerSlots,
+                        DrbdLayer.FIXME_AL_STRIPES,
+                        DrbdLayer.FIXME_AL_STRIPE_SIZE
+                    );
+                    drbdVlmData.setUsableSize(netSize);
+                    drbdVlmData.setAllocatedSize(grossSize);
+                }
+            }
+        }
+        catch (
+            InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException | MinAlSizeException
+            | MaxAlSizeException | AlStripesException | PeerCountException exc
+        )
         {
             throw new ImplementationError(exc);
         }

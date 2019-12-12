@@ -14,7 +14,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.SysFsHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -23,6 +22,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -45,8 +45,6 @@ import com.linbit.linstor.storage.layer.provider.StorageLayer;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.utils.SetUtils;
 import com.linbit.utils.Either;
-
-import static com.linbit.linstor.InternalApiConsts.API_NOTIFY_NODE_APPLIED;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -199,18 +197,35 @@ public class DeviceHandlerImpl implements DeviceHandler
         return ret;
     }
 
-    private void calculateGrossSizes(Collection<Resource> rootResources) throws ImplementationError
+    private void calculateGrossSizes(Collection<Resource> resources) throws ImplementationError
     {
-        for (Resource rsc : rootResources)
+        try
         {
-            try
+            for (Resource rsc : resources)
             {
-                updateGrossSizeForChildren(rsc);
+                AbsRscLayerObject<Resource> rscData = rsc.getLayerData(wrkCtx);
+                for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
+                {
+                    long vlmDfnSize = vlmData.getVolume().getVolumeSize(wrkCtx);
+                    boolean calculateNetSizes = vlmData.getVolume().getVolumeDefinition().getFlags()
+                        .isSet(wrkCtx, VolumeDefinition.Flags.GROSS_SIZE);
+
+                    if (calculateNetSizes)
+                    {
+                        vlmData.setAllocatedSize(vlmDfnSize);
+                        updateUsableSizeFromAllocatedSize(vlmData);
+                    }
+                    else
+                    {
+                        vlmData.setUsableSize(vlmDfnSize);
+                        updateAllocatedSizeFromUsableSize(vlmData);
+                    }
+                }
             }
-            catch (AccessDeniedException | DatabaseException exc)
-            {
-                throw new ImplementationError(exc);
-            }
+        }
+        catch (AccessDeniedException | DatabaseException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
@@ -724,46 +739,56 @@ public class DeviceHandlerImpl implements DeviceHandler
         return processResult;
     }
 
-    public void updateGrossSizeForChildren(Resource rsc) throws AccessDeniedException, DatabaseException
+    @Override
+    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException
     {
-        for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
-        {
-            long size = vlm.getVolumeDefinition().getVolumeSize(wrkCtx);
-            { // set initial size which will be changed by the actual layers shortly
-                vlm.setAllocatedSize(wrkCtx, size);
-                vlm.setUsableSize(wrkCtx, size);
-            }
+        DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
 
-            VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
+        errorReporter.logTrace(
+            "Layer '%s' updating gross size of volume '%s/%d' (usable: %d",
+            nextLayer.getName(),
+            vlmData.getRscLayerObject().getSuffixedResourceName(),
+            vlmData.getVlmNr().value,
+            vlmData.getUsableSize()
+        );
 
-            LinkedList<AbsRscLayerObject<Resource>> rscDataList = new LinkedList<>();
-            rscDataList.add(rsc.getLayerData(wrkCtx));
+        nextLayer.updateAllocatedSizeFromUsableSize(vlmData);
 
-            VlmProviderObject<Resource> vlmData = null;
-            boolean isVlmDataRoot = true;
+        errorReporter.logTrace(
+            "Layer '%s' finished calculating sizes of volume '%s/%d'. Allocated: %d, usable: %d",
+            nextLayer.getName(),
+            vlmData.getRscLayerObject().getSuffixedResourceName(),
+            vlmData.getVlmNr().value,
+            vlmData.getAllocatedSize(),
+            vlmData.getUsableSize()
+        );
+    }
 
-            while (!rscDataList.isEmpty())
-            {
-                AbsRscLayerObject<Resource> rscData = rscDataList.removeFirst();
-                rscDataList.addAll(rscData.getChildren());
+    @Override
+    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException
+    {
+        DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
 
-                vlmData = rscData.getVlmProviderObject(vlmNr);
-                if (vlmData != null)
-                {
-                    if (isVlmDataRoot)
-                    {
-                        /*
-                         * set the usableSize for the root vlmData.
-                         * All layers are expected to set their own gross size (allocated size)
-                         * as well as their child-vlmData's usableSize
-                         */
-                        vlmData.setUsableSize(size);
-                        isVlmDataRoot = false;
-                    }
-                    layerFactory.getDeviceLayer(rscData.getLayerKind()).updateGrossSize(vlmData);
-                }
-            }
-        }
+        errorReporter.logTrace(
+            "Layer '%s' updating net size of volume '%s/%d' (allocated: %d)",
+            nextLayer.getName(),
+            vlmData.getRscLayerObject().getSuffixedResourceName(),
+            vlmData.getVlmNr().value,
+            vlmData.getAllocatedSize()
+        );
+
+        nextLayer.updateUsableSizeFromAllocatedSize(vlmData);
+
+        errorReporter.logTrace(
+            "Layer '%s' finished calculating sizes of volume '%s/%d'. Allocated: %d, usable: %d",
+            nextLayer.getName(),
+            vlmData.getRscLayerObject().getSuffixedResourceName(),
+            vlmData.getVlmNr().value,
+            vlmData.getAllocatedSize(),
+            vlmData.getUsableSize()
+        );
     }
 
     // TODO: create delete volume / resource methods that (for now) only perform the actual .delete()

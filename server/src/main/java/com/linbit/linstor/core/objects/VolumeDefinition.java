@@ -24,6 +24,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Identity;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -531,8 +532,9 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
     public static enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),
-        ENCRYPTED(2L),
-        RESIZE(4L);
+        ENCRYPTED(1L << 1),
+        RESIZE(1L << 2),
+        GROSS_SIZE(1L << 3);
 
         public final long flagValue;
 
@@ -578,6 +580,16 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
                 }
             }
             return flagList.toArray(new Flags[flagList.size()]);
+        }
+
+        public static List<String> toStringList(long flagsMask)
+        {
+            return FlagsHelper.toStringList(Flags.class, flagsMask);
+        }
+
+        public static long fromStringList(List<String> listFlags)
+        {
+            return FlagsHelper.fromStringList(Flags.class, listFlags);
         }
     }
 }

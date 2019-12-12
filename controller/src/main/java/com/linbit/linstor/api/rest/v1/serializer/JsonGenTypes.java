@@ -822,7 +822,7 @@ public class JsonGenTypes
     }
 
     /**
-     * This structured is used for create physical-storage
+     * This structure is used for create physical-storage
      */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PhysicalStorageStoragePoolCreate
@@ -834,6 +834,9 @@ public class JsonGenTypes
         public Map<String, String> props = Collections.emptyMap();
     }
 
+    /**
+     * If `with_storage_pool` is set a linstor storage pool will also be created using this device pool
+     */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PhysicalStorageCreate
     {
@@ -847,9 +850,6 @@ public class JsonGenTypes
         public boolean vdo_enable = false;
         public int vdo_slab_size_kib = 0;
         public int vdo_logical_size_kib = 0;
-        /**
-         * If specified a linstor storage pool will also be created using this device pool
-         */
         public PhysicalStorageStoragePoolCreate with_storage_pool;
     }
 

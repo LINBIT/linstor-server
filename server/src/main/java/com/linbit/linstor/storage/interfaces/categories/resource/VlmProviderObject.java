@@ -28,6 +28,7 @@ import java.util.List;
  */
 public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerObject
 {
+    public static final int UNINITIALIZED_SIZE = -1;
     enum Size
     {
         TOO_SMALL,
@@ -43,6 +44,8 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
     boolean hasFailed();
 
     long getAllocatedSize();
+
+    void setAllocatedSize(long allocatedSizeRef) throws DatabaseException;
 
     AbsVolume<RSC> getVolume();
 

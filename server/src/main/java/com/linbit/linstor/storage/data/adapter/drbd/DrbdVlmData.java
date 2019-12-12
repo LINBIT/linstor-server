@@ -35,9 +35,9 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     private final TransactionSimpleObject<DrbdVlmData<?>, StorPool> externalMetaDataStorPool;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize;
+    private long allocatedSize = -1;
     private String devicePath;
-    private long usableSize;
+    private long usableSize = -1;
 
     // not persisted, not serialized, stlt only
     private boolean exists;
@@ -116,6 +116,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
         return allocatedSize;
     }
 
+    @Override
     public void setAllocatedSize(long allocatedSizeRef)
     {
         allocatedSize = allocatedSizeRef;

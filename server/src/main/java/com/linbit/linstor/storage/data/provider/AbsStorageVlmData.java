@@ -152,6 +152,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         return allocatedSize.get();
     }
 
+    @Override
     public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
     {
         allocatedSize.set(allocatedSizeRef);

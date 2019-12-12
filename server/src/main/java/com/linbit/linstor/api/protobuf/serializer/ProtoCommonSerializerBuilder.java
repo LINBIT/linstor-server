@@ -699,7 +699,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         VlmDfnOuterClass.VlmDfn.Builder builder = VlmDfn.newBuilder()
             .setVlmDfnUuid(vlmDfnApi.getUuid().toString())
             .setVlmSize(vlmDfnApi.getSize())
-            .addAllVlmFlags(Volume.Flags.toStringList(vlmDfnApi.getFlags()))
+            .addAllVlmFlags(VolumeDefinition.Flags.toStringList(vlmDfnApi.getFlags()))
             .putAllVlmProps(vlmDfnApi.getProps())
             .addAllLayerData(LayerObjectSerializer.seriailzeVlmDfnLayerData(vlmDfnApi.getVlmDfnLayerData()));
         if (vlmDfnApi.getVolumeNr() != null)

@@ -243,14 +243,33 @@ public class NvmeLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject<Resource> vlmData)
+    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
         throws AccessDeniedException, DatabaseException
     {
         NvmeVlmData<Resource> nvmeVlmData = (NvmeVlmData<Resource>) vlmData;
 
+        // basically no-op. gross == net for NVMe
         long size = nvmeVlmData.getUsableSize();
         nvmeVlmData.setAllocatedSize(size);
-        nvmeVlmData.getSingleChild().setUsableSize(size);
+
+        VlmProviderObject<Resource> childVlmData = nvmeVlmData.getSingleChild();
+        childVlmData.setUsableSize(size);
+        resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(childVlmData);
+    }
+
+    @Override
+    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException
+    {
+        NvmeVlmData<Resource> nvmeVlmData = (NvmeVlmData<Resource>) vlmData;
+
+        // basically no-op. gross == net for NVMe
+        long size = nvmeVlmData.getAllocatedSize();
+        nvmeVlmData.setUsableSize(size);
+
+        VlmProviderObject<Resource> childVlmData = nvmeVlmData.getSingleChild();
+        childVlmData.setAllocatedSize(size);
+        resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(childVlmData);
     }
 
     @Override

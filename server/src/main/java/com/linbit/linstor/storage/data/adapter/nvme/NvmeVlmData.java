@@ -28,9 +28,9 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     private final NvmeRscData<RSC> rscData;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize;
+    private long allocatedSize = -1;
     private String devicePath;
-    private long usableSize;
+    private long usableSize = -1;
 
     // not persisted, not serialized, stlt only
     private boolean exists;
@@ -88,6 +88,7 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
         return allocatedSize;
     }
 
+    @Override
     public void setAllocatedSize(long allocatedSizeRef)
     {
         allocatedSize = allocatedSizeRef;

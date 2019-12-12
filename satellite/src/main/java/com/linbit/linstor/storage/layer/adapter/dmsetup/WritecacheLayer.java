@@ -158,30 +158,69 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException, DatabaseException
+    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException
     {
-        WritecacheVlmData<Resource> vlmData = (WritecacheVlmData<Resource>) vlmDataRef;
+        updateSize((WritecacheVlmData<Resource>) vlmData, true);
 
-        String cacheSizeStr = getCacheSize(vlmDataRef.getVolume());
-        long cacheSize;
-        if (cacheSizeStr.endsWith("%"))
+    }
+
+    @Override
+    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException
+    {
+        updateSize((WritecacheVlmData<Resource>) vlmData, false);
+    }
+
+    private void updateSize(WritecacheVlmData<Resource> vlmData, boolean fromUsable)
+        throws AccessDeniedException, DatabaseException
+    {
+        VlmProviderObject<Resource> dataChildVlmData = vlmData
+            .getChildBySuffix(WritecacheRscData.SUFFIX_DATA);
+        VlmProviderObject<Resource> cacheChildVlmData = vlmData
+            .getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
+
+        if (fromUsable)
         {
-            String cacheSizePercent = cacheSizeStr.substring(0, cacheSizeStr.length() - 1);
-            double percent = Double.parseDouble(cacheSizePercent) / 100;
-            cacheSize = Math.round(percent * vlmDataRef.getUsableSize() + 0.5);
+            dataChildVlmData.setUsableSize(vlmData.getUsableSize());
+            resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChildVlmData);
         }
         else
         {
-            cacheSize = Long.parseLong(cacheSizeStr);
-        }
-        vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA).setUsableSize(vlmDataRef.getUsableSize());
-        VlmProviderObject<Resource> cacheVlmChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
-        if (cacheVlmChild != null)
-        {
-            cacheVlmChild.setUsableSize(cacheSize);
+            dataChildVlmData.setAllocatedSize(vlmData.getAllocatedSize());
+            resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(dataChildVlmData);
         }
 
-        vlmData.setAllocatedSize(vlmDataRef.getUsableSize() + cacheSize);
+        long cacheSize;
+        if (cacheChildVlmData != null)
+        {
+            // null if we are above an NVMe target
+            String cacheSizeStr = getCacheSize(vlmData.getVolume());
+            if (cacheSizeStr.endsWith("%"))
+            {
+                String cacheSizePercent = cacheSizeStr.substring(0, cacheSizeStr.length() - 1);
+                double percent = Double.parseDouble(cacheSizePercent) / 100;
+                cacheSize = Math.round(percent * vlmData.getUsableSize() + 0.5);
+            }
+            else
+            {
+                cacheSize = Long.parseLong(cacheSizeStr);
+            }
+
+            // even if we are updating fromAllocated, cache device still need to be calculated fromUsable
+            cacheChildVlmData.setUsableSize(cacheSize);
+            resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(cacheChildVlmData);
+        }
+        else
+        {
+            cacheSize = 0;
+        }
+
+        if (!fromUsable)
+        {
+            vlmData.setUsableSize(vlmData.getAllocatedSize());
+        }
+        vlmData.setAllocatedSize(vlmData.getUsableSize() + cacheSize);
     }
 
     @Override

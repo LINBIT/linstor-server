@@ -8,6 +8,8 @@ import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.DeviceLayer.LayerProcessResult;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
@@ -29,6 +31,24 @@ public interface DeviceHandler
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,
         DatabaseException;
+
+    /**
+     * @see DeviceLayer#updateAllocatedSizeFromUsableSize(VlmProviderObject)
+     * @param vlmData
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     */
+    void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException;
+
+    /**
+     * @see DeviceLayer#updateUsableSizeFromAllocatedSize(VlmProviderObject)
+     * @param vlmData
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     */
+    void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException;
 
     void sendResourceCreatedEvent(AbsRscLayerObject<Resource> layerDataRef, UsageState usageStateRef);
 
