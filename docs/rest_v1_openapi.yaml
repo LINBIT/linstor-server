@@ -4512,7 +4512,7 @@ components:
           type: string
     PhysicalStorageStoragePoolCreate:
       type: object
-      description: This structured is used for create physical-storage
+      description: This structure is used for create physical-storage
       properties:
         name:
           type: string
@@ -4521,6 +4521,7 @@ components:
             $ref: '#/components/schemas/Properties'
     PhysicalStorageCreate:
       type: object
+      description: If `with_storage_pool` is set a linstor storage pool will also be created using this device pool
       required:
         - provider_kind
         - device_paths
@@ -4552,5 +4553,4 @@ components:
           format: uint64
           default: 0
         with_storage_pool:
-          description: If specified a linstor storage pool will also be created using this device pool
           $ref: '#/components/schemas/PhysicalStorageStoragePoolCreate'
