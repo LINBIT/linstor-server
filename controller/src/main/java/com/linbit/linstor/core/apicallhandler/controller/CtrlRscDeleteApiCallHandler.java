@@ -111,7 +111,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             }
         }
 
-        if (nodeNamesToDelete.isEmpty())
+        if (!nodeNamesToDelete.isEmpty())
         {
             fluxes.add(
                 ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(
