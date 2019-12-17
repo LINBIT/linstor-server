@@ -131,19 +131,28 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
             rscLayerObject.remove(accCtx, vlmNrRef);
         }
         VLM_TYPE vlmData = vlmMap.remove(vlmNrRef);
-        if (!(vlmData instanceof VlmLayerObject))
+        if (vlmData != null)
         {
-            StorPool storPool = vlmData.getStorPool();
-            if (vlmData.getVolume() instanceof Volume)
+            /*
+             * vlmData might be null when having mixed external and internal drbd
+             * metadata will result in drbd-resource with i.e. 2 drbd-volumes and
+             * 1 storage child-rsc. this storage child-rsc will only have 1
+             * storage-volume (one external drbd-volume, the other has internal)
+             */
+            if (!(vlmData instanceof VlmLayerObject))
             {
-                storPool.removeVolume(accCtx, (VlmProviderObject<Resource>) vlmData);
+                StorPool storPool = vlmData.getStorPool();
+                if (vlmData.getVolume() instanceof Volume)
+                {
+                    storPool.removeVolume(accCtx, (VlmProviderObject<Resource>) vlmData);
+                }
+                else
+                {
+                    storPool.removeSnapshotVolume(accCtx, (VlmProviderObject<Snapshot>) vlmData);
+                }
             }
-            else
-            {
-                storPool.removeSnapshotVolume(accCtx, (VlmProviderObject<Snapshot>) vlmData);
-            }
+            deleteVlmFromDatabase(vlmData);
         }
-        deleteVlmFromDatabase(vlmData);
     }
 
     protected abstract void deleteVlmFromDatabase(VLM_TYPE vlm) throws DatabaseException;
