@@ -72,6 +72,7 @@ public class LsBlkUtils
                 "lsblk",
                 "-P",
                 "-b",
+                "--paths",
                 "-o", Arrays.stream(LsBlkEntry.LsBlkFields.values())
                     .map(LsBlkEntry.LsBlkFields::toString)
                     .collect(Collectors.joining(","))
