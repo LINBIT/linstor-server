@@ -19,9 +19,11 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 
 import javax.inject.Inject;
@@ -133,6 +135,8 @@ public class CtrlAuthResponseApiCallHandler
                 peer.setConnectionStatus(Peer.ConnectionStatus.CONNECTED);
                 peer.getExtToolsManager().updateExternalToolsInfo(externalToolsInfoList);
 
+                logExternaltools(peer, nodeUname);
+
                 // Set the satellite's access context
                 // Certain APIs called by the satellite are executed with a privileged access context by the controller,
                 // while the access context of the peer connection itself remains unprivileged
@@ -224,6 +228,43 @@ public class CtrlAuthResponseApiCallHandler
             flux = Flux.empty();
         }
         return flux;
+    }
+
+    private void logExternaltools(Peer peerRef, String nodeUnameRef)
+    {
+        String nodeName = peerRef.getNode().getName().displayValue;
+        errorReporter.logDebug("%s, uname: %s", peerRef.toString(), nodeUnameRef);
+        ExtToolsManager extToolsManager = peerRef.getExtToolsManager();
+        for (ExtTools extTool : ExtTools.values())
+        {
+            ExtToolsInfo extToolInfo = extToolsManager.getExtToolInfo(extTool);
+            if (extToolInfo == null)
+            {
+                errorReporter.logDebug("%s, %s: not available", nodeName, extTool.name());
+            }
+            else
+            {
+                if (!extToolInfo.isSupported())
+                {
+                    errorReporter.logDebug("%s, %s: not supported", nodeName, extTool.name());
+                    for (String reason : extToolInfo.getNotSupportedReasons())
+                    {
+                        errorReporter.logDebug("%s,  %s: %s", nodeName, extTool.name(), reason);
+                    }
+                }
+                else
+                {
+                    errorReporter.logDebug(
+                        "%s, %s: %d.%d.%d",
+                        nodeName,
+                        extTool.name(),
+                        extToolInfo.getVersionMajor(),
+                        extToolInfo.getVersionMinor(),
+                        extToolInfo.getVersionPatch()
+                    );
+                }
+            }
+        }
     }
 
 }
