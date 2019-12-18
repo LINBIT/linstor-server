@@ -13,18 +13,21 @@ public class NvmeRscPojo implements RscLayerDataApi
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
     private final List<NvmeVlmPojo> vlms;
+    private final boolean suspend;
 
     public NvmeRscPojo(
         int idRef,
         List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
-        List<NvmeVlmPojo> vlmsRef
+        List<NvmeVlmPojo> vlmsRef,
+        boolean suspendRef
     )
     {
         id = idRef;
         children = childrenRef;
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
+        suspend = suspendRef;
     }
 
     @Override
@@ -49,6 +52,12 @@ public class NvmeRscPojo implements RscLayerDataApi
     public DeviceLayerKind getLayerKind()
     {
         return DeviceLayerKind.NVME;
+    }
+
+    @Override
+    public boolean getSuspend()
+    {
+        return suspend;
     }
 
     @Override

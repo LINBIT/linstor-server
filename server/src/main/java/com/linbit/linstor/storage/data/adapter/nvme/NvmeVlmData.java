@@ -1,7 +1,8 @@
 package com.linbit.linstor.storage.data.adapter.nvme;
 
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
-import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
@@ -19,11 +20,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class NvmeVlmData extends BaseTransactionObject implements NvmeVlmObject
+public class NvmeVlmData<RSC extends AbsResource<RSC>>
+    extends BaseTransactionObject implements NvmeVlmObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final Volume vlm;
-    private final NvmeRscData rscData;
+    private final AbsVolume<RSC> vlm;
+    private final NvmeRscData<RSC> rscData;
 
     // not persisted, serialized, ctrl and stlt
     private long allocatedSize;
@@ -34,13 +36,13 @@ public class NvmeVlmData extends BaseTransactionObject implements NvmeVlmObject
     private boolean exists;
     private boolean failed;
     private boolean hasDisk;
-    private final TransactionList<NvmeVlmData, State> states;
+    private final TransactionList<NvmeVlmData<RSC>, State> states;
     private Size sizeState;
     private String diskState;
 
     public NvmeVlmData(
-        Volume vlmRef,
-        NvmeRscData rscDataRef,
+        AbsVolume<RSC> vlmRef,
+        NvmeRscData<RSC> rscDataRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -154,7 +156,7 @@ public class NvmeVlmData extends BaseTransactionObject implements NvmeVlmObject
     }
 
     @Override
-    public Volume getVolume()
+    public AbsVolume<RSC> getVolume()
     {
         return vlm;
     }
@@ -166,7 +168,7 @@ public class NvmeVlmData extends BaseTransactionObject implements NvmeVlmObject
     }
 
     @Override
-    public NvmeRscData getRscLayerObject()
+    public NvmeRscData<RSC> getRscLayerObject()
     {
         return rscData;
     }

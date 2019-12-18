@@ -26,7 +26,7 @@ public class FreeSpaceMgrName extends GenericName
         Checks.nameCheck(freeSpaceMgrNameStr, MIN_LENGTH, MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
     }
 
-    public FreeSpaceMgrName(NodeName nodeName, StorPoolName storPoolName)
+    public FreeSpaceMgrName(NodeName nodeName, StorPoolName storPoolName) throws InvalidNameException
     {
         super(nodeName.displayValue + RESERVED_CONNECTOR + storPoolName.displayValue);
     }

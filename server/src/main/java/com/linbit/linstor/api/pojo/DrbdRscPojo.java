@@ -22,6 +22,7 @@ public class DrbdRscPojo implements RscLayerDataApi
     private final long alStripeSize;
     private final long flags;
     private final List<DrbdVlmPojo> vlms;
+    private final boolean suspend;
 
     public DrbdRscPojo(
         int idRef,
@@ -33,7 +34,8 @@ public class DrbdRscPojo implements RscLayerDataApi
         int alStripesRef,
         long alStripeSizeRef,
         long flagsRef,
-        List<DrbdVlmPojo> vlmsRef
+        List<DrbdVlmPojo> vlmsRef,
+        boolean suspendRef
     )
     {
         id = idRef;
@@ -46,6 +48,7 @@ public class DrbdRscPojo implements RscLayerDataApi
         alStripeSize = alStripeSizeRef;
         flags = flagsRef;
         vlms = vlmsRef;
+        suspend = suspendRef;
     }
 
     @Override
@@ -103,6 +106,12 @@ public class DrbdRscPojo implements RscLayerDataApi
     }
 
     @Override
+    public boolean getSuspend()
+    {
+        return suspend;
+    }
+
+    @Override
     public List<DrbdVlmPojo> getVolumeList()
     {
         return vlms;
@@ -114,7 +123,7 @@ public class DrbdRscPojo implements RscLayerDataApi
         private final short peerSlots;
         private final int alStripes;
         private final long alStripeSize;
-        private final int port;
+        private final Integer port;
         private final String transportType;
         private final String secret;
         private final boolean down;
@@ -124,7 +133,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             short peerSlotsRef,
             int alStripesRef,
             long alStripeSizeRef,
-            int portRef,
+            Integer portRef,
             String transportTypeRef,
             String secretRef,
             boolean downRef
@@ -161,7 +170,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             return alStripeSize;
         }
 
-        public int getPort()
+        public Integer getPort()
         {
             return port;
         }
@@ -286,12 +295,12 @@ public class DrbdRscPojo implements RscLayerDataApi
     {
         private final String rscNameSuffix;
         private final int vlmNr;
-        private final int minorNr;
+        private final Integer minorNr;
 
         public DrbdVlmDfnPojo(
             String rscNameSuffixRef,
             int vlmNrRef,
-            int minorNrRef
+            Integer minorNrRef
         )
         {
             rscNameSuffix = rscNameSuffixRef;
@@ -310,7 +319,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             return vlmNr;
         }
 
-        public int getMinorNr()
+        public Integer getMinorNr()
         {
             return minorNr;
         }

@@ -34,7 +34,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -62,8 +62,8 @@ public class ConfFileBuilder
 
     private final ErrorReporter errorReporter;
     private final AccessContext accCtx;
-    private final DrbdRscData localRscData;
-    private final Collection<DrbdRscData> remoteResourceData;
+    private final DrbdRscData<Resource> localRscData;
+    private final Collection<DrbdRscData<Resource>> remoteResourceData;
     private final WhitelistProps whitelistProps;
 
     private StringBuilder stringBuilder;
@@ -72,8 +72,8 @@ public class ConfFileBuilder
     public ConfFileBuilder(
         final ErrorReporter errorReporterRef,
         final AccessContext accCtxRef,
-        final DrbdRscData localRscRef,
-        final Collection<DrbdRscData> remoteResourcesRef,
+        final DrbdRscData<Resource> localRscRef,
+        final Collection<DrbdRscData<Resource>> remoteResourcesRef,
         final WhitelistProps whitelistPropsRef
     )
     {
@@ -112,15 +112,15 @@ public class ConfFileBuilder
     public String build()
         throws AccessDeniedException, StorageException
     {
-        Set<DrbdRscData> peerRscSet = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
-        DrbdRscDfnData rscDfnData = localRscData.getRscDfnLayerObject();
+        Set<DrbdRscData<Resource>> peerRscSet = new TreeSet<>(RESOURCE_NAME_COMPARATOR);
+        DrbdRscDfnData<Resource> rscDfnData = localRscData.getRscDfnLayerObject();
         if (remoteResourceData == null)
         {
-            throw new ImplementationError("No remote resources found for " + localRscData.getResource() + "!");
+            throw new ImplementationError("No remote resources found for " + localRscData.getAbsResource() + "!");
         }
         peerRscSet.addAll(remoteResourceData); // node-alphabetically sorted
 
-        Resource localRsc = localRscData.getResource();
+        Resource localRsc = localRscData.getAbsResource();
         final ResourceDefinition rscDfn = localRsc.getDefinition();
         if (rscDfn == null)
         {
@@ -205,14 +205,14 @@ public class ConfFileBuilder
             // Create local network configuration
             {
                 appendLine("");
-                appendLine("on %s", localRsc.getAssignedNode().getProps(accCtx).getPropWithDefault(
+                appendLine("on %s", localRsc.getNode().getProps(accCtx).getPropWithDefault(
                     InternalApiConsts.NODE_UNAME,
-                    localRsc.getAssignedNode().getName().displayValue)
+                    localRsc.getNode().getName().displayValue)
                 );
                 try (Section onSection = new Section())
                 {
-                    Collection<DrbdVlmData> vlmDataList = localRscData.getVlmLayerObjects().values();
-                    for (DrbdVlmData vlmData : vlmDataList)
+                    Collection<DrbdVlmData<Resource>> vlmDataList = localRscData.getVlmLayerObjects().values();
+                    for (DrbdVlmData<Resource> vlmData : vlmDataList)
                     {
                         appendVlmIfPresent(vlmData, accCtx, false);
                     }
@@ -220,21 +220,22 @@ public class ConfFileBuilder
                 }
             }
 
-            for (final DrbdRscData peerRscData : peerRscSet)
+            for (final DrbdRscData<Resource> peerRscData : peerRscSet)
             {
-                Resource peerRsc = peerRscData.getResource();
+                Resource peerRsc = peerRscData.getAbsResource();
                 if (peerRsc.getStateFlags().isUnset(accCtx, Resource.Flags.DELETE))
                 {
                     appendLine("");
-                    appendLine("on %s", peerRsc.getAssignedNode().getProps(accCtx)
+                    appendLine("on %s", peerRsc.getNode().getProps(accCtx)
                         .getPropWithDefault(
                             InternalApiConsts.NODE_UNAME,
-                            peerRsc.getAssignedNode().getName().displayValue)
+                            peerRsc.getNode().getName().displayValue)
                     );
                     try (Section onSection = new Section())
                     {
-                        Collection<DrbdVlmData> peerVlmDataList = peerRscData.getVlmLayerObjects().values();
-                        for (DrbdVlmData peerVlmData : peerVlmDataList)
+                        Collection<DrbdVlmData<Resource>> peerVlmDataList = peerRscData
+                            .getVlmLayerObjects().values();
+                        for (DrbdVlmData<Resource> peerVlmData : peerVlmDataList)
                         {
                             appendVlmIfPresent(peerVlmData, accCtx, true);
                         }
@@ -248,15 +249,15 @@ public class ConfFileBuilder
             }
 
             // first generate all with local first
-            for (final DrbdRscData peerRscData : peerRscSet)
+            for (final DrbdRscData<Resource> peerRscData : peerRscSet)
             {
-                Resource peerRsc = peerRscData.getResource();
+                Resource peerRsc = peerRscData.getAbsResource();
                 // don't create a connection entry if the resource has the deleted flag
                 // or if it is a connection between two diskless nodes
                 if (
                     peerRsc.getStateFlags().isUnset(accCtx, Resource.Flags.DELETE) &&
-                        !(peerRsc.disklessForPeers(accCtx) &&
-                            localRsc.getStateFlags().isSet(accCtx, Resource.Flags.DISKLESS))
+                        !(peerRsc.disklessForDrbdPeers(accCtx) &&
+                            localRsc.getStateFlags().isSet(accCtx, Resource.Flags.DRBD_DISKLESS))
                 )
                 {
                     appendLine("");
@@ -264,7 +265,7 @@ public class ConfFileBuilder
                     try (Section connectionSection = new Section())
                     {
                         List<Pair<NetInterface, NetInterface>> pathsList = new ArrayList<>();
-                        ResourceConnection rscConn = localRsc.getResourceConnection(accCtx, peerRsc);
+                        ResourceConnection rscConn = localRsc.getAbsResourceConnection(accCtx, peerRsc);
                         NodeConnection nodeConn;
                         Optional<Props> paths = Optional.empty();
 
@@ -344,7 +345,7 @@ public class ConfFileBuilder
                         // ...or fall back to node connection
                         if (!paths.isPresent())
                         {
-                            nodeConn = localRsc.getAssignedNode().getNodeConnection(accCtx, peerRsc.getAssignedNode());
+                            nodeConn = localRsc.getNode().getNodeConnection(accCtx, peerRsc.getNode());
 
                             if (nodeConn != null)
                             {
@@ -363,8 +364,8 @@ public class ConfFileBuilder
 
                                 if (nodes.isPresent() && nodes.get().map().size() == 2)
                                 {
-                                    Node firstNode = peerRsc.getAssignedNode();
-                                    Node secondNode = localRsc.getAssignedNode();
+                                    Node firstNode = peerRsc.getNode();
+                                    Node secondNode = localRsc.getNode();
                                     try
                                     {
                                         // iterate through nodes (should be exactly 2)
@@ -756,28 +757,30 @@ public class ConfFileBuilder
         }
     }
 
-    private NetInterface getPreferredNetIf(DrbdRscData peerRscDataRef)
+    private NetInterface getPreferredNetIf(DrbdRscData<Resource> peerRscDataRef)
     {
         NetInterface preferredNetIf = null;
         try
         {
-            TreeMap<VolumeNumber, DrbdVlmData> sortedVlmData = new TreeMap<>(peerRscDataRef.getVlmLayerObjects());
-            Entry<VolumeNumber, DrbdVlmData> firstVolumeEntry = sortedVlmData.firstEntry();
-            Resource rsc = peerRscDataRef.getResource();
-            Node node = rsc.getAssignedNode();
+            TreeMap<VolumeNumber, DrbdVlmData<Resource>> sortedVlmData = new TreeMap<>(
+                peerRscDataRef.getVlmLayerObjects()
+            );
+            Entry<VolumeNumber, DrbdVlmData<Resource>> firstVolumeEntry = sortedVlmData.firstEntry();
+            Resource rsc = peerRscDataRef.getAbsResource();
+            Node node = rsc.getNode();
 
             PriorityProps prioProps = new PriorityProps();
 
             if (firstVolumeEntry != null)
             {
                 VolumeNumber firstVlmNr = firstVolumeEntry.getKey();
-                List<RscLayerObject> storageRscList = LayerUtils.getChildLayerDataByKind(
+                List<AbsRscLayerObject<Resource>> storageRscList = LayerUtils.getChildLayerDataByKind(
                     firstVolumeEntry.getValue().getRscLayerObject(),
                     DeviceLayerKind.STORAGE
                 );
-                for (RscLayerObject rscObj : storageRscList)
+                for (AbsRscLayerObject<Resource> rscObj : storageRscList)
                 {
-                    VlmProviderObject vlmProviderObject = rscObj.getVlmProviderObject(firstVlmNr);
+                    VlmProviderObject<Resource> vlmProviderObject = rscObj.getVlmProviderObject(firstVlmNr);
                     if (vlmProviderObject != null)
                     {
                         prioProps.addProps(
@@ -827,20 +830,20 @@ public class ConfFileBuilder
         return preferredNetIf;
     }
 
-    private void appendVlmIfPresent(DrbdVlmData vlmData, AccessContext localAccCtx, boolean isPeerRsc)
+    private void appendVlmIfPresent(DrbdVlmData<Resource> vlmData, AccessContext localAccCtx, boolean isPeerRsc)
         throws AccessDeniedException
     {
-        if (vlmData.getVolume().getFlags().isUnset(localAccCtx, Volume.Flags.DELETE))
+        if (((Volume) vlmData.getVolume()).getFlags().isUnset(localAccCtx, Volume.Flags.DELETE))
         {
             final String disk;
             if ((!isPeerRsc && vlmData.getBackingDevice() == null) ||
                 (isPeerRsc &&
                 // FIXME: vlmData.getRscLayerObject().getFlags should be used here
-                     vlmData.getVolume().getResource().disklessForPeers(accCtx)
+                     vlmData.getVolume().getAbsResource().disklessForDrbdPeers(accCtx)
                 ) ||
                 (!isPeerRsc &&
                 // FIXME: vlmData.getRscLayerObject().getFlags should be used here
-                     vlmData.getVolume().getResource().isDiskless(accCtx)
+                     vlmData.getVolume().getAbsResource().isDrbdDiskless(accCtx)
                 )
             )
             {
@@ -961,13 +964,13 @@ public class ConfFileBuilder
         appendLine(format, args);
     }
 
-    private static class ResourceNameComparator implements Comparator<DrbdRscData>
+    private static class ResourceNameComparator implements Comparator<DrbdRscData<?>>
     {
         @Override
-        public int compare(DrbdRscData o1, DrbdRscData o2)
+        public int compare(DrbdRscData<?> o1, DrbdRscData<?> o2)
         {
-            return o1.getResource().getAssignedNode().getName().compareTo(
-                   o2.getResource().getAssignedNode().getName()
+            return o1.getAbsResource().getNode().getName().compareTo(
+                   o2.getAbsResource().getNode().getName()
             );
         }
     }

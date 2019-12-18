@@ -1,7 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
-import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -13,8 +12,7 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SWORDFISH_INITIATOR;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SWORDFISH_TARGET;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SPDK;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
 
@@ -25,6 +23,7 @@ public class StorageRscPojo implements RscLayerDataApi
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
+    private final boolean suspend;
 
     private final List<VlmLayerDataApi> vlms;
 
@@ -32,13 +31,15 @@ public class StorageRscPojo implements RscLayerDataApi
         int idRef,
         List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
-        List<VlmLayerDataApi> vlmsRef
+        List<VlmLayerDataApi> vlmsRef,
+        boolean suspendRef
     )
     {
         id = idRef;
         children = childrenRef;
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
+        suspend = suspendRef;
     }
 
     @Override
@@ -63,6 +64,12 @@ public class StorageRscPojo implements RscLayerDataApi
     public String getRscNameSuffix()
     {
         return rscNameSuffix;
+    }
+
+    @Override
+    public boolean getSuspend()
+    {
+        return suspend;
     }
 
     @Override
@@ -179,6 +186,21 @@ public class StorageRscPojo implements RscLayerDataApi
         }
     }
 
+    public static class SpdkVlmPojo extends AbsVlmProviderPojo
+    {
+        public SpdkVlmPojo(
+            int vlmNrRef,
+            String devicePathRef,
+            long allocatedSizeRef,
+            long usableSizeRef,
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
+        )
+        {
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, SPDK);
+        }
+    }
+
     public static class LvmThinVlmPojo extends AbsVlmProviderPojo
     {
         public LvmThinVlmPojo(
@@ -251,98 +273,6 @@ public class StorageRscPojo implements RscLayerDataApi
         )
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, FILE_THIN);
-        }
-    }
-
-    public static class SwordfishTargetVlmPojo extends AbsVlmProviderPojo
-    {
-        private final SwordfishVlmDfnPojo vlmDfn;
-
-        public SwordfishTargetVlmPojo(
-            SwordfishVlmDfnPojo vlmDfnRef,
-            long allocatedSizeRef,
-            long usableSizeRef,
-            StorPoolApi storPoolApiRef
-        )
-        {
-            super(vlmDfnRef.vlmNr, null, allocatedSizeRef, usableSizeRef, null, storPoolApiRef, SWORDFISH_TARGET);
-            vlmDfn = vlmDfnRef;
-        }
-
-        public SwordfishVlmDfnPojo getVlmDfn()
-        {
-            return vlmDfn;
-        }
-    }
-
-    public static class SwordfishInitiatorVlmPojo extends AbsVlmProviderPojo
-    {
-        private final SwordfishVlmDfnPojo vlmDfn;
-
-        public SwordfishInitiatorVlmPojo(
-            SwordfishVlmDfnPojo vlmDfnRef,
-            String devicePathRef,
-            long allocatedSizeRef,
-            long usableSizeRef,
-            String diskStateRef,
-            StorPoolApi storPoolApiRef
-        )
-        {
-            super(
-                vlmDfnRef.vlmNr,
-                devicePathRef,
-                allocatedSizeRef,
-                usableSizeRef,
-                diskStateRef,
-                storPoolApiRef,
-                SWORDFISH_INITIATOR
-            );
-            vlmDfn = vlmDfnRef;
-        }
-
-        public SwordfishVlmDfnPojo getVlmDfn()
-        {
-            return vlmDfn;
-        }
-    }
-
-    public static class SwordfishVlmDfnPojo implements VlmDfnLayerDataApi
-    {
-        private final String rscNameSuffix;
-        private final int vlmNr;
-        private final String vlmOdata;
-
-        public SwordfishVlmDfnPojo(
-            String rscNameSuffixRef,
-            int vlmNrRef,
-            String vlmOdataRef
-        )
-        {
-            rscNameSuffix = rscNameSuffixRef;
-            vlmNr = vlmNrRef;
-            vlmOdata = vlmOdataRef;
-        }
-
-        public String getRscNameSuffix()
-        {
-            return rscNameSuffix;
-        }
-
-        @Override
-        public int getVlmNr()
-        {
-            return vlmNr;
-        }
-
-        public String getVlmOdata()
-        {
-            return vlmOdata;
-        }
-
-        @Override
-        public DeviceLayerKind getLayerKind()
-        {
-            return STORAGE;
         }
     }
 }

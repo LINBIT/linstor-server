@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -17,17 +18,20 @@ import java.util.UUID;
 public class SnapshotSatelliteFactory
 {
     private final SnapshotDatabaseDriver driver;
+    private final PropsContainerFactory propsConFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public SnapshotSatelliteFactory(
         SnapshotDatabaseDriver driverRef,
+        PropsContainerFactory propsConFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         driver = driverRef;
+        propsConFactory = propsConFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -51,14 +55,12 @@ public class SnapshotSatelliteFactory
                     snapshotUuid,
                     snapshotDfn,
                     node,
-                    // Snapshot node ID is not relevant for the satellite
-                    null,
                     StateFlagsBits.getMask(flags),
-                    driver, transObjFactory, transMgrProvider,
-                    new TreeMap<>(),
-                    Collections.emptyList() // satellite does not care about snapshots layer stack
-                // as the resource that will use the restored data will get the layerdata-tree set by the
-                // controller (controller-sided snapshots DO store the layer-stack)
+                    driver,
+                    propsConFactory,
+                    transObjFactory,
+                    transMgrProvider,
+                    new TreeMap<>()
                 );
                 snapshotDfn.addSnapshot(accCtx, snapshot);
             }

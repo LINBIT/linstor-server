@@ -2,6 +2,7 @@ package com.linbit.linstor.dbdrivers.etcd;
 
 import static com.ibm.etcd.client.KeyUtils.bs;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
@@ -108,9 +109,16 @@ public abstract class BaseEtcdDriver
             return this;
         }
 
-        public Map<String, String> get(boolean recursive)
+        public Map<String, String> get(boolean recursive) throws DatabaseException
         {
-            return transactionMgrETCD.readTable(currentBaseKey, recursive);
+            try
+            {
+                return transactionMgrETCD.readTable(currentBaseKey, recursive);
+            }
+            catch (io.grpc.StatusRuntimeException grpcExc)
+            {
+                throw new DatabaseException(grpcExc);
+            }
         }
     }
 }

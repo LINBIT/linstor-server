@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -25,7 +26,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.io.File;
+
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -57,7 +58,7 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
-    protected void createLvImpl(ZfsData vlmData)
+    protected void createLvImpl(ZfsData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.create(
@@ -108,18 +109,7 @@ public class ZfsThinProvider extends ZfsProvider
     @Override
     public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        String thinZpoolName = getZPool(storPool);
-        if (thinZpoolName == null)
-        {
-            throw new StorageException("Unset thin zfs dataset for " + storPool);
-        }
-
-        int idx = thinZpoolName.indexOf(File.separator);
-        if (idx == -1)
-        {
-            idx = thinZpoolName.length();
-        }
-        String zPoolName = thinZpoolName.substring(0, idx);
+        String zPoolName = getZpoolOnlyName(storPool);
 
         // do not use the thin version, we have to ask the actual zpool, not the thin "pool"
         return ZfsUtils.getZPoolTotalSize(
@@ -141,6 +131,4 @@ public class ZfsThinProvider extends ZfsProvider
             extCmdFactory.create()
         ).get(thinZpoolName).usableSize;
     }
-
-
 }

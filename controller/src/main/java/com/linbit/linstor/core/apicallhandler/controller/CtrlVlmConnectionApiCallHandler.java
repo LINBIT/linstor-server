@@ -31,6 +31,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -147,7 +148,7 @@ class CtrlVlmConnectionApiCallHandler
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.VOLUME_CONN, overrideProps, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.remove(LinStorObject.VOLUME_CONN, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 
@@ -388,8 +389,8 @@ class CtrlVlmConnectionApiCallHandler
         try
         {
             descriptionInline = getVlmConnectionDescriptionInline(
-                vlmConn.getSourceVolume(accCtx).getResource().getAssignedNode().getName().displayValue,
-                vlmConn.getTargetVolume(accCtx).getResource().getAssignedNode().getName().displayValue,
+                vlmConn.getSourceVolume(accCtx).getAbsResource().getNode().getName().displayValue,
+                vlmConn.getTargetVolume(accCtx).getAbsResource().getNode().getName().displayValue,
                 vlmConn.getSourceVolume(accCtx).getResourceDefinition().getName().displayValue,
                 vlmConn.getSourceVolume(accCtx).getVolumeDefinition().getVolumeNumber().value
             );

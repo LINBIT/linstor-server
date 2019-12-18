@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+// Writecache layer specific properties. See RscLayerData.proto for shared properties
+message WritecacheRsc
+{
+    required uint64         flags = 1;
+    repeated WritecacheVlm  vlms = 2;
+}
+
+message WritecacheVlm
+{
+    required uint32         vlm_nr = 1;
+    optional string         device_path_data = 2;
+    optional string         device_path_cache = 3;
+    optional int64          allocated_size = 4;
+    optional int64          usable_size = 5;
+    optional string         disk_state = 6;
+    optional string         cache_stor_pool_name = 7;
+}
+

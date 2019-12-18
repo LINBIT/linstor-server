@@ -14,6 +14,8 @@ message ExternalToolsInfo
         LVM = 4;
         ZFS = 5;
         NVME = 6;
+        SPDK = 7;
+        WRITECACHE = 8;
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

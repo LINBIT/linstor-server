@@ -1,12 +1,17 @@
 package com.linbit.linstor.storage.utils;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.NVME;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.WRITECACHE;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,21 +24,22 @@ import java.util.TreeSet;
 
 public class LayerUtils
 {
-    private static final LayerNode TOPMOST_NODE = new LayerNode();
+    private static final LayerNode TOPMOST_NODE = new LayerNode(null);
 
     private static final Map<DeviceLayerKind, LayerNode> NODES = new HashMap<>();
 
     static
     {
-        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME);
+        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE);
 
-        NODES.get(DRBD).addChildren(LUKS, STORAGE);
+        NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE);
         NODES.get(LUKS).addChildren(STORAGE);
-        NODES.get(NVME).addChildren(LUKS, STORAGE);
+        NODES.get(NVME).addChildren(LUKS, STORAGE, WRITECACHE);
+        NODES.get(WRITECACHE).addChildren(NVME, LUKS, STORAGE);
 
         NODES.get(STORAGE).setAllowedEnd(true);
 
-        ensureAllRulesEndWithStorage();
+        ensureAllRulesHaveAllowedEnd();
     }
 
     public static boolean isLayerKindStackAllowed(List<DeviceLayerKind> kindList)
@@ -70,51 +76,74 @@ public class LayerUtils
         return allowed;
     }
 
-    private static void ensureAllRulesEndWithStorage()
+    private static void ensureAllRulesHaveAllowedEnd()
     {
-        if (!NODES.get(STORAGE).successor.isEmpty())
+        Set<LayerNode> allowedEndNodes = new HashSet<>();
+        Set<LayerNode> nodesToCheck = new HashSet<>();
+        for (LayerNode node : NODES.values())
         {
-            throw new ImplementationError("STORAGE is not allowed to have children!");
+            if (node.endAllowed)
+            {
+                allowedEndNodes.add(node);
+            }
+            else
+            {
+                nodesToCheck.add(node);
+            }
         }
-        for (DeviceLayerKind kind : TOPMOST_NODE.successor.keySet())
-        {
-            ensureAllRulesEndWithStorage(new LinkedList<>(), kind);
-        }
-    }
 
-    private static void ensureAllRulesEndWithStorage(LinkedList<DeviceLayerKind> kindList, DeviceLayerKind kindRef)
-    {
-        kindList.add(kindRef);
-        LayerNode layerNode = NODES.get(kindRef);
-        if (layerNode == null)
+        int lastCheckCount = NODES.size();
+        while (lastCheckCount != nodesToCheck.size())
         {
-            throw new ImplementationError("Unknown kind: " + kindRef + " " + kindList);
+            Set<LayerNode> nextNodesToCheck = new HashSet<>();
+            for (LayerNode node : nodesToCheck)
+            {
+                boolean allowed = false;
+                for (LayerNode successor : node.successor.values())
+                {
+                    if (allowedEndNodes.contains(successor))
+                    {
+                        allowedEndNodes.add(node);
+                        allowed = true;
+                        break;
+                    }
+                }
+                if (!allowed)
+                {
+                    nextNodesToCheck.add(node);
+                }
+            }
+            nodesToCheck = nextNodesToCheck;
+            lastCheckCount = nodesToCheck.size();
         }
-        if (!kindRef.equals(STORAGE))
+
+        if (!nodesToCheck.isEmpty())
         {
-            Set<DeviceLayerKind> children = layerNode.successor.keySet();
-            if (children.isEmpty())
+            List<String> nodeDevs = new ArrayList<>();
+            for (LayerNode node : nodesToCheck)
             {
-                throw new ImplementationError(kindList + " not ending with STORAGE layer");
+                nodeDevs.add(node.kind.name());
             }
-            for (DeviceLayerKind child : children)
-            {
-                ensureAllRulesEndWithStorage(kindList, child);
-            }
+            throw new ImplementationError("Kind(s) " + nodeDevs + " do not have allowed ending");
         }
-        kindList.removeLast();
     }
 
     private static class LayerNode
     {
         private Map<DeviceLayerKind, LayerNode> successor = new HashMap<>();
         private boolean endAllowed = false;
+        private DeviceLayerKind kind;
+
+        public LayerNode(DeviceLayerKind kindRef)
+        {
+            kind = kindRef;
+        }
 
         private LayerNode addChildren(DeviceLayerKind... kinds)
         {
             for (DeviceLayerKind kind : kinds)
             {
-                successor.put(kind, NODES.computeIfAbsent(kind, (ignore) -> new LayerNode()));
+                successor.put(kind, NODES.computeIfAbsent(kind, (ignore) -> new LayerNode(kind)));
             }
             return this;
         }
@@ -125,22 +154,22 @@ public class LayerUtils
         }
     }
 
-    public static List<RscLayerObject> getChildLayerDataByKind(
-        RscLayerObject rscDataRef,
+    public static <RSC extends AbsResource<RSC>> List<AbsRscLayerObject<RSC>> getChildLayerDataByKind(
+        AbsRscLayerObject<RSC> rscDataRef,
         DeviceLayerKind kind
     )
     {
-        LinkedList<RscLayerObject> rscDataToExplore = new LinkedList<>();
+        LinkedList<AbsRscLayerObject<RSC>> rscDataToExplore = new LinkedList<>();
         if (rscDataRef != null)
         {
             rscDataToExplore.add(rscDataRef);
         }
 
-        List<RscLayerObject> ret = new ArrayList<>();
+        List<AbsRscLayerObject<RSC>> ret = new ArrayList<>();
 
         while (!rscDataToExplore.isEmpty())
         {
-            RscLayerObject rscData = rscDataToExplore.removeFirst();
+            AbsRscLayerObject<RSC> rscData = rscDataToExplore.removeFirst();
             if (rscData.getLayerKind().equals(kind))
             {
                 ret.add(rscData);
@@ -154,24 +183,42 @@ public class LayerUtils
         return ret;
     }
 
-    public static boolean hasLayer(
-        RscLayerObject rscData,
-        DeviceLayerKind kind
-    )
+    public static boolean hasLayer(AbsRscLayerObject<?> rscData, DeviceLayerKind kind)
     {
         return !LayerUtils.getChildLayerDataByKind(rscData, kind).isEmpty();
     }
 
-    public static Set<DeviceLayerKind> getUsedDeviceLayerKinds(RscLayerObject rscLayerObject)
+    public static Set<DeviceLayerKind> getUsedDeviceLayerKinds(
+        AbsRscLayerObject<?> rscLayerObject
+    )
     {
         Set<DeviceLayerKind> ret = new TreeSet<>();
-        LinkedList<RscLayerObject> rscDataToExplore = new LinkedList<>();
+        LinkedList<AbsRscLayerObject<?>> rscDataToExplore = new LinkedList<>();
         rscDataToExplore.add(rscLayerObject);
         while (!rscDataToExplore.isEmpty())
         {
-            RscLayerObject rscData = rscDataToExplore.removeFirst();
+            AbsRscLayerObject<?> rscData = rscDataToExplore.removeFirst();
             ret.add(rscData.getLayerKind());
             rscDataToExplore.addAll(rscData.getChildren());
+        }
+        return ret;
+    }
+
+    public static List<DeviceLayerKind> getLayerStack(AbsResource<?> rscRef, AccessContext accCtx)
+    {
+        List<DeviceLayerKind> ret = new ArrayList<>();
+        try
+        {
+            AbsRscLayerObject<?> layerData = rscRef.getLayerData(accCtx);
+            while (layerData != null)
+            {
+                ret.add(layerData.getLayerKind());
+                layerData = layerData.getChildBySuffix("");
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
         return ret;
     }
@@ -179,5 +226,4 @@ public class LayerUtils
     private LayerUtils()
     {
     }
-
 }

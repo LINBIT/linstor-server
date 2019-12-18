@@ -1,11 +1,5 @@
 package com.linbit.linstor.api.interfaces.serializer;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.objects.Node;
@@ -15,6 +9,12 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public interface CtrlStltSerializer extends CommonSerializer
 {
@@ -77,11 +77,11 @@ public interface CtrlStltSerializer extends CommonSerializer
         /*
          * Satellite -> Controller
          */
+        CtrlStltSerializerBuilder notifyNodeApplied(Node node);
         CtrlStltSerializerBuilder notifyResourceApplied(
             Resource resource,
             Map<StorPool, SpaceInfo> freeSpaceMap
         );
-
         CtrlStltSerializerBuilder notifyResourceFailed(
             Resource resource,
             ApiCallRc apiCallRc
@@ -119,6 +119,12 @@ public interface CtrlStltSerializer extends CommonSerializer
             boolean vdoEnabled,
             long vdoLogicalSizeKib,
             long vdoSlabSizeKib
+        );
+
+        CtrlStltSerializerBuilder deleteDevicePool(
+            List<String> devicePaths,
+            DeviceProviderKind providerKindRef,
+            String poolName
         );
     }
 }

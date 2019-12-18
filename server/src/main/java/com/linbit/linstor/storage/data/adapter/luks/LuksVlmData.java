@@ -1,10 +1,11 @@
 package com.linbit.linstor.storage.data.adapter.luks;
 
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
-import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.luks.LuksVlmObject;
@@ -18,17 +19,19 @@ import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class LuksVlmData extends BaseTransactionObject implements LuksVlmObject
+public class LuksVlmData<RSC extends AbsResource<RSC>>
+    extends BaseTransactionObject implements LuksVlmObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final Volume vlm;
-    private final RscLayerObject rscData;
+    private final AbsVolume<RSC> vlm;
+    private final AbsRscLayerObject<RSC> rscData;
 
     // persisted, serialized, ctrl and stlt
-    private final TransactionSimpleObject<LuksVlmData, byte[]> encryptedPassword;
+    private final TransactionSimpleObject<LuksVlmData<?>, byte[]> encryptedPassword;
 
     // not persisted, serialized, ctrl and stlt
     private long allocatedSize;
@@ -49,8 +52,8 @@ public class LuksVlmData extends BaseTransactionObject implements LuksVlmObject
     // TODO maybe introduce States like "OPEN", "CLOSED", "UNINITIALIZED" or something...
 
     public LuksVlmData(
-        Volume vlmRef,
-        LuksRscData rscDataRef,
+        AbsVolume<RSC> vlmRef,
+        LuksRscData<RSC> rscDataRef,
         byte[] encryptedPasswordRef,
         LuksLayerDatabaseDriver dbDriver,
         TransactionObjectFactory transObjFactory,
@@ -61,6 +64,8 @@ public class LuksVlmData extends BaseTransactionObject implements LuksVlmObject
 
         vlm = Objects.requireNonNull(vlmRef);
         rscData = Objects.requireNonNull(rscDataRef);
+
+        unmodStates = Collections.emptyList();
 
         encryptedPassword = transObjFactory.createTransactionSimpleObject(
             this,
@@ -192,7 +197,7 @@ public class LuksVlmData extends BaseTransactionObject implements LuksVlmObject
     }
 
     @Override
-    public Volume getVolume()
+    public AbsVolume<RSC> getVolume()
     {
         return vlm;
     }
@@ -204,7 +209,7 @@ public class LuksVlmData extends BaseTransactionObject implements LuksVlmObject
     }
 
     @Override
-    public RscLayerObject getRscLayerObject()
+    public AbsRscLayerObject<RSC> getRscLayerObject()
     {
         return rscData;
     }

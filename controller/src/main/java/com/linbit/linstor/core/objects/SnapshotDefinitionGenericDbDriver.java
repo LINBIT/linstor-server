@@ -15,6 +15,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
+@Deprecated
 public class SnapshotDefinitionGenericDbDriver implements SnapshotDefinitionDatabaseDriver
 {
     private static final String TBL_SNAPSHOT_DFN = DbConstants.TBL_SNAPSHOT_DEFINITIONS;
@@ -77,11 +80,13 @@ public class SnapshotDefinitionGenericDbDriver implements SnapshotDefinitionData
     private final FlagDriver flagsDriver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
+    private final ObjectProtectionDatabaseDriver objProtDriver;
 
     @Inject
     public SnapshotDefinitionGenericDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
+        ObjectProtectionDatabaseDriver objProtDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
@@ -89,6 +94,7 @@ public class SnapshotDefinitionGenericDbDriver implements SnapshotDefinitionData
     {
         dbCtx = accCtx;
         errorReporter = errorReporterRef;
+        objProtDriver = objProtDriverRef;
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
@@ -140,6 +146,7 @@ public class SnapshotDefinitionGenericDbDriver implements SnapshotDefinitionData
         try {
             snapshotDfn = new SnapshotDefinition(
                 java.util.UUID.fromString(resultSet.getString(SD_UUID)),
+                getObjectProtection(resDfn.getName(), snapshotName),
                 resDfn,
                 snapshotName,
                 resultSet.getLong(SD_FLAGS),
@@ -148,7 +155,8 @@ public class SnapshotDefinitionGenericDbDriver implements SnapshotDefinitionData
                 propsContainerFactory,
                 transMgrProvider,
                 snapshotVlmDfnMap,
-                snapshotMap
+                snapshotMap,
+                new TreeMap<>()
             );
             retPair = new Pair<>(snapshotDfn, new SnapshotDefinitionInitMaps(snapshotMap, snapshotVlmDfnMap));
 
@@ -162,6 +170,24 @@ public class SnapshotDefinitionGenericDbDriver implements SnapshotDefinitionData
         return retPair;
     }
 
+
+    private ObjectProtection getObjectProtection(ResourceName resourceName, SnapshotName snapName)
+        throws DatabaseException, ImplementationError
+    {
+        ObjectProtection objProt = objProtDriver.loadObjectProtection(
+            ObjectProtection.buildPath(resourceName, snapName),
+            false // no need to log a warning, as we would fail then anyways
+        );
+        if (objProt == null)
+        {
+            throw new ImplementationError(
+                "ResourceDefinition's DB entry exists, but is missing an entry in ObjProt table! " +
+                    getId(resourceName.displayValue, snapName),
+                null
+            );
+        }
+        return objProt;
+    }
 
     public Map<SnapshotDefinition, SnapshotDefinition.InitMaps> loadAll(
         Map<ResourceName, ? extends ResourceDefinition> rscDfnMap

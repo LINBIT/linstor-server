@@ -52,7 +52,7 @@ public class ResourceConnectionSatelliteFactory
 
         try
         {
-            rscConData = sourceResource.getResourceConnection(accCtx, targetResource);
+            rscConData = sourceResource.getAbsResourceConnection(accCtx, targetResource);
 
             if (rscConData == null)
             {
@@ -68,8 +68,8 @@ public class ResourceConnectionSatelliteFactory
                     transMgrProvider,
                     StateFlagsBits.getMask(initFlags)
                 );
-                sourceResource.setResourceConnection(accCtx, rscConData);
-                targetResource.setResourceConnection(accCtx, rscConData);
+                sourceResource.setAbsResourceConnection(accCtx, rscConData);
+                targetResource.setAbsResourceConnection(accCtx, rscConData);
             }
         }
         catch (Exception exc)

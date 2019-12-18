@@ -17,8 +17,8 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeGenericDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeGenericDbDriver;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -193,7 +193,7 @@ public class VolumeGenericDbDriverTest extends GenericDbBase
         assertNotNull(volData.getFlags());
         assertTrue(volData.getFlags().isSet(SYS_CTX, Volume.Flags.DELETE));
         assertNotNull(volData.getProps(SYS_CTX));
-        assertEquals(res, volData.getResource());
+        assertEquals(res, volData.getAbsResource());
         assertEquals(resDfn, volData.getResourceDefinition());
         assertEquals(volDfn, volData.getVolumeDefinition());
 
@@ -260,7 +260,7 @@ public class VolumeGenericDbDriverTest extends GenericDbBase
         volDfn.putVolume(SYS_CTX, vol);
         res.putVolume(SYS_CTX, vol);
 
-        Volume loadedVol = (Volume) res.getVolume(volDfn.getVolumeNumber());
+        Volume loadedVol = res.getVolume(volDfn.getVolumeNumber());
         checkLoaded(loadedVol, uuid);
     }
 
@@ -389,7 +389,7 @@ public class VolumeGenericDbDriverTest extends GenericDbBase
         assertNotNull(loadedVol.getFlags());
         assertTrue(loadedVol.getFlags().isSet(SYS_CTX, Volume.Flags.DELETE));
         assertNotNull(loadedVol.getProps(SYS_CTX));
-        assertEquals(res.getDefinition().getName(), loadedVol.getResource().getDefinition().getName());
+        assertEquals(res.getDefinition().getName(), loadedVol.getAbsResource().getDefinition().getName());
         assertEquals(volDfn.getVolumeNumber(), loadedVol.getVolumeDefinition().getVolumeNumber());
         assertEquals(volDfn.getVolumeSize(SYS_CTX), loadedVol.getVolumeDefinition().getVolumeSize(SYS_CTX));
         assertEquals(volDfn.getUuid(), loadedVol.getVolumeDefinition().getUuid());

@@ -1,10 +1,10 @@
 package com.linbit.linstor.storage.interfaces.layers.luks;
 
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.core.objects.AbsResource;
 
 /**
  *  Marker interface
  */
-public interface LuksRscObject extends RscLayerObject
+public interface LuksRscObject<RSC extends AbsResource<RSC>>
 {
 }

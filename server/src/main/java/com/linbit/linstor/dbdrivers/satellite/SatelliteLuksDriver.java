@@ -25,33 +25,33 @@ public class SatelliteLuksDriver implements LuksLayerDatabaseDriver
     }
 
     @Override
-    public void persist(LuksRscData luksRscDataRef)
+    public void persist(LuksRscData<?> luksRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(LuksRscData luksRscDataRef)
+    public void delete(LuksRscData<?> luksRscDataRef)
     {
         // no-op
     }
 
     @Override
-    public void persist(LuksVlmData luksVlmDataRef)
+    public void persist(LuksVlmData<?> luksVlmDataRef)
     {
         // no-op
     }
 
     @Override
-    public void delete(LuksVlmData luksVlmDataRef)
+    public void delete(LuksVlmData<?> luksVlmDataRef)
     {
         // no-op
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<LuksVlmData, byte[]> getVlmEncryptedPasswordDriver()
+    public SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]> getVlmEncryptedPasswordDriver()
     {
-        return (SingleColumnDatabaseDriver<LuksVlmData, byte[]>) noopSingleColDriver;
+        return (SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]>) noopSingleColDriver;
     }
 }

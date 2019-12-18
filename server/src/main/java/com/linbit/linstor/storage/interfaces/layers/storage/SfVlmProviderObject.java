@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.interfaces.layers.storage;
 
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 
@@ -9,7 +10,7 @@ import com.linbit.linstor.storage.interfaces.layers.State;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface SfVlmProviderObject extends VlmProviderObject
+public interface SfVlmProviderObject<RSC extends AbsResource<RSC>> extends VlmProviderObject<RSC>
 {
     /** This state should never be seen by user, as it should only be used to close the vlmDiskStateEvent-stream */
     State INTERNAL_REMOVE = new State(true, true, "Removing");

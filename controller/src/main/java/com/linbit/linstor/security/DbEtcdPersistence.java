@@ -224,7 +224,7 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
         List<TypeEnforcementRulePojo> ret = new ArrayList<>();
         for (String composedPk : composedPkList)
         {
-            String[] pk = composedPk.split(EtcdUtils.PK_DELIMITER);
+            String[] pk = EtcdUtils.splitPks(composedPk, false);
             ret.add(
                 new TypeEnforcementRulePojo(
                     pk[0],

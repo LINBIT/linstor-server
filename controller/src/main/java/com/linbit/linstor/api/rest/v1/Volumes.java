@@ -2,9 +2,11 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
@@ -28,6 +30,8 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -203,30 +207,30 @@ public class Volumes
 
     @PUT
     @Path("{vlmNr}")
-    public Response modifyVolume(
+    public void modifyVolume(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("rscName") String rscName,
         @PathParam("vlmNr") Integer vlmNr,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_RSC, request), () ->
-        {
-            JsonGenTypes.VolumeModify modifyData = objectMapper
-                .readValue(jsonData, JsonGenTypes.VolumeModify.class);
-            return ApiCallRcConverter.toResponse(
-                ctrlApiCallHandler.modifyVlm(
-                    null,
-                    nodeName,
-                    rscName,
-                    vlmNr,
-                    modifyData.override_props,
-                    new HashSet<>(modifyData.delete_props),
-                    new HashSet<>(modifyData.delete_namespaces)
-                ),
-                Response.Status.OK
-            );
-        }, true);
+        JsonGenTypes.VolumeModify modifyData = objectMapper
+            .readValue(jsonData, JsonGenTypes.VolumeModify.class);
+
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyVlm(
+            null,
+            nodeName,
+            rscName,
+            vlmNr,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces)
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 }

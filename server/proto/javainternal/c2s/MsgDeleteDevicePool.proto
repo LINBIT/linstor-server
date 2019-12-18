@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+import "common/ProviderType.proto";
+
+message MsgDeleteDevicePool {
+    repeated string device_paths = 1;
+    common.ProviderType provider_kind = 2;
+    string pool_name = 3;
+}

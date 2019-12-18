@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.0.10";
+    public static final String REST_API_VERSION = "1.0.12";
 
     /**
      * Common api reply structure
@@ -63,6 +63,10 @@ public class JsonGenTypes
          * unique object id
          */
         public String uuid;
+        public List<String> storage_providers = Collections.emptyList();
+        public List<String> resource_layers = Collections.emptyList();
+        public Map<String, List<String>> unsupported_providers = Collections.emptyMap();
+        public Map<String, List<String>> unsupported_layers = Collections.emptyMap();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -318,6 +322,12 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class WritecacheResource
+    {
+        public List<WritecacheVolume> writecache_volumes = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ResourceLayer
     {
         public List<ResourceLayer> children = Collections.emptyList();
@@ -327,6 +337,7 @@ public class JsonGenTypes
         public LUKSResource luks;
         public StorageResource storage;
         public NVMEResource nvme;
+        public WritecacheResource writecache;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -455,6 +466,26 @@ public class JsonGenTypes
          * block device used by nvme
          */
         public String backing_device;
+        public Long allocated_size_kib;
+        public Long usable_size_kib;
+        /**
+         * String describing current volume state
+         */
+        public String disk_state;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class WritecacheVolume
+    {
+        public Integer volume_number;
+        /**
+         * block device path
+         */
+        public String device_path;
+        /**
+         * block device path used as cache device
+         */
+        public String device_path_cache;
         public Long allocated_size_kib;
         public Long usable_size_kib;
         /**
@@ -790,6 +821,19 @@ public class JsonGenTypes
         public String wwn;
     }
 
+    /**
+     * This structured is used for create physical-storage
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class PhysicalStorageStoragePoolCreate
+    {
+        /**
+         * Name of the linstor storage pool
+         */
+        public String name;
+        public Map<String, String> props = Collections.emptyMap();
+    }
+
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PhysicalStorageCreate
     {
@@ -803,6 +847,10 @@ public class JsonGenTypes
         public boolean vdo_enable = false;
         public int vdo_slab_size_kib = 0;
         public int vdo_logical_size_kib = 0;
+        /**
+         * If specified a linstor storage pool will also be created using this device pool
+         */
+        public PhysicalStorageStoragePoolCreate with_storage_pool;
     }
 
     private JsonGenTypes()

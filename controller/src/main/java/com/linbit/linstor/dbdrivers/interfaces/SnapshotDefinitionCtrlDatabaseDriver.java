@@ -10,7 +10,7 @@ import java.util.Map;
 public interface SnapshotDefinitionCtrlDatabaseDriver extends SnapshotDefinitionDatabaseDriver,
     ControllerDatabaseDriver<SnapshotDefinition,
         SnapshotDefinition.InitMaps,
-        Map<ResourceName, ? extends ResourceDefinition>>
+        Map<ResourceName, ResourceDefinition>>
 {
 
 }

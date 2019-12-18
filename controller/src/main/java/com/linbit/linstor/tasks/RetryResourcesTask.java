@@ -132,7 +132,7 @@ public class RetryResourcesTask implements Task
             {
                 try
                 {
-                    Node node = rsc.getAssignedNode();
+                    Node node = rsc.getNode();
                     if (!node.isDeleted())
                     {
                         Peer peer = node.getPeer(sysCtx);

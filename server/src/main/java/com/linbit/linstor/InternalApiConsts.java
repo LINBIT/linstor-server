@@ -14,6 +14,8 @@ public class InternalApiConsts
     public static final String API_OTHER_CONTROLLER     = "OtherController"; // old controller was replaced
     // with a new controller. Indicates that the old controller should not try to reconnect to satellite
 
+    public static final String API_NOTIFY_NODE_APPLIED    = "NotifyNodeApplied";
+    public static final String API_NOTIFY_NODE_FAILED    = "NotifyNodeFailed";
     public static final String API_CHANGED_NODE       = "ChangedNode";
     public static final String API_REQUEST_NODE       = "RequestNode";
     public static final String API_APPLY_NODE         = "ApplyNode";
@@ -55,10 +57,12 @@ public class InternalApiConsts
     public static final String API_LIST_PHYSICAL_DEVICES = "ListPhysicalDevices";
     public static final String API_ANSWER_PHYSICAL_DEVICES = "AnswerPhysicalDevices";
     public static final String API_CREATE_DEVICE_POOL = "CreateDevicePool";
+    public static final String API_DELETE_DEVICE_POOL = "DeleteDevicePool";
 
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
+    public static final String PROP_NVME_TARGET_NODE_NAME = "NvmeTargetNodeName";
 
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;

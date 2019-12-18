@@ -51,7 +51,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
@@ -98,7 +98,7 @@ public class ConfFileBuilderTest
     private ObjectProtection dummyObjectProtection;
     private WhitelistProps whitelistProps;
 
-    private DrbdRscData localRscData, peerRscData;
+    private DrbdRscData<Resource> localRscData, peerRscData;
 
     private ConfFileBuilder confFileBuilder;
     private ResourceConnection rscConn;
@@ -139,17 +139,17 @@ public class ConfFileBuilderTest
 
         localRscData = makeMockResource(101, "alpha", "1.2.3.4", false, false, false);
         peerRscData = makeMockResource(202, "bravo", "5.6.7.8", false, false, false);
-        when(localRscData.getResource().getAssignedNode().getNodeConnection(
-                accessContext, peerRscData.getResource().getAssignedNode()))
+        when(localRscData.getAbsResource().getNode().getNodeConnection(
+                accessContext, peerRscData.getAbsResource().getNode()))
             .thenReturn(nodeConn);
-        when(peerRscData.getResource().getAssignedNode().getNodeConnection(
-                accessContext, localRscData.getResource().getAssignedNode()))
+        when(peerRscData.getAbsResource().getNode().getNodeConnection(
+                accessContext, localRscData.getAbsResource().getNode()))
             .thenReturn(nodeConn);
         when(rscConn.getProps(accessContext)).thenReturn(props);
         when(nodeConn.getProps(accessContext)).thenReturn(props);
-        when(localRscData.getResource().getResourceConnection(accessContext, peerRscData.getResource()))
+        when(localRscData.getAbsResource().getAbsResourceConnection(accessContext, peerRscData.getAbsResource()))
             .thenReturn(rscConn);
-        when(peerRscData.getResource().getResourceConnection(accessContext, localRscData.getResource()))
+        when(peerRscData.getAbsResource().getAbsResourceConnection(accessContext, localRscData.getAbsResource()))
             .thenReturn(rscConn);
 
     }
@@ -196,7 +196,7 @@ public class ConfFileBuilderTest
     @Test(expected = ImplementationError.class)
     public void testRscDfnNull() throws Exception
     {
-        when(localRscData.getResource().getDefinition()).thenReturn(null);
+        when(localRscData.getAbsResource().getDefinition()).thenReturn(null);
         confFileBuilder = new ConfFileBuilder(
                 errorReporter,
                 accessContext,
@@ -318,7 +318,7 @@ public class ConfFileBuilderTest
     }
 */
     @SuppressWarnings("checkstyle:magicnumber")
-    private DrbdRscData makeMockResource(
+    private DrbdRscData<Resource> makeMockResource(
             final int volumeNumber,
             final String nodeName,
             final String ipAddr,
@@ -365,7 +365,8 @@ public class ConfFileBuilderTest
         when(volume.getVolumeDefinition()).thenReturn(volumeDefinition);
         when(volume.getResourceDefinition()).thenReturn(resourceDefinition);
         when(volume.getProps(accessContext)).thenReturn(vlmProps);
-        when(volume.getResource()).thenReturn(resource);
+        when(volume.getAbsResource()).thenReturn(resource);
+        when(volume.getVolumeNumber()).thenReturn(new VolumeNumber(volumeNumber));
 
         when(netInterface.getAddress(any(AccessContext.class)))
                 .thenReturn(new LsIpAddress(ipAddr));
@@ -388,9 +389,13 @@ public class ConfFileBuilderTest
 
         when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.DELETE)))
             .thenReturn(!resourceDeleted);
-        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.DISKLESS)))
+        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.DRBD_DISKLESS)))
             .thenReturn(!diskless);
-        when(rscStateFlags.isSet(any(AccessContext.class), eq(Resource.Flags.DISKLESS)))
+        when(rscStateFlags.isSet(any(AccessContext.class), eq(Resource.Flags.DRBD_DISKLESS)))
+            .thenReturn(diskless);
+        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.NVME_INITIATOR)))
+            .thenReturn(!diskless);
+        when(rscStateFlags.isSet(any(AccessContext.class), eq(Resource.Flags.NVME_INITIATOR)))
             .thenReturn(diskless);
 
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
@@ -409,21 +414,23 @@ public class ConfFileBuilderTest
 
         when(resource.getObjProt()).thenReturn(dummyObjectProtection);
         when(resource.getDefinition()).thenReturn(resourceDefinition);
+        when(resource.getResourceDefinition()).thenReturn(resourceDefinition);
         when(resource.getStateFlags()).thenReturn(rscStateFlags);
         when(rscConn.getStateFlags()).thenReturn(rscConnStateFlags);
-        when(resource.getAssignedNode()).thenReturn(assignedNode);
+        when(resource.getNode()).thenReturn(assignedNode);
         when(resource.iterateVolumes()).thenAnswer(makeIteratorAnswer(volume));
         when(resource.streamVolumes()).thenAnswer(makeStreamAnswer(volume));
         when(resource.getProps(accessContext)).thenReturn(rscProps);
-        when(resource.disklessForPeers(accessContext)).thenReturn(diskless);
+        when(resource.disklessForDrbdPeers(accessContext)).thenReturn(diskless);
 
         when(assignedNode.getProps(accessContext)).thenReturn(nodeProps);
 
 
-        List<DrbdRscData> rscDataList = new ArrayList<>();
+        List<DrbdRscData<Resource>> rscDataList = new ArrayList<>();
 
-        DrbdRscDfnData rscDfnData = new DrbdRscDfnData(
-            resourceDefinition,
+        DrbdRscDfnData<Resource> rscDfnData = new DrbdRscDfnData<>(
+            resourceDefinition.getName(),
+            null,
             "",
             InternalApiConsts.DEFAULT_PEER_COUNT,
             InternalApiConsts.DEFAULT_AL_STRIPES,
@@ -439,13 +446,13 @@ public class ConfFileBuilderTest
             transMgrProvider
         );
 
-        Map<VolumeNumber, DrbdVlmDfnData> drbdVlmDfnMap = new HashMap<>();
-        DrbdRscData rscData;
+        Map<VolumeNumber, DrbdVlmDfnData<Resource>> drbdVlmDfnMap = new HashMap<>();
+        DrbdRscData<Resource> rscData;
         {
-            Set<RscLayerObject> drbdRscDataChildren = new HashSet<>();
-            Map<VolumeNumber, DrbdVlmData> drbdRscDataVlmMap = new HashMap<>();
+            Set<AbsRscLayerObject<Resource>> drbdRscDataChildren = new HashSet<>();
+            Map<VolumeNumber, DrbdVlmData<Resource>> drbdRscDataVlmMap = new HashMap<>();
 
-            rscData = new DrbdRscData(
+            rscData = new DrbdRscData<>(
                 idGenerator.incrementAndGet(),
                 resource,
                 null,
@@ -457,7 +464,7 @@ public class ConfFileBuilderTest
                 null, // copied from rscDfnData
                 null, // copied from rscDfnData
                 null, // copied from rscDfnData
-                resource.isDiskless(accessContext) ?
+                resource.isDrbdDiskless(accessContext) ?
                     DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue : 0,
                 DRBD_LAYER_NO_OP_DRIVER,
                 transObjFactory,
@@ -465,8 +472,8 @@ public class ConfFileBuilderTest
             );
             rscDataList.add(rscData);
 
-            Map<VolumeNumber, VlmProviderObject> vlmProviderMap = new HashMap<>();
-            StorageRscData storRscData = new StorageRscData(
+            Map<VolumeNumber, VlmProviderObject<Resource>> vlmProviderMap = new HashMap<>();
+            StorageRscData<Resource> storRscData = new StorageRscData<>(
                 -1, // satellite does not care about rscLayerIds (database index only)
                 rscData,
                 resource,
@@ -480,9 +487,12 @@ public class ConfFileBuilderTest
             {
                 VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
 
-                DrbdVlmDfnData drbdVlmDfnData = new DrbdVlmDfnData(
+                DrbdVlmDfnData<Resource> drbdVlmDfnData = new DrbdVlmDfnData<>(
                     vlm.getVolumeDefinition(),
+                    vlm.getResourceDefinition().getName(),
+                    null,
                     "",
+                    vlm.getVolumeNumber(),
                     99,
                     mockedMinorPool,
                     rscDfnData,
@@ -491,7 +501,7 @@ public class ConfFileBuilderTest
                 );
                 drbdVlmDfnMap.put(vlmNr, drbdVlmDfnData);
 
-                DrbdVlmData drbdVlmData = new DrbdVlmData(
+                DrbdVlmData<Resource> drbdVlmData = new DrbdVlmData<>(
                     vlm,
                     rscData,
                     drbdVlmDfnData,
@@ -504,7 +514,7 @@ public class ConfFileBuilderTest
 
                 vlmProviderMap.put(
                     vlmNr,
-                    new LvmData(
+                    new LvmData<>(
                         vlm,
                         storRscData,
                         storPool,
@@ -623,7 +633,7 @@ public class ConfFileBuilderTest
     public void testNoConnectionBetweenDiskless() throws Exception
     {
         {
-            List<DrbdRscData> peerRscs = new ArrayList<>();
+            List<DrbdRscData<Resource>> peerRscs = new ArrayList<>();
             peerRscs.add(makeMockResource(0, "testNode1", "5.6.7.8", false, false, true));
             peerRscs.add(makeMockResource(0, "testNode2", "9.10.11.12", false, false, true));
             String confFileNormal = new ConfFileBuilder(
@@ -638,7 +648,7 @@ public class ConfFileBuilderTest
         }
 
         {
-            List<DrbdRscData> peerRscs = new ArrayList<>();
+            List<DrbdRscData<Resource>> peerRscs = new ArrayList<>();
             peerRscs.add(makeMockResource(0, "testNode1", "5.6.7.8", false, false, false));
             peerRscs.add(makeMockResource(0, "testNode2", "9.10.11.12", false, false, true));
             String confFileNormal = new ConfFileBuilder(
@@ -653,7 +663,7 @@ public class ConfFileBuilderTest
         }
 
         {
-            List<DrbdRscData> peerRscs = new ArrayList<>();
+            List<DrbdRscData<Resource>> peerRscs = new ArrayList<>();
             peerRscs.add(makeMockResource(0, "testNode1", "5.6.7.8", false, false, false));
             peerRscs.add(makeMockResource(0, "testNode2", "9.10.11.12", false, false, false));
             String confFileNormal = new ConfFileBuilder(

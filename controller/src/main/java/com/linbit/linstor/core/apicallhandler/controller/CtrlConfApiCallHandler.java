@@ -49,6 +49,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -394,33 +395,50 @@ public class CtrlConfApiCallHandler
             {
                 fullKey = key;
             }
-            String oldValue = systemConfRepository.removeCtrlProp(peerAccCtx.get(), key, namespace);
-            systemConfRepository.removeStltProp(peerAccCtx.get(), key, namespace);
-
-            if (oldValue != null)
-            {
-                switch (fullKey)
-                {
-                    case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
-                        tcpPortPool.reloadRange();
-                        break;
-                    case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
-                        minorNrPool.reloadRange();
-                        break;
-                    // TODO: check for other properties
-                    default:
-                        // ignore - for now
-                }
-            }
-
-            transMgrProvider.get().commit();
-
-            updateSatelliteConf();
-
-            apiCallRc.addEntry(
-                "Successfully deleted property '" + fullKey + "'",
-                ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_DEL | ApiConsts.DELETED
+            boolean isPropWhitelisted = whitelistProps.isAllowed(
+                LinStorObject.CONTROLLER,
+                Collections.singletonList(ApiConsts.NAMESPC_AUXILIARY + "/"),
+                fullKey,
+                null,
+                false
             );
+            if (isPropWhitelisted)
+            {
+                String oldValue = systemConfRepository.removeCtrlProp(peerAccCtx.get(), key, namespace);
+                systemConfRepository.removeStltProp(peerAccCtx.get(), key, namespace);
+
+                if (oldValue != null)
+                {
+                    switch (fullKey)
+                    {
+                        case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
+                            tcpPortPool.reloadRange();
+                            break;
+                        case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
+                            minorNrPool.reloadRange();
+                            break;
+                        // TODO: check for other properties
+                        default:
+                            // ignore - for now
+                    }
+                }
+
+                transMgrProvider.get().commit();
+
+                updateSatelliteConf();
+
+                apiCallRc.addEntry(
+                    "Successfully deleted property '" + fullKey + "'",
+                    ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_DEL | ApiConsts.DELETED
+                );
+            }
+            else
+            {
+                ApiCallRcEntry entry = new ApiCallRcEntry();
+                entry.setMessage("The key '" + fullKey + "' is not whitelisted");
+                entry.setReturnCode(ApiConsts.FAIL_INVLD_PROP | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_DEL);
+                apiCallRc.addEntry(entry);
+            }
         }
         catch (Exception exc)
         {
@@ -704,6 +722,25 @@ public class CtrlConfApiCallHandler
             );
         }
         return apiCallRc;
+    }
+
+    boolean passphraseExists() throws AccessDeniedException
+    {
+        Props namespace = systemConfRepository.getCtrlConfForView(peerAccCtx.get()).getNamespace(NAMESPACE_ENCRYPTED)
+            .orElse(null);
+
+        boolean exists = false;
+        if (namespace != null)
+        {
+            String masterHashStr = namespace.getProp(KEY_CRYPT_HASH);
+            String encryptedMasterKeyStr = namespace.getProp(KEY_CRYPT_KEY);
+            String passphraseSaltStr = namespace.getProp(KEY_PASSPHRASE_SALT);
+
+            exists = masterHashStr != null &&
+                encryptedMasterKeyStr != null &&
+                passphraseSaltStr != null;
+        }
+        return exists;
     }
 
     private void setPassphraseImpl(String newPassphrase, byte[] masterKey)

@@ -3,6 +3,9 @@ package com.linbit.linstor.debug;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
@@ -158,22 +161,36 @@ public class CmdDisplayStorPool extends BaseDebugCmd
                         .leaf("Node volatile UUID: %s", UuidUtils.dbgInstanceIdString(storPool.getNode()))
                         .leaf("Driver name: %s", storPool.getDeviceProviderKind());
 
-                    Collection<VlmProviderObject> vlmLayerDataCollection = storPool.getVolumes(accCtx);
+                    Collection<VlmProviderObject<Resource>> vlmLayerDataCollection = storPool
+                        .getVolumes(accCtx);
+                    Collection<VlmProviderObject<Snapshot>> snapVlmLayerDataCollection = storPool
+                        .getSnapVolumes(accCtx);
 
-                    treeBuilder
-                        .branch("Volumes (count: %d)", vlmLayerDataCollection.size());
+                    treeBuilder.branch("Volumes (count: %d)", vlmLayerDataCollection.size());
 
-                    for (VlmProviderObject vlmLayerData : vlmLayerDataCollection)
+                    for (VlmProviderObject<Resource> vlmLayerData : vlmLayerDataCollection)
                     {
-                        Volume vlm = vlmLayerData.getVolume();
+                        Volume vlm = (Volume) vlmLayerData.getVolume();
                         treeBuilder
                             .branch("Volume %s", vlm.getUuid().toString().toUpperCase())
                             .leaf("Flags: %016X", vlm.getFlags().getFlagsBits(accCtx))
-                            .leaf("Volume number: %s", vlm.getVolumeDefinition().getVolumeNumber())
+                            .leaf("Volume number: %s", vlm.getVolumeNumber())
+                            .endBranch();
+                    }
+
+                    treeBuilder.branch("Snapshots (count: %d)", snapVlmLayerDataCollection.size());
+
+                    for (VlmProviderObject<Snapshot> snapVlmData : snapVlmLayerDataCollection)
+                    {
+                        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
+                        treeBuilder
+                            .branch("SnapshotVolume %s", snapVlm.getUuid().toString().toUpperCase())
+                            .leaf("Volume number: %s", snapVlm.getVolumeNumber())
                             .endBranch();
                     }
 
                     treeBuilder
+                        .endBranch()
                         .endBranch()
                         .endBranch();
                 }

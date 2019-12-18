@@ -10,6 +10,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.SnapshotDefinition.InitMaps;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
@@ -19,31 +20,38 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotDefinitions.RESOURCE_NAME;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotDefinitions.SNAPSHOT_DSP_NAME;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotDefinitions.SNAPSHOT_FLAGS;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotDefinitions.SNAPSHOT_NAME;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SnapshotDefinitions.UUID;
+import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.LAYER_STACK;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.PARENT_UUID;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_DSP_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_EXTERNAL_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_FLAGS;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_GROUP_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_DSP_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.UUID;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
 public class SnapshotDefinitionDbDriver
-    extends
-    AbsDatabaseDriver<SnapshotDefinition,
+    extends AbsDatabaseDriver<SnapshotDefinition,
         SnapshotDefinition.InitMaps,
-        Map<ResourceName, ? extends ResourceDefinition>>
+        Map<ResourceName, ResourceDefinition>>
     implements SnapshotDefinitionCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
@@ -64,7 +72,7 @@ public class SnapshotDefinitionDbDriver
         TransactionObjectFactory transObjFactoryRef
     )
     {
-        super(errorReporterRef, GeneratedDatabaseTables.SNAPSHOT_DEFINITIONS, dbEngineRef, objProtDriverRef);
+        super(errorReporterRef, GeneratedDatabaseTables.RESOURCE_DEFINITIONS, dbEngineRef, objProtDriverRef);
 
         dbCtx = dbCtxRef;
         transMgrProvider = transMgrProviderRef;
@@ -75,9 +83,17 @@ public class SnapshotDefinitionDbDriver
         setColumnSetter(RESOURCE_NAME, snapDfn -> snapDfn.getResourceName().value);
         setColumnSetter(SNAPSHOT_NAME, snapDfn -> snapDfn.getName().value);
         setColumnSetter(SNAPSHOT_DSP_NAME, snapDfn -> snapDfn.getName().displayValue);
-        setColumnSetter(SNAPSHOT_FLAGS, snapDfn -> snapDfn.getFlags().getFlagsBits(dbCtxRef));
+        setColumnSetter(RESOURCE_FLAGS, snapDfn -> snapDfn.getFlags().getFlagsBits(dbCtxRef));
+        setColumnSetter(
+            RESOURCE_GROUP_NAME, snapDfn -> snapDfn.getResourceDefinition().getResourceGroup().getName().value
+        );
+        setColumnSetter(PARENT_UUID, snapDfn -> snapDfn.getResourceDefinition().getUuid().toString());
 
-        flagsDriver = generateFlagDriver(SNAPSHOT_FLAGS, SnapshotDefinition.Flags.class);
+        setColumnSetter(RESOURCE_EXTERNAL_NAME, ignored -> null);
+        setColumnSetter(RESOURCE_DSP_NAME, ignored -> null);
+        setColumnSetter(LAYER_STACK, ignored -> toString(Collections.emptyList()));
+
+        flagsDriver = generateFlagDriver(RESOURCE_FLAGS, SnapshotDefinition.Flags.class);
     }
 
     @Override
@@ -89,41 +105,57 @@ public class SnapshotDefinitionDbDriver
     @Override
     protected Pair<SnapshotDefinition, SnapshotDefinition.InitMaps> load(
         RawParameters raw,
-        Map<ResourceName, ? extends ResourceDefinition> rscDfnMap
+        Map<ResourceName, ResourceDefinition> rscDfnMap
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        final Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMap = new TreeMap<>();
-        final Map<NodeName, Snapshot> snapshotMap = new TreeMap<>();
-        final long flags;
-
-        switch (getDbType())
+        final Pair<SnapshotDefinition, InitMaps> ret;
+        final String snapNameStr = raw.get(SNAPSHOT_DSP_NAME);
+        if (snapNameStr.equals(DFLT_SNAP_NAME_FOR_RSC))
         {
-            case ETCD:
-                flags = Long.parseLong(raw.get(SNAPSHOT_FLAGS));
-                break;
-            case SQL:
-                flags = raw.get(SNAPSHOT_FLAGS);
-                break;
-            default:
-                throw new ImplementationError("Unknown database type: " + getDbType());
+            // this entry is a ResourceDefinition, not a SnapshotDefinition
+            ret = null;
         }
+        else
+        {
+            final Map<VolumeNumber, SnapshotVolumeDefinition> snapshotVlmDfnMap = new TreeMap<>();
+            final Map<NodeName, Snapshot> snapshotMap = new TreeMap<>();
+            final long flags;
 
-        return new Pair<>(
-            new SnapshotDefinition(
-                raw.build(UUID, java.util.UUID::fromString),
-                rscDfnMap.get(raw.build(RESOURCE_NAME, ResourceName::new)),
-                raw.build(SNAPSHOT_DSP_NAME, SnapshotName::new),
-                flags,
-                this,
-                transObjFactory,
-                propsContainerFactory,
-                transMgrProvider,
-                snapshotVlmDfnMap,
-                snapshotMap
-            ),
-            new InitMapsImpl(snapshotMap, snapshotVlmDfnMap)
-        );
+            final ResourceName rscName = raw.build(RESOURCE_NAME, ResourceName::new);
+            final SnapshotName snapName = raw.build(SNAPSHOT_DSP_NAME, SnapshotName::new);
+
+            switch (getDbType())
+            {
+                case ETCD:
+                    flags = Long.parseLong(raw.get(RESOURCE_FLAGS));
+                    break;
+                case SQL:
+                    flags = raw.get(RESOURCE_FLAGS);
+                    break;
+                default:
+                    throw new ImplementationError("Unknown database type: " + getDbType());
+            }
+
+            ret = new Pair<>(
+                new SnapshotDefinition(
+                    raw.build(UUID, java.util.UUID::fromString),
+                    getObjectProtection(ObjectProtection.buildPath(rscName, snapName)),
+                    rscDfnMap.get(rscName),
+                    snapName,
+                    flags,
+                    this,
+                    transObjFactory,
+                    propsContainerFactory,
+                    transMgrProvider,
+                    snapshotVlmDfnMap,
+                    snapshotMap,
+                    new TreeMap<>()
+                ),
+                new InitMapsImpl(snapshotMap, snapshotVlmDfnMap)
+            );
+        }
+        return ret;
     }
 
     @Override

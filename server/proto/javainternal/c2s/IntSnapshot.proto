@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.c2s;
 
+import "common/RscLayerData.proto";
 import "common/RscGrp.proto";
 
 // Internal message containing an in-progress snapshot
@@ -26,6 +27,7 @@ message IntSnapshot
     bool                              suspend_resource  = 15;
     bool                              take_snapshot     = 16;
     common.RscGrp                     rsc_grp           = 21;
+    common.RscLayerData               layer_object      = 22;
 }
 
 message SnapshotVlmDfn
@@ -41,6 +43,4 @@ message SnapshotVlm
     string snapshot_vlm_uuid = 1;
     string snapshot_vlm_dfn_uuid = 2;
     sint32 vlm_nr = 3;
-    string stor_pool_uuid = 4;
-    string stor_pool_name = 5;
 }

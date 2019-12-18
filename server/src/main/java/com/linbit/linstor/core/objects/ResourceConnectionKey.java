@@ -25,8 +25,8 @@ public class ResourceConnectionKey
 
     public ResourceConnectionKey(final Resource resourceA, final Resource resourceB)
     {
-        final NodeName rscNameA = resourceA.getAssignedNode().getName();
-        final NodeName rscNameB = resourceB.getAssignedNode().getName();
+        final NodeName rscNameA = resourceA.getNode().getName();
+        final NodeName rscNameB = resourceB.getNode().getName();
 
         if (rscNameA.compareTo(rscNameB) < 0)
         {

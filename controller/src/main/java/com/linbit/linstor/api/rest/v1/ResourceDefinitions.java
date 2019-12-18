@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceDefinition;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
@@ -25,6 +26,8 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -146,35 +149,37 @@ public class ResourceDefinitions
                 rscDfnCreate.drbd_peer_slots == null ? null : rscDfnCreate.drbd_peer_slots.shortValue(),
                 rscDfnCreate.resource_definition.resource_group_name
             );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{rscName}")
-    public Response modifyResourceDefinition(
+    public void modifyResourceDefinition(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request), () ->
-        {
-            JsonGenTypes.ResourceDefinitionModify modifyData =
-                objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionModify.class);
-            ApiCallRc apiCallRc = ctrlApiCallHandler.modifyRscDfn(
-                null,
-                rscName,
-                modifyData.drbd_port,
-                modifyData.override_props,
-                new HashSet<>(modifyData.delete_props),
-                new HashSet<>(modifyData.delete_namespaces),
-                modifyData.layer_stack,
-                modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue()
-            );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
-        }, true);
+        JsonGenTypes.ResourceDefinitionModify modifyData =
+            objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionModify.class);
+
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyRscDfn(
+            null,
+            rscName,
+            modifyData.drbd_port,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces),
+            modifyData.layer_stack,
+            modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue()
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE
@@ -187,6 +192,6 @@ public class ResourceDefinitions
         Flux<ApiCallRc> flux = ctrlRscDfnDeleteApiCallHandler.deleteResourceDefinition(rscName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_RSC_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 }

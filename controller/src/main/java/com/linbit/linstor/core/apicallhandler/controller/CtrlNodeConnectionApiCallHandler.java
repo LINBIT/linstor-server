@@ -16,9 +16,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeConnectionFactory;
-import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -28,6 +28,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -141,7 +142,7 @@ class CtrlNodeConnectionApiCallHandler
 
             ctrlPropsHelper.fillProperties(
                 LinStorObject.NODE_CONN, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.remove(LinStorObject.NODE_CONN, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

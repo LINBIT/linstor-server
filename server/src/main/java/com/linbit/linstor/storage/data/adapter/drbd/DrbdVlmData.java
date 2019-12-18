@@ -1,11 +1,13 @@
 package com.linbit.linstor.storage.data.adapter.drbd;
 
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -21,15 +23,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
+public class DrbdVlmData<RSC extends AbsResource<RSC>>
+    extends BaseTransactionObject implements DrbdVlmObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final Volume vlm;
-    private final DrbdRscData rscData;
-    private final DrbdVlmDfnData vlmDfnData;
+    private final AbsVolume<RSC> vlm;
+    private final DrbdRscData<RSC> rscData;
+    private final DrbdVlmDfnData<RSC> vlmDfnData;
 
     // persisted, serialized, ctrl and stlt
-    private final TransactionSimpleObject<DrbdVlmData, StorPool> externalMetaDataStorPool;
+    private final TransactionSimpleObject<DrbdVlmData<?>, StorPool> externalMetaDataStorPool;
 
     // not persisted, serialized, ctrl and stlt
     private long allocatedSize;
@@ -43,14 +46,14 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     private boolean checkMetaData;
     private boolean isMetaDataNew;
     private boolean hasDisk;
-    private final TransactionList<DrbdVlmData, State> states;
+    private final TransactionList<DrbdVlmData<RSC>, State> states;
     private Size sizeState;
     private String diskState;
 
     public DrbdVlmData(
-        Volume vlmRef,
-        DrbdRscData rscDataRef,
-        DrbdVlmDfnData vlmDfnDataRef,
+        AbsVolume<RSC> vlmRef,
+        DrbdRscData<RSC> rscDataRef,
+        DrbdVlmDfnData<RSC> vlmDfnDataRef,
         StorPool extMetaDataStorPoolRef,
         DrbdLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -174,7 +177,16 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
         }
         else
         {
-            metaDiskPath = getChildBySuffix(DrbdRscData.SUFFIX_META).getDevicePath();
+            VlmProviderObject<RSC> childVlm = getChildBySuffix(DrbdRscData.SUFFIX_META);
+            if (childVlm != null)
+            {
+                // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
+                metaDiskPath = childVlm.getDevicePath();
+            }
+            else
+            {
+                metaDiskPath = null;
+            }
         }
         return metaDiskPath;
     }
@@ -187,7 +199,14 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     @Override
     public String getBackingDevice()
     {
-        return getChildBySuffix(DrbdRscData.SUFFIX_DATA).getDevicePath();
+        VlmProviderObject<RSC> childBySuffix = getChildBySuffix(DrbdRscData.SUFFIX_DATA);
+        String devicePath = null;
+        if (childBySuffix != null)
+        {
+            // null when diskless
+            devicePath = childBySuffix.getDevicePath();
+        }
+        return devicePath;
     }
 
     @Override
@@ -252,19 +271,19 @@ public class DrbdVlmData extends BaseTransactionObject implements DrbdVlmObject
     }
 
     @Override
-    public Volume getVolume()
+    public AbsVolume<RSC> getVolume()
     {
         return vlm;
     }
 
     @Override
-    public DrbdVlmDfnData getVlmDfnLayerObject()
+    public DrbdVlmDfnData<RSC> getVlmDfnLayerObject()
     {
         return vlmDfnData;
     }
 
     @Override
-    public DrbdRscData getRscLayerObject()
+    public DrbdRscData<RSC> getRscLayerObject()
     {
         return rscData;
     }

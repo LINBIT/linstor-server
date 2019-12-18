@@ -20,11 +20,14 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
+import com.linbit.utils.Pair;
 
 import javax.inject.Provider;
 
@@ -32,6 +35,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public class SnapshotVolumeDefinition extends BaseTransactionObject
@@ -50,9 +55,6 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
 
     private final SnapshotDefinition snapshotDfn;
 
-    // DRBD volume number
-    private final VolumeNumber volumeNr;
-
     // Net volume size in kiB
     private final TransactionSimpleObject<SnapshotVolumeDefinition, Long> volumeSize;
 
@@ -68,32 +70,45 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
 
     private final TransactionSimpleObject<SnapshotVolumeDefinition, Boolean> deleted;
 
+    private final VolumeDefinition vlmDfn;
+    private final VolumeNumber vlmNr;
+
+    private final TransactionMap<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
+
+
     public SnapshotVolumeDefinition(
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
-        VolumeNumber volNr,
+        VolumeDefinition vlmDfnRef,
+        VolumeNumber vlmNrRef,
         long volSize,
         long initFlags,
         SnapshotVolumeDefinitionDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef,
-        Map<NodeName, SnapshotVolume> snapshotVlmMapRef
+        Map<NodeName, SnapshotVolume> snapshotVlmMapRef,
+        Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerDataMapRef
     )
         throws MdException, DatabaseException
     {
         super(transMgrProviderRef);
         VolumeDefinition.checkVolumeSize(volSize);
+        vlmDfn = vlmDfnRef;
 
         objId = objIdRef;
         snapshotDfn = snapshotDfnRef;
-        volumeNr = volNr;
+        vlmNr = vlmNrRef;
         dbDriver = dbDriverRef;
 
         dbgInstanceId = UUID.randomUUID();
 
         snapshotVlmDfnProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(snapshotDfnRef.getResourceName(), snapshotDfnRef.getName(), volumeNr)
+            PropsContainer.buildPath(
+                snapshotDfnRef.getResourceName(),
+                snapshotDfnRef.getName(),
+                vlmNrRef
+            )
         );
 
         flags = transObjFactory.createStateFlagsImpl(
@@ -106,6 +121,8 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
 
         snapshotVlmMap = transObjFactory.createTransactionMap(snapshotVlmMapRef, null);
 
+        layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
+
         volumeSize = transObjFactory.createTransactionSimpleObject(
             this,
             volSize,
@@ -115,6 +132,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
+            layerStorage,
             snapshotDfn,
             snapshotVlmMap,
             deleted
@@ -132,10 +150,16 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
         return snapshotDfn;
     }
 
+    public VolumeDefinition getVolumeDefinition()
+    {
+        checkDeleted();
+        return vlmDfn;
+    }
+
     public VolumeNumber getVolumeNumber()
     {
         checkDeleted();
-        return volumeNr;
+        return vlmNr;
     }
 
     public void addSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
@@ -186,6 +210,64 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
         return flags;
     }
 
+    @SuppressWarnings("unchecked")
+    public <T extends VlmDfnLayerObject> T setLayerData(AccessContext accCtx, T vlmDfnLayerData)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        snapshotDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        return (T) layerStorage.put(
+            new Pair<>(
+                vlmDfnLayerData.getLayerKind(),
+                vlmDfnLayerData.getRscNameSuffix()
+            ), vlmDfnLayerData
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends VlmDfnLayerObject> Map<String, T> getLayerData(
+        AccessContext accCtx,
+        DeviceLayerKind kind
+    )
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        snapshotDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        Map<String, T> ret = new TreeMap<>();
+        for (Entry<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> entry : layerStorage.entrySet())
+        {
+            Pair<DeviceLayerKind, String> key = entry.getKey();
+            if (key.objA.equals(kind))
+            {
+                ret.put(key.objB, (T) entry.getValue());
+            }
+        }
+        return ret;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends VlmDfnLayerObject> T getLayerData(
+        AccessContext accCtx,
+        DeviceLayerKind kind,
+        String rscNameSuffix
+    )
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        snapshotDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        return (T) layerStorage.get(new Pair<>(kind, rscNameSuffix));
+    }
+
+    public void removeLayerData(AccessContext accCtx, DeviceLayerKind kind, String rscNameSuffix)
+        throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        snapshotDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
+        layerStorage.remove(new Pair<>(kind, rscNameSuffix)).delete();
+    }
+
     @Override
     public int compareTo(SnapshotVolumeDefinition otherSnapshotVlmDfn)
     {
@@ -206,9 +288,14 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
         {
             getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
-            snapshotDfn.removeSnapshotVolumeDefinition(accCtx, volumeNr);
+            snapshotDfn.removeSnapshotVolumeDefinition(accCtx, vlmNr);
 
             snapshotVlmDfnProps.delete();
+
+            for (VlmDfnLayerObject vlmDfnLayerObject : layerStorage.values())
+            {
+                vlmDfnLayerObject.delete();
+            }
 
             activateTransMgr();
             dbDriver.delete(this);
@@ -228,7 +315,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
     @Override
     public String toString()
     {
-        return snapshotDfn + ", VlmNr: '" + volumeNr + "'";
+        return snapshotDfn + ", VlmNr: '" + vlmDfn.getVolumeNumber() + "'";
     }
 
     @Override

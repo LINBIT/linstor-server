@@ -481,7 +481,7 @@ public class StltApiCallHandler
             stltConf.map().putAll(satelliteProps);
             stltConf.keySet().retainAll(satelliteProps.keySet());
 
-            // local nodename need to be set for swordfish driver
+            // local nodename (was) needed by swordfish driver
             stltConf.setProp(LinStor.KEY_NODE_NAME, controllerPeerConnector.getLocalNodeName().displayValue);
 
             String extCmdWaitToStr = stltConf.getProp(ApiConsts.KEY_EXT_CMD_WAIT_TO);
@@ -529,7 +529,7 @@ public class StltApiCallHandler
             {
                 throw new ImplementationError(exc);
             }
-            if (tmpResFileOut != null && !localNodeType.equals(Node.Type.SWORDFISH_TARGET))
+            if (tmpResFileOut != null)
             {
                 try (
                     FileOutputStream commonFileOut = new FileOutputStream(tmpResFileOut.toFile())

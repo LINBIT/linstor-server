@@ -284,7 +284,8 @@ public class ZfsCommands
         final List<String> devicePaths,
         final RaidLevel raidLevel,  // ignore for now as we only support JBOD yet
         final String zpoolName
-    ) throws StorageException
+    )
+        throws StorageException
     {
         final String failMsg = "Failed to create zpool: " + zpoolName;
         return genericExecutor(
@@ -297,6 +298,45 @@ public class ZfsCommands
                     zpoolName
                 },
                 devicePaths),
+            failMsg,
+            failMsg
+        );
+    }
+
+    public static OutputData deleteZPool(
+        ExtCmd extCmd,
+        final String zpoolName
+    ) throws StorageException
+    {
+        final String failMsg = "Failed to destroy zpool: " + zpoolName;
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "zpool",
+                "destroy",
+                zpoolName
+            },
+            failMsg,
+            failMsg
+        );
+    }
+
+    public static OutputData getPhysicalDevices(ExtCmd extCmdRef, String zPoolRef) throws StorageException
+    {
+        final String failMsg = "Failed to query physical devices for zpool: " + zPoolRef;
+        return genericExecutor(
+            extCmdRef,
+            new String[]
+            {
+                "zpool",
+                "list",
+                "-v", // verbose, in order to include physical devices
+                "-P", // Display full paths for vdevs instead of only the last component of the path
+                "-H", // Scripted mode. Do not display headers, and separate fields by a single tab instead of arbitrary
+                      // space.
+                "-o", "name", // only "name" column
+                zPoolRef
+            },
             failMsg,
             failMsg
         );

@@ -21,6 +21,14 @@ public class DatabaseInfo
         ETCD
     }
 
+    public static final int[] H2_MIN_VERSION = {1, 2};
+    public static final int[] DERBY_MIN_VERSION = {10, 11};
+    public static final int[] DB2_MIN_VERSION = {9, 7};
+    public static final int[] POSTGRES_MIN_VERSION = {9, 0};
+    public static final int[] MYSQL_MIN_VERSION = {5, 1};
+    public static final int[] MARIADB_MIN_VERSION = {5, 1};
+    public static final int[] INFORMIX_MIN_VERSION = {12, 10};
+
     private static final String ID_H2       = "H2";
     private static final String ID_DB2      = "DB2";
     private static final String ID_PGSQL    = "POSTGRESQL";
@@ -37,13 +45,11 @@ public class DatabaseInfo
         {
             dbProd = DbProduct.H2;
         }
-        else
-        if (dbUpperName.equals(ID_DB2))
+        else if (dbUpperName.equals(ID_DB2))
         {
             dbProd = DbProduct.DB2;
         }
-        else
-        if (dbUpperName.startsWith(ID_DB2))
+        else if (dbUpperName.startsWith(ID_DB2))
         {
             int splitIdx = dbUpperName.indexOf('/');
             if (splitIdx != -1)
@@ -55,13 +61,11 @@ public class DatabaseInfo
                 }
             }
         }
-        else
-        if (dbUpperName.equals(ID_PGSQL))
+        else if (dbUpperName.equals(ID_PGSQL))
         {
             dbProd = DbProduct.POSTGRESQL;
         }
-        else
-        if (dbUpperName.equals(ID_MYSQL))
+        else if (dbUpperName.equals(ID_MYSQL))
         {
             String dbVsn = databaseProductVersion;
             dbVsn = dbVsn.toUpperCase();
@@ -73,6 +77,10 @@ public class DatabaseInfo
             {
                 dbProd = DbProduct.MYSQL;
             }
+        }
+        else if (dbUpperName.equals(SUB_ID_MARIADB))
+        {
+            dbProd = DbProduct.MARIADB;
         }
         else if (dbUpperName.equals(ID_ETCD))
         {

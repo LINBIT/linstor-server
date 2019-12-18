@@ -1,3 +1,96 @@
+linstor-server (1.3.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * Fix storage pool delete
+  * rest-api: use http.OK instead of CREATED for modify operations
+  * etcd-transaction: throw a DatabaseException instead of grpc exception
+  * etcd: fix missing netinterface delete on node delete
+  * rest-api: 1.0.12 enable /physical-storage endpoint
+  * nvmelayer: fix copy paste bug
+
+  [ Gabor Hernadi ]
+  * Db: Added migration for orphaned drbd layer data
+  * ETCD: added missing migrations
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 05 Dec 2019 13:05:39 +0100
+
+linstor-server (1.3.0-1) experimental; urgency=medium
+
+  [ Rainer Laschober ]
+  * CtrlAutoStorPoolSelector: Fixed and extended algorithm so that replica [...]
+  * Compare nodes with repOnDiff so that better ones are chosen
+  * BUGFIX: Incorrect number of nodes being filtered for repOnDiff
+  * Add startup checks for databases
+  * Fix derby minor version req; code quality
+  * Relax minimum requirement for databases (only tested PostgreSQL)
+  * Node delete: Deletes now its snapshots
+  * EXPAND UNITTESTS: Add test, new parameter for addStorPool; BUGFIX: Ctr [...]
+  * Fluxify vlmGrp modify
+  * Fluxify rscDfn modify
+  * Fluxify vlm modify
+  * Fluxify rsc modify
+  * Fluxify node modify
+  * Fluxify storPool modify + delete
+  * Fluxify storPoolDfn modify
+  * Fluxify rscConn modify + create + delete
+  * Fix unit tests for modify and make REST call safer
+  * Take care of stlt-side of now synchronous node-modify-call
+  * Comment out failing unit tests that need further attention later (see  [...]
+  * AutoPlace BUG: node deletion when filtering list of replicas on same
+
+  [ Gabor Hernadi ]
+  * RscAutoPlaceTest: Added test to cover github example
+  * Ctrl: Small improvements for database-version check
+
+  [ Robert Altnoeder ]
+  * TcpConnectorService: Ignore canceled selection keys
+  * TcpConnectorService: Handle various cases of CancelledKeyException
+  * SPDK extensions: Code cleanup, control flow corrections, style fixes
+  * Replaced some external ls/rm commands with Java code
+
+  [ Rene Peinthor ]
+  * linstor/toml: Fix typo in client_key_p[ck]s8_pem variable
+  * firewalld: add http(s) port for linstor-controller services
+  * node-create: fix incorrect http status if no satellite conn defined
+  * db-version-check: Fix check if dbversion string isn't just a number
+  * rest-api: allow configuration of access log file
+
+  [ Tomasz Bykowski ]
+  * Added initial support for SPDK v19.07
+  * Changed logic for SPDK in NVMe Layer an Utils
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 03 Dec 2019 11:51:01 +0100
+
+linstor-server (1.2.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * etcd-tls: enable all options to use etcd with tls
+  * gradle: update to jackson 2.10.0
+  * rest-api-doc: update property documentation
+  * rest-api: Fix query-max-vlm-size api call, expected incorrect post data
+
+  [ Roland Kammerer ]
+  * docker,satellite: add cryptsetup
+
+  [ Gabor Hernadi ]
+  * Added environment variables
+  * DRBD: additionally copy .res files to backup dir
+  * LvmProvider: disabled unimplemented async wiping
+  * Snapshot-restore: actually deleting hanging properties
+  * Drbd: Skip initial sync on ZFS
+  * Encryption API: improved correction message
+  * Props: Added whitelist check for delete
+  * Rest: Changed type for supported providers / layers in yaml
+
+  [ Rainer Laschober ]
+  * Correct error message
+  * Rest: Add un-/supported providers and layers to Node
+
+  [ Robert Altnoeder ]
+  * Further improved error message for failed TCP/IP port number allocation
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 07 Nov 2019 12:54:27 +0100
+
 linstor-server (1.2.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

@@ -6,10 +6,10 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -27,12 +27,12 @@ import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
-import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -184,7 +184,11 @@ public class CtrlRscCrtApiCallHandler
             else
             {
                 autoHelper.removeTiebreakerFlag(tiebreaker);
-                if (!FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DISKLESS))
+                boolean isDiskless =
+                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DISKLESS) || // needed for compatibility
+                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DRBD_DISKLESS) ||
+                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.NVME_INITIATOR);
+                if (!isDiskless)
                 {
                     // target resource is diskful
                     autoFlux.add(
@@ -200,7 +204,7 @@ public class CtrlRscCrtApiCallHandler
                 else
                 {
                     // target resource is diskless.
-                    NodeName tiebreakerNodeName = tiebreaker.getAssignedNode().getName();
+                    NodeName tiebreakerNodeName = tiebreaker.getNode().getName();
                     autoFlux.add(
                         ctrlSatelliteUpdateCaller.updateSatellites(
                             tiebreaker.getDefinition(),
@@ -278,11 +282,11 @@ public class CtrlRscCrtApiCallHandler
             AccessContext peerCtx = peerCtxProvider.get();
             for (Resource rsc : deployedResourcesRef)
             {
-                List<RscLayerObject> drbdRscList = LayerUtils
+                List<AbsRscLayerObject<Resource>> drbdRscList = LayerUtils
                     .getChildLayerDataByKind(rsc.getLayerData(peerCtx), DeviceLayerKind.DRBD);
-                for (RscLayerObject drbdRsc : drbdRscList)
+                for (AbsRscLayerObject<Resource> drbdRsc : drbdRscList)
                 {
-                    ((DrbdRscData) drbdRsc).getFlags().enableFlags(peerCtx, DrbdRscFlags.INITIALIZED);
+                    ((DrbdRscData<Resource>) drbdRsc).getFlags().enableFlags(peerCtx, DrbdRscFlags.INITIALIZED);
                 }
             }
             ctrlTransactionHelper.commit();
@@ -311,14 +315,14 @@ public class CtrlRscCrtApiCallHandler
             vlmCreatedRcEntry.setMessage(
                 "Volume with number '" + vlmNr + "' on resource '" +
                     vlm.getResourceDefinition().getName().displayValue + "' on node '" +
-                    vlm.getResource().getAssignedNode().getName().displayValue +
+                    vlm.getAbsResource().getNode().getName().displayValue +
                     "' successfully registered"
             );
             vlmCreatedRcEntry.setDetails(
                 "Volume UUID is: " + vlm.getUuid().toString()
             );
             vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
-            vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_NODE, rsc.getAssignedNode().getName().displayValue);
+            vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_NODE, rsc.getNode().getName().displayValue);
             vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rsc.getDefinition().getName().displayValue);
             vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
 

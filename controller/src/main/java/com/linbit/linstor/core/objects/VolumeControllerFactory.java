@@ -3,8 +3,8 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -27,7 +27,7 @@ public class VolumeControllerFactory
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
-    private final CtrlLayerDataHelper layerStackHelper;
+    private final CtrlRscLayerDataFactory layerStackHelper;
 
     @Inject
     public VolumeControllerFactory(
@@ -35,7 +35,7 @@ public class VolumeControllerFactory
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CtrlLayerDataHelper layerStackHelperRef
+        CtrlRscLayerDataFactory layerStackHelperRef
     )
     {
         driver = driverRef;
@@ -70,10 +70,10 @@ public class VolumeControllerFactory
             vlmDfn,
             StateFlagsBits.getMask(flags),
             driver,
+            new TreeMap<>(),
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider,
-            new TreeMap<>()
+            transMgrProvider
         );
 
         driver.create(volData);

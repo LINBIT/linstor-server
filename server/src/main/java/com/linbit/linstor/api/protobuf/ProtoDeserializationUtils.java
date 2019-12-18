@@ -118,12 +118,6 @@ public class ProtoDeserializationUtils
                 case LVM_THIN:
                     kind = DeviceProviderKind.LVM_THIN;
                     break;
-                case SWORDFISH_INITIATOR:
-                    kind = DeviceProviderKind.SWORDFISH_INITIATOR;
-                    break;
-                case SWORDFISH_TARGET:
-                    kind = DeviceProviderKind.SWORDFISH_TARGET;
-                    break;
                 case ZFS:
                     kind = DeviceProviderKind.ZFS;
                     break;
@@ -135,6 +129,9 @@ public class ProtoDeserializationUtils
                     break;
                 case FILE_THIN:
                     kind = DeviceProviderKind.FILE_THIN;
+                    break;
+                case SPDK:
+                    kind = DeviceProviderKind.SPDK;
                     break;
                 case UNKNOWN_PROVIDER: // fall-through
                 case UNRECOGNIZED: // fall-through
@@ -184,6 +181,9 @@ public class ProtoDeserializationUtils
                 break;
             case NVME:
                 kind = DeviceLayerKind.NVME;
+                break;
+            case WRITECACHE:
+                kind = DeviceLayerKind.WRITECACHE;
                 break;
             case UNKNOWN_LAYER: // fall-through
             case UNRECOGNIZED: // fall-through
@@ -261,7 +261,8 @@ public class ProtoDeserializationUtils
                     null
             ),
             null,
-            storPoolProto.getSnapshotSupported()
+            storPoolProto.getSnapshotSupported(),
+            storPoolProto.getIsPmem()
         );
     }
 
@@ -323,6 +324,12 @@ public class ProtoDeserializationUtils
                 break;
             case ZFS:
                 tool = ExtTools.ZFS;
+                break;
+            case SPDK:
+                tool = ExtTools.SPDK;
+                break;
+            case WRITECACHE:
+                tool = ExtTools.WRITECACHE;
                 break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through

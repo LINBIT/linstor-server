@@ -1,7 +1,6 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -9,7 +8,6 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
 import com.linbit.linstor.storage.DevicePoolHandler;
@@ -26,12 +24,11 @@ import java.util.List;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_CREATE_DEVICE_POOL,
-    description = "Applies storage pool update data"
+    description = "Creates a device pool"
 )
 @Singleton
 public class CreateDevicePool implements ApiCall
 {
-    private final ErrorReporter errorReporter;
     private final Provider<Peer> peerProvider;
     private Provider<Long> apiCallId;
     private final CtrlStltSerializer ctrlStltSerializer;
@@ -39,14 +36,12 @@ public class CreateDevicePool implements ApiCall
 
     @Inject
     public CreateDevicePool(
-        ErrorReporter errorReporterRef,
         Provider<Peer> peerProviderRef,
         @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         DevicePoolHandler devicePoolHandlerRef
     )
     {
-        this.errorReporter = errorReporterRef;
         this.peerProvider = peerProviderRef;
         this.apiCallId = apiCallIdRef;
         this.ctrlStltSerializer = ctrlStltSerializerRef;

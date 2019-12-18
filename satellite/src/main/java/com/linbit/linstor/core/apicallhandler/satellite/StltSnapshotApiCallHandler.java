@@ -9,27 +9,26 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.apicallhandler.StltLayerSnapDataMerger;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionSatelliteFactory;
+import com.linbit.linstor.core.objects.SnapshotSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.SnapshotVolumeSatelliteFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionSatelliteFactory;
-import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.SnapshotVolumeSatelliteFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -62,6 +61,7 @@ class StltSnapshotApiCallHandler
     private final SnapshotSatelliteFactory snapshotFactory;
     private final SnapshotVolumeSatelliteFactory snapshotVolumeFactory;
     private final StltRscGrpApiCallHelper rscGrpApiCallHelper;
+    private final StltLayerSnapDataMerger layerSnapDataMerger;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
@@ -78,6 +78,7 @@ class StltSnapshotApiCallHandler
         SnapshotSatelliteFactory snapshotFactoryRef,
         SnapshotVolumeSatelliteFactory snapshotVolumeFactoryRef,
         StltRscGrpApiCallHelper stltGrpApiCallHelperRef,
+        StltLayerSnapDataMerger layerSnapDataMergerRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -93,6 +94,7 @@ class StltSnapshotApiCallHandler
         snapshotFactory = snapshotFactoryRef;
         snapshotVolumeFactory = snapshotVolumeFactoryRef;
         rscGrpApiCallHelper = stltGrpApiCallHelperRef;
+        layerSnapDataMerger = layerSnapDataMergerRef;
         transMgrProvider = transMgrProviderRef;
     }
 
@@ -208,6 +210,7 @@ class StltSnapshotApiCallHandler
                     apiCtx,
                     snapshotVlmDfnApi.getUuid(),
                     snapshotDfn,
+                    rscDfn.getVolumeDfn(apiCtx, volumeNumber),
                     volumeNumber,
                     snapshotVlmDfnApi.getSize(),
                     snapshotVlmDfnFlags
@@ -251,30 +254,25 @@ class StltSnapshotApiCallHandler
         {
             mergeSnapshotVolume(snapshotVlmApi, snapshot);
         }
+
+        layerSnapDataMerger.mergeLayerData(snapshot, snapshotRaw.getLayerData(), false);
     }
 
     private void mergeSnapshotVolume(SnapshotVolumeApi snapshotVlmApi, Snapshot snapshot)
         throws ValueOutOfRangeException, DivergentUuidsException, InvalidNameException, AccessDeniedException
     {
         VolumeNumber volumeNumber = new VolumeNumber(snapshotVlmApi.getSnapshotVlmNr());
-        SnapshotVolume snapshotVolume = snapshot.getSnapshotVolume(apiCtx, volumeNumber);
+        SnapshotVolume snapshotVolume = snapshot.getVolume(volumeNumber);
         if (snapshotVolume == null)
         {
-            StorPool storPool = snapshot.getNode().getStorPool(
-                apiCtx,
-                new StorPoolName(snapshotVlmApi.getStorPoolName())
-            );
-            checkUuid(storPool, snapshotVlmApi);
-
             snapshotVolume = snapshotVolumeFactory.getInstanceSatellite(
                 apiCtx,
                 snapshotVlmApi.getSnapshotVlmUuid(),
                 snapshot,
-                snapshot.getSnapshotDefinition().getSnapshotVolumeDefinition(apiCtx, volumeNumber),
-                storPool
+                snapshot.getSnapshotDefinition().getSnapshotVolumeDefinition(apiCtx, volumeNumber)
             );
 
-            snapshot.addSnapshotVolume(apiCtx, snapshotVolume);
+            snapshot.putVolume(apiCtx, snapshotVolume);
         }
         checkUuid(snapshotVolume, snapshotVlmApi);
     }
@@ -369,18 +367,6 @@ class StltSnapshotApiCallHandler
             "SnapshotVolume",
             String.valueOf(snapshotVolume.getVolumeNumber()),
             String.valueOf(snapshotVlmApi.getSnapshotVlmNr())
-        );
-    }
-
-    private void checkUuid(StorPool storPool, SnapshotVolumeApi snapshotVlmApi)
-        throws DivergentUuidsException
-    {
-        checkUuid(
-            storPool.getUuid(),
-            snapshotVlmApi.getStorPoolUuid(),
-            "StorPool",
-            storPool.getName().displayValue,
-            snapshotVlmApi.getStorPoolName()
         );
     }
 

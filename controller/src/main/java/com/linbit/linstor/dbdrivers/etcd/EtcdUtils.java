@@ -2,6 +2,7 @@ package com.linbit.linstor.dbdrivers.etcd;
 
 import static com.ibm.etcd.client.KeyUtils.bs;
 
+import com.linbit.linstor.dbcp.migration.UsedByMigration;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 
@@ -20,7 +21,9 @@ import com.ibm.etcd.client.kv.KvClient;
 
 public class EtcdUtils
 {
+    @UsedByMigration
     public static final String PATH_DELIMITER = "/";
+    @UsedByMigration
     public static final String PK_DELIMITER = ":";
     public static final String LINSTOR_PREFIX = "LINSTOR" + PATH_DELIMITER;
 
@@ -30,12 +33,12 @@ public class EtcdUtils
     }
 
     public static String buildKey(
-        Table table,
+        String tableName,
         String... pks
     )
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(LINSTOR_PREFIX).append(table.getName()).append(PATH_DELIMITER);
+        sb.append(LINSTOR_PREFIX).append(tableName).append(PATH_DELIMITER);
         if (pks.length > 0)
         {
             for (String pk : pks)
@@ -50,6 +53,23 @@ public class EtcdUtils
             sb.append(PATH_DELIMITER);
         }
         return sb.toString();
+    }
+
+    public static String buildKey(
+        Table table,
+        String... pks
+    )
+    {
+        return buildKey(table.getName(), pks);
+    }
+
+    public static String buildKeyStr(
+        String tableName,
+        String columnName,
+        String... pks
+    )
+    {
+        return buildKey(tableName, pks) + columnName;
     }
 
     public static String buildKey(
@@ -129,6 +149,7 @@ public class EtcdUtils
         return ret;
     }
 
+    @UsedByMigration
     public static String extractPrimaryKey(String key)
     {
         // key is something like
@@ -151,9 +172,16 @@ public class EtcdUtils
             endIdx = composedPkRef.indexOf(PK_DELIMITER, startIdx);
             if (endIdx != -1)
             {
-                if (startIdx == endIdx && emptyStringAsNull)
+                if (startIdx == endIdx)
                 {
-                    pks.add(null);
+                    if (emptyStringAsNull)
+                    {
+                        pks.add(null);
+                    }
+                    else
+                    {
+                        pks.add("");
+                    }
                 }
                 else
                 {

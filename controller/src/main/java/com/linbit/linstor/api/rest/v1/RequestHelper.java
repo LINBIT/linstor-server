@@ -11,6 +11,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -242,12 +243,12 @@ public class RequestHelper
             ret = Response
                 .status(Response.Status.BAD_REQUEST)
                 .type(MediaType.APPLICATION_JSON)
-                .entity(ApiCallRcConverter.toJSON(apiCallRc))
+                .entity(ApiCallRcRestUtils.toJSON(apiCallRc))
                 .build();
         }
         catch (ApiRcException exc)
         {
-            ret = ApiCallRcConverter.toResponse(exc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR);
+            ret = ApiCallRcRestUtils.toResponse(exc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR);
         }
         catch (Exception exc)
         {
@@ -262,7 +263,7 @@ public class RequestHelper
             ret = Response
                 .status(Response.Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON)
-                .entity(ApiCallRcConverter.toJSON(apiCallRc))
+                .entity(ApiCallRcRestUtils.toJSON(apiCallRc))
                 .build();
         }
         finally
@@ -299,7 +300,7 @@ public class RequestHelper
         monoResponse
             .onErrorResume(ApiRcException.class,
                 apiExc -> Mono.just(
-                    ApiCallRcConverter.toResponse(apiExc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR)))
+                    ApiCallRcRestUtils.toResponse(apiExc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR)))
             .subscribe(
                 asyncResponse::resume,
                 exc ->
@@ -308,7 +309,7 @@ public class RequestHelper
                     ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
                     apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage()));
                     asyncResponse.resume(
-                        ApiCallRcConverter.toResponse(apiCallRc, Response.Status.INTERNAL_SERVER_ERROR)
+                        ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.INTERNAL_SERVER_ERROR)
                     );
                 }
             );
@@ -323,7 +324,7 @@ public class RequestHelper
         catch (ApiRcException apiExc)
         {
             asyncResponse.resume(
-                ApiCallRcConverter.toResponse(apiExc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR)
+                ApiCallRcRestUtils.toResponse(apiExc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR)
             );
         }
     }
@@ -339,7 +340,7 @@ public class RequestHelper
         );
         return Response
             .status(Response.Status.NOT_FOUND)
-            .entity(ApiCallRcConverter.toJSON(apiCallRc))
+            .entity(ApiCallRcRestUtils.toJSON(apiCallRc))
             .type(MediaType.APPLICATION_JSON)
             .build();
     }

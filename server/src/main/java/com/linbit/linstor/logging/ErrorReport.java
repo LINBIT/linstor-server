@@ -2,7 +2,7 @@ package com.linbit.linstor.logging;
 
 import java.util.Date;
 
-public class ErrorReport implements Comparable
+public class ErrorReport implements Comparable<ErrorReport>
 {
     private Date dateTime;
     private String fileName;
@@ -50,9 +50,8 @@ public class ErrorReport implements Comparable
     }
 
     @Override
-    public int compareTo(Object obj)
+    public int compareTo(ErrorReport errRpt)
     {
-        ErrorReport errRpt = (ErrorReport) obj;
         int cmp = dateTime.compareTo(errRpt.dateTime);
         if (cmp == 0)
         {

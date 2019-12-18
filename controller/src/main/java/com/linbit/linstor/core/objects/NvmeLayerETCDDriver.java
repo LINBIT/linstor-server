@@ -10,7 +10,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -64,18 +64,18 @@ public class NvmeLayerETCDDriver extends BaseEtcdDriver implements NvmeLayerCtrl
      * upon further loading, without triggering transaction (and possibly database-) updates.
      */
     @Override
-    public Pair<NvmeRscData, Set<RscLayerObject>> load(
-        Resource rsc,
+    public <RSC extends AbsResource<RSC>> Pair<NvmeRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
+        RSC absRsc,
         int id,
         String rscSuffixRef,
-        RscLayerObject parentRef
+        AbsRscLayerObject<RSC> parentRef
     )
     {
-        Set<RscLayerObject> children = new HashSet<>();
-        Map<VolumeNumber, NvmeVlmData> vlmMap = new TreeMap<>();
-        NvmeRscData nvmeRscData = new NvmeRscData(
+        Set<AbsRscLayerObject<RSC>> children = new HashSet<>();
+        Map<VolumeNumber, NvmeVlmData<RSC>> vlmMap = new TreeMap<>();
+        NvmeRscData<RSC> nvmeRscData = new NvmeRscData<>(
             id,
-            rsc,
+            absRsc,
             parentRef,
             children,
             vlmMap,
@@ -84,45 +84,45 @@ public class NvmeLayerETCDDriver extends BaseEtcdDriver implements NvmeLayerCtrl
             transObjFactory,
             transMgrProvider
         );
-        for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
+        for (AbsVolume<RSC> vlm : absRsc.streamVolumes().collect(Collectors.toList()))
         {
             vlmMap.put(
-                vlm.getVolumeDefinition().getVolumeNumber(),
-                new NvmeVlmData(vlm, nvmeRscData, transObjFactory, transMgrProvider)
+                vlm.getVolumeNumber(),
+                new NvmeVlmData<>(vlm, nvmeRscData, transObjFactory, transMgrProvider)
             );
         }
         return new Pair<>(nvmeRscData, children);
     }
 
     @Override
-    public void create(NvmeRscData drbdRscDataRef) throws DatabaseException
+    public void create(NvmeRscData<?> drbdRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeRscData will get a database table in future.
     }
 
     @Override
-    public void delete(NvmeRscData drbdRscDataRef) throws DatabaseException
+    public void delete(NvmeRscData<?> drbdRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeRscData will get a database table in future.
     }
 
     @Override
-    public void persist(NvmeVlmData drbdVlmDataRef) throws DatabaseException
+    public void persist(NvmeVlmData<?> drbdVlmDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeVlmData will get a database table in future.
     }
 
     @Override
-    public void delete(NvmeVlmData drbdVlmDataRef) throws DatabaseException
+    public void delete(NvmeVlmData<?> drbdVlmDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if NvmeVlmData will get a database table in future.
     }
 
-    private String getId(NvmeRscData nvmeRscData)
+    private String getId(NvmeRscData<?> nvmeRscData)
     {
         return "(LayerRscId=" + nvmeRscData.getRscLayerId() +
             ", SuffResName=" + nvmeRscData.getSuffixedResourceName() +

@@ -20,8 +20,6 @@ import java.util.List;
 @Singleton
 public class DevicePoolHandler
 {
-    private static final String VG_PREFIX = "linstor_";
-
     private final ErrorReporter errorReporter;
     private final ExtCmdFactory extCmdFactory;
 
@@ -69,7 +67,7 @@ public class DevicePoolHandler
             );
 
             apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
-                ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
+                ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
                 String.format("VDO '%s' on device '%s' created.", poolName, devicePath)));
             vdoDevicePath = "/dev/mapper/" + poolName;
         }
@@ -96,21 +94,21 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, poolName));
                 break;
             case LVM_THIN:
-                apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, VG_PREFIX + poolName));
-                apiCallRc.addEntries(createLVMThinPool(VG_PREFIX + poolName, poolName));
+                apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, LvmThinDriverKind.VG_PREFIX + poolName));
+                apiCallRc.addEntries(createLVMThinPool(LvmThinDriverKind.VG_PREFIX + poolName, poolName));
                 break;
             case ZFS_THIN: // no differentiation between ZFS and ZFS_THIN pool. fall-through
             case ZFS:
                 apiCallRc.addEntries(createZPool(devicePaths, raidLevel, poolName));
                 break;
 
+            case SPDK: // not implemented (yet) -> fall-through
+
                 // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             case FILE: // fall-through
             case FILE_THIN: // fall-through
-            case SWORDFISH_INITIATOR: // fall-through
-            case SWORDFISH_TARGET: // fall-through
             default:
                 apiCallRc.addEntry(
                     ApiCallRcImpl.simpleEntry(
@@ -132,24 +130,65 @@ public class DevicePoolHandler
             for (final String devicePath : devicePaths)
             {
                 LvmCommands.pvCreate(extCmdFactory.create(), devicePath);
-                apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
-                    String.format("PV for device '%s' created.", devicePath))
+                apiCallRc.addEntry(
+                    ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
+                        String.format("PV for device '%s' created.", devicePath)
+                    )
+                    .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                    .build()
                 );
             }
             LvmCommands.vgCreate(extCmdFactory.create(), poolName, raidLevel, devicePaths);
-            apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
-                ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
-                String.format("VG for devices [%s] with name '%s' created.",
-                    String.join(", ", devicePaths),
-                    poolName)
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format("VG for devices [%s] with name '%s' created.",
+                        String.join(", ", devicePaths),
+                        poolName)
                 )
+                    .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                    .build()
             );
         }
         catch (StorageException storExc)
         {
             errorReporter.reportError(storExc);
             apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_UNKNOWN_ERROR, storExc));
+        }
+
+        return apiCallRc;
+    }
+
+    private ApiCallRc deleteLVMPool(final List<String> devicePaths, final String poolName)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try
+        {
+            LvmCommands.vgRemove(extCmdFactory.create(), poolName);
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format("VG with name '%s' removed.", poolName)
+                )
+                    .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                    .build()
+            );
+
+            LvmCommands.pvRemove(extCmdFactory.create(), devicePaths);
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format("PV for device(s) '%s' removed.", String.join(",", devicePaths))
+                )
+                    .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                    .build()
+            );
+        }
+        catch (StorageException storExc)
+        {
+            errorReporter.reportError(storExc);
+            apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_STOR_POOL_CONFIGURATION_ERROR, storExc));
         }
 
         return apiCallRc;
@@ -168,15 +207,48 @@ public class DevicePoolHandler
                 lvmPoolName,
                 thinPoolName
             );
-            apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
-                ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
-                String.format("Thin-pool '%s' in LVM-pool '%s' created.", thinPoolName, lvmPoolName)));
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format("Thin-pool '%s' in LVM-pool '%s' created.", thinPoolName, lvmPoolName)
+                ).putObjRef(ApiConsts.KEY_POOL_NAME, lvmPoolName + "/" + thinPoolName).build()
+            );
         }
         catch (StorageException storExc)
         {
             errorReporter.reportError(storExc);
             apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_UNKNOWN_ERROR, storExc));
         }
+        return apiCallRc;
+    }
+
+    private ApiCallRc deleteLVMThinPool(
+        final List<String> devicePaths,
+        final String lvmPoolName,
+        final String thinPoolName
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try
+        {
+            LvmCommands.delete(extCmdFactory.create(), lvmPoolName, thinPoolName);
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format("Thin lv with name '%s' removed.", thinPoolName)
+                )
+                    .putObjRef(ApiConsts.KEY_POOL_NAME, lvmPoolName + "/" + thinPoolName)
+                    .build()
+            );
+
+            apiCallRc.addEntries(deleteLVMPool(devicePaths, lvmPoolName));
+        }
+        catch (StorageException storExc)
+        {
+            errorReporter.reportError(storExc);
+            apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_STOR_POOL_CONFIGURATION_ERROR, storExc));
+        }
+
         return apiCallRc;
     }
 
@@ -196,18 +268,88 @@ public class DevicePoolHandler
                 raidLevel,
                 zPoolName
             );
-            apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
-                ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
-                String.format(
-                    "ZPool '%s' on device(s) [%s] created.",
-                    zPoolName,
-                    String.join(", ", devicePaths)))
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format(
+                        "ZPool '%s' on device(s) [%s] created.",
+                        zPoolName,
+                        String.join(", ", devicePaths))
+                ).putObjRef(ApiConsts.KEY_POOL_NAME, zPoolName).build()
             );
         }
         catch (StorageException storExc)
         {
             errorReporter.reportError(storExc);
             apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_UNKNOWN_ERROR, storExc));
+        }
+
+        return apiCallRc;
+    }
+
+    private ApiCallRc deleteZPool(final List<String> devicePaths, final String zPoolName)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try
+        {
+            ZfsCommands.deleteZPool(
+                extCmdFactory.create(),
+                zPoolName
+            );
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format(
+                        "ZPool '%s' deleted.",
+                        zPoolName)
+                ).putObjRef(ApiConsts.KEY_POOL_NAME, zPoolName).build()
+            );
+
+            Commands.wipeFs(extCmdFactory.create(), devicePaths);
+        }
+        catch (StorageException storExc)
+        {
+            errorReporter.reportError(storExc);
+            apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_UNKNOWN_ERROR, storExc));
+        }
+        return apiCallRc;
+    }
+
+    public ApiCallRc deleteDevicePool(
+        final DeviceProviderKind deviceProviderKind,
+        final List<String> devicePaths,
+        final String poolName
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        switch (deviceProviderKind)
+        {
+            case LVM_THIN:
+                apiCallRc.addEntries(deleteLVMThinPool(devicePaths, LvmThinDriverKind.VG_PREFIX + poolName, poolName));
+                break;
+            case LVM:
+                apiCallRc.addEntries(deleteLVMPool(devicePaths, poolName));
+                break;
+            case ZFS_THIN: // no differentiation between ZFS and ZFS_THIN pool. fall-through
+            case ZFS:
+                apiCallRc.addEntries(deleteZPool(devicePaths, poolName));
+                break;
+
+            // the following cases make no sense, hence the fall-throughs
+            case DISKLESS: // fall-through
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
+            case FILE: // fall-through
+            case FILE_THIN: // fall-through
+            default:
+                apiCallRc.addEntry(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_PROVIDER,
+                        "Delete device pool not supported for provider: " + deviceProviderKind
+                    )
+                );
+                break;
         }
 
         return apiCallRc;

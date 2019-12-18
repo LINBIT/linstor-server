@@ -10,11 +10,11 @@ public interface StorageLayerDatabaseDriver
 {
     ResourceLayerIdDatabaseDriver getIdDriver();
 
-    void persist(StorageRscData storageRscDataRef) throws DatabaseException;
-    void delete(StorageRscData storgeRscDataRef) throws DatabaseException;
+    void persist(StorageRscData<?> storageRscDataRef) throws DatabaseException;
+    void delete(StorageRscData<?> storgeRscDataRef) throws DatabaseException;
 
-    void persist(VlmProviderObject vlmDataRef) throws DatabaseException;
-    void delete(VlmProviderObject vlmDataRef) throws DatabaseException;
+    void persist(VlmProviderObject<?> vlmDataRef) throws DatabaseException;
+    void delete(VlmProviderObject<?> vlmDataRef) throws DatabaseException;
 
-    SingleColumnDatabaseDriver<VlmProviderObject, StorPool> getStorPoolDriver();
+    SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool> getStorPoolDriver();
 }

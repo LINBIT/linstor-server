@@ -22,6 +22,10 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final Map<String, String> nodeProps;
     private final Long fullSyncId;
     private final Long updateId;
+    private final List<String> deviceLayerKindNames;
+    private final List<String> deviceProviderKindNames;
+    private final Map<String, List<String>> unsupportedLayersWithReasons;
+    private final Map<String, List<String>> unsupportedProvidersWithReasons;
 
     public NodePojo(
         final UUID nodeUuidRef,
@@ -34,7 +38,11 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         final Map<String, String> nodePropsRef,
         final Peer.ConnectionStatus connectionStatusRef,
         final Long fullSyncIdRef,
-        final Long updateIdRef
+        final Long updateIdRef,
+        final List<String> deviceLayerKindNamesRef,
+        final List<String> deviceProviderKindNamesRef,
+        final Map<String, List<String>> unsupportedLayersWithReasonsRef,
+        final Map<String, List<String>> unsupportedProvidersWithReasonsRef
     )
     {
         nodeUuid = nodeUuidRef;
@@ -48,6 +56,10 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         connectionStatus = connectionStatusRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
+        deviceLayerKindNames = deviceLayerKindNamesRef;
+        deviceProviderKindNames = deviceProviderKindNamesRef;
+        unsupportedLayersWithReasons = unsupportedLayersWithReasonsRef;
+        unsupportedProvidersWithReasons = unsupportedProvidersWithReasonsRef;
     }
 
     @Override
@@ -122,6 +134,26 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     public long getUpdateId()
     {
         return updateId;
+    }
+
+    public List<String> getDeviceLayerKindNames()
+    {
+        return deviceLayerKindNames;
+    }
+
+    public List<String> getDeviceProviderKindNames()
+    {
+        return deviceProviderKindNames;
+    }
+
+    public Map<String, List<String>> getUnsupportedLayersWithReasons()
+    {
+        return unsupportedLayersWithReasons;
+    }
+
+    public Map<String, List<String>> getUnsupportedProvidersWithReasons()
+    {
+        return unsupportedProvidersWithReasons;
     }
 
     public static class NodeConnPojo

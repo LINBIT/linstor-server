@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage;
 
 import com.linbit.linstor.api.ApiConsts;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -76,7 +77,6 @@ public interface StorageDriverKind
 
     /**
      * Returns whether it makes sense to use this volume with DRBD.
-     * E.g. Swordfish volumes are remote, so it does not make much sense to place DRBD resources on them.
      *
      * @return true if and only if DRBD should be started on resources containing volumes of this type.
      */

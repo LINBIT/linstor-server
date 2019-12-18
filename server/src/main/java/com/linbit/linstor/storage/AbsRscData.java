@@ -2,12 +2,16 @@ package com.linbit.linstor.storage;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
@@ -26,28 +30,29 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
-    extends BaseTransactionObject implements RscLayerObject
+public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>>
+    extends BaseTransactionObject implements AbsRscLayerObject<RSC>
 {
     // unmodifiable data
     protected final int rscLayerId;
-    protected final Resource rsc;
+    protected final RSC rsc;
     protected final String rscSuffix;
     protected final ResourceLayerIdDatabaseDriver dbDriver;
 
     // persisted, serialized
     protected final TransactionMap<VolumeNumber, VLM_TYPE> vlmMap;
-    protected final TransactionSimpleObject<AbsRscData<VLM_TYPE>, RscLayerObject> parent;
-    protected final TransactionSet<AbsRscData<VLM_TYPE>, RscLayerObject> children;
+    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> parent;
+    protected final TransactionSet<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> children;
+    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, Boolean> suspend;
 
     // volatile satellite only
     private boolean checkFileSystem;
 
     public AbsRscData(
         int rscLayerIdRef,
-        Resource rscRef,
-        @Nullable RscLayerObject parentRef,
-        Set<RscLayerObject> childrenRef,
+        RSC rscRef,
+        @Nullable AbsRscLayerObject<RSC> parentRef,
+        Set<AbsRscLayerObject<RSC>> childrenRef,
         String rscNameSuffixRef,
         ResourceLayerIdDatabaseDriver dbDriverRef,
         Map<VolumeNumber, VLM_TYPE> vlmProviderObjectsRef,
@@ -64,6 +69,7 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
         parent = transObjFactory.createTransactionSimpleObject(this, parentRef, dbDriverRef.getParentDriver());
         children = transObjFactory.createTransactionSet(this, childrenRef, null);
         vlmMap = transObjFactory.createTransactionMap(vlmProviderObjectsRef, null);
+        suspend = transObjFactory.createTransactionSimpleObject(this, false, dbDriverRef.getSuspendDriver());
 
         checkFileSystem = true;
 
@@ -81,25 +87,25 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     }
 
     @Override
-    public RscLayerObject getParent()
+    public AbsRscLayerObject<RSC> getParent()
     {
         return parent.get();
     }
 
     @Override
-    public void setParent(RscLayerObject parentRscLayerObjectRef) throws DatabaseException
+    public void setParent(AbsRscLayerObject<RSC> parentRscLayerObjectRef) throws DatabaseException
     {
         parent.set(parentRscLayerObjectRef);
     }
 
     @Override
-    public Set<RscLayerObject> getChildren()
+    public Set<AbsRscLayerObject<RSC>> getChildren()
     {
         return children;
     }
 
     @Override
-    public Resource getResource()
+    public RSC getAbsResource()
     {
         return rsc;
     }
@@ -120,16 +126,24 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     public void remove(AccessContext accCtx, VolumeNumber vlmNrRef)
         throws DatabaseException, AccessDeniedException
     {
-        for (RscLayerObject rscLayerObject : children)
+        for (AbsRscLayerObject<RSC> rscLayerObject : children)
         {
             rscLayerObject.remove(accCtx, vlmNrRef);
         }
-        VLM_TYPE vlm = vlmMap.remove(vlmNrRef);
-        if (!(vlm instanceof VlmLayerObject))
+        VLM_TYPE vlmData = vlmMap.remove(vlmNrRef);
+        if (!(vlmData instanceof VlmLayerObject))
         {
-            vlm.getStorPool().removeVolume(accCtx, vlm);
+            StorPool storPool = vlmData.getStorPool();
+            if (vlmData.getVolume() instanceof Volume)
+            {
+                storPool.removeVolume(accCtx, (VlmProviderObject<Resource>) vlmData);
+            }
+            else
+            {
+                storPool.removeSnapshotVolume(accCtx, (VlmProviderObject<Snapshot>) vlmData);
+            }
         }
-        deleteVlmFromDatabase(vlm);
+        deleteVlmFromDatabase(vlmData);
     }
 
     protected abstract void deleteVlmFromDatabase(VLM_TYPE vlm) throws DatabaseException;
@@ -139,7 +153,7 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     @Override
     public void delete() throws DatabaseException
     {
-        for (RscLayerObject rscLayerObject : children)
+        for (AbsRscLayerObject<RSC> rscLayerObject : children)
         {
             rscLayerObject.delete();
         }
@@ -150,11 +164,23 @@ public abstract class AbsRscData<VLM_TYPE extends VlmProviderObject>
     protected List<RscLayerDataApi> getChildrenPojos(AccessContext accCtx) throws AccessDeniedException
     {
         List<RscLayerDataApi> childrenPojos = new ArrayList<>();
-        for (RscLayerObject rscLayerObject : children)
+        for (AbsRscLayerObject<RSC> rscLayerObject : children)
         {
             childrenPojos.add(rscLayerObject.asPojo(accCtx));
         }
         return childrenPojos;
+    }
+
+    @Override
+    public void setSuspendIo(boolean suspendRef) throws DatabaseException
+    {
+        suspend.set(suspendRef);
+    }
+
+    @Override
+    public boolean getSuspendIo()
+    {
+        return suspend.get();
     }
 
     @Override

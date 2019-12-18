@@ -136,8 +136,8 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         Set<String> composedPkList = EtcdUtils.getComposedPkList(dataMap);
         for (String composedPk : composedPkList)
         {
-            Object[] rawObjects = new Object[columns.length];
-            String[] pks = composedPk.split(EtcdUtils.PK_DELIMITER);
+            Map<String, Object> rawObjects = new TreeMap<>();
+            String[] pks = EtcdUtils.splitPks(composedPk, false);
 
             int pkIdx = 0;
 
@@ -145,7 +145,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
             {
                 if (col.isPk())
                 {
-                    rawObjects[col.getIndex()] = pks[pkIdx++];
+                    rawObjects.put(col.getName(), pks[pkIdx++]);
                 }
                 else
                 {
@@ -153,14 +153,19 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                     String colData = dataMap.get(colKey);
                     if (colData == null && !col.isNullable())
                     {
-                        EtcdUtils.buildKey(col, pks);
                         throw new LinStorDBRuntimeException("Column was unexpectedly null. " + colKey);
                     }
-                    rawObjects[col.getIndex()] = colData;
+                    rawObjects.put(col.getName(), colData);
                 }
             }
             Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(new RawParameters(table, rawObjects), parents);
-            loadedObjectsMap.put(pair.objA, pair.objB);
+            // pair might be null when loading objects sharing the same table.
+            // For example SnapshotDbDriver will return null when finding a Resource entry
+            // and vice versa.
+            if (pair != null)
+            {
+                loadedObjectsMap.put(pair.objA, pair.objB);
+            }
         }
 
         return loadedObjectsMap;

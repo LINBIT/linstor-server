@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.Node;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
@@ -30,6 +31,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -139,36 +141,44 @@ public class Nodes
                 )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_NODE, request));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{nodeName}")
-    public Response modifyNode(
+    public void modifyNode(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         String jsonData
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_NODE, request), () ->
+        try
         {
             JsonGenTypes.NodeModify modifyData = objectMapper.readValue(jsonData, JsonGenTypes.NodeModify.class);
-            ApiCallRc apiCallRc = ctrlApiCallHandler.modifyNode(
+
+            Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyNode(
                 null,
                 nodeName,
                 modifyData.node_type,
                 modifyData.override_props,
                 new HashSet<>(modifyData.delete_props),
                 new HashSet<>(modifyData.delete_namespaces)
-            );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
-        }, true);
+            )
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_NODE, request));
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 
     @DELETE
@@ -183,7 +193,7 @@ public class Nodes
             .deleteNode(nodeName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_NODE, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 
     @DELETE
@@ -198,7 +208,7 @@ public class Nodes
             .lostNode(nodeName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_LOST_NODE, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 
     @PUT
@@ -214,7 +224,7 @@ public class Nodes
             nodes.add(nodeName);
             ApiCallRc apiCallRc = ctrlApiCallHandler.reconnectNode(nodes);
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, false);
     }
 
@@ -317,7 +327,7 @@ public class Nodes
                 netInterface.satellite_encryption_type,
                 netInterface.is_active
             );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
     }
 
@@ -344,7 +354,7 @@ public class Nodes
                 netInterface.is_active
             );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
 
@@ -363,7 +373,7 @@ public class Nodes
                 netIfName
             );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
 }

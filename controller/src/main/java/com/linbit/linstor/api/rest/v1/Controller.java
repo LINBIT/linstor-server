@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -98,7 +99,7 @@ public class Controller
                 new HashSet<>(properties.delete_namespaces)
             );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
 
         }, true);
     }
@@ -119,7 +120,7 @@ public class Controller
                 keyPair.objB
             );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
 

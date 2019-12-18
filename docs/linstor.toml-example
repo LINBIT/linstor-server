@@ -5,6 +5,17 @@
   # jdbc connection url
   connection_url = "jdbc:h2:/var/lib/linstor/linstordb"
 
+  ## for etcd
+  ## do not set user field if no authentication required
+  # connection_url = "etcd://etcdhost:2379"
+
+  ## if you use TLS
+  # ca_certificate = "ca.pem"
+  # client_certificate = "client.pem"
+  # client_key_pkcs8_pem = "client-key.pkcs8"
+  ## set client_key_password if private key has a password
+  # client_key_password = "mysecret"
+
 [http]
   enabled = true
   listen_addr = "::"
@@ -42,3 +53,16 @@
 
   # search_filter: ldap filter to restrict users on memberships
   search_filter = ""
+
+[logging]
+  level = "info" # minimal log level can be trace, debug, info, warning, error
+
+  # path to the rest access log, if relative path it will be resolved to the linstor log directory
+  rest_access_log_path = "rest-access.log"
+
+  # rest_access_log_mode configures the way the log is archived
+  #   - "append" will always append to the same file
+  #   - "rotatehourly" will rotate the file on an hourly basis
+  #   - "rotatedaily"  will rotate the file on a daily basis
+  #   - "nolog" will not write a access log file
+  rest_access_log_mode = "append"

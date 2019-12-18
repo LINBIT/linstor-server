@@ -36,31 +36,7 @@ public class StorageConstants
     public static final String CONFIG_ZFS_THIN_POOL_KEY = ApiConsts.KEY_STOR_POOL_ZPOOLTHIN;
     public static final String CONFIG_ZFS_COMMAND_KEY = "zfs";
 
-    /*
-     * Swordfish
-     */
-    public static final String CONFIG_SF_URL_KEY = ApiConsts.KEY_STOR_POOL_SF_URL;
-    public static final String CONFIG_SF_STOR_SVC_KEY = ApiConsts.KEY_STOR_POOL_SF_STOR_SVC;
-    public static final String CONFIG_SF_STOR_POOL_KEY = ApiConsts.KEY_STOR_POOL_SF_STOR_POOL;
-    public static final String CONFIG_SF_USER_NAME_KEY = ApiConsts.KEY_STOR_POOL_SF_USER_NAME;
-    public static final String CONFIG_SF_USER_PW_KEY = ApiConsts.KEY_STOR_POOL_SF_USER_PW;
-    public static final String CONFIG_SF_POLL_TIMEOUT_VLM_CRT_KEY = ApiConsts.KEY_STOR_POOL_SF_POLL_TIMEOUT_VLM_CRT;
-    public static final String CONFIG_SF_POLL_RETRIES_VLM_CRT_KEY = ApiConsts.KEY_STOR_POOL_SF_POLL_RETRIES_VLM_CRT;
-    public static final String CONFIG_SF_POLL_TIMEOUT_ATTACH_VLM_KEY =
-        ApiConsts.KEY_STOR_POOL_SF_POLL_TIMEOUT_ATTACH_VLM;
-    public static final String CONFIG_SF_POLL_RETRIES_ATTACH_VLM_KEY =
-        ApiConsts.KEY_STOR_POOL_SF_POLL_RETRIES_ATTACH_VLM;
-    public static final String CONFIG_SF_POLL_TIMEOUT_GREP_NVME_UUID_KEY =
-        ApiConsts.KEY_STOR_POOL_SF_POLL_TIMEOUT_GREP_NVME_UUID;
-    public static final String CONFIG_SF_POLL_RETRIES_GREP_NVME_UUID_KEY =
-        ApiConsts.KEY_STOR_POOL_SF_POLL_RETRIES_GREP_NVME_UUID;
-    public static final String CONFIG_SF_COMPOSED_NODE_NAME_KEY = ApiConsts.KEY_STOR_POOL_SF_COMPOSED_NODE_NAME;
-    public static final String CONFIG_SF_RETRY_COUNT_KEY = ApiConsts.KEY_STOR_POOL_SF_RETRY_COUNT;
-    public static final String CONFIG_SF_RETRY_DELAY_KEY = ApiConsts.KEY_STOR_POOL_SF_RETRY_DELAY;
-
     public static final Map<String, String> KEY_DESCRIPTION = new HashMap<>();
-    public static final int CONFIG_SF_RETRY_COUNT_DEFAULT = 5;
-    public static final long CONFIG_SF_RETRY_DELAY_DEFAULT = 2000L;
 
     /*
      * FILE

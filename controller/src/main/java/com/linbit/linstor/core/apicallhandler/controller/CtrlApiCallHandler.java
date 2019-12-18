@@ -28,6 +28,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -35,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlApiCallHandler
@@ -124,7 +127,7 @@ public class CtrlApiCallHandler
      * @param deleteNamespaces
      * @return
      */
-    public ApiCallRc modifyNode(
+    public Flux<ApiCallRc> modifyNode(
         UUID nodeUuid,
         String nodeName,
         String nodeType,
@@ -133,10 +136,10 @@ public class CtrlApiCallHandler
         Set<String> deleteNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP))
         {
-            apiCallRc = nodeApiCallHandler.modifyNode(
+            flux = nodeApiCallHandler.modify(
                 nodeUuid,
                 nodeName,
                 nodeType,
@@ -145,7 +148,7 @@ public class CtrlApiCallHandler
                 deleteNamespaces
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     public ApiCallRc reconnectNode(
@@ -158,16 +161,6 @@ public class CtrlApiCallHandler
             apiCallRc = nodeApiCallHandler.reconnectNode(
                 nodes
             );
-        }
-        return apiCallRc;
-    }
-
-    public ApiCallRc createSwordfishTargetNode(String nodeName, Map<String, String> props)
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP))
-        {
-            apiCallRc = nodeApiCallHandler.createSwordfishTargetNode(nodeName, props);
         }
         return apiCallRc;
     }
@@ -248,7 +241,7 @@ public class CtrlApiCallHandler
      * @param layerStackStrList
      * @param newRscPeerSlotsRef
      */
-    public ApiCallRc modifyRscDfn(
+    public Flux<ApiCallRc> modifyRscDfn(
         UUID rscDfnUuid,
         String rscName,
         Integer port,
@@ -259,10 +252,10 @@ public class CtrlApiCallHandler
         Short newRscPeerSlotsRef
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
         {
-            apiCallRc = rscDfnApiCallHandler.modifyRscDfn(
+            flux = rscDfnApiCallHandler.modify(
                 rscDfnUuid,
                 rscName,
                 port,
@@ -273,7 +266,7 @@ public class CtrlApiCallHandler
                 newRscPeerSlotsRef
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     public ArrayList<ResourceDefinitionApi> listResourceDefinitions()
@@ -328,7 +321,7 @@ public class CtrlApiCallHandler
      * @param rscName
      *            required
      */
-    public ApiCallRc modifyRsc(
+    public Flux<ApiCallRc> modifyRsc(
         UUID rscUuid,
         String nodeName,
         String rscName,
@@ -337,7 +330,7 @@ public class CtrlApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> apiCallRc;
         Map<String, String> overrideProps = overridePropsRef;
         Set<String> deletePropKeys = deletePropKeysRef;
         if (overrideProps == null)
@@ -352,7 +345,7 @@ public class CtrlApiCallHandler
             LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP)
         )
         {
-            apiCallRc = rscApiCallHandler.modifyResource(
+            apiCallRc = rscApiCallHandler.modify(
                 rscUuid,
                 nodeName,
                 rscName,
@@ -361,6 +354,7 @@ public class CtrlApiCallHandler
                 deletePropNamespaces
             );
         }
+
         return apiCallRc;
     }
 
@@ -445,7 +439,7 @@ public class CtrlApiCallHandler
      * @param deletePropKeysRef
      *            optional
      */
-    public ApiCallRc modifyStorPoolDfn(
+    public Flux<ApiCallRc> modifyStorPoolDfn(
         UUID storPoolDfnUuid,
         String storPoolName,
         Map<String, String> overridePropsRef,
@@ -453,7 +447,7 @@ public class CtrlApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> apiCallRc;
 
         Map<String, String> overrideProps = overridePropsRef;
         Set<String> deletePropKeys = deletePropKeysRef;
@@ -467,7 +461,7 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, STOR_POOL_DFN_MAP))
         {
-            apiCallRc = storPoolDfnApiCallHandler.modifyStorPoolDfn(
+            apiCallRc = storPoolDfnApiCallHandler.modify(
                 storPoolDfnUuid,
                 storPoolName,
                 overrideProps,
@@ -523,7 +517,7 @@ public class CtrlApiCallHandler
      * @param deletePropKeysRef
      *            optional
      */
-    public ApiCallRc modifyStorPool(
+    public Flux<ApiCallRc> modifyStorPool(
         UUID storPoolUuid,
         String nodeName,
         String storPoolName,
@@ -532,7 +526,7 @@ public class CtrlApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
 
         Map<String, String> overrideProps = overridePropsRef;
         Set<String> deletePropKeys = deletePropKeysRef;
@@ -546,7 +540,7 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, STOR_POOL_DFN_MAP))
         {
-            apiCallRc = storPoolApiCallHandler.modifyStorPool(
+            flux = storPoolApiCallHandler.modify(
                 storPoolUuid,
                 nodeName,
                 storPoolName,
@@ -555,7 +549,7 @@ public class CtrlApiCallHandler
                 deletePropNamespaces
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     /**
@@ -564,21 +558,21 @@ public class CtrlApiCallHandler
      * The {@link StorPool} is only deleted once the corresponding satellite
      * confirms that it has undeployed (deleted) the {@link StorPool}.
      */
-    public ApiCallRc deleteStoragePool(
+    public Flux<ApiCallRc> deleteStoragePool(
         String nodeName,
         String storPoolName
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, STOR_POOL_DFN_MAP))
         {
-            apiCallRc = storPoolApiCallHandler.deleteStorPool(
+            flux = storPoolApiCallHandler.deleteStorPool(
                 nodeName,
                 storPoolName
             );
         }
 
-        return apiCallRc;
+        return flux;
     }
 
     /**
@@ -693,14 +687,14 @@ public class CtrlApiCallHandler
      * @param rscConnPropsMap
      *            optional, recommended
      */
-    public ApiCallRc createResourceConnection(
+    public Flux<ApiCallRc> createResourceConnection(
         String nodeName1,
         String nodeName2,
         String rscName,
         Map<String, String> rscConnPropsMap
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         Map<String, String> rscConnProps = rscConnPropsMap;
         if (rscConnProps == null)
         {
@@ -708,14 +702,14 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP))
         {
-            apiCallRc = rscConnApiCallHandler.createResourceConnection(
+            flux = rscConnApiCallHandler.createResourceConnection(
                 nodeName1,
                 nodeName2,
                 rscName,
                 rscConnProps
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     /**
@@ -734,7 +728,7 @@ public class CtrlApiCallHandler
      * @param deletePropKeysRef
      *            optional
      */
-    public ApiCallRc modifyRscConn(
+    public Flux<ApiCallRc> modifyRscConn(
         UUID rscConnUuid,
         String nodeName1,
         String nodeName2,
@@ -744,7 +738,7 @@ public class CtrlApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
 
         Map<String, String> overrideProps = overridePropsRef;
         Set<String> deletePropKeys = deletePropKeysRef;
@@ -758,7 +752,7 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP))
         {
-            apiCallRc = rscConnApiCallHandler.modifyRscConnection(
+            flux = rscConnApiCallHandler.modify(
                 rscConnUuid,
                 nodeName1,
                 nodeName2,
@@ -768,7 +762,7 @@ public class CtrlApiCallHandler
                 deletePropNamespaces
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     /**
@@ -781,22 +775,22 @@ public class CtrlApiCallHandler
      * @param rscName
      *            required
      */
-    public ApiCallRc deleteResourceConnection(
+    public Flux<ApiCallRc> deleteResourceConnection(
         String nodeName1,
         String nodeName2,
         String rscName
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP))
         {
-            apiCallRc = rscConnApiCallHandler.deleteResourceConnection(
+            flux = rscConnApiCallHandler.deleteResourceConnection(
                 nodeName1,
                 nodeName2,
                 rscName
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     /**
@@ -1191,7 +1185,7 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ApiCallRc modifyVlm(
+    public Flux<ApiCallRc> modifyVlm(
         UUID uuidRef,
         String nodeNameRef,
         String rscNameRef,
@@ -1201,10 +1195,10 @@ public class CtrlApiCallHandler
         Set<String> deleteNamespacesRef
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP, RSC_DFN_MAP))
         {
-            apiCallRc = vlmApiCallHandler.modifyVolume(
+            flux = vlmApiCallHandler.modify(
                 uuidRef,
                 nodeNameRef,
                 rscNameRef,
@@ -1214,7 +1208,7 @@ public class CtrlApiCallHandler
                 deleteNamespacesRef
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     public List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames)
@@ -1270,7 +1264,7 @@ public class CtrlApiCallHandler
         return listVolumeGroups;
     }
 
-    public ApiCallRc modifyVolumeGroup(
+    public Flux<ApiCallRc> modifyVolumeGroup(
         String rscGrpNameRef,
         int vlmNrRef,
         Map<String, String> overrideProps,
@@ -1278,10 +1272,10 @@ public class CtrlApiCallHandler
         HashSet<String> deleteNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_GRP_MAP))
         {
-            apiCallRc = vlmGrpApiCallHandler.modify(
+            flux = vlmGrpApiCallHandler.modify(
                 rscGrpNameRef,
                 vlmNrRef,
                 overrideProps,
@@ -1289,7 +1283,7 @@ public class CtrlApiCallHandler
                 deleteNamespaces
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     public ApiCallRc deleteVolumeGroup(

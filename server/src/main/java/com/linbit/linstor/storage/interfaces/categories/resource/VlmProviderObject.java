@@ -4,8 +4,9 @@ import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -15,6 +16,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.ExceptionThrowingSupplier;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
 
 /**
@@ -24,7 +26,7 @@ import java.util.List;
  * this interface does not have {@link VlmLayerObject#getBackingDevice()} and
  * {@link LayerObject#getChildren()} methods
  */
-public interface VlmProviderObject extends LayerObject
+public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerObject
 {
     enum Size
     {
@@ -42,22 +44,22 @@ public interface VlmProviderObject extends LayerObject
 
     long getAllocatedSize();
 
-    Volume getVolume();
+    AbsVolume<RSC> getVolume();
 
     default VolumeNumber getVlmNr()
     {
-       return getVolume().getVolumeDefinition().getVolumeNumber();
+        return getVolume().getVolumeNumber();
     }
 
     @Nullable VlmDfnLayerObject getVlmDfnLayerObject();
 
-    RscLayerObject getRscLayerObject();
+    AbsRscLayerObject<RSC> getRscLayerObject();
 
     default long getParentAllocatedSizeOrElse(ExceptionThrowingSupplier<Long, AccessDeniedException> orElse)
         throws AccessDeniedException
     {
         long ret;
-        RscLayerObject parent = getRscLayerObject().getParent();
+        AbsRscLayerObject<RSC> parent = getRscLayerObject().getParent();
         if (parent != null)
         {
             ret = parent.getVlmProviderObject(getVlmNr()).getAllocatedSize();
@@ -91,8 +93,8 @@ public interface VlmProviderObject extends LayerObject
 
     default String getVolumeKey()
     {
-        Volume volume = getVolume();
-        NodeName nodeName = volume.getResource().getAssignedNode().getName();
+        AbsVolume<RSC> volume = getVolume();
+        NodeName nodeName = volume.getAbsResource().getNode().getName();
         ResourceName rscName = volume.getResourceDefinition().getName();
         String rscNameSuffix = getRscLayerObject().getResourceNameSuffix();
         VolumeNumber volNr = getVlmNr();

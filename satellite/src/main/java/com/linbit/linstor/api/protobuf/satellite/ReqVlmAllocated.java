@@ -17,12 +17,14 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.Ms
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntVlmAllocatedOuterClass.VlmAllocated;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Either;
-import reactor.core.publisher.Flux;
+
+import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBuilder.serializeApiCallRc;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.linbit.linstor.api.protobuf.serializer.ProtoCommonSerializerBuilder.serializeApiCallRc;
+import reactor.core.publisher.Flux;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_REQUEST_VLM_ALLOCATED,

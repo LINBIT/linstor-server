@@ -112,7 +112,7 @@ public class ResourceGenericDbDriver implements ResourceDatabaseDriver
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_INSERT))
         {
             stmt.setString(1, res.getUuid().toString());
-            stmt.setString(2, res.getAssignedNode().getName().value);
+            stmt.setString(2, res.getNode().getName().value);
             stmt.setString(3, res.getDefinition().getName().value);
             stmt.setLong(4, res.getStateFlags().getFlagsBits(accCtx));
             stmt.executeUpdate();
@@ -134,7 +134,7 @@ public class ResourceGenericDbDriver implements ResourceDatabaseDriver
         errorReporter.logTrace("Ensuring Resource exists %s", getId(res));
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_SELECT))
         {
-            stmt.setString(1, res.getAssignedNode().getName().value);
+            stmt.setString(1, res.getNode().getName().value);
             stmt.setString(2, res.getDefinition().getName().value);
 
             try (ResultSet resultSet = stmt.executeQuery())
@@ -261,7 +261,7 @@ public class ResourceGenericDbDriver implements ResourceDatabaseDriver
         errorReporter.logTrace("Deleting Resource %s", getId(resource));
         try (PreparedStatement stmt = getConnection().prepareStatement(RES_DELETE))
         {
-            stmt.setString(1, resource.getAssignedNode().getName().value);
+            stmt.setString(1, resource.getNode().getName().value);
             stmt.setString(2, resource.getDefinition().getName().value);
 
             stmt.executeUpdate();
@@ -290,7 +290,7 @@ public class ResourceGenericDbDriver implements ResourceDatabaseDriver
     private String getId(Resource res)
     {
         return getId(
-            res.getAssignedNode().getName().displayValue,
+            res.getNode().getName().displayValue,
             res.getDefinition().getName().displayValue
         );
     }
@@ -332,7 +332,7 @@ public class ResourceGenericDbDriver implements ResourceDatabaseDriver
                 {
                     stmt.setLong(1, flags);
 
-                    stmt.setString(2, resource.getAssignedNode().getName().value);
+                    stmt.setString(2, resource.getNode().getName().value);
                     stmt.setString(3, resource.getDefinition().getName().value);
 
                     stmt.executeUpdate();

@@ -1,16 +1,14 @@
 package com.linbit.linstor.core.apicallhandler.controller.internal;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -19,39 +17,39 @@ import com.linbit.locks.LockGuard;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import static java.util.stream.Collectors.toList;
+
 public class NodeInternalCallHandler
 {
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
-    private final NodeRepository nodeRepository;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final Provider<Peer> peer;
-
     private final ReadWriteLock nodesMapLock;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
 
     @Inject
     public NodeInternalCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        NodeRepository nodeRepositoryRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         Provider<Peer> peerRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef
+        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
+        CtrlApiDataLoader ctrlApiDataLoaderRef
     )
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
-        nodeRepository = nodeRepositoryRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         peer = peerRef;
         nodesMapLock = nodesMapLockRef;
+        ctrlApiDataLoader = ctrlApiDataLoaderRef;
     }
 
     public void handleNodeRequest(UUID nodeUuid, String nodeNameStr)
@@ -64,7 +62,7 @@ public class NodeInternalCallHandler
             Peer currentPeer = peer.get();
             NodeName nodeName = new NodeName(nodeNameStr);
 
-            Node node = nodeRepository.get(apiCtx, nodeName); // TODO use CtrlApiLoader.loadNode
+            Node node = ctrlApiDataLoader.loadNode(nodeName, false);
             if (node != null && !node.isDeleted() && node.getFlags().isUnset(apiCtx, Node.Flags.DELETE))
             {
                 if (node.getUuid().equals(nodeUuid))
@@ -81,7 +79,7 @@ public class NodeInternalCallHandler
                             Resource otherRsc = otherRscIterator.next();
                             if (otherRsc != rsc)
                             {
-                                otherNodes.add(otherRsc.getAssignedNode());
+                                otherNodes.add(otherRsc.getNode());
                             }
                         }
                     }

@@ -14,9 +14,9 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolGenericDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.StorPoolGenericDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -95,6 +95,7 @@ public class StorPoolGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
+            new TreeMap<>(),
             new TreeMap<>()
         );
         driver.create(storPool);
@@ -153,6 +154,7 @@ public class StorPoolGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
+            new TreeMap<>(),
             new TreeMap<>()
         );
         driver.create(storPool);
@@ -212,7 +214,7 @@ public class StorPoolGenericDbDriverTest extends GenericDbBase
     @Test
     public void testLoadGetInstance() throws Exception
     {
-        StorPool loadedStorPool = (StorPool) node.getStorPool(SYS_CTX, spdd.getName());
+        StorPool loadedStorPool = node.getStorPool(SYS_CTX, spdd.getName());
 
         assertNull(loadedStorPool);
 
@@ -226,13 +228,14 @@ public class StorPoolGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
+            new TreeMap<>(),
             new TreeMap<>()
         );
         driver.create(storPool);
         node.addStorPool(SYS_CTX, storPool);
         spdd.addStorPool(SYS_CTX, storPool);
 
-        loadedStorPool = (StorPool) node.getStorPool(SYS_CTX, spdd.getName());
+        loadedStorPool = node.getStorPool(SYS_CTX, spdd.getName());
 
         assertEquals(uuid, loadedStorPool.getUuid());
         assertEquals(spName, loadedStorPool.getDefinition(SYS_CTX).getName());
@@ -283,6 +286,7 @@ public class StorPoolGenericDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
+            new TreeMap<>(),
             new TreeMap<>()
         );
         driver.create(storPool);

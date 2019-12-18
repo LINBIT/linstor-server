@@ -214,6 +214,7 @@ public class RscApiTest extends ApiTestBase
                                         StorageRsc.newBuilder()
                                             .build()
                                     )
+                                    .setSuspend(false)
                                     .build()
                             )
                             .build()

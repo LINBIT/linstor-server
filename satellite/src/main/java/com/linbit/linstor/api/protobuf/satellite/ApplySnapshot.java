@@ -2,12 +2,14 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
 import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
+import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
@@ -71,14 +73,17 @@ public class ApplySnapshot implements ApiCall
         List<SnapshotVolumeApi> snapshotVlms =
             snapshot.getSnapshotVlmsList().stream()
                 .map(snapshotVlm -> new SnapshotVlmPojo(
-                    snapshotVlm.getStorPoolName(),
-                    UUID.fromString(snapshotVlm.getStorPoolUuid()),
                     UUID.fromString(snapshotVlm.getSnapshotVlmDfnUuid()),
                     UUID.fromString(snapshotVlm.getSnapshotVlmUuid()),
                     snapshotVlm.getVlmNr()
                 ))
                 .collect(Collectors.toList());
 
+        RscLayerDataApi snapLayerData = ProtoLayerUtils.extractRscLayerData(
+            snapshot.getLayerObject(),
+            fullSyncId,
+            updateId
+        );
         return new SnapshotPojo(
             new SnapshotDfnPojo(
                 new RscDfnPojo(
@@ -95,7 +100,8 @@ public class ApplySnapshot implements ApiCall
                 snapshot.getSnapshotName(),
                 snapshotVlmDfns,
                 snapshot.getSnapshotDfnFlags(),
-                snapshot.getSnapshotDfnPropsMap()
+                snapshot.getSnapshotDfnPropsMap(),
+                Collections.emptyList()
             ),
             UUID.fromString(snapshot.getSnapshotUuid()),
             snapshot.getFlags(),
@@ -103,7 +109,8 @@ public class ApplySnapshot implements ApiCall
             snapshot.getTakeSnapshot(),
             fullSyncId,
             updateId,
-            snapshotVlms
+            snapshotVlms,
+            snapLayerData
         );
     }
 }

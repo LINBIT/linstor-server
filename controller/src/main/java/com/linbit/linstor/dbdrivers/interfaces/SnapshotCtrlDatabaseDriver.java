@@ -14,8 +14,7 @@ import java.util.Map;
 public interface SnapshotCtrlDatabaseDriver extends SnapshotDatabaseDriver,
     ControllerDatabaseDriver<Snapshot,
         Snapshot.InitMaps,
-        Pair<Map<NodeName, ? extends Node>,
-            Map<Pair<ResourceName, SnapshotName>, ? extends SnapshotDefinition>>>
+        Pair<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
 {
 
 }

@@ -14,11 +14,11 @@ import java.util.function.Function;
 
 public class LayerPayload
 {
-    DrbdRscPayload drbdRsc;
-    DrbdRscDfnPayload drbdRscDfn;
-    DrbdVlmDfnPayload drbdVlmDfn;
+    public DrbdRscPayload drbdRsc;
+    public DrbdRscDfnPayload drbdRscDfn;
+    public DrbdVlmDfnPayload drbdVlmDfn;
 
-    Map<Pair<String, Integer>, StorageVlmPayload> storagePayload;
+    public Map<Pair<String, Integer>, StorageVlmPayload> storagePayload;
 
     public LayerPayload()
     {
@@ -30,77 +30,23 @@ public class LayerPayload
 
     public class DrbdRscPayload
     {
-        Integer nodeId;
-        Short peerSlots;
-        Integer alStripes;
-        Long alStripeSize;
-
-        public DrbdRscPayload setNodeId(Integer nodeIdRef)
-        {
-            nodeId = nodeIdRef;
-            return this;
-        }
-
-        public DrbdRscPayload setPeerSlots(Short peerSlotsRef)
-        {
-            peerSlots = peerSlotsRef;
-            return this;
-        }
-
-        public DrbdRscPayload setAlStripes(Integer alStripesRef)
-        {
-            alStripes = alStripesRef;
-            return this;
-        }
-
-        public DrbdRscPayload setAlStripeSize(Long alStripeSizeRef)
-        {
-            alStripeSize = alStripeSizeRef;
-            return this;
-        }
+        public Integer nodeId;
+        public Short peerSlots;
+        public Integer alStripes;
+        public Long alStripeSize;
     }
 
     public class DrbdRscDfnPayload
     {
-        Integer tcpPort;
-        TransportType transportType;
-        String sharedSecret;
-        Short peerSlotsNewResource;
-
-        public DrbdRscDfnPayload setTcpPort(Integer tcpPortRef)
-        {
-            tcpPort = tcpPortRef;
-            return this;
-        }
-
-        public DrbdRscDfnPayload setTransportType(TransportType transportTypeRef)
-        {
-            transportType = transportTypeRef;
-            return this;
-        }
-
-        public DrbdRscDfnPayload setSharedSecret(String sharedSecretRef)
-        {
-            sharedSecret = sharedSecretRef;
-            return this;
-        }
-
-        public DrbdRscDfnPayload setPeerSlotsNewResource(Short peerSlotsNewResourceRef)
-        {
-            peerSlotsNewResource = peerSlotsNewResourceRef;
-            return this;
-        }
+        public Integer tcpPort;
+        public TransportType transportType;
+        public String sharedSecret;
+        public Short peerSlotsNewResource;
     }
 
     public class DrbdVlmDfnPayload
     {
-        Integer minorNr;
-
-        public DrbdVlmDfnPayload setMinorNr(Integer minorNrRef)
-        {
-            minorNr = minorNrRef;
-            return this;
-        }
+        public Integer minorNr;
     }
 
     public DrbdRscPayload getDrbdRsc()
@@ -120,16 +66,11 @@ public class LayerPayload
 
     public class StorageVlmPayload
     {
-        String storPoolName;
+        public String storPoolName;
 
         public StorageVlmPayload(String storPoolNameRef)
         {
             storPoolName = storPoolNameRef;
-        }
-
-        public String getStorPoolName()
-        {
-            return storPoolName;
         }
     }
 
@@ -143,7 +84,6 @@ public class LayerPayload
         storagePayload.put(new Pair<>(rscNameSuffix, vlmNr), new StorageVlmPayload(storPoolName));
         return this;
     }
-
 
     public LayerPayload extractFrom(Props props)
     {

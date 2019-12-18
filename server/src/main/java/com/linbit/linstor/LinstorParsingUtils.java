@@ -323,12 +323,15 @@ public class LinstorParsingUtils
                 break;
             case "STORAGE": // fall-through
             case "LVM": // fall-through
+            case "SPDK": // fall-through
             case "ZFS": // fall-through
-            case "SWORDFISH":
                 kind = DeviceLayerKind.STORAGE;
                 break;
             case "NVME":
                 kind = DeviceLayerKind.NVME;
+                break;
+            case "WRITECACHE":
+                kind = DeviceLayerKind.WRITECACHE;
                 break;
             default:
                 throw new ApiRcException(
@@ -390,21 +393,14 @@ public class LinstorParsingUtils
             case "ZFS_THIN":
                 kind = DeviceProviderKind.ZFS_THIN;
                 break;
-            case "SWORDFISHTARGET":
-                // fall-through
-            case "SWORDFISH_TARGET":
-                kind = DeviceProviderKind.SWORDFISH_TARGET;
-                break;
-            case "SWORDFISHINITIATOR":
-                // fall-through
-            case "SWORDFISH_INITIATOR":
-                kind = DeviceProviderKind.SWORDFISH_INITIATOR;
-                break;
             case "FILE":
                 kind = DeviceProviderKind.FILE;
                 break;
             case "FILE_THIN":
                 kind = DeviceProviderKind.FILE_THIN;
+                break;
+            case "SPDK":
+                kind = DeviceProviderKind.SPDK;
                 break;
             default:
                 throw new ApiRcException(

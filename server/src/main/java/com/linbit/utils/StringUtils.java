@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.StringJoiner;
 
 /**
@@ -47,10 +46,23 @@ public class StringUtils
         return join(col, ",");
     }
 
+    /**
+     * Convenience method delegating the call to {@link #join(String, Object...)} in a
+     * typesafe way
+     *
+     * @param delimiter
+     * @param array
+     * @return
+     */
     public static String join(String delimiter, String... array)
     {
+        return join(delimiter, (Object[]) array);
+    }
+
+    public static String join(String delimiter, Object... array)
+    {
         StringBuilder sb = new StringBuilder();
-        for (String element : array)
+        for (Object element : array)
         {
             sb.append(element).append(delimiter);
         }
@@ -75,7 +87,7 @@ public class StringUtils
         return result.toArray(new String[result.size()]);
     }
 
-    public static String[] concat(String[] array1, String[] array2)
+    public static String[] concat(String[] array1, String... array2)
     {
         String[] result = new String[array1.length + array2.length];
         System.arraycopy(array1, 0, result, 0, array1.length);

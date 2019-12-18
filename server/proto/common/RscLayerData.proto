@@ -6,6 +6,7 @@ import "common/DrbdRsc.proto";
 import "common/LuksRsc.proto";
 import "common/StorageRsc.proto";
 import "common/NvmeRsc.proto";
+import "common/WritecacheRsc.proto";
 import "common/LayerType.proto";
 
 // Shared properties of layered resource data. See DrbdRsc.proto, LuksRsc.proto and StorageRsc.proto for concrete types
@@ -19,4 +20,7 @@ message RscLayerData
     optional LuksRsc            luks = 7;
     optional StorageRsc         storage = 8;
     optional NvmeRsc            nvme = 9;
+    optional WritecacheRsc      writecache = 10;
+
+    required bool               suspend = 11;
 }

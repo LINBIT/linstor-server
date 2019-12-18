@@ -39,8 +39,7 @@ public class DbConnectionPoolInitializer implements DbInitializer
         linstorConfig = linstorConfigRef;
     }
 
-    public void initialize()
-        throws InitializationException
+    public void initialize(boolean withStartupVer) throws InitializationException
     {
         errorLog.logInfo("Initializing the database connection pool");
 
@@ -49,7 +48,7 @@ public class DbConnectionPoolInitializer implements DbInitializer
 
         dbConnPool.initializeDataSource(connectionUrl);
 
-        dbConnPool.migrate(dbType);
+        dbConnPool.migrate(dbType, withStartupVer);
 
         testDbConnection();
 

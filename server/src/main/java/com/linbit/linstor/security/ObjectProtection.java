@@ -8,6 +8,7 @@ import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.BaseTransactionObject;
@@ -33,6 +34,7 @@ public final class ObjectProtection extends BaseTransactionObject
     private static final String PATH_SEPARATOR               = "/";
     private static final String PATH_RESOURCES               = "/resources/";
     private static final String PATH_RESOURCE_DEFINITIONS    = "/resourcedefinitions/";
+    private static final String PATH_SNAPSHOT_DEFINITIONS    = "/snapshotdefinitions/";
     private static final String PATH_RESOURCE_GROUPS         = "/resourcegroups/";
     private static final String PATH_NODES                   = "/nodes/";
     private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
@@ -459,6 +461,16 @@ public final class ObjectProtection extends BaseTransactionObject
         return PATH_RESOURCE_DEFINITIONS + resDfnName.value;
     }
 
+    /**
+     * ObjProt-Path for SnapshotDefinitions
+     */
+    public static String buildPath(ResourceName rscName, SnapshotName snapName)
+    {
+        return PATH_SNAPSHOT_DEFINITIONS +
+            rscName.value + PATH_SEPARATOR +
+            snapName.value;
+    }
+
 
     /**
      * ObjProt-Path for ResourceGroups
@@ -541,4 +553,5 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         return objPath;
     }
+
 }

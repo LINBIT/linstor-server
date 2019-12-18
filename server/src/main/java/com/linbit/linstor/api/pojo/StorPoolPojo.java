@@ -26,6 +26,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     private final Optional<Long> totalSpace;
     private final ApiCallRc reports;
     private final Boolean supportsSnapshots;
+    private final Boolean isPmem;
 
     public StorPoolPojo(
         final UUID storPoolUuidRef,
@@ -43,7 +44,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         final Optional<Long> freeSpaceRef,
         final Optional<Long> totalSpaceRef,
         final ApiCallRc reportsRef,
-        final Boolean supportsSnapshotsRef
+        final Boolean supportsSnapshotsRef,
+        final Boolean isPmemRef
     )
     {
         storPoolUuid = storPoolUuidRef;
@@ -62,6 +64,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         totalSpace = totalSpaceRef;
         reports = reportsRef;
         supportsSnapshots = supportsSnapshotsRef;
+        isPmem = isPmemRef;
     }
 
     @Override
@@ -152,9 +155,15 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         return updateId;
     }
 
+    @Override
     public Boolean supportsSnapshots()
     {
         return supportsSnapshots;
+    }
+
+    public Boolean isPmem()
+    {
+        return isPmem;
     }
 
     @Override

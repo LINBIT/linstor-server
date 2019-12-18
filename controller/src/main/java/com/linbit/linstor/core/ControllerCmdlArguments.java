@@ -1,21 +1,24 @@
 package com.linbit.linstor.core;
 
+import java.util.function.Function;
+
 public class ControllerCmdlArguments extends LinStorCmdlArguments
 {
+    public static final String LS_REST_BIND_ADDRESS = "LS_REST_BIND_ADDRESS";
+    public static final String LS_REST_BIND_ADDRESS_SECURE = "LS_REST_BIND_ADDRESS_SECURE";
+
     private String inMemoryDbType;
     private int inMemoryDbPort;
     private String inMemoryDbAddress;
     private String restBindAddress;
     private String restBindAddressSecure;
-    private String logLevel;
-
     public ControllerCmdlArguments()
     {
         inMemoryDbType = null;
         inMemoryDbAddress = null;
         inMemoryDbPort = 0;
-        restBindAddress = null;
-        logLevel = null;
+        restBindAddress = getEnv(LS_REST_BIND_ADDRESS, Function.identity());
+        restBindAddressSecure = getEnv(LS_REST_BIND_ADDRESS_SECURE, Function.identity());
     }
 
     public void setInMemoryDbType(final String inMemoryDbTypeRef)
@@ -65,15 +68,5 @@ public class ControllerCmdlArguments extends LinStorCmdlArguments
     public void setRESTBindAddressSecure(String restBindAddressRef)
     {
         restBindAddressSecure = restBindAddressRef;
-    }
-
-    public String getLogLevel()
-    {
-        return logLevel;
-    }
-
-    public void setLogLevel(String logLevelRef)
-    {
-        logLevel = logLevelRef;
     }
 }

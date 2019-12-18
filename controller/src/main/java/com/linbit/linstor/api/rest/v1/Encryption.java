@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 
 import javax.inject.Inject;
@@ -52,7 +53,7 @@ public class Encryption
                 null
             );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
     }
 
@@ -73,7 +74,7 @@ public class Encryption
                 passPhraseCreate.old_passphrase
             );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
 
@@ -90,7 +91,7 @@ public class Encryption
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.enterPassphrase(passPhrase);
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
 }

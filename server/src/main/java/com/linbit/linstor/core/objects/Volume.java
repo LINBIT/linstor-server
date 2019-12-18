@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -13,8 +11,6 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -22,10 +18,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -33,6 +28,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.utils.Pair;
 
 import javax.inject.Provider;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,35 +40,18 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-/**
- *
- * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
- */
-public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Comparable<Volume>, LinstorDataObject
+public class Volume extends AbsVolume<Resource>
 {
-
     public static interface InitMaps
     {
         Map<Key, VolumeConnection> getVolumeConnections();
     }
-
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
-
-    // Reference to the resource this volume belongs to
-    private final Resource resource;
 
     // Reference to the resource definition that defines the resource this volume belongs to
     private final ResourceDefinition resourceDfn;
 
     // Reference to the volume definition that defines this volume
     private final VolumeDefinition volumeDfn;
-
-    // Properties container for this volume
-    private final Props volumeProps;
 
     // State flags
     private final StateFlags<Volume.Flags> flags;
@@ -87,100 +66,68 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
 
     private final VolumeDatabaseDriver dbDriver;
 
-    private final TransactionSimpleObject<Volume, Boolean> deleted;
-
     private final Key vlmKey;
 
     private ApiCallRcImpl reports;
 
     Volume(
         UUID uuid,
-        Resource resRef,
-        VolumeDefinition volDfnRef,
+        Resource rscRef,
+        VolumeDefinition vlmDfnRef,
         long initFlags,
         VolumeDatabaseDriver dbDriverRef,
+        Map<Volume.Key, VolumeConnection> vlmConnsMapRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
-        Provider<? extends TransactionMgr> transMgrProviderRef,
-        Map<Volume.Key, VolumeConnection> vlmConnsMapRef
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
-
-        objId = uuid;
-        dbgInstanceId = UUID.randomUUID();
-        resource = resRef;
-        resourceDfn = resRef.getDefinition();
-        volumeDfn = volDfnRef;
+        super(
+            uuid,
+            rscRef,
+            propsContainerFactory.getInstance(
+                PropsContainer.buildPath(
+                    rscRef.getNode().getName(),
+                    rscRef.getDefinition().getName(),
+                    vlmDfnRef.getVolumeNumber()
+                )
+            ),
+            transObjFactory,
+            transMgrProviderRef
+        );
+        resourceDfn = rscRef.getDefinition();
+        volumeDfn = vlmDfnRef;
         devicePath = transObjFactory.createTransactionSimpleObject(this, null, null);
         dbDriver = dbDriverRef;
 
+        usableSize = transObjFactory.createTransactionSimpleObject(this, null, null);
+        allocatedSize = transObjFactory.createTransactionSimpleObject(this, null, null);
+
+        vlmKey = new Key(this);
+        reports = new ApiCallRcImpl();
+
         flags = transObjFactory.createStateFlagsImpl(
-            resRef.getObjProt(),
+            rscRef.getObjProt(),
             this,
-            Volume.Flags.class,
+            Flags.class,
             this.dbDriver.getStateFlagsPersistence(),
             initFlags
         );
 
         volumeConnections = transObjFactory.createTransactionMap(vlmConnsMapRef, null);
-        volumeProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(
-                resRef.getAssignedNode().getName(),
-                resRef.getDefinition().getName(),
-                volDfnRef.getVolumeNumber()
+
+        transObjs.addAll(
+            Arrays.asList(
+                volumeDfn,
+                volumeConnections,
+                usableSize,
+                flags
             )
-        );
-        usableSize = transObjFactory.createTransactionSimpleObject(this, null, null);
-        allocatedSize = transObjFactory.createTransactionSimpleObject(this, null, null);
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-
-        vlmKey = new Key(this);
-        reports = new ApiCallRcImpl();
-
-        transObjs = Arrays.asList(
-            resource,
-            volumeDfn,
-            volumeConnections,
-            volumeProps,
-            usableSize,
-            flags,
-            deleted
         );
     }
 
     @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
-    }
-
-    public Props getProps(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        return PropsAccess.secureGetProps(accCtx, resource.getObjProt(), volumeProps);
-    }
-
-    public Resource getResource()
-    {
-        checkDeleted();
-        return resource;
-    }
-
-    public ResourceDefinition getResourceDefinition()
-    {
-        checkDeleted();
-        return resourceDfn;
-    }
-
     public VolumeDefinition getVolumeDefinition()
     {
         checkDeleted();
@@ -191,7 +138,7 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumeConnections.values().stream();
     }
 
@@ -199,7 +146,7 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumeConnections.get(othervolume.getKey());
     }
 
@@ -211,8 +158,8 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         Volume sourceVolume = volumeConnection.getSourceVolume(accCtx);
         Volume targetVolume = volumeConnection.getTargetVolume(accCtx);
 
-        sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        sourceVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         if (this == sourceVolume)
         {
@@ -232,8 +179,8 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         Volume sourceVolume = volumeConnection.getSourceVolume(accCtx);
         Volume targetVolume = volumeConnection.getTargetVolume(accCtx);
 
-        sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        sourceVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         if (this == sourceVolume)
         {
@@ -254,14 +201,14 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
     public String getDevicePath(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return devicePath.get();
     }
 
     public void setDevicePath(AccessContext accCtx, String path) throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         try
         {
             devicePath.set(path);
@@ -276,14 +223,14 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
-        getFlags().enableFlags(accCtx, Volume.Flags.DELETE);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.USE);
+        getFlags().enableFlags(accCtx, Flags.DELETE);
     }
 
     public boolean isUsableSizeSet(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
         return usableSize.get() != null;
     }
@@ -291,7 +238,7 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
     public void setUsableSize(AccessContext accCtx, long size) throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.USE);
 
         try
         {
@@ -306,7 +253,7 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
     public long getUsableSize(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
         return usableSize.get();
     }
@@ -314,14 +261,14 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
     public boolean isAllocatedSizeSet(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return allocatedSize.get() != null;
     }
 
     public void setAllocatedSize(AccessContext accCtx, long size) throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.USE);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.USE);
         try
         {
             allocatedSize.set(size);
@@ -335,29 +282,25 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
     public long getAllocatedSize(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return allocatedSize.get();
     }
 
     public long getEstimatedSize(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        resource.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
         return volumeDfn.getVolumeSize(accCtx);
     }
 
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {
-            resource.getObjProt().requireAccess(accCtx, AccessType.USE);
+            absRsc.getObjProt().requireAccess(accCtx, AccessType.USE);
 
             // preventing ConcurrentModificationException
             Collection<VolumeConnection> values = new ArrayList<>(volumeConnections.values());
@@ -366,10 +309,10 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
                 vlmConn.delete(accCtx);
             }
 
-            resource.removeVolume(accCtx, this);
-            ((VolumeDefinition) volumeDfn).removeVolume(accCtx, this);
+            absRsc.removeVolume(accCtx, this);
+            volumeDfn.removeVolume(accCtx, this);
 
-            volumeProps.delete();
+            props.delete();
 
             activateTransMgr();
             dbDriver.delete(this);
@@ -378,59 +321,68 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         }
     }
 
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted volume");
-        }
-    }
-
     @Override
     public String toString()
     {
-        return "Node: '" + resource.getAssignedNode().getName() + "', " +
-               "Rsc: '" + resource.getDefinition().getName() + "', " +
-               "VlmNr: '" + volumeDfn.getVolumeNumber() + "'";
+        return "Node: '" + absRsc.getNode().getName() + "', " +
+            "Rsc: '" + absRsc.getDefinition().getName() + "', " +
+            "VlmNr: '" + volumeDfn.getVolumeNumber() + "'";
     }
 
     @Override
-    public int compareTo(Volume otherVlm)
+    public int compareTo(AbsVolume<Resource> otherVlm)
     {
-        int eq = getResource().getAssignedNode().compareTo(
-            otherVlm.getResource().getAssignedNode()
-        );
-        if (eq == 0)
+        int eq = 1;
+        if (otherVlm instanceof Volume)
         {
-            eq = getVolumeDefinition().compareTo(otherVlm.getVolumeDefinition()); // also contains rscName comparison
+            eq = getAbsResource().getNode().compareTo(
+                otherVlm.getAbsResource().getNode()
+            );
+            if (eq == 0)
+            {
+                eq = volumeDfn.compareTo(((Volume) otherVlm).volumeDfn); // also contains rscName comparison
+            }
         }
         return eq;
     }
 
+    @Override
+    public VolumeNumber getVolumeNumber()
+    {
+        return volumeDfn.getVolumeNumber();
+    }
+
+    @Override
+    public long getVolumeSize(AccessContext dbCtxRef) throws AccessDeniedException
+    {
+        return volumeDfn.getVolumeSize(dbCtxRef);
+    }
+
     public static String getVolumeKey(Volume volume)
     {
-        NodeName nodeName = volume.getResource().getAssignedNode().getName();
+        NodeName nodeName = volume.absRsc.node.getName();
         ResourceName rscName = volume.getResourceDefinition().getName();
-        VolumeNumber volNr = volume.getVolumeDefinition().getVolumeNumber();
+        VolumeNumber volNr = volume.volumeDfn.getVolumeNumber();
         return nodeName.value + "/" + rscName.value + "/" + volNr.value;
     }
 
     public VolumeApi getApiData(Long allocated, AccessContext accCtx) throws AccessDeniedException
     {
-        VolumeNumber vlmNr = getVolumeDefinition().getVolumeNumber();
+        VolumeNumber vlmNr = volumeDfn.getVolumeNumber();
         List<Pair<String, VlmLayerDataApi>> layerDataList = new ArrayList<>();
 
         StorPool compatStorPool = null;
 
-        LinkedList<RscLayerObject> rscLayersToExpand = new LinkedList<>();
-        rscLayersToExpand.add(resource.getLayerData(accCtx));
+        LinkedList<AbsRscLayerObject<Resource>> rscLayersToExpand = new LinkedList<>();
+        rscLayersToExpand.add(absRsc.getLayerData(accCtx));
         while (!rscLayersToExpand.isEmpty())
         {
-            RscLayerObject rscLayerObject = rscLayersToExpand.removeFirst();
-            VlmProviderObject vlmProvider = rscLayerObject.getVlmLayerObjects().get(vlmNr);
+            AbsRscLayerObject<Resource> rscLayerObject = rscLayersToExpand.removeFirst();
+            VlmProviderObject<Resource> vlmProvider = rscLayerObject.getVlmLayerObjects().get(vlmNr);
+
             if (vlmProvider != null)
             {
-                // vlmProvider is null is a layer (like DRBD) does not need for all volumes backing vlmProvider
+                // vlmProvider is null as a layer (like DRBD) does not need for all volumes backing vlmProvider
                 // (like in the case of mixed internal and external meta-data)
                 layerDataList.add(
                     new Pair<>(
@@ -441,14 +393,13 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
             }
 
             // deprecated - only for compatibility with old versions
-            if (rscLayerObject.getResourceNameSuffix().isEmpty()) // for "" resources vlmProvider always have to exist
+            if (compatStorPool == null && rscLayerObject.getResourceNameSuffix().isEmpty())
             {
                 compatStorPool = vlmProvider.getStorPool();
             }
 
             rscLayersToExpand.addAll(rscLayerObject.getChildren());
         }
-
 
         String compatStorPoolName = null;
         DeviceProviderKind compatStorPoolKind = null;
@@ -459,7 +410,7 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         }
 
         return new VlmPojo(
-            getVolumeDefinition().getUuid(),
+            volumeDfn.getUuid(),
             getUuid(),
             getDevicePath(accCtx),
             vlmNr.value,
@@ -535,9 +486,9 @@ public class Volume extends BaseTransactionObject implements DbgInstanceUuid, Co
         public Key(Volume volume)
         {
             this(
-                volume.getResource().getAssignedNode().getName(),
+                volume.getAbsResource().getNode().getName(),
                 volume.getResourceDefinition().getName(),
-                volume.getVolumeDefinition().getVolumeNumber()
+                volume.volumeDfn.getVolumeNumber()
             );
         }
 

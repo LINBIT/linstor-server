@@ -1,7 +1,5 @@
 package com.linbit.linstor.core;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
 import com.linbit.linstor.annotation.SatelliteConnectorContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
@@ -14,6 +12,9 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.PrivilegeSet;
 
 import javax.inject.Singleton;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 
 public class ControllerSatelliteCommunicationModule extends AbstractModule
 {

@@ -4,7 +4,7 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
@@ -12,7 +12,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.AbsRscData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -28,13 +28,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObject
+public class DrbdRscData<RSC extends AbsResource<RSC>>
+    extends AbsRscData<RSC, DrbdVlmData<RSC>>
+    implements DrbdRscObject<RSC>
 {
     public static final String SUFFIX_DATA = "";
     public static final String SUFFIX_META = ".meta"; // . is not a valid character in ResourceName
 
     // unmodifiable data, once initialized
-    private final DrbdRscDfnData drbdRscDfnData;
+    private final DrbdRscDfnData<RSC> drbdRscDfnData;
     private final NodeId nodeId;
     private final short peerSlots;
     private final int alStripes;
@@ -55,11 +57,11 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
 
     public DrbdRscData(
         int rscLayerIdRef,
-        Resource rscRef,
-        @Nullable RscLayerObject parentRef,
-        DrbdRscDfnData drbdRscDfnDataRef,
-        Set<RscLayerObject> childrenRef,
-        Map<VolumeNumber, DrbdVlmData> vlmLayerObjectsMapRef,
+        RSC rscRef,
+        @Nullable AbsRscLayerObject<RSC> parentRef,
+        DrbdRscDfnData<RSC> drbdRscDfnDataRef,
+        Set<AbsRscLayerObject<RSC>> childrenRef,
+        Map<VolumeNumber, DrbdVlmData<RSC>> vlmLayerObjectsMapRef,
         String rscNameSuffixRef,
         NodeId nodeIdRef,
         @Nullable Short peerSlotsRef,
@@ -86,9 +88,8 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
         nodeId = nodeIdRef;
         drbdDbDriver = dbDriverRef;
 
-
         flags = transObjFactory.createStateFlagsImpl(
-            rsc.getObjProt(),
+            rscRef.getObjProt(),
             this,
             DrbdRscFlags.class,
             dbDriverRef.getRscStateFlagPersistence(),
@@ -122,13 +123,13 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     }
 
     @Override
-    public @Nullable RscLayerObject getParent()
+    public @Nullable AbsRscLayerObject<RSC> getParent()
     {
         return parent.get();
     }
 
     @Override
-    public void setParent(@Nonnull RscLayerObject parentObj) throws DatabaseException
+    public void setParent(@Nonnull AbsRscLayerObject<RSC> parentObj) throws DatabaseException
     {
         parent.set(parentObj);
     }
@@ -158,14 +159,14 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     }
 
     @Override
-    public DrbdRscDfnData getRscDfnLayerObject()
+    public DrbdRscDfnData<RSC> getRscDfnLayerObject()
     {
         return drbdRscDfnData;
     }
 
     // no setter for drbdRscDfnData - unmodifiable after initialized
 
-    public void putVlmLayerObject(DrbdVlmData data)
+    public void putVlmLayerObject(DrbdVlmData<RSC> data)
     {
         vlmMap.put(data.getVlmNr(), data);
     }
@@ -201,7 +202,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     }
 
     @Override
-    protected void deleteVlmFromDatabase(DrbdVlmData drbdVlmData) throws DatabaseException
+    protected void deleteVlmFromDatabase(DrbdVlmData<RSC> drbdVlmData) throws DatabaseException
     {
         drbdDbDriver.delete(drbdVlmData);
     }
@@ -260,7 +261,7 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
     public RscLayerDataApi asPojo(AccessContext accCtx) throws AccessDeniedException
     {
         List<DrbdVlmPojo> vlmPojos = new ArrayList<>();
-        for (DrbdVlmData drbdVlmData : vlmMap.values())
+        for (DrbdVlmData<RSC> drbdVlmData : vlmMap.values())
         {
             vlmPojos.add(drbdVlmData.asPojo(accCtx));
         }
@@ -274,7 +275,8 @@ public class DrbdRscData extends AbsRscData<DrbdVlmData> implements DrbdRscObjec
             alStripes,
             alStripeSize,
             flags.getFlagsBits(accCtx),
-            vlmPojos
+            vlmPojos,
+            suspend.get()
         );
     }
 }

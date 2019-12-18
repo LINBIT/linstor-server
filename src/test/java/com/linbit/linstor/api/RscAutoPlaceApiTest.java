@@ -529,12 +529,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 .build()
 
             .addReplicasOnSameNodeProp("Aux/A")
-            .addReplicasOnDfifferentNodeProp("Aux/B")
+            .addReplicasOnDifferentNodeProp("Aux/B")
         );
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 nodes
+            .map(rsc -> rsc.getNode()) // we should have now only 2 nodes
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
 
@@ -543,6 +543,266 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         assertEquals(firstNodeProps.getProp("Aux/A"), secondNodeProps.getProp("Aux/A"));
         assertNotEquals(firstNodeProps.getProp("Aux/B"), secondNodeProps.getProp("Aux/B"));
+    }
+
+    @Test
+    public void replicasOnCombinedWithValueTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                1,
+                true,
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("node0.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node1.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node2.val2")
+                .setNodeProp("Aux/A", "2")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node3.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node4.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 10 * GB)
+                .build()
+
+            .addReplicasOnSameNodeProp("Aux/A=1")
+            .addReplicasOnDifferentNodeProp("Aux/A=0")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(1, deployedNodes.size());
+
+        String nodePropVal = deployedNodes.get(0).getProps(GenericDbBase.SYS_CTX).getProp("Aux/A");
+
+        assertEquals("1", nodePropVal);
+        assertNotEquals("0", nodePropVal);
+    }
+
+    @Test
+    public void replicasOnDifferentWithValueGithub79Test() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED // rsc autoplace
+            )
+                .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+                .stltBuilder("node1")
+                    .setNodeProp("Aux/key", "val1")
+                    .addStorPool("stor", 10 * GB)
+                    .build()
+                .stltBuilder("node2")
+                    .setNodeProp("Aux/key", "val2")
+                    .addStorPool("stor", 10 * GB)
+                    .build()
+                .stltBuilder("node3")
+                    .setNodeProp("Aux/key", "val3")
+                    .addStorPool("stor", 9 * GB)
+                    .build()
+                .stltBuilder("node4")
+                    .setNodeProp("Aux/key", "val1") // same as "node1"
+                    .addStorPool("stor", 10 * GB)
+                    .build()
+                .stltBuilder("node5")
+                    .setNodeProp("Aux/key", "val2") // same as "node2"
+                    .addStorPool("stor", 10 * GB)
+                    .build()
+
+                .addReplicasOnDifferentNodeProp("Aux/key=val1")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .sorted((n1, n2) -> n1.getName().compareTo(n2.getName()))
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+
+        String nodePropVal = deployedNodes.get(0).getProps(GenericDbBase.SYS_CTX).getProp("Aux/key");
+
+        assertNotEquals("val1", nodePropVal);
+
+        assertEquals("node2", deployedNodes.get(0).getName().displayValue);
+        assertEquals("node3", deployedNodes.get(1).getName().displayValue);
+    }
+
+    @Test
+    public void replicasOnDifferentWithValueTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED // rsc autoplace
+            )
+                .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+                .stltBuilder("node0.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+                .stltBuilder("node1.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 10 * GB)
+                .build()
+                .stltBuilder("node2.val2")
+                .setNodeProp("Aux/A", "2")
+                .addStorPool("stor", 10 * GB)
+                .build()
+                .stltBuilder("node3.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+                .stltBuilder("node4.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 10 * GB)
+                .build()
+
+                .addReplicasOnDifferentNodeProp("Aux/A=0")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+
+        String firstNodePropVal = deployedNodes.get(0).getProps(GenericDbBase.SYS_CTX).getProp("Aux/A");
+        String secondNodePropVal = deployedNodes.get(1).getProps(GenericDbBase.SYS_CTX).getProp("Aux/A");
+
+        assertNotEquals("0", firstNodePropVal);
+        assertNotEquals("0", secondNodePropVal);
+    }
+
+    @Test
+    public void replicasOnSameTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                5,
+                true,
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("node0.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node1.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node2.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node3.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node4.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+
+            .stltBuilder("node5.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 20 * GB)
+                .build()
+            .stltBuilder("node6.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 20 * GB)
+                .build()
+            .stltBuilder("node7.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 20 * GB)
+                .build()
+            .stltBuilder("node8.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 20 * GB)
+                .build()
+            .stltBuilder("node9.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 20 * GB)
+                .build()
+
+            .addReplicasOnSameNodeProp("Aux/A")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(5, deployedNodes.size());
+
+        for (int idx = 0; idx < 5; idx++)
+        {
+            assertEquals("1", deployedNodes.get(idx).getProps(GenericDbBase.SYS_CTX).getProp("Aux/A"));
+        }
+    }
+
+    @Test
+    public void replicasCombinedGithub89Test() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 100 * GB)
+            .stltBuilder("m13c12")
+                .addStorPool("thindata", null, 179 * GB, 900 * GB, LVM_THIN)
+                .setNodeProp("Aux/moonshot", "13")
+                .setNodeProp("Aux/opennebula-1", "true")
+                .build()
+            .stltBuilder("m14c21")
+                .addStorPool("thindata", null, 203 * GB, 900 * GB, LVM_THIN)
+                .setNodeProp("Aux/moonshot", "14")
+                .setNodeProp("Aux/opennebula-1", "true")
+                .build()
+            .stltBuilder("m10c12")
+                .addStorPool("thindata", null, 900 * GB, 900 * GB, LVM_THIN)
+                .setNodeProp("Aux/moonshot", "10")
+                .setNodeProp("Aux/opennebula-1", "true")
+                .build()
+            .stltBuilder("m15c12")
+                .addStorPool("thindata", null, 900 * GB, 900 * GB, LVM_THIN)
+                .setNodeProp("Aux/moonshot", "15")
+                .setNodeProp("Aux/opennebula-1", "true")
+                .build()
+
+            .addReplicasOnSameNodeProp("Aux/opennebula-1")
+            .addReplicasOnDifferentNodeProp("Aux/moonshot")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode)
+            .collect(Collectors.toList());
+
+        assertEquals(2, deployedNodes.size());
+        assertEquals("m10c12", deployedNodes.get(0).getName().displayValue);
+        assertEquals("m15c12", deployedNodes.get(1).getName().displayValue);
     }
 
     @Test
@@ -565,7 +825,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode()) // we should have now only 2 diskfull and 2 diskless nodes
+            .map(rsc -> rsc.getNode()) // we should have now only 2 diskfull and 2 diskless nodes
             .collect(Collectors.toList());
         assertEquals(4, deployedNodes.size());
 
@@ -575,8 +835,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 assertEquals(1, node.getResourceCount()); // just to be sure
                 try
                 {
-                    return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME)).getStateFlags()
-                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DISKLESS);
+                    return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME))
+                        .getStateFlags()
+                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DRBD_DISKLESS);
                 }
                 catch (AccessDeniedException | InvalidNameException exc)
                 {
@@ -613,7 +874,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
 
@@ -632,7 +893,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         // recheck
         deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
     }
@@ -660,7 +921,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
 
@@ -680,7 +941,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         // recheck
         deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(4, deployedNodes.size());
 
@@ -690,8 +951,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 assertEquals(1, node.getResourceCount()); // just to be sure
                 try
                 {
-                    return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME)).getStateFlags()
-                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DISKLESS);
+                    return node.getResource(GenericDbBase.SYS_CTX, new ResourceName(TEST_RSC_NAME))
+                        .getStateFlags()
+                        .isSet(GenericDbBase.SYS_CTX, Resource.Flags.DRBD_DISKLESS);
                 }
                 catch (AccessDeniedException | InvalidNameException exc)
                 {
@@ -727,7 +989,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
 
@@ -751,7 +1013,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         // recheck
         deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(4, deployedNodes.size());
 
@@ -834,7 +1096,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
         assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
@@ -870,7 +1132,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         List<Node> deployedNodes = nodesMap.values().stream()
             .flatMap(this::streamResources)
-            .map(rsc -> rsc.getAssignedNode())
+            .map(rsc -> rsc.getNode())
             .collect(Collectors.toList());
         assertEquals(2, deployedNodes.size());
         assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
@@ -901,7 +1163,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 Volume vlm = vlmIt.next();
                 assertEquals(
                     storPoolName,
-                    vlm.getResource()
+                    vlm.getAbsResource()
                         .getLayerData(SYS_CTX) // drbd layer
                         .getSingleChild() // storage layer
                         .getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber())
@@ -1025,7 +1287,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
-        RscAutoPlaceApiCall addReplicasOnDfifferentNodeProp(String nodePropKey)
+        RscAutoPlaceApiCall addReplicasOnDifferentNodeProp(String nodePropKey)
         {
             replicasOnDifferentNodePropList.add(nodePropKey);
             return this;
@@ -1266,19 +1528,20 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize)
             throws Exception
         {
-            return addStorPool(storPoolName, null, storPoolSize, LVM);
+            return addStorPool(storPoolName, null, storPoolSize, storPoolSize, LVM);
         }
 
         SatelliteBuilder addStorPool(String storPoolName, long storPoolSize, DeviceProviderKind provider)
             throws Exception
         {
-            return addStorPool(storPoolName, null, storPoolSize, provider);
+            return addStorPool(storPoolName, null, storPoolSize, storPoolSize, provider);
         }
 
         SatelliteBuilder addStorPool(
             String storPoolName,
             String freeSpaceMgrName,
-            long storPoolSize,
+            long freeSpace,
+            long totalCapacity,
             DeviceProviderKind providerKind
         )
             throws Exception
@@ -1315,7 +1578,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 fsm
             );
 
-            storPool.getFreeSpaceTracker().setCapacityInfo(GenericDbBase.SYS_CTX, storPoolSize, storPoolSize);
+            storPool.getFreeSpaceTracker().setCapacityInfo(GenericDbBase.SYS_CTX, freeSpace, totalCapacity);
 
             commitAndCleanUp(true);
 

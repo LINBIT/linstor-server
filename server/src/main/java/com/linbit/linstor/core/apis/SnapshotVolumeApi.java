@@ -6,7 +6,5 @@ public interface SnapshotVolumeApi
 {
     UUID getSnapshotVlmUuid();
     UUID getSnapshotVlmDfnUuid();
-    String getStorPoolName();
-    UUID getStorPoolUuid();
     int getSnapshotVlmNr();
 }

@@ -9,8 +9,7 @@ import com.linbit.linstor.storage.layer.provider.file.FileProvider;
 import com.linbit.linstor.storage.layer.provider.file.FileThinProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmProvider;
 import com.linbit.linstor.storage.layer.provider.lvm.LvmThinProvider;
-import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishInitiatorProvider;
-import com.linbit.linstor.storage.layer.provider.swordfish.SwordfishTargetProvider;
+import com.linbit.linstor.storage.layer.provider.spdk.SpdkProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsProvider;
 import com.linbit.linstor.storage.layer.provider.zfs.ZfsThinProvider;
 
@@ -27,11 +26,10 @@ public class DeviceProviderMapper
     private final LvmThinProvider lvmThinProvider;
     private final ZfsProvider zfsProvider;
     private final ZfsThinProvider zfsThinProvider;
-    private final SwordfishTargetProvider sfTargetProvider;
-    private final SwordfishInitiatorProvider sfInitProvider;
     private final DisklessProvider disklessProvider;
     private final FileProvider fileProvider;
     private final FileThinProvider fileThinProvider;
+    private final SpdkProvider spdkProvider;
     private final List<DeviceProvider> driverList;
 
     @Inject
@@ -40,33 +38,30 @@ public class DeviceProviderMapper
         LvmThinProvider lvmThinProviderRef,
         ZfsProvider zfsProviderRef,
         ZfsThinProvider zfsThinProviderRef,
-        SwordfishTargetProvider sfTargetProviderRef,
-        SwordfishInitiatorProvider sfInitProviderRef,
         DisklessProvider disklessProviderRef,
         FileProvider fileProviderRef,
-        FileThinProvider fileThinProviderRef
+        FileThinProvider fileThinProviderRef,
+        SpdkProvider spdkProviderRef
     )
     {
         lvmProvider = lvmProviderRef;
         lvmThinProvider = lvmThinProviderRef;
         zfsProvider = zfsProviderRef;
         zfsThinProvider = zfsThinProviderRef;
-        sfTargetProvider = sfTargetProviderRef;
-        sfInitProvider = sfInitProviderRef;
         disklessProvider = disklessProviderRef;
         fileProvider = fileProviderRef;
         fileThinProvider = fileThinProviderRef;
+        spdkProvider = spdkProviderRef;
 
         driverList = Arrays.asList(
             lvmProvider,
             lvmThinProvider,
             zfsProvider,
             zfsThinProvider,
-            sfTargetProvider,
-            sfInitProvider,
             disklessProvider,
             fileProvider,
-            fileThinProvider
+            fileThinProvider,
+            spdkProvider
         );
     }
 
@@ -91,12 +86,6 @@ public class DeviceProviderMapper
             case LVM_THIN:
                 devProvider = lvmThinProvider;
                 break;
-            case SWORDFISH_INITIATOR:
-                devProvider = sfInitProvider;
-                break;
-            case SWORDFISH_TARGET:
-                devProvider = sfTargetProvider;
-                break;
             case ZFS:
                 devProvider = zfsProvider;
                 break;
@@ -111,6 +100,9 @@ public class DeviceProviderMapper
                 break;
             case FILE_THIN:
                 devProvider = fileThinProvider;
+                break;
+            case SPDK:
+                devProvider = spdkProvider;
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 throw new ImplementationError("A volume from a layer was asked for its provider type");

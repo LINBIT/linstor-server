@@ -2,8 +2,9 @@ package com.linbit.linstor.storage.data.provider.diskless;
 
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -18,11 +19,12 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 
-public class DisklessData extends AbsStorageVlmData
+public class DisklessData<RSC extends AbsResource<RSC>>
+    extends AbsStorageVlmData<RSC>
 {
     public DisklessData(
-        Volume vlmRef,
-        StorageRscData rscDataRef,
+        AbsVolume<RSC> vlmRef,
+        StorageRscData<RSC> rscDataRef,
         long usableSizeRef,
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
@@ -77,7 +79,7 @@ public class DisklessData extends AbsStorageVlmData
     public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         return new DisklessVlmPojo(
-            vlm.getVolumeDefinition().getVolumeNumber().value,
+            vlm.getVolumeNumber().value,
             getDevicePath(),
             getAllocatedSize(),
             getUsableSize(),

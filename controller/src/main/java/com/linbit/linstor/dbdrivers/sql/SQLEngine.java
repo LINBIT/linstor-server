@@ -262,7 +262,13 @@ public class SQLEngine implements DbEngine
                     Pair<DATA, INIT_MAPS> pair = restoreData(
                         table, resultSet, parentsRef, dataLoaderRef
                     );
-                    loadedObjectsMap.put(pair.objA, pair.objB);
+                    // pair might be null when loading objects sharing the same table.
+                    // For example SnapshotDbDriver will return null when finding a Resource entry
+                    // and vice versa.
+                    if (pair != null)
+                    {
+                        loadedObjectsMap.put(pair.objA, pair.objB);
+                    }
                 }
             }
         }
@@ -282,24 +288,25 @@ public class SQLEngine implements DbEngine
         throws DatabaseException, MdException
     {
         Column[] columns = table.values();
-        Object[] objects = new Object[columns.length];
+        Map<String, Object> objects = new TreeMap<>();
         try
         {
-            for (int idx = 0; idx < columns.length; ++idx)
+            for (Column column : columns)
             {
-                if (columns[idx].getSqlType() == Types.BLOB)
+                Object data;
+                if (column.getSqlType() == Types.BLOB)
                 {
-                    // otherwise .getObjects could return a java.h2.JdbcBlob
-                    objects[idx] = resultSet.getBytes(idx + 1);
+                    data = resultSet.getBytes(column.getName());
                 }
                 else
                 {
-                    objects[idx] = resultSet.getObject(idx + 1);
+                    data = resultSet.getObject(column.getName());
                 }
                 if (resultSet.wasNull())
                 {
-                    objects[idx] = null;
+                    data = null;
                 }
+                objects.put(column.getName(), data);
             }
         }
         catch (SQLException exc)
@@ -319,7 +326,7 @@ public class SQLEngine implements DbEngine
             {
                 if (col.isPk())
                 {
-                    pk.append(col.getName()).append(" = '").append(objects[col.getIndex()]).append("', ");
+                    pk.append(col.getName()).append(" = '").append(objects.get(col.getName())).append("', ");
                 }
             }
             pk.setLength(pk.length() - 2);

@@ -40,7 +40,8 @@ public class SnapshotVolumeDefinitionSatelliteFactory
         AccessContext accCtx,
         UUID snapshotVolumeDefinitionUuid,
         SnapshotDefinition snapshotDfn,
-        VolumeNumber volumeNumber,
+        VolumeDefinition vlmDfn,
+        VolumeNumber vlmNr,
         long vlmSize,
         SnapshotVolumeDefinition.Flags[] flags
     )
@@ -49,19 +50,21 @@ public class SnapshotVolumeDefinitionSatelliteFactory
         SnapshotVolumeDefinition snapshotVolumeDefinition;
         try
         {
-            snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(accCtx, volumeNumber);
+            snapshotVolumeDefinition = snapshotDfn.getSnapshotVolumeDefinition(accCtx, vlmNr);
             if (snapshotVolumeDefinition == null)
             {
                 snapshotVolumeDefinition = new SnapshotVolumeDefinition(
                     snapshotVolumeDefinitionUuid,
                     snapshotDfn,
-                    volumeNumber,
+                    vlmDfn,
+                    vlmNr,
                     vlmSize,
                     StateFlagsBits.getMask(flags),
                     driver,
                     propsContainerFactory,
                     transObjFactory,
                     transMgrProvider,
+                    new TreeMap<>(),
                     new TreeMap<>()
                 );
                 snapshotDfn.addSnapshotVolumeDefinition(accCtx, snapshotVolumeDefinition);

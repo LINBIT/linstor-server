@@ -3,13 +3,15 @@ package com.linbit.linstor.storage.layer.provider;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.layer.DeviceLayer;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,12 +22,12 @@ public interface DeviceProvider
 
     void clearCache() throws StorageException;
 
-    void prepare(List<VlmProviderObject> vlmDataList, List<SnapshotVolume> snapVlms)
+    void prepare(List<VlmProviderObject<Resource>> vlmDataList, List<VlmProviderObject<Snapshot>> snapVlms)
         throws StorageException, AccessDeniedException, DatabaseException;
 
     void process(
-        List<VlmProviderObject> vlmDataList,
-        List<SnapshotVolume> list,
+        List<VlmProviderObject<Resource>> vlmDataList,
+        List<VlmProviderObject<Snapshot>> snapVlmDataList,
         ApiCallRcImpl apiCallRc
     )
         throws AccessDeniedException, DatabaseException, StorageException;
@@ -57,9 +59,20 @@ public interface DeviceProvider
 
     Collection<StorPool> getChangedStorPools();
 
-    void updateGrossSize(VlmProviderObject vlmObj)
+    void updateGrossSize(VlmProviderObject<Resource> vlmObj)
         throws AccessDeniedException, DatabaseException;
 
-    void updateAllocatedSize(VlmProviderObject vlmObj)
+    void updateAllocatedSize(VlmProviderObject<Resource> vlmObj)
+        throws AccessDeniedException, DatabaseException, StorageException;
+
+    /**
+     * Used to determine properties of the storage pool, i.e. if the storage pool is ontop of a pmem device
+     *
+     * @param storPoolRef
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     * @throws StorageException
+     */
+    void update(StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException, StorageException;
 }

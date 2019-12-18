@@ -111,9 +111,19 @@ public class LinstorConfigToml
 
     public static class DB
     {
-        private String user = "linstor";
-        private String password = "linstor";
+        private String user;
+        private String password;
         private String connection_url = "jdbc:h2:/var/lib/linstor/linstordb";
+        private String ca_certificate;
+        private String client_certificate;
+
+        /**
+         * Typo in linstor version 1.2.1
+         */
+        @Deprecated
+        private String client_key_pcks8_pem;
+        private String client_key_pkcs8_pem;
+        private String client_key_password;
 
         public String getUser()
         {
@@ -129,15 +139,53 @@ public class LinstorConfigToml
         {
             return connection_url;
         }
+
+        public String getCACertificate()
+        {
+            return ca_certificate;
+        }
+
+        public String getClientCertificate()
+        {
+            return client_certificate;
+        }
+
+        public String getClientKeyPKCS8PEM()
+        {
+            return client_key_pkcs8_pem != null ? client_key_pkcs8_pem : client_key_pcks8_pem;
+        }
+
+        public String getClientKeyPassword()
+        {
+            return client_key_password;
+        }
     }
 
     public static class Logging
     {
+        public enum RestAccessLogMode {
+            append,
+            rotatehourly,
+            rotatedaily,
+            nolog;
+        }
         private String level = "info";
+        private String rest_access_log_path = "rest-access.log";
+        private RestAccessLogMode rest_access_log_mode = RestAccessLogMode.append;
 
         public String getLevel()
         {
             return level;
+        }
+
+        public String getRestAccessLogPath()
+        {
+            return rest_access_log_path;
+        }
+
+        public RestAccessLogMode getRestAccessLogMode()
+        {
+            return rest_access_log_mode;
         }
     }
 

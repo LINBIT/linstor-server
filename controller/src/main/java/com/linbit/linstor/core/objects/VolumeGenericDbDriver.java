@@ -172,10 +172,10 @@ public class VolumeGenericDbDriver implements VolumeDatabaseDriver
                 vlmDfn,
                 resultSet.getLong(VOL_FLAGS),
                 this,
+                vlmConnsMap,
                 propsContainerFactory,
                 transObjFactory,
-                transMgrProvider,
-                vlmConnsMap
+                transMgrProvider
             );
         }
         catch (SQLException sqlExc)
@@ -200,7 +200,7 @@ public class VolumeGenericDbDriver implements VolumeDatabaseDriver
             errorReporter.logTrace("Creating Volume %s", getId(vol));
 
             stmt.setString(1, vol.getUuid().toString());
-            stmt.setString(2, vol.getResource().getAssignedNode().getName().value);
+            stmt.setString(2, vol.getAbsResource().getNode().getName().value);
             stmt.setString(3, vol.getResourceDefinition().getName().value);
             stmt.setInt(4, vol.getVolumeDefinition().getVolumeNumber().value);
             stmt.setLong(5, vol.getFlags().getFlagsBits(dbCtx));
@@ -226,8 +226,8 @@ public class VolumeGenericDbDriver implements VolumeDatabaseDriver
         {
             errorReporter.logTrace("Deleting Volume %s", getId(volume));
 
-            stmt.setString(1, volume.getResource().getAssignedNode().getName().value);
-            stmt.setString(2, volume.getResource().getDefinition().getName().value);
+            stmt.setString(1, volume.getAbsResource().getNode().getName().value);
+            stmt.setString(2, volume.getAbsResource().getDefinition().getName().value);
             stmt.setInt(3, volume.getVolumeDefinition().getVolumeNumber().value);
             stmt.executeUpdate();
 
@@ -248,8 +248,8 @@ public class VolumeGenericDbDriver implements VolumeDatabaseDriver
     private String getId(Volume volume)
     {
         return getVolId(
-            volume.getResource().getAssignedNode().getName().displayValue,
-            volume.getResource().getDefinition().getName().displayValue,
+            volume.getAbsResource().getNode().getName().displayValue,
+            volume.getAbsResource().getDefinition().getName().displayValue,
             volume.getVolumeDefinition().getVolumeNumber()
         );
     }
@@ -296,8 +296,8 @@ public class VolumeGenericDbDriver implements VolumeDatabaseDriver
                 );
 
                 stmt.setLong(1, flags);
-                stmt.setString(2, volume.getResource().getAssignedNode().getName().value);
-                stmt.setString(3, volume.getResource().getDefinition().getName().value);
+                stmt.setString(2, volume.getAbsResource().getNode().getName().value);
+                stmt.setString(3, volume.getAbsResource().getDefinition().getName().value);
                 stmt.setInt(4, volume.getVolumeDefinition().getVolumeNumber().value);
                 stmt.executeUpdate();
 

@@ -128,7 +128,7 @@ public class CtrlFullSyncApiCallHandler
                     Resource otherRsc = otherRscIterator.next();
                     if (otherRsc != rsc)
                     {
-                        nodes.add(otherRsc.getAssignedNode());
+                        nodes.add(otherRsc.getNode());
                     }
                 }
             }
@@ -165,9 +165,9 @@ public class CtrlFullSyncApiCallHandler
                 StringBuilder details = new StringBuilder();
                 ExtToolsManager extToolsManager = satellitePeer.getExtToolsManager();
                 Map<DeviceLayerKind, List<String>> unsupportedLayersWithResons =
-                    extToolsManager.getUnsupportedLayersWithResons();
+                    extToolsManager.getUnsupportedLayersWithReasons();
                 Map<DeviceProviderKind, List<String>> unsupportedProvidersWithResons =
-                    extToolsManager.getUnsupportedProvidersWithResons();
+                    extToolsManager.getUnsupportedProvidersWithReasons();
 
                 details.append("Supported storage providers: ")
                     .append(extToolsManager.getSupportedProviders().toString().toLowerCase())

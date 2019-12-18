@@ -41,9 +41,10 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.helper.ReadyForPrimaryNotifier;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
@@ -53,6 +54,7 @@ import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
+import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.utils.AccessUtils;
 
 import javax.inject.Inject;
@@ -66,7 +68,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -134,14 +135,17 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void prepare(Set<RscLayerObject> rscDataList, Set<Snapshot> affectedSnapshots)
+    public void prepare(
+        Set<AbsRscLayerObject<Resource>> rscDataList,
+        Set<AbsRscLayerObject<Snapshot>> affectedSnapshots
+    )
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op
     }
 
     @Override
-    public void resourceFinished(RscLayerObject layerDataRef)
+    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef)
     {
         /*
          * Although the corresponding events2 event will also trigger the "resource created"
@@ -169,12 +173,13 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, DatabaseException
+    public void updateGrossSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException
     {
         try
         {
-            DrbdVlmData drbdVlmData = (DrbdVlmData) vlmData;
-            String peerSlotsProp = vlmData.getVolume().getResource()
+            DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
+            String peerSlotsProp = vlmData.getVolume().getAbsResource()
                 .getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
             // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
             // as an unexpected exception in dispatchResource()
@@ -183,29 +188,39 @@ public class DrbdLayer implements DeviceLayer
 
             long netSize = drbdVlmData.getUsableSize();
 
-            if (drbdVlmData.isUsingExternalMetaData())
+            boolean isDiskless = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags()
+                .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
+            if (!isDiskless)
             {
-                long extMdSize = new MetaData().getExternalMdSize(
-                    netSize,
-                    peerSlots,
-                    DrbdLayer.FIXME_AL_STRIPES,
-                    DrbdLayer.FIXME_AL_STRIPE_SIZE
-                );
-                drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
+                if (drbdVlmData.isUsingExternalMetaData())
+                {
+                    long extMdSize = new MetaData().getExternalMdSize(
+                        netSize,
+                        peerSlots,
+                        DrbdLayer.FIXME_AL_STRIPES,
+                        DrbdLayer.FIXME_AL_STRIPE_SIZE
+                    );
+                    drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
 
-                drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(netSize);
-                drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META).setUsableSize(extMdSize);
-            }
-            else
-            {
-                long grossSize = new MetaData().getGrossSize(
-                    netSize,
-                    peerSlots,
-                    DrbdLayer.FIXME_AL_STRIPES,
-                    DrbdLayer.FIXME_AL_STRIPE_SIZE
-                );
-                drbdVlmData.setAllocatedSize(grossSize);
-                drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(grossSize);
+                    drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(netSize);
+                    VlmProviderObject<Resource> metaChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META);
+                    if (metaChild != null)
+                    {
+                        // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
+                        metaChild.setUsableSize(extMdSize);
+                    }
+                }
+                else
+                {
+                    long grossSize = new MetaData().getGrossSize(
+                        netSize,
+                        peerSlots,
+                        DrbdLayer.FIXME_AL_STRIPES,
+                        DrbdLayer.FIXME_AL_STRIPE_SIZE
+                    );
+                    drbdVlmData.setAllocatedSize(grossSize);
+                    drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA).setUsableSize(grossSize);
+                }
             }
         }
         catch (InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException |
@@ -222,16 +237,16 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void process(
-        RscLayerObject rscLayerData,
-        Collection<Snapshot> snapshots,
+    public LayerProcessResult process(
+        AbsRscLayerObject<Resource> rscLayerData,
+        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
-        DrbdRscData drbdRscData = (DrbdRscData) rscLayerData;
+        DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscLayerData;
 
-        Resource rsc = rscLayerData.getResource();
+        Resource rsc = rscLayerData.getAbsResource();
         if (rsc.getProps(workerCtx).map().containsKey(ApiConsts.KEY_RSC_ROLLBACK_TARGET))
         {
             /*
@@ -241,8 +256,13 @@ public class DrbdLayer implements DeviceLayer
              *  - start drbd
              */
             deleteDrbd(drbdRscData);
-            processChild(drbdRscData, snapshots, apiCallRc);
-            adjustDrbd(drbdRscData, snapshots, apiCallRc, true);
+            if (processChild(drbdRscData, snapshotList, apiCallRc))
+            {
+                adjustDrbd(drbdRscData, snapshotList, apiCallRc, true);
+
+                // this should not be executed if adjusting the drbd resource fails
+                copyResFileToBackup(drbdRscData);
+            }
         }
         else
         if (
@@ -253,16 +273,30 @@ public class DrbdLayer implements DeviceLayer
             deleteDrbd(drbdRscData);
             addDeletedMsg(drbdRscData, apiCallRc);
 
-            processChild(drbdRscData, snapshots, apiCallRc);
+            processChild(drbdRscData, snapshotList, apiCallRc);
+
+            // this should not be executed if deleting the drbd resource fails
+            deleteBackupResFile(drbdRscData);
         }
         else
         {
-            adjustDrbd(drbdRscData, snapshots, apiCallRc, false);
-            addAdjustedMsg(drbdRscData, apiCallRc);
+            if (adjustDrbd(drbdRscData, snapshotList, apiCallRc, false))
+            {
+                addAdjustedMsg(drbdRscData, apiCallRc);
+
+                // this should not be executed if adjusting the drbd resource fails
+                copyResFileToBackup(drbdRscData);
+            }
+            else
+            {
+                addAbortedMsg(drbdRscData, apiCallRc);
+            }
         }
+        return LayerProcessResult.NO_DEVICES_PROVIDED; // TODO: make this depend on whether the local
+        // resource is currently primary or not.
     }
 
-    private void addDeletedMsg(DrbdRscData drbdRscData, ApiCallRcImpl apiCallRc)
+    private void addDeletedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
     {
         apiCallRc.addEntry(
             ApiCallRcImpl.simpleEntry(
@@ -272,7 +306,7 @@ public class DrbdLayer implements DeviceLayer
         );
     }
 
-    private void addAdjustedMsg(DrbdRscData drbdRscData, ApiCallRcImpl apiCallRc)
+    private void addAdjustedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
     {
         apiCallRc.addEntry(
             ApiCallRcImpl.simpleEntry(
@@ -282,35 +316,60 @@ public class DrbdLayer implements DeviceLayer
         );
     }
 
-    private void processChild(
-        DrbdRscData drbdRscData,
-        Collection<Snapshot> snapshots,
+    private void addAbortedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
+    {
+        apiCallRc.addEntry(
+            ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_RSC,
+                "Resource '" + drbdRscData.getSuffixedResourceName() + "' [DRBD] not adjusted "
+            ).setCause(
+                "This happened most likely because the layer below did not provide a device to work with."
+            )
+        );
+    }
+
+    private boolean processChild(
+        DrbdRscData<Resource> drbdRscData,
+        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws AccessDeniedException, StorageException, ResourceException, VolumeException, DatabaseException
     {
-        if (
-            !drbdRscData.getResource().isDiskless(workerCtx) ||
-                drbdRscData.getResource().getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING)
-        )
+        boolean isDiskless = drbdRscData.getAbsResource().isDrbdDiskless(workerCtx);
+        boolean isDiskRemoving = drbdRscData.getAbsResource().getStateFlags()
+            .isSet(workerCtx, Resource.Flags.DISK_REMOVING);
+
+        boolean contProcess = isDiskless;
+
+        if (!isDiskless || isDiskRemoving)
         {
-            RscLayerObject dataChild = drbdRscData.getChildBySuffix(DrbdRscData.SUFFIX_DATA);
-            resourceProcessorProvider.get().process(
+            AbsRscLayerObject<Resource> dataChild = drbdRscData.getChildBySuffix(DrbdRscData.SUFFIX_DATA);
+            LayerProcessResult dataResult = resourceProcessorProvider.get().process(
                 dataChild,
-                snapshots,
+                snapshotList,
                 apiCallRc
             );
+            LayerProcessResult metaResult = null;
 
-            RscLayerObject metaChild = drbdRscData.getChildBySuffix(DrbdRscData.SUFFIX_META);
+            AbsRscLayerObject<Resource> metaChild = drbdRscData.getChildBySuffix(DrbdRscData.SUFFIX_META);
             if (metaChild != null)
             {
-                resourceProcessorProvider.get().process(
+                metaResult = resourceProcessorProvider.get().process(
                     metaChild,
-                    snapshots,
+                    snapshotList,
                     apiCallRc
                 );
             }
+
+            if (
+                dataResult == LayerProcessResult.SUCCESS &&
+                    (metaResult == null || metaResult == LayerProcessResult.SUCCESS)
+            )
+            {
+                contProcess = true;
+            }
         }
+        return contProcess;
     }
 
     /**
@@ -324,7 +383,7 @@ public class DrbdLayer implements DeviceLayer
      * @throws DatabaseException
      * @throws AccessDeniedException
      */
-    private void deleteDrbd(DrbdRscData drbdRscData) throws StorageException
+    private void deleteDrbd(DrbdRscData<Resource> drbdRscData) throws StorageException
     {
         String suffixedRscName = drbdRscData.getSuffixedResourceName();
         try
@@ -336,7 +395,7 @@ public class DrbdLayer implements DeviceLayer
             Files.deleteIfExists(resFile);
 
             drbdRscData.setExists(false);
-            for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+            for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
             {
                 drbdVlmData.setExists(false);
             }
@@ -363,26 +422,17 @@ public class DrbdLayer implements DeviceLayer
 
     /**
      * Adjusts (creates or modifies) a given DRBD resource
-     * @param rsc
-     * @param snapshots
-     * @param apiCallRc
-     * @param childAlreadyProcessed
-     * @param rscNameSuffix
-     * @throws DatabaseException
-     * @throws StorageException
-     * @throws AccessDeniedException
-     * @throws VolumeException
-     * @throws ResourceException
      */
-    private void adjustDrbd(
-        DrbdRscData drbdRscData,
-        Collection<Snapshot> snapshots,
+    private boolean adjustDrbd(
+        DrbdRscData<Resource> drbdRscData,
+        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc,
         boolean childAlreadyProcessed
     )
         throws AccessDeniedException, StorageException, DatabaseException,
             ResourceException, VolumeException
     {
+        boolean contProcess = true;
         updateRequiresAdjust(drbdRscData);
 
         if (drbdRscData.isAdjustRequired())
@@ -401,156 +451,162 @@ public class DrbdLayer implements DeviceLayer
              */
             updateResourceToCurrentDrbdState(drbdRscData);
 
-            List<DrbdVlmData> checkMetaData = detachVolumesIfNecessary(drbdRscData);
+            List<DrbdVlmData<Resource>> checkMetaData = detachVolumesIfNecessary(drbdRscData);
 
-            adjustSuspendIo(drbdRscData, snapshots);
+            adjustSuspendIo(drbdRscData, snapshotList);
 
             if (!childAlreadyProcessed)
             {
-                processChild(drbdRscData, snapshots, apiCallRc);
+                contProcess = processChild(drbdRscData, snapshotList, apiCallRc);
             }
 
-            // hasMetaData needs to be run after child-resource processed
-            List<DrbdVlmData> createMetaData = new ArrayList<>();
-            if (!drbdRscData.getResource().isDiskless(workerCtx))
+            if (contProcess)
             {
-                // do not try to create meta data while the resource is diskless....
-                for (DrbdVlmData drbdVlmData : checkMetaData)
+                // hasMetaData needs to be run after child-resource processed
+                List<DrbdVlmData<Resource>> createMetaData = new ArrayList<>();
+                if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx))
                 {
-                    if (!hasMetaData(drbdVlmData))
+                    // do not try to create meta data while the resource is diskless....
+                    for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
                     {
-                        createMetaData.add(drbdVlmData);
-                    }
-                }
-            }
-
-            regenerateResFile(drbdRscData);
-
-            // createMetaData needs rendered resFile
-            for (DrbdVlmData drbdVlmData : createMetaData)
-            {
-                createMetaData(drbdVlmData);
-            }
-
-            try
-            {
-                for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
-                {
-                    if (needsResize(drbdVlmData))
-                    {
-                        drbdUtils.resize(
-                            drbdVlmData,
-                            // TODO: not sure if we should "--assume-clean" if data device is only partially
-                            // thinly backed
-                            VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false)
-                        );
-                    }
-                }
-
-                if (!drbdRscData.getResource().isDiskless(workerCtx))
-                {
-                    for (DrbdRscData otherRsc : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
-                    {
-                        if (!otherRsc.equals(drbdRscData) && // skip local rsc
-                            !otherRsc.getResource().isDiskless(workerCtx) && // skip remote diskless resources
-                                otherRsc.getResource().getStateFlags().isSet(workerCtx, Resource.Flags.DELETE)
-                        )
+                        if (!hasMetaData(drbdVlmData))
                         {
-                            /*
-                             * If a peer is getting deleted, we issue a forget-peer (which requires
-                             * a del-peer) so that the bitmap of that peer is reset to day0
-                             */
-                            ExtCmdFailedException delPeerExc = null;
-                            try
-                            {
-                                /*
-                                 * Race condition:
-                                 * If two linstor-resources are deleted concurrently, and one is much
-                                 * faster than the other, the slower will get an "unknown connection"
-                                 * from the drbd-utils when executing the del-peer command.
-                                 * In that case, we will still try the forget-peer.
-                                 * If the forget-peer command succeeds, ignore the exception of the failed
-                                 * del-peer command.
-                                 * If the forget-peer command also failed we ignore that exception and
-                                 * re-throw the del-peer's exception as there could be a different reason
-                                 * for the del-peer to have failed than this race-condition
-                                 */
-                                drbdUtils.deletePeer(otherRsc);
-                            }
-                            catch (ExtCmdFailedException exc)
-                            {
-                                delPeerExc = exc;
-                            }
-                            try
-                            {
-                                drbdUtils.forgetPeer(otherRsc);
-                            }
-                            catch (ExtCmdFailedException forgetPeerExc)
-                            {
-                                throw delPeerExc != null ? delPeerExc : forgetPeerExc;
-                            }
+                            createMetaData.add(drbdVlmData);
                         }
                     }
                 }
 
-                drbdUtils.adjust(
-                    drbdRscData,
-                    false,
-                    false,
-                    false
-                );
-                drbdRscData.setAdjustRequired(false);
+                regenerateResFile(drbdRscData);
 
-                // set device paths
-                for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                // createMetaData needs rendered resFile
+                for (DrbdVlmData<Resource> drbdVlmData : createMetaData)
                 {
-                    drbdVlmData.setDevicePath(generateDevicePath(drbdVlmData));
+                    createMetaData(drbdVlmData);
                 }
-                condInitialOrSkipSync(drbdRscData);
-            }
-            catch (ExtCmdFailedException exc)
-            {
-                throw new ResourceException(
-                    String.format("Failed to adjust DRBD resource %s", drbdRscData.getSuffixedResourceName()),
-                    exc
-                );
+
+                try
+                {
+                    for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                    {
+                        if (needsResize(drbdVlmData))
+                        {
+                            drbdUtils.resize(
+                                drbdVlmData,
+                                // TODO: not sure if we should "--assume-clean" if data device is only partially
+                                // thinly backed
+                                VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false)
+                            );
+                        }
+                    }
+
+                    if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx))
+                    {
+                        for (DrbdRscData<Resource> otherRsc : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
+                        {
+                            if (!otherRsc.equals(drbdRscData) && // skip local rsc
+                                !otherRsc.getAbsResource().isDrbdDiskless(workerCtx) && // skip remote diskless resources
+                                    otherRsc.getAbsResource().getStateFlags().isSet(workerCtx, Resource.Flags.DELETE)
+                            )
+                            {
+                                /*
+                                 * If a peer is getting deleted, we issue a forget-peer (which requires
+                                 * a del-peer) so that the bitmap of that peer is reset to day0
+                                 */
+                                ExtCmdFailedException delPeerExc = null;
+                                try
+                                {
+                                    /*
+                                     * Race condition:
+                                     * If two linstor-resources are deleted concurrently, and one is much
+                                     * faster than the other, the slower will get an "unknown connection"
+                                     * from the drbd-utils when executing the del-peer command.
+                                     * In that case, we will still try the forget-peer.
+                                     * If the forget-peer command succeeds, ignore the exception of the failed
+                                     * del-peer command.
+                                     * If the forget-peer command also failed we ignore that exception and
+                                     * re-throw the del-peer's exception as there could be a different reason
+                                     * for the del-peer to have failed than this race-condition
+                                     */
+                                    drbdUtils.deletePeer(otherRsc);
+                                }
+                                catch (ExtCmdFailedException exc)
+                                {
+                                    delPeerExc = exc;
+                                }
+                                try
+                                {
+                                    drbdUtils.forgetPeer(otherRsc);
+                                }
+                                catch (ExtCmdFailedException forgetPeerExc)
+                                {
+                                    throw delPeerExc != null ? delPeerExc : forgetPeerExc;
+                                }
+                            }
+                        }
+                    }
+
+                    drbdUtils.adjust(
+                        drbdRscData,
+                        false,
+                        false,
+                        false
+                    );
+                    drbdRscData.setAdjustRequired(false);
+
+                    // set device paths
+                    for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                    {
+                        drbdVlmData.setDevicePath(generateDevicePath(drbdVlmData));
+                    }
+                    condInitialOrSkipSync(drbdRscData);
+                }
+                catch (ExtCmdFailedException exc)
+                {
+                    throw new ResourceException(
+                        String.format("Failed to adjust DRBD resource %s", drbdRscData.getSuffixedResourceName()),
+                        exc
+                    );
+                }
             }
         }
+        return contProcess;
     }
 
-    private boolean needsResize(DrbdVlmData drbdVlmData) throws AccessDeniedException
+    private boolean needsResize(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException
     {
         // A resize should not be called on a resize without a disk
         // there was a bug in pre 0.9.2 versions where diskless would be chosen for the resize command
-        return drbdVlmData.getVolume().getFlags().isSet(workerCtx, Volume.Flags.DRBD_RESIZE) && drbdVlmData.hasDisk();
+        boolean isResizeFlagSet = ((Volume) drbdVlmData.getVolume()).getFlags()
+            .isSet(workerCtx, Volume.Flags.DRBD_RESIZE);
+        return isResizeFlagSet && drbdVlmData.hasDisk();
     }
 
-    private String generateDevicePath(DrbdVlmData drbdVlmData)
+    private String generateDevicePath(DrbdVlmData<Resource> drbdVlmData)
     {
         return String.format(DRBD_DEVICE_PATH_FORMAT, drbdVlmData.getVlmDfnLayerObject().getMinorNr().value);
     }
 
-    private void updateRequiresAdjust(DrbdRscData drbdRscData)
+    private void updateRequiresAdjust(DrbdRscData<?> drbdRscData)
     {
         drbdRscData.setAdjustRequired(true); // TODO: could be improved :)
     }
 
-    private List<DrbdVlmData> detachVolumesIfNecessary(DrbdRscData drbdRscData)
+    private List<DrbdVlmData<Resource>> detachVolumesIfNecessary(DrbdRscData<Resource> drbdRscData)
         throws AccessDeniedException, StorageException
     {
-        List<DrbdVlmData> checkMetaData = new ArrayList<>();
-        Resource rsc = drbdRscData.getResource();
-        if (!rsc.isDiskless(workerCtx) ||
-                rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING)
+        List<DrbdVlmData<Resource>> checkMetaData = new ArrayList<>();
+        Resource rsc = drbdRscData.getAbsResource();
+        if (!rsc.isDrbdDiskless(workerCtx) ||
+            rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING)
         )
         {
             // using a dedicated list to prevent concurrentModificationException
-            List<DrbdVlmData> volumesToDelete = new ArrayList<>();
-            List<DrbdVlmData> volumesToMakeDiskless = new ArrayList<>();
+            List<DrbdVlmData<Resource>> volumesToDelete = new ArrayList<>();
+            List<DrbdVlmData<Resource>> volumesToMakeDiskless = new ArrayList<>();
 
-            for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+            for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
             {
-                if (drbdVlmData.getVolume().getFlags().isSet(workerCtx, Volume.Flags.DELETE))
+                if (((Volume) drbdVlmData.getVolume()).getFlags().isSet(workerCtx, Volume.Flags.DELETE))
                 {
                     if (drbdVlmData.hasDisk() && !drbdVlmData.hasFailed())
                     {
@@ -569,12 +625,12 @@ public class DrbdLayer implements DeviceLayer
                     checkMetaData.add(drbdVlmData);
                 }
             }
-            for (DrbdVlmData drbdVlmData : volumesToDelete)
+            for (DrbdVlmData<Resource> drbdVlmData : volumesToDelete)
             {
                 detachDrbdVolume(drbdVlmData, false);
                 drbdVlmData.setExists(false);
             }
-            for (DrbdVlmData drbdVlmData : volumesToMakeDiskless)
+            for (DrbdVlmData<Resource> drbdVlmData : volumesToMakeDiskless)
             {
                 detachDrbdVolume(drbdVlmData, true);
                 drbdVlmData.setExists(false);
@@ -583,7 +639,7 @@ public class DrbdLayer implements DeviceLayer
         return checkMetaData;
     }
 
-    private void detachDrbdVolume(DrbdVlmData drbdVlmData, boolean diskless) throws StorageException
+    private void detachDrbdVolume(DrbdVlmData<Resource> drbdVlmData, boolean diskless) throws StorageException
     {
         errorReporter.logTrace(
             "Detaching volume %s/%d",
@@ -608,13 +664,13 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private void adjustSuspendIo(DrbdRscData drbdRscData, Collection<Snapshot> snapshots)
+    private void adjustSuspendIo(
+        DrbdRscData<Resource> drbdRscData,
+        List<Snapshot> snapshotList
+    )
         throws ResourceException
     {
-        boolean shouldSuspend = snapshots.stream()
-            .anyMatch(snap ->
-                AccessUtils.execPrivileged(() -> snap.getSuspendResource(workerCtx))
-            );
+        boolean shouldSuspend = drbdRscData.exists() && drbdRscData.getSuspendIo();
 
         if (!drbdRscData.isSuspended() && shouldSuspend)
         {
@@ -657,7 +713,7 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private boolean hasMetaData(DrbdVlmData drbdVlmData)
+    private boolean hasMetaData(DrbdVlmData<Resource> drbdVlmData)
         throws VolumeException
     {
         String metaDiskPath = drbdVlmData.getMetaDiskPath();
@@ -740,7 +796,7 @@ public class DrbdLayer implements DeviceLayer
         return hasMetaData;
     }
 
-    private void createMetaData(DrbdVlmData drbdVlmData)
+    private void createMetaData(DrbdVlmData<Resource> drbdVlmData)
         throws AccessDeniedException, StorageException, ImplementationError, VolumeException
     {
         try
@@ -751,7 +807,18 @@ public class DrbdLayer implements DeviceLayer
             );
             drbdVlmData.setMetaDataIsNew(true);
 
-            if (VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true))
+            boolean skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true);
+            if (!skipInitSync)
+            {
+                skipInitSync = VolumeUtils.getStorageDevices(
+                    drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA)
+                )
+                    .stream()
+                    .map(VlmProviderObject::getProviderKind)
+                    .allMatch(kind -> kind == DeviceProviderKind.ZFS || kind == DeviceProviderKind.ZFS_THIN);
+            }
+
+            if (skipInitSync)
             {
                 String currentGi = null;
                 try
@@ -816,7 +883,7 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private void updateResourceToCurrentDrbdState(DrbdRscData drbdRscData)
+    private void updateResourceToCurrentDrbdState(DrbdRscData<Resource> drbdRscData)
         throws AccessDeniedException, StorageException
     {
         try
@@ -850,14 +917,14 @@ public class DrbdLayer implements DeviceLayer
                 }
 
                 { // check drbd connections
-                    Resource localResource = drbdRscData.getResource();
+                    Resource localResource = drbdRscData.getAbsResource();
                     localResource.getDefinition().streamResource(workerCtx)
                         .filter(otherRsc -> !otherRsc.equals(localResource))
                         .forEach(
                             otherRsc ->
                                 {
                                     DrbdConnection drbdConn = drbdRscState.getConnection(
-                                        otherRsc.getAssignedNode().getName().displayValue
+                                        otherRsc.getNode().getName().displayValue
                                     );
                                     if (drbdConn != null)
                                     {
@@ -907,7 +974,7 @@ public class DrbdLayer implements DeviceLayer
 
                 Map<VolumeNumber, DrbdVolume> drbdVolumes = drbdRscState.getVolumesMap();
 
-                for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
                     { // check drbd-volume
                         DrbdVolume drbdVlmState = drbdVolumes.remove(drbdVlmData.getVlmNr());
@@ -1013,22 +1080,22 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private void fillResourceState(DrbdRscData drbdRscData)
+    private void fillResourceState(DrbdRscData<Resource> drbdRscData)
         throws AccessDeniedException
     {
-        Resource localResource = drbdRscData.getResource();
+        Resource localResource = drbdRscData.getAbsResource();
 
         // FIXME: Temporary fix: If the NIC selection property on a storage pool is changed retrospectively,
         //        then rewriting the DRBD resource configuration file and 'drbdadm adjust' is required,
         //        but there is not yet a mechanism to notify the device handler to perform an adjust action.
         drbdRscData.setAdjustRequired(true);
 
-        boolean isRscDisklessFlagSet = localResource.getStateFlags().isSet(workerCtx, Resource.Flags.DISKLESS);
+        boolean isRscDisklessFlagSet = localResource.getStateFlags().isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
 
-        Iterator<DrbdVlmData> drbdVlmDataIter = drbdRscData.getVlmLayerObjects().values().iterator();
+        Iterator<DrbdVlmData<Resource>> drbdVlmDataIter = drbdRscData.getVlmLayerObjects().values().iterator();
         while (drbdVlmDataIter.hasNext())
         {
-            DrbdVlmData drbdVlmData = drbdVlmDataIter.next();
+            DrbdVlmData<Resource> drbdVlmData = drbdVlmDataIter.next();
 
             if (isRscDisklessFlagSet)
             {
@@ -1037,14 +1104,17 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private void regenerateResFile(DrbdRscData drbdRscData)
+    private void regenerateResFile(DrbdRscData<Resource> drbdRscData)
         throws AccessDeniedException, StorageException
     {
         Path resFile = asResourceFile(drbdRscData, false);
         Path tmpResFile = asResourceFile(drbdRscData, true);
 
-        List<DrbdRscData> drbdPeerRscDataList = drbdRscData.getRscDfnLayerObject().getDrbdRscDataList().stream()
-            .filter(otherRscData -> !otherRscData.equals(drbdRscData))
+        List<DrbdRscData<Resource>> drbdPeerRscDataList = drbdRscData.getRscDfnLayerObject()
+            .getDrbdRscDataList().stream()
+            .filter(otherRscData -> !otherRscData.equals(drbdRscData) &&
+                AccessUtils.execPrivileged(() -> DrbdLayerUtils.isDrbdResourceExpected(workerCtx, otherRscData))
+            )
             .collect(Collectors.toList());
 
         String content = new ConfFileBuilder(
@@ -1121,16 +1191,60 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private void condInitialOrSkipSync(DrbdRscData drbdRscData)
+    private void copyResFileToBackup(DrbdRscData<Resource> drbdRscData) throws StorageException
+    {
+        Path resFile = asResourceFile(drbdRscData, false);
+        Path backupFile = asBackupResourceFile(drbdRscData);
+        try
+        {
+            Files.copy(resFile, backupFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+        catch (IOException ioExc)
+        {
+            String ioErrorMsg = ioExc.getMessage();
+            if (ioErrorMsg == null)
+            {
+                ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
+                    "the I/O error";
+            }
+            throw new StorageException(
+                "Failed to create a backup of the resource file of resource '" + drbdRscData.getSuffixedResourceName() +
+                    "'",
+                getAbortMsg(drbdRscData),
+                null,
+                "- Check whether enough free space is available for the creation of the file\n" +
+                    "- Check whether the application has write access to the target directory\n" +
+                    "- Check whether the storage is operating flawlessly",
+                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                ioExc
+            );
+        }
+    }
+
+    private void deleteBackupResFile(DrbdRscData<Resource> drbdRscDataRef) throws StorageException
+    {
+        Path resFile = asBackupResourceFile(drbdRscDataRef);
+        errorReporter.logTrace("Deleting res file from backup: %s ", resFile);
+        try
+        {
+            Files.deleteIfExists(resFile);
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException("IOException while removing resource file from backup", exc);
+        }
+    }
+
+    private void condInitialOrSkipSync(DrbdRscData<Resource> drbdRscData)
         throws AccessDeniedException, StorageException
     {
         try
         {
-            Resource rsc = drbdRscData.getResource();
+            Resource rsc = drbdRscData.getAbsResource();
             ResourceDefinition rscDfn = rsc.getDefinition();
 
             if (rscDfn.getProps(workerCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
-                    rsc.getStateFlags().isUnset(workerCtx, Resource.Flags.DISKLESS)
+                    !rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DRBD_DISKLESS)
             )
             {
                 boolean alreadyInitialized = !allVlmsMetaDataNew(drbdRscData);
@@ -1152,7 +1266,7 @@ public class DrbdLayer implements DeviceLayer
             {
                 // First, skip the resync on all thinly provisioned volumes
                 boolean haveFatVlm = false;
-                for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
                     if (!VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false))
                     {
@@ -1179,12 +1293,12 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private boolean allVlmsMetaDataNew(DrbdRscData rscState)
+    private boolean allVlmsMetaDataNew(DrbdRscData<Resource> rscState)
     {
         return rscState.getVlmLayerObjects().values().stream().allMatch(DrbdVlmData::isMetaDataNew);
     }
 
-    private void setResourcePrimary(DrbdRscData drbdRscData) throws StorageException
+    private void setResourcePrimary(DrbdRscData<Resource> drbdRscData) throws StorageException
     {
         try
         {
@@ -1213,7 +1327,7 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private void waitForValidStateForPrimary(DrbdRscData drbdRscData) throws StorageException
+    private void waitForValidStateForPrimary(DrbdRscData<Resource> drbdRscData) throws StorageException
     {
         try
         {
@@ -1264,7 +1378,7 @@ public class DrbdLayer implements DeviceLayer
      * DELETE method and its utilities
      */
 
-    private Path asResourceFile(DrbdRscData drbdRscData, boolean temp)
+    private Path asResourceFile(DrbdRscData<Resource> drbdRscData, boolean temp)
     {
         return Paths.get(
             CoreModule.CONFIG_PATH,
@@ -1272,12 +1386,20 @@ public class DrbdLayer implements DeviceLayer
         );
     }
 
-    private String getAbortMsg(DrbdRscData drbdRscData)
+    private Path asBackupResourceFile(DrbdRscData<Resource> drbdRscData)
+    {
+        return Paths.get(
+            CoreModule.BACKUP_PATH,
+            drbdRscData.getSuffixedResourceName() + DRBD_CONFIG_SUFFIX
+        );
+    }
+
+    private String getAbortMsg(DrbdRscData<Resource> drbdRscData)
     {
         return "Operations on resource '" + drbdRscData.getSuffixedResourceName() + "' were aborted";
     }
 
-    private String getAbortMsg(DrbdVlmData drbdVlmData)
+    private String getAbortMsg(DrbdVlmData<Resource> drbdVlmData)
     {
         return "Operations on volume " + drbdVlmData.getVlmNr().value + " of resource '" +
             drbdVlmData.getRscLayerObject().getSuffixedResourceName() + "' were aborted";

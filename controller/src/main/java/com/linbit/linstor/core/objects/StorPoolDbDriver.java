@@ -78,6 +78,7 @@ public class StorPoolDbDriver
         setColumnSetter(FREE_SPACE_MGR_DSP_NAME, sp -> sp.getFreeSpaceTracker().getName().displayValue);
     }
 
+    @Override
     public Map<FreeSpaceMgrName, FreeSpaceMgr> getAllLoadedFreeSpaceMgrs()
     {
         return freeSpaceMgrMap;
@@ -97,7 +98,9 @@ public class StorPoolDbDriver
 
         final FreeSpaceMgr fsm = restore(fsmName);
 
-        final Map<String, VlmProviderObject> vlmMap = new TreeMap<>();
+        final Map<String, VlmProviderObject<Resource>> vlmMap = new TreeMap<>();
+        final Map<String, VlmProviderObject<Snapshot>> snapVlmMap = new TreeMap<>();
+
         return new Pair<>(
             new StorPool(
                 raw.build(UUID, java.util.UUID::fromString),
@@ -109,9 +112,10 @@ public class StorPoolDbDriver
                 propsContainerFactory,
                 transObjFactory,
                 transMgrProvider,
-                vlmMap
+                vlmMap,
+                snapVlmMap
             ),
-            new InitMapsImpl(vlmMap)
+            new InitMapsImpl(vlmMap, snapVlmMap)
         );
     }
 
@@ -141,17 +145,28 @@ public class StorPoolDbDriver
 
     private class InitMapsImpl implements StorPool.InitMaps
     {
-        private final Map<String, VlmProviderObject> vlmMap;
+        private final Map<String, VlmProviderObject<Resource>> vlmMap;
+        private final Map<String, VlmProviderObject<Snapshot>> snapVlmMap;
 
-        private InitMapsImpl(Map<String, VlmProviderObject> vlmMapRef)
+        public InitMapsImpl(
+            Map<String, VlmProviderObject<Resource>> vlmMapRef,
+            Map<String, VlmProviderObject<Snapshot>> snapVlmMapRef
+        )
         {
             vlmMap = vlmMapRef;
+            snapVlmMap = snapVlmMapRef;
         }
 
         @Override
-        public Map<String, VlmProviderObject> getVolumeMap()
+        public Map<String, VlmProviderObject<Resource>> getVolumeMap()
         {
             return vlmMap;
+        }
+
+        @Override
+        public Map<String, VlmProviderObject<Snapshot>> getSnapshotVolumeMap()
+        {
+            return snapVlmMap;
         }
     }
 

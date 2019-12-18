@@ -2,9 +2,10 @@ package com.linbit.linstor.storage;
 
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.DeviceLayer;
-import com.linbit.linstor.storage.layer.adapter.nvme.NvmeLayer;
+import com.linbit.linstor.storage.layer.adapter.dmsetup.WritecacheLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
 import com.linbit.linstor.storage.layer.adapter.luks.LuksLayer;
+import com.linbit.linstor.storage.layer.adapter.nvme.NvmeLayer;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 
 import javax.inject.Inject;
@@ -25,7 +26,8 @@ public class LayerFactory
         NvmeLayer nvmeLayer,
         DrbdLayer drbdLayer,
         StorageLayer storageLayer,
-        LuksLayer luksLayer
+        LuksLayer luksLayer,
+        WritecacheLayer writecacheLayer
     )
     {
         devLayerLookupTable = new HashMap<>();
@@ -34,6 +36,7 @@ public class LayerFactory
         devLayerLookupTable.put(DeviceLayerKind.DRBD, drbdLayer);
         devLayerLookupTable.put(DeviceLayerKind.LUKS, luksLayer);
         devLayerLookupTable.put(DeviceLayerKind.STORAGE, storageLayer);
+        devLayerLookupTable.put(DeviceLayerKind.WRITECACHE, writecacheLayer);
     }
 
     public DeviceLayer getDeviceLayer(DeviceLayerKind kind)

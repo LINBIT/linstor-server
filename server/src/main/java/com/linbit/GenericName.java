@@ -10,8 +10,12 @@ public abstract class GenericName implements Comparable<GenericName>
     public final String value;
     public final String displayValue;
 
-    public GenericName(String genName)
+    public GenericName(String genName) throws InvalidNameException
     {
+        if (genName == null)
+        {
+            throw new InvalidNameException("Given name is null", "null");
+        }
         value = genName.toUpperCase();
         displayValue = genName;
     }

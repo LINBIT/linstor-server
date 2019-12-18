@@ -5,7 +5,8 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -19,13 +20,23 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.locks.LockGuardFactory;
+
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlVlmApiCallHandler
@@ -34,44 +45,84 @@ public class CtrlVlmApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final ResponseConverter responseConverter;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final Provider<Peer> peer;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlVlmApiCallHandler(
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
-        Provider<Peer> peerRef
+        Provider<Peer> peerRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
-    public ApiCallRc modifyVolume(
+    public Flux<ApiCallRc> modify(
         UUID vlmUuid,
         String nodeNameStr,
         String rscNameStr,
         Integer vlmNrInt,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deletePropNamespacesRef
+        Set<String> deletePropNamespaces
     )
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeVlmContext(
             ApiOperation.makeModifyOperation(),
             nodeNameStr,
             rscNameStr,
             vlmNrInt
         );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Modify volume",
+                lockGuardFactory.buildDeferred(
+                    WRITE,
+                    NODES_MAP, RSC_DFN_MAP, STOR_POOL_DFN_MAP
+                ),
+                () -> modifyInTransaction(
+                    vlmUuid,
+                    nodeNameStr,
+                    rscNameStr,
+                    vlmNrInt,
+                    overrideProps,
+                    deletePropKeys,
+                    deletePropNamespaces,
+                    context
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> modifyInTransaction(
+        UUID vlmUuid,
+        String nodeNameStr,
+        String rscNameStr,
+        Integer vlmNrInt,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces,
+        ResponseContext context
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
 
         try
         {
@@ -88,38 +139,37 @@ public class CtrlVlmApiCallHandler
             Props props = ctrlPropsHelper.getProps(vlm);
 
             ctrlPropsHelper.fillProperties(LinStorObject.VOLUME, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_VLM);
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespacesRef);
+            ctrlPropsHelper.remove(LinStorObject.VOLUME, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 
-            responseConverter.addWithDetail(
-                responses,
-                context,
-                ctrlSatelliteUpdater.updateSatellites(vlm.getResource())
-            );
             responseConverter.addWithOp(
-                responses,
+                apiCallRcs,
                 context,
                 ApiSuccessUtils.defaultModifiedEntry(vlm.getUuid(), getVlmDescriptionInline(vlm))
             );
+
+            flux = ctrlSatelliteUpdateCaller
+                .updateSatellites(vlm.getResourceDefinition(), Flux.empty())
+                .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return responses;
+        return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
     }
 
     public static String getVlmDescription(Volume vlm)
     {
-        return getVlmDescription(vlm.getResource(), vlm.getVolumeDefinition());
+        return getVlmDescription(vlm.getAbsResource(), vlm.getVolumeDefinition());
     }
 
     public static String getVlmDescription(Resource rsc, VolumeDefinition vlmDfn)
     {
         return getVlmDescription(
-            rsc.getAssignedNode().getName().displayValue,
+            rsc.getNode().getName().displayValue,
             rsc.getDefinition().getName().displayValue,
             vlmDfn.getVolumeNumber().value
         );
@@ -138,13 +188,13 @@ public class CtrlVlmApiCallHandler
 
     public static String getVlmDescriptionInline(Volume vlm)
     {
-        return getVlmDescriptionInline(vlm.getResource(), vlm.getVolumeDefinition());
+        return getVlmDescriptionInline(vlm.getAbsResource(), vlm.getVolumeDefinition());
     }
 
     public static String getVlmDescriptionInline(Resource rsc, VolumeDefinition vlmDfn)
     {
         return getVlmDescriptionInline(
-            rsc.getAssignedNode().getName().displayValue,
+            rsc.getNode().getName().displayValue,
             rsc.getDefinition().getName().displayValue,
             vlmDfn.getVolumeNumber().value
         );

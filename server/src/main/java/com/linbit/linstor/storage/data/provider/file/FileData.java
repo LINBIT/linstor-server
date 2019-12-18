@@ -2,8 +2,9 @@ package com.linbit.linstor.storage.data.provider.file;
 
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -21,14 +22,15 @@ import javax.inject.Provider;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
-public class FileData extends AbsStorageVlmData implements FileProviderObject
+public class FileData<RSC extends AbsResource<RSC>>
+    extends AbsStorageVlmData<RSC> implements FileProviderObject<RSC>
 {
     // not persisted, not serialized, stlt only
     private transient Path storageDir;
 
     public FileData(
-        Volume vlmRef,
-        StorageRscData rscDataRef,
+        AbsVolume<RSC> vlmRef,
+        StorageRscData<RSC> rscDataRef,
         DeviceProviderKind kindRef,
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
@@ -67,7 +69,7 @@ public class FileData extends AbsStorageVlmData implements FileProviderObject
     public VlmLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         return new FileVlmPojo(
-            vlm.getVolumeDefinition().getVolumeNumber().getValue(),
+            vlm.getVolumeNumber().getValue(),
             getDevicePath(),
             getAllocatedSize(),
             getUsableSize(),

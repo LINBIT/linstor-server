@@ -50,11 +50,17 @@ class ControllerArgumentParser
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
     private boolean usageHelpRequested;
 
+    @CommandLine.Option(
+        names = {"--disable-db-version-check"},
+        description = "Disable database version version checks supported by Linstor")
+    private boolean disableDbVersionCheck = false;
+
     static ControllerCmdlArguments parseCommandLine(String[] args)
     {
         ControllerArgumentParser linArgParser = new ControllerArgumentParser();
         CommandLine cmd = new CommandLine(linArgParser);
         cmd.setCommandName("Controller");
+        cmd.setOverwrittenOptionsAllowed(true);
 
         try
         {
@@ -130,6 +136,8 @@ class ControllerArgumentParser
         {
             cArgs.setLogLevel(linArgParser.logLevel);
         }
+
+        cArgs.setDbStartupVerification(!linArgParser.disableDbVersionCheck);
 
         return cArgs;
     }

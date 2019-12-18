@@ -18,6 +18,7 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
@@ -95,6 +96,10 @@ public class Json
 
         nd.net_interfaces = netIfsList;
         nd.uuid = nodeApi.getUuid().toString();
+        nd.resource_layers = nodeApi.getDeviceLayerKindNames();
+        nd.storage_providers = nodeApi.getDeviceProviderKindNames();
+        nd.unsupported_layers = nodeApi.getUnsupportedLayersWithReasons();
+        nd.unsupported_providers = nodeApi.getUnsupportedProvidersWithReasons();
         return nd;
     }
 
@@ -232,6 +237,7 @@ public class Json
                     case LUKS:
                     case STORAGE:
                     case NVME:
+                    case WRITECACHE:
                     default:
                         throw new ImplementationError("Not implemented kind case");
                 }
@@ -284,6 +290,7 @@ public class Json
                     case LUKS:
                     case STORAGE:
                     case NVME:
+                    case WRITECACHE:
                     default:
                         throw new ImplementationError("Not implemented Kind case");
                 }
@@ -350,6 +357,15 @@ public class Json
         return nvmeResource;
     }
 
+    public static JsonGenTypes.WritecacheResource pojoToWritecacheResource(WritecacheRscPojo writecacheRscPojo)
+    {
+        JsonGenTypes.WritecacheResource writecacheResource = new JsonGenTypes.WritecacheResource();
+        writecacheResource.writecache_volumes = writecacheRscPojo.getVolumeList().stream()
+            .map(Json::pojoToWritecacheVolume)
+            .collect(Collectors.toList());
+        return writecacheResource;
+    }
+
     public static JsonGenTypes.ResourceLayer apiToResourceLayer(RscLayerDataApi rscLayerDataApi)
     {
         JsonGenTypes.ResourceLayer resourceLayer = new JsonGenTypes.ResourceLayer();
@@ -375,6 +391,10 @@ public class Json
             case NVME:
                 NvmeRscPojo nvmeRscPojo = (NvmeRscPojo) rscLayerDataApi;
                 resourceLayer.nvme = pojoToNVMEResource(nvmeRscPojo);
+                break;
+            case WRITECACHE:
+                WritecacheRscPojo writecacheRscPojo = (WritecacheRscPojo) rscLayerDataApi;
+                resourceLayer.writecache = pojoToWritecacheResource(writecacheRscPojo);
                 break;
             default:
         }
@@ -513,6 +533,20 @@ public class Json
         return nvmeVolume;
     }
 
+    public static JsonGenTypes.WritecacheVolume pojoToWritecacheVolume(
+        WritecacheRscPojo.WritecacheVlmPojo writecacheVlmPojo
+    )
+    {
+        JsonGenTypes.WritecacheVolume writecacheVolume = new JsonGenTypes.WritecacheVolume();
+        writecacheVolume.volume_number = writecacheVlmPojo.getVlmNr();
+        writecacheVolume.device_path = writecacheVlmPojo.getDevicePath();
+        writecacheVolume.device_path_cache = writecacheVlmPojo.getDevicePathCache();
+        writecacheVolume.allocated_size_kib = writecacheVlmPojo.getAllocatedSize();
+        writecacheVolume.usable_size_kib = writecacheVlmPojo.getUsableSize();
+        writecacheVolume.disk_state = writecacheVlmPojo.getDiskState();
+        return writecacheVolume;
+    }
+
     public static JsonGenTypes.StorageVolume apiToStorageVolume(
         VlmLayerDataApi vlmLayerDataApi
     )
@@ -564,6 +598,10 @@ public class Json
                 case NVME:
                     NvmeRscPojo.NvmeVlmPojo nvmeVlmPojo = (NvmeRscPojo.NvmeVlmPojo) layerData.objB;
                     volumeLayerData.data = pojoToNVMEVolume(nvmeVlmPojo);
+                    break;
+                case WRITECACHE:
+                    WritecacheRscPojo.WritecacheVlmPojo writecacheVlmPojo = (WritecacheRscPojo.WritecacheVlmPojo) layerData.objB;
+                    volumeLayerData.data = pojoToWritecacheVolume(writecacheVlmPojo);
                     break;
                 default:
             }

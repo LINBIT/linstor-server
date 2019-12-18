@@ -297,7 +297,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         try
         {
             hasDrbdLayer = !LayerUtils.getChildLayerDataByKind(
-                vlm.getResource().getLayerData(apiCtx),
+                vlm.getAbsResource().getLayerData(apiCtx),
                 DeviceLayerKind.DRBD
             ).isEmpty();
         }
@@ -331,7 +331,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         else
         {
             Optional<Volume> drbdResizeVlm = streamVolumesPrivileged(vlmDfn)
-                .filter(this::isDiskful)
+                .filter(this::isDrbdDiskful)
                 .findAny();
             drbdResizeVlm.ifPresent(this::markVlmDrbdResize);
 
@@ -351,12 +351,12 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         return flux;
     }
 
-    private boolean isDiskful(Volume vlm)
+    private boolean isDrbdDiskful(Volume vlm)
     {
         boolean diskless;
         try
         {
-            diskless = vlm.getResource().isDiskless(apiCtx);
+            diskless = vlm.getAbsResource().isDrbdDiskless(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -615,7 +615,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     private static Set<NodeName> getNodeNames(Optional<Volume> drbdResizeVlm)
     {
         return drbdResizeVlm.isPresent() ?
-            Collections.singleton(drbdResizeVlm.get().getResource().getAssignedNode().getName()) :
+            Collections.singleton(drbdResizeVlm.get().getAbsResource().getNode().getName()) :
             Collections.emptySet();
     }
 }

@@ -4,8 +4,9 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -25,7 +26,8 @@ import javax.inject.Provider;
 import java.io.File;
 import java.util.ArrayList;
 
-public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
+public class ZfsData<RSC extends AbsResource<RSC>>
+    extends AbsStorageVlmData<RSC> implements ZfsProviderObject<RSC>
 {
     public static final State CREATED = new State(true, true, "Created");
     public static final State FAILED = new State(false, true, "Failed");
@@ -34,8 +36,8 @@ public class ZfsData extends AbsStorageVlmData implements ZfsProviderObject
     private transient String zpool = null;
 
     public ZfsData(
-        Volume vlmRef,
-        StorageRscData rscDataRef,
+        AbsVolume<RSC> vlmRef,
+        StorageRscData<RSC> rscDataRef,
         DeviceProviderKind kindRef,
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,

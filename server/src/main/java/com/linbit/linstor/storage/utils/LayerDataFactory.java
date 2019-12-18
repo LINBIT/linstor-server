@@ -3,10 +3,12 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -15,7 +17,7 @@ import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SwordfishLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -26,16 +28,16 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
+import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfTargetData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
+import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -60,7 +62,7 @@ public class LayerDataFactory
     private final DrbdLayerDatabaseDriver drbdDbDriver;
     private final StorageLayerDatabaseDriver storageDbDriver;
     private final NvmeLayerDatabaseDriver nvmeDbDriver;
-    private final SwordfishLayerDatabaseDriver swordfishDbDriver;
+    private final WritecacheLayerDatabaseDriver writecacheDbDriver;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
 
@@ -74,7 +76,7 @@ public class LayerDataFactory
         DrbdLayerDatabaseDriver drbdDbDriverRef,
         StorageLayerDatabaseDriver storageDbDriverRef,
         NvmeLayerDatabaseDriver nvmeDbDriverRef,
-        SwordfishLayerDatabaseDriver swordfishDbDriverRef,
+        WritecacheLayerDatabaseDriver writecacheDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
 
@@ -87,7 +89,7 @@ public class LayerDataFactory
         drbdDbDriver = drbdDbDriverRef;
         storageDbDriver = storageDbDriverRef;
         nvmeDbDriver = nvmeDbDriverRef;
-        swordfishDbDriver = swordfishDbDriverRef;
+        writecacheDbDriver = writecacheDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
 
@@ -95,12 +97,12 @@ public class LayerDataFactory
         transObjFactory = transObjFactoryRef;
     }
 
-    public DrbdRscData createDrbdRscData(
+    public <RSC extends AbsResource<RSC>> DrbdRscData<RSC> createDrbdRscData(
         int rscLayerId,
-        Resource rsc,
+        RSC rsc,
         String rscNameSuffix,
-        @Nullable RscLayerObject parent,
-        DrbdRscDfnData rscDfnData,
+        @Nullable AbsRscLayerObject<RSC> parent,
+        DrbdRscDfnData<RSC> rscDfnData,
         NodeId nodeId,
         @Nullable Short peerSlots,
         @Nullable Integer alStripes,
@@ -109,7 +111,7 @@ public class LayerDataFactory
     )
         throws DatabaseException
     {
-        DrbdRscData drbdRscData = new DrbdRscData(
+        DrbdRscData<RSC> drbdRscData = new DrbdRscData<>(
             rscLayerId,
             rsc,
             parent,
@@ -131,8 +133,9 @@ public class LayerDataFactory
         return drbdRscData;
     }
 
-    public DrbdRscDfnData createDrbdRscDfnData(
-        ResourceDefinition rscDfn,
+    public <RSC extends AbsResource<RSC>> DrbdRscDfnData<RSC> createDrbdRscDfnData(
+        ResourceName rscName,
+        SnapshotName snapName,
         String resourceNameSuffix,
         short peerSlots,
         int alStripes,
@@ -143,8 +146,9 @@ public class LayerDataFactory
     )
         throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
-        DrbdRscDfnData drbdRscDfnData = new DrbdRscDfnData(
-            rscDfn,
+        DrbdRscDfnData<RSC> drbdRscDfnData = new DrbdRscDfnData<>(
+            rscName,
+            snapName,
             resourceNameSuffix,
             peerSlots,
             alStripes,
@@ -163,17 +167,23 @@ public class LayerDataFactory
         return drbdRscDfnData;
     }
 
-    public DrbdVlmDfnData createDrbdVlmDfnData(
+    public <RSC extends AbsResource<RSC>> DrbdVlmDfnData<RSC> createDrbdVlmDfnData(
         VolumeDefinition vlmDfn,
+        ResourceName rscName,
+        SnapshotName snapName,
         String resourceNameSuffix,
+        VolumeNumber vlmNr,
         Integer minorNrInt,
-        DrbdRscDfnData drbdRscDfnData
+        DrbdRscDfnData<RSC> drbdRscDfnData
     )
         throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
     {
-        DrbdVlmDfnData drbdVlmDfnData = new DrbdVlmDfnData(
+        DrbdVlmDfnData<RSC> drbdVlmDfnData = new DrbdVlmDfnData<>(
             vlmDfn,
+            rscName,
+            snapName,
             resourceNameSuffix,
+            vlmNr,
             minorNrInt,
             minorPool,
             drbdRscDfnData,
@@ -184,15 +194,15 @@ public class LayerDataFactory
         return drbdVlmDfnData;
     }
 
-    public DrbdVlmData createDrbdVlmData(
-        Volume vlm,
+    public <RSC extends AbsResource<RSC>> DrbdVlmData<RSC> createDrbdVlmData(
+        AbsVolume<RSC> vlm,
         StorPool extMetaStorPool,
-        DrbdRscData rscData,
-        DrbdVlmDfnData vlmDfnData
+        DrbdRscData<RSC> rscData,
+        DrbdVlmDfnData<RSC> vlmDfnData
     )
         throws DatabaseException
     {
-        DrbdVlmData drbdVlmData = new DrbdVlmData(
+        DrbdVlmData<RSC> drbdVlmData = new DrbdVlmData<>(
             vlm,
             rscData,
             vlmDfnData,
@@ -205,15 +215,15 @@ public class LayerDataFactory
         return drbdVlmData;
     }
 
-    public DisklessData createDisklessData(
-        Volume vlm,
+    public <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> DisklessData<RSC> createDisklessData(
+        VLM vlm,
         long usableSize,
-        StorageRscData rscData,
+        StorageRscData<RSC> rscData,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        DisklessData disklessData = new DisklessData(
+        DisklessData<RSC> disklessData = new DisklessData<>(
             vlm,
             rscData,
             usableSize,
@@ -226,15 +236,15 @@ public class LayerDataFactory
         return disklessData;
     }
 
-    public LuksRscData createLuksRscData(
+    public <RSC extends AbsResource<RSC>> LuksRscData<RSC> createLuksRscData(
         int rscLayerId,
-        Resource rsc,
+        RSC rsc,
         String rscNameSuffix,
-        RscLayerObject parentData
+        AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
-        LuksRscData luksRscData = new LuksRscData(
+        LuksRscData<RSC> luksRscData = new LuksRscData<>(
             rscLayerId,
             rsc,
             rscNameSuffix,
@@ -250,14 +260,14 @@ public class LayerDataFactory
         return luksRscData;
     }
 
-    public LuksVlmData createLuksVlmData(
-        Volume vlm,
-        LuksRscData rscData,
+    public <RSC extends AbsResource<RSC>> LuksVlmData<RSC> createLuksVlmData(
+        AbsVolume<RSC> vlm,
+        LuksRscData<RSC> rscData,
         byte[] password
     )
         throws DatabaseException
     {
-        LuksVlmData luksVlmData = new LuksVlmData(
+        LuksVlmData<RSC> luksVlmData = new LuksVlmData<>(
             vlm,
             rscData,
             password,
@@ -269,15 +279,15 @@ public class LayerDataFactory
         return luksVlmData;
     }
 
-    public StorageRscData createStorageRscData(
+    public <RSC extends AbsResource<RSC>> StorageRscData<RSC> createStorageRscData(
         int rscLayerId,
-        RscLayerObject parentRscData,
-        Resource rsc,
+        AbsRscLayerObject<RSC> parentRscData,
+        RSC rsc,
         String rscNameSuffix
     )
         throws DatabaseException
     {
-        StorageRscData storageRscData = new StorageRscData(
+        StorageRscData<RSC> storageRscData = new StorageRscData<>(
             rscLayerId,
             parentRscData,
             rsc,
@@ -292,15 +302,15 @@ public class LayerDataFactory
         return storageRscData;
     }
 
-    public NvmeRscData createNvmeRscData(
+    public <RSC extends AbsResource<RSC>> NvmeRscData<RSC> createNvmeRscData(
         int rscLayerId,
-        Resource rsc,
+        RSC rsc,
         String rscNameSuffix,
-        RscLayerObject parentData
+        AbsRscLayerObject<RSC> parentData
     )
         throws DatabaseException
     {
-        NvmeRscData nvmeRscData = new NvmeRscData(
+        NvmeRscData<RSC> nvmeRscData = new NvmeRscData<>(
             rscLayerId,
             rsc,
             parentData,
@@ -316,9 +326,12 @@ public class LayerDataFactory
         return nvmeRscData;
     }
 
-    public NvmeVlmData createNvmeVlmData(Volume vlm, NvmeRscData rscData)
+    public <RSC extends AbsResource<RSC>> NvmeVlmData<RSC> createNvmeVlmData(
+        AbsVolume<RSC> vlm,
+        NvmeRscData<RSC> rscData
+    )
     {
-        return new NvmeVlmData(
+        return new NvmeVlmData<RSC>(
             vlm,
             rscData,
             transObjFactory,
@@ -326,14 +339,54 @@ public class LayerDataFactory
         );
     }
 
-    public LvmData createLvmData(
-        Volume vlm,
-        StorageRscData rscData,
+    public <RSC extends AbsResource<RSC>> WritecacheRscData<RSC> createWritecacheRscData(
+        int rscLayerId,
+        RSC rsc,
+        String rscNameSuffix,
+        AbsRscLayerObject<RSC> parentData
+    )
+        throws DatabaseException
+    {
+        WritecacheRscData<RSC> writecacheRscData = new WritecacheRscData<>(
+            rscLayerId,
+            rsc,
+            parentData,
+            new HashSet<>(),
+            rscNameSuffix,
+            writecacheDbDriver,
+            new TreeMap<>(),
+            transObjFactory,
+            transMgrProvider
+        );
+        resourceLayerIdDatabaseDriver.persist(writecacheRscData);
+        writecacheDbDriver.persist(writecacheRscData);
+        return writecacheRscData;
+    }
+
+    public <RSC extends AbsResource<RSC>> WritecacheVlmData<RSC> createWritecacheVlmData(
+        AbsVolume<RSC> vlm,
+        StorPool cacheStorPool,
+        WritecacheRscData<RSC> rscData
+    )
+    {
+        return new WritecacheVlmData<>(
+            vlm,
+            rscData,
+            cacheStorPool,
+            writecacheDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+    }
+
+    public <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> LvmData<RSC> createLvmData(
+        VLM vlm,
+        StorageRscData<RSC> rscData,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        LvmData lvmData = new LvmData(
+        LvmData<RSC> lvmData = new LvmData<>(
             vlm,
             rscData,
             storPoolRef,
@@ -345,14 +398,14 @@ public class LayerDataFactory
         return lvmData;
     }
 
-    public LvmThinData createLvmThinData(
-        Volume vlm,
-        StorageRscData rscData,
+    public <RSC extends AbsResource<RSC>> LvmThinData<RSC> createLvmThinData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> rscData,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        LvmThinData lvmThinData = new LvmThinData(
+        LvmThinData<RSC> lvmThinData = new LvmThinData<>(
             vlm,
             rscData,
             storPoolRef,
@@ -364,79 +417,34 @@ public class LayerDataFactory
         return lvmThinData;
     }
 
-    public SfInitiatorData createSfInitData(
-        Volume vlmRef,
-        StorageRscData storRscDataRef,
-        SfVlmDfnData sfVlmDfnData,
+    public <RSC extends AbsResource<RSC>> SpdkData<RSC> createSpdkData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> rscData,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        SfInitiatorData sfInitiatorData = new SfInitiatorData(
-            storRscDataRef,
-            vlmRef,
-            sfVlmDfnData,
-            storPoolRef,
-            storageDbDriver,
-            transObjFactory,
-            transMgrProvider
-        );
-        storageDbDriver.persist(sfInitiatorData);
-        swordfishDbDriver.persist(sfInitiatorData);
-        return sfInitiatorData;
-    }
-
-    public SfTargetData createSfTargetData(
-        Volume vlm,
-        StorageRscData rscData,
-        SfVlmDfnData sfVlmDfnData,
-        StorPool storPoolRef
-    )
-        throws DatabaseException
-    {
-        SfTargetData sfTargetData = new SfTargetData(
+        SpdkData<RSC> spdkData = new SpdkData<>(
             vlm,
             rscData,
-            sfVlmDfnData,
             storPoolRef,
             storageDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(sfTargetData);
-        swordfishDbDriver.persist(sfTargetData);
-        return sfTargetData;
+        storageDbDriver.persist(spdkData);
+        return spdkData;
     }
 
-    public SfVlmDfnData createSfVlmDfnData(
-        VolumeDefinition volumeDefinitionRef,
-        String vlmOdata,
-        String suffixedResourceName
-    )
-        throws DatabaseException
-    {
-        SfVlmDfnData sfVlmDfnData = new SfVlmDfnData(
-            volumeDefinitionRef,
-            vlmOdata,
-            suffixedResourceName,
-            swordfishDbDriver,
-            transObjFactory,
-            transMgrProvider
-        );
-        swordfishDbDriver.persist(sfVlmDfnData);
-        return sfVlmDfnData;
-    }
-
-
-    public ZfsData createZfsData(
-        Volume vlm,
-        StorageRscData rscData,
+    public <RSC extends AbsResource<RSC>> ZfsData<RSC> createZfsData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> rscData,
         DeviceProviderKind kind,
         StorPool storPoolRef
     )
         throws DatabaseException
     {
-        ZfsData zfsData = new ZfsData(
+        ZfsData<RSC> zfsData = new ZfsData<>(
             vlm,
             rscData,
             kind,
@@ -449,10 +457,15 @@ public class LayerDataFactory
         return zfsData;
     }
 
-    public FileData createFileData(Volume vlm, StorageRscData rscData, DeviceProviderKind kind, StorPool storPool)
+    public <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> FileData<RSC> createFileData(
+        VLM vlm,
+        StorageRscData<RSC> rscData,
+        DeviceProviderKind kind,
+        StorPool storPool
+    )
         throws DatabaseException
     {
-        FileData fileData = new FileData(
+        FileData<RSC> fileData = new FileData<>(
             vlm,
             rscData,
             kind,

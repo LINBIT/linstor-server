@@ -38,6 +38,7 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import javax.inject.Provider;
 
@@ -409,6 +410,14 @@ public class Node extends BaseTransactionObject
         return snapshotMap.values();
     }
 
+    public Iterator<Snapshot> iterateSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        return snapshotMap.values().iterator();
+    }
 
     public NetInterface getNetInterface(AccessContext accCtx, NetInterfaceName niName) throws AccessDeniedException
     {
@@ -649,6 +658,13 @@ public class Node extends BaseTransactionObject
             }
 
             // Shallow copy the collection because elements may be removed from it
+            ArrayList<NetInterface> netIfs = new ArrayList<>(netInterfaceMap.values());
+            for (NetInterface netIf : netIfs)
+            {
+                netIf.delete(accCtx);
+            }
+
+            // Shallow copy the collection because elements may be removed from it
             ArrayList<StorPool> storPools = new ArrayList<>(storPoolMap.values());
             for (StorPool storPool : storPools)
             {
@@ -720,6 +736,7 @@ public class Node extends BaseTransactionObject
         }
 
         Peer tmpPeer = getPeer(accCtx);
+        ExtToolsManager extToolsManager = peer.getExtToolsManager();
 
         return new NodePojo(
             getUuid(),
@@ -732,7 +749,13 @@ public class Node extends BaseTransactionObject
             getProps(accCtx).map(),
             tmpPeer != null ? tmpPeer.getConnectionStatus() : Peer.ConnectionStatus.UNKNOWN,
             fullSyncId,
-            updateId
+            updateId,
+            extToolsManager.getSupportedLayers().stream()
+                .map(deviceLayerKind -> deviceLayerKind.name()).collect(toList()),
+            extToolsManager.getSupportedProviders().stream()
+                .map(deviceProviderKind -> deviceProviderKind.name()).collect(toList()),
+            extToolsManager.getUnsupportedLayersWithReasonsAsString(),
+            extToolsManager.getUnsupportedProvidersWithReasonsAsString()
         );
     }
 
@@ -846,11 +869,11 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.DISKLESS,
                 DeviceProviderKind.LVM,
                 DeviceProviderKind.LVM_THIN,
-                DeviceProviderKind.SWORDFISH_INITIATOR,
                 DeviceProviderKind.ZFS,
                 DeviceProviderKind.ZFS_THIN,
                 DeviceProviderKind.FILE,
-                DeviceProviderKind.FILE_THIN
+                DeviceProviderKind.FILE_THIN,
+                DeviceProviderKind.SPDK
             )
         ),
         COMBINED(
@@ -859,19 +882,15 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.DISKLESS,
                 DeviceProviderKind.LVM,
                 DeviceProviderKind.LVM_THIN,
-                DeviceProviderKind.SWORDFISH_INITIATOR,
                 DeviceProviderKind.ZFS,
                 DeviceProviderKind.ZFS_THIN,
                 DeviceProviderKind.FILE,
-                DeviceProviderKind.FILE_THIN
+                DeviceProviderKind.FILE_THIN,
+                DeviceProviderKind.SPDK
             )
         ),
-        AUXILIARY(4, Collections.emptyList()),
-        SWORDFISH_TARGET(
-            5,
-            Arrays.asList(
-                DeviceProviderKind.SWORDFISH_TARGET
-            )
+        AUXILIARY(
+            4, Collections.emptyList()
         );
 
         private final int flag;

@@ -4,6 +4,6 @@ import com.linbit.linstor.InitializationException;
 
 public interface DbInitializer
 {
-    void initialize()
+    void initialize(boolean withStartupVer)
         throws InitializationException;
 }

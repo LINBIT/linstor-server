@@ -4,14 +4,14 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.AbsRscData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMgr;
@@ -24,16 +24,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class StorageRscData extends AbsRscData<VlmProviderObject>
+public class StorageRscData<RSC extends AbsResource<RSC>>
+    extends AbsRscData<RSC, VlmProviderObject<RSC>>
 {
     private StorageLayerDatabaseDriver storageDbDriver;
 
     public StorageRscData(
         int rscLayerIdRef,
-        RscLayerObject parentRef,
-        Resource rscRef,
+        AbsRscLayerObject<RSC> parentRef,
+        RSC rscRef,
         String rscNameSuffixRef,
-        Map<VolumeNumber, VlmProviderObject> vlmProviderObjectsRef,
+        Map<VolumeNumber, VlmProviderObject<RSC>> vlmProviderObjectsRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
@@ -66,7 +67,7 @@ public class StorageRscData extends AbsRscData<VlmProviderObject>
     }
 
     @Override
-    protected void deleteVlmFromDatabase(VlmProviderObject vlmRef) throws DatabaseException
+    protected void deleteVlmFromDatabase(VlmProviderObject<RSC> vlmRef) throws DatabaseException
     {
         storageDbDriver.delete(vlmRef);
     }
@@ -81,7 +82,7 @@ public class StorageRscData extends AbsRscData<VlmProviderObject>
     public RscLayerDataApi asPojo(AccessContext accCtxRef) throws AccessDeniedException
     {
         List<VlmLayerDataApi> vlmPojos = new ArrayList<>();
-        for (VlmProviderObject vlmProviderObject : vlmMap.values())
+        for (VlmProviderObject<RSC> vlmProviderObject : vlmMap.values())
         {
             vlmPojos.add(vlmProviderObject.asPojo(accCtxRef));
         }
@@ -89,7 +90,8 @@ public class StorageRscData extends AbsRscData<VlmProviderObject>
             rscLayerId,
             getChildrenPojos(accCtxRef),
             rscSuffix,
-            vlmPojos
+            vlmPojos,
+            suspend.get()
         );
     }
 }

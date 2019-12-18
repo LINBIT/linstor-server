@@ -23,32 +23,34 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
@@ -90,7 +92,8 @@ public class CtrlSnapshotCrtApiCallHandler
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
-    private final CtrlLayerDataHelper layerStackHelper;
+    private final CtrlRscLayerDataFactory layerStackHelper;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     public CtrlSnapshotCrtApiCallHandler(
@@ -107,7 +110,8 @@ public class CtrlSnapshotCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlLayerDataHelper layerStackHelperRef
+        CtrlRscLayerDataFactory layerStackHelperRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -124,6 +128,7 @@ public class CtrlSnapshotCrtApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         layerStackHelper = layerStackHelperRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     /**
@@ -177,6 +182,10 @@ public class CtrlSnapshotCrtApiCallHandler
             snapshotName,
             new SnapshotDefinition.Flags[] {}
         );
+        ctrlPropsHelper.copy(
+            ctrlPropsHelper.getProps(rscDfn),
+            ctrlPropsHelper.getProps(snapshotDfn)
+        );
 
         ensureSnapshotsViable(rscDfn);
 
@@ -191,28 +200,10 @@ public class CtrlSnapshotCrtApiCallHandler
             SnapshotVolumeDefinition snapshotVlmDfn = createSnapshotVlmDfnData(snapshotDfn, vlmDfn);
             snapshotVolumeDefinitions.add(snapshotVlmDfn);
 
-            Map<String, String> vlmDfnProps = getVlmDfnProps(vlmDfn).map();
-            Map<String, String> snapshotVlmDfnProps = getSnapshotVlmDfnProps(snapshotVlmDfn).map();
-
-            boolean isEncrypted = isEncrypted(vlmDfn);
-            if (isEncrypted)
-            {
-
-                String cryptPasswd = vlmDfnProps.get(ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD);
-                if (cryptPasswd == null)
-                {
-                    throw new ImplementationError("Encrypted volume definition without crypt passwd found");
-                }
-
-                markEncrypted(snapshotVlmDfn);
-                snapshotVlmDfnProps.put(
-                    ApiConsts.KEY_STOR_POOL_CRYPT_PASSWD,
-                    cryptPasswd
-                );
-            }
-
-            copyProp(vlmDfnProps, snapshotVlmDfnProps, ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
-            copyProp(vlmDfnProps, snapshotVlmDfnProps, ApiConsts.KEY_DRBD_CURRENT_GI);
+            ctrlPropsHelper.copy(
+                ctrlPropsHelper.getProps(vlmDfn),
+                ctrlPropsHelper.getProps(snapshotVlmDfn)
+            );
         }
 
         boolean resourceFound = false;
@@ -255,6 +246,13 @@ public class CtrlSnapshotCrtApiCallHandler
             ));
         }
 
+        Iterator<Resource> rscIterator = ctrlSnapshotHelper.iterateResource(rscDfn);
+        while (rscIterator.hasNext())
+        {
+            Resource rsc = rscIterator.next();
+            setSuspend(rsc, true);
+        }
+
         ctrlTransactionHelper.commit();
 
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -265,6 +263,7 @@ public class CtrlSnapshotCrtApiCallHandler
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
+                .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
@@ -384,10 +383,14 @@ public class CtrlSnapshotCrtApiCallHandler
             unsetSuspendResourcePrivileged(snapshot);
         }
 
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
+        resumeIoPrivileged(rscDfn);
+
         ctrlTransactionHelper.commit();
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
+                .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
                 .transform(responses -> CtrlResponseUtils.combineResponses(
                     responses,
                     rscName,
@@ -438,11 +441,21 @@ public class CtrlSnapshotCrtApiCallHandler
     )
     {
         Snapshot snapshot = createSnapshot(snapshotDfn, rsc);
-        setSuspendResource(snapshot);
+        ctrlPropsHelper.copy(
+            ctrlPropsHelper.getProps(rsc),
+            ctrlPropsHelper.getProps(snapshot)
+        );
+
+        setSuspend(snapshot);
 
         for (SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotVolumeDefinitions)
         {
-            createSnapshotVolume(rsc, snapshot, snapshotVolumeDefinition);
+            SnapshotVolume snapVlm = createSnapshotVolume(rsc, snapshot, snapshotVolumeDefinition);
+
+            ctrlPropsHelper.copy(
+                ctrlPropsHelper.getProps(rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber())),
+                ctrlPropsHelper.getProps(snapVlm)
+            );
         }
     }
 
@@ -453,7 +466,6 @@ public class CtrlSnapshotCrtApiCallHandler
         {
             Resource currentRsc = rscIterator.next();
             ensureDriversSupportSnapshots(currentRsc);
-            ensureInternalMetaDisks(currentRsc);
             ctrlSnapshotHelper.ensureSatelliteConnected(
                 currentRsc,
                 "Snapshots cannot be created when the corresponding satellites are not connected."
@@ -473,8 +485,7 @@ public class CtrlSnapshotCrtApiCallHandler
                     Volume vlm = vlmIterator.next();
                     Map<String, StorPool> storPoolMap = getStorPoolMap(
                         vlm,
-                        apiCtx,
-                        CtrlVlmListApiCallHandler::getVlmDescriptionInline
+                        apiCtx
                     );
 
                     for (StorPool storPool : storPoolMap.values())
@@ -500,7 +511,7 @@ public class CtrlSnapshotCrtApiCallHandler
                                     "Storage driver '" + providerKind + "' " + "does not support snapshots."
                                 )
                                 .setDetails("Used for storage pool '" + storPool.getName() + "'" +
-                                    " on '" + rsc.getAssignedNode().getName() + "'.")
+                                    " on '" + rsc.getNode().getName() + "'.")
                                 .build()
                             );
                         }
@@ -514,45 +525,14 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
-    private void ensureInternalMetaDisks(Resource rsc)
-    {
-        Iterator<Volume> vlmIterator = rsc.iterateVolumes();
-        while (vlmIterator.hasNext())
-        {
-            Volume vlm = vlmIterator.next();
-
-            List<String> metaDiskPaths = getDrbdMetaDiskPath(vlm);
-            boolean hasInvalidMetaDisk = false;
-            for (String metaDiskPath : metaDiskPaths)
-            {
-                if (!metaDiskPath.equals("internal"))
-                {
-                    hasInvalidMetaDisk = true;
-                    break;
-                }
-            }
-            if (hasInvalidMetaDisk)
-            {
-                throw new ApiRcException(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.FAIL_SNAPSHOTS_NOT_SUPPORTED,
-                        "Snapshot with external meta-disk not supported."
-                    )
-                    .setDetails("Volume " + vlm.getVolumeDefinition().getVolumeNumber().value +
-                        " on node " + rsc.getAssignedNode().getName().displayValue +
-                        " has meta disk path '" + metaDiskPaths + "'")
-                    .build()
-                );
-            }
-        }
-    }
-
     private boolean isDisklessPrivileged(Resource rsc)
     {
         boolean isDiskless;
         try
         {
-            isDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS);
+            StateFlags<Flags> stateFlags = rsc.getStateFlags();
+            isDiskless = stateFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) ||
+                stateFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         }
         catch (AccessDeniedException implError)
         {
@@ -615,7 +595,7 @@ public class CtrlSnapshotCrtApiCallHandler
             snapshotVlmDfn = snapshotVolumeDefinitionControllerFactory.create(
                 peerAccCtx.get(),
                 snapshotDfn,
-                vlmDfn.getVolumeNumber(),
+                vlmDfn,
                 volumeSize,
                 new SnapshotVolumeDefinition.Flags[]{}
             );
@@ -654,46 +634,20 @@ public class CtrlSnapshotCrtApiCallHandler
         return snapshotVlmDfn;
     }
 
-    private void copyProp(
-        Map<String, String> vlmDfnProps,
-        Map<String, String> snapshotVlmDfnProps,
-        String propKey
-    )
-    {
-        String propValue = vlmDfnProps.get(propKey);
-        if (propValue != null)
-        {
-            snapshotVlmDfnProps.put(propKey, propValue);
-        }
-    }
-
     private Snapshot createSnapshot(SnapshotDefinition snapshotDfn, Resource rsc)
     {
         String snapshotNameStr = snapshotDfn.getName().displayValue;
         String rscNameStr = rsc.getDefinition().getName().displayValue;
-        String nodeNameStr = rsc.getAssignedNode().getName().displayValue;
+        String nodeNameStr = rsc.getNode().getName().displayValue;
 
         Snapshot snapshot;
         try
         {
-            NodeId nodeId = null;
-            List<RscLayerObject> childLayerDataByKind = LayerUtils.getChildLayerDataByKind(
-                rsc.getLayerData(apiCtx),
-                DeviceLayerKind.DRBD
-            );
-            if (!childLayerDataByKind.isEmpty())
-            {
-                nodeId = ((DrbdRscData) childLayerDataByKind.get(0)).getNodeId();
-            }
-
             snapshot = snapshotFactory.create(
                 peerAccCtx.get(),
-                rsc.getAssignedNode(),
+                rsc,
                 snapshotDfn,
-                nodeId,
-                new Snapshot.Flags[]
-                {},
-                layerStackHelper.getLayerStack(rsc)
+                new Snapshot.Flags[0]
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -724,23 +678,20 @@ public class CtrlSnapshotCrtApiCallHandler
         return snapshot;
     }
 
-    private void createSnapshotVolume(
+    private SnapshotVolume createSnapshotVolume(
         Resource rsc,
         Snapshot snapshot,
         SnapshotVolumeDefinition snapshotVolumeDefinition
     )
     {
+        SnapshotVolume snapVlm;
         try
         {
-            snapshotVolumeControllerFactory.create(
+            snapVlm = snapshotVolumeControllerFactory.create(
                 peerAccCtx.get(),
+                rsc,
                 snapshot,
-                snapshotVolumeDefinition,
-                getStorPoolMap(
-                    rsc.getVolume(snapshotVolumeDefinition.getVolumeNumber()),
-                    apiCtx,
-                    CtrlVlmListApiCallHandler::getVlmDescriptionInline
-                ).get("")
+                snapshotVolumeDefinition
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -770,9 +721,11 @@ public class CtrlSnapshotCrtApiCallHandler
         {
             throw new ApiDatabaseException(sqlExc);
         }
+        return snapVlm;
     }
 
-    private void setSuspendResource(Snapshot snapshot)
+    @Deprecated
+    private void setSuspend(Snapshot snapshot)
     {
         try
         {
@@ -788,40 +741,24 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
-    private Props getVlmDfnProps(VolumeDefinition vlmDfn)
+    private void setSuspend(Resource rsc, boolean suspend)
     {
-        Props props;
         try
         {
-            props = vlmDfn.getProps(peerAccCtx.get());
+            rsc.getLayerData(peerAccCtx.get()).setSuspendIo(suspend);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access the properties of " + getVlmDfnDescriptionInline(vlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+                "set resource suspension for " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
             );
         }
-        return props;
-    }
-
-    private Props getSnapshotVlmDfnProps(SnapshotVolumeDefinition snapshotVlmDfn)
-    {
-        Props props;
-        try
+        catch (DatabaseException exc)
         {
-            props = snapshotVlmDfn.getProps(peerAccCtx.get());
+            throw new ApiDatabaseException(exc);
         }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "access the properties of " + getSnapshotVlmDfnDescriptionInline(snapshotVlmDfn),
-                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT_VLM_DFN
-            );
-        }
-        return props;
     }
 
     private List<String> getDrbdMetaDiskPath(Volume vlm)
@@ -829,14 +766,14 @@ public class CtrlSnapshotCrtApiCallHandler
         List<String> metaDiskPaths = new ArrayList<>();
         try
         {
-            List<RscLayerObject> drbdRscDataList = LayerUtils.getChildLayerDataByKind(
-                vlm.getResource().getLayerData(apiCtx), DeviceLayerKind.DRBD
+            List<AbsRscLayerObject<Resource>> drbdRscDataList = LayerUtils.getChildLayerDataByKind(
+                vlm.getAbsResource().getLayerData(apiCtx), DeviceLayerKind.DRBD
             );
 
-            for (RscLayerObject rscLayerObject : drbdRscDataList)
+            for (AbsRscLayerObject<Resource> rscLayerObject : drbdRscDataList)
             {
-                DrbdRscData drbdRscData = (DrbdRscData) rscLayerObject;
-                for (DrbdVlmData drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscLayerObject;
+                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
                     String meta = drbdVlmData.getMetaDiskPath();
                     if (meta != null && !meta.isEmpty() && !meta.equalsIgnoreCase("internal"))
@@ -983,6 +920,7 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
+    @Deprecated
     private void unsetSuspendResourcePrivileged(Snapshot snapshot)
     {
         try
@@ -992,6 +930,27 @@ public class CtrlSnapshotCrtApiCallHandler
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ImplementationError(accDeniedExc);
+        }
+    }
+
+    private void resumeIoPrivileged(ResourceDefinition rscDfn)
+    {
+        try
+        {
+            Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+            while (rscIt.hasNext())
+            {
+                Resource rsc= rscIt.next();
+                rsc.getLayerData(apiCtx).setSuspendIo(false);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
         }
     }
 

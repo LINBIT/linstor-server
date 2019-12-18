@@ -21,6 +21,14 @@ info:
 
     Changelog:
 
+    * 1.0.12
+      - Added WritecacheResource and WritecacheVolume schemas.
+      - Removed support for swordfish
+      - Added `with_storage_pool` to PhysicalStorageCreate post request, allowing to create linstor storage pools too
+    * 1.0.11
+      - Added /v1/physical-storage endpoint, that lets you query and create lvm/zfs pools
+      - Extended Node with list of supported providers and layers as well as lists of reasons for
+        unsupported providers and layers
     * 1.0.10
       - Added `reports` array field to Volume object, contains ApiCallRcs for problems
       - Changed `ResourceDefinitions` can now include `VolumeDefinitions` in `volume_definitions` field
@@ -55,7 +63,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.10
+  version: 1.0.12
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -261,13 +269,6 @@ paths:
             * external
             * internal
 
-        - `StorDriver/SwordfishComposedNodeName` - regex[`.*`]
-        - `StorDriver/SwordfishStorSvc` - regex[`.*`]
-        - `StorDriver/SwordfishUserName` - regex[`.*`]
-        - `StorDriver/SwordfishUserPw` - regex[`.*`]
-        - `StorDriver/SwordfishUrl` - regex[`.*`]
-        - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
         - `sys/fs/blkio_throttle_read` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
@@ -275,6 +276,53 @@ paths:
         - `sys/fs/blkio_throttle_write` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
+        - `Writecache/PoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name for writecache
+
+        - `Writecache/Size` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the writecache in % (0-100) or KiB otherwise
+
+        - `Writecache/Blocksize` - long
+
+            4096 is recommended; the maximum block size is the page size
+
+        - `Writecache/Options/StartSector` - long
+
+            offset from the start of cache device in 512-byte sectors
+
+        - `Writecache/Options/HighWatermark` - long
+
+            start writeback when the number of used blocks reach this watermark
+
+        - `Writecache/Options/LowWatermark` - long
+
+            stop writeback when the number of used blocks drops below this watermark
+
+        - `Writecache/Options/WritebackJobs` - long
+
+            limit the number of blocks that are in flight during writeback. Setting this value reduces writeback throughput, but it may improve latency of read requests
+
+        - `Writecache/Options/AutocommitBlocks` - long
+
+            when the application writes this amount of blocks without issuing the FLUSH request, the blocks are automatically commited
+
+        - `Writecache/Options/AutocommitTime` - long
+
+            autocommit time in milliseconds. The data is automatically commited if this time passes and no FLUSH request is received
+
+        - `Writecache/Options/Fua` - enum
+
+            "On" results in "fua" as argument, whereas the value "Off" results in "nofua" argument
+
+            * On
+            * Off
+
+        - `Writecache/Options/Additional` - string
+
+            Additional arguments passed through
 
       responses:
         '200':
@@ -526,19 +574,15 @@ paths:
         - `StorDriver/ThinPool` - regex[`[a-zA-Z0-9_-]+`]
         - `StorDriver/ZPool` - regex[`[a-zA-Z0-9_/-]+`]
         - `StorDriver/ZPoolThin` - regex[`[a-zA-Z0-9_/-]+`]
+        - `StorDriver/FileDir` - regex[`.*`]
         - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Preferred network interface to use
 
-        - `StorDriver/SwordfishStorPool` - regex[`.*`]
-        - `StorDriver/SwordfishVolumeCreateTimeout` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishVolumeCreateRetries` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishAttachVolumeTimeout` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishAttachVolumeRetries` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishGrepNvmeUuidTimeout` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishGrepNvmeUuidRetries` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
+        - `NVMe/PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Preferred network interface to use
+
         - `StorDriver/LvcreateType` - enum
             * linear
             * striped
@@ -607,8 +651,8 @@ paths:
       parameters:
         - name: resource_definitions
           in: query
-          description: Filter only for the specified resource definitions, if not specified
-            no filtering.
+          description: Filter only for the specified resource definitions, if not
+            specified no filtering.
           schema:
             type: array
             items:
@@ -685,6 +729,7 @@ paths:
             * zlib
             * lzma
             * lz4
+            * zstd
 
         - `FileSystem/Type` - enum
 
@@ -722,6 +767,65 @@ paths:
         - `sys/fs/blkio_throttle_write` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
+        - `DrbdOptions/auto-quorum` - enum
+
+            Enables automatic setting of the 'quroum' and 'on-no-quroum' property
+
+            * io-error
+            * suspend-io
+            * disabled
+
+        - `DrbdOptions/auto-add-quorum-tiebreaker` - boolean_true_false
+
+            Enables automatic management (creation and deletion) of tie breaking resource
+
+        - `Writecache/PoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name for writecache
+
+        - `Writecache/Size` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the writecache in % (0-100) or KiB otherwise
+
+        - `Writecache/Blocksize` - long
+
+            4096 is recommended; the maximum block size is the page size
+
+        - `Writecache/Options/StartSector` - long
+
+            offset from the start of cache device in 512-byte sectors
+
+        - `Writecache/Options/HighWatermark` - long
+
+            start writeback when the number of used blocks reach this watermark
+
+        - `Writecache/Options/LowWatermark` - long
+
+            stop writeback when the number of used blocks drops below this watermark
+
+        - `Writecache/Options/WritebackJobs` - long
+
+            limit the number of blocks that are in flight during writeback. Setting this value reduces writeback throughput, but it may improve latency of read requests
+
+        - `Writecache/Options/AutocommitBlocks` - long
+
+            when the application writes this amount of blocks without issuing the FLUSH request, the blocks are automatically commited
+
+        - `Writecache/Options/AutocommitTime` - long
+
+            autocommit time in milliseconds. The data is automatically commited if this time passes and no FLUSH request is received
+
+        - `Writecache/Options/Fua` - enum
+
+            "On" results in "fua" as argument, whereas the value "Off" results in "nofua" argument
+
+            * On
+            * Off
+
+        - `Writecache/Options/Additional` - string
+
+            Additional arguments passed through
 
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
@@ -1012,6 +1116,53 @@ paths:
         - `sys/fs/blkio_throttle_write` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
+        - `Writecache/PoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name for writecache
+
+        - `Writecache/Size` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the writecache in % (0-100) or KiB otherwise
+
+        - `Writecache/Blocksize` - long
+
+            4096 is recommended; the maximum block size is the page size
+
+        - `Writecache/Options/StartSector` - long
+
+            offset from the start of cache device in 512-byte sectors
+
+        - `Writecache/Options/HighWatermark` - long
+
+            start writeback when the number of used blocks reach this watermark
+
+        - `Writecache/Options/LowWatermark` - long
+
+            stop writeback when the number of used blocks drops below this watermark
+
+        - `Writecache/Options/WritebackJobs` - long
+
+            limit the number of blocks that are in flight during writeback. Setting this value reduces writeback throughput, but it may improve latency of read requests
+
+        - `Writecache/Options/AutocommitBlocks` - long
+
+            when the application writes this amount of blocks without issuing the FLUSH request, the blocks are automatically commited
+
+        - `Writecache/Options/AutocommitTime` - long
+
+            autocommit time in milliseconds. The data is automatically commited if this time passes and no FLUSH request is received
+
+        - `Writecache/Options/Fua` - enum
+
+            "On" results in "fua" as argument, whereas the value "Off" results in "nofua" argument
+
+            * On
+            * Off
+
+        - `Writecache/Options/Additional` - string
+
+            Additional arguments passed through
 
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
@@ -1838,7 +1989,8 @@ paths:
       parameters:
         - name: resource_groups
           in: query
-          description: Filter only for the specified resource groups, if not specified no filtering.
+          description: Filter only for the specified resource groups, if not specified
+            no filtering.
           schema:
             type: array
             items:
@@ -2105,7 +2257,8 @@ paths:
         Creates a new resource-definition and auto-deploys if configured to do so.
       responses:
         '201':
-          description: resource-definition created and auto-deployed if configured accordingly
+          description: resource-definition created and auto-deployed if configured
+            accordingly
           content:
             application/json:
               schema:
@@ -2323,11 +2476,6 @@ paths:
 
             Enable dmstats on lvm create
 
-        - `StorDriver/SwordfishUserName` - regex[`.*`]
-        - `StorDriver/SwordfishUserPw` - regex[`.*`]
-        - `StorDriver/SwordfishUrl` - regex[`.*`]
-        - `StorDriver/SwordfishRetryCount` - regex[`[0-9]+`]
-        - `StorDriver/SwordfishRetryDelay` - regex[`[0-9]+`]
         - `GlobSeqApiCalls` - boolean_true_false
 
             Globally sequentialize all ctrl -> stlt api calls
@@ -2361,6 +2509,73 @@ paths:
         - `sys/fs/blkio_throttle_write` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
+        - `SearchDomain` - string
+
+            Search domain node names, if no FQDN is given.
+
+        - `ExtCmdWaitTimeout` - long
+
+            Wait timeout for an external command in milliseconds
+
+        - `DrbdOptions/auto-quorum` - enum
+
+            Enables automatic setting of the 'quroum' and 'on-no-quroum' property
+
+            * io-error
+            * suspend-io
+            * disabled
+
+        - `DrbdOptions/auto-add-quorum-tiebreaker` - boolean_true_false
+
+            Enables automatic management (creation and deletion) of tie breaking resource
+
+        - `Writecache/PoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Linstor storage pool name for writecache
+
+        - `Writecache/Size` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the writecache in % (0-100) or KiB otherwise
+
+        - `Writecache/Blocksize` - long
+
+            4096 is recommended; the maximum block size is the page size
+
+        - `Writecache/Options/StartSector` - long
+
+            offset from the start of cache device in 512-byte sectors
+
+        - `Writecache/Options/HighWatermark` - long
+
+            start writeback when the number of used blocks reach this watermark
+
+        - `Writecache/Options/LowWatermark` - long
+
+            stop writeback when the number of used blocks drops below this watermark
+
+        - `Writecache/Options/WritebackJobs` - long
+
+            limit the number of blocks that are in flight during writeback. Setting this value reduces writeback throughput, but it may improve latency of read requests
+
+        - `Writecache/Options/AutocommitBlocks` - long
+
+            when the application writes this amount of blocks without issuing the FLUSH request, the blocks are automatically commited
+
+        - `Writecache/Options/AutocommitTime` - long
+
+            autocommit time in milliseconds. The data is automatically commited if this time passes and no FLUSH request is received
+
+        - `Writecache/Options/Fua` - enum
+
+            "On" results in "fua" as argument, whereas the value "Off" results in "nofua" argument
+
+            * On
+            * Off
+
+        - `Writecache/Options/Additional` - string
+
+            Additional arguments passed through
 
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
@@ -2601,6 +2816,7 @@ paths:
 
         - `DrbdOptions/ProxyCompression/numa-threshold` - range[`0-253`]
         - `DrbdOptions/ProxyCompression/level` - range[`1-9`]
+        - `DrbdOptions/ProxyCompression/level` - range[`1-22`]
       responses:
         '200':
           description: drbd proxy properties modified
@@ -3027,57 +3243,58 @@ paths:
         '500':
           $ref: '#/components/responses/OperationFailed'
 
-#  /v1/physical-storage:
-#    get:
-#      tags:
-#        - developers
-#      operationId: viewPhysicaStorage
-#      summary: show physical storage on nodes, to be used with LINSTOR
-#      description: Gives a grouped list of physical storage that can be turned into a LINSTOR storage-pool
-#      parameters:
-#        - $ref: '#/components/parameters/Offset'
-#        - $ref: '#/components/parameters/Limit'
-#      responses:
-#        '200':
-#          description: physical storage list
-#          content:
-#            application/json:
-#              schema:
-#                type: array
-#                items:
-#                  $ref: '#/components/schemas/PhysicalStorage'
-#        '500':
-#          $ref: '#/components/responses/OperationFailed'
-#  /v1/physical-storage/{node}:
-#    post:
-#      tags:
-#        - developers
-#      operationId: createDevicePool
-#      summary: creates an LVM, LVM-thin or ZFS pool, optional VDO under it
-#      description: |
-#        Creates a LVM/LVM-thin, ZFS pool on the given device and if supported VDO(optional) under it.
-#        logcal_size_kib parameter is only needed if LVM-thin or vdo is used is used.
-#        Also note VDO can only used with LVM-fat.
-#      parameters:
-#        - $ref: '#/components/parameters/Node'
-#      responses:
-#        '201':
-#          description: device pool created
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/ApiCallRc'
-#      requestBody:
-#        content:
-#          application/json:
-#            schema:
-#              $ref: '#/components/schemas/PhysicalStorageCreate'
-#            example:
-#              provider_kind: LVM_THIN
-#              device_path: '/dev/sde'
-#              pool_name: ssd_fast
-#              logcal_size_kib: 5368709120
-#              vdo_enable: false
+  /v1/physical-storage:
+    get:
+      tags:
+        - developers
+      operationId: viewPhysicaStorage
+      summary: show physical storage on nodes, to be used with LINSTOR
+      description: Gives a grouped list of physical storage that can be turned into
+        a LINSTOR storage-pool
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: physical storage list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhysicalStorage'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/physical-storage/{node}:
+    post:
+      tags:
+        - developers
+      operationId: createDevicePool
+      summary: creates an LVM, LVM-thin or ZFS pool, optional VDO under it
+      description: |
+        Creates a LVM/LVM-thin, ZFS pool on the given device and if supported VDO(optional) under it.
+        logcal_size_kib parameter is only needed if LVM-thin or vdo is used is used.
+        Also note VDO can only used with LVM-fat.
+      parameters:
+        - $ref: '#/components/parameters/Node'
+      responses:
+        '201':
+          description: device pool created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhysicalStorageCreate'
+            example:
+              provider_kind: LVM_THIN
+              device_path: /dev/sde
+              pool_name: ssd_fast
+              logcal_size_kib: 5368709120
+              vdo_enable: false
 
 
 components:
@@ -3219,7 +3436,6 @@ components:
             - Satellite
             - Combined
             - Auxiliary
-            - SWORDFISH_TARGET
         flags:
           type: array
           items:
@@ -3248,6 +3464,26 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        storage_providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderKind'
+        resource_layers:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'
+        unsupported_providers:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        unsupported_layers:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
     NodeModify:
       type: object
       properties:
@@ -3305,10 +3541,9 @@ components:
         - LVM_THIN
         - ZFS
         - ZFS_THIN
-        - SWORDFISH_TARGET
-        - SWORDFISH_INITIATOR
         - FILE
         - FILE_THIN
+        - SPDK
     StoragePool:
       description: |
         Contains information about a storage pool.
@@ -3606,6 +3841,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NVMEVolume'
+    WritecacheResource:
+      type: object
+      properties:
+        writecache_volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WritecacheVolume'
     ResourceLayer:
       type: object
       properties:
@@ -3625,6 +3867,8 @@ components:
           $ref: '#/components/schemas/StorageResource'
         nvme:
           $ref: '#/components/schemas/NVMEResource'
+        writecache:
+          $ref: '#/components/schemas/WritecacheResource'
     ResourceState:
       type: object
       properties:
@@ -3782,6 +4026,28 @@ components:
         backing_device:
           type: string
           description: block device used by nvme
+        allocated_size_kib:
+          type: integer
+          format: int64
+        usable_size_kib:
+          type: integer
+          format: int64
+        disk_state:
+          type: string
+          description: String describing current volume state
+
+    WritecacheVolume:
+      type: object
+      properties:
+        volume_number:
+          type: integer
+          format: int32
+        device_path:
+          type: string
+          description: block device path
+        device_path_cache:
+          type: string
+          description: block device path used as cache device
         allocated_size_kib:
           type: integer
           format: int64
@@ -4244,6 +4510,15 @@ components:
           type: string
         wwn:
           type: string
+    PhysicalStorageStoragePoolCreate:
+      type: object
+      description: This structured is used for create physical-storage
+      properties:
+        name:
+          type: string
+          description: Name of the linstor storage pool
+        props:
+            $ref: '#/components/schemas/Properties'
     PhysicalStorageCreate:
       type: object
       required:
@@ -4251,7 +4526,7 @@ components:
         - device_paths
       properties:
         provider_kind:
-            $ref: '#/components/schemas/ProviderKind'
+          $ref: '#/components/schemas/ProviderKind'
         device_paths:
           type: array
           items:
@@ -4262,7 +4537,7 @@ components:
             RAID level to use for pool.
           enum:
             - JBOD
-          default: "JBOD"
+          default: JBOD
         pool_name:
           type: string
         vdo_enable:
@@ -4276,3 +4551,6 @@ components:
           type: integer
           format: uint64
           default: 0
+        with_storage_pool:
+          description: If specified a linstor storage pool will also be created using this device pool
+          $ref: '#/components/schemas/PhysicalStorageStoragePoolCreate'

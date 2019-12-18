@@ -7,6 +7,7 @@ import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerLinstorModule;
+import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -158,9 +159,6 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Mock @Bind @Named(NumberPoolModule.TCP_PORT_POOL)
     protected DynamicNumberPool tcpPortPoolMock;
 
-    @Mock @Bind @Named(NumberPoolModule.SF_TARGET_PORT_POOL)
-    protected DynamicNumberPool sfTargetPortPoolMock;
-
     @Mock @Bind @Named(NumberPoolModule.LAYER_RSC_ID_POOL)
     protected DynamicNumberPool layerRscIdPoolMock;
     protected AtomicInteger layerRscIdAtomicId = new AtomicInteger();
@@ -201,7 +199,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @BeforeClass
     public static void setUpBeforeClass()
-        throws DatabaseException, SQLException, InvalidNameException
+        throws DatabaseException, SQLException, InvalidNameException, InitializationException
     {
         if (dbConnPool == null)
         {
@@ -750,7 +748,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     }
 
     protected FreeSpaceMgr getFreeSpaceMgr(StorPoolDefinition storPoolDfn, Node node)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidNameException
     {
         return freeSpaceMgrFactory.getInstance(
             SYS_CTX, new FreeSpaceMgrName(node.getName(), storPoolDfn.getName())

@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
 
 import javax.inject.Inject;
@@ -68,11 +69,11 @@ public class AutoPlace
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_AUTO_PLACE_RSC, request));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 }

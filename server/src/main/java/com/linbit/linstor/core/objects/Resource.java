@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
@@ -12,23 +10,17 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 
@@ -49,45 +41,34 @@ import java.util.stream.Stream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Resource extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<Resource>, ProtectedObject
+public class Resource extends AbsResource<Resource>
 {
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
+    public static interface InitMaps
+    {
+        Map<ResourceKey, ResourceConnection> getRscConnMap();
+        Map<VolumeNumber, Volume> getVlmMap();
+    }
 
     // Reference to the resource definition
     private final ResourceDefinition resourceDfn;
 
-    // Connections to the peer resources
-    private final TransactionMap<Resource.ResourceKey, ResourceConnection> resourceConnections;
-
-    // List of volumes of this resource
-    private final TransactionMap<VolumeNumber, Volume> volumeMap;
-
-    // Reference to the node this resource is assigned to
-    private final Node assgNode;
-
     // State flags
     private final StateFlags<Flags> flags;
+
+    // Connections to the peer resources
+    private final TransactionMap<Resource.ResourceKey, ResourceConnection> resourceConnections;
+    private final TransactionMap<VolumeNumber, Volume> vlmMap;
 
     // Access control for this resource
     private final ObjectProtection objProt;
 
-    // Properties container for this resource
-    private final Props resourceProps;
-
     private final ResourceDatabaseDriver dbDriver;
 
-    private final TransactionSimpleObject<Resource, Boolean> deleted;
 
     private boolean createPrimary = false;
 
     private final ResourceKey rscKey;
 
-    private final TransactionSimpleObject<Resource, RscLayerObject> rootLayerData;
 
     Resource(
         UUID objIdRef,
@@ -104,27 +85,25 @@ public class Resource extends BaseTransactionObject
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(
+            objIdRef,
+            nodeRef,
+            propsContainerFactory.getInstance(
+                PropsContainer.buildPath(
+                    nodeRef.getName(),
+                    resDfnRef.getName()
+                )
+            ),
+            transMgrProviderRef,
+            transObjFactory
+        );
         dbDriver = dbDriverRef;
 
         ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
-        ErrorCheck.ctorNotNull(Resource.class, Node.class, nodeRef);
         resourceDfn = resDfnRef;
-        assgNode = nodeRef;
-        objId = objIdRef;
-        dbgInstanceId = UUID.randomUUID();
-
         resourceConnections = transObjFactory.createTransactionMap(rscConnMapRef, null);
-        volumeMap = transObjFactory.createTransactionMap(vlmMapRef, null);
-        resourceProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(
-                nodeRef.getName(),
-                resDfnRef.getName()
-            )
-        );
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
         objProt = objProtRef;
-        rootLayerData = transObjFactory.createTransactionSimpleObject(this, null, null);
+        vlmMap = transObjFactory.createTransactionMap(vlmMapRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
@@ -136,37 +115,21 @@ public class Resource extends BaseTransactionObject
 
         rscKey = new ResourceKey(this);
 
-        transObjs = Arrays.asList(
-            resourceDfn,
-            assgNode,
-            flags,
-            objProt,
-            resourceConnections,
-            volumeMap,
-            resourceProps,
-            rootLayerData,
-            deleted
+        transObjs.addAll(
+            Arrays.asList(
+                vlmMap,
+                resourceConnections,
+                resourceDfn,
+                flags,
+                objProt
+            )
         );
     }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
-    }
-
     @Override
     public ObjectProtection getObjProt()
     {
         checkDeleted();
         return objProt;
-    }
-
-    public Props getProps(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        return PropsAccess.secureGetProps(accCtx, objProt, resourceProps);
     }
 
     public ResourceDefinition getDefinition()
@@ -175,7 +138,54 @@ public class Resource extends BaseTransactionObject
         return resourceDfn;
     }
 
-    public synchronized void setResourceConnection(AccessContext accCtx, ResourceConnection resCon)
+    @Override
+    public Volume getVolume(VolumeNumber volNr)
+    {
+        checkDeleted();
+        return vlmMap.get(volNr);
+    }
+
+    public int getVolumeCount()
+    {
+        checkDeleted();
+        return vlmMap.size();
+    }
+
+    public synchronized Volume putVolume(AccessContext accCtx, Volume vol)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        return vlmMap.put(vol.getVolumeNumber(), vol);
+    }
+
+    public synchronized void removeVolume(AccessContext accCtx, Volume vol)
+        throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        VolumeNumber vlmNr = vol.getVolumeNumber();
+        vlmMap.remove(vlmNr);
+        rootLayerData.get().remove(accCtx, vlmNr);
+    }
+
+    @Override
+    public Iterator<Volume> iterateVolumes()
+    {
+        checkDeleted();
+        return Collections.unmodifiableCollection(vlmMap.values()).iterator();
+    }
+
+    @Override
+    public Stream<Volume> streamVolumes()
+    {
+        checkDeleted();
+        return Collections.unmodifiableCollection(vlmMap.values()).stream();
+    }
+
+    public synchronized void setAbsResourceConnection(AccessContext accCtx, ResourceConnection resCon)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -216,7 +226,7 @@ public class Resource extends BaseTransactionObject
         }
     }
 
-    public Stream<ResourceConnection> streamResourceConnections(AccessContext accCtx)
+    public Stream<ResourceConnection> streamAbsResourceConnections(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -224,7 +234,7 @@ public class Resource extends BaseTransactionObject
         return resourceConnections.values().stream();
     }
 
-    public ResourceConnection getResourceConnection(AccessContext accCtx, Resource otherResource)
+    public ResourceConnection getAbsResourceConnection(AccessContext accCtx, Resource otherResource)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -232,55 +242,6 @@ public class Resource extends BaseTransactionObject
         return resourceConnections.get(otherResource.getKey());
     }
 
-    public Volume getVolume(VolumeNumber volNr)
-    {
-        checkDeleted();
-        return volumeMap.get(volNr);
-    }
-
-    public int getVolumeCount()
-    {
-        checkDeleted();
-        return volumeMap.size();
-    }
-
-    public synchronized Volume putVolume(AccessContext accCtx, Volume vol)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
-
-        return volumeMap.put(vol.getVolumeDefinition().getVolumeNumber(), vol);
-    }
-
-    public synchronized void removeVolume(AccessContext accCtx, Volume vol)
-        throws AccessDeniedException, DatabaseException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.CHANGE);
-
-        VolumeNumber vlmNr = vol.getVolumeDefinition().getVolumeNumber();
-        volumeMap.remove(vlmNr);
-        rootLayerData.get().remove(accCtx, vlmNr);
-    }
-
-    public Iterator<Volume> iterateVolumes()
-    {
-        checkDeleted();
-        return Collections.unmodifiableCollection(volumeMap.values()).iterator();
-    }
-
-    public Stream<Volume> streamVolumes()
-    {
-        checkDeleted();
-        return Collections.unmodifiableCollection(volumeMap.values()).stream();
-    }
-
-    public Node getAssignedNode()
-    {
-        checkDeleted();
-        return assgNode;
-    }
 
     public StateFlags<Flags> getStateFlags()
     {
@@ -291,37 +252,22 @@ public class Resource extends BaseTransactionObject
     /**
      * Whether peers should treat this resource as diskless.
      */
-    public boolean disklessForPeers(AccessContext accCtx)
+    public boolean disklessForDrbdPeers(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
-        return flags.isSet(accCtx, Flags.DISKLESS) &&
+        return flags.isSet(accCtx, Flags.DRBD_DISKLESS) &&
             flags.isUnset(accCtx, Flags.DISK_ADDING) &&
             flags.isUnset(accCtx, Flags.DISK_REMOVING);
     }
 
-    public RscLayerObject getLayerData(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.USE);
-        return rootLayerData.get();
-    }
-
-    public void setLayerData(AccessContext accCtx, RscLayerObject layerData)
-        throws AccessDeniedException, DatabaseException
-    {
-        checkDeleted();
-        objProt.requireAccess(accCtx, AccessType.USE);
-        rootLayerData.set(layerData);
-
-    }
-
+    @Override
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         getStateFlags().enableFlags(accCtx, Flags.DELETE);
     }
 
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
@@ -329,7 +275,7 @@ public class Resource extends BaseTransactionObject
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
 
-            assgNode.removeResource(accCtx, this);
+            node.removeResource(accCtx, this);
             resourceDfn.removeResource(accCtx, this);
 
             // preventing ConcurrentModificationException
@@ -340,13 +286,13 @@ public class Resource extends BaseTransactionObject
             }
 
             // preventing ConcurrentModificationException
-            Collection<Volume> vlmValues = new ArrayList<>(volumeMap.values());
-            for (Volume vlm : vlmValues)
+            Collection<AbsVolume<Resource>> vlmValues = new ArrayList<>(vlmMap.values());
+            for (AbsVolume<Resource> vlm : vlmValues)
             {
                 vlm.delete(accCtx);
             }
 
-            resourceProps.delete();
+            props.delete();
 
             objProt.delete(accCtx);
 
@@ -359,19 +305,6 @@ public class Resource extends BaseTransactionObject
             dbDriver.delete(this);
 
             deleted.set(true);
-        }
-    }
-
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted resource");
         }
     }
 
@@ -391,9 +324,14 @@ public class Resource extends BaseTransactionObject
         return createPrimary;
     }
 
-    public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
+    public boolean isDrbdDiskless(AccessContext accCtx) throws AccessDeniedException
     {
-        return getStateFlags().isSet(accCtx, Flags.DISKLESS);
+        return getStateFlags().isSet(accCtx, Flags.DRBD_DISKLESS);
+    }
+
+    public boolean isNvmeInitiator(AccessContext accCtx) throws AccessDeniedException
+    {
+        return getStateFlags().isSet(accCtx, Flags.NVME_INITIATOR);
     }
 
     public ResourceApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
@@ -406,14 +344,14 @@ public class Resource extends BaseTransactionObject
             volumes.add(itVolumes.next().getApiData(null, accCtx));
         }
         List<ResourceConnectionApi> rscConns = new ArrayList<>();
-        for (ResourceConnection rscConn : streamResourceConnections(accCtx).collect(Collectors.toList()))
+        for (ResourceConnection rscConn : streamAbsResourceConnections(accCtx).collect(Collectors.toList()))
         {
             rscConns.add(rscConn.getApiData(accCtx));
         }
         return new RscPojo(
             getDefinition().getName().getDisplayName(),
-            getAssignedNode().getName().getDisplayName(),
-            getAssignedNode().getUuid(),
+            getNode().getName().getDisplayName(),
+            getNode().getUuid(),
             getDefinition().getApiData(accCtx),
             getUuid(),
             getStateFlags().getFlagsBits(accCtx),
@@ -437,12 +375,16 @@ public class Resource extends BaseTransactionObject
     }
 
     @Override
-    public int compareTo(Resource otherRsc)
+    public int compareTo(AbsResource<Resource> otherRsc)
     {
-        int eq = getAssignedNode().compareTo(otherRsc.getAssignedNode());
-        if (eq == 0)
+        int eq = 1;
+        if (otherRsc instanceof Resource)
         {
-            eq = getDefinition().compareTo(otherRsc.getDefinition());
+            eq = getNode().compareTo(otherRsc.getNode());
+            if (eq == 0)
+            {
+                eq = getDefinition().compareTo(((Resource) otherRsc).getDefinition());
+            }
         }
         return eq;
     }
@@ -450,20 +392,14 @@ public class Resource extends BaseTransactionObject
     @Override
     public String toString()
     {
-        return "Node: '" + assgNode.getName() + "', " +
+        return "Node: '" + node.getName() + "', " +
                "Rsc: '" + resourceDfn.getName() + "'";
     }
 
     public static String getStringId(Resource rsc)
     {
-        return rsc.getAssignedNode().getName().value + "/" +
+        return rsc.getNode().getName().value + "/" +
             rsc.getDefinition().getName().value;
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
     }
 
     /**
@@ -476,7 +412,7 @@ public class Resource extends BaseTransactionObject
 
         public ResourceKey(Resource resource)
         {
-            this(resource.getAssignedNode().getName(), resource.getDefinition().getName());
+            this(resource.getNode().getName(), resource.getDefinition().getName());
         }
 
         public ResourceKey(NodeName nodeNameRef, ResourceName resourceNameRef)
@@ -535,21 +471,22 @@ public class Resource extends BaseTransactionObject
         }
     }
 
-    public static interface InitMaps
-    {
-        Map<ResourceKey, ResourceConnection> getRscConnMap();
-        Map<VolumeNumber, Volume> getVlmMap();
-    }
-
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         CLEAN(1L << 0),
         DELETE(1L << 1),
+        @Deprecated
         DISKLESS(1L << 2),
         DISK_ADD_REQUESTED(1L << 3),
         DISK_ADDING(1L << 4),
         DISK_REMOVE_REQUESTED(1L << 5),
-        DISK_REMOVING(1L << 6), TIE_BREAKER(DISKLESS.flagValue | 1L << 7);
+        DISK_REMOVING(1L << 6),
+
+        DRBD_DISKLESS(DISKLESS.flagValue | 1L << 8),
+        // DO NOT rename TIE_BREAKER to DRBD_TIE_BREAKER for compatibility reasons
+        TIE_BREAKER(DRBD_DISKLESS.flagValue | 1L << 7),
+
+        NVME_INITIATOR(DISKLESS.flagValue | 1L << 9);
 
         public final long flagValue;
 
@@ -586,5 +523,11 @@ public class Resource extends BaseTransactionObject
         {
             return FlagsHelper.fromStringList(Flags.class, listFlags);
         }
+    }
+
+    @Override
+    public ResourceDefinition getResourceDefinition()
+    {
+        return resourceDfn;
     }
 }

@@ -27,10 +27,12 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 
+import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.FLAGS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.NODE_NAME_DST;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.NODE_NAME_SRC;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.RESOURCE_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.SNAPSHOT_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.TCP_PORT;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceConnections.UUID;
 
@@ -76,11 +78,13 @@ public class ResourceConnectionDbDriver
         tcpPortPool = tcpPortPoolRef;
 
         setColumnSetter(UUID, rc -> rc.getUuid().toString());
-        setColumnSetter(NODE_NAME_SRC, rc -> rc.getSourceResource(dbCtxRef).getAssignedNode().getName().value);
-        setColumnSetter(NODE_NAME_DST, rc -> rc.getTargetResource(dbCtxRef).getAssignedNode().getName().value);
+        setColumnSetter(NODE_NAME_SRC, rc -> rc.getSourceResource(dbCtxRef).getNode().getName().value);
+        setColumnSetter(NODE_NAME_DST, rc -> rc.getTargetResource(dbCtxRef).getNode().getName().value);
         setColumnSetter(RESOURCE_NAME, rc -> rc.getSourceResource(dbCtxRef).getDefinition().getName().value);
         setColumnSetter(FLAGS, rc -> rc.getStateFlags().getFlagsBits(dbCtxRef));
         setColumnSetter(TCP_PORT, rc -> TcpPortNumber.getValueNullable(rc.getPort(dbCtxRef)));
+
+        setColumnSetter(SNAPSHOT_NAME, ignored -> DFLT_SNAP_NAME_FOR_RSC);
 
         flagsDriver = generateFlagDriver(FLAGS, ResourceConnection.Flags.class);
         portDriver = generateSingleColumnDriver(
@@ -109,50 +113,60 @@ public class ResourceConnectionDbDriver
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        final NodeName nodeNameSrc = raw.build(NODE_NAME_SRC, NodeName::new);
-        final NodeName nodeNameDst = raw.build(NODE_NAME_DST, NodeName::new);
-        final ResourceName rscName = raw.build(RESOURCE_NAME, ResourceName::new);
-
-        final TcpPortNumber port;
-        final long flags;
-        switch (getDbType())
+        final Pair<ResourceConnection, Void> ret;
+        if (!raw.get(SNAPSHOT_NAME).equals(DFLT_SNAP_NAME_FOR_RSC))
         {
-            case ETCD:
-                String portStr = raw.get(TCP_PORT);
-                port = portStr != null ? new TcpPortNumber(Integer.parseInt(portStr)) : null;
-                flags = Long.parseLong(raw.get(FLAGS));
-                break;
-            case SQL:
-                port = raw.build(TCP_PORT, TcpPortNumber::new);
-                flags = raw.get(FLAGS);
-                break;
-            default:
-                throw new ImplementationError("Unknown database type: " + getDbType());
+            // this entry is a SnapshotConnection (TBD), not a Resourceconnection
+            ret = null;
         }
+        else
+        {
+            final NodeName nodeNameSrc = raw.build(NODE_NAME_SRC, NodeName::new);
+            final NodeName nodeNameDst = raw.build(NODE_NAME_DST, NodeName::new);
+            final ResourceName rscName = raw.build(RESOURCE_NAME, ResourceName::new);
 
-        return new Pair<>(
-            new ResourceConnection(
-                raw.build(UUID, java.util.UUID::fromString),
-                rscMap.get(new Pair<>(nodeNameSrc, rscName)),
-                rscMap.get(new Pair<>(nodeNameDst, rscName)),
-                port,
-                tcpPortPool,
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                flags
-            ),
-            null
-        );
+            final TcpPortNumber port;
+            final long flags;
+            switch (getDbType())
+            {
+                case ETCD:
+                    String portStr = raw.get(TCP_PORT);
+                    port = portStr != null ? new TcpPortNumber(Integer.parseInt(portStr)) : null;
+                    flags = Long.parseLong(raw.get(FLAGS));
+                    break;
+                case SQL:
+                    port = raw.build(TCP_PORT, TcpPortNumber::new);
+                    flags = raw.get(FLAGS);
+                    break;
+                default:
+                    throw new ImplementationError("Unknown database type: " + getDbType());
+            }
+
+            ret = new Pair<>(
+                new ResourceConnection(
+                    raw.build(UUID, java.util.UUID::fromString),
+                    rscMap.get(new Pair<>(nodeNameSrc, rscName)),
+                    rscMap.get(new Pair<>(nodeNameDst, rscName)),
+                    port,
+                    tcpPortPool,
+                    this,
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider,
+                    flags
+                ),
+                null
+            );
+        }
+        return ret;
     }
 
     @Override
     protected String getId(ResourceConnection rc) throws AccessDeniedException
     {
         Resource sourceRsc = rc.getSourceResource(dbCtx);
-        return "(SourceNode=" + sourceRsc.getAssignedNode().getName().displayValue +
-            " TargetNode=" + rc.getTargetResource(dbCtx).getAssignedNode().getName().displayValue +
+        return "(SourceNode=" + sourceRsc.getNode().getName().displayValue +
+            " TargetNode=" + rc.getTargetResource(dbCtx).getNode().getName().displayValue +
             " ResName=" + sourceRsc.getDefinition().getName().displayValue + ")";
     }
 

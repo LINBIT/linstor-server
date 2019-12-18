@@ -18,7 +18,7 @@ import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
-import com.linbit.linstor.api.rest.v1.GrizzlyHttpService;
+import com.linbit.linstor.api.rest.v1.config.GrizzlyHttpService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.objects.Node;
@@ -90,8 +90,6 @@ public final class Controller
     public static final int API_VERSION = 4;
     public static final int API_MIN_VERSION = API_VERSION;
 
-    private static final String ENV_REST_BIND_ADDRESS = "LS_REST_BIND_ADDRESS";
-    private static final String ENV_REST_BIND_ADDRESS_SECURE = "LS_REST_BIND_ADDRESS_SECURE";
     public static final String DEFAULT_HTTP_LISTEN_ADDRESS = "::";
     public static final int DEFAULT_HTTP_REST_PORT = 3370;
     public static final int DEFAULT_HTTPS_REST_PORT = 3371;
@@ -135,7 +133,6 @@ public final class Controller
     private final DebugConsoleCreator debugConsoleCreator;
     private final ControllerNetComInitializer controllerNetComInitializer;
 
-    private final SwordfishTargetProcessManager swordfishTargetProcessManager;
     private final WhitelistProps whitelistProps;
 
     private RetryResourcesTask retryResourcesTask;
@@ -165,7 +162,6 @@ public final class Controller
         LogArchiveTask logArchiveTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
-        SwordfishTargetProcessManager swordfishTargetProcessManagerRef,
         WhitelistProps whitelistPropsRef,
         LinstorConfigToml linstorConfigRef
     )
@@ -191,7 +187,6 @@ public final class Controller
         retryResourcesTask = retryResourcesTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
-        swordfishTargetProcessManager = swordfishTargetProcessManagerRef;
         whitelistProps = whitelistPropsRef;
         linstorConfig = linstorConfigRef;
     }
@@ -233,7 +228,7 @@ public final class Controller
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
-            dbInitializer.initialize();
+            dbInitializer.initialize(cArgs.isDbStartupVerification());
 
             // Object protection loading has a hidden dependency on initializing the security objects
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).
@@ -255,8 +250,6 @@ public final class Controller
             );
 
             whitelistProps.overrideDrbdProperties();
-
-            swordfishTargetProcessManager.initialize();
 
             connectToKnownNodes(errorReporter, initCtx);
 
@@ -306,20 +299,12 @@ public final class Controller
             }
             else
             {
-                final String envRESTBindAddress = System.getenv(ENV_REST_BIND_ADDRESS);
-                if (envRESTBindAddress != null)
-                {
-                    restBindAddress = envRESTBindAddress;
-                }
-                else
-                {
-                    restEnabled = linstorConfig.getHTTP().isEnabled();
+                restEnabled = linstorConfig.getHTTP().isEnabled();
 
-                    restBindAddress = restBindAddress(
-                        linstorConfig.getHTTP().getListenAddr(),
-                        linstorConfig.getHTTP().getPort()
-                    );
-                }
+                restBindAddress = restBindAddress(
+                    linstorConfig.getHTTP().getListenAddr(),
+                    linstorConfig.getHTTP().getPort()
+                );
             }
 
             if (cArgs.getRESTBindAddressSecure() != null)
@@ -328,18 +313,10 @@ public final class Controller
             }
             else
             {
-                final String envRESTBindAddressSecure = System.getenv(ENV_REST_BIND_ADDRESS_SECURE);
-                if (envRESTBindAddressSecure != null)
-                {
-                    restBindAddresSecure = envRESTBindAddressSecure;
-                }
-                else
-                {
-                    restBindAddresSecure = restBindAddress(
-                        linstorConfig.getHTTPS().getListenAddr(),
-                        linstorConfig.getHTTPS().getPort()
-                    );
-                }
+                restBindAddresSecure = restBindAddress(
+                    linstorConfig.getHTTPS().getListenAddr(),
+                    linstorConfig.getHTTPS().getPort()
+                );
             }
 
             Path keyStorePath = null;
@@ -379,7 +356,9 @@ public final class Controller
                     keyStorePath,
                     keyStorePassword,
                     trustStorePath,
-                    trustStorePassword
+                    trustStorePassword,
+                    linstorConfig.getLogging().getRestAccessLogPath(),
+                    linstorConfig.getLogging().getRestAccessLogMode()
                 );
                 systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
             }

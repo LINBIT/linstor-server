@@ -87,7 +87,7 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
 
     private transient TransactionSimpleObject<VolumeDefinition, String> cryptKey;
 
-    private final Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
+    private final TransactionMap<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
 
     VolumeDefinition(
         UUID uuid,
@@ -147,6 +147,7 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
             resourceDfn,
             volumeSize,
             flags,
+            layerStorage,
             deleted,
             cryptKey
         );
@@ -232,13 +233,13 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
     public void putVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        volumes.put(Resource.getStringId(volume.getResource()), volume);
+        volumes.put(Resource.getStringId(volume.getAbsResource()), volume);
     }
 
     public void removeVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
     {
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        volumes.remove(Resource.getStringId(volume.getResource()));
+        volumes.remove(Resource.getStringId(volume.getAbsResource()));
     }
 
     public Iterator<Volume> iterateVolumes(AccessContext accCtx) throws AccessDeniedException
@@ -363,6 +364,7 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
                 vlmDfnLayerObject.delete();
             }
 
+            activateTransMgr();
             dbDriver.delete(this);
 
             deleted.set(true);

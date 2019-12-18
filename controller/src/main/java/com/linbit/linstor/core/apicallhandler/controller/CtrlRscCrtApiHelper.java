@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.compat.CompatibilityUtils;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -26,8 +27,10 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -36,7 +39,7 @@ import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
-import com.linbit.linstor.layer.CtrlLayerDataHelper;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -44,12 +47,16 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.utils.layer.DrbdLayerUtils;
+import com.linbit.utils.AccessUtils;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
@@ -86,7 +93,7 @@ public class CtrlRscCrtApiHelper
     private final ResourceControllerFactory resourceFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final ResourceCreateCheck resourceCreateCheck;
-    private final CtrlLayerDataHelper layerDataHelper;
+    private final CtrlRscLayerDataFactory layerDataHelper;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -102,7 +109,7 @@ public class CtrlRscCrtApiHelper
         ResourceControllerFactory resourceFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ResourceCreateCheck resourceCreateCheckRef,
-        CtrlLayerDataHelper layerDataHelperRef
+        CtrlRscLayerDataFactory layerDataHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -187,6 +194,19 @@ public class CtrlRscCrtApiHelper
             }
         }
 
+        // compatibility
+        if (FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS))
+        {
+            if (layerStack.isEmpty())
+            {
+                flags |= Resource.Flags.DRBD_DISKLESS.flagValue;
+            }
+            else
+            {
+                flags |= CompatibilityUtils.mapDisklessFlagToNvmeOrDrbd(layerStack).flagValue;
+            }
+        }
+
         resourceCreateCheck.getAndSetDeployedResourceRoles(rscDfn);
 
         Resource rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
@@ -264,30 +284,29 @@ public class CtrlRscCrtApiHelper
     {
         try
         {
-            RscLayerObject rscLayerObj = vlmRef.getResource().getLayerData(peerAccCtx.get());
+            AbsRscLayerObject<Resource> rscLayerObj = vlmRef.getAbsResource().getLayerData(peerAccCtx.get());
             if (LayerUtils.hasLayer(rscLayerObj, DeviceLayerKind.DRBD))
             {
                 boolean hasThinStorPool = false;
                 boolean hasFatStorPool = false;
                 String granularity = "8192"; // take ZFS, unless we have at least one LVM
 
-                List<RscLayerObject> storageRscLayerObjList = LayerUtils.getChildLayerDataByKind(
+                List<AbsRscLayerObject<Resource>> storageRscLayerObjList = LayerUtils.getChildLayerDataByKind(
                     rscLayerObj,
                     DeviceLayerKind.STORAGE
                 );
-                for (RscLayerObject storageRsc : storageRscLayerObjList)
+                for (AbsRscLayerObject<Resource> storageRsc : storageRscLayerObjList)
                 {
-                    for (VlmProviderObject storageVlm : storageRsc.getVlmLayerObjects().values())
+                    for (VlmProviderObject<Resource> storageVlm : storageRsc.getVlmLayerObjects().values())
                     {
                         DeviceProviderKind devProviderKind = storageVlm.getStorPool().getDeviceProviderKind();
                         switch (devProviderKind)
                         {
-                            case DISKLESS: // fall-through
-                            case SWORDFISH_INITIATOR: // fall-through
-                            case SWORDFISH_TARGET:
+                            case DISKLESS:
                                 // ignored
                                 break;
                             case LVM: // fall-through
+                            case SPDK: // fall-through
                             case ZFS:
                                 hasFatStorPool = true;
                                 break;
@@ -334,11 +353,10 @@ public class CtrlRscCrtApiHelper
         }
         catch (AccessDeniedException exc)
         {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_ACC_DENIED_VLM_DFN,
-                    "Linstor currently only allows one swordfish target per resource definition"
-                )
+            throw new ApiAccessDeniedException(
+                exc,
+                "setting properties on volume",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
             );
         }
         catch (InvalidKeyException | InvalidValueException exc)
@@ -370,7 +388,7 @@ public class CtrlRscCrtApiHelper
         ResourceName rscName = rscDfn.getName();
 
         Set<NodeName> nodeNames = deployedResources.stream()
-            .map(Resource::getAssignedNode)
+            .map(Resource::getNode)
             .map(Node::getName)
             .collect(Collectors.toSet());
 
@@ -395,21 +413,32 @@ public class CtrlRscCrtApiHelper
             List<Mono<ApiCallRc>> resourceReadyResponses = new ArrayList<>();
             for (Resource rsc : deployedResources)
             {
-                NodeName nodeName = rsc.getAssignedNode().getName();
-                if (containsDrbdLayerData(rsc))
+                if (
+                    AccessUtils.execPrivileged(
+                        () -> DrbdLayerUtils.isAnyDrbdResourceExpected(apiCtx, rsc)
+                    )
+                )
                 {
-                    resourceReadyResponses.add(eventWaiter
-                        .waitForStream(
-                            resourceStateEvent.get(),
-                            ObjectIdentifier.resource(nodeName, rscName)
-                        )
-                        .skipUntil(UsageState::getResourceReady)
-                        .next()
-                        .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
-                        .onErrorResume(PeerNotConnectedException.class, ignored -> Mono.just(
-                            ApiCallRcImpl.singletonApiCallRc(ResponseUtils.makeNotConnectedWarning(nodeName))
-                        ))
-                    );
+                    NodeName nodeName = rsc.getNode().getName();
+                    if (containsDrbdLayerData(rsc))
+                    {
+                        resourceReadyResponses.add(
+                            eventWaiter
+                                .waitForStream(
+                                    resourceStateEvent.get(),
+                                    // TODO if anything is allowed above DRBD, this resource-name must be adjusted
+                                    ObjectIdentifier.resource(nodeName, rscName)
+                                )
+                                .skipUntil(UsageState::getResourceReady)
+                                .next()
+                                .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
+                                .onErrorResume(
+                                    PeerNotConnectedException.class, ignored -> Mono.just(
+                                        ApiCallRcImpl.singletonApiCallRc(ResponseUtils.makeNotConnectedWarning(nodeName))
+                                    )
+                                )
+                        );
+                    }
                 }
             }
             readyResponses = Flux.merge(resourceReadyResponses);
@@ -430,7 +459,6 @@ public class CtrlRscCrtApiHelper
             )
             .concatWith(readyResponses);
     }
-
 
     public ApiCallRc makeResourceDidNotAppearMessage(ResponseContext context)
     {
@@ -508,13 +536,56 @@ public class CtrlRscCrtApiHelper
         return rsc;
     }
 
+    Resource createResourceFromSnapshot(
+        ResourceDefinition toRscDfn,
+        Node toNode,
+        Snapshot fromSnapshotRef
+    )
+    {
+        Resource rsc;
+        try
+        {
+            checkPeerSlotsForNewPeer(toRscDfn);
+
+            rsc = resourceFactory.create(
+                peerAccCtx.get(),
+                toRscDfn,
+                toNode,
+                fromSnapshotRef.getLayerData(peerAccCtx.get())
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "register the " + getRscDescriptionInline(toNode, toRscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_RSC,
+                    "A " + getRscDescriptionInline(toNode, toRscDfn) + " already exists."
+                ),
+                dataAlreadyExistsExc
+            );
+        }
+        return rsc;
+    }
+
     private Set<DeviceLayerKind> getUnsupportedLayers(Resource rsc) throws AccessDeniedException
     {
         Set<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
             rsc.getLayerData(peerAccCtx.get())
         );
         usedDeviceLayerKinds.removeAll(
-            rsc.getAssignedNode()
+            rsc.getNode()
                 .getPeer(peerAccCtx.get())
                 .getExtToolsManager().getSupportedLayers()
         );
@@ -603,19 +674,19 @@ public class CtrlRscCrtApiHelper
         {
             Resource otherRsc = rscIter.next();
 
-            List<RscLayerObject> drbdRscDataList = LayerUtils.getChildLayerDataByKind(
+            List<AbsRscLayerObject<Resource>> drbdRscDataList = LayerUtils.getChildLayerDataByKind(
                 otherRsc.getLayerData(peerAccCtx.get()),
                 DeviceLayerKind.DRBD
             );
 
-            for (RscLayerObject rscLayerObj : drbdRscDataList)
+            for (AbsRscLayerObject<Resource> rscLayerObj : drbdRscDataList)
             {
-                if (((DrbdRscData) rscLayerObj).getPeerSlots() < resourceCount)
+                if (((DrbdRscData<Resource>) rscLayerObj).getPeerSlots() < resourceCount)
                 {
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS,
-                            "Resource on node " + otherRsc.getAssignedNode().getName().displayValue +
+                            "Resource on node " + otherRsc.getNode().getName().displayValue +
                             " has insufficient peer slots to add another peer"
                         )
                     );
@@ -657,10 +728,15 @@ public class CtrlRscCrtApiHelper
         boolean allDiskless = true;
         try
         {
-            Iterator<Resource> rscIter = rscDfn.iterateResource(peerAccCtx.get());
+            AccessContext accCtx = peerAccCtx.get();
+            Iterator<Resource> rscIter = rscDfn.iterateResource(accCtx);
             while (rscIter.hasNext())
             {
-                if (!rscIter.next().getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.DISKLESS))
+                StateFlags<Flags> stateFlags = rscIter.next().getStateFlags();
+                if (
+                    !stateFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS)  &&
+                    !stateFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR)
+                )
                 {
                     allDiskless = false;
                 }
@@ -679,7 +755,7 @@ public class CtrlRscCrtApiHelper
 
     private boolean containsDrbdLayerData(Resource rsc)
     {
-        List<RscLayerObject> drbdLayerData;
+        List<AbsRscLayerObject<Resource>> drbdLayerData;
         try
         {
             drbdLayerData = LayerUtils.getChildLayerDataByKind(

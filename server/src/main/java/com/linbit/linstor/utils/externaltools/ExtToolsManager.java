@@ -7,8 +7,10 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -112,14 +114,36 @@ public class ExtToolsManager
         return supportedProviders;
     }
 
-    public Map<DeviceLayerKind, List<String>> getUnsupportedLayersWithResons()
+    public Map<DeviceLayerKind, List<String>> getUnsupportedLayersWithReasons()
     {
         return unsupportedLayers;
     }
 
-    public Map<DeviceProviderKind, List<String>> getUnsupportedProvidersWithResons()
+    public Map<DeviceProviderKind, List<String>> getUnsupportedProvidersWithReasons()
     {
         return unsupportedProviders;
+    }
+
+    public Map<String, List<String>> getUnsupportedLayersWithReasonsAsString()
+    {
+        Map<String, List<String>> mapTmp = new HashMap<>();
+        for (Entry<DeviceLayerKind, List<String>> entry : unsupportedLayers.entrySet())
+        {
+            mapTmp.put(entry.getKey().toString(), entry.getValue());
+        }
+
+        return mapTmp;
+    }
+
+    public Map<String, List<String>> getUnsupportedProvidersWithReasonsAsString()
+    {
+        Map<String, List<String>> mapTmp = new HashMap<>();
+        for (Entry<DeviceProviderKind, List<String>> entry : unsupportedProviders.entrySet())
+        {
+            mapTmp.put(entry.getKey().toString(), entry.getValue());
+        }
+
+        return mapTmp;
     }
 
     private List<String> getReasons(ExtTools[] extTools)

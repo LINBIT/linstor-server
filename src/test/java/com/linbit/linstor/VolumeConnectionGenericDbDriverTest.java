@@ -222,7 +222,7 @@ public class VolumeConnectionGenericDbDriverTest extends GenericDbBase
     )
     {
         vlmMap.put(new Triple<NodeName, ResourceName, VolumeNumber>(
-                vol.getResource().getAssignedNode().getName(),
+                vol.getAbsResource().getNode().getName(),
                 vol.getResourceDefinition().getName(),
                 vol.getVolumeDefinition().getVolumeNumber()
             ),
@@ -335,8 +335,8 @@ public class VolumeConnectionGenericDbDriverTest extends GenericDbBase
         Volume sourceVolume = loadedConDfn.getSourceVolume(SYS_CTX);
         Volume targetVolume = loadedConDfn.getTargetVolume(SYS_CTX);
 
-        assertEquals(sourceName, sourceVolume.getResource().getAssignedNode().getName());
-        assertEquals(targetName, targetVolume.getResource().getAssignedNode().getName());
+        assertEquals(sourceName, sourceVolume.getAbsResource().getNode().getName());
+        assertEquals(targetName, targetVolume.getAbsResource().getNode().getName());
         assertEquals(resName, sourceVolume.getResourceDefinition().getName());
         assertEquals(sourceVolume.getResourceDefinition(), targetVolume.getResourceDefinition());
         assertEquals(volNr, sourceVolume.getVolumeDefinition().getVolumeNumber());

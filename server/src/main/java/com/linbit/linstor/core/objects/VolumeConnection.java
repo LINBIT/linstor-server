@@ -67,10 +67,10 @@ public class VolumeConnection extends BaseTransactionObject
                     "Creating connection between unrelated Volumes %n" +
                         "Volume1: NodeName=%s, ResName=%s, VolNr=%d %n" +
                         "Volume2: NodeName=%s, ResName=%s, VolNr=%d.",
-                        sourceVolumeRef.getResource().getAssignedNode().getName().value,
+                        sourceVolumeRef.getAbsResource().getNode().getName().value,
                         sourceVolumeRef.getResourceDefinition().getName().value,
                         sourceVolumeRef.getVolumeDefinition().getVolumeNumber().value,
-                        targetVolumeRef.getResource().getAssignedNode().getName().value,
+                        targetVolumeRef.getAbsResource().getNode().getName().value,
                         targetVolumeRef.getResourceDefinition().getName().value,
                         targetVolumeRef.getVolumeDefinition().getVolumeNumber().value
                     ),
@@ -82,8 +82,8 @@ public class VolumeConnection extends BaseTransactionObject
         dbDriver = dbDriverRef;
         dbgInstanceId = UUID.randomUUID();
 
-        NodeName sourceNodeName = sourceVolumeRef.getResource().getAssignedNode().getName();
-        NodeName targetNodeName = targetVolumeRef.getResource().getAssignedNode().getName();
+        NodeName sourceNodeName = sourceVolumeRef.getAbsResource().getNode().getName();
+        NodeName targetNodeName = targetVolumeRef.getAbsResource().getNode().getName();
 
         if (sourceNodeName.compareTo(targetNodeName) < 0)
         {
@@ -124,8 +124,8 @@ public class VolumeConnection extends BaseTransactionObject
         Volume source;
         Volume target;
 
-        NodeName sourceNodeName = sourceVolume.getResource().getAssignedNode().getName();
-        NodeName targetNodeName = targetVolume.getResource().getAssignedNode().getName();
+        NodeName sourceNodeName = sourceVolume.getAbsResource().getNode().getName();
+        NodeName targetNodeName = targetVolume.getAbsResource().getNode().getName();
 
         if (sourceNodeName.compareTo(targetNodeName) < 0)
         {
@@ -138,7 +138,7 @@ public class VolumeConnection extends BaseTransactionObject
             target = sourceVolume;
         }
 
-        return (VolumeConnection) source.getVolumeConnection(accCtx, target);
+        return source.getVolumeConnection(accCtx, target);
     }
 
     @Override
@@ -156,14 +156,14 @@ public class VolumeConnection extends BaseTransactionObject
     public Volume getSourceVolume(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        sourceVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return sourceVolume;
     }
 
     public Volume getTargetVolume(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
-        targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        targetVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return targetVolume;
     }
 
@@ -172,8 +172,8 @@ public class VolumeConnection extends BaseTransactionObject
         checkDeleted();
         return PropsAccess.secureGetProps(
             accCtx,
-            sourceVolume.getResource().getObjProt(),
-            targetVolume.getResource().getObjProt(),
+            sourceVolume.getAbsResource().getObjProt(),
+            targetVolume.getAbsResource().getObjProt(),
             props
         );
     }
@@ -182,8 +182,8 @@ public class VolumeConnection extends BaseTransactionObject
     {
         if (!deleted.get())
         {
-            sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-            targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+            sourceVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+            targetVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
             sourceVolume.removeVolumeConnection(accCtx, this);
             targetVolume.removeVolumeConnection(accCtx, this);
@@ -208,12 +208,12 @@ public class VolumeConnection extends BaseTransactionObject
     @Override
     public int compareTo(VolumeConnection other)
     {
-        return (sourceVolume.getResource().getAssignedNode().getName().value +
-            targetVolume.getResource().getAssignedNode().getName().value +
+        return (sourceVolume.getAbsResource().getNode().getName().value +
+            targetVolume.getAbsResource().getNode().getName().value +
             sourceVolume.getResourceDefinition().getName().value +
             sourceVolume.getVolumeDefinition().getVolumeNumber()).compareTo(
-                other.sourceVolume.getResource().getAssignedNode().getName().value +
-                other.targetVolume.getResource().getAssignedNode().getName().value +
+                other.sourceVolume.getAbsResource().getNode().getName().value +
+                other.targetVolume.getAbsResource().getNode().getName().value +
                 other.sourceVolume.getResourceDefinition().getName().value +
                 other.sourceVolume.getVolumeDefinition().getVolumeNumber()
         );
@@ -222,8 +222,8 @@ public class VolumeConnection extends BaseTransactionObject
     @Override
     public String toString()
     {
-        return "Node1: '" + sourceVolume.getResource().getAssignedNode().getName() + "', " +
-               "Node2: '" + targetVolume.getResource().getAssignedNode().getName() + "', " +
+        return "Node1: '" + sourceVolume.getAbsResource().getNode().getName() + "', " +
+               "Node2: '" + targetVolume.getAbsResource().getNode().getName() + "', " +
                "Rsc: '" + sourceVolume.getResourceDefinition().getName() + "', " +
                "VlmNr: '" + sourceVolume.getVolumeDefinition().getVolumeNumber() + "'";
     }

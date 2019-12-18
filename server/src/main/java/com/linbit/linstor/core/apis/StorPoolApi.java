@@ -24,4 +24,5 @@ public interface StorPoolApi
     Map<String, String> getStorPoolDfnProps();
     ApiCallRc getReports();
     Boolean supportsSnapshots();
+    Boolean isPmem();
 }

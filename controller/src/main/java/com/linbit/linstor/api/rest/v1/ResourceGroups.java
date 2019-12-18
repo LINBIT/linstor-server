@@ -9,6 +9,7 @@ import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceGroup;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
@@ -29,6 +30,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -156,7 +158,7 @@ public class ResourceGroups
                     autoSelectFilter
                 )
             );
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
     }
 
@@ -200,7 +202,7 @@ public class ResourceGroups
         )
             .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_GRP, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE
@@ -212,7 +214,7 @@ public class ResourceGroups
     {
         return requestHelper.doInScope(
             requestHelper.createContext(ApiConsts.API_DEL_RSC_GRP, request),
-            () -> ApiCallRcConverter.toResponse(
+            () -> ApiCallRcRestUtils.toResponse(
                 ctrlApiCallHandler.deleteResourceGroup(rscGrpName),
                 Response.Status.OK
             ),
@@ -245,11 +247,11 @@ public class ResourceGroups
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_SPAWN_RSC_DFN, request));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 }

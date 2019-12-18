@@ -19,6 +19,8 @@ import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo;
+import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
@@ -52,6 +54,7 @@ import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
+import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn.Builder;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo.ExternalTools;
 import com.linbit.linstor.proto.common.FilterOuterClass;
@@ -79,11 +82,9 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.FileThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.SpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishInitiator;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishTarget;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.SwordfishVlmDfn;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsVlm;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass;
@@ -92,6 +93,8 @@ import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 import com.linbit.linstor.proto.common.VlmOuterClass;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
+import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheRsc;
+import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheVlm;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
@@ -102,9 +105,7 @@ import com.linbit.linstor.proto.responses.MsgEventOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
-import com.linbit.linstor.storage.data.provider.swordfish.SfInitiatorData;
-import com.linbit.linstor.storage.data.provider.swordfish.SfVlmDfnData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -298,9 +299,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setSupported(info.isSupported());
             if (info.isSupported())
             {
-                builder
-                    .setVersionMajor(info.getVersionMajor())
-                    .setVersionMinor(info.getVersionMinor());
+                if (info.getVersionMajor() != null)
+                {
+                    builder.setVersionMajor(info.getVersionMajor());
+                }
+                if (info.getVersionMinor() != null)
+                {
+                    builder.setVersionMinor(info.getVersionMinor());
+                }
                 if (info.getVersionPatch() != null)
                 {
                     builder.setVersionPatch(info.getVersionPatch());
@@ -712,8 +718,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return RscOuterClass.Rsc.newBuilder()
             .setUuid(rsc.getUuid().toString())
             .setName(rsc.getDefinition().getName().displayValue)
-            .setNodeUuid(rsc.getAssignedNode().getUuid().toString())
-            .setNodeName(rsc.getAssignedNode().getName().displayValue)
+            .setNodeUuid(rsc.getNode().getUuid().toString())
+            .setNodeName(rsc.getNode().getName().displayValue)
             .setRscDfnUuid(rsc.getDefinition().getUuid().toString())
             .putAllProps(rsc.getProps(accCtx).map())
             .addAllRscFlags(Resource.Flags.toStringList(rsc.getStateFlags().getFlagsBits(accCtx)))
@@ -767,8 +773,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     {
         RscConn.Builder builder = RscConn.newBuilder()
             .setRscConnUuid(rscConn.getUuid().toString())
-            .setNodeName1(rscConn.getSourceResource(accCtx).getAssignedNode().getName().displayValue)
-            .setNodeName2(rscConn.getTargetResource(accCtx).getAssignedNode().getName().displayValue)
+            .setNodeName1(rscConn.getSourceResource(accCtx).getNode().getName().displayValue)
+            .setNodeName2(rscConn.getTargetResource(accCtx).getNode().getName().displayValue)
             .setRscName(rscConn.getSourceResource(accCtx).getDefinition().getName().displayValue)
             .setRsc1Uuid(rscConn.getSourceResource(accCtx).getUuid().toString())
             .setRsc2Uuid(rscConn.getTargetResource(accCtx).getUuid().toString())
@@ -804,7 +810,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setProviderKind(asProviderType(storPool.getDeviceProviderKind()))
             .putAllProps(storPool.getProps(accCtx).map())
             .putAllStorPoolDfnProps(storPool.getDefinition(accCtx).getProps(accCtx).map())
-            .putAllStaticTraits(storPool.getDeviceProviderKind().getStorageDriverKind().getStaticTraits());
+            .putAllStaticTraits(storPool.getDeviceProviderKind().getStorageDriverKind().getStaticTraits())
+            .setIsPmem(storPool.isPmem());
         FreeSpaceTracker freeSpaceTracker = storPool.getFreeSpaceTracker();
         if (freeSpaceTracker.getTotalCapacity(accCtx).isPresent())
         {
@@ -837,12 +844,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case LVM_THIN:
                 type = ProviderType.LVM_THIN;
                 break;
-            case SWORDFISH_INITIATOR:
-                type = ProviderType.SWORDFISH_INITIATOR;
-                break;
-            case SWORDFISH_TARGET:
-                type = ProviderType.SWORDFISH_TARGET;
-                break;
             case ZFS:
                 type = ProviderType.ZFS;
                 break;
@@ -854,6 +855,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 break;
             case FILE_THIN:
                 type = ProviderType.FILE_THIN;
+                break;
+            case SPDK:
+                type = ProviderType.SPDK;
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
@@ -1015,6 +1019,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case NVME:
                 layerType = LayerType.NVME;
                 break;
+            case WRITECACHE:
+                layerType = LayerType.WRITECACHE;
+                break;
             default: throw new RuntimeException("Not implemented.");
         }
         return layerType;
@@ -1042,6 +1049,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 break;
             case ZFS:
                 ret = ExternalTools.ZFS;
+                break;
+            case SPDK:
+                ret = ExternalTools.SPDK;
+                break;
+            case WRITECACHE:
+                ret = ExternalTools.WRITECACHE;
                 break;
             default:
                 throw new RuntimeException("Not implemented.");
@@ -1078,7 +1091,10 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                             // no rsc-dfn related data
                             break;
                         case NVME:
-                            // no rsc-dfn related data TODO: change (not sure yet)???
+                            // no rsc-dfn related data
+                            break;
+                        case WRITECACHE:
+                            // no rsc-dfn related data
                             break;
                         default:
                             break;
@@ -1118,7 +1134,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                             // no vlm-dfn related data
                             break;
                         case NVME:
-                            // no vlm-dfn related data TODO: not sure yet
+                            // no vlm-dfn related data
+                            break;
+                        case WRITECACHE:
+                            // no vlm-dfn related data
+                            break;
                         default:
                             break;
                     }
@@ -1129,7 +1149,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         }
 
         public static RscLayerDataOuterClass.RscLayerData serializeLayerObject(
-            RscLayerObject layerData,
+            AbsRscLayerObject<?> layerData,
             AccessContext accCtx
         )
             throws AccessDeniedException
@@ -1166,10 +1186,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 case NVME:
                     builder.setNvme(buildNvmeRscData((NvmeRscPojo) rscLayerPojo));
                     break;
+                case WRITECACHE:
+                    builder.setWritecache(buildWritecacheRscData((WritecacheRscPojo) rscLayerPojo));
+                    break;
                 default:
                     break;
             }
             builder.setLayerType(asLayerType(rscLayerPojo.getLayerKind()));
+            builder.setSuspend(rscLayerPojo.getSuspend());
             return builder.build();
         }
 
@@ -1229,25 +1253,37 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
 
         private static DrbdRscDfn buildDrbdRscDfnData(DrbdRscDfnPojo drbdRscDfnPojo)
         {
-            return DrbdRscDfn.newBuilder()
+            DrbdRscDfn.Builder builder = DrbdRscDfn.newBuilder()
                 .setRscNameSuffix(drbdRscDfnPojo.getRscNameSuffix())
                 .setPeersSlots(drbdRscDfnPojo.getPeerSlots())
                 .setAlStripes(drbdRscDfnPojo.getAlStripes())
                 .setAlSize(drbdRscDfnPojo.getAlStripeSize())
-                .setPort(drbdRscDfnPojo.getPort())
                 .setTransportType(drbdRscDfnPojo.getTransportType())
-                .setSecret(drbdRscDfnPojo.getSecret())
-                .setDown(drbdRscDfnPojo.isDown())
-                .build();
+                .setDown(drbdRscDfnPojo.isDown());
+            Integer port = drbdRscDfnPojo.getPort();
+            if (port != null)
+            {
+                builder.setPort(port);
+            }
+            String secret = drbdRscDfnPojo.getSecret();
+            if (secret != null)
+            {
+                builder.setSecret(secret);
+            }
+            return builder.build();
         }
 
         private static DrbdVlmDfn buildDrbdVlmDfnData(DrbdVlmDfnPojo drbdVlmDfnPojo)
         {
-            return DrbdVlmDfn.newBuilder()
+            Builder builder = DrbdVlmDfn.newBuilder()
                 .setRscNameSuffix(drbdVlmDfnPojo.getRscNameSuffix())
-                .setVlmNr(drbdVlmDfnPojo.getVlmNr())
-                .setMinor(drbdVlmDfnPojo.getMinorNr())
-                .build();
+                .setVlmNr(drbdVlmDfnPojo.getVlmNr());
+            Integer minorNr = drbdVlmDfnPojo.getMinorNr();
+            if (minorNr != null)
+            {
+                builder.setMinor(minorNr);
+            }
+            return builder.build();
         }
 
         private static LuksRsc buildLuksRscData(LuksRscPojo rscLayerPojoRef)
@@ -1300,6 +1336,20 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .build();
         }
 
+        private static WritecacheRsc buildWritecacheRscData(WritecacheRscPojo rscLayerPojoRef)
+        {
+            List<WritecacheVlm> protoVlms = new ArrayList<>();
+            for (WritecacheVlmPojo vlmPojo : rscLayerPojoRef.getVolumeList())
+            {
+                protoVlms.add(buildWritecacheVlm(vlmPojo));
+            }
+
+            return WritecacheRsc.newBuilder()
+                .setFlags(0) // TODO serialize flags as soon NvmeRscData get flags
+                .addAllVlms(protoVlms)
+                .build();
+        }
+
         private static StorageRsc buildStorageRscData(StorageRscPojo rscLayerPojoRef)
         {
             List<StorageVlm> storageVlms = new ArrayList<>();
@@ -1346,43 +1396,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 case ZFS_THIN:
                     builder.setZfsThin(ZfsThinVlm.newBuilder().build());
                     break;
-                case SWORDFISH_INITIATOR:
-                    {
-                        SfVlmDfnData sfVlmDfnData = ((SfInitiatorData) vlmPojo).getVlmDfnLayerObject();
-                        builder.setSfInit(
-                            SwordfishInitiator.newBuilder()
-                                .setSfVlmDfn(
-                                    SwordfishVlmDfn.newBuilder()
-                                        .setRscNameSuffix(sfVlmDfnData.getRscNameSuffix())
-                                        .setVlmNr(sfVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
-                                        .setVlmOdata(sfVlmDfnData.getVlmOdata())
-                                        .build()
-                                )
-                                .build()
-                        );
-                    }
-                    break;
-                case SWORDFISH_TARGET:
-                    {
-                        SfVlmDfnData sfVlmDfnData = ((SfInitiatorData) vlmPojo).getVlmDfnLayerObject();
-                        builder.setSfTarget(
-                            SwordfishTarget.newBuilder()
-                                .setSfVlmDfn(
-                                    SwordfishVlmDfn.newBuilder()
-                                        .setRscNameSuffix(sfVlmDfnData.getRscNameSuffix())
-                                        .setVlmNr(sfVlmDfnData.getVolumeDefinition().getVolumeNumber().value)
-                                        .setVlmOdata(sfVlmDfnData.getVlmOdata())
-                                        .build()
-                                )
-                                .build()
-                            );
-                    }
-                    break;
                 case FILE:
                     builder.setFile(FileVlm.newBuilder().build());
                     break;
                 case FILE_THIN:
                     builder.setFileThin(FileThinVlm.newBuilder().build());
+                    break;
+                case SPDK:
+                    builder.setSpdk(SpdkVlm.newBuilder().build());
                     break;
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 default:
@@ -1411,6 +1432,32 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             }
 
             return nvmeVlmBuilder.build();
+        }
+
+        private static WritecacheVlm buildWritecacheVlm(WritecacheVlmPojo vlmPojo)
+        {
+            WritecacheVlm.Builder protoVlmBuilder = WritecacheVlm.newBuilder()
+                .setVlmNr(vlmPojo.getVlmNr())
+                .setAllocatedSize(vlmPojo.getAllocatedSize())
+                .setUsableSize(vlmPojo.getUsableSize());
+            if (vlmPojo.getDevicePath() != null)
+            {
+                protoVlmBuilder.setDevicePathData(vlmPojo.getDevicePath());
+            }
+            if (vlmPojo.getDevicePathCache() != null)
+            {
+                protoVlmBuilder.setDevicePathCache(vlmPojo.getDevicePathCache());
+            }
+            if (vlmPojo.getDiskState() != null)
+            {
+                protoVlmBuilder.setDiskState(vlmPojo.getDiskState());
+            }
+            if (vlmPojo.getCacheStorPoolName() != null)
+            {
+                protoVlmBuilder.setCacheStorPoolName(vlmPojo.getCacheStorPoolName());
+            }
+
+            return protoVlmBuilder.build();
         }
 
         private LayerObjectSerializer()

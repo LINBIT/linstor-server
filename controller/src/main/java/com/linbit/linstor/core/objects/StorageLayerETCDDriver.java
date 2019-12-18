@@ -9,6 +9,7 @@ import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver.StorVlmInfoData;
@@ -28,8 +29,9 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
+import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
@@ -53,13 +55,15 @@ import java.util.TreeMap;
 @Singleton
 public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLayerCtrlDatabaseDriver
 {
+    private final static int PK_V_LRI_ID_IDX = 0;
+    private final static int PK_V_VLM_NR_IDX = 1;
+
     private final ErrorReporter errorReporter;
     private final ResourceLayerIdDatabaseDriver rscIdDriver;
     private final TransactionObjectFactory transObjFactory;
     private final AccessContext dbCtx;
-    private final SwordfishETCDDriver sfDbDriver;
 
-    private final SingleColumnDatabaseDriver<VlmProviderObject, StorPool> storPoolDriver;
+    private final SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool> storPoolDriver;
 
     private Map<Integer, List<StorVlmInfoData>> cachedStorVlmInfoByRscLayerId;
 
@@ -69,8 +73,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
         ErrorReporter errorReporterRef,
         Provider<TransactionMgrETCD> transMgrProviderRef,
         TransactionObjectFactory transObjFactoryRef,
-        ResourceLayerIdDatabaseDriver rscIdDriverRef,
-        SwordfishETCDDriver sfDbDriverRef
+        ResourceLayerIdDatabaseDriver rscIdDriverRef
     )
     {
         super(transMgrProviderRef);
@@ -78,7 +81,6 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
         errorReporter = errorReporterRef;
         transObjFactory = transObjFactoryRef;
         rscIdDriver = rscIdDriverRef;
-        sfDbDriver = sfDbDriverRef;
 
         storPoolDriver = (parent, storPool) ->
         {
@@ -102,12 +104,11 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     {
         cachedStorVlmInfoByRscLayerId.clear();
         cachedStorVlmInfoByRscLayerId = null;
-
-        sfDbDriver.clearLoadAllCache();
     }
 
     @Override
     public void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef)
+        throws DatabaseException
     {
         cachedStorVlmInfoByRscLayerId = new HashMap<>();
 
@@ -119,10 +120,10 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
         {
             for (String composedPk : composedPkSet)
             {
-                String[] pks = composedPk.split(EtcdUtils.PK_DELIMITER);
+                String[] pks = EtcdUtils.splitPks(composedPk, false);
 
-                rscLayerId = Integer.parseInt(pks[LayerStorageVolumes.LAYER_RESOURCE_ID.getIndex()]);
-                int vlmNr = Integer.parseInt(pks[LayerStorageVolumes.VLM_NR.getIndex()]);
+                rscLayerId = Integer.parseInt(pks[PK_V_LRI_ID_IDX]);
+                int vlmNr = Integer.parseInt(pks[PK_V_VLM_NR_IDX]);
 
                 List<StorVlmInfoData> infoList = cachedStorVlmInfoByRscLayerId.get(rscLayerId);
                 if (infoList == null)
@@ -171,18 +172,19 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     }
 
     @Override
-    public Pair<? extends RscLayerObject, Set<RscLayerObject>> load(
-        Resource resourceRef,
+    public <RSC extends AbsResource<RSC>> Pair<StorageRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
+        RSC absRsc,
         int rscIdRef,
         String rscSuffixRef,
-        RscLayerObject parentRef
-    ) throws AccessDeniedException, DatabaseException
+        AbsRscLayerObject<RSC> parentRef
+    )
+        throws AccessDeniedException, DatabaseException
     {
-        Map<VolumeNumber, VlmProviderObject> vlmMap = new TreeMap<>();
-        StorageRscData storageRscData = new StorageRscData(
+        Map<VolumeNumber, VlmProviderObject<RSC>> vlmMap = new TreeMap<>();
+        StorageRscData<RSC> storageRscData = new StorageRscData<>(
             rscIdRef,
             parentRef,
-            resourceRef,
+            absRsc,
             rscSuffixRef,
             vlmMap,
             this,
@@ -199,17 +201,27 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                 try
                 {
                     VolumeNumber vlmNr = new VolumeNumber(vlmInfo.vlmNr);
-                    Volume vlm = resourceRef.getVolume(vlmNr);
+                    AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
 
                     if (vlm == null)
                     {
-                        throw new LinStorRuntimeException(
-                            "Storage volume found but linstor volume missing: " +
-                                resourceRef + ", vlmNr: " + vlmNr
-                        );
+                        if (absRsc instanceof Resource)
+                        {
+                            throw new LinStorRuntimeException(
+                                "Storage volume found but linstor volume missing: " +
+                                    absRsc + ", vlmNr: " + vlmNr
+                            );
+                        }
+                        else
+                        {
+                            throw new LinStorRuntimeException(
+                                "Storage snapshot volume found but linstor snapshot volume missing: " +
+                                    absRsc + ", vlmNr: " + vlmNr
+                            );
+                        }
                     }
 
-                    VlmProviderObject vlmData = loadVlmProviderObject(vlm, storageRscData, vlmInfo);
+                    VlmProviderObject<RSC> vlmData = loadVlmProviderObject(vlm, storageRscData, vlmInfo);
                     vlmMap.put(vlmNr, vlmData);
                 }
                 catch (ValueOutOfRangeException exc)
@@ -231,19 +243,19 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
         );
     }
 
-    private VlmProviderObject loadVlmProviderObject(
-        Volume vlmRef,
-        StorageRscData rscDataRef,
+    private <RSC extends AbsResource<RSC>> VlmProviderObject<RSC> loadVlmProviderObject(
+        AbsVolume<RSC> vlmRef,
+        StorageRscData<RSC> rscDataRef,
         StorVlmInfoData vlmInfo
     )
         throws AccessDeniedException, DatabaseException
     {
-        VlmProviderObject vlmProviderObj;
+        VlmProviderObject<RSC> vlmProviderObj;
         switch (vlmInfo.kind)
         {
             case DISKLESS:
                 // no special database table for diskless DRBD.
-                vlmProviderObj = new DisklessData(
+                vlmProviderObj = new DisklessData<>(
                     vlmRef,
                     rscDataRef,
                     vlmRef.getVolumeDefinition().getVolumeSize(dbCtx),
@@ -254,7 +266,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                 );
                 break;
             case LVM:
-                vlmProviderObj = new LvmData(
+                vlmProviderObj = new LvmData<>(
                     vlmRef,
                     rscDataRef,
                     vlmInfo.storPool,
@@ -264,7 +276,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                 );
                 break;
             case LVM_THIN:
-                vlmProviderObj = new LvmThinData(
+                vlmProviderObj = new LvmThinData<>(
                     vlmRef,
                     rscDataRef,
                     vlmInfo.storPool,
@@ -273,13 +285,9 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                     transMgrProvider
                 );
                 break;
-            case SWORDFISH_INITIATOR: // fall-through
-            case SWORDFISH_TARGET:
-                vlmProviderObj = sfDbDriver.load(vlmRef, rscDataRef, vlmInfo.kind, vlmInfo.storPool, this);
-                break;
             case ZFS: // fall-trough
             case ZFS_THIN:
-                vlmProviderObj = new ZfsData(
+                vlmProviderObj = new ZfsData<>(
                     vlmRef,
                     rscDataRef,
                     vlmInfo.kind,
@@ -291,7 +299,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                 break;
             case FILE: // fall-through
             case FILE_THIN:
-                vlmProviderObj = new FileData(
+                vlmProviderObj = new FileData<>(
                     vlmRef,
                     rscDataRef,
                     vlmInfo.kind,
@@ -301,36 +309,63 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                     transMgrProvider
                 );
                 break;
+            case SPDK:
+                vlmProviderObj = new SpdkData<>(
+                        vlmRef,
+                        rscDataRef,
+                        vlmInfo.storPool,
+                        this,
+                        transObjFactory,
+                        transMgrProvider
+                );
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unhandled storage type: " + vlmInfo.kind);
         }
-        vlmInfo.storPoolInitMaps.getVolumeMap().put(vlmProviderObj.getVolumeKey(), vlmProviderObj);
+        if (vlmRef instanceof Volume)
+        {
+            vlmInfo.storPoolInitMaps.getVolumeMap().put(
+                vlmProviderObj.getVolumeKey(),
+                (VlmProviderObject<Resource>) vlmProviderObj
+            );
+        }
+        else
+        {
+            vlmInfo.storPoolInitMaps.getSnapshotVolumeMap().put(
+                vlmProviderObj.getVolumeKey(),
+                (VlmProviderObject<Snapshot>) vlmProviderObj
+            );
+        }
         return vlmProviderObj;
     }
 
     @Override
-    public void loadLayerData(Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef) throws DatabaseException
+    public void loadLayerData(
+        Map<ResourceName, ResourceDefinition> rscDfnMap,
+        Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> snapDfnMap
+    )
+        throws DatabaseException
     {
-        sfDbDriver.loadLayerData(tmpRscDfnMapRef);
+        // no-op - no provider needs special resource- or volume-definition prefetching
     }
 
     @Override
-    public void persist(StorageRscData storageRscDataRef) throws DatabaseException
-    {
-        // no-op - there is no special database table.
-        // this method only exists if StorageRscData will get a database table in future.
-    }
-
-    @Override
-    public void delete(StorageRscData storgeRscDataRef) throws DatabaseException
+    public void persist(StorageRscData<?> storageRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if StorageRscData will get a database table in future.
     }
 
     @Override
-    public void persist(VlmProviderObject vlmDataRef) throws DatabaseException
+    public void delete(StorageRscData<?> storgeRscDataRef) throws DatabaseException
+    {
+        // no-op - there is no special database table.
+        // this method only exists if StorageRscData will get a database table in future.
+    }
+
+    @Override
+    public void persist(VlmProviderObject<?> vlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating StorageVolume %s", getId(vlmDataRef));
         namespace(
@@ -344,7 +379,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     }
 
     @Override
-    public void delete(VlmProviderObject vlmDataRef) throws DatabaseException
+    public void delete(VlmProviderObject<?> vlmDataRef) throws DatabaseException
     {
         /*
          * DO NOT USE ranged delete!
@@ -365,12 +400,12 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     }
 
     @Override
-    public SingleColumnDatabaseDriver<VlmProviderObject, StorPool> getStorPoolDriver()
+    public SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool> getStorPoolDriver()
     {
         return storPoolDriver;
     }
 
-    public static String getId(VlmProviderObject vlmData)
+    public static String getId(VlmProviderObject<?> vlmData)
     {
         return vlmData.getProviderKind().name() +
             "( rscId: " + vlmData.getRscLayerObject().getRscLayerId() +

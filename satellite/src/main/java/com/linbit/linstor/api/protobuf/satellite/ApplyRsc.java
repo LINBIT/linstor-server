@@ -1,12 +1,10 @@
 package com.linbit.linstor.api.protobuf.satellite;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
-import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -27,12 +25,10 @@ import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfn;
-import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
 import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.proto.common.RscOuterClass.Rsc;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfn;
@@ -45,6 +41,7 @@ import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -101,49 +98,9 @@ public class ApplyRsc implements ApiCall
             intRscData.getRscConnectionsList()
         );
 
-        List<Pair<String, RscDfnLayerDataApi>> layerData = new ArrayList<>();
-        for (RscDfnLayerData rscDfnData : rscDfn.getLayerDataList())
-        {
-            Pair<String, RscDfnLayerDataApi> pair = new Pair<>();
-            pair.objA = ProtoLayerUtils.layerType2layerString(rscDfnData.getLayerType());
-
-            RscDfnLayerDataApi rscDfnLayerDataApi;
-            switch (rscDfnData.getLayerType())
-            {
-                case DRBD:
-                    if (rscDfnData.hasDrbd())
-                    {
-                        DrbdRscDfn drbdRscDfn = rscDfnData.getDrbd();
-                        rscDfnLayerDataApi = new DrbdRscDfnPojo(
-                            drbdRscDfn.getRscNameSuffix(),
-                            (short) drbdRscDfn.getPeersSlots(),
-                            drbdRscDfn.getAlStripes(),
-                            drbdRscDfn.getAlSize(),
-                            drbdRscDfn.getPort(),
-                            drbdRscDfn.getTransportType(),
-                            drbdRscDfn.getSecret(),
-                            drbdRscDfn.getDown()
-                        );
-                    }
-                    else
-                    {
-                        rscDfnLayerDataApi = null;
-                    }
-                    break;
-                case LUKS:
-                case STORAGE:
-                case NVME:
-                    rscDfnLayerDataApi = null;
-                    break;
-                case UNKNOWN_LAYER: // fall-through
-                case UNRECOGNIZED: // fall-through
-                default:
-                    throw new ImplementationError(
-                        "Unknown resource definition layer (proto) kind: " + rscDfnData.getLayerType()
-                    );
-            }
-            layerData.add(pair);
-        }
+        List<Pair<String, RscDfnLayerDataApi>> layerData = ProtoLayerUtils.extractRscDfnLayerData(
+            rscDfn
+        );
 
         RscDfnPojo rscDfnPojo = new RscDfnPojo(
             UUID.fromString(rscDfn.getRscDfnUuid()),

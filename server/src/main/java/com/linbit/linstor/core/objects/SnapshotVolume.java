@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -10,76 +10,62 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
+import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 
-public class SnapshotVolume extends BaseTransactionObject implements DbgInstanceUuid, Comparable<SnapshotVolume>
+public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement SnapshotVolumeConnections
 {
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
-
-    private final Snapshot snapshot;
-
     private final SnapshotVolumeDefinition snapshotVolumeDefinition;
 
-    private final StorPool storPool;
-
     private final SnapshotVolumeDatabaseDriver dbDriver;
-
-    private final TransactionSimpleObject<SnapshotVolume, Boolean> deleted;
 
     public SnapshotVolume(
         UUID objIdRef,
         Snapshot snapshotRef,
         SnapshotVolumeDefinition snapshotVolumeDefinitionRef,
-        StorPool storPoolRef,
         SnapshotVolumeDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsConFactory,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
+        throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(
+            objIdRef,
+            snapshotRef,
+            propsConFactory.getInstance(
+                PropsContainer.buildPath(
+                    snapshotRef.getResourceName(),
+                    snapshotRef.getSnapshotName(),
+                    snapshotVolumeDefinitionRef.getVolumeNumber()
+                )
+            ),
+            transObjFactory,
+            transMgrProviderRef
+        );
 
-        objId = objIdRef;
-        snapshot = snapshotRef;
         snapshotVolumeDefinition = snapshotVolumeDefinitionRef;
-        storPool = storPoolRef;
         dbDriver = dbDriverRef;
 
-        dbgInstanceId = UUID.randomUUID();
-
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-
-        transObjs = Arrays.asList(
-            snapshot,
-            snapshotVolumeDefinition,
-            deleted
+        transObjs.addAll(
+            Arrays.asList(
+                snapshotVolumeDefinition,
+                deleted
+            )
         );
-    }
-
-    public UUID getUuid()
-    {
-        return objId;
-    }
-
-    public Snapshot getSnapshot()
-    {
-        checkDeleted();
-        return snapshot;
     }
 
     public SnapshotVolumeDefinition getSnapshotVolumeDefinition()
@@ -88,23 +74,15 @@ public class SnapshotVolume extends BaseTransactionObject implements DbgInstance
         return snapshotVolumeDefinition;
     }
 
-    public StorPool getStorPool(AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        checkDeleted();
-        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return storPool;
-    }
-
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
         {
-            getResourceDefinition()
-                .getObjProt().requireAccess(accCtx, AccessType.CONTROL);
+            getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.CONTROL);
 
-            snapshot.removeSnapshotVolume(accCtx, this);
+            absRsc.removeVolume(accCtx, this);
             snapshotVolumeDefinition.removeSnapshotVolume(accCtx, this);
 
             activateTransMgr();
@@ -114,32 +92,23 @@ public class SnapshotVolume extends BaseTransactionObject implements DbgInstance
         }
     }
 
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted snapshot volume");
-        }
-    }
-
     @Override
     public String toString()
     {
-        return snapshot + ", VlmNr: '" + getVolumeNumber() + "'";
+        return absRsc + ", VlmNr: '" + getVolumeNumber() + "'";
     }
 
     @Override
-    public UUID debugGetVolatileUuid()
+    public int compareTo(AbsVolume<Snapshot> other)
     {
-        return dbgInstanceId;
-    }
-
-    public int compareTo(SnapshotVolume other)
-    {
-        int cmp = snapshot.compareTo(other.getSnapshot());
-        if (cmp == 0)
+        int cmp = -1;
+        if (other instanceof SnapshotVolume)
         {
-            cmp = snapshotVolumeDefinition.compareTo(other.getSnapshotVolumeDefinition());
+            cmp = absRsc.compareTo(other.getAbsResource());
+            if (cmp == 0)
+            {
+                cmp = snapshotVolumeDefinition.compareTo(((SnapshotVolume) other).getSnapshotVolumeDefinition());
+            }
         }
         return cmp;
     }
@@ -148,8 +117,6 @@ public class SnapshotVolume extends BaseTransactionObject implements DbgInstance
         throws AccessDeniedException
     {
         return new SnapshotVlmPojo(
-            getStorPool(accCtx).getName().getDisplayName(),
-            getStorPool(accCtx).getUuid(),
             getSnapshotVolumeDefinition().getUuid(),
             getUuid(),
             getVolumeNumber().value
@@ -158,14 +125,20 @@ public class SnapshotVolume extends BaseTransactionObject implements DbgInstance
 
     public Node getNode()
     {
-        return getSnapshot().getNode();
+        return absRsc.getNode();
     }
 
     public SnapshotDefinition getSnapshotDefinition()
     {
-        return getSnapshot().getSnapshotDefinition();
+        return absRsc.getSnapshotDefinition();
     }
 
+    public Snapshot getSnapshot()
+    {
+        return absRsc;
+    }
+
+    @Override
     public ResourceDefinition getResourceDefinition()
     {
         return getSnapshotDefinition().getResourceDefinition();
@@ -186,9 +159,22 @@ public class SnapshotVolume extends BaseTransactionObject implements DbgInstance
         return getNode().getName();
     }
 
+    @Override
     public VolumeNumber getVolumeNumber()
     {
         return getSnapshotVolumeDefinition().getVolumeNumber();
+    }
+
+    @Override
+    public long getVolumeSize(AccessContext dbCtxRef) throws AccessDeniedException
+    {
+        return getSnapshotVolumeDefinition().getVolumeSize(dbCtxRef);
+    }
+
+    @Override
+    public VolumeDefinition getVolumeDefinition()
+    {
+        return getSnapshotVolumeDefinition().getVolumeDefinition();
     }
 
     public Key getKey()
@@ -249,5 +235,50 @@ public class SnapshotVolume extends BaseTransactionObject implements DbgInstance
         {
             return "SnapshotVolume.Key [rscName=" + rscName + ", vlmNr=" + vlmNr + ", snapName=" + snapName + "]";
         }
+    }
+
+    @Override
+    public ApiCallRc getReports()
+    {
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
+    }
+
+    @Override
+    public void addReports(ApiCallRc apiCallRcRef)
+    {
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
+    }
+
+    @Override
+    public void clearReports()
+    {
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
+    }
+
+    public Stream<TransactionObject> streamSnapshotVolumeConnections(AccessContext accCtxRef)
+        throws AccessDeniedException
+    {
+        throw new ImplementationError("Not implemented yet");
+    }
+
+    public TransactionObject getSnapshotVolumeConnection(AccessContext accCtxRef, SnapshotVolume othervolumeRef)
+        throws AccessDeniedException
+    {
+        throw new ImplementationError("Not implemented yet");
+    }
+
+    public void setSnapshotVolumeConnection(AccessContext accCtxRef, TransactionObject volumeConnectionRef)
+        throws AccessDeniedException
+    {
+        throw new ImplementationError("Not implemented yet");
+    }
+
+    public void removeSnapshotVolumeConnection(AccessContext accCtxRef, TransactionObject volumeConnectionRef)
+        throws AccessDeniedException
+    {
+        throw new ImplementationError("Not implemented yet");
     }
 }

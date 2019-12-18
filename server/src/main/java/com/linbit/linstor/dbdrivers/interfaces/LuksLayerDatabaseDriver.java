@@ -9,11 +9,13 @@ public interface LuksLayerDatabaseDriver
 {
     ResourceLayerIdDatabaseDriver getIdDriver();
 
-    void persist(LuksRscData luksRscDataRef) throws DatabaseException;
-    void delete(LuksRscData luksRscDataRef) throws DatabaseException;
+    void persist(LuksRscData<?> luksRscDataRef) throws DatabaseException;
 
-    void persist(LuksVlmData luksVlmDataRef) throws DatabaseException;
-    void delete(LuksVlmData luksVlmDataRef) throws DatabaseException;
+    void delete(LuksRscData<?> luksRscDataRef) throws DatabaseException;
 
-    SingleColumnDatabaseDriver<LuksVlmData, byte[]> getVlmEncryptedPasswordDriver();
+    void persist(LuksVlmData<?> luksVlmDataRef) throws DatabaseException;
+
+    void delete(LuksVlmData<?> luksVlmDataRef) throws DatabaseException;
+
+    SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]> getVlmEncryptedPasswordDriver();
 }

@@ -433,7 +433,8 @@ public class NodeGenericDbDriverTest extends GenericDbBase
                 SYS_CTX,
                 res1,
                 volDfn,
-                new Volume.Flags[] {},
+                new Volume.Flags[]
+                {},
                 Collections.singletonMap("", storPool1)
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
@@ -459,7 +460,8 @@ public class NodeGenericDbDriverTest extends GenericDbBase
                 SYS_CTX,
                 res2,
                 volDfn,
-                new Volume.Flags[] {},
+                new Volume.Flags[]
+                {},
                 Collections.singletonMap("", storPool2)
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);
@@ -527,7 +529,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
         {
             Resource res = loadedNode.getResource(SYS_CTX, resName);
             assertNotNull(res);
-            assertEquals(loadedNode, res.getAssignedNode());
+            assertEquals(loadedNode, res.getNode());
             {
                 ResourceDefinition resDfn = res.getDefinition();
                 assertNotNull(resDfn);
@@ -569,7 +571,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
                     assertEquals(vol1TestValue, volProps.getProp(vol1TestKey));
                     assertEquals(1, volProps.size());
                 }
-                assertEquals(res, vol.getResource());
+                assertEquals(res, vol.getAbsResource());
                 assertEquals(res.getDefinition(), vol.getResourceDefinition());
                 assertEquals(vol1Uuid, vol.getUuid());
                 {
@@ -608,7 +610,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
                 Resource res2 = loadedNode2.getResource(SYS_CTX, resName);
                 assertNotNull(res2);
                 assertEquals(res2Uuid, res2.getUuid());
-                ResourceConnection resCon = res.getResourceConnection(SYS_CTX, res2);
+                ResourceConnection resCon = res.getAbsResourceConnection(SYS_CTX, res2);
                 assertNotNull(resCon);
 
                 assertEquals(res, resCon.getSourceResource(SYS_CTX));

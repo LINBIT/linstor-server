@@ -30,7 +30,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.tasks.RetryResourcesTask;
@@ -199,7 +199,7 @@ public class RscInternalCallHandler
 
             layerRscDataMerger.mergeLayerData(rsc, rscLayerDataPojoRef, false);
 
-            Set<RscLayerObject> storageResources = LayerRscUtils.getRscDataByProvider(
+            Set<AbsRscLayerObject<Resource>> storageResources = LayerRscUtils.getRscDataByProvider(
                 rsc.getLayerData(apiCtx),
                 DeviceLayerKind.STORAGE
             );
@@ -219,9 +219,9 @@ public class RscInternalCallHandler
                     vlm.setAllocatedSize(apiCtx, ProviderUtils.getAllocatedSize(vlm, apiCtx));
                     vlm.clearReports();
 
-                    for (RscLayerObject storageRsc : storageResources)
+                    for (AbsRscLayerObject<Resource> storageRsc : storageResources)
                     {
-                        VlmProviderObject vlmProviderObject = storageRsc.getVlmProviderObject(vlmNr);
+                        VlmProviderObject<Resource> vlmProviderObject = storageRsc.getVlmProviderObject(vlmNr);
                         if (vlmProviderObject != null)
                         {
                             StorPool storPool = vlmProviderObject.getStorPool();

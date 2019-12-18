@@ -10,10 +10,9 @@ import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
@@ -89,24 +88,26 @@ public class LuksLayerGenericDbDriver implements LuksLayerCtrlDatabaseDriver
         vlmPwDriver = new VlmPwDriver();
     }
 
+    @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public Pair<LuksRscData, Set<RscLayerObject>> load(
-        Resource rsc,
+    public <RSC extends AbsResource<RSC>> Pair<LuksRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
+        RSC absRsc,
         int id,
         String rscSuffixRef,
-        RscLayerObject parentRef
+        AbsRscLayerObject<RSC> parentRef
     )
         throws DatabaseException
     {
-        Pair<DrbdRscData, Set<RscLayerObject>> ret;
-        Set<RscLayerObject> childrenRscDataList = new HashSet<>();
-        Map<VolumeNumber, LuksVlmData> vlmDataMap = new TreeMap<>();
-        LuksRscData rscData = new LuksRscData(
+        Pair<LuksRscData<RSC>, Set<AbsRscLayerObject<RSC>>> ret;
+        Set<AbsRscLayerObject<RSC>> children = new HashSet<>();
+        Map<VolumeNumber, LuksVlmData<RSC>> vlmDataMap = new TreeMap<>();
+
+        LuksRscData<RSC> rscData = new LuksRscData<>(
             id,
-            rsc,
+            absRsc,
             rscSuffixRef,
             parentRef,
-            childrenRscDataList,
+            children,
             vlmDataMap,
             this,
             transObjFactory,
@@ -134,8 +135,8 @@ public class LuksLayerGenericDbDriver implements LuksLayerCtrlDatabaseDriver
                     }
                     vlmDataMap.put(
                         vlmNr,
-                        new LuksVlmData(
-                            rsc.getVolume(vlmNr),
+                        new LuksVlmData<>(
+                            absRsc.getVolume(vlmNr),
                             rscData,
                             resultSet.getBytes(ENCRYPTED_PASSWORD),
                             this,
@@ -151,11 +152,11 @@ public class LuksLayerGenericDbDriver implements LuksLayerCtrlDatabaseDriver
             throw new DatabaseException(sqlExc);
         }
 
-        return new Pair<>(rscData, childrenRscDataList);
+        return new Pair<>(rscData, children);
     }
 
     @Override
-    public void persist(LuksRscData luksRscDataRef) throws DatabaseException
+    public void persist(LuksRscData<?> luksRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if LuksRscData will get a database table in future.
@@ -163,7 +164,7 @@ public class LuksLayerGenericDbDriver implements LuksLayerCtrlDatabaseDriver
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Override
-    public void persist(LuksVlmData luksVlmDataRef) throws DatabaseException
+    public void persist(LuksVlmData<?> luksVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating LuksVlmData %s", getId(luksVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
@@ -182,14 +183,14 @@ public class LuksLayerGenericDbDriver implements LuksLayerCtrlDatabaseDriver
     }
 
     @Override
-    public void delete(LuksRscData luksRscDataRef) throws DatabaseException
+    public void delete(LuksRscData<?> luksRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
         // this method only exists if LuksRscData will get a database table in future.
     }
 
     @Override
-    public void delete(LuksVlmData luksVlmDataRef) throws DatabaseException
+    public void delete(LuksVlmData<?> luksVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting LuksVlmData %s", getId(luksVlmDataRef));
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM))
@@ -207,7 +208,7 @@ public class LuksLayerGenericDbDriver implements LuksLayerCtrlDatabaseDriver
     }
 
     @Override
-    public SingleColumnDatabaseDriver<LuksVlmData, byte[]> getVlmEncryptedPasswordDriver()
+    public SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]> getVlmEncryptedPasswordDriver()
     {
         return vlmPwDriver;
     }
@@ -223,18 +224,18 @@ public class LuksLayerGenericDbDriver implements LuksLayerCtrlDatabaseDriver
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(LuksVlmData luksVlmDataRef)
+    private String getId(LuksVlmData<?> luksVlmDataRef)
     {
         return "(LayerRscId=" + luksVlmDataRef.getRscLayerId() +
             ", VlmNr=" + luksVlmDataRef.getVlmNr().value +
             ")";
     }
 
-    private class VlmPwDriver implements SingleColumnDatabaseDriver<LuksVlmData, byte[]>
+    private class VlmPwDriver implements SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]>
     {
         @SuppressWarnings("checkstyle:magicnumber")
         @Override
-        public void update(LuksVlmData luksVlmDataRef, byte[] encryptedPassword)
+        public void update(LuksVlmData<?> luksVlmDataRef, byte[] encryptedPassword)
             throws DatabaseException
         {
             errorReporter.logTrace(

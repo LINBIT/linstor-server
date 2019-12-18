@@ -4,12 +4,17 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
-import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.utils.SpdkUtils;
 import com.linbit.utils.StringUtils;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+
+import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 public class Commands
 {
@@ -94,23 +99,25 @@ public class Commands
 
     public static OutputData wipeFs(
         ExtCmd extCmd,
-        String devicePath
+        Collection<String> devicePaths
     )
         throws StorageException
     {
         return genericExecutor(
             extCmd,
-            new String[]
+            StringUtils.concat(
+                new String[]
                 {
-                    "wipefs", "-a", "-f",
-                    devicePath
+                    "wipefs", "-a", "-f"
                 },
-            "Failed to wipeFs of " + devicePath,
-            "Failed to wipeFs of " + devicePath
+                devicePaths
+            ),
+            "Failed to wipeFs of " + String.join(", ", devicePaths),
+            "Failed to wipeFs of " + String.join(", ", devicePaths)
         );
     }
 
-    public static long getBlockSizeInKib(
+    public static long getDeviceSizeInSectors(
         ExtCmd extCmd,
         String devicePath
     )
@@ -119,20 +126,50 @@ public class Commands
         OutputData output = genericExecutor(
             extCmd,
             new String[]
+            {
+                "blockdev",
+                "--getsz",
+                devicePath
+            },
+            "Failed to get device size of " + devicePath,
+            "Failed to get device size of " + devicePath
+        );
+        String outRaw = new String(output.stdoutData);
+        return Long.parseLong(outRaw.trim());
+    }
+
+    public static long getBlockSizeInKib(
+        ExtCmd extCmd,
+        String devicePath
+    )
+        throws StorageException
+    {
+        long sizeKiB;
+        if (devicePath.startsWith(SPDK_PATH_PREFIX))
+        {
+            sizeKiB = SpdkUtils.getBlockSizeByName(extCmd, devicePath.split(SPDK_PATH_PREFIX)[1]);
+        }
+        else
+        {
+            OutputData output = genericExecutor(
+                extCmd,
+                new String[]
                 {
                     "blockdev",
                     "--getsize64",
                     devicePath
                 },
-            "Failed to get block size of " + devicePath,
-            "Failed to get block size of " + devicePath
-        );
-        String outRaw = new String(output.stdoutData);
-        return SizeConv.convert(
-            Long.parseLong(outRaw.trim()),
-            SizeUnit.UNIT_B,
-            SizeUnit.UNIT_KiB
-        );
+                "Failed to get block size of " + devicePath,
+                "Failed to get block size of " + devicePath
+            );
+            String outRaw = new String(output.stdoutData);
+            sizeKiB = SizeConv.convert(
+                Long.parseLong(outRaw.trim()),
+                SizeUnit.UNIT_B,
+                SizeUnit.UNIT_KiB
+            );
+        }
+        return sizeKiB;
     }
 
     public static class NoRetryHandler implements RetryHandler

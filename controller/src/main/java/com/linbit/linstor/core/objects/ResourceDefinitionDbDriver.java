@@ -11,6 +11,7 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.ResourceDefinition.InitMaps;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
@@ -31,11 +32,14 @@ import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.LAYER_STACK;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.PARENT_UUID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_DSP_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_EXTERNAL_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_FLAGS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_GROUP_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_DSP_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.UUID;
 
 import javax.inject.Inject;
@@ -51,6 +55,8 @@ public class ResourceDefinitionDbDriver
     AbsDatabaseDriver<ResourceDefinition, ResourceDefinition.InitMaps, Map<ResourceGroupName, ResourceGroup>>
     implements ResourceDefinitionCtrlDatabaseDriver
 {
+    static final String DFLT_SNAP_NAME_FOR_RSC = "";
+
     private final AccessContext dbCtx;
 
     private final Provider<TransactionMgr> transMgrProvider;
@@ -84,6 +90,9 @@ public class ResourceDefinitionDbDriver
             LAYER_STACK, rscDfn -> toString(StringUtils.asStrList(rscDfn.getLayerStack(dbCtxRef)))
         );
         setColumnSetter(RESOURCE_GROUP_NAME, rscDfn -> rscDfn.getResourceGroup().getName().value);
+        setColumnSetter(SNAPSHOT_NAME, ignored -> DFLT_SNAP_NAME_FOR_RSC);
+        setColumnSetter(SNAPSHOT_DSP_NAME, ignored -> DFLT_SNAP_NAME_FOR_RSC);
+        setColumnSetter(PARENT_UUID, ignored -> null);
         switch (getDbType())
         {
             case ETCD:
@@ -131,48 +140,57 @@ public class ResourceDefinitionDbDriver
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException
     {
-        final Map<VolumeNumber, VolumeDefinition> vlmDfnMap = new TreeMap<>();
-        final Map<NodeName, Resource> rscMap = new TreeMap<>();
-        final Map<SnapshotName, SnapshotDefinition> snapshotDfnMap = new TreeMap<>();
-        final ResourceName rscName = raw.build(RESOURCE_DSP_NAME, ResourceName::new);
-        final long flags;
-        final byte[] extName;
-
-        switch (getDbType())
+        final Pair<ResourceDefinition, InitMaps> ret;
+        if (!raw.get(SNAPSHOT_NAME).equals(DFLT_SNAP_NAME_FOR_RSC))
         {
-            case ETCD:
-                flags = Long.parseLong(raw.get(RESOURCE_FLAGS));
-                String extNameBase64 = raw.get(RESOURCE_EXTERNAL_NAME);
-                extName = extNameBase64 != null ? Base64.decode(extNameBase64) : null;
-                break;
-            case SQL:
-                flags = raw.get(RESOURCE_FLAGS);
-                extName = raw.get(RESOURCE_EXTERNAL_NAME);
-                break;
-            default:
-                throw new ImplementationError("Unknown database type: " + getDbType());
+            // this entry is a SnapshotDefinition, not a ResourceDefinition
+            ret = null;
         }
-        return new Pair<>(
-            new ResourceDefinition(
-                raw.build(UUID, java.util.UUID::fromString),
-                getObjectProtection(ObjectProtection.buildPath(rscName)),
-                rscName,
-                extName,
-                flags,
-                DatabaseLoader.asDevLayerKindList(raw.getAsStringList(LAYER_STACK)),
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                vlmDfnMap,
-                rscMap,
-                snapshotDfnMap,
-                new TreeMap<>(),
-                rscGrpMap.get(raw.build(RESOURCE_GROUP_NAME, ResourceGroupName::new))
-            ),
-            new RscDfnInitMaps(vlmDfnMap, rscMap, snapshotDfnMap)
-        );
+        else
+        {
+            final Map<VolumeNumber, VolumeDefinition> vlmDfnMap = new TreeMap<>();
+            final Map<NodeName, Resource> rscMap = new TreeMap<>();
+            final Map<SnapshotName, SnapshotDefinition> snapshotDfnMap = new TreeMap<>();
+            final ResourceName rscName = raw.build(RESOURCE_DSP_NAME, ResourceName::new);
+            final long flags;
+            final byte[] extName;
 
+            switch (getDbType())
+            {
+                case ETCD:
+                    flags = Long.parseLong(raw.get(RESOURCE_FLAGS));
+                    String extNameBase64 = raw.get(RESOURCE_EXTERNAL_NAME);
+                    extName = extNameBase64 != null ? Base64.decode(extNameBase64) : null;
+                    break;
+                case SQL:
+                    flags = raw.get(RESOURCE_FLAGS);
+                    extName = raw.get(RESOURCE_EXTERNAL_NAME);
+                    break;
+                default:
+                    throw new ImplementationError("Unknown database type: " + getDbType());
+            }
+            ret = new Pair<>(
+                new ResourceDefinition(
+                    raw.build(UUID, java.util.UUID::fromString),
+                    getObjectProtection(ObjectProtection.buildPath(rscName)),
+                    rscName,
+                    extName,
+                    flags,
+                    DatabaseLoader.asDevLayerKindList(raw.getAsStringList(LAYER_STACK)),
+                    this,
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider,
+                    vlmDfnMap,
+                    rscMap,
+                    snapshotDfnMap,
+                    new TreeMap<>(),
+                    rscGrpMap.get(raw.build(RESOURCE_GROUP_NAME, ResourceGroupName::new))
+                ),
+                new RscDfnInitMaps(vlmDfnMap, rscMap, snapshotDfnMap)
+            );
+        }
+        return ret;
     }
 
     @Override

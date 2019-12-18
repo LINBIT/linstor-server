@@ -453,7 +453,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                             ctrlRscCrtApiHelper.createResourceDb(
                                 disklessNode.getName().displayValue,
                                 rscNameStr,
-                                Resource.Flags.DISKLESS.flagValue,
+                                Resource.Flags.DRBD_DISKLESS.flagValue | Resource.Flags.NVME_INITIATOR.flagValue,
                                 rscPropsMap,
                                 Collections.emptyList(),
                                 null,
@@ -540,7 +540,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     alreadyPlaced.size() + " nodes. Skipping."
             )
             .setDetails("Used nodes: '" +
-                alreadyPlaced.stream().map(rsc -> rsc.getAssignedNode().getName().displayValue)
+                alreadyPlaced.stream().map(rsc -> rsc.getNode().getName().displayValue)
                     .collect(Collectors.joining("', '")) + "'")
             .build();
     }
@@ -557,7 +557,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     "The resource would have to be deleted from nodes to reach the placement count.",
                 rscNameStr,
                 alreadyPlaced.size(),
-                alreadyPlaced.stream().map(rsc -> "'" + rsc.getAssignedNode().getName().displayValue + "'")
+                alreadyPlaced.stream().map(rsc -> "'" + rsc.getNode().getName().displayValue + "'")
                     .collect(Collectors.joining(", "))
             )
         );

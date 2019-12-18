@@ -14,6 +14,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.UUID;
 
 public class VolumeConnectionFactory
@@ -44,8 +45,8 @@ public class VolumeConnectionFactory
     )
         throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {
-        sourceVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        targetVolume.getResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        sourceVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        targetVolume.getAbsResource().getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
         VolumeConnection volConData = VolumeConnection.get(accCtx, sourceVolume, targetVolume);
 
@@ -83,8 +84,8 @@ public class VolumeConnectionFactory
 
         Volume source;
         Volume target;
-        NodeName sourceNodeName = sourceVolume.getResource().getAssignedNode().getName();
-        NodeName targetNodeName = targetVolume.getResource().getAssignedNode().getName();
+        NodeName sourceNodeName = sourceVolume.getAbsResource().getNode().getName();
+        NodeName targetNodeName = targetVolume.getAbsResource().getNode().getName();
         if (sourceNodeName.compareTo(targetNodeName) < 0)
         {
             source = sourceVolume;
@@ -98,7 +99,7 @@ public class VolumeConnectionFactory
 
         try
         {
-            volConData = (VolumeConnection) source.getVolumeConnection(accCtx, target);
+            volConData = source.getVolumeConnection(accCtx, target);
             if (volConData == null)
             {
                 volConData = new VolumeConnection(

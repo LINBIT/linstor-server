@@ -3,6 +3,7 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 
 import javax.inject.Inject;
@@ -55,7 +56,7 @@ public class SnapshotRestoreVolumeDefinition
                 snapRestore.to_resource
             );
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.OK);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
 }

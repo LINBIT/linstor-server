@@ -4,7 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -26,17 +27,13 @@ import com.linbit.linstor.transaction.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 @Singleton
 public class LvmThinProvider extends LvmProvider
 {
-    private static final String ID_SNAP_DELIMITER = "_";
-    public static final String FORMAT_SNAP_VLM_TO_LVM_ID = FORMAT_RSC_TO_LVM_ID + "_%s";
-
     @Inject
     public LvmThinProvider(
         ErrorReporter errorReporter,
@@ -62,11 +59,11 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void updateInfo(LvmData vlmDataRef, LvsInfo infoRef)
+    protected void updateInfo(LvmData<?> vlmDataRef, LvsInfo infoRef)
         throws AccessDeniedException, DatabaseException, StorageException
     {
         super.updateInfo(vlmDataRef, infoRef);
-        LvmThinData lvmThinData = (LvmThinData) vlmDataRef;
+        LvmThinData<?> lvmThinData = (LvmThinData<?>) vlmDataRef;
         if (infoRef == null)
         {
             lvmThinData.setThinPool(getThinPool(vlmDataRef.getStorPool()));
@@ -87,30 +84,10 @@ public class LvmThinProvider extends LvmProvider
         }
     }
 
-    private List<String> asFullQualifiedLvIdentifierList(String rscNameSuffix, SnapshotVolume snapVlm)
-        throws AccessDeniedException
-    {
-        List<String> fqLvIdList = new ArrayList<>();
-
-        StorPool storPool = snapVlm.getStorPool(storDriverAccCtx);
-        fqLvIdList.add(
-            getVolumeGroup(storPool) + File.separator +
-            String.format(
-                FORMAT_SNAP_VLM_TO_LVM_ID,
-                snapVlm.getResourceName().displayValue,
-                rscNameSuffix,
-                snapVlm.getVolumeNumber().value,
-                snapVlm.getSnapshotName().displayValue
-            )
-        );
-
-        return fqLvIdList;
-    }
-
     @Override
-    protected void createLvImpl(LvmData lvmVlmData) throws StorageException, AccessDeniedException
+    protected void createLvImpl(LvmData<Resource> lvmVlmData) throws StorageException, AccessDeniedException
     {
-        LvmThinData vlmData = (LvmThinData) lvmVlmData;
+        LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
         String volumeGroup = vlmData.getVolumeGroup();
         String lvId = asLvIdentifier(vlmData);
         LvmCommands.createThin(
@@ -128,7 +105,8 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void deleteLvImpl(LvmData lvmVlmData, String oldLvmId) throws StorageException, DatabaseException
+    protected void deleteLvImpl(LvmData<Resource> lvmVlmData, String oldLvmId)
+        throws StorageException, DatabaseException
     {
         LvmCommands.delete(
             extCmdFactory.create(),
@@ -139,69 +117,42 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected boolean snapshotExists(SnapshotVolume snapVlm)
+    protected boolean snapshotExists(LvmData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        // FIXME: RAID: rscNameSuffix
+        String identifier = getFullQualifiedIdentifier(snapVlmRef);
 
-        boolean oneExists = false;
-        boolean allExsits = true;
-        List<String> identifierList = asFullQualifiedLvIdentifierList("", snapVlm);
-
-        for (String snapLvId : identifierList)
-        {
-            if (infoListCache.get(snapLvId) != null)
-            {
-                oneExists = true;
-            }
-            else
-            {
-                allExsits = false;
-            }
-        }
-        if (oneExists && !allExsits)
-        {
-            // FIXME: what the heck should we do now?
-            errorReporter.logError("Some, but not all LVs of snapshot " + snapVlm + " exist.");
-        }
-        return allExsits;
+        return infoListCache.get(identifier) != null;
     }
 
     @Override
-    protected void createSnapshot(LvmData lvmVlmData, SnapshotVolume snapVlm)
+    protected void createSnapshot(LvmData<Resource> vlmDataRef, LvmData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        LvmThinData vlmData = (LvmThinData) lvmVlmData;
-        String rscNameSuffix = vlmData.getRscLayerObject().getResourceNameSuffix();
-        String snapshotIdentifier = getSnapshotIdentifier(rscNameSuffix, snapVlm);
+        LvmThinData<Resource> vlmData = (LvmThinData<Resource>) vlmDataRef;
         LvmCommands.createSnapshotThin(
             extCmdFactory.create(),
             vlmData.getVolumeGroup(),
             vlmData.getThinPool(),
-            asLvIdentifier(
-                rscNameSuffix,
-                snapVlm.getResourceDefinition().getVolumeDfn(
-                    storDriverAccCtx,
-                    snapVlm.getVolumeNumber()
-                )
-            ),
-            snapshotIdentifier
+            vlmData.getIdentifier(),
+            getFullQualifiedIdentifier(snapVlmRef)
         );
     }
 
     @Override
-    protected void deleteSnapshot(String rscNameSuffix, SnapshotVolume snapVlm)
+    protected void deleteSnapshot(LvmData<Snapshot> snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         LvmCommands.delete(
             extCmdFactory.create(),
-            getVolumeGroup(snapVlm.getStorPool(storDriverAccCtx)),
-            getSnapshotIdentifier(rscNameSuffix, snapVlm)
+            getVolumeGroup(snapVlm.getStorPool()),
+            asSnapLvIdentifier(snapVlm)
         );
+        snapVlm.setExists(false);
     }
 
     @Override
-    protected void restoreSnapshot(String sourceLvId, String sourceSnapName, LvmData vlmData)
+    protected void restoreSnapshot(String sourceLvId, String sourceSnapName, LvmData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         String storageName = vlmData.getVolumeGroup();
@@ -220,20 +171,24 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void rollbackImpl(LvmData lvmVlmData, String rollbackTargetSnapshotName)
+    protected void rollbackImpl(LvmData<Resource> lvmVlmData, String rollbackTargetSnapshotName)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        LvmThinData vlmData = (LvmThinData) lvmVlmData;
+        LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
 
         String volumeGroup = vlmData.getVolumeGroup();
         String thinPool = vlmData.getThinPool();
-        String baseId = asLvIdentifier(vlmData);
-        String snapshotId = getSnapshotIdentifier(baseId, rollbackTargetSnapshotName);
-
+        String targetLvId = asLvIdentifier(vlmData);
+        String snapshotId = asSnapLvIdentifierRaw(
+            vlmData.getRscLayerObject().getResourceName().displayValue,
+            vlmData.getRscLayerObject().getResourceNameSuffix(),
+            rollbackTargetSnapshotName,
+            vlmData.getVlmNr().value
+        );
         LvmCommands.deactivateVolume(
             extCmdFactory.create(),
             volumeGroup,
-            baseId
+            targetLvId
         );
 
         LvmCommands.rollbackToSnapshot(
@@ -251,14 +206,14 @@ public class LvmThinProvider extends LvmProvider
             extCmdFactory.create(),
             volumeGroup,
             thinPool,
-            baseId,
+            targetLvId,
             snapshotId
         );
 
         LvmCommands.activateVolume(
             extCmdFactory.create(),
             volumeGroup,
-            baseId
+            targetLvId
         );
     }
 
@@ -295,9 +250,9 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected long getAllocatedSize(LvmData vlmDataRef) throws StorageException
+    protected long getAllocatedSize(LvmData<Resource> vlmDataRef) throws StorageException
     {
-        LvmThinData lvmThinData = (LvmThinData) vlmDataRef;
+        LvmThinData<Resource> lvmThinData = (LvmThinData<Resource>) vlmDataRef;
         long allocatedSize = super.getAllocatedSize(vlmDataRef);
         return (long) (allocatedSize * lvmThinData.getDataPercent());
     }
@@ -341,23 +296,5 @@ public class LvmThinProvider extends LvmProvider
             throw new ImplementationError("Invalid hardcoded key exception", exc);
         }
         return thinPool;
-    }
-
-    /**
-     * @param snapVlm
-     * @return "rscName_vlmNr" + "_" + "snapshotName"
-     * @throws AccessDeniedException
-     */
-    private String getSnapshotIdentifier(String rscNameSuffix, SnapshotVolume snapVlm)
-    {
-        return getSnapshotIdentifier(
-            asLvIdentifier(rscNameSuffix, snapVlm.getSnapshotVolumeDefinition()),
-            snapVlm.getSnapshotName().displayValue
-        );
-    }
-
-    private String getSnapshotIdentifier(String baseId, String snapshotName)
-    {
-        return baseId + ID_SNAP_DELIMITER + snapshotName;
     }
 }

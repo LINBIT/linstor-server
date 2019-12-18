@@ -17,7 +17,7 @@ public interface ControllerDatabase extends SystemService
     void initializeDataSource(String dbConnectionUrl)
         throws DatabaseException;
 
-    void migrate(String dbType);
+    void migrate(String dbType) throws InitializationException;
 
     /**
      * Close all DB connections the calling thread had not closed yet.

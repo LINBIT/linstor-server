@@ -1,8 +1,5 @@
 package com.linbit.linstor.numberpool;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-
 import com.linbit.Checks;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
@@ -13,7 +10,11 @@ import com.linbit.linstor.propscon.Props;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
+
 import java.util.regex.Pattern;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 
 public class NumberPoolModule extends AbstractModule
 {
@@ -21,7 +22,6 @@ public class NumberPoolModule extends AbstractModule
 
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String TCP_PORT_POOL = "TcpPortPool";
-    public static final String SF_TARGET_PORT_POOL = "SfTargetPortPool";
     public static final String LAYER_RSC_ID_POOL = "LayerRscIdPool";
 
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
@@ -37,11 +37,6 @@ public class NumberPoolModule extends AbstractModule
     // invalid ranges (e.g. -1 for port), we will fall back to these defaults
     private static final int DEFAULT_TCP_PORT_MIN = 7000;
     private static final int DEFAULT_TCP_PORT_MAX = 7999;
-
-    private static final int DEFAULT_SF_TARGET_TCP_PORT_MIN = 10_000;
-    private static final int DEFAULT_SF_TARGET_TCP_PORT_MAX = 10_999;
-
-    private static final String SF_TARGET_TCP_ELEMENT_NAME = "Swordfish target TCP port";
 
     private static final int LAYER_RSC_ID_MIN = 0;
     private static final int LAYER_RSC_ID_MAX = BitmapPool.MAX_CAPACITY - 1;
@@ -89,26 +84,6 @@ public class NumberPoolModule extends AbstractModule
             TcpPortNumber.PORT_NR_MAX,
             DEFAULT_TCP_PORT_MIN,
             DEFAULT_TCP_PORT_MAX
-        );
-    }
-
-    @Provides
-    @Singleton
-    @Named(SF_TARGET_PORT_POOL)
-    public DynamicNumberPool sfTargetPortPool(
-        ErrorReporter errorReporter,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
-    )
-    {
-        return new DynamicNumberPoolImpl(
-            errorReporter,
-            ctrlConfRef,
-            ApiConsts.KEY_SF_TARGET_PORT_AUTO_RANGE,
-            SF_TARGET_TCP_ELEMENT_NAME,
-            TcpPortNumber::tcpPortNrCheck,
-            TcpPortNumber.PORT_NR_MAX,
-            DEFAULT_SF_TARGET_TCP_PORT_MIN,
-            DEFAULT_SF_TARGET_TCP_PORT_MAX
         );
     }
 

@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -81,7 +83,8 @@ public class CtrlStorPoolCrtApiCallHandler
         String storPoolNameStr,
         DeviceProviderKind providerKindRef,
         String freeSpaceMgrNameStr,
-        Map<String, String> storPoolPropsMap
+        Map<String, String> storPoolPropsMap,
+        Flux<ApiCallRc> onError
     )
     {
         ResponseContext context = makeStorPoolContext(
@@ -100,7 +103,8 @@ public class CtrlStorPoolCrtApiCallHandler
                     providerKindRef,
                     freeSpaceMgrNameStr,
                     storPoolPropsMap,
-                    context
+                    context,
+                    onError
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -112,25 +116,27 @@ public class CtrlStorPoolCrtApiCallHandler
         DeviceProviderKind deviceProviderKindRef,
         String freeSpaceMgrNameStr,
         Map<String, String> storPoolPropsMap,
-        ResponseContext context
+        ResponseContext context,
+        Flux<ApiCallRc> onError
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        // as the storage pool definition is implicitly created if it doesn't exist
-        // we always will update the storPoolDfnMap even if not necessary
-        // Therefore we need to be able to modify apiCtrlAccessors.storPoolDfnMap
-        requireStorPoolDfnMapChangeAccess();
-
-        StorPool storPool = storPoolHelper.createStorPool(
-            nodeNameStr,
-            storPoolNameStr,
-            deviceProviderKindRef,
-            freeSpaceMgrNameStr
-        );
+        Flux<ApiCallRc> flux;
 
         try
         {
+            // as the storage pool definition is implicitly created if it doesn't exist
+            // we always will update the storPoolDfnMap even if not necessary
+            // Therefore we need to be able to modify apiCtrlAccessors.storPoolDfnMap
+            requireStorPoolDfnMapChangeAccess();
+
+            StorPool storPool = storPoolHelper.createStorPool(
+                nodeNameStr,
+                storPoolNameStr,
+                deviceProviderKindRef,
+                freeSpaceMgrNameStr
+            );
+
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
                 peerAccCtx.get(),
@@ -154,38 +160,47 @@ public class CtrlStorPoolCrtApiCallHandler
             updateStorPoolDfnMap(storPool);
 
             ctrlTransactionHelper.commit();
+
+            Flux<ApiCallRc> updateResponses = ctrlSatelliteUpdateCaller
+                .updateSatellite(storPool)
+                .onErrorResume(
+                    ApiRcException.class,
+                    apiRcException -> Flux.just(apiRcException.getApiCallRc())
+                );
+
+            responseConverter.addWithOp(responses, context,
+                ApiSuccessUtils.defaultRegisteredEntry(storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
+
+            flux = Flux
+                .<ApiCallRc>just(responses)
+                .concatWith(updateResponses);
         }
-        catch (Exception | ImplementationError exc)
+        catch (InvalidNameException | LinStorException exc)
         {
-            try
+            ApiCallRc.RcEntry errorRc;
+            if (exc instanceof LinStorException)
             {
-                responses = responseConverter.reportException(
-                    storPool.getNode().getPeer(peerAccCtx.get()), context, exc
+                errorRc = ApiCallRcImpl.copyFromLinstorExc(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    (LinStorException) exc
                 );
             }
-            catch (AccessDeniedException accDenExc)
+            else
             {
-                throw new ApiAccessDeniedException(
-                    accDenExc,
-                    "get peer from node",
-                    ApiConsts.FAIL_ACC_DENIED_NODE
-                );
+                errorRc = ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
+                    exc.getMessage());
             }
+
+            responseConverter.addWithOp(responses, context, errorRc);
+            flux = Flux.<ApiCallRc>just(responses).concatWith(onError);
+        }
+        catch (ApiRcException apiExc)
+        {
+            flux = Flux.<ApiCallRc>just(apiExc.getApiCallRc()).concatWith(onError);
         }
 
-        Flux<ApiCallRc> updateResponses = ctrlSatelliteUpdateCaller
-            .updateSatellite(storPool)
-            .onErrorResume(
-                ApiRcException.class,
-                apiRcException -> Flux.just(apiRcException.getApiCallRc())
-            );
-
-        responseConverter.addWithOp(responses, context,
-            ApiSuccessUtils.defaultRegisteredEntry(storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
-
-        return Flux
-            .<ApiCallRc>just(responses)
-            .concatWith(updateResponses);
+        return flux;
     }
 
     private void requireStorPoolDfnMapChangeAccess()

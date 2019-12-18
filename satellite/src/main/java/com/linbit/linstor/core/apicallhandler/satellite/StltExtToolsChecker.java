@@ -12,10 +12,13 @@ import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
+import static com.linbit.linstor.storage.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +46,8 @@ public class StltExtToolsChecker
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern NVME_VERSION_PATTERN = Pattern
         .compile("(?:nvme version\\s*)(\\d+)\\.(\\d+)");
+    private static final Pattern SPDK_VERSION_PATTERN = Pattern
+            .compile("(?:\\s*version\\s*)?(\\d+)\\.(\\d+)");
 
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
@@ -68,7 +73,9 @@ public class StltExtToolsChecker
             getCryptSetupInfo(),
             getLvmInfo(),
             getZfsInfo(),
-            getNvmeInfo()
+            getNvmeInfo(),
+            getSpdkInfo(),
+            getWritecacheInfo()
         );
     }
 
@@ -127,7 +134,34 @@ public class StltExtToolsChecker
 
     private ExtToolsInfo getNvmeInfo()
     {
-        return infoBy3MatchGroupPattern(NVME_VERSION_PATTERN, ExtTools.NVME, false, "nvme", "version");
+        ExtToolsInfo ret;
+
+        List<String> modprobeFailures = new ArrayList<>();
+        check(modprobeFailures, "modprobe", "nvmet_rdma");
+        check(modprobeFailures, "modprobe", "nvme_rdma");
+        if (!modprobeFailures.isEmpty())
+        {
+            ret = new ExtToolsInfo(ExtTools.NVME, false, null, null, null, modprobeFailures);
+        }
+        else
+        {
+            ret = infoBy3MatchGroupPattern(NVME_VERSION_PATTERN, ExtTools.NVME, false, "nvme", "version");
+        }
+        return ret;
+    }
+
+    private ExtToolsInfo getSpdkInfo()
+    {
+        return infoBy3MatchGroupPattern(SPDK_VERSION_PATTERN, ExtTools.SPDK, false, SPDK_RPC_SCRIPT, "get_spdk_version");
+    }
+
+    private ExtToolsInfo getWritecacheInfo()
+    {
+        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason("modinfo", "dm-writecache");
+        return stdoutOrErrorReason.map(
+            pair -> new ExtToolsInfo(ExtTools.WRITECACHE, true, null, null, null, Collections.emptyList()),
+            errorReson -> new ExtToolsInfo(ExtTools.WRITECACHE, false, null, null, null, errorReson)
+        );
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)
@@ -179,6 +213,15 @@ public class StltExtToolsChecker
         );
     }
 
+    private void check(List<String> resultErrors, String... commandParts)
+    {
+        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(commandParts);
+        stdoutOrErrorReason.map(
+            ignore -> true, // addAll also returns boolean, just to make the <T> of the map method happy
+            failList -> resultErrors.addAll(failList)
+        );
+
+    }
 
     private Either<Pair<String, String>, List<String>> getStdoutOrErrorReason(String... cmds)
     {

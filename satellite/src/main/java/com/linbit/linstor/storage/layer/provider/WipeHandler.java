@@ -5,12 +5,13 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.MdSuperblockBuffer;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
+import com.linbit.utils.ExceptionThrowingConsumer;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
-import java.util.function.Consumer;
+import java.util.Collections;
 
 @Singleton
 public class WipeHandler
@@ -33,7 +34,6 @@ public class WipeHandler
      *
      * That means, this method calls "{@code wipefs devicePath}" and cleans drbd super block (last 4k of the device)
      *
-     * @param extCmd
      * @param devicePath
      *
      * @throws StorageException
@@ -41,7 +41,7 @@ public class WipeHandler
      */
     public void quickWipe(String devicePath) throws StorageException
     {
-        Commands.wipeFs(extCmdFactory.create(), devicePath);
+        Commands.wipeFs(extCmdFactory.create(), Collections.singleton(devicePath));
         try
         {
             MdSuperblockBuffer.wipe(devicePath);
@@ -52,7 +52,8 @@ public class WipeHandler
         }
     }
 
-    public void asyncWipe(String devicePath, Consumer<String> wipeFinishedNotifier)
+    public void asyncWipe(String devicePath, ExceptionThrowingConsumer<String, StorageException> wipeFinishedNotifier)
+        throws StorageException
     {
         // TODO: this step should be asynchron
 

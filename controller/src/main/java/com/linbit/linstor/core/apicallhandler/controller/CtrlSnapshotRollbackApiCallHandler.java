@@ -291,7 +291,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
             if (!isDisklessPrivileged(rsc))
             {
-                diskNodeNames.add(rsc.getAssignedNode().getName());
+                diskNodeNames.add(rsc.getNode().getName());
             }
         }
 
@@ -395,7 +395,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             Resource rsc = rscIter.next();
             if (!isDiskless(rsc))
             {
-                Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(rsc.getAssignedNode(), snapshotDfn);
+                Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(rsc.getNode(), snapshotDfn);
 
                 Iterator<Volume> vlmIter = rsc.iterateVolumes();
                 while (vlmIter.hasNext())
@@ -425,7 +425,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         Optional<Resource> rscInUse = anyResourceInUse(rscDfn);
         if (rscInUse.isPresent())
         {
-            NodeName nodeName = rscInUse.get().getAssignedNode().getName();
+            NodeName nodeName = rscInUse.get().getNode().getName();
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.FAIL_IN_USE,
@@ -443,7 +443,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         boolean diskless;
         try
         {
-            diskless = rsc.isDiskless(peerAccCtx.get());
+            AccessContext accCtx = peerAccCtx.get();
+            diskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -518,11 +519,11 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         try
         {
-            Map<String, DrbdRscDfnData> drbdRscDfnDataMap = rscDfn.getLayerData(
+            Map<String, DrbdRscDfnData<Resource>> drbdRscDfnDataMap = rscDfn.getLayerData(
                 peerAccCtx.get(),
                 DeviceLayerKind.DRBD
             );
-            for (DrbdRscDfnData drbdRscDfnData : drbdRscDfnDataMap.values())
+            for (DrbdRscDfnData<Resource> drbdRscDfnData : drbdRscDfnDataMap.values())
             {
                 drbdRscDfnData.setDown(true);
             }
@@ -546,7 +547,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         boolean diskless;
         try
         {
-            diskless = rsc.isDiskless(apiCtx);
+            diskless = rsc.isDrbdDiskless(apiCtx) || rsc.isNvmeInitiator(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -559,11 +560,11 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     {
         try
         {
-            Map<String, DrbdRscDfnData> drbdRscDfnDataMap = rscDfn.getLayerData(
+            Map<String, DrbdRscDfnData<Resource>> drbdRscDfnDataMap = rscDfn.getLayerData(
                 peerAccCtx.get(),
                 DeviceLayerKind.DRBD
             );
-            for (DrbdRscDfnData drbdRscDfnData : drbdRscDfnDataMap.values())
+            for (DrbdRscDfnData<Resource> drbdRscDfnData : drbdRscDfnDataMap.values())
             {
                 drbdRscDfnData.setDown(false);
             }

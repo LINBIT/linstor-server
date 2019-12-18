@@ -1,6 +1,6 @@
 FROM centos:centos7 as builder
 
-ENV LINSTOR_VERSION 1.2.0
+ENV LINSTOR_VERSION 1.3.1
 
 ENV GRADLE_VERSION 4.4.1
 
@@ -37,7 +37,7 @@ RUN cd ${HOME} && \
 FROM quay.io/linbit/drbd-utils
 # this is/needs to be based on registry.access.redhat.com/ubi7/ubi
 
-ENV LINSTOR_VERSION 1.2.0
+ENV LINSTOR_VERSION 1.3.1
 ARG release=1
 
 LABEL name="linstor-satellite" \
@@ -52,6 +52,16 @@ COPY COPYING /licenses/gpl-3.0.txt
 COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
   yum install -y which lvm2 && yum install -y /tmp/linstor-common*.rpm /tmp/linstor-satellite*.rpm && yum clean all -y
+
+COPY --from=builder /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 /etc/pki/rpm-gpg/
+RUN { \
+	echo '[base]' ;\
+	echo 'name=CentOS-7 - Base' ;\
+	echo 'baseurl=http://mirror.centos.org/centos/7/os/$basearch/' ;\
+	echo 'gpgcheck=1' ;\
+	echo 'gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7' ;\
+} >/etc/yum.repos.d/Centos-Base.repo
+RUN yum install -y cryptsetup && yum clean all -y
 
 RUN sed -i 's/udev_rules.*=.*/udev_rules=0/' /etc/lvm/lvm.conf
 

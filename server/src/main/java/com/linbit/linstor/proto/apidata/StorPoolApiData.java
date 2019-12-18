@@ -138,4 +138,9 @@ public class StorPoolApiData implements StorPoolApi
         return storPool.getSnapshotSupported();
     }
 
+    @Override
+    public Boolean isPmem()
+    {
+        return storPool.getIsPmem();
+    }
 }

@@ -31,6 +31,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -48,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -148,7 +150,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         Optional<Resource> rscInUse = anyResourceInUsePrivileged(rscDfn);
         if (rscInUse.isPresent())
         {
-            NodeName nodeName = rscInUse.get().getAssignedNode().getName();
+            NodeName nodeName = rscInUse.get().getNode().getName();
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.MASK_RSC_DFN | ApiConsts.MASK_DEL | ApiConsts.FAIL_IN_USE,
@@ -172,7 +174,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
             try
             {
-                if (vlm.getResource().getLayerData(peerAccCtx.get()).getLayerKind().equals(DeviceLayerKind.NVME))
+                if (vlm.getAbsResource().getLayerData(peerAccCtx.get()).getLayerKind().equals(DeviceLayerKind.NVME))
                 {
                     throw new ApiRcException(ApiCallRcImpl
                         .entryBuilder(
@@ -313,18 +315,24 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             {
                 for (Snapshot snapshot : snapshotDfn.getAllSnapshots(peerAccCtx.get()))
                 {
-                    SnapshotVolume snapshotVlm = snapshot.getSnapshotVolume(peerAccCtx.get(), vlmDfn.getVolumeNumber());
+                    SnapshotVolume snapshotVlm = snapshot.getVolume(vlmDfn.getVolumeNumber());
                     if (snapshotVlm != null)
                     {
-                        StorPool storPool = snapshotVlm.getStorPool(apiCtx);
-                        if (storPool.getDeviceProviderKind().isSnapshotDependent())
+                        Map<String, StorPool> storPoolMap = LayerVlmUtils.getStorPoolMap(snapshotVlm, peerAccCtx.get());
+                        for (StorPool storPool : storPoolMap.values())
                         {
-                            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_EXISTS_SNAPSHOT,
-                                "Volume definition " + vlmDfn.getVolumeNumber() + " of '" + rscDfn.getName() +
-                                "' cannot be deleted because dependent snapshot '" + snapshot.getSnapshotName() +
-                                "' is present on node '" + snapshot.getNodeName() + "'"
-                                ));
+                            if (storPool.getDeviceProviderKind().isSnapshotDependent())
+                            {
+                                throw new ApiRcException(
+                                    ApiCallRcImpl.simpleEntry(
+                                        ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                                        "Volume definition " + vlmDfn.getVolumeNumber() + " of '" + rscDfn.getName() +
+                                            "' cannot be deleted because dependent snapshot '" +
+                                            snapshot.getSnapshotName() +
+                                            "' is present on node '" + snapshot.getNodeName() + "'"
+                                    )
+                                );
+                            }
                         }
                     }
                 }

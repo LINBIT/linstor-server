@@ -46,8 +46,8 @@ public class DbConstants
     public static final String TBL_LAYER_DRBD_VOLUMES    = "LAYER_DRBD_VOLUMES";
     public static final String TBL_LAYER_DRBD_VOLUME_DEFINITIONS = "LAYER_DRBD_VOLUME_DEFINITIONS";
     public static final String TBL_LAYER_LUKS_VOLUMES    = "LAYER_LUKS_VOLUMES";
-    public static final String TBL_LAYER_SWORDFISH_VOLUME_DEFINITIONS = "LAYER_SWORDFISH_VOLUME_DEFINITIONS";
     public static final String TBL_LAYER_STORAGE_VOLUMES = "LAYER_STORAGE_VOLUMES";
+    public static final String TBL_LAYER_WRITECACHE_VOLUMES = "LAYER_WRITECACHE_VOLUMES";
     public static final String TBL_RESOURCE_GROUPS       = "RESOURCE_GROUPS";
     public static final String TBL_VOLUME_GROUPS         = "VOLUME_GROUPS";
 
@@ -160,6 +160,7 @@ public class DbConstants
     public static final String LAYER_RESOURCE_KIND = "LAYER_RESOURCE_KIND";
     public static final String LAYER_RESOURCE_PARENT_ID = "LAYER_RESOURCE_PARENT_ID";
     public static final String LAYER_RESOURCE_SUFFIX = "LAYER_RESOURCE_SUFFIX";
+    public static final String LAYER_RESOURCE_SUSPENDED = "LAYER_RESOURCE_SUSPENDED";
 
     // LAYER_DRBD_RESOURCES column names
     public static final String AL_STRIPES      = "AL_STRIPES";
@@ -173,9 +174,6 @@ public class DbConstants
 
     // LAYER_LUKS_VOLUMES column names
     public static final String ENCRYPTED_PASSWORD = "ENCRYPTED_PASSWORD";
-
-    // LAYER_SWORDFISH_VOLUME_DEFINITIONS column names
-    public static final String SF_VLM_ODATA = "VLM_ODATA";
 
     // LAYER_STORAGE_VOLUMES column names
     public static final String PROVIDER_KIND = "PROVIDER_KIND";

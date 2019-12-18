@@ -18,10 +18,14 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscLayerObject;
+import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
+
+import static com.linbit.linstor.storage.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -32,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -46,13 +51,21 @@ public class SysFsHandler
     private static final String THROTTLE_READ_BPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.read_bps_device";
     private static final String THROTTLE_WRITE_BPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.write_bps_device";
 
+    private static final String SPDK_THROTTLE_READ_MBPS = "--r_mbytes_per_sec";
+    private static final String SPDK_THROTTLE_WRITE_MBPS = "--w_mbytes_per_sec";
+
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ExtCmdFactory extCmdFactory;
     private final Map<String, String> cgroupBlkioThrottleReadBpsDeviceMap;
     private final Map<String, String> cgroupBlkioThrottleWriteBpsDeviceMap;
-    private final Map<VlmProviderObject, String> deviceMajorMinorMap;
+    private final Map<VlmProviderObject<Resource>, String> deviceMajorMinorMap;
     private final Props satelliteProps;
+
+    public static final String DEVNAME = "DEVNAME";
+    public static final String DEVTYPE = "DEVTYPE";
+    public static final String DEVTYPE_DISK = "disk";
+    public static final String DEVTYPE_PARTITION = "partition";
 
     @Inject
     public SysFsHandler(
@@ -89,18 +102,27 @@ public class SysFsHandler
     {
         for (Resource rsc : deleteListRef)
         {
-            RscLayerObject rscLayerData = rsc.getLayerData(apiCtx);
+            AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(apiCtx);
             execForAllVlmData(
                 rscLayerData,
                 true,
                 vlmData ->
                 {
-                    String majMin = getMajorMinor(vlmData);
-                    if (majMin != null)
+                    String identifier;
+                    if (vlmData instanceof SpdkData)
+                    {
+                        identifier = vlmData.getDevicePath();
+                    }
+                    else
+                    {
+                        identifier = getMajorMinor(vlmData);
+                    }
+
+                    if (identifier != null)
                     {
                         // cleaning up throttle caches
-                        cgroupBlkioThrottleReadBpsDeviceMap.remove(majMin);
-                        cgroupBlkioThrottleWriteBpsDeviceMap.remove(majMin);
+                        cgroupBlkioThrottleReadBpsDeviceMap.remove(identifier);
+                        cgroupBlkioThrottleWriteBpsDeviceMap.remove(identifier);
 
                         deviceMajorMinorMap.remove(vlmData);
                     }
@@ -114,25 +136,34 @@ public class SysFsHandler
     {
         for (Resource rsc : updateList)
         {
-            RscLayerObject rscLayerData = rsc.getLayerData(apiCtx);
+            AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(apiCtx);
             execForAllVlmData(
                 rscLayerData,
                 true,
                 vlmData ->
                 {
-                    String majMin = getMajorMinor(vlmData);
-                    if (majMin != null)
+                    String identifier;
+                    if (vlmData instanceof SpdkData)
+                    {
+                        identifier = vlmData.getDevicePath();
+                    }
+                    else
+                    {
+                        identifier = getMajorMinor(vlmData);
+                    }
+
+                    if (identifier != null)
                     {
                         setThrottle(
                             vlmData,
-                            majMin,
+                            identifier,
                             ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
                             cgroupBlkioThrottleReadBpsDeviceMap,
                             THROTTLE_READ_BPS_DEVICE
                         );
                         setThrottle(
                             vlmData,
-                            majMin,
+                            identifier,
                             ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE,
                             cgroupBlkioThrottleWriteBpsDeviceMap,
                             THROTTLE_WRITE_BPS_DEVICE
@@ -144,16 +175,16 @@ public class SysFsHandler
     }
 
     private void setThrottle(
-        VlmProviderObject vlmDataRef,
-        String majMinRef,
+        VlmProviderObject<Resource> vlmDataRef,
+        String identifier,
         String apiKey,
         Map<String, String> deviceThrottleMap,
         String sysFsPath
     )
         throws AccessDeniedException, InvalidKeyException, StorageException
     {
-        Volume vlm = vlmDataRef.getVolume();
-        Resource rsc = vlm.getResource();
+        Volume vlm = (Volume) vlmDataRef.getVolume();
+        Resource rsc = vlm.getAbsResource();
         ResourceDefinition rscDfn = vlm.getResourceDefinition();
         VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
@@ -171,64 +202,59 @@ public class SysFsHandler
             priorityProps.addProps(storPool.getDefinition(apiCtx).getProps(apiCtx));
         }
 
-        priorityProps.addProps(rsc.getAssignedNode().getProps(apiCtx));
+        priorityProps.addProps(rsc.getNode().getProps(apiCtx));
         priorityProps.addProps(satelliteProps);
 
         String expectedThrottle = priorityProps.getProp(
             apiKey,
             ApiConsts.NAMESPC_SYS_FS
         );
-        String knownThrottle = deviceThrottleMap.get(majMinRef);
+        String knownThrottle = deviceThrottleMap.get(identifier);
 
         if (expectedThrottle == null && knownThrottle != null)
         {
-            setSysFs(sysFsPath, majMinRef + " 0");
-            deviceThrottleMap.remove(majMinRef);
+            if (vlmDataRef instanceof SpdkData)
+            {
+                setSpdkIO(identifier, apiKey, "0");
+            }
+            else
+            {
+                setSysFs(sysFsPath, identifier + " 0");
+            }
+            deviceThrottleMap.remove(identifier);
         }
         else if (
             expectedThrottle != null &&
             (knownThrottle == null || !knownThrottle.equals(expectedThrottle))
         )
         {
-            setSysFs(sysFsPath, majMinRef + " " + expectedThrottle);
-            deviceThrottleMap.put(majMinRef, expectedThrottle);
+            if (vlmDataRef instanceof SpdkData)
+            {
+                setSpdkIO(identifier, apiKey, expectedThrottle);
+            }
+            else
+            {
+                setSysFs(sysFsPath, identifier + " " + expectedThrottle);
+            }
+            deviceThrottleMap.put(identifier, expectedThrottle);
         }
         else
         {
             errorReporter.logTrace(
-                "SysFs: '%s' for %s already has expected value of %s", sysFsPath, majMinRef, expectedThrottle
+                "SysFs: '%s' for %s already has expected value of %s", sysFsPath, identifier, expectedThrottle
             );
         }
     }
 
-    private String getMajorMinor(VlmProviderObject vlmDataRef) throws StorageException
+    private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws StorageException
     {
         String majMin = deviceMajorMinorMap.get(vlmDataRef);
         if (vlmDataRef.exists())
         {
             if (majMin == null)
             {
-                String devicePath = vlmDataRef.getDevicePath();
-                if (devicePath != null)
-                {
-                    OutputData outputData = Commands.genericExecutor(
-                        extCmdFactory.create(),
-                        new String[] {
-                            "stat",
-                            "-L", // follow links
-                            "-c", "%t:%T",
-                            devicePath
-                        },
-                        "Failed to find major:minor of device " + devicePath,
-                        "Failed to find major:minor of device " + devicePath
-                    );
-                    majMin = new String(outputData.stdoutData).trim();
-                    String[] split = majMin.split(":");
-                    String major = Integer.toString(Integer.parseInt(split[0], BASE_HEX));
-                    String minor = Long.toString(Long.parseLong(split[1], BASE_HEX));
-                    majMin = major + ":" + minor;
-                    deviceMajorMinorMap.put(vlmDataRef, majMin);
-                }
+                majMin = queryMajMin(extCmdFactory, vlmDataRef.getDevicePath());
+                deviceMajorMinorMap.put(vlmDataRef, majMin);
             }
         }
         else
@@ -240,19 +266,19 @@ public class SysFsHandler
     }
 
     private void execForAllVlmData(
-        RscLayerObject rscLayerData,
+        AbsRscLayerObject<Resource> rscLayerData,
         boolean recursive,
-        Executor<VlmProviderObject> consumer
+        Executor<VlmProviderObject<Resource>> consumer
     )
         throws StorageException, AccessDeniedException, InvalidKeyException
     {
-        for (VlmProviderObject vlmData : rscLayerData.getVlmLayerObjects().values())
+        for (VlmProviderObject<Resource> vlmData : rscLayerData.getVlmLayerObjects().values())
         {
             consumer.exec(vlmData);
         }
         if (recursive)
         {
-            for (RscLayerObject childRscData : rscLayerData.getChildren())
+            for (AbsRscLayerObject<Resource> childRscData : rscLayerData.getChildren())
             {
                 execForAllVlmData(childRscData, recursive, consumer);
             }
@@ -272,6 +298,95 @@ public class SysFsHandler
         }
     }
 
+    private void setSpdkIO(String path, String key, String data) throws StorageException
+    {
+            String parameter = SPDK_THROTTLE_READ_MBPS;
+            if (key == ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE)
+            {
+                parameter = SPDK_THROTTLE_WRITE_MBPS;
+            }
+
+            Commands.genericExecutor(
+                    extCmdFactory.create(),
+                    new String[]
+                    {
+                            SPDK_RPC_SCRIPT,
+                            "set_bdev_qos_limit",
+                            path.split(SPDK_PATH_PREFIX)[1],
+                            parameter,
+                            String.valueOf(Integer.valueOf(data) / 1024 / 1024) // bytes to megabytes
+                    },
+                    "Failed to set " + key + " of device " + path,
+                    "Failed to set " + key + " of device " + path
+            );
+    }
+
+    public static String queryMajMin(ExtCmdFactory extCmdFactory, String devicePath) throws StorageException
+    {
+        String majMin = null;
+        if (devicePath != null)
+        {
+            OutputData outputData = Commands.genericExecutor(
+                extCmdFactory.create(),
+                new String[]
+                {
+                    "stat",
+                    "-L", // follow links
+                    "-c", "%t:%T",
+                    devicePath
+                },
+                "Failed to find major:minor of device " + devicePath,
+                "Failed to find major:minor of device " + devicePath
+            );
+            majMin = new String(outputData.stdoutData).trim();
+            String[] split = majMin.split(":");
+            String major = Integer.toString(Integer.parseInt(split[0], BASE_HEX));
+            String minor = Long.toString(Long.parseLong(split[1], BASE_HEX));
+            majMin = major + ":" + minor;
+        }
+        return majMin;
+    }
+
+    public static Map<String, String> queryUevent(ExtCmdFactory extCmdFactory, String majMin) throws StorageException
+    {
+        OutputData outputData = Commands.genericExecutor(
+            extCmdFactory.create(),
+            new String[]
+            {
+                "cat",
+                "/sys/dev/block/" + majMin + "/uevent"
+            },
+            "Failed to query uevent of device '" + majMin + "'",
+            "Failed to query uevent of device '" + majMin + "'"
+        );
+        String outStr = new String(outputData.stdoutData);
+        Map<String, String> ret = new LinkedHashMap<>();
+
+        String[] lines = outStr.split("\n");
+        for (String line : lines)
+        {
+            String[] parts = line.trim().split("=");
+            ret.put(parts[0], parts[1]);
+        }
+
+        return ret;
+    }
+
+    public static boolean queryDaxSupport(ExtCmdFactory extCmdFactoryRef, String block) throws StorageException
+    {
+        OutputData outputData = Commands.genericExecutor(
+            extCmdFactoryRef.create(),
+            new String[]
+            {
+                "cat",
+                "/sys/block/" + block + "/queue/dax"
+            },
+            "Failed to query device '" + block + "' for dax support",
+            "Failed to query device '" + block + "' for dax support"
+        );
+        String out = new String(outputData.stdoutData).trim();
+        return out.equals("1");
+    }
 
     private interface Executor<T>
     {

@@ -49,7 +49,7 @@ public class CtrlSatelliteConnectionNotifier
         return Flux.merge(
             checkResourceDefinitionConnected(rsc.getDefinition(), context),
             notifyListeners(
-                "connecting to node '" + rsc.getAssignedNode().getName() + "' for resource '" + rscDfn.getName() + "'",
+                "connecting to node '" + rsc.getNode().getName() + "' for resource '" + rscDfn.getName() + "'",
                 connectionListener -> connectionListener.resourceConnected(rsc)
             )
         );
@@ -64,7 +64,7 @@ public class CtrlSatelliteConnectionNotifier
             while (rscIter.hasNext())
             {
                 Resource rsc = rscIter.next();
-                if (rsc.getAssignedNode().getPeer(apiCtx).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
+                if (rsc.getNode().getPeer(apiCtx).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
                 {
                     allOnline = false;
                     break;

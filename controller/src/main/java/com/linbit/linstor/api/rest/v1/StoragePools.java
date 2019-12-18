@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
@@ -33,6 +34,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -181,7 +183,7 @@ public class StoragePools
 
                     resp = Response
                         .status(Response.Status.NOT_FOUND)
-                        .entity(ApiCallRcConverter.toJSON(apiCallRc))
+                        .entity(ApiCallRcRestUtils.toJSON(apiCallRc))
                         .type(MediaType.APPLICATION_JSON)
                         .build();
                 }
@@ -225,66 +227,62 @@ public class StoragePools
                 storPoolData.storage_pool_name,
                 LinstorParsingUtils.asProviderKind(storPoolData.provider_kind),
                 storPoolData.free_space_mgr_name,
-                storPoolData.props
+                storPoolData.props,
+                Flux.empty()
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_STOR_POOL, request));
 
             requestHelper.doFlux(
                 asyncResponse,
-                ApiCallRcConverter.mapToMonoResponse(responses, Response.Status.CREATED)
+                ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
             );
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 
     @PUT
     @Path("{storPoolName}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response modifyStorPool(
+    public void modifyStorPool(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("storPoolName") String storPoolName,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL, request), () ->
-            {
-                JsonGenTypes.StoragePoolDefinitionModify modifyData = objectMapper
-                    .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
+        JsonGenTypes.StoragePoolDefinitionModify modifyData = objectMapper
+            .readValue(jsonData, JsonGenTypes.StoragePoolDefinitionModify.class);
 
-                return ApiCallRcConverter.toResponse(
-                    ctrlStorPoolApiCallHandler.modifyStorPool(
-                        null,
-                        nodeName,
-                        storPoolName,
-                        modifyData.override_props,
-                        new HashSet<>(modifyData.delete_props),
-                        new HashSet<>(modifyData.delete_namespaces)
-                    ),
-                    Response.Status.OK
-                );
-            },
-            true
-        );
+        Flux<ApiCallRc> flux = ctrlStorPoolApiCallHandler.modify(
+            null,
+            nodeName,
+            storPoolName,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces)
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE
     @Path("{storPoolName}")
-    public Response deleteStorPool(
+    public void deleteStorPool(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("storPoolName") String storPoolName
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request), () ->
-                ApiCallRcConverter.toResponse(
-                    ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName),
-                    Response.Status.OK
-                ),
-            true
-        );
+        Flux<ApiCallRc> flux = ctrlStorPoolApiCallHandler.deleteStorPool(nodeName, storPoolName)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 }

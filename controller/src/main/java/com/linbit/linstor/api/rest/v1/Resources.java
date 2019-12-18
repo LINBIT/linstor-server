@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
@@ -126,6 +127,21 @@ public class Resources
 
         ResourceWithPayload(JsonGenTypes.ResourceCreate rsc, String rscName)
         {
+            if (rsc.resource.flags.contains(ApiConsts.FLAG_DISKLESS))
+            {
+                for (String layer : rsc.layer_list)
+                {
+                    if (layer.equalsIgnoreCase("drbd"))
+                    {
+                        rsc.resource.flags.add(ApiConsts.FLAG_DRBD_DISKLESS);
+                    }
+                    if (layer.equalsIgnoreCase("nvme"))
+                    {
+                        rsc.resource.flags.add(ApiConsts.FLAG_NVME_INITIATOR);
+                    }
+                }
+            }
+
             rscPayload = rsc;
             rscPayload.resource.name = rscName;
         }
@@ -171,11 +187,11 @@ public class Resources
             Flux<ApiCallRc> flux = ctrlRscCrtApiCallHandler.createResource(rscWithPayloadApiList)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_RSC, request));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux, Response.Status.CREATED));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 
@@ -202,35 +218,35 @@ public class Resources
         }
         catch (IOException ioExc)
         {
-            ApiCallRcConverter.handleJsonParseException(ioExc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
 
     @PUT
     @Path("{nodeName}")
-    public Response modifyResource(
+    public void modifyResource(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("rscName") String rscName,
         String jsonData
     )
+        throws IOException
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_MOD_RSC, request), () ->
-        {
-            JsonGenTypes.ResourceModify modifyData = objectMapper
-                .readValue(jsonData, JsonGenTypes.ResourceModify.class);
-            return ApiCallRcConverter.toResponse(
-                ctrlApiCallHandler.modifyRsc(
-                    null,
-                    nodeName,
-                    rscName,
-                    modifyData.override_props,
-                    new HashSet<>(modifyData.delete_props),
-                    new HashSet<>(modifyData.delete_namespaces)
-                ),
-                Response.Status.OK
-            );
-        }, true);
+        JsonGenTypes.ResourceModify modifyData = objectMapper
+            .readValue(jsonData, JsonGenTypes.ResourceModify.class);
+
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyRsc(
+            null,
+            nodeName,
+            rscName,
+            modifyData.override_props,
+            new HashSet<>(modifyData.delete_props),
+            new HashSet<>(modifyData.delete_namespaces)
+        )
+        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @DELETE
@@ -245,7 +261,7 @@ public class Resources
         Flux<ApiCallRc> flux = ctrlRscDeleteApiCallHandler.deleteResource(nodeName, rscName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_RSC, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 
     @PUT
@@ -278,7 +294,7 @@ public class Resources
                 true)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 
     @PUT
@@ -311,7 +327,7 @@ public class Resources
                 false)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 
     @PUT
@@ -346,6 +362,6 @@ public class Resources
             false)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 }

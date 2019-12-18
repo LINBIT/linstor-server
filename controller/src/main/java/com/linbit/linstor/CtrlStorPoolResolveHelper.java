@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.compat.CompatibilityUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -19,7 +20,9 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
@@ -32,6 +35,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -98,7 +102,7 @@ public class CtrlStorPoolResolveHelper
             Props vlmDfnProps = ctrlPropsHelper.getProps(accCtx, vlmDfn);
             Props rscDfnProps = ctrlPropsHelper.getProps(accCtx, rsc.getDefinition());
             Props rscGrpProps = ctrlPropsHelper.getProps(accCtx, rsc.getDefinition().getResourceGroup());
-            Props nodeProps = ctrlPropsHelper.getProps(accCtx, rsc.getAssignedNode());
+            Props nodeProps = ctrlPropsHelper.getProps(accCtx, rsc.getNode());
 
             PriorityProps vlmPrioProps = new PriorityProps(
                 rscProps, vlmDfnProps, rscDfnProps, rscGrpProps, nodeProps
@@ -115,7 +119,7 @@ public class CtrlStorPoolResolveHelper
                 }
                 else
                 {
-                    storPool = rsc.getAssignedNode().getStorPool(
+                    storPool = rsc.getNode().getStorPool(
                         apiCtx,
                         LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                     );
@@ -129,7 +133,7 @@ public class CtrlStorPoolResolveHelper
                 {
                     storPoolNameStr = InternalApiConsts.DEFAULT_STOR_POOL_NAME;
                 }
-                storPool = rsc.getAssignedNode().getStorPool(
+                storPool = rsc.getNode().getStorPool(
                     apiCtx,
                     LinstorParsingUtils.asStorPoolName(storPoolNameStr)
                 );
@@ -139,12 +143,21 @@ public class CtrlStorPoolResolveHelper
                     if (storPool.getDeviceProviderKind().hasBackingDevice())
                     {
                         // If the storage pool has backing storage, check that it is of the same kind as the peers
-                        checkSameKindAsPeers(vlmDfn, rsc.getAssignedNode().getName(), storPool);
+                        checkSameKindAsPeers(vlmDfn, rsc.getNode().getName(), storPool);
                     }
                     else
                     {
-                        responses.addEntry(makeFlaggedDisklessWarning(storPool));
-                        rsc.getStateFlags().enableFlags(apiCtx, Resource.Flags.DISKLESS);
+                        List<DeviceLayerKind> layerList = LayerRscUtils.getLayerStack(rsc, accCtx);
+                        Resource.Flags flag = CompatibilityUtils.mapDisklessFlagToNvmeOrDrbd(layerList);
+                        if (flag.equals(Resource.Flags.DRBD_DISKLESS))
+                        {
+                            responses.addEntry(makeFlaggedDrbdDisklessWarning(storPool));
+                        }
+                        else
+                        {
+                            responses.addEntry(makeFlaggedNvmeInitiatorWarning(storPool));
+                        }
+                        rsc.getStateFlags().enableFlags(apiCtx, flag);
                     }
                 }
             }
@@ -173,7 +186,8 @@ public class CtrlStorPoolResolveHelper
 
         for (Resource peerRsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
         {
-            if (!peerRsc.isDiskless(apiCtx) && !peerRsc.getAssignedNode().getName().equals(nodeName))
+            boolean isDiskless = peerRsc.isDrbdDiskless(apiCtx) || peerRsc.isNvmeInitiator(apiCtx);
+            if (!isDiskless && !peerRsc.getNode().getName().equals(nodeName))
             {
                 Volume peerVlm = peerRsc.getVolume(vlmDfn.getVolumeNumber());
                 if (peerVlm != null)
@@ -222,7 +236,7 @@ public class CtrlStorPoolResolveHelper
                 .entryBuilder(FAIL_NOT_FOUND_DFLT_STOR_POOL, "The storage pool '" + storPoolNameStr + "' " +
                     "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
                     "for volume number '" + vlmDfn.getVolumeNumber().value + "' " +
-                    "is not deployed on node '" + rsc.getAssignedNode().getName().displayValue + "'.")
+                    "is not deployed on node '" + rsc.getNode().getName().displayValue + "'.")
                 .setDetails("The resource which should be deployed had at least one volume definition " +
                     "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
                     "tried to automatically create. " +
@@ -236,17 +250,33 @@ public class CtrlStorPoolResolveHelper
         }
     }
 
-    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedDisklessWarning(StorPool storPool)
+    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedNvmeInitiatorWarning(StorPool storPool)
+    {
+        return makeFlaggedDiskless(storPool, "nvme initiator");
+    }
+
+    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedDrbdDisklessWarning(StorPool storPool)
+    {
+        return makeFlaggedDiskless(storPool, "drbd diskless");
+    }
+
+    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedDiskless(StorPool storPool, String type)
     {
         return ApiCallRcImpl
             .entryBuilder(
                 MASK_WARN | MASK_STOR_POOL,
-                "Resource will be automatically flagged diskless."
+                "Resource will be automatically flagged as " + type
             )
-            .setCause(String.format("Used storage pool '%s' is diskless, " +
-                "but resource was not flagged diskless", storPool.getName()))
+            .setCause(
+                String.format(
+                    "Used storage pool '%s' is diskless, but resource was not flagged %s",
+                    storPool.getName(),
+                    type
+                )
+            )
             .build();
     }
+
 
     private ApiCallRcImpl.ApiCallRcEntry makeInvalidDriverKindError(
         DeviceProviderKind driverKind,

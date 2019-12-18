@@ -162,7 +162,7 @@ public class CmdDisplayResource extends BaseDebugCmd
                     {
                         Resource rsc = rscIter.next();
                         ObjectProtection rscProt = rsc.getObjProt();
-                        Node peerNode = rsc.getAssignedNode();
+                        Node peerNode = rsc.getNode();
                         NodeName peerNodeName = peerNode.getName();
 
                         treeBuilder.branch(peerNodeName.displayValue)

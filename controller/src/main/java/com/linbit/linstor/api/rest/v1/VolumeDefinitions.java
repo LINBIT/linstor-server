@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
@@ -159,7 +160,7 @@ public class VolumeDefinitions
             vlmList.add(new VlmDfnCreationWithPayload(vlmDfnData));
             ApiCallRc apiCallRc = ctrlApiCallHandler.createVlmDfns(rscName, vlmList);
 
-            return ApiCallRcConverter.toResponse(apiCallRc, Response.Status.CREATED);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
     }
 
@@ -188,11 +189,11 @@ public class VolumeDefinitions
                 new HashSet<>(vlmDfnData.delete_props))
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN, request));
 
-            requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
         }
         catch (IOException exc)
         {
-            ApiCallRcConverter.handleJsonParseException(exc, asyncResponse);
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
         }
     }
 
@@ -208,6 +209,6 @@ public class VolumeDefinitions
         Flux<ApiCallRc> flux = ctrlVlmDfnDeleteApiCallHandler.deleteVolumeDefinition(rscName, vlmNr)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_VLM_DFN, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 }

@@ -15,6 +15,7 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -36,10 +37,13 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.utils.DmStatCommands;
 import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
+import com.linbit.linstor.storage.utils.SpdkCommands;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
+
+import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import javax.inject.Provider;
 
@@ -57,7 +61,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmData> implements DeviceProvider
+public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmData<Resource>, LAYER_SNAP_DATA extends AbsStorageVlmData<Snapshot>>
+    implements DeviceProvider
 {
     private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 500;
     public static final long SIZE_OF_NOT_FOUND_STOR_POOL = -1;
@@ -138,7 +143,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     @SuppressWarnings("unchecked")
     @Override
-    public void prepare(List<VlmProviderObject> rawVlmDataList, List<SnapshotVolume> snapVlms)
+    public void prepare(List<VlmProviderObject<Resource>> rawVlmDataList, List<VlmProviderObject<Snapshot>> rawSnapVlms)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         clearCache(false);
@@ -146,12 +151,15 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         Object intentionalTypeEreasure = rawVlmDataList;
         List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) intentionalTypeEreasure;
 
-        updateVolumeAndSnapshotStates(snapVlms, vlmDataList);
+        intentionalTypeEreasure = rawSnapVlms;
+        List<LAYER_SNAP_DATA> snapVlmDatList = (List<LAYER_SNAP_DATA>) intentionalTypeEreasure;
+
+        updateVolumeAndSnapshotStates(vlmDataList, snapVlmDatList);
 
         prepared = true;
     }
 
-    private void updateVolumeAndSnapshotStates(List<SnapshotVolume> snapVlms, List<LAYER_DATA> vlmDataList)
+    private void updateVolumeAndSnapshotStates(List<LAYER_DATA> vlmDataList, List<LAYER_SNAP_DATA> snapVlms)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         infoListCache.putAll(getInfoListImpl(vlmDataList, snapVlms));
@@ -162,8 +170,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     @Override
     @SuppressWarnings("unchecked")
     public void process(
-        List<VlmProviderObject> rawVlmDataList,
-        List<SnapshotVolume> snapshotVlms,
+        List<VlmProviderObject<Resource>> rawVlmDataList,
+        List<VlmProviderObject<Snapshot>> snapshotVlms,
         ApiCallRcImpl apiCallRc
     )
         throws AccessDeniedException, DatabaseException, StorageException
@@ -175,13 +183,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         Object intentionalTypeEreasure = rawVlmDataList;
         List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) intentionalTypeEreasure;
 
-        Map<Boolean, List<SnapshotVolume>> groupedSnapshotVolumesByDeletingFlag = snapshotVlms.stream()
+        Map<Boolean, List<VlmProviderObject<Snapshot>>> groupedSnapshotVolumesByDeletingFlag = snapshotVlms.stream()
             .collect(
                 Collectors.partitioningBy(
                     snapVlm -> AccessUtils.execPrivileged(
                         // explicit cast to make eclipse compiler happy
                         (ExceptionThrowingSupplier<Boolean, AccessDeniedException>)
-                        () -> snapVlm.getSnapshot().getFlags().isSet(storDriverAccCtx, Snapshot.Flags.DELETE)
+                        () -> snapVlm.getVolume().getAbsResource().getFlags()
+                            .isSet(storDriverAccCtx, Snapshot.Flags.DELETE)
                     )
                 )
             );
@@ -202,8 +211,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 vlmData
             );
 
-            boolean vlmShouldExist = !vlmData.getVolume().getFlags().isSet(storDriverAccCtx, Volume.Flags.DELETE);
-            vlmShouldExist &= !vlmData.getRscLayerObject().getResource().getStateFlags().isSet(
+            boolean vlmShouldExist = !((Volume) vlmData.getVolume()).getFlags().isSet(
+                storDriverAccCtx,
+                Volume.Flags.DELETE
+            );
+            vlmShouldExist &= !vlmData.getRscLayerObject().getAbsResource().getStateFlags().isSet(
                 storDriverAccCtx,
                 Resource.Flags.DISK_REMOVING
             );
@@ -220,7 +232,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 else
                 {
                     Size sizeState = vlmData.getSizeState();
-                    if (vlmData.getVolume().getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
+                    if (
+                        ((Volume) vlmData.getVolume()).getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
                         (sizeState.equals(VlmProviderObject.Size.TOO_LARGE) ||
                         sizeState.equals(VlmProviderObject.Size.TOO_SMALL))
                     )
@@ -257,16 +270,20 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
          * before the resource-deletion, the snapshot will never gets deleted because the resource-deletion
          * will fail before the snapshot-deletion-attempt.
          */
-        // FIXME RAID
-        deleteSnapshots("", groupedSnapshotVolumesByDeletingFlag.get(true), apiCallRc);
+
+        // intentional type erasure
+        Object typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(true);
+        deleteSnapshots((List<LAYER_SNAP_DATA>) typeErasedList, apiCallRc);
 
         createVolumes(vlmsToCreate, apiCallRc);
         resizeVolumes(vlmsToResize, apiCallRc);
         deleteVolumes(vlmsToDelete, apiCallRc);
 
+        // intentional type erasure
+        typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(false);
         takeSnapshots(
             volumesLut,
-            groupedSnapshotVolumesByDeletingFlag.get(false),
+            (List<LAYER_SNAP_DATA>) typeErasedList,
             apiCallRc
         );
 
@@ -369,7 +386,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 DmStatCommands.create(extCmdFactory.create(), devicePath);
             }
 
-            if (!snapRestore)
+            if (!snapRestore && !devicePath.startsWith(SPDK_PATH_PREFIX))
             {
                 wipeHandler.quickWipe(devicePath);
             }
@@ -438,7 +455,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
             deleteLvImpl(vlmData, lvId);
 
-            if (!vlmData.getVolume().getResource().getStateFlags().isSet(
+            if (!vlmData.getVolume().getAbsResource().getStateFlags().isSet(
                 storDriverAccCtx,
                 Resource.Flags.DISK_REMOVING)
             )
@@ -448,15 +465,15 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
     }
 
-    private void deleteSnapshots(String rscNameSuffix, List<SnapshotVolume> snapVlms, ApiCallRcImpl apiCallRc)
+    private void deleteSnapshots(List<LAYER_SNAP_DATA> snapVlmsDataList, ApiCallRcImpl apiCallRc)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        for (SnapshotVolume snapVlm : snapVlms)
+        for (LAYER_SNAP_DATA snapVlm : snapVlmsDataList)
         {
             errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
             if (snapshotExists(snapVlm))
             {
-                deleteSnapshot(rscNameSuffix, snapVlm);
+                deleteSnapshot(snapVlm);
             }
             else
             {
@@ -469,19 +486,21 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     private void takeSnapshots(
         Map<Pair<String, VolumeNumber>, LAYER_DATA> vlmDataLut,
-        List<SnapshotVolume> snapVlms,
+        List<LAYER_SNAP_DATA> listRef,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        for (SnapshotVolume snapVlm : snapVlms)
+        for (LAYER_SNAP_DATA snapVlm : listRef)
         {
-            if (snapVlm.getSnapshot().getTakeSnapshot(storDriverAccCtx))
+            if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
             {
-                String rscName = snapVlm.getResourceName().displayValue;
-                String rscNameSuffix = ""; // FIXME: RAID
-
-                LAYER_DATA vlmData = vlmDataLut.get(new Pair<>(rscName + rscNameSuffix, snapVlm.getVolumeNumber()));
+                LAYER_DATA vlmData = vlmDataLut.get(
+                    new Pair<>(
+                        snapVlm.getRscLayerObject().getSuffixedResourceName(),
+                        snapVlm.getVlmNr()
+                    )
+                );
                 if (vlmData == null)
                 {
                     throw new StorageException(
@@ -507,7 +526,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         for (LAYER_DATA vlmData : vlmsToCheckForRollback)
         {
-            String rollbackTargetSnapshotName = vlmData.getVolume().getResource()
+            String rollbackTargetSnapshotName = vlmData.getVolume().getAbsResource()
                 .getProps(storDriverAccCtx).map()
                 .get(ApiConsts.KEY_RSC_ROLLBACK_TARGET);
             if (rollbackTargetSnapshotName != null)
@@ -600,11 +619,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
     }
 
-    private void addSnapCreatedMsg(SnapshotVolume snapVlm, ApiCallRcImpl apiCallRc)
+    private void addSnapCreatedMsg(LAYER_SNAP_DATA snapVlmData, ApiCallRcImpl apiCallRc)
     {
-        String snapName = snapVlm.getSnapshotName().displayValue;
-        String rscName = snapVlm.getResourceName().displayValue;
-        int vlmNr = snapVlm.getVolumeNumber().value;
+        Snapshot snap = snapVlmData.getVolume().getAbsResource();
+        String snapName = snap.getSnapshotName().displayValue;
+        String rscName = snap.getResourceName().displayValue;
+        int vlmNr = snapVlmData.getVlmNr().value;
+
         apiCallRc.addEntry(
             ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_SNAPSHOT | ApiConsts.CREATED,
@@ -623,8 +644,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
     }
 
-    private void addSnapDeletedMsg(SnapshotVolume snapVlm, ApiCallRcImpl apiCallRc)
+    private void addSnapDeletedMsg(LAYER_SNAP_DATA snapVlmData, ApiCallRcImpl apiCallRc)
     {
+        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
         String snapName = snapVlm.getSnapshotName().displayValue;
         String rscName = snapVlm.getResourceName().displayValue;
         int vlmNr = snapVlm.getVolumeNumber().value;
@@ -678,7 +700,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         return restoreVlmName;
     }
 
-    private String computeRestoreFromSnapshotName(Volume vlm)
+    private String computeRestoreFromSnapshotName(AbsVolume<Resource> vlm)
         throws AccessDeniedException
     {
         String restoreSnapshotName;
@@ -699,6 +721,20 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void waitUntilDeviceCreated(String devicePath, long waitTimeoutAfterCreateMillis)
+        throws StorageException
+    {
+        if (!devicePath.startsWith(SPDK_PATH_PREFIX))
+        {
+            waitUntilNonSpdkCreated(devicePath, waitTimeoutAfterCreateMillis);
+        }
+        else
+        {
+            // wait not required, just confirming LV existence
+            SpdkCommands.lvsByName(extCmdFactory.create(), devicePath.split(SPDK_PATH_PREFIX)[1]);
+        }
+    }
+
+    private void waitUntilNonSpdkCreated(String devicePath, long waitTimeoutAfterCreateMillis)
         throws StorageException
     {
         final Object syncObj = new Object();
@@ -767,7 +803,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     @SuppressWarnings("unchecked")
     @Override
-    public void updateGrossSize(VlmProviderObject vlmData) throws AccessDeniedException, DatabaseException
+    public void updateGrossSize(VlmProviderObject<Resource> vlmData)
+        throws AccessDeniedException, DatabaseException
     {
         // usable size was just updated (set) by the layer above us. copy that, so we can
         // update it again with the actual usable size when we are finished
@@ -775,7 +812,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @Override
-    public void updateAllocatedSize(VlmProviderObject vlmDataRef)
+    public void updateAllocatedSize(VlmProviderObject<Resource> vlmDataRef)
         throws AccessDeniedException, DatabaseException, StorageException
     {
         LAYER_DATA vlmData = (LAYER_DATA) vlmDataRef;
@@ -794,7 +831,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected abstract String getStorageName(StorPool storPoolRef) throws AccessDeniedException, StorageException;
 
     @SuppressWarnings("unused")
-    protected void createSnapshot(LAYER_DATA vlmData, SnapshotVolume snapVlm)
+    protected void createSnapshot(LAYER_DATA vlmData, LAYER_SNAP_DATA snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
@@ -808,14 +845,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @SuppressWarnings("unused")
-    protected void deleteSnapshot(String rscNameSuffix, SnapshotVolume snapVlm)
+    protected void deleteSnapshot(LAYER_SNAP_DATA snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
     @SuppressWarnings("unused")
-    protected boolean snapshotExists(SnapshotVolume snapVlm)
+    protected boolean snapshotExists(LAYER_SNAP_DATA snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
@@ -834,11 +871,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     protected abstract Map<String, INFO> getInfoListImpl(
         List<LAYER_DATA> vlmDataList,
-        List<SnapshotVolume> snapVlmsRef
+        List<LAYER_SNAP_DATA> snapVlmsRef
     )
         throws StorageException, AccessDeniedException, DatabaseException;
 
-    protected abstract void updateStates(List<LAYER_DATA> vlmDataList, Collection<SnapshotVolume> snapVlms)
+    protected abstract void updateStates(List<LAYER_DATA> vlmDataList, List<LAYER_SNAP_DATA> snapVlms)
         throws StorageException, AccessDeniedException, DatabaseException;
 
     protected abstract void createLvImpl(LAYER_DATA vlmData)
@@ -858,6 +895,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
     }
 
+    protected String asSnapLvIdentifier(LAYER_SNAP_DATA snapVlmData)
+    {
+        return asSnapLvIdentifier(
+            snapVlmData.getRscLayerObject().getResourceNameSuffix(),
+            ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotVolumeDefinition()
+        );
+    }
+
     protected String asLvIdentifier(String rscNameSuffix, VolumeDefinition vlmDfn)
     {
         return getMigrationId(vlmDfn).orElse(
@@ -866,6 +911,16 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 rscNameSuffix,
                 vlmDfn.getVolumeNumber()
             )
+        );
+    }
+
+    protected String asSnapLvIdentifier(String rscNameSuffix, SnapshotVolumeDefinition snapVlmDfn)
+    {
+        return asSnapLvIdentifier(
+            snapVlmDfn.getResourceName(),
+            rscNameSuffix,
+            snapVlmDfn.getSnapshotName(),
+            snapVlmDfn.getVolumeNumber()
         );
     }
 
@@ -884,6 +939,28 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         ResourceName resourceName,
         String rscNameSuffix,
         VolumeNumber volumeNumber
+    );
+
+    protected String asSnapLvIdentifier(
+        ResourceName rscName,
+        String rscNameSuffix,
+        SnapshotName snapName,
+        VolumeNumber vlmNr
+    )
+    {
+        return asSnapLvIdentifierRaw(
+            rscName.displayValue,
+            rscNameSuffix,
+            snapName.displayValue,
+            vlmNr.value
+        );
+    }
+
+    protected abstract String asSnapLvIdentifierRaw(
+        String rscName,
+        String rscNameSuffix,
+        String snapName,
+        int vlmNr
     );
 
     protected abstract String getDevicePath(String storageName, String lvId);

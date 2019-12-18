@@ -247,7 +247,7 @@ public class WhitelistProps
             Property rule = rules.get(lsObj).get(key);
             if (rule != null)
             {
-                validProp = rule.isValid(value);
+                validProp = value == null || rule.isValid(value); // value is null if user tries to delete it
                 if (!validProp && log)
                 {
                     errorReporter.logWarning(

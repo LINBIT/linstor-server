@@ -5,10 +5,10 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -150,7 +150,7 @@ public class MkfsUtils
         if (rsc.getLayerData(wrkCtx).checkFileSystem())
         {
             rsc.getLayerData(wrkCtx).disableCheckFileSystem();
-            for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
+            for (AbsVolume<Resource> vlm : rsc.streamVolumes().collect(Collectors.toList()))
             {
                 VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
                 ResourceDefinition rscDfn = vlm.getResourceDefinition();
@@ -166,7 +166,7 @@ public class MkfsUtils
                 final String fsType = prioProps.getProp(ApiConsts.KEY_FS_TYPE, ApiConsts.NAMESPC_FILESYSTEM);
                 if (fsType != null)
                 {
-                    VlmProviderObject vlmProviderObject = rsc.getLayerData(wrkCtx).getVlmProviderObject(
+                    VlmProviderObject<Resource> vlmProviderObject = rsc.getLayerData(wrkCtx).getVlmProviderObject(
                         vlmDfn.getVolumeNumber()
                     );
                     final String devicePath = vlmProviderObject.getDevicePath();

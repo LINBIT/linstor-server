@@ -7,8 +7,9 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -16,29 +17,36 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.locks.LockGuardFactory;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlStorPoolApiCallHandler
@@ -46,32 +54,38 @@ public class CtrlStorPoolApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlStorPoolApiCallHandler(
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
-    public ApiCallRc modifyStorPool(
+    public Flux<ApiCallRc> modify(
         UUID storPoolUuid,
         String nodeNameStr,
         String storPoolNameStr,
@@ -80,12 +94,41 @@ public class CtrlStorPoolApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolContext(
             ApiOperation.makeModifyOperation(),
             nodeNameStr,
             storPoolNameStr
         );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Modify storage-pool",
+                lockGuardFactory.buildDeferred(WRITE, NODES_MAP, STOR_POOL_DFN_MAP),
+                () -> modifyInTransaction(
+                    storPoolUuid,
+                    nodeNameStr,
+                    storPoolNameStr,
+                    overrideProps,
+                    deletePropKeys,
+                    deletePropNamespaces,
+                    context
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> modifyInTransaction(
+        UUID storPoolUuid,
+        String nodeNameStr,
+        String storPoolNameStr,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespaces,
+        ResponseContext context
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
 
         try
         {
@@ -121,7 +164,7 @@ public class CtrlStorPoolApiCallHandler
                 props,
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
-            ctrlPropsHelper.remove(props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.remove(LinStorObject.STORAGEPOOL, props, deletePropKeys, deletePropNamespaces);
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
@@ -133,25 +176,49 @@ public class CtrlStorPoolApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
+            responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
-            responseConverter.addWithDetail(
-                responses, context, ctrlSatelliteUpdater.updateSatellite(storPool));
+
+            flux = ctrlSatelliteUpdateCaller.updateSatellite(storPool);
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return responses;
+        return Flux.<ApiCallRc>just(apiCallRcs).concatWith(flux);
     }
 
-    public ApiCallRc deleteStorPool(
+    public Flux<ApiCallRc> deleteStorPool(
         String nodeNameStr,
         String storPoolNameStr
     )
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResponseContext context = makeStorPoolContext(
+            ApiOperation.makeModifyOperation(),
+            nodeNameStr,
+            storPoolNameStr
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Delete storage-pool",
+                lockGuardFactory.buildDeferred(WRITE, NODES_MAP, STOR_POOL_DFN_MAP),
+                () -> deleteStorPoolInTransaction(
+                    nodeNameStr,
+                    storPoolNameStr
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    public Flux<ApiCallRc> deleteStorPoolInTransaction(
+        String nodeNameStr,
+        String storPoolNameStr
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         ResponseContext context = makeStorPoolContext(
             ApiOperation.makeDeleteOperation(),
             nodeNameStr,
@@ -185,15 +252,15 @@ public class CtrlStorPoolApiCallHandler
                     .build()
                 );
             }
-            Collection<VlmProviderObject> volumes = getVolumes(storPool);
+            Collection<VlmProviderObject<Resource>> volumes = getVolumes(storPool);
             if (!volumes.isEmpty())
             {
                 StringBuilder volListSb = new StringBuilder();
-                for (VlmProviderObject vlmObj : volumes)
+                for (VlmProviderObject<Resource> vlmObj : volumes)
                 {
-                    Resource rsc = vlmObj.getVolume().getResource();
+                    Resource rsc = vlmObj.getVolume().getAbsResource();
                     volListSb.append("\n   Node name: '")
-                         .append(rsc.getAssignedNode().getName().displayValue)
+                         .append(rsc.getNode().getName().displayValue)
                          .append("', resource name: '")
                          .append(rsc.getDefinition().getName().displayValue)
                          .append("', volume number: ")
@@ -221,32 +288,27 @@ public class CtrlStorPoolApiCallHandler
             else
             {
                 UUID storPoolUuid = storPool.getUuid(); // cache storpool uuid to avoid access deleted storpool
-                StorPoolName storPoolName = storPool.getName();
-                Node node = storPool.getNode();
+                final Node storPoolNode = storPool.getNode();
                 delete(storPool);
                 ctrlTransactionHelper.commit();
 
-                responseConverter.addWithDetail(
-                    responses,
-                    context,
-                    ctrlSatelliteUpdater.updateSatellite(node, storPoolName, storPoolUuid)
-                );
-
-                responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
+                responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultDeletedEntry(
                     storPoolUuid, getStorPoolDescription(nodeNameStr, storPoolNameStr)));
+
+                flux = ctrlSatelliteUpdateCaller.updateSatellite(storPoolUuid, storPoolNameStr, storPoolNode);
             }
         }
         catch (Exception | ImplementationError exc)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            apiCallRcs = responseConverter.reportException(peer.get(), context, exc);
         }
 
-        return responses;
+        return Flux.<ApiCallRc>just(apiCallRcs).concatWith(flux);
     }
 
-    private Collection<VlmProviderObject> getVolumes(StorPool storPool)
+    private Collection<VlmProviderObject<Resource>> getVolumes(StorPool storPool)
     {
-        Collection<VlmProviderObject> volumes;
+        Collection<VlmProviderObject<Resource>> volumes;
         try
         {
             volumes = storPool.getVolumes(peerAccCtx.get());

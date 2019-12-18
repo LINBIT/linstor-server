@@ -1,9 +1,11 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -35,6 +37,7 @@ import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass.IntSnapsh
 import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgDeleteDevicePoolOuterClass.MsgDeleteDevicePool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyControllerOuterClass.MsgIntApplyController;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedNodeOuterClass.MsgIntApplyDeletedNode;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedRscOuterClass.MsgIntApplyDeletedRsc;
@@ -48,6 +51,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgReqPhysicalDevicesOuterClass.MsgReqPhysicalDevices;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyNodeSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
@@ -76,8 +80,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
-
-import static java.util.stream.Collectors.toList;
 
 public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     implements CtrlStltSerializer.CtrlStltSerializerBuilder
@@ -479,6 +481,28 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
+    public ProtoCtrlStltSerializerBuilder notifyNodeApplied(Node node)
+    {
+        try
+        {
+            MsgIntApplyNodeSuccessOuterClass.MsgIntApplyNodeSuccess.newBuilder()
+                .setNodeId(
+                    IntObjectId.newBuilder()
+                        .setUuid(node.getUuid().toString())
+                        .setName(node.getName().displayValue)
+                        .build()
+                )
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
     public ProtoCtrlStltSerializerBuilder notifyResourceApplied(
         Resource resource,
         Map<StorPool, SpaceInfo> freeSpaceMap
@@ -631,6 +655,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .build()
                     )
                 .setSupportsSnapshots(supportsSnapshotsRef)
+                .setIsPmem(storPool.isPmem())
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -690,6 +715,32 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
 
             msgCreateDevicePoolBuilder
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializer.CtrlStltSerializerBuilder deleteDevicePool(
+        List<String> devicePaths,
+        DeviceProviderKind providerKindRef,
+        String poolName
+    )
+    {
+        try
+        {
+            MsgDeleteDevicePool.Builder msgDeleteDevicePoolBuilder =
+                MsgDeleteDevicePool.newBuilder()
+                    .addAllDevicePaths(devicePaths)
+                    .setProviderKind(asProviderType(providerKindRef))
+                    .setPoolName(poolName);
+
+            msgDeleteDevicePoolBuilder
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -912,7 +963,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllRscConnections(
                     ProtoCommonSerializerBuilder.serializeResourceConnections(
                         serializerCtx,
-                        localResource.streamResourceConnections(serializerCtx).collect(Collectors.toList())
+                        localResource.streamAbsResourceConnections(serializerCtx).collect(Collectors.toList())
                     )
                 )
                 .build();
@@ -930,7 +981,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                     IntOtherRsc.newBuilder()
                         .setNode(ProtoCommonSerializerBuilder.serializeNode(
                             serializerCtx,
-                            rsc.getAssignedNode())
+                            rsc.getNode())
                         )
                         .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, rsc))
                         .build()
@@ -964,16 +1015,15 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
 
             List<IntSnapshotOuterClass.SnapshotVlm> snapshotVlms = new ArrayList<>();
-            for (SnapshotVolume snapshotVolume : snapshot.getAllSnapshotVolumes(serializerCtx))
+            Iterator<SnapshotVolume> snapVlmIt = snapshot.iterateVolumes();
+            while (snapVlmIt.hasNext())
             {
-                StorPool storPool = snapshotVolume.getStorPool(serializerCtx);
+                SnapshotVolume snapshotVolume = snapVlmIt.next();
                 snapshotVlms.add(
                     IntSnapshotOuterClass.SnapshotVlm.newBuilder()
                         .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
                         .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
                         .setVlmNr(snapshotVolume.getVolumeNumber().value)
-                        .setStorPoolUuid(storPool.getUuid().toString())
-                        .setStorPoolName(storPool.getName().displayValue)
                         .build()
                 );
             }
@@ -994,6 +1044,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
                 .setSuspendResource(snapshot.getSuspendResource(serializerCtx))
                 .setTakeSnapshot(snapshot.getTakeSnapshot(serializerCtx))
+                .setLayerObject(
+                    LayerObjectSerializer.serializeLayerObject(
+                        snapshot.getApiData(serializerCtx, null, null).getLayerData()
+                    )
+                )
                 .build();
         }
     }

@@ -1,25 +1,26 @@
 package com.linbit.linstor.storage.layer.adapter.drbd.utils;
 
+import com.linbit.ChildProcessTimeoutException;
+import com.linbit.extproc.ExtCmd;
+import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFailedException;
+import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.types.MinorNumber;
+import com.linbit.linstor.core.types.NodeId;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import com.linbit.ChildProcessTimeoutException;
-import com.linbit.extproc.ExtCmd;
-import com.linbit.extproc.ExtCmd.OutputData;
-import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.types.MinorNumber;
-import com.linbit.linstor.core.types.NodeId;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.extproc.ExtCmdFailedException;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import java.io.File;
 
 @Singleton
 public class DrbdAdm
@@ -48,7 +49,7 @@ public class DrbdAdm
      * Adjusts a resource
      */
     public void adjust(
-        DrbdRscData drbdRscData,
+        DrbdRscData<Resource> drbdRscData,
         boolean skipNet,
         boolean skipDisk,
         boolean discard
@@ -91,12 +92,12 @@ public class DrbdAdm
      * Resizes a resource
      */
     public void resize(
-        DrbdVlmData drbdVlmData,
+        DrbdVlmData<Resource> drbdVlmData,
         boolean assumeClean
     )
         throws ExtCmdFailedException
     {
-        DrbdRscData drbdRscData = drbdVlmData.getRscLayerObject();
+        DrbdRscData<Resource> drbdRscData = drbdVlmData.getRscLayerObject();
         waitConnectResource(drbdRscData, WAIT_CONNECT_RES_TIME);
         List<String> command = new ArrayList<>();
         command.addAll(Arrays.asList(DRBDADM_UTIL, "-vvv"));
@@ -117,7 +118,7 @@ public class DrbdAdm
      * Shuts down (unconfigures) a DRBD resource
      * @param rscNameSuffix
      */
-    public void down(DrbdRscData drbdRscData) throws ExtCmdFailedException
+    public void down(DrbdRscData<Resource> drbdRscData) throws ExtCmdFailedException
     {
         simpleSetupCommand(drbdRscData, (VolumeNumber) null, "down");
     }
@@ -126,7 +127,7 @@ public class DrbdAdm
      * Switches a DRBD resource to primary mode
      */
     public void primary(
-        DrbdRscData drbdRscData,
+        DrbdRscData<Resource> drbdRscData,
         boolean force,
         boolean withDrbdSetup
     )
@@ -161,7 +162,7 @@ public class DrbdAdm
     /**
      * Switches a resource to secondary mode
      */
-    public void secondary(DrbdRscData drbdRscData) throws ExtCmdFailedException
+    public void secondary(DrbdRscData<Resource> drbdRscData) throws ExtCmdFailedException
     {
         simpleAdmCommand(drbdRscData, "secondary");
     }
@@ -169,7 +170,7 @@ public class DrbdAdm
     /**
      * Connects a resource to its peer resuorces on other hosts
      */
-    public void connect(DrbdRscData drbdRscData, boolean discard) throws ExtCmdFailedException
+    public void connect(DrbdRscData<Resource> drbdRscData, boolean discard) throws ExtCmdFailedException
     {
         adjust(drbdRscData, false, true, discard);
     }
@@ -177,7 +178,7 @@ public class DrbdAdm
     /**
      * Disconnects a resource from its peer resources on other hosts
      */
-    public void disconnect(DrbdRscData drbdRscData) throws ExtCmdFailedException
+    public void disconnect(DrbdRscData<Resource> drbdRscData) throws ExtCmdFailedException
     {
         simpleAdmCommand(drbdRscData, "disconnect");
     }
@@ -185,11 +186,9 @@ public class DrbdAdm
     /**
      * Attaches a volume to its disk
      *
-     * @param resourceName
-     * @param volNum
      * @throws ExtCmdFailedException
      */
-    public void attach(DrbdVlmData drbdVlmData) throws ExtCmdFailedException
+    public void attach(DrbdVlmData<Resource> drbdVlmData) throws ExtCmdFailedException
     {
         adjust(drbdVlmData.getRscLayerObject(), true, false, false);
     }
@@ -199,7 +198,7 @@ public class DrbdAdm
      *
      * @param diskless If true, convert to a diskless client volume
      */
-    public void detach(DrbdVlmData drbdVlmData, boolean diskless) throws ExtCmdFailedException
+    public void detach(DrbdVlmData<Resource> drbdVlmData, boolean diskless) throws ExtCmdFailedException
     {
         List<String> commands = new ArrayList<>();
         commands.add(DRBDSETUP_UTIL);
@@ -216,7 +215,7 @@ public class DrbdAdm
     /**
      * Calls drbdadm to create the metadata information for a volume
      */
-    public void createMd(DrbdVlmData drbdVlmData, int peers) throws ExtCmdFailedException
+    public void createMd(DrbdVlmData<Resource> drbdVlmData, int peers) throws ExtCmdFailedException
     {
         simpleAdmCommand(
             drbdVlmData.getRscLayerObject(),
@@ -314,9 +313,9 @@ public class DrbdAdm
      * @param vlmDataRef
      * @throws ExtCmdFailedException
      */
-    public void showGi(DrbdVlmData vlmDataRef) throws ExtCmdFailedException
+    public void showGi(DrbdVlmData<Resource> vlmDataRef) throws ExtCmdFailedException
     {
-        DrbdRscData rscData = vlmDataRef.getRscLayerObject();
+        DrbdRscData<Resource> rscData = vlmDataRef.getRscLayerObject();
         execute(
             DRBDSETUP_UTIL,
             "show-gi",
@@ -326,24 +325,24 @@ public class DrbdAdm
         );
     }
 
-    public void suspendIo(DrbdRscData drbdRscData)
+    public void suspendIo(DrbdRscData<Resource> drbdRscData)
         throws ExtCmdFailedException
     {
         execute(DRBDADM_UTIL, "suspend-io", drbdRscData.getSuffixedResourceName());
     }
 
-    public void resumeIo(DrbdRscData drbdRscData)
+    public void resumeIo(DrbdRscData<Resource> drbdRscData)
         throws ExtCmdFailedException
     {
         execute(DRBDADM_UTIL, "resume-io", drbdRscData.getSuffixedResourceName());
     }
 
-    public void waitConnectResource(DrbdRscData drbdRscData, int timeout) throws ExtCmdFailedException
+    public void waitConnectResource(DrbdRscData<Resource> drbdRscData, int timeout) throws ExtCmdFailedException
     {
         waitForFamily(drbdRscData, timeout, "wait-connect-resource");
     }
 
-    public void waitSyncResource(DrbdRscData drbdRscData, int timeout) throws ExtCmdFailedException
+    public void waitSyncResource(DrbdRscData<Resource> drbdRscData, int timeout) throws ExtCmdFailedException
     {
         waitForFamily(drbdRscData, timeout, "wait-sync-resource");
     }
@@ -367,7 +366,7 @@ public class DrbdAdm
     }
 
 
-    public void deletePeer(DrbdRscData peerRscData) throws ExtCmdFailedException
+    public void deletePeer(DrbdRscData<Resource> peerRscData) throws ExtCmdFailedException
     {
         execute(
             DRBDSETUP_UTIL,
@@ -377,7 +376,7 @@ public class DrbdAdm
         );
     }
 
-    public void forgetPeer(DrbdRscData rscData) throws ExtCmdFailedException
+    public void forgetPeer(DrbdRscData<Resource> rscData) throws ExtCmdFailedException
     {
         execute(
             DRBDSETUP_UTIL,
@@ -388,7 +387,7 @@ public class DrbdAdm
     }
 
     private void simpleSetupCommand(
-        DrbdRscData drbdRscData,
+        DrbdRscData<Resource> drbdRscData,
         VolumeNumber vlmNr,
         String... subCommands
     )
@@ -408,13 +407,13 @@ public class DrbdAdm
         execute(command);
     }
 
-    private void simpleAdmCommand(DrbdRscData drbdRscData, String subcommand) throws ExtCmdFailedException
+    private void simpleAdmCommand(DrbdRscData<Resource> drbdRscData, String subcommand) throws ExtCmdFailedException
     {
         simpleAdmCommand(drbdRscData, null, subcommand);
     }
 
     private void simpleAdmCommand(
-        DrbdRscData drbdRscData,
+        DrbdRscData<Resource> drbdRscData,
         VolumeNumber volNum,
         String... subCommands
     )
@@ -441,7 +440,7 @@ public class DrbdAdm
     }
 
     private void waitForFamily(
-        DrbdRscData drbdRscData,
+        DrbdRscData<Resource> drbdRscData,
         int timeout,
         String commandRef
     )

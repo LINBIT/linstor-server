@@ -182,8 +182,8 @@ public class ResourceGenericDbDriverTest extends GenericDbBase
 
         assertNotNull("Database did not persist resource / resourceDefinition", loadedRes);
         assertEquals(resUuid, loadedRes.getUuid());
-        assertNotNull(loadedRes.getAssignedNode());
-        assertEquals(nodeName, loadedRes.getAssignedNode().getName());
+        assertNotNull(loadedRes.getNode());
+        assertEquals(nodeName, loadedRes.getNode().getName());
         assertNotNull(loadedRes.getDefinition());
         assertEquals(resName, loadedRes.getDefinition().getName());
         assertEquals(Resource.Flags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
@@ -219,8 +219,8 @@ public class ResourceGenericDbDriverTest extends GenericDbBase
 
         assertNotNull(resData);
         assertEquals(resUuid, resData.getUuid());
-        assertNotNull(resData.getAssignedNode());
-        assertEquals(nodeName, resData.getAssignedNode().getName());
+        assertNotNull(resData.getNode());
+        assertEquals(nodeName, resData.getNode().getName());
         assertNotNull(resData.getDefinition());
         assertEquals(resName, resData.getDefinition().getName());
         assertEquals(Resource.Flags.CLEAN.flagValue, resData.getStateFlags().getFlagsBits(SYS_CTX));

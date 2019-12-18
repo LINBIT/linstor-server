@@ -162,8 +162,8 @@ public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
     public void testLoadGetInstance() throws Exception
     {
         driver.create(resCon);
-        resSrc.setResourceConnection(SYS_CTX, resCon);
-        resDst.setResourceConnection(SYS_CTX, resCon);
+        resSrc.setAbsResourceConnection(SYS_CTX, resCon);
+        resDst.setAbsResourceConnection(SYS_CTX, resCon);
 
         ResourceConnection loadedConDfn = ResourceConnection.get(
             SYS_CTX,
@@ -247,8 +247,8 @@ public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
         Resource targetResource = loadedConDfn.getTargetResource(SYS_CTX);
 
         assertEquals(resName, sourceResource.getDefinition().getName());
-        assertEquals(sourceName, sourceResource.getAssignedNode().getName());
-        assertEquals(targetName, targetResource.getAssignedNode().getName());
+        assertEquals(sourceName, sourceResource.getNode().getName());
+        assertEquals(targetName, targetResource.getNode().getName());
         assertEquals(sourceResource.getDefinition().getName(), targetResource.getDefinition().getName());
     }
 
@@ -256,8 +256,8 @@ public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         driver.create(resCon);
-        resSrc.setResourceConnection(SYS_CTX, resCon);
-        resDst.setResourceConnection(SYS_CTX, resCon);
+        resSrc.setAbsResourceConnection(SYS_CTX, resCon);
+        resDst.setAbsResourceConnection(SYS_CTX, resCon);
 
         resourceConnectionFactory.create(SYS_CTX, resSrc, resDst, null);
     }

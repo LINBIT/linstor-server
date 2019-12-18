@@ -2,6 +2,8 @@
 <service>
     <short>Linstor controller service</short>
     <description>Linstor Controller client api port</description>
+    <port protocol="tcp" port="3370"/><!-- http port -->
+    <port protocol="tcp" port="3371"/><!-- https port -->
     <port protocol="tcp" port="3376"/>
     <port protocol="tcp" port="3377"/><!-- SSL port -->
 </service>

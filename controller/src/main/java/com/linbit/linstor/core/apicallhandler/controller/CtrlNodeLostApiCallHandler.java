@@ -10,7 +10,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.SwordfishTargetProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -64,7 +63,6 @@ public class CtrlNodeLostApiCallHandler
     private final ScopeRunner scopeRunner;
     private final CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifier;
     private final ReconnectorTask reconnectorTask;
-    private final SwordfishTargetProcessManager sfTargetProcessMgr;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeRepository nodeRepository;
@@ -78,7 +76,7 @@ public class CtrlNodeLostApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
         CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifierRef,
-        ReconnectorTask reconnectorTaskRef, SwordfishTargetProcessManager sfTargetProcessMgrRef,
+        ReconnectorTask reconnectorTaskRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeRepository nodeRepositoryRef,
@@ -92,7 +90,6 @@ public class CtrlNodeLostApiCallHandler
         scopeRunner = scopeRunnerRef;
         ctrlSatelliteConnectionNotifier = ctrlSatelliteConnectionNotifierRef;
         reconnectorTask = reconnectorTaskRef;
-        sfTargetProcessMgr = sfTargetProcessMgrRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodeRepository = nodeRepositoryRef;
@@ -168,7 +165,7 @@ public class CtrlNodeLostApiCallHandler
             {
                 for (Resource peerRsc : getRscStreamPrivileged(rscDfn).collect(toList()))
                 {
-                    nodesToContact.put(peerRsc.getAssignedNode().getName(), peerRsc.getAssignedNode());
+                    nodesToContact.put(peerRsc.getNode().getName(), peerRsc.getNode());
                 }
             }
             deletePrivileged(rsc);
@@ -403,10 +400,6 @@ public class CtrlNodeLostApiCallHandler
             Node.Type nodeType = node.getNodeType(apiCtx);
             node.delete(peerAccCtx.get());
 
-            if (Node.Type.SWORDFISH_TARGET.equals(nodeType))
-            {
-                sfTargetProcessMgr.stopProcess(node);
-            }
         }
         catch (AccessDeniedException accDeniedExc)
         {

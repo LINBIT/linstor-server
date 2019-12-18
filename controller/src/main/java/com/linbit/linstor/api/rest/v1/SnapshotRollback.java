@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotRollbackApiCallHandler;
 
 import javax.inject.Inject;
@@ -43,6 +44,6 @@ public class SnapshotRollback
         Flux<ApiCallRc> flux = ctrlSnapshotRollbackApiCallHandler.rollbackSnapshot(rscName, snapName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_ROLLBACK_SNAPSHOT, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcConverter.mapToMonoResponse(flux));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 }

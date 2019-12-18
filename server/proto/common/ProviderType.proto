@@ -12,8 +12,7 @@ enum ProviderType
     LVM_THIN = 3;
     ZFS = 4;
     ZFS_THIN = 5;
-    SWORDFISH_TARGET = 6;
-    SWORDFISH_INITIATOR = 7;
     FILE = 8;
     FILE_THIN = 9;
+    SPDK = 10;
 }
