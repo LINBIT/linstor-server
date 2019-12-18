@@ -26,6 +26,7 @@ info:
       - Removed support for swordfish
       - Added `with_storage_pool` to PhysicalStorageCreate post request, allowing to create linstor storage pools too
       - Added `gross` flag for volume-definition size
+      - Added flags to VolumeDefinitionModify (so that `gross` flag can be changed)
     * 1.0.11
       - Added /v1/physical-storage endpoint, that lets you query and create lvm/zfs pools
       - Extended Node with list of supported providers and layers as well as lists of reasons for
@@ -3795,7 +3796,10 @@ components:
           type: array
           items:
             type: string
-
+        flags:
+          type: array
+          items:
+            type: string
     DrbdResource:
       type: object
       properties:

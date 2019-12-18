@@ -262,6 +262,8 @@ class StltRscApiCallHandler
 
                     // corresponding volumes will be created later when iterating over (local|remote)vlmApis
 
+                    vlmDfn.getFlags().resetFlagsTo(apiCtx, vlmDfnFlags);
+
                     if (Arrays.asList(vlmDfnFlags).contains(VolumeDefinition.Flags.DELETE))
                     {
                         vlmDfnsToDelete.put(vlmNr, vlmDfn);

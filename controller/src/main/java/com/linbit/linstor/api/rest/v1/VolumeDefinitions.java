@@ -26,6 +26,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -186,7 +187,9 @@ public class VolumeDefinitions
                 vlmNr,
                 vlmDfnData.size_kib,
                 vlmDfnData.override_props,
-                new HashSet<>(vlmDfnData.delete_props))
+                new HashSet<>(vlmDfnData.delete_props),
+                vlmDfnData.flags
+            )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));

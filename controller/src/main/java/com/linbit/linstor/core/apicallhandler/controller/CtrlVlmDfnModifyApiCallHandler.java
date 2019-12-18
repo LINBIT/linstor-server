@@ -25,6 +25,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -120,7 +121,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         int vlmNr,
         Long size,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        List<String> vlmDfnFlags
     )
     {
         ResponseContext context = makeVlmDfnContext(
@@ -139,7 +141,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                     vlmNr,
                     size,
                     overrideProps,
-                    deletePropKeys
+                    deletePropKeys,
+                    vlmDfnFlags
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -151,7 +154,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         int vlmNrInt,
         Long size,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        List<String> vlmDfnFlagsRef
     )
     {
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
@@ -176,31 +180,47 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             propsMap.remove(delKey);
         }
 
-        boolean resize = size != null;
-        if (resize)
+        VolumeDefinition.Flags[] flagsToSet = VolumeDefinition.Flags
+            .restoreFlags(VolumeDefinition.Flags.fromStringList(vlmDfnFlagsRef));
+
+        boolean isGrossFlagCurrentlySet = isFlagSet(vlmDfn, VolumeDefinition.Flags.GROSS_SIZE);
+        boolean shouldGrossFlagBeSet = isFlagSet(flagsToSet, VolumeDefinition.Flags.GROSS_SIZE);
+        boolean grossFlagChanges = isGrossFlagCurrentlySet ^ shouldGrossFlagBeSet;
+
+        boolean hasDeployedVolumes = hasDeployedVolumes(vlmDfn);
+
+        if (isGrossFlagCurrentlySet && !shouldGrossFlagBeSet)
+        {
+            unsetFlag(vlmDfn, VolumeDefinition.Flags.GROSS_SIZE);
+        }
+        else if (!isGrossFlagCurrentlySet && shouldGrossFlagBeSet)
+        {
+            if (hasDeployedVolumes)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_VLM_SIZE,
+                        "Deployed volumes can only grow in size, not shrink. Changing volume's size from " +
+                            "usable (net) to allocated (gross) could require the volume to shrink"
+                    )
+                );
+            }
+            setFlag(vlmDfn, VolumeDefinition.Flags.GROSS_SIZE);
+        }
+
+        boolean sizeChanges = size != null;
+        boolean updateForResize = grossFlagChanges;
+        if (sizeChanges)
         {
             long vlmDfnSize = getVlmDfnSize(vlmDfn);
             if (size >= vlmDfnSize)
             {
                 setVlmDfnSize(vlmDfn, size);
-
-                Iterator<Volume> vlmIter = iterateVolumes(vlmDfn);
-
-                if (vlmIter.hasNext())
-                {
-                    markVlmDfnResize(vlmDfn);
-                }
-
-                while (vlmIter.hasNext())
-                {
-                    Volume vlm = vlmIter.next();
-
-                    markVlmResize(vlm);
-                }
+                updateForResize = true;
             }
             else
             {
-                if (!hasDeployedVolumes(vlmDfn))
+                if (!hasDeployedVolumes)
                 {
                     setVlmDfnSize(vlmDfn, size);
                 }
@@ -214,13 +234,30 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             }
         }
 
+        if (updateForResize)
+        {
+            Iterator<Volume> vlmIter = iterateVolumes(vlmDfn);
+
+            if (vlmIter.hasNext())
+            {
+                markVlmDfnResize(vlmDfn);
+            }
+
+            while (vlmIter.hasNext())
+            {
+                Volume vlm = vlmIter.next();
+
+                markVlmResize(vlm);
+            }
+        }
+
         ctrlTransactionHelper.commit();
 
         ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(
             ApiSuccessUtils.defaultModifiedEntry(vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn))
         );
 
-        Flux<ApiCallRc> updateResponses = updateSatellites(rscName, vlmNr, resize);
+        Flux<ApiCallRc> updateResponses = updateSatellites(rscName, vlmNr, sizeChanges);
 
         return Flux
             .just(responses)
@@ -610,6 +647,77 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             throw new ImplementationError(accDeniedExc);
         }
         return volumeStream;
+    }
+
+    private boolean isFlagSet(VolumeDefinition vlmDfnRef, Flags flag)
+    {
+        boolean isFlagSet;
+        try
+        {
+            isFlagSet = vlmDfnRef.getFlags().isSet(peerAccCtx.get(), flag);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check if a flag is set",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        return isFlagSet;
+    }
+
+    private boolean isFlagSet(Flags[] vlmDfnFlagsRef, Flags flag)
+    {
+        boolean isFlagSet = false;
+        for (Flags setFlag : vlmDfnFlagsRef)
+        {
+            if (setFlag.equals(flag))
+            {
+                isFlagSet = true;
+            }
+        }
+        return isFlagSet;
+    }
+
+    private void unsetFlag(VolumeDefinition vlmDfnRef, Flags flag)
+    {
+        try
+        {
+            vlmDfnRef.getFlags().disableFlags(peerAccCtx.get(), flag);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "disabling flag",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
+        }
+    }
+
+    private void setFlag(VolumeDefinition vlmDfnRef, Flags flag)
+    {
+        try
+        {
+            vlmDfnRef.getFlags().enableFlags(peerAccCtx.get(), flag);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "enabling flag",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
+        }
     }
 
     private static Set<NodeName> getNodeNames(Optional<Volume> drbdResizeVlm)

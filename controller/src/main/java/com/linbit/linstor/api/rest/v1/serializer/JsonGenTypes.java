@@ -289,6 +289,7 @@ public class JsonGenTypes
         public Map<String, String> override_props = Collections.emptyMap();
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
+        public List<String> flags = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
