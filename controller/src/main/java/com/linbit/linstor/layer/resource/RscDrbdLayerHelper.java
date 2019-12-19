@@ -48,6 +48,7 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.Transp
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
+import com.linbit.linstor.storage.utils.LayerUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
@@ -71,6 +72,8 @@ public class RscDrbdLayerHelper extends
     private final Props stltConf;
     private final ResourceDefinitionRepository rscDfnMap;
 
+    private final Provider<RscNvmeLayerHelper> nvmeHelperProvider;
+
     @Inject
     RscDrbdLayerHelper(
         ErrorReporter errorReporter,
@@ -79,7 +82,8 @@ public class RscDrbdLayerHelper extends
         LayerDataFactory layerDataFactory,
         @Named(LinStor.SATELLITE_PROPS)Props stltConfRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPool,
-        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory
+        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
+        Provider<RscNvmeLayerHelper> nvmeHelperProviderRef
     )
     {
         super(
@@ -96,6 +100,7 @@ public class RscDrbdLayerHelper extends
         );
         rscDfnMap = rscDfnMapRef;
         stltConf = stltConfRef;
+        nvmeHelperProvider = nvmeHelperProviderRef;
     }
 
     @Override
@@ -210,7 +215,7 @@ public class RscDrbdLayerHelper extends
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException
+        ValueInUseException, ImplementationError, InvalidNameException
     {
         ResourceDefinition rscDfn = rscRef.getDefinition();
         DrbdRscDfnData<Resource> drbdRscDfnData = ensureResourceDefinitionExists(
@@ -219,7 +224,44 @@ public class RscDrbdLayerHelper extends
             payloadRef
         );
 
-        NodeId nodeId = getNodeId(payloadRef.drbdRsc.nodeId, drbdRscDfnData);
+        NodeId nodeId = null;
+
+        boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
+        boolean isNvmeInitiator = rscRef.getStateFlags()
+            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+
+        if (isNvmeBelow && isNvmeInitiator)
+        {
+            // we need to find our nvme-target resource and copy the node-id from that target-resource
+            Resource targetRsc = nvmeHelperProvider.get().getTarget(rscRef);
+            if (targetRsc != null)
+            {
+                AbsRscLayerObject<Resource> rootLayerData = targetRsc.getLayerData(apiCtx);
+                List<AbsRscLayerObject<Resource>> targetDrbdChildren = LayerUtils
+                    .getChildLayerDataByKind(rootLayerData, DeviceLayerKind.DRBD);
+                for (AbsRscLayerObject<Resource> targetRscData : targetDrbdChildren)
+                {
+                    if (targetRscData.getResourceNameSuffix().equals(rscNameSuffixRef))
+                    {
+                        nodeId = ((DrbdRscData<Resource>) targetRscData).getNodeId();
+                        break;
+                    }
+                }
+            }
+            if (nodeId == null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_MISSING_NVME_TARGET,
+                        "Failed to find nvme-target "
+                    )
+                );
+            }
+        }
+        else
+        {
+            nodeId = getNodeId(payloadRef.drbdRsc.nodeId, drbdRscDfnData);
+        }
 
         DrbdRscData<Resource> drbdRscData = layerDataFactory.createDrbdRscData(
             layerRscIdPool.autoAllocate(),

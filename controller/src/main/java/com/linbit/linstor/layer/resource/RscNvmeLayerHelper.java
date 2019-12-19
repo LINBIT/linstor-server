@@ -2,12 +2,14 @@ package com.linbit.linstor.layer.resource;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -116,6 +118,26 @@ class RscNvmeLayerHelper extends AbsRscLayerHelper<
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
+        ensureTargetNodeNameIsSet(rscRef);
+        return layerDataFactory.createNvmeRscData(
+            layerRscIdPool.autoAllocate(),
+            rscRef,
+            rscNameSuffixRef,
+            parentObjectRef
+        );
+    }
+
+    Resource getTarget(Resource initiator)
+        throws AccessDeniedException, DatabaseException, ImplementationError, InvalidNameException
+    {
+        ensureTargetNodeNameIsSet(initiator);
+        String nodeNameStr = initiator.getProps(apiCtx).getProp(InternalApiConsts.PROP_NVME_TARGET_NODE_NAME);
+        return initiator.getResourceDefinition().getResource(apiCtx, new NodeName(nodeNameStr));
+    }
+
+    private void ensureTargetNodeNameIsSet(Resource rscRef)
+        throws AccessDeniedException, DatabaseException, ImplementationError
+    {
         Props rscProps = rscRef.getProps(apiCtx);
         if (rscProps.getProp(InternalApiConsts.PROP_NVME_TARGET_NODE_NAME) == null &&
             rscRef.isNvmeInitiator(apiCtx))
@@ -182,12 +204,6 @@ class RscNvmeLayerHelper extends AbsRscLayerHelper<
                 throw new ImplementationError(exc);
             }
         }
-        return layerDataFactory.createNvmeRscData(
-            layerRscIdPool.autoAllocate(),
-            rscRef,
-            rscNameSuffixRef,
-            parentObjectRef
-        );
     }
 
     @Override

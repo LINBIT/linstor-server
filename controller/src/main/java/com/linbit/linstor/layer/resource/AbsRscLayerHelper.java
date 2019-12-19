@@ -388,7 +388,7 @@ public abstract class AbsRscLayerHelper<
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException;
+        ValueInUseException, ImplementationError, InvalidNameException;
 
     protected abstract void mergeRscData(
         RSC_LO rscDataRef,
