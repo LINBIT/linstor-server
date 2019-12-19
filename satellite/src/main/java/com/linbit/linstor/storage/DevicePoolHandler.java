@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage;
 
+import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -9,6 +10,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.storage.utils.LvmCommands;
+import com.linbit.linstor.storage.utils.SpdkCommands;
 import com.linbit.linstor.storage.utils.ZfsCommands;
 
 import javax.inject.Inject;
@@ -101,8 +103,9 @@ public class DevicePoolHandler
             case ZFS:
                 apiCallRc.addEntries(createZPool(devicePaths, raidLevel, poolName));
                 break;
-
-            case SPDK: // not implemented (yet) -> fall-through
+            case SPDK:
+                apiCallRc.addEntries(createSPDKPool(devicePaths, poolName));
+                break;
 
                 // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
@@ -316,6 +319,109 @@ public class DevicePoolHandler
         return apiCallRc;
     }
 
+    private ApiCallRc createSPDKPool(final List<String> pciAddresses, final String poolName)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try
+        {
+            String lvolStoreName;
+            List<String> nvmeBdevs = new ArrayList<>();
+            for (final String pciAddress : pciAddresses)
+            {
+                final String bdev_name = new String(SpdkCommands.nvmeBdevCreate(extCmdFactory.create(), pciAddress).stdoutData).trim();
+                nvmeBdevs.add(bdev_name);
+                apiCallRc.addEntry(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
+                        String.format("Nvme bdev for device '%s' created.", pciAddress)
+                    )
+                        .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                        .build()
+                );
+            }
+
+            if (nvmeBdevs.size() > 1)
+            {
+                SpdkCommands.nvmeRaidBdevCreate(extCmdFactory.create(), poolName, nvmeBdevs);
+                lvolStoreName = poolName;
+            }
+            else
+            {
+                lvolStoreName = nvmeBdevs.get(0);
+            }
+
+            SpdkCommands.lvolStoreCreate(extCmdFactory.create(), lvolStoreName, poolName);
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format("Lvol store for devices [%s] with name '%s' created.",
+                            String.join(", ", pciAddresses),
+                            poolName)
+                )
+                    .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                    .build()
+            );
+
+        }
+        catch (StorageException storExc)
+        {
+            errorReporter.reportError(storExc);
+            apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_UNKNOWN_ERROR, storExc));
+        }
+
+        return apiCallRc;
+    }
+
+    private ApiCallRc deleteSPDKPool(final List<String> pciAddresses, final String poolName)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try
+        {
+            SpdkCommands.lvolStoreRemove(extCmdFactory.create(), poolName);
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
+                    String.format("Lvol store with name '%s' removed.", poolName)
+                )
+                    .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                    .build()
+            );
+
+            if (new String(SpdkCommands.listRaidBdevsAll(extCmdFactory.create()).stdoutData).trim().matches("(.*)\\b"+poolName+"\\b(.*)"))
+            {
+                SpdkCommands.nvmeRaidBdevRemove(extCmdFactory.create(), poolName);
+                apiCallRc.addEntry(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
+                        String.format("RAID bdev with name '%s' removed.", poolName)
+                    )
+                        .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                        .build()
+                );
+            }
+
+            for (final String pciAddress : pciAddresses)
+            {
+                SpdkCommands.nvmeBdevRemove(extCmdFactory.create(), pciAddress);
+                apiCallRc.addEntry(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
+                        String.format("Nvme bdev for device '%s' removed.", pciAddress)
+                    )
+                        .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                        .build()
+                );
+            }
+        }
+        catch (StorageException storExc)
+        {
+            errorReporter.reportError(storExc);
+            apiCallRc.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_STOR_POOL_CONFIGURATION_ERROR, storExc));
+        }
+
+        return apiCallRc;
+    }
+
     public ApiCallRc deleteDevicePool(
         final DeviceProviderKind deviceProviderKind,
         final List<String> devicePaths,
@@ -335,6 +441,9 @@ public class DevicePoolHandler
             case ZFS_THIN: // no differentiation between ZFS and ZFS_THIN pool. fall-through
             case ZFS:
                 apiCallRc.addEntries(deleteZPool(devicePaths, poolName));
+                break;
+            case SPDK:
+                apiCallRc.addEntries(deleteSPDKPool(devicePaths, poolName));
                 break;
 
             // the following cases make no sense, hence the fall-throughs
