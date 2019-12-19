@@ -65,6 +65,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private static final String PATH_NODE_CON_DEFINITIONS     = "/conDfn/nodes/";
     private static final String PATH_RESOURCE_CON_DEFINITIONS = "/conDfn/resources/";
     private static final String PATH_VOLUME_CON_DEFINITIONS   = "/conDfn/volume/";
+    private static final String PATH_SNAPSHOTS = "/snapshots/";
+    private static final String PATH_SNAPSHOT_VOLUMES = "/snapshotvolumes/";
     private static final String PATH_SNAPSHOT_DEFINITIONS     = "/snapshotdefinitions/";
     private static final String PATH_SNAPSHOT_VOLUME_DEFINITIONS = "/snapshotvolumedefinitions/";
     private static final String PATH_KVS                      = "/keyvaluestores/";
@@ -2296,6 +2298,27 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 PATH_SEPARATOR + targetName.value +
                 PATH_SEPARATOR + resName.value +
                 PATH_SEPARATOR + volNr.value;
+    }
+
+    /**
+     * PropsCon-path for Snapshot
+     */
+    public static String buildPath(NodeName nodeName, ResourceName rscName, SnapshotName snapName)
+    {
+        return PATH_SNAPSHOTS + nodeName.value +
+            PATH_SEPARATOR + rscName.value +
+            PATH_SEPARATOR + snapName.value;
+    }
+
+    /**
+     * PropsCon-path for SnapshotVolume
+     */
+    public static String buildPath(NodeName nodeName, ResourceName rscName, SnapshotName snapName, VolumeNumber vlmNr)
+    {
+        return PATH_SNAPSHOTS + nodeName.value +
+            PATH_SEPARATOR + rscName.value +
+            PATH_SEPARATOR + snapName.value +
+            PATH_SEPARATOR + vlmNr.value;
     }
 
     /**

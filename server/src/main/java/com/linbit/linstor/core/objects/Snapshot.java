@@ -76,6 +76,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
             nodeRef,
             propsConFactory.getInstance(
                 PropsContainer.buildPath(
+                    nodeRef.getName(),
                     snapshotDfnRef.getResourceName(),
                     snapshotDfnRef.getName()
                 )

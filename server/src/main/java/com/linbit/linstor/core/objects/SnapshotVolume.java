@@ -48,6 +48,7 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
             snapshotRef,
             propsConFactory.getInstance(
                 PropsContainer.buildPath(
+                    snapshotRef.getNodeName(),
                     snapshotRef.getResourceName(),
                     snapshotRef.getSnapshotName(),
                     snapshotVolumeDefinitionRef.getVolumeNumber()
