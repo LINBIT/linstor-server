@@ -27,6 +27,7 @@ info:
       - Added `with_storage_pool` to PhysicalStorageCreate post request, allowing to create linstor storage pools too
       - Added `gross` flag for volume-definition size
       - Added flags to VolumeDefinitionModify (so that `gross` flag can be changed)
+      - Added query-max-volume-size to resource-groups
     * 1.0.11
       - Added /v1/physical-storage endpoint, that lets you query and create lvm/zfs pools
       - Extended Node with list of supported providers and layers as well as lists of reasons for
@@ -2438,6 +2439,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-groups/{resource_group}/query-max-volume-size:
+    parameters:
+      - $ref: '#/components/parameters/ResourceGroupName'
+    get:
+      tags:
+        - developers
+      operationId: queryMaxVolumeSizeFromRscGrp
+      summary: query the maximum volume size from a given resource group
+      description: Query the maximum possible volume size storage pools
+      responses:
+        '200':
+          description: list of usable storage pools
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaxVolumeSizes'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
   /v1/controller/properties:
     get:
       tags:

@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
@@ -12,6 +13,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceGroup;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 
 import javax.inject.Inject;
@@ -39,10 +41,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Path("resource-groups")
 @Produces(MediaType.APPLICATION_JSON)
@@ -254,4 +258,53 @@ public class ResourceGroups
             ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
+
+    @GET
+    @Path("{rscGrpName}/query-max-volume-size")
+    public void queryMaxVolumeSize(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        @PathParam("rscGrpName") String rscGrpName
+    )
+    {
+        Mono<Response> flux = ctrlRscGrpApiCallHandler.queryMaxVlmSize(
+            rscGrpName
+        )
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_QRY_MAX_VLM_SIZE, request))
+            .flatMap(apiCallRcWith ->
+            {
+                Response resp;
+                if (apiCallRcWith.hasApiCallRc())
+                {
+                    resp = ApiCallRcRestUtils.toResponse(
+                        apiCallRcWith.getApiCallRc(),
+                        Response.Status.INTERNAL_SERVER_ERROR
+                    );
+                }
+                else
+                {
+                    List<MaxVlmSizeCandidatePojo> maxVlmSizeCandidates = apiCallRcWith.getValue();
+                    JsonGenTypes.MaxVolumeSizes maxVolumeSizesData = Json.pojoToMaxVolumeSizes(maxVlmSizeCandidates);
+                    maxVolumeSizesData.default_max_oversubscription_ratio = FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
+
+                    try
+                    {
+                        resp = Response
+                            .status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(maxVolumeSizesData))
+                            .build();
+                    }
+                    catch (JsonProcessingException exc)
+                    {
+                        exc.printStackTrace();
+                        resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    }
+                }
+
+                return Mono.just(resp);
+            }).next();
+
+        requestHelper.doFlux(asyncResponse, flux);
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.GenericName;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -12,14 +13,18 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmDfnWithCreationPayloadPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.AutoStorPoolSelectorConfig;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -29,14 +34,17 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
+import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -49,6 +57,9 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.ComparatorUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
@@ -61,13 +72,16 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.inject.Provider;
 import reactor.core.publisher.Flux;
@@ -89,6 +103,8 @@ public class CtrlRscGrpApiCallHandler
     private final ResponseConverter responseConverter;
     private final CtrlVlmGrpApiCallHandler ctrlVlmGrpApiCallHandler;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final FreeCapacityFetcher freeCapacityFetcher;
+    private final CtrlAutoStorPoolSelector ctrlAutoStorPoolSelector;
 
     private final CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
@@ -110,6 +126,8 @@ public class CtrlRscGrpApiCallHandler
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandlerRef,
         CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef,
+        CtrlAutoStorPoolSelector ctrlAutoStorPoolSelectorRef,
+        FreeCapacityFetcher freeCapacityFetcherRef,
         LockGuardFactory lockGuardFactoryRef
     )
     {
@@ -128,6 +146,8 @@ public class CtrlRscGrpApiCallHandler
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
         ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
+        ctrlAutoStorPoolSelector = ctrlAutoStorPoolSelectorRef;
+        freeCapacityFetcher = freeCapacityFetcherRef;
         lockGuardFactory = lockGuardFactoryRef;
     }
 
@@ -777,6 +797,145 @@ public class CtrlRscGrpApiCallHandler
             ),
             null
         );
+    }
+
+    public Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> queryMaxVlmSize(String rscGrpNameRef)
+    {
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
+            .flatMapMany(
+                thinFreeCapacities -> scopeRunner
+                    .fluxInTransactionlessScope(
+                        "Query max volume size",
+                        lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
+                        () -> queryMaxVlmSizeInScope(rscGrpNameRef, thinFreeCapacities)
+                    )
+            );
+    }
+
+    private Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> queryMaxVlmSizeInScope(
+        String rscGrpNameRef,
+        Map<StorPool.Key, Long> thinFreeCapacities
+    )
+    {
+        Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> flux;
+        try
+        {
+            ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
+            AutoSelectorConfig selectFilter = rscGrp.getAutoPlaceConfig();
+
+            AccessContext accCtx = peerAccCtx.get();
+
+            if (selectFilter.getReplicaCount(accCtx) == null)
+            {
+                flux = Flux.error(
+                    new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_PLACE_COUNT,
+                            "Replica count is required for this operation"
+                        )
+                    )
+                );
+            }
+            else
+            {
+                AutoStorPoolSelectorConfig autoStorPoolSelectorConfig = new AutoStorPoolSelectorConfig(
+                    selectFilter.getReplicaCount(accCtx),
+                    selectFilter.getReplicasOnDifferentList(accCtx),
+                    selectFilter.getReplicasOnSameList(accCtx),
+                    selectFilter.getDoNotPlaceWithRscRegex(accCtx),
+                    selectFilter.getDoNotPlaceWithRscList(accCtx),
+                    selectFilter.getStorPoolNameStr(accCtx),
+                    selectFilter.getLayerStackList(accCtx),
+                    selectFilter.getProviderList(accCtx)
+                );
+
+                List<Candidate> candidates = ctrlAutoStorPoolSelector.getCandidateList(
+                    ctrlAutoStorPoolSelector.listAvailableStorPools(),
+                    autoStorPoolSelectorConfig,
+                    FreeCapacityAutoPoolSelectorUtils.mostFreeCapacityNodeStrategy(thinFreeCapacities)
+                );
+
+                List<MaxVlmSizeCandidatePojo> candidatesWithCapacity = candidates.stream()
+                    .flatMap(candidate -> candidateWithCapacity(thinFreeCapacities, candidate))
+                    .collect(Collectors.toList());
+                flux = Flux.just(makeResponse(candidatesWithCapacity));
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "no auto-place configured in " + getRscGrpDescriptionInline(rscGrpNameRef),
+                ApiConsts.FAIL_ACC_DENIED_RSC_GRP
+            );
+        }
+        return flux;
+    }
+
+    private Stream<MaxVlmSizeCandidatePojo> candidateWithCapacity(
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        Candidate candidate
+    )
+    {
+        StorPool storPool = FreeCapacityAutoPoolSelectorUtils.getCandidateStorPoolPrivileged(apiCtx, candidate);
+        Optional<Long> freeCapacity = FreeCapacityAutoPoolSelectorUtils.getFreeCapacityCurrentEstimationPrivileged(
+            apiCtx,
+            thinFreeCapacities,
+            storPool
+        );
+        return freeCapacity
+            .map(
+                capacity -> Stream.of(
+                    new MaxVlmSizeCandidatePojo(
+                        getStorPoolDfnApiData(storPool),
+                        candidate.allThin(),
+                        candidate.getNodes().stream()
+                            .map(Node::getName)
+                            .map(GenericName::getDisplayName)
+                            .collect(Collectors.toList()),
+                        capacity
+                    )
+                )
+            )
+            .orElseGet(Stream::empty);
+    }
+
+    private StorPoolDefinitionApi getStorPoolDfnApiData(StorPool storPool)
+    {
+        StorPoolDefinitionApi apiData;
+        try
+        {
+            apiData = storPool.getDefinition(apiCtx).getApiData(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return apiData;
+    }
+
+    private ApiCallRcWith<List<MaxVlmSizeCandidatePojo>> makeResponse(List<MaxVlmSizeCandidatePojo> candidates)
+    {
+        ApiCallRc apirc = null;
+        if (candidates.isEmpty())
+        {
+            apirc = ApiCallRcImpl.singletonApiCallRc(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.MASK_ERROR | ApiConsts.FAIL_NOT_ENOUGH_NODES,
+                    "Not enough nodes"
+                )
+            );
+        }
+        else
+        {
+            candidates.sort(
+                ComparatorUtils.comparingWithComparator(
+                    MaxVlmSizeCandidatePojo::getStorPoolDfnApi,
+                    Comparator.comparing(StorPoolDefinitionApi::getName)
+                )
+            );
+        }
+        return new ApiCallRcWith<>(apirc, candidates);
     }
 
     static VolumeNumber getVlmNr(VolumeGroupApi vlmGrpApi, ResourceGroup rscGrp, AccessContext accCtx)
