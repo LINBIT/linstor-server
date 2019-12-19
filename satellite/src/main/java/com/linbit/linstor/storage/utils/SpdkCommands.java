@@ -9,6 +9,7 @@ import com.linbit.linstor.storage.layer.provider.utils.RetryIfDeviceBusy;
 import com.linbit.utils.StringUtils;
 
 import java.io.File;
+import java.util.List;
 
 import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
 
@@ -204,7 +205,7 @@ public class SpdkCommands
                 type
             },
             "Failed to create transport'" + type,
-            "Failed to create transport' '" + type + "'",
+            "Failed to create transport '" + type + "'",
             new Commands.SkipExitCodeRetryHandler()
             {
                 @Override
@@ -243,6 +244,148 @@ public class SpdkCommands
             },
             "Failed to query nvmf subsystems",
             "Failed to query nvmf subsystems"
+        );
+    }
+
+    public static OutputData nvmeBdevCreate(
+            ExtCmd extCmd,
+            String pciAddress
+    )
+            throws StorageException
+    {
+        return genericExecutor(
+                extCmd,
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "construct_nvme_bdev",
+                    "--trtype", "PCIe",
+                    "--traddr", pciAddress,
+                    "--name", pciAddress
+                },
+                "Failed to create nvme bdev",
+                "Failed to create new nvme bdev with PCI address '" + pciAddress + "'"
+        );
+    }
+
+    public static OutputData nvmeRaidBdevCreate(
+            ExtCmd extCmd,
+            String raidBdevName,
+            List<String> baseBdevs
+    )
+            throws StorageException
+    {
+        return genericExecutor(
+                extCmd,
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "construct_raid_bdev",
+                    "--name", raidBdevName,
+                    "--raid-level", "0", // SPDK v19.07 supports only RAID 0
+                    "--strip-size_kb", "64",
+                    "--base-bdevs", String.join(" ", baseBdevs)
+                },
+                "Failed to create RAID nvme bdev",
+                "Failed to create new RAID nvme bdev '" + raidBdevName + "' from bdevs: " +
+                        String.join(", ", baseBdevs)
+        );
+    }
+
+    public static OutputData lvolStoreCreate(
+            ExtCmd extCmd,
+            String bdevName,
+            String lvolStoreName
+    )
+            throws StorageException
+    {
+        return genericExecutor(
+                extCmd,
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "construct_lvol_store",
+                    bdevName,
+                    lvolStoreName
+                },
+                "Failed to create lvol store",
+                "Failed to create new lvol store '" + lvolStoreName + "' on bdev '" + bdevName + "'"
+        );
+    }
+
+    public static OutputData nvmeBdevRemove(
+            ExtCmd extCmd,
+            String controllerName
+    )
+            throws StorageException
+    {
+        return genericExecutor(
+                extCmd,
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "delete_nvme_controller",
+                    controllerName
+                },
+        "Failed to remove nvme bdev",
+        "Failed to remove nvme bdev '" + controllerName + "'"
+        );
+    }
+
+    public static OutputData nvmeRaidBdevRemove(
+            ExtCmd extCmd,
+            String raidBdevName
+    )
+            throws StorageException
+    {
+        return genericExecutor(
+                extCmd,
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "destroy_raid_bdev",
+                    raidBdevName
+                },
+                "Failed to remove RAID nvme bdev",
+                "Failed to remove RAID nvme bdev '" + raidBdevName + "'"
+        );
+    }
+
+    public static OutputData lvolStoreRemove(
+            ExtCmd extCmd,
+            String lvolStoreName
+    )
+            throws StorageException
+    {
+        return genericExecutor(
+                extCmd,
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "destroy_lvol_store",
+                    "-l",
+                    lvolStoreName
+                },
+        "Failed to remove lvol store",
+        "Failed to remove lvol store '" + lvolStoreName + "'"
+        );
+    }
+
+    public static OutputData listRaidBdevsAll(
+            ExtCmd extCmd
+    )
+            throws StorageException
+    {
+        return genericExecutor(
+                extCmd,
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "get_raid_bdevs",
+                    "all"
+                },
+                "Failed to read RAID bdevs",
+                "Failed to read RAID bdevs"
         );
     }
 }

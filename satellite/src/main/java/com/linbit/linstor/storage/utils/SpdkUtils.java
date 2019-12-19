@@ -5,11 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.layer.provider.utils.Commands;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -288,5 +292,35 @@ public class SpdkUtils
         }
 
         return rootNode.elements();
+    }
+
+    public static List<String> lspci(ExtCmd extCmd)
+            throws StorageException
+    {
+        ExtCmd.OutputData outputData = Commands.genericExecutor(
+                extCmd,
+                new String[]{
+                        "lspci", "-mm", "-n", "-D"
+                },
+                "Failed to execute lspci",
+                "Failed to execute lspci"
+        );
+
+        return parseNvmeDrivesAddresses(new String(outputData.stdoutData, StandardCharsets.UTF_8));
+    }
+
+    static List<String> parseNvmeDrivesAddresses(String lspciOutput)
+    {
+        ArrayList<String> lspciEntries = new ArrayList<>();
+        for (String line : lspciOutput.split("\n"))
+        {
+            // Matching NVMe Drives - PCI devices with Class 01, Subclass 08, ProgIf 02
+            if (line.trim().matches("(.*)\"0108\"+(.*)-p02+(.*)"))
+            {
+                // Extracting PCI address
+                lspciEntries.add(line.trim().split(" ")[0]);
+            }
+        }
+        return lspciEntries;
     }
 }
