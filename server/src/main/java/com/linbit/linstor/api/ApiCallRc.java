@@ -18,6 +18,12 @@ public interface ApiCallRc
     boolean isEmpty();
 
     /**
+     * Checks if any of the rcEntries is an error.
+     * @return true if ApiCallRc has error entries.
+     */
+    boolean hasErrors();
+
+    /**
      * Return code entry
      */
     interface RcEntry

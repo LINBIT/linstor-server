@@ -61,6 +61,12 @@ public class ApiCallRcImpl implements ApiCallRc
     }
 
     @Override
+    public boolean hasErrors()
+    {
+        return entries.stream().anyMatch(RcEntry::isError);
+    }
+
+    @Override
     public String toString()
     {
         return "ApiCallRcImpl{" +

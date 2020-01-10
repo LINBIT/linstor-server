@@ -72,7 +72,7 @@ public class CreateDevicePool implements ApiCall
             }
         }
 
-        if (!lvmDevicePaths.isEmpty())
+        if (!lvmDevicePaths.isEmpty() && !apiCallRc.hasErrors())
         {
             apiCallRc.addEntries(devicePoolHandler.createDevicePool(
                 ProtoDeserializationUtils.parseDeviceProviderKind(msgCreateDevicePool.getProviderKind()),
