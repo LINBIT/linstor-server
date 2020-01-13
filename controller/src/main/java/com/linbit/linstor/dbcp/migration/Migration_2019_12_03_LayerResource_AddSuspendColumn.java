@@ -24,7 +24,8 @@ public class Migration_2019_12_03_LayerResource_AddSuspendColumn extends Linstor
                     "LAYER_RESOURCE_SUSPENDED",
                     "BOOL",
                     false,
-                    "FALSE"
+                    "FALSE",
+                    null
                 )
             );
         }

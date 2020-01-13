@@ -34,6 +34,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
                     "LAYER_STACK",
                     "VARCHAR(1024)",
                     true,
+                    null,
                     null
                 )
             );
@@ -44,6 +45,7 @@ public class Migration_2019_03_06_RscDfn_LayerStack extends LinstorMigration
                     "LAYER_STACK",
                     "VARCHAR(1024)",
                     true,
+                    null,
                     null
                 )
             );

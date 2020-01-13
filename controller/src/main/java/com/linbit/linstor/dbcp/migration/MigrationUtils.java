@@ -6,6 +6,8 @@ import com.linbit.linstor.DatabaseInfo.DbProduct;
 import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.utils.StringUtils;
 
+import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -111,7 +113,8 @@ public class MigrationUtils
         String column,
         String typeRef,
         boolean nullable,
-        String defaultValRef
+        String defaultValRef,
+        @Nullable String afterColumn
     )
     {
         StringBuilder sql = new StringBuilder();
@@ -156,6 +159,10 @@ public class MigrationUtils
                 if (defaultValRef != null)
                 {
                     sql.append(" DEFAULT ").append(defaultVal);
+                }
+                if (database.equals(DbProduct.H2) && afterColumn != null) // we only need this for our own H2 setup
+                {
+                    sql.append(" AFTER ").append(afterColumn);
                 }
                 sql.append(";");
                 break;

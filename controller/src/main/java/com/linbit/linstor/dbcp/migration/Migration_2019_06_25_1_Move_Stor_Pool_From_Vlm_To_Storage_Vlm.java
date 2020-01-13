@@ -36,6 +36,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
                     NODE_NAME,
                     LSV_NODE_NAME_TYPE,
                     true,
+                    null,
                     null
                 )
             );
@@ -48,6 +49,7 @@ public class Migration_2019_06_25_1_Move_Stor_Pool_From_Vlm_To_Storage_Vlm exten
                     STOR_POOL_NAME,
                     LSV_STOR_POOL_NAME_TYPE,
                     true,
+                    null,
                     null
                 )
             );
