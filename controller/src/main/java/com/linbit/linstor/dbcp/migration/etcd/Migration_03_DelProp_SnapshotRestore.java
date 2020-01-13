@@ -1,8 +1,9 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
+import java.util.Map.Entry;
+
 import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
 
-import java.util.Map.Entry;
 import java.util.TreeMap;
 
 // corresponds to Migration_2019_10_31_SnapRestoreDeleteProps2

@@ -109,7 +109,7 @@ public class DbEtcd implements ControllerETCDDatabase
         ControllerETCDTransactionMgr etcdTx = gen.startTransaction();
 
         KvClient kvClient = etcdClient.getKvClient();
-        RangeResponse dbVersResp = kvClient.get(bs(dbhistoryVersionKey)).sync();
+        RangeResponse dbVersResp = EtcdUtils.requestWithRetry(kvClient.get(bs(dbhistoryVersionKey)));
         int dbVersion = dbVersResp.getCount() > 0 ?
             Integer.parseInt(dbVersResp.getKvs(0).getValue().toStringUtf8()) : 0;
 
@@ -277,7 +277,9 @@ public class DbEtcd implements ControllerETCDDatabase
     @Override
     public void checkHealth() throws DatabaseException
     {
-        RangeResponse sync = etcdClient.getKvClient().get(bs(EtcdUtils.LINSTOR_PREFIX)).asPrefix().limit(1).sync();
+        RangeResponse sync = EtcdUtils.requestWithRetry(
+            etcdClient.getKvClient().get(bs(EtcdUtils.LINSTOR_PREFIX)).asPrefix().limit(1)
+        );
         if (sync.getKvsList().size() == 0)
         {
             throw new DatabaseException("ETCD database reported 0 entries ");

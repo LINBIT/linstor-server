@@ -5,6 +5,11 @@ import static com.ibm.etcd.client.KeyUtils.bs;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
+import com.linbit.linstor.transaction.TransactionException;
+import com.linbit.linstor.transaction.TransactionMgrETCD;
+import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectCollection;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,7 +66,8 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
         removeDuplucateRequests();
 
         // TODO check for errors
-        TxnResponse txnResponse = currentTransaction.sync();
+        TxnResponse txnResponse = EtcdUtils.requestWithRetry(currentTransaction);
+
         if (txnResponse.getSucceeded())
         {
             transactionObjectCollection.commitAll();
@@ -179,7 +185,8 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
         {
             request = request.asPrefix();
         }
-        RangeResponse rspRow = request.sync();
+
+        RangeResponse rspRow = EtcdUtils.requestWithRetry(request);
 
         TreeMap<String, String> rowMap = new TreeMap<>();
         for (KeyValue keyValue : rspRow.getKvsList())

@@ -1,7 +1,11 @@
 package com.linbit.linstor.transaction;
 
+import java.util.regex.Pattern;
+
 public interface TransactionMgr
 {
+    static final Pattern TX_MGR_PATTERN = Pattern.compile("(Controller(SQL|ETCD)|Satellite|)TransactionMgr");
+
     void register(TransactionObject transObj);
 
     void commit() throws TransactionException;
@@ -21,12 +25,7 @@ public interface TransactionMgr
         {
             String className = elem.getClassName();
             if (
-                (
-                    className.equals(TransactionMgr.class.getName()) ||
-                    className.equals(ControllerSQLTransactionMgr.class.getName()) ||
-                    className.equals(ControllerETCDTransactionMgr.class.getName()) ||
-                    className.equals(SatelliteTransactionMgr.class.getName())
-                ) &&
+                TX_MGR_PATTERN.matcher(className).find() &&
                 elem.getMethodName().equals(methodName)
             )
             {

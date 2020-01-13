@@ -2,6 +2,7 @@ package com.linbit.linstor.transaction;
 
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
+import com.linbit.linstor.transaction.TransactionMgrGenerator;
 
 import javax.inject.Inject;
 

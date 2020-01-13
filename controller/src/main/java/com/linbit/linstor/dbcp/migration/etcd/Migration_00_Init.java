@@ -426,8 +426,8 @@ public class Migration_00_Init extends EtcdMigration
         propsContainers(txn, "/CTRLCFG", "defaultSslConSvc", "SslConnector");
 
         String dbhistoryVersionKey = EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version";
-        return txn
-            .put(putReq(dbhistoryVersionKey, "1"))
-            .sync();
+        return EtcdUtils.requestWithRetry(
+            txn.put(putReq(dbhistoryVersionKey, "1"))
+        );
     }
 }

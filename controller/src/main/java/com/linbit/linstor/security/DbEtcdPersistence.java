@@ -267,22 +267,26 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
     @Override
     public void setSecurityLevel(ControllerETCDDatabase etcdDb, SecurityLevel newLevel) throws DatabaseException
     {
-        etcdDb.getKvClient().batch().put(
-            EtcdUtils.putReq(
-                EtcdUtils.buildKey(SecConfiguration.ENTRY_VALUE, SecurityDbConsts.KEY_SEC_LEVEL),
-                newLevel.name()
+        EtcdUtils.requestWithRetry(
+            etcdDb.getKvClient().batch().put(
+                EtcdUtils.putReq(
+                    EtcdUtils.buildKey(SecConfiguration.ENTRY_VALUE, SecurityDbConsts.KEY_SEC_LEVEL),
+                    newLevel.name()
+                )
             )
-        ).sync();
+        );
     }
 
     @Override
     public void setAuthRequired(ControllerETCDDatabase etcdDb, boolean newPolicy) throws DatabaseException
     {
-        etcdDb.getKvClient().batch().put(
-            EtcdUtils.putReq(
-                EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_AUTH_REQ),
-                Boolean.toString(newPolicy)
+        EtcdUtils.requestWithRetry(
+            etcdDb.getKvClient().batch().put(
+                EtcdUtils.putReq(
+                    EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_AUTH_REQ),
+                    Boolean.toString(newPolicy)
+                )
             )
-        ).sync();
+        );
     }
 }
