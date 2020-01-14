@@ -24,6 +24,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -121,6 +122,13 @@ public class PhysicalStorage
             case ZFS:
                 map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_ZPOOL, pool);
                 break;
+
+            case DISKLESS: // fall-through
+            case FILE: // fall-through
+            case FILE_THIN: // fall-through
+            case SPDK: // fall-through
+            case ZFS_THIN: // fall-through
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:
                 //ignore
                 break;
