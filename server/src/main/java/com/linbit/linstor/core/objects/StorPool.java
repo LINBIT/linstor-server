@@ -109,9 +109,13 @@ public class StorPool extends BaseTransactionObject
             PropsContainer.buildPath(storPoolDef.getName(), node.getName())
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+
+        final boolean isFileProviderKind = providerKindRef == DeviceProviderKind.FILE ||
+            providerKindRef == DeviceProviderKind.FILE_THIN;
+
         supportsSnapshots = transObjFactory.createTransactionSimpleObject(
             this,
-            providerKindRef.isSnapshotSupported(),
+            isFileProviderKind ? null : providerKindRef.isSnapshotSupported(),
             null
         );
         isPmem = transObjFactory.createTransactionSimpleObject(this, false, null);

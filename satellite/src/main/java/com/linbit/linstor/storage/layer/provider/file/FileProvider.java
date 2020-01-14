@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
-import com.linbit.linstor.core.SysFsHandler;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
@@ -622,6 +621,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
                     {
                         dummyVlmPath.toFile().delete();
                     }
+
+                    transMgrProvider.get().commit();
                 }
             }
             catch (DatabaseException | InvalidKeyException exc)
