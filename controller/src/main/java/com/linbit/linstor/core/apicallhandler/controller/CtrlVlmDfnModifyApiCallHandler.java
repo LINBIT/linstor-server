@@ -431,7 +431,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             ctrlTransactionHelper.commit();
         }
 
-        return Flux.empty();
+        return updateSatellites(rscName, vlmNr, false);
     }
 
     private Props getVlmDfnProps(VolumeDefinition vlmDfn)
