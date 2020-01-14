@@ -1,3 +1,71 @@
+linstor-server (1.4.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rest-api: go back to version 1.0.11
+  * errorreport: parameterize comparable
+  * wiphandler: allow a collection of paths to be specified
+  * create-storagepool: Allow an onError flux to be given and fix Exc handling
+  * createdevicepool: cleanup
+  * scripts/rest-gen: allow null default for string
+  * genericname: Throw InvalidNameException if string is null
+  * rest/physicaldevice: Add "atomic" storage pool creation
+  * rest-api-doc: fix incorrect yaml
+  * lsblkutils: show full paths for device names
+  * createdevicepool: do not continue on vdo errors
+
+  [ Roland Kammerer ]
+  * args: allow args to be overwritten
+
+  [ Gabor Hernadi ]
+  * LayerData: Implemented layer-skip
+  * Added Writecache layer
+  * RestApi: reorganized some classes
+  * Resource.Flags: Split DISKLESS into DRBD_DISKLESS and NVME_INITIATOR
+  * Layer: Allow DRBD over NVMe
+  * Drbd,Diskless: fixing wrong usage of flags.isUnset
+  * Drbd,Nvme: Added support for ext. metadata (local-only!)
+  * Writecache: Fixed delete bug and added some logging
+  * AbsResource: Unified Resources and Snapshots
+  * Snapshot: add support for DRBD external metadata
+  * DatabaseLoader: Fixed NPE when restoring layerdata
+  * Tests: Fixed unit tests
+  * Snapshot: Fixed migration issues
+  * Writecache: Flushing device before creating snapshot
+  * Drbd,Nvme: Added support for snapshot
+  * Drbd,Nvme: Allow multiple nvme targets when using DRBD
+  * ETCD: Fixed lot of PK access bugs
+  * AbsStorageProvider: Fixed cast exception
+  * Workaround: Add AFTER clause in ADD COLUMN for H2
+  * SnapVlmDfn: Fixed access to deleted VlmDfn
+  * LayerDrbdDriver: Fixed incorrect loading of volumes
+  * MigrationUtils: Fix drop constraint bug for mariaDB
+  * MariaDB: fixed several migration bugs
+  * Fixed unit tests
+  * Added missing switch-case
+  * NvmeHelper: Fixed multiple initiators choosing the same target
+  * DbTablesGen: removed unnecessary column-index property
+  * Partial revert of ADD COLUMN AFTER clause
+  * Removed support for swordfish
+  * Cleanup: Added some generic types to layer objects
+  * Gradle: Fixed vararg related compile warnings
+  * Diskless: Fixing unnecessarily needed storagepools
+  * VlmDfn: Added GROSS_SIZE flag
+  * Rsc.delete: Fixed possible NPE
+  * CtrlRscDelete: Fixed bug preventing cleanup of DELETING resources on c [...]
+  * AuthResponse: Ctrl now logs extTools of stlt when received
+  * Added API for new GROSS_SIZE flag
+  * Added qmvs to rscGrp api
+  * Snapshot/-Volumes now have their own propsContainer
+  * Nvme: Target shares drbd-node-id with its initiator
+  * ETCD: added deadline (timeout) for etcd requests
+  * Revert "Partial revert of ADD COLUMN AFTER clause"
+  * PhysicalStorage: Added missing enum cases
+
+  [ Tomasz Bykowski ]
+  * Added support for SPDK in DevicePoolHandler
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 14 Jan 2020 07:29:28 +0000
+
 linstor-server (1.3.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
