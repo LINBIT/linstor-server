@@ -430,7 +430,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 updateInfo(vlmData, info);
 
                 final long expectedSize = vlmData.getExepectedSize();
-                final long actualSize = info.allocatedSize;
+                final long actualSize = info.usableSize;
                 if (actualSize != expectedSize)
                 {
                     if (actualSize < expectedSize)
