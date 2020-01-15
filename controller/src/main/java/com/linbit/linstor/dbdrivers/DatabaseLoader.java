@@ -582,13 +582,21 @@ public class DatabaseLoader implements DatabaseDriver
         List<Snapshot> snapshotsWithLayerData = loadLayerData(
             tmpStorPoolMapRef,
             rli ->{
-                SnapshotDefinition snapshotDefinition = tmpSnapDfnMapRef.get(
-                    new Pair<>(
-                        rli.resourceName,
-                        rli.snapshotName
-                    )
-                );
-                return snapshotDefinition == null ? null : snapshotDefinition.getSnapshot(dbCtx, rli.nodeName);
+                Snapshot snap = null;
+                if (rli.snapshotName != null)
+                {
+                    SnapshotDefinition snapshotDefinition = tmpSnapDfnMapRef.get(
+                        new Pair<>(
+                            rli.resourceName,
+                            rli.snapshotName
+                        )
+                    );
+                    if (snapshotDefinition != null)
+                    {
+                        snap = snapshotDefinition.getSnapshot(dbCtx, rli.nodeName);
+                    }
+                }
+                return snap;
             }
         );
 
