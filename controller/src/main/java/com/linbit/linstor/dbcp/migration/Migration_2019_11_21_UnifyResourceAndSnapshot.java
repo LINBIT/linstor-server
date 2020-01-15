@@ -63,6 +63,8 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
 
     private static final String CHK_RD_DSP_NAME = "CHK_RD_DSP_NAME";
 
+    private static final String UNQ_LDVD_MINOR = "UNQ_LDVD_MINOR";
+
     private static final String TBL_NODES = "NODES";
     private static final String TBL_RSC_DFN = "RESOURCE_DEFINITIONS";
     private static final String TBL_RSC = "RESOURCES";
@@ -146,9 +148,6 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
      */
     private static final String DFLT_RSC_NAME_SUFFIX = ""; // intentionally empty
     private static final String DFLT_TRANSPORT_TYPE = "IP";
-
-    private static final int DFLT_SNAP_TCP_PORT = -1;
-    private static final int DFLT_SNAP_MINOR = -1;
 
     // temporary containers to avoid duplicate DB entries (which would cause exceptions)
     private final HashSet<Key> layerDrbdRscDfnSet = new HashSet<>();
@@ -1031,7 +1030,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
             insert.setInt(4, InternalApiConsts.DEFAULT_PEER_SLOTS); // we have nothing else saved
             insert.setInt(5, InternalApiConsts.DEFAULT_AL_STRIPES);
             insert.setLong(6, InternalApiConsts.DEFAULT_AL_SIZE);
-            insert.setInt(7, DFLT_SNAP_TCP_PORT);
+            insert.setNull(7, Types.INTEGER); // null as tcpPort
             insert.setString(8, DFLT_TRANSPORT_TYPE);
             insert.setNull(9, Types.VARCHAR); // no secret
 
@@ -1048,7 +1047,8 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
             insert.setString(2, DFLT_RSC_NAME_SUFFIX);
             insert.setString(3, snapName);
             insert.setInt(4, vlmNr);
-            insert.setInt(5, DFLT_SNAP_MINOR);
+            insert.setNull(5, Types.INTEGER); // null minor number
+            // insert.setInt(5, DFLT_SNAP_MINOR);
 
             insert.executeUpdate();
         }

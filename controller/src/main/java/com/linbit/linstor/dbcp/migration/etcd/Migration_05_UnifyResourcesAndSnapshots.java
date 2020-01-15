@@ -105,12 +105,10 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
     private static final String DFLT_RSC_NAME_SUFFIX = ""; // intentionally empty
     private static final String DFLT_TRANSPORT_TYPE = "IP";
 
-    private static final String DFLT_SNAP_TCP_PORT = "-1";
-    private static final String DFLT_SNAP_MINOR = "-1";
-
     // temporary containers to avoid unnecessary get requests
     private static final Map<Key, SnapInfo> SNAP_INFO_MAP = new HashMap<>();
 
+    private static final String NULL = ":null";
 
     public static void migrate(ControllerETCDTransactionMgr txMgr) throws JsonMappingException, JsonProcessingException
     {
@@ -635,7 +633,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         relativeMap.put(CLM_PEER_SLOTS, "" + InternalApiConsts.DEFAULT_PEER_SLOTS); // we have nothing else saved
         relativeMap.put(CLM_AL_STRIPES, "" + InternalApiConsts.DEFAULT_AL_STRIPES);
         relativeMap.put(CLM_AL_STRIPE_SIZE, "" + InternalApiConsts.DEFAULT_AL_SIZE);
-        relativeMap.put(CLM_TCP_PORT, DFLT_SNAP_TCP_PORT);
+        relativeMap.put(CLM_TCP_PORT, NULL);
         relativeMap.put(CLM_TRANSPORT_TYPE, DFLT_TRANSPORT_TYPE);
         // no secret
 
@@ -661,7 +659,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
     {
         TreeMap<String, String> relativeMap = new TreeMap<>();
 
-        relativeMap.put(CLM_VLM_MINOR_NR, DFLT_SNAP_MINOR);
+        relativeMap.put(CLM_VLM_MINOR_NR, NULL);
 
         write(
             tx,
