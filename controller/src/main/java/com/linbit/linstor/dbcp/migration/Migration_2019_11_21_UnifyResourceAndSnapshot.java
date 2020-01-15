@@ -883,7 +883,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
                 "S." + CLM_NODE_ID + ", " +
                 "S." + CLM_LAYER_STACK + ", " +
                 "SV." + CLM_STOR_POOL_NAME + ", " +
-                "SP." + CLM_DRIVER_NAME + " AS SP_KIND " +
+                "SP." + CLM_DRIVER_NAME +
             " FROM " +
                 TBL_SNAP_VLM + " AS SV, "+
                 TBL_SNAP + " AS S, " +
