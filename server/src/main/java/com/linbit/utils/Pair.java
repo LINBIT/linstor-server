@@ -44,13 +44,24 @@ public class Pair<A, B> implements Comparable<Pair<A, B>>
     public int compareTo(Pair<A, B> otherPair)
     {
         int eq = 0;
-        if (objA instanceof Comparable)
+        if (objA == null)
         {
-            eq = ((Comparable<A>) objA).compareTo(otherPair.objA);
+            eq = otherPair.objA == null ? 0 : -1;
         }
-        if (eq == 0 && objB instanceof Comparable)
+        else if (objA instanceof Comparable)
         {
-            eq = ((Comparable<B>) objB).compareTo(otherPair.objB);
+            eq = otherPair.objA == null ? 1 : ((Comparable<A>) objA).compareTo(otherPair.objA);
+        }
+        if (eq == 0)
+        {
+            if (objB == null)
+            {
+                eq = otherPair.objB == null ? 0 : -1;
+            }
+            else if (objB instanceof Comparable)
+            {
+                eq = otherPair.objB == null ? 1 : ((Comparable<B>) objB).compareTo(otherPair.objB);
+            }
         }
         return eq;
     }
