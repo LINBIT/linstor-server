@@ -151,7 +151,7 @@ class CtrlNetIfApiCallHandler
         String addressStr,
         Integer stltPort,
         String stltEncrType,
-        Boolean setActive
+        Boolean setActivePrm
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -168,6 +168,8 @@ class CtrlNetIfApiCallHandler
             Node.Type nodeType = netIf.getNode().getNodeType(apiCtx);
             boolean isModifyingActiveStltConn =
                 netIf.getUuid().equals(node.getActiveStltConn(peerAccCtx.get()).getUuid());
+
+            final boolean setActive = setActivePrm != null ? setActivePrm : false;
 
             // reconnect necessary if ip or port changes on the active stlt conn
             boolean needsReconnect =
