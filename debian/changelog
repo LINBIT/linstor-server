@@ -1,3 +1,16 @@
+linstor-server (1.4.1-1) experimental; urgency=medium
+
+  * FILE, FILE_THIN: fixed isSnapshotSupported
+  * Pair: Fixed compareTo method
+  * DbLoader: added additional filter for snapshots
+  * Migration: fixed incorrect column
+  * Fix Boolean unboxing: Boolean object can be a null reference
+  * PairTest: Extended with null_null case
+  * Migration: Fixed tcpPort and minorNr of snapshots
+  * OpenApi: Added missing WRITECACHE entries
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 16 Jan 2020 07:24:57 +0000
+
 linstor-server (1.4.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
