@@ -3627,6 +3627,7 @@ components:
         - LUKS
         - STORAGE
         - NVME
+        - WRITECACHE
     DrbdResourceDefinitionLayer:
       type: object
       properties:
@@ -4094,6 +4095,7 @@ components:
             - $ref: '#/components/schemas/LUKSVolume'
             - $ref: '#/components/schemas/StorageVolume'
             - $ref: '#/components/schemas/NVMEVolume'
+            - $ref: '#/components/schemas/WritecacheVolume'
 
     Volume:
       type: object
