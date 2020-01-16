@@ -23,6 +23,7 @@ import com.linbit.linstor.security.SignInException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -78,6 +79,7 @@ public class SignIn implements ApiCall
 
             ApiCallRcEntry rcEntry = new ApiCallRcEntry();
             rcEntry.setMessage("Sign-in successful");
+            rcEntry.setReturnCode(ApiConsts.SUCCESS_SIGN_IN);
             rcEntry.putObjRef(ApiConsts.KEY_SEC_IDENTITY, clientCtx.subjectId.name.displayValue);
             rcEntry.putObjRef(ApiConsts.KEY_SEC_ROLE, clientCtx.subjectRole.name.displayValue);
             rcEntry.putObjRef(ApiConsts.KEY_SEC_DOMAIN, clientCtx.subjectDomain.name.displayValue);
