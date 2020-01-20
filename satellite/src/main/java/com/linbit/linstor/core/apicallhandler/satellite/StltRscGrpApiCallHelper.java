@@ -2,9 +2,9 @@ package com.linbit.linstor.core.apicallhandler.satellite;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.VolumeGroupSatelliteFactory;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
@@ -71,7 +71,7 @@ class StltRscGrpApiCallHelper
         ResourceGroupName rscGrpName = new ResourceGroupName(rscGrpApiRef.getName());
         AutoSelectFilterApi autoPlaceConfigPojo = rscGrpApiRef.getAutoSelectFilter();
 
-        ResourceGroup rscGrp = (ResourceGroup) rscGrpMap.get(rscGrpName);
+        ResourceGroup rscGrp = rscGrpMap.get(rscGrpName);
         if (rscGrp == null)
         {
             rscGrp = resourceGroupFactory.getInstanceSatellite(
@@ -99,7 +99,7 @@ class StltRscGrpApiCallHelper
 
             rscGrp.setDescription(apiCtx, rscGrpApiRef.getDescription());
 
-            AutoSelectorConfig autoPlaceConfig = (AutoSelectorConfig) rscGrp.getAutoPlaceConfig();
+            AutoSelectorConfig autoPlaceConfig = rscGrp.getAutoPlaceConfig();
 
             autoPlaceConfig.applyChanges(autoPlaceConfigPojo);
         }
@@ -122,12 +122,20 @@ class StltRscGrpApiCallHelper
                     vlmGrp = volumeGroupFactory.getInstanceSatellite(
                         vlmGrpApi.getUUID(),
                         rscGrp,
-                        vlmNr
+                        vlmNr,
+                        vlmGrpApi.getFlags()
                     );
                 }
-                Props vlmGrpProps = vlmGrp.getProps(apiCtx);
-                vlmGrpProps.clear();
-                vlmGrpProps.map().putAll(vlmGrpApi.getProps());
+                else
+                {
+                    Props vlmGrpProps = vlmGrp.getProps(apiCtx);
+                    vlmGrpProps.clear();
+                    vlmGrpProps.map().putAll(vlmGrpApi.getProps());
+                    vlmGrp.getFlags().resetFlagsTo(
+                        apiCtx,
+                        VolumeGroup.Flags.restoreFlags(vlmGrpApi.getFlags())
+                    );
+                }
             }
 
             for (VolumeNumber vlmNr : vlmGrpsToDelete.keySet())

@@ -9,4 +9,5 @@ message VlmGrp
     // null for automatic assignment
     optional sint32 vlm_nr = 2;
     map<string, string> vlm_dfn_props = 3;
+    repeated string flags = 4;
 }

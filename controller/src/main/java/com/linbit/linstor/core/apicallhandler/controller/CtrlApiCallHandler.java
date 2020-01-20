@@ -1269,7 +1269,8 @@ public class CtrlApiCallHandler
         int vlmNrRef,
         Map<String, String> overrideProps,
         HashSet<String> deletePropKeys,
-        HashSet<String> deleteNamespaces
+        HashSet<String> deleteNamespaces,
+        List<String> flags
     )
     {
         Flux<ApiCallRc> flux;
@@ -1280,7 +1281,8 @@ public class CtrlApiCallHandler
                 vlmNrRef,
                 overrideProps,
                 deletePropKeys,
-                deleteNamespaces
+                deleteNamespaces,
+                flags
             );
         }
         return flux;

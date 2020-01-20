@@ -9,6 +9,7 @@ import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo.ExternalTools;
@@ -17,6 +18,7 @@ import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
 import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -298,7 +300,8 @@ public class ProtoDeserializationUtils
         return new VlmGrpPojo(
             UUID.fromString(vlmGrpProto.getUuid()),
             vlmGrpProto.getVlmNr(),
-            vlmGrpProto.getVlmDfnPropsMap()
+            vlmGrpProto.getVlmDfnPropsMap(),
+            FlagsHelper.fromStringList(VolumeGroup.Flags.class, vlmGrpProto.getFlagsList())
         );
     }
 

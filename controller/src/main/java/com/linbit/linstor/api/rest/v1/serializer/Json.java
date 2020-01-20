@@ -43,6 +43,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -790,6 +791,7 @@ public class Json
         vlmGrp.volume_number = vlmGrpApi.getVolumeNr();
         vlmGrp.props = vlmGrpApi.getProps();
         vlmGrp.uuid = vlmGrpApi.getUUID().toString();
+        vlmGrp.flags = FlagsHelper.toStringList(VolumeGroup.Flags.class, vlmGrpApi.getFlags());
         return vlmGrp;
     }
 

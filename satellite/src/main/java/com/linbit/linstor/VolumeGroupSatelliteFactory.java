@@ -58,11 +58,12 @@ public class VolumeGroupSatelliteFactory
     public VolumeGroup getInstanceSatellite(
         UUID uuid,
         ResourceGroup rscGrp,
-        VolumeNumber vlmNr
+        VolumeNumber vlmNr,
+        long initFlags
     )
         throws DatabaseException, AccessDeniedException
     {
-        VolumeGroup vlmGrp = (VolumeGroup) rscGrp.getVolumeGroup(sysCtx, vlmNr);
+        VolumeGroup vlmGrp = rscGrp.getVolumeGroup(sysCtx, vlmNr);
 
         if (vlmGrp == null)
         {
@@ -70,6 +71,7 @@ public class VolumeGroupSatelliteFactory
                 uuid,
                 rscGrp,
                 vlmNr,
+                initFlags,
                 vlmGrpDriver,
                 propsContainerFactory,
                 transObjFactory,

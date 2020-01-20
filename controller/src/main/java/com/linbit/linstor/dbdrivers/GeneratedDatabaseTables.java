@@ -1123,12 +1123,14 @@ public class GeneratedDatabaseTables
         public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
 
         public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
+        public static final Column FLAGS = new Column("FLAGS", Types.BIGINT, false, false);
 
         public static final Column[] ALL = new Column[]
         {
             UUID,
             RESOURCE_GROUP_NAME,
-            VLM_NR
+            VLM_NR,
+            FLAGS
         };
 
         @Override
@@ -1343,6 +1345,7 @@ public class GeneratedDatabaseTables
         VolumeGroups.UUID.table = VOLUME_GROUPS;
         VolumeGroups.RESOURCE_GROUP_NAME.table = VOLUME_GROUPS;
         VolumeGroups.VLM_NR.table = VOLUME_GROUPS;
+        VolumeGroups.FLAGS.table = VOLUME_GROUPS;
     }
 
     public static class Column

@@ -21,6 +21,9 @@ info:
 
     Changelog:
 
+    * 1.0.13
+      - Fixed broken volume definition modify `flags` handling
+      - Added flags to volume groups (create/modify)
     * 1.0.12
       - Added WritecacheResource and WritecacheVolume schemas.
       - Removed support for swordfish
@@ -66,7 +69,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.12
+  version: 1.0.13
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -3819,6 +3822,11 @@ components:
             type: string
         flags:
           type: array
+          description: |
+            To add a flag just specify the flag name, to remove a flag prepend it with a '-'.
+
+            Flags:
+              * GROSS_SIZE
           items:
             type: string
     DrbdResource:
@@ -4219,11 +4227,24 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        flags:
+          type: array
+          items:
+            type: string
     VolumeGroupModify:
       type: object
       properties:
         override_props:
           $ref: '#/components/schemas/Properties'
+        flags:
+          type: array
+          description: |
+            To add a flag just specify the flag name, to remove a flag prepend it with a '-'.
+
+            Flags:
+              * GROSS_SIZE
+          items:
+            type: string
         delete_props:
           type: array
           items:

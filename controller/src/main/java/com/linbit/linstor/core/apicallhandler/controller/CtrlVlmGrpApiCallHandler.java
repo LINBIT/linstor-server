@@ -28,6 +28,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.VolumeGroup;
+import com.linbit.linstor.core.objects.VolumeGroup.Flags;
 import com.linbit.linstor.core.objects.VolumeGroupControllerFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -35,7 +36,10 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.locks.LockGuardFactory;
+import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler.getRscGrpDescriptionInline;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -47,6 +51,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -223,7 +228,8 @@ public class CtrlVlmGrpApiCallHandler
         int vlmNrInt,
         Map<String, String> overrideProps,
         HashSet<String> deletePropKeys,
-        HashSet<String> deleteNamespaces
+        HashSet<String> deleteNamespaces,
+        List<String> flagsList
     )
     {
         ResponseContext context = makeVolumeGroupContext(
@@ -244,7 +250,8 @@ public class CtrlVlmGrpApiCallHandler
                     vlmNrInt,
                     overrideProps,
                     deletePropKeys,
-                    deleteNamespaces
+                    deleteNamespaces,
+                    flagsList
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -255,7 +262,8 @@ public class CtrlVlmGrpApiCallHandler
         int vlmNrInt,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deleteNamespaces
+        Set<String> deleteNamespaces,
+        List<String> flagsListRef
     )
     {
         List<Flux<Flux<ApiCallRc>>> fluxes = new ArrayList<>();
@@ -287,6 +295,21 @@ public class CtrlVlmGrpApiCallHandler
                 deletePropKeys,
                 deleteNamespaces
             );
+
+            Pair<Set<VolumeGroup.Flags>, Set<VolumeGroup.Flags>> pair = FlagsHelper.extractFlagsToEnableOrDisable(
+                VolumeGroup.Flags.class,
+                flagsListRef
+            );
+
+            StateFlags<Flags> vlmGrpFlags = vlmGrp.getFlags();
+            for (VolumeGroup.Flags flag : pair.objA)
+            {
+                vlmGrpFlags.enableFlags(apiCtx, flag);
+            }
+            for (VolumeGroup.Flags flag : pair.objB)
+            {
+                vlmGrpFlags.disableFlags(apiCtx, flag);
+            }
 
             ctrlTransactionHelper.commit();
 
@@ -392,7 +415,8 @@ public class CtrlVlmGrpApiCallHandler
             vlmGrp = createVolumeGroup(
                 peerAccCtx.get(),
                 rscGrpRef,
-                vlmNr
+                vlmNr,
+                vlmGrpApiRef.getFlags()
             );
 
             ctrlPropsHelper.fillProperties(
@@ -420,7 +444,8 @@ public class CtrlVlmGrpApiCallHandler
     private VolumeGroup createVolumeGroup(
         AccessContext accCtx,
         ResourceGroup rscGrp,
-        VolumeNumber vlmNr
+        VolumeNumber vlmNr,
+        long initFlags
     )
     {
         VolumeGroup vlmGrp;
@@ -429,7 +454,8 @@ public class CtrlVlmGrpApiCallHandler
             vlmGrp = volumeGroupFactory.create(
                 accCtx,
                 rscGrp,
-                vlmNr
+                vlmNr,
+                initFlags
             );
         }
         catch (AccessDeniedException accDeniedExc)

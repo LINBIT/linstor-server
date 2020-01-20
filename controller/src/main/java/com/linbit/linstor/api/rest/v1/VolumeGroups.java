@@ -8,6 +8,8 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
+import com.linbit.linstor.core.objects.VolumeGroup;
+import com.linbit.linstor.stateflags.FlagsHelper;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -130,7 +132,8 @@ public class VolumeGroups
                     new VlmGrpPojo(
                         null,
                         vlmGrp.volume_number,
-                        vlmGrp.props
+                        vlmGrp.props,
+                        FlagsHelper.fromStringList(VolumeGroup.Flags.class, vlmGrp.flags)
                     )
                 )
             );
@@ -160,7 +163,8 @@ public class VolumeGroups
             volumeNumber,
             modifyData.override_props,
             new HashSet<>(modifyData.delete_props),
-            new HashSet<>(modifyData.delete_namespaces)
+            new HashSet<>(modifyData.delete_namespaces),
+            modifyData.flags
         )
         .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_GRP, request));
 

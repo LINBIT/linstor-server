@@ -42,14 +42,15 @@ public class VolumeGroupControllerFactory
     public VolumeGroup create(
         AccessContext accCtx,
         ResourceGroup rscGrp,
-        VolumeNumber vlmNr
+        VolumeNumber vlmNr,
+        long initFlags
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
 
         rscGrp.getObjProt().requireAccess(accCtx, AccessType.USE);
 
-        VolumeGroup vlmGrpData = (VolumeGroup) rscGrp.getVolumeGroup(accCtx, vlmNr);
+        VolumeGroup vlmGrpData = rscGrp.getVolumeGroup(accCtx, vlmNr);
 
         if (vlmGrpData != null)
         {
@@ -60,6 +61,7 @@ public class VolumeGroupControllerFactory
             UUID.randomUUID(),
             rscGrp,
             vlmNr,
+            initFlags,
             driver,
             propsContainerFactory,
             transObjFactory,
@@ -67,7 +69,7 @@ public class VolumeGroupControllerFactory
         );
 
         driver.create(vlmGrpData);
-        ((ResourceGroup) rscGrp).putVolumeGroup(accCtx, vlmGrpData);
+        rscGrp.putVolumeGroup(accCtx, vlmGrpData);
 
         return vlmGrpData;
     }

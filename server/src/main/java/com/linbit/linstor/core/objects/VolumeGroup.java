@@ -16,6 +16,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
+import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -23,8 +25,10 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class VolumeGroup extends BaseTransactionObject
@@ -40,6 +44,8 @@ public class VolumeGroup extends BaseTransactionObject
 
     private final Props vlmGrpProps;
 
+    private final StateFlags<VolumeGroup.Flags> flags;
+
     private final VolumeGroupDatabaseDriver dbDriver;
 
     private final TransactionSimpleObject<VolumeGroup, Boolean> deleted;
@@ -48,6 +54,7 @@ public class VolumeGroup extends BaseTransactionObject
         UUID uuidRef,
         ResourceGroup rscGrpRef,
         VolumeNumber vlmNrRef,
+        long initFlags,
         VolumeGroupDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -64,6 +71,14 @@ public class VolumeGroup extends BaseTransactionObject
 
         dbDriver = dbDriverRef;
 
+        flags = transObjFactoryRef.createStateFlagsImpl(
+            rscGrpRef.getObjProt(),
+            this,
+            VolumeGroup.Flags.class,
+            this.dbDriver.getStateFlagsPersistence(),
+            initFlags
+        );
+
         vlmGrpProps = propsContainerFactoryRef.getInstance(
             PropsContainer.buildPath(rscGrp.getName(), vlmNr)
         );
@@ -71,6 +86,7 @@ public class VolumeGroup extends BaseTransactionObject
 
         transObjs = Arrays.asList(
             rscGrp,
+            flags,
             vlmGrpProps,
             deleted
         );
@@ -109,6 +125,12 @@ public class VolumeGroup extends BaseTransactionObject
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtxRef, rscGrp.getObjProt(), vlmGrpProps);
+    }
+
+    public StateFlags<VolumeGroup.Flags> getFlags()
+    {
+        checkDeleted();
+        return flags;
     }
 
     public void delete(AccessContext accCtxRef) throws AccessDeniedException, DatabaseException
@@ -150,7 +172,69 @@ public class VolumeGroup extends BaseTransactionObject
         return new VlmGrpPojo(
             objId,
             vlmNr.value,
-            Collections.unmodifiableMap(vlmGrpProps.map())
+            Collections.unmodifiableMap(vlmGrpProps.map()),
+            flags.getFlagsBits(accCtxRef)
         );
+    }
+
+    public static enum Flags implements com.linbit.linstor.stateflags.Flags
+    {
+        GROSS_SIZE(1L);
+
+        public final long flagValue;
+
+        Flags(long value)
+        {
+            flagValue = value;
+        }
+
+        @Override
+        public long getFlagValue()
+        {
+            return flagValue;
+        }
+
+        public static Flags[] valuesOfIgnoreCase(String string)
+        {
+            Flags[] flags;
+            if (string == null)
+            {
+                flags = new Flags[0];
+            }
+            else
+            {
+                String[] split = string.split(",");
+                flags = new Flags[split.length];
+
+                for (int idx = 0; idx < split.length; idx++)
+                {
+                    flags[idx] = Flags.valueOf(split[idx].toUpperCase().trim());
+                }
+            }
+            return flags;
+        }
+
+        public static Flags[] restoreFlags(long vlmDfnFlags)
+        {
+            List<Flags> flagList = new ArrayList<>();
+            for (Flags flag : Flags.values())
+            {
+                if ((vlmDfnFlags & flag.flagValue) == flag.flagValue)
+                {
+                    flagList.add(flag);
+                }
+            }
+            return flagList.toArray(new Flags[flagList.size()]);
+        }
+
+        public static List<String> toStringList(long flagsMask)
+        {
+            return FlagsHelper.toStringList(Flags.class, flagsMask);
+        }
+
+        public static long fromStringList(List<String> listFlags)
+        {
+            return FlagsHelper.fromStringList(Flags.class, listFlags);
+        }
     }
 }

@@ -45,6 +45,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -54,6 +55,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.locks.LockGuardFactory;
@@ -678,16 +680,19 @@ public class CtrlRscGrpApiCallHandler
             {
                 for (int idx = 0; idx < vlmSizeLen; ++idx)
                 {
+                    VolumeGroup vlmGrp = vlmGrps.get(idx);
+
                     long vlmSize = vlmSizesRef.get(idx).longValue();
                     Integer vlmNr = null;
                     if (idx < vlmGrpLen)
                     {
-                        vlmNr = vlmGrps.get(idx).getVolumeNumber().value;
+                        vlmNr = vlmGrp.getVolumeNumber().value;
                     }
                     vlmDfnCrtList.add(
                         createVlmDfnWithCreationPayload(
                             vlmNr,
-                            vlmSize
+                            vlmSize,
+                            vlmGrp.getFlags().getFlagsBits(peerCtx)
                         )
                     );
                 }
@@ -784,14 +789,21 @@ public class CtrlRscGrpApiCallHandler
 
     }
 
-    private VolumeDefinitionWtihCreationPayload createVlmDfnWithCreationPayload(Integer vlmNr, long vlmSizeRef)
+    private VolumeDefinitionWtihCreationPayload createVlmDfnWithCreationPayload(
+        Integer vlmNr,
+        long vlmSizeRef,
+        long vlmGrpFlags
+    )
     {
         return new VlmDfnWithCreationPayloadPojo(
             new VlmDfnPojo(
                 null,
                 vlmNr,
                 vlmSizeRef,
-                0,
+                FlagsHelper.fromStringList(
+                    VolumeDefinition.Flags.class,
+                    FlagsHelper.toStringList(VolumeGroup.Flags.class, vlmGrpFlags)
+                ),
                 Collections.emptyMap(),
                 Collections.emptyList()
             ),

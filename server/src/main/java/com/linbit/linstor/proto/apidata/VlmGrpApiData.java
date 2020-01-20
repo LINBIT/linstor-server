@@ -1,6 +1,7 @@
 package com.linbit.linstor.proto.apidata;
 
 import com.linbit.linstor.core.apis.VolumeGroupApi;
+import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 
@@ -26,6 +27,12 @@ public class VlmGrpApiData implements VolumeGroupApi
     public Map<String, String> getProps()
     {
         return vlmGrp.getVlmDfnPropsMap();
+    }
+
+    @Override
+    public long getFlags()
+    {
+        return VolumeGroup.Flags.fromStringList(vlmGrp.getFlagsList());
     }
 
     @Override

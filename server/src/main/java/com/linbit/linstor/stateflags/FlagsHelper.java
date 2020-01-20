@@ -2,11 +2,14 @@ package com.linbit.linstor.stateflags;
 
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.utils.Pair;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * FlagsHelper contains static helper methods to avoid code duplication in flag enums.
@@ -79,7 +82,35 @@ public class FlagsHelper
         return (flagBits & tmp) == tmp;
     }
 
+    /**
+     * Returns a pair of sets of positive and negative flags.
+     * pair.a is the set of positive flags, pair.b is the set of negative flags.
+     */
+    public static <E extends Enum<E> & Flags> Pair<Set<E>, Set<E>> extractFlagsToEnableOrDisable(
+        Class<E> classRef,
+        List<String> flagsListRef
+    )
+    {
+        Set<E> flagsToEnable = new TreeSet<>();
+        Set<E> flagsToDisable = new TreeSet<>();
+        Pair<Set<E>, Set<E>> ret = new Pair<>(flagsToEnable, flagsToDisable);
+
+        for (String flag : flagsListRef)
+        {
+            if (flag.startsWith("-"))
+            {
+                flagsToDisable.add(Enum.valueOf(classRef, flag.substring(1)));
+            }
+            else
+            {
+                flagsToEnable.add(Enum.valueOf(classRef, flag));
+            }
+        }
+        return ret;
+    }
+
     private FlagsHelper()
     {
     }
+
 }

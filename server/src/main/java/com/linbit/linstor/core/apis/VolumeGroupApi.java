@@ -8,4 +8,5 @@ public interface VolumeGroupApi
     Integer getVolumeNr();
     Map<String, String> getProps();
     UUID getUUID();
+    long getFlags();
 }

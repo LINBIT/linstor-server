@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.0.12";
+    public static final String REST_API_VERSION = "1.0.13";
 
     /**
      * Common api reply structure
@@ -289,6 +289,12 @@ public class JsonGenTypes
         public Map<String, String> override_props = Collections.emptyMap();
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
+        /**
+         * To add a flag just specify the flag name, to remove a flag prepend it with a '-'.
+         *
+         * Flags:
+         *   * GROSS_SIZE
+         */
         public List<String> flags = Collections.emptyList();
     }
 
@@ -591,12 +597,20 @@ public class JsonGenTypes
          * unique object id
          */
         public String uuid;
+        public List<String> flags = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class VolumeGroupModify
     {
         public Map<String, String> override_props = Collections.emptyMap();
+        /**
+         * To add a flag just specify the flag name, to remove a flag prepend it with a '-'.
+         *
+         * Flags:
+         *   * GROSS_SIZE
+         */
+        public List<String> flags = Collections.emptyList();
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
     }

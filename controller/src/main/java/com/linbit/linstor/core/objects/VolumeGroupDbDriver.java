@@ -17,10 +17,12 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeGroups.FLAGS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeGroups.RESOURCE_GROUP_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeGroups.UUID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.VolumeGroups.VLM_NR;
@@ -37,6 +39,7 @@ public class VolumeGroupDbDriver
     implements VolumeGroupCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
+    private final StateFlagsPersistence<VolumeGroup> flagsDriver;
     private final Provider<TransactionMgr> transMgrProvider;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
@@ -61,6 +64,15 @@ public class VolumeGroupDbDriver
         setColumnSetter(UUID, vlmGrp -> vlmGrp.getUuid().toString());
         setColumnSetter(RESOURCE_GROUP_NAME, vlmGrp -> vlmGrp.getResourceGroup().getName().value);
         setColumnSetter(VLM_NR, vlmGrp -> vlmGrp.getVolumeNumber().value);
+        setColumnSetter(FLAGS, vlmGrp -> vlmGrp.getFlags().getFlagsBits(dbCtxRef));
+
+        flagsDriver = generateFlagDriver(FLAGS, VolumeGroup.Flags.class);
+    }
+
+    @Override
+    public StateFlagsPersistence<VolumeGroup> getStateFlagsPersistence()
+    {
+        return flagsDriver;
     }
 
     @Override
@@ -73,13 +85,16 @@ public class VolumeGroupDbDriver
     {
         final ResourceGroupName rscGrpName = raw.build(RESOURCE_GROUP_NAME, ResourceGroupName::new);
         final VolumeNumber vlmNr;
+        final long flags;
         switch (getDbType())
         {
             case ETCD:
                 vlmNr = new VolumeNumber(Integer.parseInt(raw.get(VLM_NR)));
+                flags = Long.parseLong(raw.get(FLAGS));
                 break;
             case SQL:
                 vlmNr = raw.build(VLM_NR, VolumeNumber::new);
+                flags = raw.get(FLAGS);
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
@@ -89,6 +104,7 @@ public class VolumeGroupDbDriver
                 raw.build(UUID, java.util.UUID::fromString),
                 rscGrpMap.get(rscGrpName),
                 vlmNr,
+                flags,
                 this,
                 propsContainerFactory,
                 transObjFactory,
