@@ -1,12 +1,13 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
@@ -25,6 +26,7 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +35,6 @@ import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
-
-import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlStorPoolListApiCallHandler
@@ -94,12 +94,9 @@ public class CtrlStorPoolListApiCallHandler
         try
         {
             storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
-                .filter(storPoolDfn ->
-                    (
-                        storPoolsFilter.isEmpty() ||
-                        storPoolsFilter.contains(storPoolDfn.getName())
-                    ) &&
-                    !LinStor.DISKLESS_STOR_POOL_NAME.equalsIgnoreCase(storPoolDfn.getName().value)
+                .filter(
+                    storPoolDfn -> storPoolsFilter.isEmpty() ||
+                    storPoolsFilter.contains(storPoolDfn.getName())
                 )
                 .forEach(storPoolDfn ->
                     {
