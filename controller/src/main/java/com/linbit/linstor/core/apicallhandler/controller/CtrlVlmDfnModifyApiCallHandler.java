@@ -294,7 +294,10 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 {
                     nextStep = resizeDrbd(rscName, vlmNr);
                 }
-                nextStep = nextStep.concatWith(finishResize(rscName, vlmNr));
+                else
+                {
+                    nextStep = finishResize(rscName, vlmNr);
+                }
             }
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), nextStep)
                 .transform(
@@ -374,15 +377,19 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
             ctrlTransactionHelper.commit();
 
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), Flux.empty())
-                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
-                    updateResponses,
-                    rscName,
-                    getNodeNames(drbdResizeVlm),
-                    "Resized DRBD resource {1} on {0}",
-                    null
+            Flux<ApiCallRc> nextStep = finishResize(rscName, vlmNr);
+
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), nextStep)
+                .transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rscName,
+                        getNodeNames(drbdResizeVlm),
+                        "Resized DRBD resource {1} on {0}",
+                        null
+                    )
                 )
-            );
+                .concatWith(nextStep);
         }
 
         return flux;
