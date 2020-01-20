@@ -12,8 +12,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
-import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerREST;
@@ -57,7 +57,7 @@ public class RequestHelper
     private final AccessContext publicContext;
     private final TransactionMgrGenerator transactionMgrGenerator;
     private final CtrlAuthentication authentication;
-    private final LinstorConfigToml linstorConfig;
+    private final CtrlConfig linstorConfig;
 
     @Inject
     public RequestHelper(
@@ -67,7 +67,7 @@ public class RequestHelper
         @PublicContext AccessContext accessContextRef,
         TransactionMgrGenerator transactionMgrGeneratorRef,
         CtrlAuthentication authenticationRef,
-        LinstorConfigToml linstorConfigRef
+        CtrlConfig linstorConfigRef
     )
     {
         errorReporter = errorReporterRef;
@@ -125,7 +125,7 @@ public class RequestHelper
 
     private void checkLDAPAuth(Peer peer, String authHeader)
     {
-        if (linstorConfig.getLDAP().isEnabled())
+        if (linstorConfig.isLdapEnabled())
         {
             // request.getAuthorization() contains authorization http field
             if (authHeader != null)
@@ -166,7 +166,7 @@ public class RequestHelper
             }
             else
             {
-                if (!linstorConfig.getLDAP().allowPublicAccess())
+                if (!linstorConfig.isLdapPublicAccessAllowed())
                 {
                     ApiCallRc apiCallRc = ApiCallRcImpl.singleApiCallRc(
                         ApiConsts.FAIL_SIGN_IN_MISSING_CREDENTIALS,

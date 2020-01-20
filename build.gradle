@@ -303,7 +303,7 @@ project(':controller') {
     }
 
     task LinstorConfigStartup(type: CreateStartScripts) {
-        mainClassName = 'com.linbit.linstor.core.LinstorConfig'
+        mainClassName = 'com.linbit.linstor.core.LinstorConfigTool'
         applicationName = "linstor-config"
         outputDir = new File(project.buildDir, 'linstorconfig')
         classpath = files('*')

@@ -1,0 +1,52 @@
+package com.linbit.linstor.core.cfg;
+
+public class StltTomlConfig
+{
+    public static class NETCOM
+    {
+        private String type;
+        private String bind_address;
+        private Integer port;
+
+        private String server_certificate;
+        private String key_password;
+        private String keystore_password;
+        private String truststore_password;
+        private String trusted_certificates;
+        private String ssl_protocol;
+
+        public void applyTo(StltConfig cfg)
+        {
+            cfg.setStltType(type);
+
+            cfg.setNetBindAddress(bind_address);
+            cfg.setNetPort(port);
+
+            cfg.setNetSecureServerCertificate(server_certificate);
+            cfg.setNetSecureKeyPassword(key_password);
+            cfg.setNetSecureKeystorePassword(keystore_password);
+            cfg.setNetSecureTrustedCertificates(trusted_certificates);
+            cfg.setNetSecureTruststorePassword(truststore_password);
+            cfg.setNetSecureSslProtocol(ssl_protocol);
+        }
+    }
+
+    public static class Logging
+    {
+        private String level;
+
+        public void applyTo(StltConfig cfg)
+        {
+            cfg.setLogLevel(level);
+        }
+    }
+
+    private NETCOM netcom = new NETCOM();
+    private Logging logging = new Logging();
+
+    public void applyTo(StltConfig cfg)
+    {
+        netcom.applyTo(cfg);
+        logging.applyTo(cfg);
+    }
+}

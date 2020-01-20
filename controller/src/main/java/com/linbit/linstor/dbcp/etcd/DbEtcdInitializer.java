@@ -2,8 +2,7 @@ package com.linbit.linstor.dbcp.etcd;
 
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
-import com.linbit.linstor.core.ControllerCmdlArguments;
-import com.linbit.linstor.core.LinstorConfigToml;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -14,22 +13,19 @@ import javax.inject.Singleton;
 public class DbEtcdInitializer implements DbInitializer
 {
     private final ErrorReporter errorLog;
-    private final ControllerCmdlArguments args;
     private final DbEtcd dbEtcd;
-    private final LinstorConfigToml linstorConfig;
+    private final CtrlConfig ctrlCfg;
 
     @Inject
     public DbEtcdInitializer(
         ErrorReporter errorLogRef,
-        ControllerCmdlArguments argsRef,
         ControllerDatabase dbEtcdRef,
-        LinstorConfigToml linstorConfigRef
+        CtrlConfig ctrlCfgRef
     )
     {
         errorLog = errorLogRef;
-        args = argsRef;
         dbEtcd = (DbEtcd) dbEtcdRef;
-        linstorConfig = linstorConfigRef;
+        ctrlCfg = ctrlCfgRef;
     }
 
     @Override
@@ -37,7 +33,7 @@ public class DbEtcdInitializer implements DbInitializer
     {
         errorLog.logInfo("Initializing the etcd database");
 
-        dbEtcd.initializeDataSource(linstorConfig.getDB().getConnectionUrl());
+        dbEtcd.initializeDataSource(ctrlCfg.getDbConnectionUrl());
 
         dbEtcd.migrate("etcd");
     }

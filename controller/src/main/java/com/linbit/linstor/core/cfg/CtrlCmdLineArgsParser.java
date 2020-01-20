@@ -1,63 +1,66 @@
-package com.linbit.linstor.core;
+package com.linbit.linstor.core.cfg;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.core.LinStor;
+
 import java.io.File;
+import java.nio.file.Paths;
 
 import picocli.CommandLine;
 
-class ControllerArgumentParser
+class CtrlCmdLineArgsParser
 {
     @CommandLine.Option(names = {"-c", "--config-directory"},
         description = "Configuration directory for the controller"
     )
-    private String configurationDirectory = "./";
+    private String configurationDirectory;
     @CommandLine.Option(names = {"-d", "--debug-console"}, description = "")
-    private boolean debugConsole = false;
+    private Boolean debugConsole;
     @CommandLine.Option(
         names = {"--memory-database"},
         description = "Use a in memory database for testing. [format=dbtype;port;listenaddr]"
     )
-    private String memoryDB = null;
+    private String memoryDB;
 
     @CommandLine.Option(
         names = {"-p", "--stack-traces"},
         description = "print error stack traces on standard error"
     )
-    private boolean printStackTrace = false;
+    private Boolean printStackTrace;
 
     @CommandLine.Option(names = {"-l", "--logs"}, description = "Path to the log directory")
-    private String logDirectory = "./logs";
+    private String logDirectory;
 
     @CommandLine.Option(names = {"--log-level"},
         description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
-    private String logLevel = null;
+    private String logLevel;
 
     @CommandLine.Option(
         names = {"--rest-bind"},
         description = "Bind address for the REST HTTP server. e.g. 0.0.0.0:3370"
     )
-    private String restBindAddress = null;
+    private String restBindAddress;
 
     @CommandLine.Option(
         names = {"--rest-bind-secure"},
         description = "Bind address for the REST HTTPS server. e.g. 0.0.0.0:3371"
     )
-    private String restBindAddressSecure = null;
+    private String restBindAddressSecure;
 
     @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Show the version number")
-    private boolean versionInfoRequested;
+    private Boolean versionInfoRequested;
 
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
-    private boolean usageHelpRequested;
+    private Boolean usageHelpRequested;
 
     @CommandLine.Option(
         names = {"--disable-db-version-check"},
         description = "Disable database version version checks supported by Linstor")
-    private boolean disableDbVersionCheck = false;
+    private Boolean disableDbVersionCheck;
 
-    static ControllerCmdlArguments parseCommandLine(String[] args)
+    static void parseCommandLine(String[] args, CtrlConfig linstorCfgRef)
     {
-        ControllerArgumentParser linArgParser = new ControllerArgumentParser();
+        CtrlCmdLineArgsParser linArgParser = new CtrlCmdLineArgsParser();
         CommandLine cmd = new CommandLine(linArgParser);
         cmd.setCommandName("Controller");
         cmd.setOverwrittenOptionsAllowed(true);
@@ -85,11 +88,10 @@ class ControllerArgumentParser
             System.exit(InternalApiConsts.EXIT_CODE_SHUTDOWN);
         }
 
-        ControllerCmdlArguments cArgs = new ControllerCmdlArguments();
         if (linArgParser.configurationDirectory != null)
         {
-            cArgs.setConfigurationDirectory(linArgParser.configurationDirectory + "/");
-            File workingDir = cArgs.getConfigurationDirectory().toFile();
+            linstorCfgRef.setConfigDir(linArgParser.configurationDirectory + "/");
+            File workingDir = Paths.get(linstorCfgRef.getConfigDir()).toAbsolutePath().toFile();
             if (workingDir.exists() && !workingDir.isDirectory())
             {
                 System.err.println("Error: Given configuration directory is no directory");
@@ -97,52 +99,40 @@ class ControllerArgumentParser
             }
         }
 
-        if (linArgParser.logDirectory != null)
-        {
-            cArgs.setLogDirectory(linArgParser.logDirectory);
-        }
+        linstorCfgRef.setLogDirectory(linArgParser.logDirectory);
 
         if (linArgParser.memoryDB != null)
         {
             String[] memopts = linArgParser.memoryDB.split(";");
             if (memopts.length > 0)
             {
-                cArgs.setInMemoryDbType(memopts[0]);
+                linstorCfgRef.setDbInMemory(memopts[0]);
             }
             if (memopts.length > 1)
             {
-                cArgs.setInMemoryDbPort(Integer.parseInt(memopts[1]));
+                // cArgs.setInMemoryDbPort(Integer.parseInt(memopts[1]));
+                // deprecated
             }
             if (memopts.length > 2)
             {
-                cArgs.setInMemoryDbAddress(memopts[2]);
+                // cArgs.setInMemoryDbAddress(memopts[2]);
+                // deprecated
             }
         }
 
-        if (linArgParser.restBindAddress != null)
-        {
-            cArgs.setRESTBindAddress(linArgParser.restBindAddress);
-        }
+        linstorCfgRef.setRestBindAddressWithPort(linArgParser.restBindAddress);
 
-        if (linArgParser.restBindAddressSecure != null)
-        {
-            cArgs.setRESTBindAddressSecure(linArgParser.restBindAddressSecure);
-        }
+        linstorCfgRef.setRestSecureBindAddressWithPort(linArgParser.restBindAddressSecure);
 
-        cArgs.setPrintStacktraces(linArgParser.printStackTrace);
-        cArgs.setStartDebugConsole(linArgParser.debugConsole);
+        linstorCfgRef.setLogPrintStackTrace(linArgParser.printStackTrace);
+        linstorCfgRef.setDebugConsoleEnable(linArgParser.debugConsole);
 
-        if (linArgParser.logLevel != null)
-        {
-            cArgs.setLogLevel(linArgParser.logLevel);
-        }
+        linstorCfgRef.setLogLevel(linArgParser.logLevel);
 
-        cArgs.setDbStartupVerification(!linArgParser.disableDbVersionCheck);
-
-        return cArgs;
+        linstorCfgRef.setDbDisableVersionCheck(linArgParser.disableDbVersionCheck);
     }
 
-    private ControllerArgumentParser()
+    private CtrlCmdLineArgsParser()
     {
     }
 }

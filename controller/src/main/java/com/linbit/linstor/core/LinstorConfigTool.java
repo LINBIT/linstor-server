@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.cfg.CtrlTomlConfig;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
 
@@ -36,7 +37,7 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import picocli.CommandLine;
 
-public class LinstorConfig
+public class LinstorConfigTool
 {
     private static CommandLine commandLine;
 
@@ -352,7 +353,7 @@ public class LinstorConfig
         PoolingDataSource<PoolableConnection> dataSource = null;
         try
         {
-            LinstorConfigToml linstorToml = new Toml().read(tomlFile).to(LinstorConfigToml.class);
+            CtrlTomlConfig linstorToml = new Toml().read(tomlFile).to(CtrlTomlConfig.class);
 
             dataSource = initConnectionProvider(
                 linstorToml.getDB().getConnectionUrl(),

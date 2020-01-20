@@ -2,28 +2,18 @@ package com.linbit.linstor.core;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.function.Function;
 
 public class LinStorCmdlArguments
 {
-    public static final String LS_CONFIG_DIRECTORY = "LS_CONFIG_DIRECTORY";
-    public static final String LS_LOG_DIRECTORY = "LS_LOG_DIRECTORY";
-    public static final String LS_LOG_LEVEL = "LS_LOG_LEVEL";
-
     private String configurationDirectory;
-    private boolean startDebugConsole;
-    private boolean printStacktraces;
+    private Boolean startDebugConsole;
+    private Boolean printStacktraces;
     private String logDirectory;
     private String logLevel;
-    private boolean dbStartupVerification;
+    private Boolean dbStartupVerification;
 
     public LinStorCmdlArguments()
     {
-        configurationDirectory = getEnv(LS_CONFIG_DIRECTORY, Function.identity(), "");
-        printStacktraces = false;
-        logDirectory = getEnv(LS_LOG_DIRECTORY, Function.identity(), ".");
-        logLevel = getEnv(LS_LOG_LEVEL, Function.identity());
-        dbStartupVerification = false;
     }
 
     public void setConfigurationDirectory(final String workingDirectoryRef)
@@ -45,12 +35,12 @@ public class LinStorCmdlArguments
         startDebugConsole = startDebugConsoleRef;
     }
 
-    public boolean startDebugConsole()
+    public Boolean startDebugConsole()
     {
         return startDebugConsole;
     }
 
-    public boolean isPrintStacktraces()
+    public Boolean isPrintStacktraces()
     {
         return printStacktraces;
     }
@@ -85,19 +75,9 @@ public class LinStorCmdlArguments
         dbStartupVerification = dbStartupVerificationRef;
     }
 
-    public boolean isDbStartupVerification()
+    public Boolean isDbStartupVerification()
     {
         return dbStartupVerification;
     }
 
-    protected <T> T getEnv(String env, Function<String, T> func)
-    {
-        return getEnv(env, func, null);
-    }
-
-    protected <T> T getEnv(String env, Function<String, T> func, T dfltValue)
-    {
-        String envVal = System.getenv(env);
-        return envVal == null ? dfltValue : func.apply(envVal);
-    }
 }

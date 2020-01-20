@@ -5,7 +5,7 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.LinstorConfigToml;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Singleton;
@@ -50,7 +50,7 @@ public class ControllerSecurityModule extends AbstractModule
         ErrorReporter errorLogRef,
         ControllerDatabase dbConnPool,
         DbAccessor securityDbDriver,
-        LinstorConfigToml linstorConfigToml
+        CtrlConfig ctrlConfRef
     )
         throws InitializationException
     {
@@ -65,7 +65,7 @@ public class ControllerSecurityModule extends AbstractModule
                 dbConnPool,
                 securityDbDriver,
                 errorLogRef,
-                linstorConfigToml
+                ctrlConfRef
             );
         }
         catch (AccessDeniedException accExc)

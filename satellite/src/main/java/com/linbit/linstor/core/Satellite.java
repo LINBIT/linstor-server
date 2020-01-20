@@ -16,6 +16,7 @@ import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.devmgr.DevMgrModule;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
@@ -63,7 +64,6 @@ import java.util.stream.Stream;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.moandjiezana.toml.Toml;
 import org.slf4j.event.Level;
 
 /**
@@ -73,8 +73,6 @@ import org.slf4j.event.Level;
  */
 public final class Satellite
 {
-    private static final String SATELLITE_CONFIG = "linstor_satellite.toml";
-
     // Error & exception logging facility
     private final ErrorReporter errorReporter;
 
@@ -103,11 +101,9 @@ public final class Satellite
 
     private final SatelliteNetComInitializer satelliteNetComInitializer;
 
-    private final SatelliteCmdlArguments satelliteCmdlArguments;
-
     private final StltCoreObjProtInitializer stltCoreObjProtInitializer;
 
-    private final SatelliteConfigToml satelliteConfig;
+    private final StltConfig stltCfg;
 
     @Inject
     public Satellite(
@@ -123,9 +119,8 @@ public final class Satellite
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
-        SatelliteCmdlArguments satelliteCmdlArgumentsRef,
         StltCoreObjProtInitializer stltCoreObjProtInitializerRef,
-        SatelliteConfigToml satelliteConfigRef
+        StltConfig stltCfgRef
     )
     {
         errorReporter = errorReporterRef;
@@ -140,9 +135,8 @@ public final class Satellite
         fsWatchSvc = fsWatchSvcRef;
         drbdEventSvc = drbdEventSvcRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
-        satelliteCmdlArguments = satelliteCmdlArgumentsRef;
         stltCoreObjProtInitializer = stltCoreObjProtInitializerRef;
-        satelliteConfig = satelliteConfigRef;
+        stltCfg = stltCfgRef;
     }
 
     public void start()
@@ -153,20 +147,16 @@ public final class Satellite
 
         try
         {
-            // logLevel from cArgs overrides logLevel from toml
-            if (satelliteConfig.getLogging() != null && satelliteCmdlArguments.getLogLevel() == null)
+            try
             {
-                try
-                {
-                    errorReporter.setLogLevel(
-                        sysCtx,
-                        Level.valueOf(satelliteConfig.getLogging().getLevel().toUpperCase())
-                    );
-                }
-                catch (IllegalArgumentException exc)
-                {
-                    errorReporter.logError("Invalid Log level '" + satelliteConfig.getLogging().getLevel() + "'");
-                }
+                errorReporter.setLogLevel(
+                    sysCtx,
+                    Level.valueOf(stltCfg.getLogLevel().toUpperCase())
+                );
+            }
+            catch (IllegalArgumentException exc)
+            {
+                errorReporter.logError("Invalid Log level '" + stltCfg.getLogLevel() + "'");
             }
 
             try
@@ -204,12 +194,7 @@ public final class Satellite
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
             errorReporter.logInfo("Initializing main network communications service");
-            if (!satelliteNetComInitializer.initMainNetComService(
-                initCtx,
-                satelliteCmdlArguments.getConfigurationDirectory(),
-                satelliteCmdlArguments.getBindAddress(),
-                satelliteCmdlArguments.getPlainPortOverride())
-            )
+            if (!satelliteNetComInitializer.initMainNetComService(initCtx))
             {
                 reconfigurationLock.writeLock().unlock();
                 System.exit(InternalApiConsts.EXIT_CODE_NETCOM_ERROR);
@@ -246,7 +231,7 @@ public final class Satellite
             Files.createDirectories(varDrbdPath);
             Files.createDirectories(Paths.get(CoreModule.BACKUP_PATH));
 
-            final Pattern keepResPattern = satelliteCmdlArguments.getKeepResPattern();
+            final Pattern keepResPattern = stltCfg.getDrbdKeepResPattern();
             Function<Path, Boolean> keepFunc;
             if (keepResPattern != null)
             {
@@ -360,37 +345,12 @@ public final class Satellite
         }
     }
 
-    private static SatelliteConfigToml parseSatelliteConfig(ErrorReporter errorReporter, SatelliteCmdlArguments cArgs)
-    {
-        SatelliteConfigToml linstorConfig = new SatelliteConfigToml();
-        Path linstorConfigPath = cArgs.getConfigurationDirectory().resolve(SATELLITE_CONFIG).normalize();
-        if (Files.exists(linstorConfigPath))
-        {
-            try
-            {
-                linstorConfig = new Toml().read(linstorConfigPath.toFile()).to(SatelliteConfigToml.class);
-                errorReporter.logInfo("Linstor satellite configuration file loaded from '%s'.", linstorConfigPath);
-            }
-            catch (RuntimeException tomlExc)
-            {
-                errorReporter.logError("Error parsing '%s': %s", linstorConfigPath.toString(), tomlExc.getMessage());
-                System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
-            }
-        }
-        else
-        {
-            errorReporter.logInfo("Linstor satellite configuration file not found, using defaults.");
-        }
-
-        return linstorConfig;
-    }
-
     public static void main(String[] args)
     {
-        SatelliteCmdlArguments cArgs = SatelliteArgumentParser.parseCommandLine(args);
+        StltConfig cfg = new StltConfig(args);
 
         System.setProperty("log.module", LinStor.SATELLITE_MODULE);
-        System.setProperty("log.directory", cArgs.getLogDirectory());
+        System.setProperty("log.directory", cfg.getLogDirectory());
 
         System.out.printf(
             "%s, Module %s\n",
@@ -400,14 +360,12 @@ public final class Satellite
 
         StdErrorReporter errorLog = new StdErrorReporter(
             LinStor.SATELLITE_MODULE,
-            Paths.get(cArgs.getLogDirectory()),
-            cArgs.isPrintStacktraces(),
-            cArgs.getOverrideNodeName() != null ? cArgs.getOverrideNodeName() : LinStor.getHostName(),
-            cArgs.getLogLevel(),
+            Paths.get(cfg.getLogDirectory()),
+            cfg.isLogPrintStackTrace(),
+            cfg.getStltOverrideNodeName() != null ? cfg.getStltOverrideNodeName() : LinStor.getHostName(),
+            cfg.getLogLevel(),
             () -> null
         );
-
-        SatelliteConfigToml stltConfig = parseSatelliteConfig(errorLog, cArgs);
 
         try
         {
@@ -455,7 +413,7 @@ public final class Satellite
                 new LoggingModule(errorLog),
                 new SecurityModule(),
                 new SatelliteSecurityModule(),
-                new SatelliteArgumentsModule(cArgs, stltConfig),
+                new SatelliteArgumentsModule(cfg),
                 new CoreTimerModule(),
                 new SatelliteLinstorModule(),
                 new LinStorModule(),
@@ -480,7 +438,7 @@ public final class Satellite
             Satellite instance = injector.getInstance(Satellite.class);
             instance.start();
 
-            if (cArgs.startDebugConsole())
+            if (cfg.isDebugConsoleEnabled())
             {
                 instance.enterDebugConsole();
             }

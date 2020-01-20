@@ -21,6 +21,8 @@ import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.api.rest.v1.config.GrizzlyHttpService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
+import com.linbit.linstor.core.cfg.CtrlConfig;
+import com.linbit.linstor.core.cfg.CtrlConfigModule;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
@@ -63,7 +65,6 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -74,7 +75,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.moandjiezana.toml.Toml;
 import org.slf4j.event.Level;
 
 /**
@@ -84,15 +84,10 @@ import org.slf4j.event.Level;
  */
 public final class Controller
 {
-    public static final String LINSTOR_CONFIG = "linstor.toml";
     private static final String PROPSCON_KEY_NETCOM = "netcom";
 
     public static final int API_VERSION = 4;
     public static final int API_MIN_VERSION = API_VERSION;
-
-    public static final String DEFAULT_HTTP_LISTEN_ADDRESS = "::";
-    public static final int DEFAULT_HTTP_REST_PORT = 3370;
-    public static final int DEFAULT_HTTPS_REST_PORT = 3371;
 
     // Error & exception logging facility
     private final ErrorReporter errorReporter;
@@ -137,7 +132,7 @@ public final class Controller
 
     private RetryResourcesTask retryResourcesTask;
 
-    private final LinstorConfigToml linstorConfig;
+    private final CtrlConfig ctrlCfg;
 
     @Inject
     public Controller(
@@ -163,7 +158,7 @@ public final class Controller
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
         WhitelistProps whitelistPropsRef,
-        LinstorConfigToml linstorConfigRef
+        CtrlConfig ctrlCfgRef
     )
     {
         errorReporter = errorReporterRef;
@@ -188,10 +183,10 @@ public final class Controller
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
         whitelistProps = whitelistPropsRef;
-        linstorConfig = linstorConfigRef;
+        ctrlCfg = ctrlCfgRef;
     }
 
-    public void start(Injector injector, ControllerCmdlArguments cArgs)
+    public void start(Injector injector, CtrlConfig linstorCfgRef)
         throws SystemServiceStartException, InitializationException
     {
         applicationLifecycleManager.installShutdownHook();
@@ -203,20 +198,16 @@ public final class Controller
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
-            // logLevel from cArgs overrides logLevel from toml
-            if (linstorConfig.getLogging() != null && cArgs.getLogLevel() == null)
+            try
             {
-                try
-                {
-                    errorReporter.setLogLevel(
-                        initCtx,
-                        Level.valueOf(linstorConfig.getLogging().getLevel().toUpperCase())
-                    );
-                }
-                catch (IllegalArgumentException exc)
-                {
-                    errorReporter.logError("Invalid Log level '" + linstorConfig.getLogging().getLevel() + "'");
-                }
+                errorReporter.setLogLevel(
+                    initCtx,
+                    Level.valueOf(linstorCfgRef.getLogLevel().toUpperCase())
+                );
+            }
+            catch (IllegalArgumentException exc)
+            {
+                errorReporter.logError("Invalid Log level '" + linstorCfgRef.getLogLevel() + "'");
             }
 
             taskScheduleService.addTask(pingTask);
@@ -228,7 +219,7 @@ public final class Controller
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
-            dbInitializer.initialize(cArgs.isDbStartupVerification());
+            dbInitializer.initialize(!linstorCfgRef.isDbVersionCheckDisabled());
 
             // Object protection loading has a hidden dependency on initializing the security objects
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).
@@ -239,7 +230,7 @@ public final class Controller
             dbDataInitializer.initialize();
             dbNumberPoolInitializer.initialize();
 
-            initializeRestServer(injector, cArgs);
+            initializeRestServer(injector);
 
             applicationLifecycleManager.startSystemServices(systemServicesMap.values());
 
@@ -286,51 +277,24 @@ public final class Controller
         return restBindAddress;
     }
 
-    private void initializeRestServer(Injector injector, ControllerCmdlArguments cArgs)
+    private void initializeRestServer(Injector injector)
     {
-        boolean restEnabled = true;
-        String restBindAddress;
-        String restBindAddresSecure;
+        boolean restEnabled = ctrlCfg.isRestEnabled();
+
         try
         {
-            if (cArgs.getRESTBindAddress() != null)
-            {
-                restBindAddress = cArgs.getRESTBindAddress();
-            }
-            else
-            {
-                restEnabled = linstorConfig.getHTTP().isEnabled();
-
-                restBindAddress = restBindAddress(
-                    linstorConfig.getHTTP().getListenAddr(),
-                    linstorConfig.getHTTP().getPort()
-                );
-            }
-
-            if (cArgs.getRESTBindAddressSecure() != null)
-            {
-                restBindAddresSecure = cArgs.getRESTBindAddressSecure();
-            }
-            else
-            {
-                restBindAddresSecure = restBindAddress(
-                    linstorConfig.getHTTPS().getListenAddr(),
-                    linstorConfig.getHTTPS().getPort()
-                );
-            }
-
             Path keyStorePath = null;
             String keyStorePassword;
             Path trustStorePath = null;
             String trustStorePassword;
-            final String keyStorePathProp = linstorConfig.getHTTPS().getKeystore();
-            final String trustStorePathProp = linstorConfig.getHTTPS().getTruststore();
-            if (keyStorePathProp != null && linstorConfig.getHTTPS().isEnabled())
+            final String keyStorePathProp = ctrlCfg.getRestSecureKeystore();
+            final String trustStorePathProp = ctrlCfg.getRestSecureTruststore();
+            if (keyStorePathProp != null && ctrlCfg.isRestSecureEnabled())
             {
                 keyStorePath = Paths.get(keyStorePathProp);
                 if (!keyStorePath.isAbsolute())
                 {
-                    keyStorePath = cArgs.getConfigurationDirectory().resolve(keyStorePath);
+                    keyStorePath = ctrlCfg.getConfigPath().resolve(keyStorePath);
                 }
             }
             if (trustStorePathProp != null)
@@ -338,12 +302,12 @@ public final class Controller
                 trustStorePath = Paths.get(trustStorePathProp);
                 if (!trustStorePath.isAbsolute())
                 {
-                    trustStorePath = cArgs.getConfigurationDirectory().resolve(trustStorePath);
+                    trustStorePath = ctrlCfg.getConfigPath().resolve(trustStorePath);
                 }
             }
 
-            keyStorePassword = linstorConfig.getHTTPS().getKeystorePassword();
-            trustStorePassword = linstorConfig.getHTTPS().getTruststorePassword();
+            keyStorePassword = ctrlCfg.getRestSecureKeystorePassword();
+            trustStorePassword = ctrlCfg.getRestSecureTruststorePassword();
 
             if (restEnabled)
             {
@@ -351,14 +315,14 @@ public final class Controller
                     injector,
                     errorReporter,
                     systemServicesMap,
-                    restBindAddress,
-                    restBindAddresSecure,
+                    ctrlCfg.getRestBindAddressWithPort(),
+                    ctrlCfg.getRestSecureBindAddressWithPort(),
                     keyStorePath,
                     keyStorePassword,
                     trustStorePath,
                     trustStorePassword,
-                    linstorConfig.getLogging().getRestAccessLogPath(),
-                    linstorConfig.getLogging().getRestAccessLogMode()
+                    ctrlCfg.getLogRestAccessLogPath(),
+                    ctrlCfg.getLogRestAccessMode()
                 );
                 systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
             }
@@ -429,48 +393,24 @@ public final class Controller
         }
     }
 
-    private static LinstorConfigToml parseControllerConfig(ErrorReporter errorReporter, ControllerCmdlArguments cArgs)
-    {
-        LinstorConfigToml linstorConfig = new LinstorConfigToml();
-        Path linstorConfigPath = cArgs.getConfigurationDirectory().resolve(LINSTOR_CONFIG).normalize();
-        if (Files.exists(linstorConfigPath))
-        {
-            try
-            {
-                linstorConfig = new Toml().read(linstorConfigPath.toFile()).to(LinstorConfigToml.class);
-                errorReporter.logInfo("Linstor configuration file loaded from '%s'.", linstorConfigPath);
-            }
-            catch (RuntimeException tomlExc)
-            {
-                errorReporter.logError("Error parsing '%s': %s", linstorConfigPath.toString(), tomlExc.getMessage());
-                System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
-            }
-        }
-        else
-        {
-            errorReporter.logInfo("Linstor configuration file not found, using defaults.");
-        }
-
-        return linstorConfig;
-    }
-
     private static DatabaseDriverInfo.DatabaseType checkDatabaseConfig(
         ErrorReporter errorReporter,
-        LinstorConfigToml linstorConfig
+        CtrlConfig linstorConfig
     )
     {
         DatabaseDriverInfo.DatabaseType dbType;
-        if (linstorConfig.getDB().getConnectionUrl().startsWith("jdbc"))
+        String dbConnectionUrl = linstorConfig.getDbConnectionUrl();
+        if (dbConnectionUrl.startsWith("jdbc"))
         {
             dbType = DatabaseDriverInfo.DatabaseType.SQL;
         }
-        else if (linstorConfig.getDB().getConnectionUrl().startsWith("etcd"))
+        else if (dbConnectionUrl.startsWith("etcd"))
         {
             dbType = DatabaseDriverInfo.DatabaseType.ETCD;
         }
         else
         {
-            errorReporter.logError("Database uri not supported: " + linstorConfig.getDB().getConnectionUrl());
+            errorReporter.logError("Database uri not supported: " + dbConnectionUrl);
             System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
             throw new RuntimeException("Can't touch this");
         }
@@ -480,10 +420,10 @@ public final class Controller
 
     public static void main(String[] args)
     {
-        ControllerCmdlArguments cArgs = ControllerArgumentParser.parseCommandLine(args);
+        CtrlConfig cfg = new CtrlConfig(args);
 
         System.setProperty("log.module", LinStor.CONTROLLER_MODULE);
-        System.setProperty("log.directory", cArgs.getLogDirectory());
+        System.setProperty("log.directory", cfg.getLogDirectory());
 
         System.out.printf(
             "%s, Module %s\n",
@@ -493,17 +433,15 @@ public final class Controller
 
         StdErrorReporter errorLog = new StdErrorReporter(
             LinStor.CONTROLLER_MODULE,
-            Paths.get(cArgs.getLogDirectory()),
-            cArgs.isPrintStacktraces(),
+            Paths.get(cfg.getLogDirectory()),
+            cfg.isLogPrintStackTrace(),
             LinStor.getHostName(),
-            cArgs.getLogLevel(),
+            cfg.getLogLevel(),
             () -> null
         );
 
-        LinstorConfigToml linstorConfig = parseControllerConfig(errorLog, cArgs);
-
         // check database type
-        DatabaseDriverInfo.DatabaseType dbType = checkDatabaseConfig(errorLog, linstorConfig);
+        DatabaseDriverInfo.DatabaseType dbType = checkDatabaseConfig(errorLog, cfg);
 
         boolean dbgCnsEnabled = false;
         Controller instance = null;
@@ -511,7 +449,7 @@ public final class Controller
         {
             Thread.currentThread().setName("Main");
 
-            dbgCnsEnabled = cArgs.startDebugConsole();
+            dbgCnsEnabled = cfg.isDebugConsoleEnabled();
 
             errorLog.logInfo("Loading API classes started.");
             long startAPIClassLoadingTime = System.currentTimeMillis();
@@ -566,7 +504,7 @@ public final class Controller
                 new LoggingModule(errorLog),
                 new SecurityModule(),
                 new ControllerSecurityModule(),
-                new ControllerArgumentsModule(cArgs, linstorConfig),
+                new CtrlConfigModule(cfg),
                 new CoreTimerModule(),
                 new MetaDataModule(),
                 new ControllerLinstorModule(),
@@ -591,7 +529,7 @@ public final class Controller
             );
 
             instance = injector.getInstance(Controller.class);
-            instance.start(injector, cArgs);
+            instance.start(injector, cfg);
 
             if (dbgCnsEnabled)
             {

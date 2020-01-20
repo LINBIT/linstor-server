@@ -4,7 +4,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.LinstorConfigToml;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
@@ -15,6 +15,7 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -31,7 +32,7 @@ public class CtrlAuthentication
     private final ErrorReporter errorLog;
     private final AccessContext publicCtx;
 
-    private LinstorConfigToml.LDAP ldapConfig;
+    private CtrlConfig ctrlCfg;
 
     public CtrlAuthentication(
         AccessContext initCtx,
@@ -39,7 +40,7 @@ public class CtrlAuthentication
         ControllerDatabase ctrlDbRef,
         DbAccessor dbDriverRef,
         ErrorReporter errorLogRef,
-        LinstorConfigToml linstorConfigTomlRef
+        CtrlConfig ctrlCfgRef
     )
         throws AccessDeniedException, NoSuchAlgorithmException
     {
@@ -55,7 +56,7 @@ public class CtrlAuthentication
         errorLog = errorLogRef;
         publicCtx = publicCtxRef;
 
-        ldapConfig = linstorConfigTomlRef.getLDAP();
+        ctrlCfg = ctrlCfgRef;
     }
 
     private AccessContext signInLinstor(IdentityName idName, byte[] password)
@@ -352,9 +353,9 @@ public class CtrlAuthentication
 
         Hashtable<String, String> ldapEnv = new Hashtable<>();
         ldapEnv.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        ldapEnv.put(Context.PROVIDER_URL, ldapConfig.getUri());
+        ldapEnv.put(Context.PROVIDER_URL, ctrlCfg.getLdapUri());
         ldapEnv.put(Context.SECURITY_AUTHENTICATION, "simple");
-        String ldapDN = ldapConfig.getDN().replaceAll("\\{user}", idName.displayValue);
+        String ldapDN = ctrlCfg.getLdapDn().replaceAll("\\{user}", idName.displayValue);
         ldapEnv.put(Context.SECURITY_PRINCIPAL, ldapDN);
         ldapEnv.put(Context.SECURITY_CREDENTIALS, new String(password, StandardCharsets.UTF_8));
 
@@ -362,14 +363,14 @@ public class CtrlAuthentication
         {
             DirContext ctx = new InitialDirContext(ldapEnv);
 
-            if (!ldapConfig.getSearchFilter().isEmpty())
+            if (!ctrlCfg.getLdapSearchFilter().isEmpty())
             {
                 SearchControls searchControls = new SearchControls();
                 searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-                final String searchFilter = ldapConfig.getSearchFilter().replaceAll("\\{user}", idName.displayValue);
+                final String searchFilter = ctrlCfg.getLdapSearchFilter().replaceAll("\\{user}", idName.displayValue);
 
-                NamingEnumeration result = ctx.search(ldapConfig.getSearchBase(), searchFilter, searchControls);
+                NamingEnumeration result = ctx.search(ctrlCfg.getLdapSearchFilter(), searchFilter, searchControls);
 
                 if (!result.hasMore())
                 {
@@ -416,7 +417,7 @@ public class CtrlAuthentication
     {
         AccessContext accCtx;
 
-        if (ldapConfig.isEnabled())
+        if (ctrlCfg.isLdapEnabled())
         {
             accCtx = signInLDAP(idName, password);
         }

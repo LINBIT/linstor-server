@@ -12,7 +12,7 @@ import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDBRuntimeException;
-import com.linbit.linstor.core.LinstorConfigToml;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -78,7 +78,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
     private ThreadLocal<List<Connection>> threadLocalConnections;
 
-    private final LinstorConfigToml linstorConfig;
+    private final CtrlConfig linstorConfig;
 
     static
     {
@@ -94,7 +94,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
     @Inject
     public DbConnectionPool(
-        LinstorConfigToml linstorConfigRef
+        CtrlConfig linstorConfigRef
     )
     {
         serviceNameInstance = SERVICE_NAME;
@@ -389,13 +389,13 @@ public class DbConnectionPool implements ControllerSQLDatabase
         if (!atomicStarted.getAndSet(true))
         {
             Properties props = new Properties();
-            if (linstorConfig.getDB().getUser() != null)
+            if (linstorConfig.getDbUser() != null)
             {
-                props.setProperty("user", linstorConfig.getDB().getUser());
+                props.setProperty("user", linstorConfig.getDbUser());
             }
-            if (linstorConfig.getDB().getPassword() != null)
+            if (linstorConfig.getDbPassword() != null)
             {
-                props.setProperty("password", linstorConfig.getDB().getPassword());
+                props.setProperty("password", linstorConfig.getDbUser());
             }
             ConnectionFactory connFactory = new DriverManagerConnectionFactory(dbConnectionUrl, props);
             PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);

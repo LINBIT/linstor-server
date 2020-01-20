@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbcp;
 
-import com.linbit.linstor.core.LinstorConfigToml;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 
 import java.util.Properties;
 
@@ -19,7 +19,7 @@ public class TestDbConnectionPoolLoader
         DB_PROPS.setProperty("user", DB_USER);
         DB_PROPS.setProperty("password", DB_PASSWORD);
 
-        DbConnectionPool dbConnPool = new DbConnectionPool(new LinstorConfigToml());
+        DbConnectionPool dbConnPool = new DbConnectionPool(new CtrlConfig(null));
         dbConnPool.initializeDataSource(DB_URL);
 
         return dbConnPool;

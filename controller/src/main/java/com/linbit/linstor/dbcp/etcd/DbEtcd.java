@@ -9,7 +9,7 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.LinStorDBRuntimeException;
-import com.linbit.linstor.core.LinstorConfigToml;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.migration.etcd.EtcdMigration;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_00_Init;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_01_DelEmptyRscExtNames;
@@ -47,7 +47,7 @@ public class DbEtcd implements ControllerETCDDatabase
     private AtomicBoolean atomicStarted = new AtomicBoolean(false);
 
     private final ErrorReporter errorReporter;
-    private final LinstorConfigToml linstorConfigToml;
+    private final CtrlConfig ctrlCfg;
 
     private int dbTimeout = ControllerDatabase.DEFAULT_TIMEOUT;
     private KvStoreClient etcdClient;
@@ -67,11 +67,11 @@ public class DbEtcd implements ControllerETCDDatabase
     @Inject
     public DbEtcd(
         ErrorReporter errorReporterRef,
-        LinstorConfigToml linstorConfigTomlRef
+        CtrlConfig ctrlCfgRef
     )
     {
         errorReporter = errorReporterRef;
-        linstorConfigToml = linstorConfigTomlRef;
+        ctrlCfg = ctrlCfgRef;
     }
 
     @Override
@@ -193,32 +193,32 @@ public class DbEtcd implements ControllerETCDDatabase
     @Override
     public void start() throws SystemServiceStartException
     {
-        final String origConUrl = linstorConfigToml.getDB().getConnectionUrl();
+        final String origConUrl = ctrlCfg.getDbConnectionUrl();
         final String connectionUrl = origConUrl.toLowerCase().startsWith(ETCD_SCHEME) ?
             origConUrl.substring(ETCD_SCHEME.length()) : origConUrl;
 
         EtcdClient.Builder builder = EtcdClient.forEndpoints(connectionUrl);
 
-        if (linstorConfigToml.getDB().getCACertificate() != null)
+        if (ctrlCfg.getDbCaCertificate() != null)
         {
             try
             {
-                if (linstorConfigToml.getDB().getCACertificate() != null)
+                if (ctrlCfg.getDbCaCertificate() != null)
                 {
                     builder.withCaCert(
-                        Files.asByteSource(new File(linstorConfigToml.getDB().getCACertificate()))
+                        Files.asByteSource(new File(ctrlCfg.getDbCaCertificate()))
                     );
                 }
 
-                if (linstorConfigToml.getDB().getClientCertificate() != null &&
-                    linstorConfigToml.getDB().getClientKeyPKCS8PEM() != null)
+                if (ctrlCfg.getDbClientCertificate() != null &&
+                    ctrlCfg.getDbClientKeyPkcs8Pem() != null)
                 {
                     builder.withTlsConfig(sslContextBuilder ->
                         sslContextBuilder
                             .keyManager(
-                                new File(linstorConfigToml.getDB().getClientCertificate()),
-                                new File(linstorConfigToml.getDB().getClientKeyPKCS8PEM()),
-                                linstorConfigToml.getDB().getClientKeyPassword()
+                                new File(ctrlCfg.getDbClientCertificate()),
+                                new File(ctrlCfg.getDbClientKeyPkcs8Pem()),
+                                ctrlCfg.getDbClientKeyPassword()
                             )
                     );
                 }
@@ -233,11 +233,11 @@ public class DbEtcd implements ControllerETCDDatabase
             builder.withPlainText();
         }
 
-        if (linstorConfigToml.getDB().getUser() != null)
+        if (ctrlCfg.getDbUser() != null)
         {
             builder.withCredentials(
-                linstorConfigToml.getDB().getUser(),
-                linstorConfigToml.getDB().getPassword()
+                ctrlCfg.getDbUser(),
+                ctrlCfg.getDbPassword()
             );
         }
 

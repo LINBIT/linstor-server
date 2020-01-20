@@ -1,39 +1,40 @@
-package com.linbit.linstor.core;
+package com.linbit.linstor.core.cfg;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.core.LinStor;
 
 import java.io.File;
 
 import picocli.CommandLine;
 
-class SatelliteArgumentParser
+class StltCmdLineArgsParser
 {
     @CommandLine.Option(names = {"-c", "--config-directory"},
         description = "Configuration directory for the controller"
     )
-    private String configurationDirectory = "./";
+    private String configurationDirectory;
 
     @CommandLine.Option(names = {"-d", "--debug-console"}, description = "")
-    private boolean debugConsole = false;
+    private Boolean debugConsole;
 
     @CommandLine.Option(
         names = {"-p", "--stack-traces"},
         description = "print error stack traces on standard error"
     )
-    private boolean printStackTrace = false;
+    private Boolean printStackTrace;
 
     @CommandLine.Option(names = {"-l", "--logs"}, description = "Path to the log directory")
-    private String logDirectory = "./logs";
+    private String logDirectory;
 
     @CommandLine.Option(names = {"--log-level"},
         description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
-    private String logLevel = null;
+    private String logLevel;
 
     @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Show the version number")
-    private boolean versionInfoRequested;
+    private Boolean versionInfoRequested;
 
     @CommandLine.Option(names = {"-h", "--help"}, usageHelp = true, description = "display this help message")
-    private boolean usageHelpRequested;
+    private Boolean usageHelpRequested;
 
     @CommandLine.Option(
         names = {"-k", "--keep-res"},
@@ -44,26 +45,26 @@ class SatelliteArgumentParser
     private String keepResourceRegex;
 
     @CommandLine.Option(names = {"--port"}, description = "overrides the plain port")
-    private Integer plainPort = null;
+    private Integer plainPort;
 
     @CommandLine.Option(names = {"-s", "--skip-hostname-check"}, description = "deprecated. this argument will be silently ignored")
     @Deprecated
-    private boolean skipHostNameCheck = false;
+    private Boolean skipHostNameCheck;
 
     @CommandLine.Option(names = {"--skip-drbd-check"},
                         description = "deprecated. this argument will be silently ignored.")
     @Deprecated
-    private boolean skipDrbdCheck = true;
+    private boolean skipDrbdCheck;
 
     @CommandLine.Option(names = {"--bind-address"}, description = "overrides the bind address")
-    private String bindAddress = null;
+    private String bindAddress;
 
     @CommandLine.Option(names = {"--override-node-name"}, description = "Overrides node name used in error reports.")
-    private String nodeName = null;
+    private String nodeName;
 
-    static SatelliteCmdlArguments parseCommandLine(String[] args)
+    static void parseCommandLine(String[] args, StltConfig stltCfg)
     {
-        SatelliteArgumentParser linArgParser = new SatelliteArgumentParser();
+        StltCmdLineArgsParser linArgParser = new StltCmdLineArgsParser();
         CommandLine cmd = new CommandLine(linArgParser);
         cmd.setCommandName("Satellite");
         cmd.setOverwrittenOptionsAllowed(true);
@@ -91,11 +92,10 @@ class SatelliteArgumentParser
             System.exit(InternalApiConsts.EXIT_CODE_SHUTDOWN);
         }
 
-        SatelliteCmdlArguments cArgs = new SatelliteCmdlArguments();
         if (linArgParser.configurationDirectory != null)
         {
-            cArgs.setConfigurationDirectory(linArgParser.configurationDirectory + "/");
-            File workingDir = cArgs.getConfigurationDirectory().toFile();
+            stltCfg.setConfigDir(linArgParser.configurationDirectory + "/");
+            File workingDir = stltCfg.getConfigPath().toFile();
             if (workingDir.exists() && !workingDir.isDirectory())
             {
                 System.err.println("Error: Given configuration directory is no directory");
@@ -103,30 +103,19 @@ class SatelliteArgumentParser
             }
         }
 
-        if (linArgParser.logDirectory != null)
-        {
-            cArgs.setLogDirectory(linArgParser.logDirectory);
-        }
+        stltCfg.setLogDirectory(linArgParser.logDirectory);
 
-        cArgs.setPrintStacktraces(linArgParser.printStackTrace);
-        cArgs.setStartDebugConsole(linArgParser.debugConsole);
-        if (linArgParser.keepResourceRegex != null)
-        {
-            cArgs.setKeepResRegex(linArgParser.keepResourceRegex);
-        }
-        cArgs.setOverridePlainPort(linArgParser.plainPort);
-        cArgs.setBindAddress(linArgParser.bindAddress);
-        if (linArgParser.nodeName != null)
-        {
-            cArgs.setOverrideNodeName(linArgParser.nodeName);
-        }
+        stltCfg.setLogPrintStackTrace(linArgParser.printStackTrace);
+        stltCfg.setDebugConsoleEnable(linArgParser.debugConsole);
+        stltCfg.setDrbdKeepResPattern(linArgParser.keepResourceRegex);
+        stltCfg.setNetPort(linArgParser.plainPort);
+        stltCfg.setNetBindAddress(linArgParser.bindAddress);
+        stltCfg.setStltOverrideNodeName(linArgParser.nodeName);
 
-        cArgs.setLogLevel(linArgParser.logLevel);
-
-        return cArgs;
+        stltCfg.setLogLevel(linArgParser.logLevel);
     }
 
-    private SatelliteArgumentParser()
+    private StltCmdLineArgsParser()
     {
     }
 }

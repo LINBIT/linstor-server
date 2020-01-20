@@ -11,6 +11,7 @@ import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
@@ -32,6 +33,7 @@ import com.linbit.linstor.transaction.TransactionMgrUtil;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -78,8 +80,8 @@ public final class ControllerNetComInitializer
     private final NetComContainer netComContainer;
     private final Map<ServiceName, SystemService> systemServicesMap;
     private final LinStorScope initScope;
-    private final ControllerCmdlArguments controllerCmdlArguments;
     private final TransactionMgrGenerator transactionMgrGenerator;
+    private final CtrlConfig ctrlCfg;
 
     @Inject
     public ControllerNetComInitializer(
@@ -93,8 +95,8 @@ public final class ControllerNetComInitializer
         NetComContainer netComContainerRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         LinStorScope initScopeRef,
-        ControllerCmdlArguments controllerCmdlArgumentsRef,
-        TransactionMgrGenerator transactionMgrGeneratorRef
+        TransactionMgrGenerator transactionMgrGeneratorRef,
+        CtrlConfig ctrlCfgRef
     )
     {
         errorReporter = errorReporterRef;
@@ -107,8 +109,8 @@ public final class ControllerNetComInitializer
         netComContainer = netComContainerRef;
         systemServicesMap = systemServicesMapRef;
         initScope = initScopeRef;
-        controllerCmdlArguments = controllerCmdlArgumentsRef;
         transactionMgrGenerator = transactionMgrGeneratorRef;
+        ctrlCfg = ctrlCfgRef;
     }
 
     public boolean deleteNetComService(String serviceNameStr, ErrorReporter errorLogRef)
@@ -234,7 +236,7 @@ public final class ControllerNetComInitializer
         Path path = Paths.get(filePath);
         if (!path.isAbsolute())
         {
-            path = controllerCmdlArguments.getConfigurationDirectory().resolve(path);
+            path = ctrlCfg.getConfigPath().resolve(path);
         }
 
         return path;

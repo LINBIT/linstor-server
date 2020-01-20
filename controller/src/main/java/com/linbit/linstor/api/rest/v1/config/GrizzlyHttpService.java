@@ -9,8 +9,10 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
-import com.linbit.linstor.core.LinstorConfigToml;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.cfg.CtrlConfig;
+import com.linbit.linstor.core.cfg.LinstorConfig;
+import com.linbit.linstor.core.cfg.LinstorConfig.RestAccessLogMode;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -62,7 +64,7 @@ public class GrizzlyHttpService implements SystemService
     private String trustStorePassword;
     private ResourceConfig v1ResourceConfig;
     private Path restAccessLogPath;
-    private LinstorConfigToml.Logging.RestAccessLogMode restAccessLogMode;
+    private RestAccessLogMode restAccessLogMode;
     private final ControllerDatabase ctrlDb;
     private final Map<ServiceName, SystemService> systemServiceMap;
 
@@ -83,7 +85,7 @@ public class GrizzlyHttpService implements SystemService
         Path trustStoreFileRef,
         String trustStorePasswordRef,
         String restAccessLogPathRef,
-        LinstorConfigToml.Logging.RestAccessLogMode restAccessLogModeRef
+        CtrlConfig.RestAccessLogMode restAccessLogModeRef
     )
     {
         errorReporter = errorReporterRef;
@@ -308,10 +310,10 @@ public class GrizzlyHttpService implements SystemService
         if (restAccessLogMode == null)
         {
             errorReporter.logWarning("Unknown rest_access_log_mode set, fallback to append");
-            restAccessLogMode = LinstorConfigToml.Logging.RestAccessLogMode.append;
+            restAccessLogMode = LinstorConfig.RestAccessLogMode.APPEND;
         }
 
-        if (restAccessLogMode != LinstorConfigToml.Logging.RestAccessLogMode.nolog)
+        if (restAccessLogMode != LinstorConfig.RestAccessLogMode.NO_LOG)
         {
             final Path accessLogPath = restAccessLogPath.isAbsolute() ?
                 restAccessLogPath : errorReporter.getLogDirectory().resolve(restAccessLogPath);
@@ -319,16 +321,16 @@ public class GrizzlyHttpService implements SystemService
 
             switch (restAccessLogMode)
             {
-                case rotatehourly:
+                case ROTATE_HOURLY:
                     errorReporter.logDebug("Rest-access log set to rotate hourly.");
                     builder.rotatedHourly();
                     break;
-                case rotatedaily:
+                case ROTATE_DAILY:
                     errorReporter.logDebug("Rest-access log set to rotate daily.");
                     builder.rotatedDaily();
                     break;
-                case append:
-                case nolog:
+                case APPEND:
+                case NO_LOG:
                 default:
             }
 
