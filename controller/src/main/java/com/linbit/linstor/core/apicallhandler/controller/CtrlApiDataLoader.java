@@ -427,6 +427,19 @@ public class CtrlApiDataLoader
         return storPoolDfn;
     }
 
+    public StorPool loadStorPool(String stringRef, String nodeNameStrRef, boolean failIfNullRef)
+    {
+        StorPoolDefinition storPoolDfn = loadStorPoolDfn(stringRef, failIfNullRef);
+        Node node = loadNode(nodeNameStrRef, failIfNullRef);
+
+        StorPool ret = null;
+        if (storPoolDfn != null && node != null)
+        {
+            ret = loadStorPool(storPoolDfn, node, failIfNullRef);
+        }
+        return ret;
+    }
+
     public final StorPool loadStorPool(
         StorPoolDefinition storPoolDfn,
         Node node,
@@ -440,16 +453,22 @@ public class CtrlApiDataLoader
 
             if (failIfNull && storPool == null)
             {
-                throw new ApiRcException(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN,
-                        "Storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
-                            node.getName().displayValue + "' not found.")
-                    .setCause("The specified storage pool '" + storPoolDfn.getName().displayValue +
-                        "' on node '" + node.getName().displayValue + "' could not be found in the database")
-                    .setCorrection("Create a storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
-                        node.getName().displayValue + "' first.")
-                    .build()
+                throw new ApiRcException(
+                    ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_NOT_FOUND_STOR_POOL_DFN,
+                            "Storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
+                                node.getName().displayValue + "' not found."
+                        )
+                        .setCause(
+                            "The specified storage pool '" + storPoolDfn.getName().displayValue +
+                                "' on node '" + node.getName().displayValue + "' could not be found in the database"
+                        )
+                        .setCorrection(
+                            "Create a storage pool '" + storPoolDfn.getName().displayValue + "' on node '" +
+                                node.getName().displayValue + "' first."
+                        )
+                        .build()
                 );
             }
         }

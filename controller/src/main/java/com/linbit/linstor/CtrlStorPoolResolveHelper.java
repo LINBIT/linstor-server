@@ -6,36 +6,29 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.compat.CompatibilityUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
-import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
-import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
-import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -44,17 +37,20 @@ public class CtrlStorPoolResolveHelper
     private final AccessContext apiCtx;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final Provider<AccessContext> peerCtxProvider;
+    private final Provider<CtrlRscLayerDataFactory> layerStackHelper;
 
     @Inject
     public CtrlStorPoolResolveHelper(
         @ApiContext AccessContext apiCtxRef,
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        CtrlPropsHelper ctrlPropsHelperRef,
+        Provider<CtrlRscLayerDataFactory> layerStackHelperRef
     )
     {
         apiCtx = apiCtxRef;
         peerCtxProvider = peerCtxProviderRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
+        layerStackHelper = layerStackHelperRef;
     }
 
     /**
@@ -145,20 +141,6 @@ public class CtrlStorPoolResolveHelper
                         // If the storage pool has backing storage, check that it is of the same kind as the peers
                         checkSameKindAsPeers(vlmDfn, rsc.getNode().getName(), storPool);
                     }
-                    else
-                    {
-                        List<DeviceLayerKind> layerList = LayerRscUtils.getLayerStack(rsc, accCtx);
-                        Resource.Flags flag = CompatibilityUtils.mapDisklessFlagToNvmeOrDrbd(layerList);
-                        if (flag.equals(Resource.Flags.DRBD_DISKLESS))
-                        {
-                            responses.addEntry(makeFlaggedDrbdDisklessWarning(storPool));
-                        }
-                        else
-                        {
-                            responses.addEntry(makeFlaggedNvmeInitiatorWarning(storPool));
-                        }
-                        rsc.getStateFlags().enableFlags(apiCtx, flag);
-                    }
                 }
             }
 
@@ -170,10 +152,6 @@ public class CtrlStorPoolResolveHelper
         catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
         }
 
         return new ApiCallRcWith<>(responses, storPool);
@@ -249,34 +227,6 @@ public class CtrlStorPoolResolveHelper
             );
         }
     }
-
-    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedNvmeInitiatorWarning(StorPool storPool)
-    {
-        return makeFlaggedDiskless(storPool, "nvme initiator");
-    }
-
-    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedDrbdDisklessWarning(StorPool storPool)
-    {
-        return makeFlaggedDiskless(storPool, "drbd diskless");
-    }
-
-    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedDiskless(StorPool storPool, String type)
-    {
-        return ApiCallRcImpl
-            .entryBuilder(
-                MASK_WARN | MASK_STOR_POOL,
-                "Resource will be automatically flagged as " + type
-            )
-            .setCause(
-                String.format(
-                    "Used storage pool '%s' is diskless, but resource was not flagged %s",
-                    storPool.getName(),
-                    type
-                )
-            )
-            .build();
-    }
-
 
     private ApiCallRcImpl.ApiCallRcEntry makeInvalidDriverKindError(
         DeviceProviderKind driverKind,

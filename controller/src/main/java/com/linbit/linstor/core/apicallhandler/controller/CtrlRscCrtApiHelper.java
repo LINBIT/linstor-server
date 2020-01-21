@@ -59,6 +59,8 @@ import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.StringUtils;
 
+import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
+import static com.linbit.linstor.api.ApiConsts.MASK_WARN;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
@@ -195,7 +197,22 @@ public class CtrlRscCrtApiHelper
         }
 
         // compatibility
-        if (FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS))
+        String storPoolNameStr = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
+        StorPool storPool = storPoolNameStr == null ? null : ctrlApiDataLoader.loadStorPool(
+            storPoolNameStr,
+            nodeNameStr,
+            false
+        );
+        boolean isStorPoolDiskless = storPool != null && !storPool.getDeviceProviderKind().hasBackingDevice();
+
+        boolean isDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS);
+        boolean isDrbdDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DRBD_DISKLESS);
+        boolean isNvmeInitiatorSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.NVME_INITIATOR);
+
+        if (
+            (isDisklessSet && !isDrbdDisklessSet && !isNvmeInitiatorSet) ||
+            (!isDisklessSet && isStorPoolDiskless)
+        )
         {
             if (layerStack.isEmpty())
             {
@@ -203,7 +220,42 @@ public class CtrlRscCrtApiHelper
             }
             else
             {
-                flags |= CompatibilityUtils.mapDisklessFlagToNvmeOrDrbd(layerStack).flagValue;
+                Flags disklessNvmeOrDrbd = CompatibilityUtils.mapDisklessFlagToNvmeOrDrbd(layerStack);
+                if (storPool != null)
+                {
+                    if (disklessNvmeOrDrbd.equals(Resource.Flags.DRBD_DISKLESS))
+                    {
+                        responses.addEntry(makeFlaggedDrbdDisklessWarning(storPool));
+                    }
+                    else
+                    {
+                        responses.addEntry(makeFlaggedNvmeInitiatorWarning(storPool));
+                    }
+                }
+                flags |= disklessNvmeOrDrbd.flagValue;
+
+                if (
+                    FlagsHelper.isFlagEnabled(
+                        flags,
+                        Resource.Flags.DRBD_DISKLESS,
+                        Resource.Flags.NVME_INITIATOR
+                    )
+                )
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_LAYER_STACK,
+                            "Could not figure out how to interpret the deprecated --diskless flag."
+                        )
+                            .setDetails(
+                                "The general DISKLESS flag is deprecated. If both layers, DRBD and NVME, should " +
+                                    "be used LINSTOR has to figure out if the resource should be diskful for DRBD " +
+                                    "(required NVME_INITIATOR) or diskless for DRBD (requires DRBD_DISKLESS). " +
+                                    "Using the deprecated DISKLESS flag is not supported for this case."
+                            )
+                            .setCorrection("Use either a non-deprecated flag or do not use both layers")
+                    );
+                }
             }
         }
 
@@ -214,7 +266,7 @@ public class CtrlRscCrtApiHelper
 
         ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
 
-        if (ctrlVlmCrtApiHelper.isDiskless(rsc) && rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME) == null)
+        if (ctrlVlmCrtApiHelper.isDiskless(rsc) && storPoolNameStr == null)
         {
             rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
         }
@@ -839,4 +891,32 @@ public class CtrlRscCrtApiHelper
         }
         return ret;
     }
+
+    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedNvmeInitiatorWarning(StorPool storPool)
+    {
+        return makeFlaggedDiskless(storPool, "nvme initiator");
+    }
+
+    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedDrbdDisklessWarning(StorPool storPool)
+    {
+        return makeFlaggedDiskless(storPool, "drbd diskless");
+    }
+
+    private ApiCallRcImpl.ApiCallRcEntry makeFlaggedDiskless(StorPool storPool, String type)
+    {
+        return ApiCallRcImpl
+            .entryBuilder(
+                MASK_WARN | MASK_STOR_POOL,
+                "Resource will be automatically flagged as " + type
+            )
+            .setCause(
+                String.format(
+                    "Used storage pool '%s' is diskless, but resource was not flagged %s",
+                    storPool.getName(),
+                    type
+                )
+            )
+            .build();
+    }
+
 }

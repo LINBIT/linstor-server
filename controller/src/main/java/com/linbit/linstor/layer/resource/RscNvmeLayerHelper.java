@@ -45,7 +45,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 @Singleton
-class RscNvmeLayerHelper extends AbsRscLayerHelper<
+class RscNvmeLayerHelper
+    extends AbsRscLayerHelper<
     NvmeRscData<Resource>, NvmeVlmData<Resource>,
     RscDfnLayerObject, VlmDfnLayerObject
 >
