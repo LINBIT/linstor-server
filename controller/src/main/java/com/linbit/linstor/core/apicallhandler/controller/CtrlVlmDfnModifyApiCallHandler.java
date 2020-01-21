@@ -30,9 +30,11 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuard;
+import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.makeVlmDfnContext;
@@ -180,20 +182,26 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             propsMap.remove(delKey);
         }
 
-        VolumeDefinition.Flags[] flagsToSet = VolumeDefinition.Flags
-            .restoreFlags(VolumeDefinition.Flags.fromStringList(vlmDfnFlagsRef));
+        Pair<Set<Flags>, Set<Flags>> flagPair = FlagsHelper.extractFlagsToEnableOrDisable(
+            VolumeDefinition.Flags.class,
+            vlmDfnFlagsRef
+        );
 
         boolean isGrossFlagCurrentlySet = isFlagSet(vlmDfn, VolumeDefinition.Flags.GROSS_SIZE);
-        boolean shouldGrossFlagBeSet = isFlagSet(flagsToSet, VolumeDefinition.Flags.GROSS_SIZE);
-        boolean grossFlagChanges = isGrossFlagCurrentlySet ^ shouldGrossFlagBeSet;
+        boolean shouldGrossFlagBeEnabled = !isGrossFlagCurrentlySet &&
+            flagPair.objA.contains(VolumeDefinition.Flags.GROSS_SIZE);
+        boolean shouldGrossFlagBeDisabled = isGrossFlagCurrentlySet &&
+            flagPair.objB.contains(VolumeDefinition.Flags.GROSS_SIZE);
 
+        boolean updateForResize = false;
         boolean hasDeployedVolumes = hasDeployedVolumes(vlmDfn);
 
-        if (isGrossFlagCurrentlySet && !shouldGrossFlagBeSet)
+        if (shouldGrossFlagBeDisabled)
         {
             unsetFlag(vlmDfn, VolumeDefinition.Flags.GROSS_SIZE);
+            updateForResize = true;
         }
-        else if (!isGrossFlagCurrentlySet && shouldGrossFlagBeSet)
+        else if (shouldGrossFlagBeEnabled)
         {
             if (hasDeployedVolumes)
             {
@@ -206,10 +214,10 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 );
             }
             setFlag(vlmDfn, VolumeDefinition.Flags.GROSS_SIZE);
+            updateForResize = true;
         }
 
         boolean sizeChanges = size != null;
-        boolean updateForResize = grossFlagChanges;
         if (sizeChanges)
         {
             long vlmDfnSize = getVlmDfnSize(vlmDfn);
