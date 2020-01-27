@@ -202,6 +202,19 @@ public class CtrlRscGrpApiCallHandler
         try
         {
             requireRscGrpMapChangeAccess();
+
+            if (rscGrpPojoRef.getAutoSelectFilter() != null &&
+                    rscGrpPojoRef.getAutoSelectFilter().getReplicaCount() != null &&
+                    rscGrpPojoRef.getAutoSelectFilter().getReplicaCount() < 0)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_PLACE_COUNT,
+                        getRscGrpDescription(rscGrpNameStr) + ", place-count must be positive."
+                    )
+                );
+            }
+
             ResourceGroup rscGrp = createResourceGroup(rscGrpPojoRef);
 
             ctrlPropsHelper.fillProperties(
@@ -311,6 +324,17 @@ public class CtrlRscGrpApiCallHandler
         try
         {
             requireRscGrpMapChangeAccess();
+
+            if (autoApiRef != null && autoApiRef.getReplicaCount() != null &&
+                    autoApiRef.getReplicaCount() < 0)
+            {
+                throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_INVLD_PLACE_COUNT,
+                                getRscGrpDescription(rscGrpNameStrRef) + ", place-count must be positive."
+                        )
+                );
+            }
 
             ResourceGroup rscGrpData = ctrlApiDataLoader.loadResourceGroup(rscGrpNameStrRef, true);
 
