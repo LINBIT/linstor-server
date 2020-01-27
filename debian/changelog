@@ -1,3 +1,19 @@
+linstor-server (1.4.2-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Removing unnecessary merge-resolving file
+  * SignIn: Add return code
+  * Drbd: fixed resize while resync uncleard flag
+  * StorPool, list: Removed filtering DfltDisklessStorPools
+  * VlmGrp: Added Flags with GROSS_SIZE as first value
+  * VlmDfn: Changed method of toggling GROSS_SIZE
+  * DISKLESS flag: pulled splitting into new flags up
+
+  [ Rene Peinthor ]
+  * res-grps: check that place count is positive
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 27 Jan 2020 11:07:59 +0000
+
 linstor-server (1.4.1-1) experimental; urgency=medium
 
   * FILE, FILE_THIN: fixed isSnapshotSupported
