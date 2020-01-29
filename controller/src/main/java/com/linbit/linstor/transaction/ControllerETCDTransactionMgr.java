@@ -1,55 +1,40 @@
 package com.linbit.linstor.transaction;
 
-import static com.ibm.etcd.client.KeyUtils.bs;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.LinStorDBRuntimeException;
-import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
-import com.linbit.linstor.transaction.TransactionException;
-import com.linbit.linstor.transaction.TransactionMgrETCD;
-import com.linbit.linstor.transaction.TransactionObject;
-import com.linbit.linstor.transaction.TransactionObjectCollection;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.TreeMap;
 
-import com.ibm.etcd.api.KeyValue;
-import com.ibm.etcd.api.RangeResponse;
 import com.ibm.etcd.api.RequestOp;
 import com.ibm.etcd.api.TxnRequest;
 import com.ibm.etcd.api.TxnResponse;
-import com.ibm.etcd.client.kv.KvClient;
-import com.ibm.etcd.client.kv.KvClient.FluentRangeRequest;
-import com.ibm.etcd.client.kv.KvClient.FluentTxnOps;
 
 public class ControllerETCDTransactionMgr implements TransactionMgrETCD
 {
     private final ControllerETCDDatabase etcdDb;
     private final TransactionObjectCollection transactionObjectCollection;
-    private KvClient.FluentTxnOps<?> currentTransaction;
+    private final long maxOpsPerTx;
+    private EtcdTransaction currentTransaction;
 
-    public ControllerETCDTransactionMgr(ControllerETCDDatabase controllerETCDDatabase)
+    public ControllerETCDTransactionMgr(ControllerETCDDatabase controllerETCDDatabase, long maxOpsPerTxRef)
     {
         etcdDb = controllerETCDDatabase;
+        maxOpsPerTx = maxOpsPerTxRef;
         transactionObjectCollection = new TransactionObjectCollection();
-        currentTransaction = getClient().batch();
+        currentTransaction = createNewEtcdTx();
     }
 
-    /*
-     * DO NOT expose this client in the interface.
-     * Otherwise it is too easy to create additional etcd-transaction which linstor does not track
-     * and thus will never be able to commit / rollback
-     */
-    public KvClient getClient()
+    private EtcdTransaction createNewEtcdTx()
     {
-        return etcdDb.getKvClient();
+        currentTransaction = new EtcdTransaction(etcdDb);
+        return currentTransaction;
     }
 
     @Override
-    public KvClient.FluentTxnOps<?> getTransaction()
+    public EtcdTransaction getTransaction()
     {
         return currentTransaction;
     }
@@ -66,7 +51,7 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
         removeDuplucateRequests();
 
         // TODO check for errors
-        TxnResponse txnResponse = EtcdUtils.requestWithRetry(currentTransaction);
+        TxnResponse txnResponse = EtcdTransaction.requestWithRetry(currentTransaction.etcdTx);
 
         if (txnResponse.getSucceeded())
         {
@@ -74,11 +59,11 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
 
             clearTransactionObjects();
 
-            currentTransaction = getClient().batch();
+            currentTransaction = createNewEtcdTx();
         }
         else
         {
-            currentTransaction = getClient().batch();
+            currentTransaction = createNewEtcdTx();
             throw new TransactionException("ETCD commit failed.",
                 new LinStorDBRuntimeException(txnResponse.toString())
             );
@@ -88,7 +73,7 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
     private void removeDuplucateRequests()
     {
         // ETCD does not allow duplicate updates for the same key
-        TxnRequest request = currentTransaction.asRequest();
+        TxnRequest request = currentTransaction.etcdTx.asRequest();
         List<RequestOp> successList = new ArrayList<>(request.getSuccessList());
         // we do not use .elseDo(), thus we also only have success entries
 
@@ -121,19 +106,19 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
                 lastReqMap.put(key, req);
             }
         }
-        FluentTxnOps<?> actualTransaction = getClient().batch();
+        EtcdTransaction actualTransaction = new EtcdTransaction(etcdDb);
         for (RequestOp req : lastReqMap.values())
         {
             switch (req.getRequestCase())
             {
                 case REQUEST_DELETE_RANGE:
-                    actualTransaction.delete(req.getRequestDeleteRangeOrBuilder());
+                    actualTransaction.etcdTx.delete(req.getRequestDeleteRangeOrBuilder());
                     break;
                 case REQUEST_PUT:
-                    actualTransaction.put(req.getRequestPutOrBuilder());
+                    actualTransaction.etcdTx.put(req.getRequestPutOrBuilder());
                     break;
                 case REQUEST_RANGE:
-                    actualTransaction.get(req.getRequestRangeOrBuilder());
+                    actualTransaction.etcdTx.get(req.getRequestRangeOrBuilder());
                     break;
                 case REQUEST_NOT_SET:
                 case REQUEST_TXN:
@@ -150,7 +135,7 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
     {
         transactionObjectCollection.rollbackAll();
 
-        currentTransaction = getClient().batch();
+        currentTransaction = createNewEtcdTx();
 
         clearTransactionObjects();
     }
@@ -171,31 +156,5 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
     public int sizeObjects()
     {
         return transactionObjectCollection.sizeObjects();
-    }
-
-    @Override
-    public TreeMap<String, String> readTable(String keyRef, boolean recursiveRef)
-    {
-        /*
-         * mostly copied from EtcdUtils which is in the controller server
-         * TODO: merge this method with EtcdUtils.getTableRow once we fixed the project-setup
-         */
-        FluentRangeRequest request = getClient().get(bs(keyRef));
-        if (recursiveRef)
-        {
-            request = request.asPrefix();
-        }
-
-        RangeResponse rspRow = EtcdUtils.requestWithRetry(request);
-
-        TreeMap<String, String> rowMap = new TreeMap<>();
-        for (KeyValue keyValue : rspRow.getKvsList())
-        {
-            // final String recKey = keyValue.getKey().toStringUtf8();
-            // final String columnName = recKey.substring(recKey.lastIndexOf("/") + 1);
-            rowMap.put(keyValue.getKey().toStringUtf8(), keyValue.getValue().toStringUtf8());
-        }
-
-        return rowMap;
     }
 }

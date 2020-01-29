@@ -1,13 +1,11 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
-import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
+import com.linbit.linstor.transaction.EtcdTransaction;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-
-import com.ibm.etcd.client.kv.KvClient.FluentTxnOps;
 
 // corresponds to Migration_2019_11_12_DisklessFlagSplit
 public class Migration_04_DisklessFlagSplit extends EtcdMigration
@@ -24,14 +22,14 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
     private static final String KIND_DRBD = "DRBD";
     private static final String KIND_NVME = "NVME";
 
-    public static void migrate(ControllerETCDTransactionMgr txMgr)
+    public static void migrate(EtcdTransaction tx)
     {
-        TreeMap<String, String> allRscLayer = txMgr.readTable("LINSTOR/LAYER_RESOURCE_IDS", true);
+        TreeMap<String, String> allRscLayer = tx.get("LINSTOR/LAYER_RESOURCE_IDS", true);
 
         // key: <nodeName, rscName>, value: <etcdKey, rscFlag>
         HashMap<Pair<String, String>, Pair<String, Long>> rscMap = new HashMap<>();
         {
-            TreeMap<String, String> allRsc = txMgr.readTable("LINSTOR/RESOURCES", true);
+            TreeMap<String, String> allRsc = tx.get("LINSTOR/RESOURCES", true);
             for (Entry<String, String> rsc : allRsc.entrySet())
             {
                 String key = rsc.getKey();
@@ -51,8 +49,6 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
                 }
             }
         }
-
-        FluentTxnOps<?> tx = txMgr.getTransaction();
 
         HashMap<Long, LayerRscHolder> rscDataMap = new HashMap<>();
         for (Entry<String, String> rscLayer : allRscLayer.entrySet())
@@ -104,7 +100,7 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
                     }
                     if (update)
                     {
-                        tx.put(putReq(rscKeyAndFlag.a, Long.toString(flag)));
+                        tx.put(rscKeyAndFlag.a, Long.toString(flag));
                     }
                 }
             }

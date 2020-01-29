@@ -1,17 +1,16 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
+import com.linbit.linstor.transaction.EtcdTransaction;
+
 import java.util.Map.Entry;
-
-import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
-
 import java.util.TreeMap;
 
 // corresponds to Migration_2019_10_31_SnapRestoreDeleteProps2
 public class Migration_03_DelProp_SnapshotRestore extends EtcdMigration
 {
-    public static void migrate(ControllerETCDTransactionMgr txMgr)
+    public static void migrate(EtcdTransaction tx)
     {
-        TreeMap<String, String> props = txMgr.readTable("LINSTOR/PROPS_CONTAINER/volumes", true);
+        TreeMap<String, String> props = tx.get("LINSTOR/PROPS_CONTAINER/volumes", true);
 
         for (Entry<String, String> entry : props.entrySet())
         {
@@ -22,9 +21,7 @@ public class Migration_03_DelProp_SnapshotRestore extends EtcdMigration
                 )
             )
             {
-                txMgr.getTransaction().delete(
-                    delReq(entry.getKey(), false)
-                );
+                tx.delete(entry.getKey(), false);
             }
         }
     }

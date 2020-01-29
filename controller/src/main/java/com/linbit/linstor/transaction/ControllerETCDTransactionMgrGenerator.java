@@ -1,24 +1,33 @@
 package com.linbit.linstor.transaction;
 
-import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
-import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 
 import javax.inject.Inject;
 
+import com.google.inject.Provider;
+
 public class ControllerETCDTransactionMgrGenerator implements TransactionMgrGenerator
 {
-    private final ControllerETCDDatabase controllerDatabase;
+    private final Provider<ControllerETCDDatabase> controllerDatabase;
+    private final CtrlConfig ctrlCfg;
 
     @Inject
-    public ControllerETCDTransactionMgrGenerator(ControllerDatabase controllerDatabaseRef)
+    public ControllerETCDTransactionMgrGenerator(
+        Provider<ControllerETCDDatabase> controllerDatabaseRef,
+        CtrlConfig ctrlCfgRef
+    )
     {
-        controllerDatabase = (ControllerETCDDatabase) controllerDatabaseRef;
+        ctrlCfg = ctrlCfgRef;
+        controllerDatabase = controllerDatabaseRef;
     }
 
     @Override
     public ControllerETCDTransactionMgr startTransaction()
     {
-        return new ControllerETCDTransactionMgr(controllerDatabase);
+        return new ControllerETCDTransactionMgr(
+            controllerDatabase.get(),
+            ctrlCfg.getEtcdOperationsPerTransaction()
+        );
     }
 }

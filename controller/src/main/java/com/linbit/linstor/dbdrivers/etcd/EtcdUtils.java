@@ -5,7 +5,7 @@ import static com.ibm.etcd.client.KeyUtils.bs;
 import com.linbit.linstor.dbcp.migration.UsedByMigration;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
-import com.linbit.linstor.transaction.TransactionException;
+import com.linbit.linstor.transaction.EtcdTransaction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,14 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import com.ibm.etcd.api.KeyValue;
 import com.ibm.etcd.api.PutRequest;
 import com.ibm.etcd.api.RangeResponse;
-import com.ibm.etcd.client.FluentRequest;
 import com.ibm.etcd.client.kv.KvClient;
 import io.grpc.Deadline;
 
@@ -99,7 +96,7 @@ public class EtcdUtils
 
     public static Map<String, String> getTableRow(KvClient client, String key)
     {
-        RangeResponse rspRow = EtcdUtils.requestWithRetry(client.get(bs(key)).asPrefix());
+        RangeResponse rspRow = EtcdTransaction.requestWithRetry(client.get(bs(key)).asPrefix());
 
         HashMap<String, String> rowMap = new HashMap<>();
         for (KeyValue keyValue : rspRow.getKvsList())
@@ -204,22 +201,6 @@ public class EtcdUtils
         String[] pkArr = new String[pks.size()];
         pks.toArray(pkArr);
         return pkArr;
-    }
-
-    public static <RSP> RSP requestWithRetry(FluentRequest<?, ?, RSP> req)
-    {
-        req.backoffRetry();
-
-        RSP ret;
-        try
-        {
-            ret = req.async().get(60, TimeUnit.SECONDS);
-        }
-        catch (InterruptedException | ExecutionException | TimeoutException exc)
-        {
-            throw new TransactionException("No connection to ETCD server", exc);
-        }
-        return ret;
     }
 
     private EtcdUtils()

@@ -1,21 +1,14 @@
 package com.linbit.linstor.dbdrivers.etcd;
 
-import static com.ibm.etcd.client.KeyUtils.bs;
-
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
+import com.linbit.linstor.transaction.EtcdTransaction;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
 
 import javax.inject.Provider;
 
 import java.util.Map;
-
-import com.google.protobuf.ByteString;
-import com.ibm.etcd.api.DeleteRangeRequest;
-import com.ibm.etcd.api.PutRequest;
-import com.ibm.etcd.client.KeyUtils;
-import com.ibm.etcd.client.kv.KvClient;
 
 public abstract class BaseEtcdDriver
 {
@@ -54,13 +47,13 @@ public abstract class BaseEtcdDriver
     public static class FluentLinstorTransaction
     {
         private final TransactionMgrETCD transactionMgrETCD;
-        private final KvClient.FluentTxnOps<?> txn;
+        private final EtcdTransaction tx;
         private String currentBaseKey;
 
         public FluentLinstorTransaction(TransactionMgrETCD transactionMgrETCDRef, String baseKeyRef)
         {
             transactionMgrETCD = transactionMgrETCDRef;
-            txn = transactionMgrETCDRef.getTransaction();
+            tx = transactionMgrETCDRef.getTransaction();
             currentBaseKey = baseKeyRef;
         }
 
@@ -89,23 +82,13 @@ public abstract class BaseEtcdDriver
          */
         public FluentLinstorTransaction put(String key, String valueRef)
         {
-            txn.put(
-                PutRequest.newBuilder()
-                    .setKey(bs(currentBaseKey + key))
-                    .setValue(bs(valueRef)).build()
-            );
+            tx.put(currentBaseKey + key, valueRef);
             return this;
         }
 
         public FluentLinstorTransaction delete(boolean recursive)
         {
-            ByteString bsKey = bs(currentBaseKey);
-            DeleteRangeRequest.Builder deleteBuilder = DeleteRangeRequest.newBuilder().setKey(bsKey);
-            if (recursive)
-            {
-                deleteBuilder = deleteBuilder.setRangeEnd(KeyUtils.plusOne(bsKey));
-            }
-            txn.delete(deleteBuilder.build());
+            tx.delete(currentBaseKey, recursive);
             return this;
         }
 
@@ -113,7 +96,7 @@ public abstract class BaseEtcdDriver
         {
             try
             {
-                return transactionMgrETCD.readTable(currentBaseKey, recursive);
+                return tx.get(currentBaseKey, recursive);
             }
             catch (io.grpc.StatusRuntimeException grpcExc)
             {

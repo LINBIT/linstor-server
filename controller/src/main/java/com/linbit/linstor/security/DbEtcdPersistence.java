@@ -16,6 +16,8 @@ import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
 import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
+import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
+import com.linbit.linstor.transaction.EtcdTransaction;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
@@ -267,26 +269,33 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
     @Override
     public void setSecurityLevel(ControllerETCDDatabase etcdDb, SecurityLevel newLevel) throws DatabaseException
     {
-        EtcdUtils.requestWithRetry(
-            etcdDb.getKvClient().batch().put(
-                EtcdUtils.putReq(
-                    EtcdUtils.buildKey(SecConfiguration.ENTRY_VALUE, SecurityDbConsts.KEY_SEC_LEVEL),
-                    newLevel.name()
-                )
-            )
+        /**
+         * This action should always have its own transaction (i.e. no other actions should
+         * be active concurrently)
+         */
+        ControllerETCDTransactionMgr txMgr = new ControllerETCDTransactionMgr(etcdDb, 1);
+        EtcdTransaction tx = txMgr.getTransaction();
+        tx.put(
+            EtcdUtils.buildKey(SecConfiguration.ENTRY_VALUE, SecurityDbConsts.KEY_SEC_LEVEL),
+            newLevel.name()
         );
+        txMgr.commit();
     }
 
     @Override
     public void setAuthRequired(ControllerETCDDatabase etcdDb, boolean newPolicy) throws DatabaseException
     {
-        EtcdUtils.requestWithRetry(
-            etcdDb.getKvClient().batch().put(
-                EtcdUtils.putReq(
-                    EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_AUTH_REQ),
-                    Boolean.toString(newPolicy)
-                )
-            )
+        /**
+         * This action should always have its own transaction (i.e. no other actions should
+         * be active concurrently)
+         */
+        ControllerETCDTransactionMgr txMgr = new ControllerETCDTransactionMgr(etcdDb, 1);
+        EtcdTransaction tx = txMgr.getTransaction();
+
+        tx.put(
+            EtcdUtils.buildKey(GeneratedDatabaseTables.SEC_CONFIGURATION, SecurityDbConsts.KEY_AUTH_REQ),
+            Boolean.toString(newPolicy)
         );
+        txMgr.commit();
     }
 }

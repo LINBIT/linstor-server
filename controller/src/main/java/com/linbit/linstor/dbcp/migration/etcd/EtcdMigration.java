@@ -8,7 +8,6 @@ import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 
 import com.google.protobuf.ByteString;
 import com.ibm.etcd.api.DeleteRangeRequest;
-import com.ibm.etcd.api.PutRequest;
 import com.ibm.etcd.api.RangeRequest;
 import com.ibm.etcd.client.KeyUtils;
 
@@ -24,12 +23,6 @@ public abstract class EtcdMigration
             requestBuilder = requestBuilder.setRangeEnd(KeyUtils.plusOne(bsKey));
         }
         return requestBuilder.build();
-    }
-
-    @UsedByMigration
-    public static PutRequest putReq(String key, String value)
-    {
-        return PutRequest.newBuilder().setKey(bs(key)).setValue(bs(value)).build();
     }
 
     @UsedByMigration

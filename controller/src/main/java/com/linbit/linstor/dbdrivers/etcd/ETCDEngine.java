@@ -1,7 +1,5 @@
 package com.linbit.linstor.dbdrivers.etcd;
 
-import static com.ibm.etcd.client.KeyUtils.bs;
-
 import com.linbit.CollectionDatabaseDriver;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
@@ -21,6 +19,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.EtcdTransaction;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
@@ -38,12 +37,6 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 import com.google.inject.Provider;
-import com.google.protobuf.ByteString;
-import com.ibm.etcd.api.DeleteRangeRequest;
-import com.ibm.etcd.api.DeleteRangeRequestOrBuilder;
-import com.ibm.etcd.api.PutRequest;
-import com.ibm.etcd.client.KeyUtils;
-import com.ibm.etcd.client.kv.KvClient.FluentTxnOps;
 
 @Singleton
 public class ETCDEngine extends BaseEtcdDriver implements DbEngine
@@ -75,7 +68,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     )
         throws DatabaseException, AccessDeniedException
     {
-        FluentTxnOps<?> transaction = transMgrProvider.get().getTransaction();
+        EtcdTransaction tx = transMgrProvider.get().getTransaction();
         for (Column col : table.values())
         {
             if (!col.isPk())
@@ -85,12 +78,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                 Object obj = setters.get(col).accept(data);
                 if (obj != null)
                 {
-                    PutRequest putRequest = PutRequest.newBuilder()
-                        .setKey(bs(key))
-                        .setValue(bs(Objects.toString(obj)))
-                        .build();
-
-                    transaction.put(putRequest);
+                    tx.put(key, Objects.toString(obj));
                 }
             }
         }
@@ -106,17 +94,11 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     )
         throws DatabaseException, AccessDeniedException
     {
-        FluentTxnOps<?> transaction = transMgrProvider.get().getTransaction();
+        EtcdTransaction tx = transMgrProvider.get().getTransaction();
 
         String key = getPk(setters, table, data);
 
-        ByteString bsKey = bs(key);
-        DeleteRangeRequestOrBuilder deleteRequest = DeleteRangeRequest.newBuilder()
-            .setKey(bsKey)
-            .setRangeEnd(KeyUtils.plusOne(bsKey))
-            .build();
-
-        transaction.delete(deleteRequest);
+        tx.delete(key, true);
         // sync will be called within transMgr.commit()
     }
 

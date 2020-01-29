@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.core.objects.DrbdLayerETCDDriver;
 import com.linbit.linstor.core.objects.DrbdLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
@@ -178,6 +179,7 @@ public class ControllerDbModule extends AbstractModule
                 break;
             case ETCD:
                 bind(ControllerDatabase.class).to(DbEtcd.class);
+                bind(ControllerETCDDatabase.class).to(DbEtcd.class);
                 bind(DbEngine.class).to(ETCDEngine.class);
 
                 bind(DbInitializer.class).to(DbEtcdInitializer.class);
