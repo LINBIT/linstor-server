@@ -34,6 +34,11 @@ public class CtrlConfig extends LinstorConfig
     private boolean dbDisableVersionCheck;
 
     /*
+     * Database.ETCD
+     */
+    private long etcdOperationsPerTransaction = 128;
+
+    /*
      * Logging
      */
     private String logRestAccessLogPath;
@@ -202,6 +207,14 @@ public class CtrlConfig extends LinstorConfig
         if (dbDisableVersionCheckRef != null)
         {
             dbDisableVersionCheck = dbDisableVersionCheckRef;
+        }
+    }
+
+    public void setEtcdOperationsPerTransaction(Long etcdOperationsPerTransactionRef)
+    {
+        if (etcdOperationsPerTransactionRef != null)
+        {
+            etcdOperationsPerTransaction = etcdOperationsPerTransactionRef;
         }
     }
 
@@ -384,6 +397,11 @@ public class CtrlConfig extends LinstorConfig
     public boolean isDbVersionCheckDisabled()
     {
         return dbDisableVersionCheck;
+    }
+
+    public long getEtcdOperationsPerTransaction()
+    {
+        return etcdOperationsPerTransaction;
     }
 
     public String getLogRestAccessLogPath()

@@ -120,6 +120,8 @@ public class CtrlTomlConfig
         private String client_key_pkcs8_pem;
         private String client_key_password;
 
+        private Etcd etcd = new Etcd();
+
         public void applyTo(CtrlConfig cfg)
         {
             cfg.setDbUser(user);
@@ -129,6 +131,8 @@ public class CtrlTomlConfig
             cfg.setDbClientCertificate(client_certificate);
             cfg.setDbClientKeyPkcs8Pem(client_key_pkcs8_pem != null ? client_key_pkcs8_pem : client_key_pcks8_pem);
             cfg.setDbClientKeyPassword(client_key_password);
+
+            etcd.applyTo(cfg);
         }
 
         /**
@@ -179,6 +183,16 @@ public class CtrlTomlConfig
         public void applyTo(CtrlConfig cfg)
         {
             cfg.setMasterPassphrase(passphrase);
+        }
+    }
+
+    static class Etcd
+    {
+        private Long ops_per_transaction;
+
+        public void applyTo(CtrlConfig cfg)
+        {
+            cfg.setEtcdOperationsPerTransaction(ops_per_transaction);
         }
     }
 
