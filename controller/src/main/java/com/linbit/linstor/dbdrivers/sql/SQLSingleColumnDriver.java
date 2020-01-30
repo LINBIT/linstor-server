@@ -3,9 +3,9 @@ package com.linbit.linstor.dbdrivers.sql;
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
+import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.DbEngine.DataToString;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.ExceptionThrowingFunction;
@@ -26,7 +26,7 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
     private final ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToString;
     private final Function<INPUT_TYPE, DB_TYPE> mapper;
 
-    private final Table table;
+    private final DatabaseTable table;
     private final String updateStatement;
 
     SQLSingleColumnDriver(

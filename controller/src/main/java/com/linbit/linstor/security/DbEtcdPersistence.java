@@ -2,8 +2,8 @@ package com.linbit.linstor.security;
 
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecAccessTypes;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecConfiguration;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecDfltRoles;

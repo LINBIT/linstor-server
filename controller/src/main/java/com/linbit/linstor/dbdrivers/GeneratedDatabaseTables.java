@@ -1,25 +1,12 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
+
 import java.sql.Types;
 
 public class GeneratedDatabaseTables
 {
-    /**
-     * Marker interface. All following tables share this interface
-     */
-    public interface Table
-    {
-        /**
-         * Returns all columns of the current table
-         */
-        Column[] values();
-
-        /**
-         * Returns the name of the current table
-         */
-        String getName();
-    }
-
     private GeneratedDatabaseTables()
     {
     }
@@ -27,15 +14,15 @@ public class GeneratedDatabaseTables
     // Schema name
     public static final String DATABASE_SCHEMA_NAME = "LINSTOR";
 
-    public static class KeyValueStore implements Table
+    public static class KeyValueStore implements DatabaseTable
     {
         private KeyValueStore() { }
 
         // Primary Key
-        public static final Column KVS_NAME = new Column("KVS_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl KVS_NAME = new ColumnImpl("KVS_NAME", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column KVS_DSP_NAME = new Column("KVS_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl KVS_DSP_NAME = new ColumnImpl("KVS_DSP_NAME", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -63,18 +50,18 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class LayerDrbdResources implements Table
+    public static class LayerDrbdResources implements DatabaseTable
     {
         private LayerDrbdResources() { }
 
         // Primary Key
-        public static final Column LAYER_RESOURCE_ID = new Column("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
 
-        public static final Column PEER_SLOTS = new Column("PEER_SLOTS", Types.INTEGER, false, false);
-        public static final Column AL_STRIPES = new Column("AL_STRIPES", Types.INTEGER, false, false);
-        public static final Column AL_STRIPE_SIZE = new Column("AL_STRIPE_SIZE", Types.BIGINT, false, false);
-        public static final Column FLAGS = new Column("FLAGS", Types.BIGINT, false, false);
-        public static final Column NODE_ID = new Column("NODE_ID", Types.INTEGER, false, false);
+        public static final ColumnImpl PEER_SLOTS = new ColumnImpl("PEER_SLOTS", Types.INTEGER, false, false);
+        public static final ColumnImpl AL_STRIPES = new ColumnImpl("AL_STRIPES", Types.INTEGER, false, false);
+        public static final ColumnImpl AL_STRIPE_SIZE = new ColumnImpl("AL_STRIPE_SIZE", Types.BIGINT, false, false);
+        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl NODE_ID = new ColumnImpl("NODE_ID", Types.INTEGER, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -105,21 +92,21 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class LayerDrbdResourceDefinitions implements Table
+    public static class LayerDrbdResourceDefinitions implements DatabaseTable
     {
         private LayerDrbdResourceDefinitions() { }
 
         // Primary Keys
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column RESOURCE_NAME_SUFFIX = new Column("RESOURCE_NAME_SUFFIX", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl RESOURCE_NAME_SUFFIX = new ColumnImpl("RESOURCE_NAME_SUFFIX", Types.VARCHAR, true, false);
+        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, true, false);
 
-        public static final Column PEER_SLOTS = new Column("PEER_SLOTS", Types.INTEGER, false, false);
-        public static final Column AL_STRIPES = new Column("AL_STRIPES", Types.INTEGER, false, false);
-        public static final Column AL_STRIPE_SIZE = new Column("AL_STRIPE_SIZE", Types.BIGINT, false, false);
-        public static final Column TCP_PORT = new Column("TCP_PORT", Types.INTEGER, false, true);
-        public static final Column TRANSPORT_TYPE = new Column("TRANSPORT_TYPE", Types.VARCHAR, false, false);
-        public static final Column SECRET = new Column("SECRET", Types.VARCHAR, false, true);
+        public static final ColumnImpl PEER_SLOTS = new ColumnImpl("PEER_SLOTS", Types.INTEGER, false, false);
+        public static final ColumnImpl AL_STRIPES = new ColumnImpl("AL_STRIPES", Types.INTEGER, false, false);
+        public static final ColumnImpl AL_STRIPE_SIZE = new ColumnImpl("AL_STRIPE_SIZE", Types.BIGINT, false, false);
+        public static final ColumnImpl TCP_PORT = new ColumnImpl("TCP_PORT", Types.INTEGER, false, true);
+        public static final ColumnImpl TRANSPORT_TYPE = new ColumnImpl("TRANSPORT_TYPE", Types.VARCHAR, false, false);
+        public static final ColumnImpl SECRET = new ColumnImpl("SECRET", Types.VARCHAR, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -153,16 +140,16 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class LayerDrbdVolumes implements Table
+    public static class LayerDrbdVolumes implements DatabaseTable
     {
         private LayerDrbdVolumes() { }
 
         // Primary Keys
-        public static final Column LAYER_RESOURCE_ID = new Column("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, false, true);
-        public static final Column POOL_NAME = new Column("POOL_NAME", Types.VARCHAR, false, true);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, true);
+        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -191,17 +178,17 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class LayerDrbdVolumeDefinitions implements Table
+    public static class LayerDrbdVolumeDefinitions implements DatabaseTable
     {
         private LayerDrbdVolumeDefinitions() { }
 
         // Primary Keys
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column RESOURCE_NAME_SUFFIX = new Column("RESOURCE_NAME_SUFFIX", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl RESOURCE_NAME_SUFFIX = new ColumnImpl("RESOURCE_NAME_SUFFIX", Types.VARCHAR, true, false);
+        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final Column VLM_MINOR_NR = new Column("VLM_MINOR_NR", Types.INTEGER, false, true);
+        public static final ColumnImpl VLM_MINOR_NR = new ColumnImpl("VLM_MINOR_NR", Types.INTEGER, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -231,15 +218,15 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class LayerLuksVolumes implements Table
+    public static class LayerLuksVolumes implements DatabaseTable
     {
         private LayerLuksVolumes() { }
 
         // Primary Keys
-        public static final Column LAYER_RESOURCE_ID = new Column("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final Column ENCRYPTED_PASSWORD = new Column("ENCRYPTED_PASSWORD", Types.VARCHAR, false, false);
+        public static final ColumnImpl ENCRYPTED_PASSWORD = new ColumnImpl("ENCRYPTED_PASSWORD", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -267,20 +254,20 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class LayerResourceIds implements Table
+    public static class LayerResourceIds implements DatabaseTable
     {
         private LayerResourceIds() { }
 
         // Primary Key
-        public static final Column LAYER_RESOURCE_ID = new Column("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
 
-        public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, false, false);
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, false, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, false, false);
-        public static final Column LAYER_RESOURCE_KIND = new Column("LAYER_RESOURCE_KIND", Types.VARCHAR, false, false);
-        public static final Column LAYER_RESOURCE_PARENT_ID = new Column("LAYER_RESOURCE_PARENT_ID", Types.INTEGER, false, true);
-        public static final Column LAYER_RESOURCE_SUFFIX = new Column("LAYER_RESOURCE_SUFFIX", Types.VARCHAR, false, false);
-        public static final Column LAYER_RESOURCE_SUSPENDED = new Column("LAYER_RESOURCE_SUSPENDED", Types.BOOLEAN, false, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl LAYER_RESOURCE_KIND = new ColumnImpl("LAYER_RESOURCE_KIND", Types.VARCHAR, false, false);
+        public static final ColumnImpl LAYER_RESOURCE_PARENT_ID = new ColumnImpl("LAYER_RESOURCE_PARENT_ID", Types.INTEGER, false, true);
+        public static final ColumnImpl LAYER_RESOURCE_SUFFIX = new ColumnImpl("LAYER_RESOURCE_SUFFIX", Types.VARCHAR, false, false);
+        public static final ColumnImpl LAYER_RESOURCE_SUSPENDED = new ColumnImpl("LAYER_RESOURCE_SUSPENDED", Types.BOOLEAN, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -313,17 +300,17 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class LayerStorageVolumes implements Table
+    public static class LayerStorageVolumes implements DatabaseTable
     {
         private LayerStorageVolumes() { }
 
         // Primary Keys
-        public static final Column LAYER_RESOURCE_ID = new Column("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final Column PROVIDER_KIND = new Column("PROVIDER_KIND", Types.VARCHAR, false, false);
-        public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, false, false);
-        public static final Column STOR_POOL_NAME = new Column("STOR_POOL_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl PROVIDER_KIND = new ColumnImpl("PROVIDER_KIND", Types.VARCHAR, false, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl STOR_POOL_NAME = new ColumnImpl("STOR_POOL_NAME", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -353,16 +340,16 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class LayerWritecacheVolumes implements Table
+    public static class LayerWritecacheVolumes implements DatabaseTable
     {
         private LayerWritecacheVolumes() { }
 
         // Primary Keys
-        public static final Column LAYER_RESOURCE_ID = new Column("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, false, false);
-        public static final Column POOL_NAME = new Column("POOL_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -391,17 +378,17 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class Nodes implements Table
+    public static class Nodes implements DatabaseTable
     {
         private Nodes() { }
 
         // Primary Key
-        public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column NODE_DSP_NAME = new Column("NODE_DSP_NAME", Types.VARCHAR, false, false);
-        public static final Column NODE_FLAGS = new Column("NODE_FLAGS", Types.BIGINT, false, false);
-        public static final Column NODE_TYPE = new Column("NODE_TYPE", Types.INTEGER, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl NODE_DSP_NAME = new ColumnImpl("NODE_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl NODE_FLAGS = new ColumnImpl("NODE_FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl NODE_TYPE = new ColumnImpl("NODE_TYPE", Types.INTEGER, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -431,15 +418,15 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class NodeConnections implements Table
+    public static class NodeConnections implements DatabaseTable
     {
         private NodeConnections() { }
 
         // Primary Keys
-        public static final Column NODE_NAME_SRC = new Column("NODE_NAME_SRC", Types.VARCHAR, true, false);
-        public static final Column NODE_NAME_DST = new Column("NODE_NAME_DST", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NAME_SRC = new ColumnImpl("NODE_NAME_SRC", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NAME_DST = new ColumnImpl("NODE_NAME_DST", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -467,19 +454,19 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class NodeNetInterfaces implements Table
+    public static class NodeNetInterfaces implements DatabaseTable
     {
         private NodeNetInterfaces() { }
 
         // Primary Keys
-        public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, true, false);
-        public static final Column NODE_NET_NAME = new Column("NODE_NET_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NET_NAME = new ColumnImpl("NODE_NET_NAME", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column NODE_NET_DSP_NAME = new Column("NODE_NET_DSP_NAME", Types.VARCHAR, false, false);
-        public static final Column INET_ADDRESS = new Column("INET_ADDRESS", Types.VARCHAR, false, false);
-        public static final Column STLT_CONN_PORT = new Column("STLT_CONN_PORT", Types.SMALLINT, false, true);
-        public static final Column STLT_CONN_ENCR_TYPE = new Column("STLT_CONN_ENCR_TYPE", Types.VARCHAR, false, true);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl NODE_NET_DSP_NAME = new ColumnImpl("NODE_NET_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl INET_ADDRESS = new ColumnImpl("INET_ADDRESS", Types.VARCHAR, false, false);
+        public static final ColumnImpl STLT_CONN_PORT = new ColumnImpl("STLT_CONN_PORT", Types.SMALLINT, false, true);
+        public static final ColumnImpl STLT_CONN_ENCR_TYPE = new ColumnImpl("STLT_CONN_ENCR_TYPE", Types.VARCHAR, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -511,18 +498,18 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class NodeStorPool implements Table
+    public static class NodeStorPool implements DatabaseTable
     {
         private NodeStorPool() { }
 
         // Primary Keys
-        public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, true, false);
-        public static final Column POOL_NAME = new Column("POOL_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column DRIVER_NAME = new Column("DRIVER_NAME", Types.VARCHAR, false, false);
-        public static final Column FREE_SPACE_MGR_NAME = new Column("FREE_SPACE_MGR_NAME", Types.VARCHAR, false, false);
-        public static final Column FREE_SPACE_MGR_DSP_NAME = new Column("FREE_SPACE_MGR_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl DRIVER_NAME = new ColumnImpl("DRIVER_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl FREE_SPACE_MGR_NAME = new ColumnImpl("FREE_SPACE_MGR_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl FREE_SPACE_MGR_DSP_NAME = new ColumnImpl("FREE_SPACE_MGR_DSP_NAME", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -553,15 +540,15 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class PropsContainers implements Table
+    public static class PropsContainers implements DatabaseTable
     {
         private PropsContainers() { }
 
         // Primary Keys
-        public static final Column PROPS_INSTANCE = new Column("PROPS_INSTANCE", Types.VARCHAR, true, false);
-        public static final Column PROP_KEY = new Column("PROP_KEY", Types.VARCHAR, true, false);
+        public static final ColumnImpl PROPS_INSTANCE = new ColumnImpl("PROPS_INSTANCE", Types.VARCHAR, true, false);
+        public static final ColumnImpl PROP_KEY = new ColumnImpl("PROP_KEY", Types.VARCHAR, true, false);
 
-        public static final Column PROP_VALUE = new Column("PROP_VALUE", Types.VARCHAR, false, false);
+        public static final ColumnImpl PROP_VALUE = new ColumnImpl("PROP_VALUE", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -589,17 +576,17 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class Resources implements Table
+    public static class Resources implements DatabaseTable
     {
         private Resources() { }
 
         // Primary Keys
-        public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, true, false);
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column RESOURCE_FLAGS = new Column("RESOURCE_FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl RESOURCE_FLAGS = new ColumnImpl("RESOURCE_FLAGS", Types.BIGINT, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -629,19 +616,19 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class ResourceConnections implements Table
+    public static class ResourceConnections implements DatabaseTable
     {
         private ResourceConnections() { }
 
         // Primary Keys
-        public static final Column NODE_NAME_SRC = new Column("NODE_NAME_SRC", Types.VARCHAR, true, false);
-        public static final Column NODE_NAME_DST = new Column("NODE_NAME_DST", Types.VARCHAR, true, false);
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NAME_SRC = new ColumnImpl("NODE_NAME_SRC", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NAME_DST = new ColumnImpl("NODE_NAME_DST", Types.VARCHAR, true, false);
+        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column FLAGS = new Column("FLAGS", Types.BIGINT, false, false);
-        public static final Column TCP_PORT = new Column("TCP_PORT", Types.INTEGER, false, true);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl TCP_PORT = new ColumnImpl("TCP_PORT", Types.INTEGER, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -673,22 +660,22 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class ResourceDefinitions implements Table
+    public static class ResourceDefinitions implements DatabaseTable
     {
         private ResourceDefinitions() { }
 
         // Primary Keys
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column RESOURCE_DSP_NAME = new Column("RESOURCE_DSP_NAME", Types.VARCHAR, false, true);
-        public static final Column SNAPSHOT_DSP_NAME = new Column("SNAPSHOT_DSP_NAME", Types.VARCHAR, false, false);
-        public static final Column RESOURCE_FLAGS = new Column("RESOURCE_FLAGS", Types.BIGINT, false, false);
-        public static final Column LAYER_STACK = new Column("LAYER_STACK", Types.VARCHAR, false, false);
-        public static final Column RESOURCE_EXTERNAL_NAME = new Column("RESOURCE_EXTERNAL_NAME", Types.BLOB, false, true);
-        public static final Column RESOURCE_GROUP_NAME = new Column("RESOURCE_GROUP_NAME", Types.VARCHAR, false, false);
-        public static final Column PARENT_UUID = new Column("PARENT_UUID", Types.CHAR, false, true);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl RESOURCE_DSP_NAME = new ColumnImpl("RESOURCE_DSP_NAME", Types.VARCHAR, false, true);
+        public static final ColumnImpl SNAPSHOT_DSP_NAME = new ColumnImpl("SNAPSHOT_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl RESOURCE_FLAGS = new ColumnImpl("RESOURCE_FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl LAYER_STACK = new ColumnImpl("LAYER_STACK", Types.VARCHAR, false, false);
+        public static final ColumnImpl RESOURCE_EXTERNAL_NAME = new ColumnImpl("RESOURCE_EXTERNAL_NAME", Types.BLOB, false, true);
+        public static final ColumnImpl RESOURCE_GROUP_NAME = new ColumnImpl("RESOURCE_GROUP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl PARENT_UUID = new ColumnImpl("PARENT_UUID", Types.CHAR, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -723,25 +710,25 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class ResourceGroups implements Table
+    public static class ResourceGroups implements DatabaseTable
     {
         private ResourceGroups() { }
 
         // Primary Key
-        public static final Column RESOURCE_GROUP_NAME = new Column("RESOURCE_GROUP_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl RESOURCE_GROUP_NAME = new ColumnImpl("RESOURCE_GROUP_NAME", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column RESOURCE_GROUP_DSP_NAME = new Column("RESOURCE_GROUP_DSP_NAME", Types.VARCHAR, false, false);
-        public static final Column DESCRIPTION = new Column("DESCRIPTION", Types.VARCHAR, false, true);
-        public static final Column LAYER_STACK = new Column("LAYER_STACK", Types.VARCHAR, false, true);
-        public static final Column REPLICA_COUNT = new Column("REPLICA_COUNT", Types.INTEGER, false, false);
-        public static final Column POOL_NAME = new Column("POOL_NAME", Types.VARCHAR, false, true);
-        public static final Column DO_NOT_PLACE_WITH_RSC_REGEX = new Column("DO_NOT_PLACE_WITH_RSC_REGEX", Types.VARCHAR, false, true);
-        public static final Column DO_NOT_PLACE_WITH_RSC_LIST = new Column("DO_NOT_PLACE_WITH_RSC_LIST", Types.VARCHAR, false, true);
-        public static final Column REPLICAS_ON_SAME = new Column("REPLICAS_ON_SAME", Types.BLOB, false, true);
-        public static final Column REPLICAS_ON_DIFFERENT = new Column("REPLICAS_ON_DIFFERENT", Types.BLOB, false, true);
-        public static final Column ALLOWED_PROVIDER_LIST = new Column("ALLOWED_PROVIDER_LIST", Types.VARCHAR, false, true);
-        public static final Column DISKLESS_ON_REMAINING = new Column("DISKLESS_ON_REMAINING", Types.BOOLEAN, false, true);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl RESOURCE_GROUP_DSP_NAME = new ColumnImpl("RESOURCE_GROUP_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl DESCRIPTION = new ColumnImpl("DESCRIPTION", Types.VARCHAR, false, true);
+        public static final ColumnImpl LAYER_STACK = new ColumnImpl("LAYER_STACK", Types.VARCHAR, false, true);
+        public static final ColumnImpl REPLICA_COUNT = new ColumnImpl("REPLICA_COUNT", Types.INTEGER, false, false);
+        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, true);
+        public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_REGEX = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_REGEX", Types.VARCHAR, false, true);
+        public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_LIST = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_LIST", Types.VARCHAR, false, true);
+        public static final ColumnImpl REPLICAS_ON_SAME = new ColumnImpl("REPLICAS_ON_SAME", Types.BLOB, false, true);
+        public static final ColumnImpl REPLICAS_ON_DIFFERENT = new ColumnImpl("REPLICAS_ON_DIFFERENT", Types.BLOB, false, true);
+        public static final ColumnImpl ALLOWED_PROVIDER_LIST = new ColumnImpl("ALLOWED_PROVIDER_LIST", Types.VARCHAR, false, true);
+        public static final ColumnImpl DISKLESS_ON_REMAINING = new ColumnImpl("DISKLESS_ON_REMAINING", Types.BOOLEAN, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -779,14 +766,14 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecAccessTypes implements Table
+    public static class SecAccessTypes implements DatabaseTable
     {
         private SecAccessTypes() { }
 
         // Primary Key
-        public static final Column ACCESS_TYPE_NAME = new Column("ACCESS_TYPE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl ACCESS_TYPE_NAME = new ColumnImpl("ACCESS_TYPE_NAME", Types.VARCHAR, true, false);
 
-        public static final Column ACCESS_TYPE_VALUE = new Column("ACCESS_TYPE_VALUE", Types.SMALLINT, false, false);
+        public static final ColumnImpl ACCESS_TYPE_VALUE = new ColumnImpl("ACCESS_TYPE_VALUE", Types.SMALLINT, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -813,15 +800,15 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecAclMap implements Table
+    public static class SecAclMap implements DatabaseTable
     {
         private SecAclMap() { }
 
         // Primary Keys
-        public static final Column OBJECT_PATH = new Column("OBJECT_PATH", Types.VARCHAR, true, false);
-        public static final Column ROLE_NAME = new Column("ROLE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl OBJECT_PATH = new ColumnImpl("OBJECT_PATH", Types.VARCHAR, true, false);
+        public static final ColumnImpl ROLE_NAME = new ColumnImpl("ROLE_NAME", Types.VARCHAR, true, false);
 
-        public static final Column ACCESS_TYPE = new Column("ACCESS_TYPE", Types.SMALLINT, false, false);
+        public static final ColumnImpl ACCESS_TYPE = new ColumnImpl("ACCESS_TYPE", Types.SMALLINT, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -849,15 +836,15 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecConfiguration implements Table
+    public static class SecConfiguration implements DatabaseTable
     {
         private SecConfiguration() { }
 
         // Primary Key
-        public static final Column ENTRY_KEY = new Column("ENTRY_KEY", Types.VARCHAR, true, false);
+        public static final ColumnImpl ENTRY_KEY = new ColumnImpl("ENTRY_KEY", Types.VARCHAR, true, false);
 
-        public static final Column ENTRY_DSP_KEY = new Column("ENTRY_DSP_KEY", Types.VARCHAR, false, false);
-        public static final Column ENTRY_VALUE = new Column("ENTRY_VALUE", Types.VARCHAR, false, false);
+        public static final ColumnImpl ENTRY_DSP_KEY = new ColumnImpl("ENTRY_DSP_KEY", Types.VARCHAR, false, false);
+        public static final ColumnImpl ENTRY_VALUE = new ColumnImpl("ENTRY_VALUE", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -885,14 +872,14 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecDfltRoles implements Table
+    public static class SecDfltRoles implements DatabaseTable
     {
         private SecDfltRoles() { }
 
         // Primary Key
-        public static final Column IDENTITY_NAME = new Column("IDENTITY_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl IDENTITY_NAME = new ColumnImpl("IDENTITY_NAME", Types.VARCHAR, true, false);
 
-        public static final Column ROLE_NAME = new Column("ROLE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl ROLE_NAME = new ColumnImpl("ROLE_NAME", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -919,18 +906,18 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecIdentities implements Table
+    public static class SecIdentities implements DatabaseTable
     {
         private SecIdentities() { }
 
         // Primary Key
-        public static final Column IDENTITY_NAME = new Column("IDENTITY_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl IDENTITY_NAME = new ColumnImpl("IDENTITY_NAME", Types.VARCHAR, true, false);
 
-        public static final Column IDENTITY_DSP_NAME = new Column("IDENTITY_DSP_NAME", Types.VARCHAR, false, false);
-        public static final Column PASS_SALT = new Column("PASS_SALT", Types.CHAR, false, true);
-        public static final Column PASS_HASH = new Column("PASS_HASH", Types.CHAR, false, true);
-        public static final Column ID_ENABLED = new Column("ID_ENABLED", Types.BOOLEAN, false, false);
-        public static final Column ID_LOCKED = new Column("ID_LOCKED", Types.BOOLEAN, false, false);
+        public static final ColumnImpl IDENTITY_DSP_NAME = new ColumnImpl("IDENTITY_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl PASS_SALT = new ColumnImpl("PASS_SALT", Types.CHAR, false, true);
+        public static final ColumnImpl PASS_HASH = new ColumnImpl("PASS_HASH", Types.CHAR, false, true);
+        public static final ColumnImpl ID_ENABLED = new ColumnImpl("ID_ENABLED", Types.BOOLEAN, false, false);
+        public static final ColumnImpl ID_LOCKED = new ColumnImpl("ID_LOCKED", Types.BOOLEAN, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -961,13 +948,13 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecIdRoleMap implements Table
+    public static class SecIdRoleMap implements DatabaseTable
     {
         private SecIdRoleMap() { }
 
         // Primary Keys
-        public static final Column IDENTITY_NAME = new Column("IDENTITY_NAME", Types.VARCHAR, true, false);
-        public static final Column ROLE_NAME = new Column("ROLE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl IDENTITY_NAME = new ColumnImpl("IDENTITY_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl ROLE_NAME = new ColumnImpl("ROLE_NAME", Types.VARCHAR, true, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -994,16 +981,16 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecObjectProtection implements Table
+    public static class SecObjectProtection implements DatabaseTable
     {
         private SecObjectProtection() { }
 
         // Primary Key
-        public static final Column OBJECT_PATH = new Column("OBJECT_PATH", Types.VARCHAR, true, false);
+        public static final ColumnImpl OBJECT_PATH = new ColumnImpl("OBJECT_PATH", Types.VARCHAR, true, false);
 
-        public static final Column CREATOR_IDENTITY_NAME = new Column("CREATOR_IDENTITY_NAME", Types.VARCHAR, false, false);
-        public static final Column OWNER_ROLE_NAME = new Column("OWNER_ROLE_NAME", Types.VARCHAR, false, false);
-        public static final Column SECURITY_TYPE_NAME = new Column("SECURITY_TYPE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl CREATOR_IDENTITY_NAME = new ColumnImpl("CREATOR_IDENTITY_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl OWNER_ROLE_NAME = new ColumnImpl("OWNER_ROLE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl SECURITY_TYPE_NAME = new ColumnImpl("SECURITY_TYPE_NAME", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1032,17 +1019,17 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecRoles implements Table
+    public static class SecRoles implements DatabaseTable
     {
         private SecRoles() { }
 
         // Primary Key
-        public static final Column ROLE_NAME = new Column("ROLE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl ROLE_NAME = new ColumnImpl("ROLE_NAME", Types.VARCHAR, true, false);
 
-        public static final Column ROLE_DSP_NAME = new Column("ROLE_DSP_NAME", Types.VARCHAR, false, false);
-        public static final Column DOMAIN_NAME = new Column("DOMAIN_NAME", Types.VARCHAR, false, false);
-        public static final Column ROLE_ENABLED = new Column("ROLE_ENABLED", Types.BOOLEAN, false, false);
-        public static final Column ROLE_PRIVILEGES = new Column("ROLE_PRIVILEGES", Types.BIGINT, false, false);
+        public static final ColumnImpl ROLE_DSP_NAME = new ColumnImpl("ROLE_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl DOMAIN_NAME = new ColumnImpl("DOMAIN_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl ROLE_ENABLED = new ColumnImpl("ROLE_ENABLED", Types.BOOLEAN, false, false);
+        public static final ColumnImpl ROLE_PRIVILEGES = new ColumnImpl("ROLE_PRIVILEGES", Types.BIGINT, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1072,15 +1059,15 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecTypes implements Table
+    public static class SecTypes implements DatabaseTable
     {
         private SecTypes() { }
 
         // Primary Key
-        public static final Column TYPE_NAME = new Column("TYPE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl TYPE_NAME = new ColumnImpl("TYPE_NAME", Types.VARCHAR, true, false);
 
-        public static final Column TYPE_DSP_NAME = new Column("TYPE_DSP_NAME", Types.VARCHAR, false, false);
-        public static final Column TYPE_ENABLED = new Column("TYPE_ENABLED", Types.BOOLEAN, false, false);
+        public static final ColumnImpl TYPE_DSP_NAME = new ColumnImpl("TYPE_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl TYPE_ENABLED = new ColumnImpl("TYPE_ENABLED", Types.BOOLEAN, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1108,15 +1095,15 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class SecTypeRules implements Table
+    public static class SecTypeRules implements DatabaseTable
     {
         private SecTypeRules() { }
 
         // Primary Keys
-        public static final Column DOMAIN_NAME = new Column("DOMAIN_NAME", Types.VARCHAR, true, false);
-        public static final Column TYPE_NAME = new Column("TYPE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl DOMAIN_NAME = new ColumnImpl("DOMAIN_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl TYPE_NAME = new ColumnImpl("TYPE_NAME", Types.VARCHAR, true, false);
 
-        public static final Column ACCESS_TYPE = new Column("ACCESS_TYPE", Types.SMALLINT, false, false);
+        public static final ColumnImpl ACCESS_TYPE = new ColumnImpl("ACCESS_TYPE", Types.SMALLINT, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1144,15 +1131,15 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class StorPoolDefinitions implements Table
+    public static class StorPoolDefinitions implements DatabaseTable
     {
         private StorPoolDefinitions() { }
 
         // Primary Key
-        public static final Column POOL_NAME = new Column("POOL_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column POOL_DSP_NAME = new Column("POOL_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl POOL_DSP_NAME = new ColumnImpl("POOL_DSP_NAME", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1180,18 +1167,18 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class Volumes implements Table
+    public static class Volumes implements DatabaseTable
     {
         private Volumes() { }
 
         // Primary Keys
-        public static final Column NODE_NAME = new Column("NODE_NAME", Types.VARCHAR, true, false);
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column VLM_FLAGS = new Column("VLM_FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl VLM_FLAGS = new ColumnImpl("VLM_FLAGS", Types.BIGINT, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1222,18 +1209,18 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class VolumeConnections implements Table
+    public static class VolumeConnections implements DatabaseTable
     {
         private VolumeConnections() { }
 
         // Primary Keys
-        public static final Column NODE_NAME_SRC = new Column("NODE_NAME_SRC", Types.VARCHAR, true, false);
-        public static final Column NODE_NAME_DST = new Column("NODE_NAME_DST", Types.VARCHAR, true, false);
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final ColumnImpl NODE_NAME_SRC = new ColumnImpl("NODE_NAME_SRC", Types.VARCHAR, true, false);
+        public static final ColumnImpl NODE_NAME_DST = new ColumnImpl("NODE_NAME_DST", Types.VARCHAR, true, false);
+        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1264,18 +1251,18 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class VolumeDefinitions implements Table
+    public static class VolumeDefinitions implements DatabaseTable
     {
         private VolumeDefinitions() { }
 
         // Primary Keys
-        public static final Column RESOURCE_NAME = new Column("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final Column SNAPSHOT_NAME = new Column("SNAPSHOT_NAME", Types.VARCHAR, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column VLM_SIZE = new Column("VLM_SIZE", Types.BIGINT, false, false);
-        public static final Column VLM_FLAGS = new Column("VLM_FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl VLM_SIZE = new ColumnImpl("VLM_SIZE", Types.BIGINT, false, false);
+        public static final ColumnImpl VLM_FLAGS = new ColumnImpl("VLM_FLAGS", Types.BIGINT, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1306,16 +1293,16 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class VolumeGroups implements Table
+    public static class VolumeGroups implements DatabaseTable
     {
         private VolumeGroups() { }
 
         // Primary Keys
-        public static final Column RESOURCE_GROUP_NAME = new Column("RESOURCE_GROUP_NAME", Types.VARCHAR, true, false);
-        public static final Column VLM_NR = new Column("VLM_NR", Types.INTEGER, true, false);
+        public static final ColumnImpl RESOURCE_GROUP_NAME = new ColumnImpl("RESOURCE_GROUP_NAME", Types.VARCHAR, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final Column UUID = new Column("UUID", Types.CHAR, false, false);
-        public static final Column FLAGS = new Column("FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1546,15 +1533,15 @@ public class GeneratedDatabaseTables
         VolumeGroups.FLAGS.table = VOLUME_GROUPS;
     }
 
-    public static class Column
+    public static class ColumnImpl implements Column
     {
         private final String name;
         private final int sqlType;
         private final boolean isPk;
         private final boolean isNullable;
-        private Table table;
+        private DatabaseTable table;
 
-        public Column(
+        public ColumnImpl(
             final String nameRef,
             final int sqlTypeRef,
             final boolean isPkRef,
@@ -1567,27 +1554,31 @@ public class GeneratedDatabaseTables
             isNullable = isNullableRef;
         }
 
+        @Override
         public String getName()
         {
             return name;
         }
 
+        @Override
         public int getSqlType()
         {
             return sqlType;
         }
 
+        @Override
         public boolean isPk()
         {
             return isPk;
         }
 
+        @Override
         public boolean isNullable()
         {
             return isNullable;
         }
 
-        public Table getTable()
+        public DatabaseTable getTable()
         {
             return table;
         }

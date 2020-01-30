@@ -11,9 +11,9 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver.RawParameters;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
+import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.DbEngine;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -63,7 +63,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     public <DATA> void create(
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         DATA data,
-        Table table,
+        DatabaseTable table,
         DataToString<DATA> dataToString
     )
         throws DatabaseException, AccessDeniedException
@@ -89,7 +89,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     public <DATA> void delete(
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         DATA data,
-        Table table,
+        DatabaseTable table,
         DataToString<DATA> dataToString
     )
         throws DatabaseException, AccessDeniedException
@@ -104,7 +104,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
 
     @Override
     public <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
-        Table table,
+        DatabaseTable table,
         LOAD_ALL parents,
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoader
     )
@@ -155,7 +155,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
 
     private <DATA> String getPk(
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
-        Table table,
+        DatabaseTable table,
         DATA data
     )
         throws AccessDeniedException
@@ -243,7 +243,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     }
 
     private <DATA> String[] getPrimaryKeys(
-        Table table,
+        DatabaseTable table,
         DATA data,
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters
     )

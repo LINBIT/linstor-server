@@ -16,8 +16,17 @@ public final class DatabaseConstantsGenerator
     public static final String DFLT_PACKAGE = "com.linbit.linstor.dbdrivers";
     public static final String DFLT_CLAZZ_NAME = "GeneratedDatabaseTables";
 
-    private static final String INTERFACE_NAME = "Table";
-    private static final String COLUMN_HOLDER_NAME = "Column";
+    public static final String[] IMPORTS = new String[]
+    {
+        "com.linbit.linstor.dbdrivers.DatabaseTable",
+        "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
+        null, // empty line
+        "java.sql.Types"
+    };
+
+    private static final String INTERFACE_NAME = "DatabaseTable";
+    private static final String COLUMN_HOLDER_NAME = "ColumnImpl";
+    private static final String COLUMN_INTERFACE_NAME = "Column";
     private static final String INDENT = "    ";
     private static final String DB_SCHEMA = "LINSTOR";
     private static final String TYPE_TABLE = "TABLE";
@@ -61,28 +70,21 @@ public final class DatabaseConstantsGenerator
         activeBuilder.add(mainBuilder);
 
         appendLine("package %s;\n", pkgName);
-        appendLine("import java.sql.Types;");
+        for (String imp : IMPORTS)
+        {
+            if (imp == null)
+            {
+                appendEmptyLine();
+            }
+            else
+            {
+                appendLine("import " + imp + ";");
+            }
+        }
         appendEmptyLine();
         appendLine("public class %s", clazzName);
         try (IndentLevel clazzIndent = new IndentLevel())
         {
-            appendLine("/**");
-            appendLine(" * Marker interface. All following tables share this interface");
-            appendLine(" */");
-            appendLine("public interface " + INTERFACE_NAME);
-            try (IndentLevel iface = new IndentLevel())
-            {
-                appendLine("/**");
-                appendLine(" * Returns all columns of the current table");
-                appendLine(" */");
-                appendLine("Column[] values();");
-                appendEmptyLine();
-                appendLine("/**");
-                appendLine(" * Returns the name of the current table");
-                appendLine(" */");
-                appendLine("String getName();");
-            }
-            appendEmptyLine();
             appendLine("private %s()", clazzName);
             try (IndentLevel constructor = new IndentLevel())
             {
@@ -124,15 +126,16 @@ public final class DatabaseConstantsGenerator
             }
 
             appendEmptyLine();
-            generateHolderClass(COLUMN_HOLDER_NAME, new String[][] {
-                {"String", "name"},
-                {"int", "sqlType"},
-                {"boolean", "isPk"},
-                {"boolean", "isNullable"}
-            },
+            generateColumnClass(
                 new String[][] {
-                {INTERFACE_NAME, "table"}
-            }
+                    {"String", "name"},
+                    {"int", "sqlType"},
+                    {"boolean", "isPk"},
+                    {"boolean", "isNullable"}
+                },
+                new String[][] {
+                    {INTERFACE_NAME, "table"}
+                }
             );
         }
     }
@@ -184,8 +187,10 @@ public final class DatabaseConstantsGenerator
                         activeBuilder.push(nonPkColumnBuilder);
                     }
                     appendLine(
-                        "public static final Column %s = new Column(\"%s\", Types.%s, %s, %s);",
+                        "public static final %s %s = new %s(\"%s\", Types.%s, %s, %s);",
+                            COLUMN_HOLDER_NAME,
                             colName,
+                            COLUMN_HOLDER_NAME,
                             colName,
                             columns.getString("TYPE_NAME"),
                             Boolean.toString(primaryKeys.contains(colName)),
@@ -289,17 +294,20 @@ public final class DatabaseConstantsGenerator
         return sb.toString();
     }
 
-    private void generateHolderClass(String clazzName, String[][] fields, String[][] fieldsWithSetter) throws Exception
+    private void generateColumnClass(
+        String[][] fields,
+        String[][] fieldsWithSetter
+    )
+        throws Exception
     {
-        appendLine("public static class %s", clazzName);
+        appendLine("public static class %s implements %s", COLUMN_HOLDER_NAME, COLUMN_INTERFACE_NAME);
         try (IndentLevel clazzIndent = new IndentLevel())
         {
-            generateFieldsAndConstructor(clazzName, fields, fieldsWithSetter);
+            generateFieldsAndConstructor(fields, fieldsWithSetter);
         }
     }
 
     private void generateFieldsAndConstructor(
-        String clazzName,
         String[][] fieldInitByConstr,
         String[][] fieldsWithPrivateSetter
     )
@@ -313,7 +321,7 @@ public final class DatabaseConstantsGenerator
             appendLine("private %s %s;", field[0], field[1]);
         }
         appendEmptyLine();
-        appendLine("public %s(", clazzName);
+        appendLine("public %s(", COLUMN_HOLDER_NAME);
         try (IndentLevel paramIndent = new IndentLevel("", ")", false, true))
         {
             for (String[] field : fieldInitByConstr)
@@ -333,6 +341,7 @@ public final class DatabaseConstantsGenerator
         for (String[] field : fieldInitByConstr)
         {
             appendEmptyLine();
+            appendLine("@Override");
             if (field[1].matches("is[A-Z0-9].*"))
             {
                 appendLine("public %s %s()", field[0], field[1]);

@@ -1,8 +1,8 @@
 package com.linbit.linstor.dbdrivers.etcd;
 
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
+import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.transaction.EtcdTransaction;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
 
@@ -29,7 +29,7 @@ public abstract class BaseEtcdDriver
      *
      * @param baseKeyRef
      */
-    public FluentLinstorTransaction namespace(Table table, String... pks)
+    public FluentLinstorTransaction namespace(DatabaseTable table, String... pks)
     {
         return namespace(EtcdUtils.buildKey(table, pks));
     }

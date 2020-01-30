@@ -9,8 +9,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.GenericDatabaseDriver;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
@@ -41,7 +40,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     protected static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
     private final ErrorReporter errorReporter;
-    private final Table table;
+    private final DatabaseTable table;
     private final DbEngine dbEngine;
     private final ObjectProtectionDatabaseDriver objProtDriver;
 
@@ -49,7 +48,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
 
     public AbsDatabaseDriver(
         ErrorReporter errorReporterRef,
-        Table tableRef,
+        DatabaseTable tableRef,
         DbEngine dbEngineRef,
         ObjectProtectionDatabaseDriver objProtDriverRef
     )
@@ -226,10 +225,10 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
      */
     public static class RawParameters
     {
-        private final Table table;
+        private final DatabaseTable table;
         private final Map<String, Object> rawParameters;
 
-        public RawParameters(Table tableRef, Map<String, Object> rawParametersRef)
+        public RawParameters(DatabaseTable tableRef, Map<String, Object> rawParametersRef)
         {
             table = tableRef;
             rawParameters = rawParametersRef;

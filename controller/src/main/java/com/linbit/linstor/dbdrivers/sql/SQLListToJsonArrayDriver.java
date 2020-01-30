@@ -3,9 +3,9 @@ package com.linbit.linstor.dbdrivers.sql;
 import com.linbit.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
+import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.DbEngine.DataToString;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.ExceptionThrowingFunction;
@@ -30,7 +30,7 @@ class SQLListToJsonArrayDriver<DATA, LIST_TYPE> implements CollectionDatabaseDri
     private final Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters;
     private final DataToString<DATA> dataToString;
 
-    private final Table table;
+    private final DatabaseTable table;
 
     public SQLListToJsonArrayDriver(
         SQLEngine sqlEngineRef,

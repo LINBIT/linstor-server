@@ -13,9 +13,8 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver.RawParameters;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Nodes;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -210,7 +209,7 @@ public interface DbEngine
     <DATA> void create(
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         DATA dataRef,
-        Table table,
+        DatabaseTable table,
         DataToString<DATA> dataToString
     )
         throws DatabaseException, AccessDeniedException;
@@ -239,7 +238,7 @@ public interface DbEngine
     <DATA> void delete(
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         DATA dataRef,
-        Table table,
+        DatabaseTable table,
         DataToString<DATA> dataToString
     )
         throws DatabaseException, AccessDeniedException;
@@ -274,7 +273,7 @@ public interface DbEngine
      * @throws MdException
      */
     <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
-        Table table,
+        DatabaseTable table,
         LOAD_ALL parents,
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoaderRef
     )

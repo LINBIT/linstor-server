@@ -3,9 +3,9 @@ package com.linbit.linstor.dbdrivers.etcd;
 import com.linbit.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
+import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.DbEngine.DataToString;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
@@ -33,7 +33,7 @@ class ETCDListToJsonArrayDriver<DATA, LIST_TYPE> extends BaseEtcdDriver
     private final Column columnToUpdate;
     private final DataToString<DATA> dataToString;
 
-    private final Table table;
+    private final DatabaseTable table;
 
     public ETCDListToJsonArrayDriver(
         ErrorReporter errorReporterRef,
@@ -95,7 +95,7 @@ class ETCDListToJsonArrayDriver<DATA, LIST_TYPE> extends BaseEtcdDriver
         }
     }
 
-    private String[] getPrimaryKey(DATA data, Table tableRef) throws AccessDeniedException
+    private String[] getPrimaryKey(DATA data, DatabaseTable tableRef) throws AccessDeniedException
     {
         List<String> pkList = new ArrayList<>();
         for (Column col : tableRef.values())

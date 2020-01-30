@@ -3,7 +3,7 @@ package com.linbit.linstor.dbcp.migration.etcd;
 import static com.ibm.etcd.client.KeyUtils.bs;
 
 import com.linbit.linstor.dbcp.migration.UsedByMigration;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 
 import com.google.protobuf.ByteString;
@@ -38,7 +38,7 @@ public abstract class EtcdMigration
     }
 
     @UsedByMigration
-    public static String tblKey(GeneratedDatabaseTables.Column tableColumn, String primKey)
+    public static String tblKey(Column tableColumn, String primKey)
     {
         return EtcdUtils.buildKey(tableColumn, primKey);
     }

@@ -2,7 +2,7 @@ package com.linbit.linstor.dbdrivers.etcd;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.transaction.TransactionMgrETCD;
 
 import javax.inject.Provider;

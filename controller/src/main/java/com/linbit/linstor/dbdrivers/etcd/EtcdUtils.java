@@ -3,8 +3,8 @@ package com.linbit.linstor.dbdrivers.etcd;
 import static com.ibm.etcd.client.KeyUtils.bs;
 
 import com.linbit.linstor.dbcp.migration.UsedByMigration;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Table;
+import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
 import java.util.ArrayList;
@@ -61,7 +61,7 @@ public class EtcdUtils
     }
 
     public static String buildKey(
-        Table table,
+        DatabaseTable table,
         String... pks
     )
     {
@@ -87,7 +87,7 @@ public class EtcdUtils
 
     public static String buildKey(
         String arbitraryKey,
-        Table table,
+        DatabaseTable table,
         String... pks
     )
     {
