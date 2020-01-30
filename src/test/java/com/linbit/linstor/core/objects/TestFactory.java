@@ -233,7 +233,7 @@ public class TestFactory
         StorPoolDefinition spddRef,
         DeviceProviderKind lvmRef,
         FreeSpaceMgr fsmRef,
-        StorPoolGenericDbDriver driverRef,
+        StorPoolDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,

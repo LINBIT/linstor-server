@@ -14,12 +14,13 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
-import com.linbit.linstor.core.objects.StorPoolGenericDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 
@@ -51,7 +52,8 @@ public class StorPoolDbDriverTest extends GenericDbBase
     private StorPoolDefinition spdd;
     @Inject
     private StorPoolDefinitionDbDriver spdDriver;
-    @Inject private StorPoolGenericDbDriver driver;
+    @Inject
+    private StorPoolDbDriver driver;
 
     private FreeSpaceMgr fsm;
     private FreeSpaceMgr disklessFsm;
@@ -176,7 +178,12 @@ public class StorPoolDbDriverTest extends GenericDbBase
         tmpFreeSpaceMgrMap.put(fsm.getName(), fsm);
         tmpFreeSpaceMgrMap.put(disklessFsm.getName(), disklessFsm);
 
-        Map<StorPool, StorPool.InitMaps> storPools = driver.loadAll(tmpNodesMap, tmpStorPoolDfnMap, tmpFreeSpaceMgrMap);
+        Map<StorPool, StorPool.InitMaps> storPools = driver.loadAll(
+            new Pair<>(
+                tmpNodesMap,
+                tmpStorPoolDfnMap
+            )
+        );
 
         assertNotNull(storPools);
         assertEquals(1, storPools.size()); // we didn't create the dfltDisklessStorPool here
