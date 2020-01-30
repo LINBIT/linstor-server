@@ -41,7 +41,7 @@ public class TestFactory
         LsIpAddress niAddrRef,
         TcpPortNumber niStltConnPortRef,
         EncryptionType niStltConnEncrTypeRef,
-        NetInterfaceGenericDbDriver dbDriverRef,
+        NetInterfaceDbDriver dbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )

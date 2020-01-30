@@ -5,7 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.core.objects.DrbdLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerSQLDbDriver;
-import com.linbit.linstor.core.objects.NetInterfaceGenericDbDriver;
+import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionGenericDbDriver;
 import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerSQLDbDriver;
@@ -100,7 +100,7 @@ public class TestDbModule extends AbstractModule
         bind(VolumeDatabaseDriver.class).to(VolumeGenericDbDriver.class);
         bind(StorPoolDefinitionDatabaseDriver.class).to(StorPoolDefinitionGenericDbDriver.class);
         bind(StorPoolDatabaseDriver.class).to(StorPoolGenericDbDriver.class);
-        bind(NetInterfaceDatabaseDriver.class).to(NetInterfaceGenericDbDriver.class);
+        bind(NetInterfaceDatabaseDriver.class).to(NetInterfaceDbDriver.class);
         bind(NodeConnectionDatabaseDriver.class).to(NodeConnectionGenericDbDriver.class);
         bind(ResourceConnectionDatabaseDriver.class).to(ResourceConnectionGenericDbDriver.class);
         bind(VolumeConnectionDatabaseDriver.class).to(VolumeConnectionGenericDbDriver.class);

@@ -12,13 +12,15 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
-import com.linbit.linstor.core.objects.NetInterfaceGenericDbDriver;
+import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.GenericDbBase;
+
+import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +31,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-public class NetInterfaceGenericDbDriverTest extends GenericDbBase
+public class NetInterfaceDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_NODE_NET_INTERFACES =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + NODE_NET_NAME + ", " + NODE_NET_DSP_NAME + ", " +
@@ -47,13 +49,14 @@ public class NetInterfaceGenericDbDriverTest extends GenericDbBase
 
     private Node node;
 
-    private NetInterfaceGenericDbDriver dbDriver;
+    @Inject
+    private NetInterfaceDbDriver dbDriver;
 
     private java.util.UUID niUuid;
     private NetInterface niData;
     private SingleColumnDatabaseDriver<NetInterface, LsIpAddress> niAddrDriver;
 
-    public NetInterfaceGenericDbDriverTest() throws Exception
+    public NetInterfaceDbDriverTest() throws Exception
     {
         nodeName = new NodeName("TestNodeName");
         niName = new NetInterfaceName("TestNetInterfaceName");
@@ -80,7 +83,6 @@ public class NetInterfaceGenericDbDriverTest extends GenericDbBase
             null // flags
         );
 
-        dbDriver = new NetInterfaceGenericDbDriver(SYS_CTX, errorReporter, transObjFactory, transMgrProvider);
         niAddrDriver = dbDriver.getNetInterfaceAddressDriver();
 
         niUuid = java.util.UUID.randomUUID();
@@ -170,7 +172,7 @@ public class NetInterfaceGenericDbDriverTest extends GenericDbBase
 
         Map<NodeName, Node> tmpNodesMap = new HashMap<>();
         tmpNodesMap.put(nodeName, node);
-        List<NetInterface> niList = dbDriver.loadAll(tmpNodesMap);
+        List<NetInterface> niList = dbDriver.loadAllAsList(tmpNodesMap);
         assertNotNull(niList);
         assertEquals(1, niList.size());
 
@@ -209,7 +211,7 @@ public class NetInterfaceGenericDbDriverTest extends GenericDbBase
         dbDriver.create(niData);
         nodesMap.put(nodeName, node);
 
-        List<NetInterface> niList = dbDriver.loadAll(nodesMap);
+        List<NetInterface> niList = dbDriver.loadAllAsList(nodesMap);
         assertEquals(1, niList.size());
         NetInterface netData = niList.get(0);
 
@@ -253,24 +255,6 @@ public class NetInterfaceGenericDbDriverTest extends GenericDbBase
         resultSet = stmt.executeQuery();
         assertFalse(resultSet.next());
         resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testEnsureExists() throws Exception
-    {
-        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);
-        assertFalse(stmt.executeQuery().next());
-
-        dbDriver.ensureEntryExists(niData);
-        commit();
-
-        assertTrue(stmt.executeQuery().next());
-
-        dbDriver.ensureEntryExists(niData);
-        commit();
-
-        assertTrue(stmt.executeQuery().next());
         stmt.close();
     }
 
