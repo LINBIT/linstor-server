@@ -15,7 +15,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class PropsConGenericDbDriverBase extends GenericDbBase
+public class PropsConSQLDbDriverBase extends GenericDbBase
 {
     private static final int COL_ID_INSTANCE = 1;
     private static final int COL_ID_KEY = 2;
