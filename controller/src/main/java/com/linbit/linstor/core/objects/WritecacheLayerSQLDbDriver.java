@@ -43,7 +43,7 @@ import java.util.TreeMap;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @Singleton
-public class WritecacheLayerGenericDbDriver implements WritecacheLayerCtrlDatabaseDriver
+public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -75,7 +75,7 @@ public class WritecacheLayerGenericDbDriver implements WritecacheLayerCtrlDataba
                     VLM_NR +            " = ?";
 
     @Inject
-    public WritecacheLayerGenericDbDriver(
+    public WritecacheLayerSQLDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,

@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @Singleton
-public class NvmeLayerGenericDbDriver implements NvmeLayerCtrlDatabaseDriver
+public class NvmeLayerSQLDbDriver implements NvmeLayerCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
@@ -37,7 +37,7 @@ public class NvmeLayerGenericDbDriver implements NvmeLayerCtrlDatabaseDriver
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public NvmeLayerGenericDbDriver(
+    public NvmeLayerSQLDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,

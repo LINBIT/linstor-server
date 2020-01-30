@@ -32,13 +32,13 @@ public class PropsConGenericDbDriverBase extends GenericDbBase
 
     protected static final String DEFAULT_INSTANCE_NAME = "DEFAULT_INSTANCE";
 
-    protected PropsConGenericDbDriver dbDriver;
+    protected PropsConSQLDbDriver dbDriver;
 
     @Before
     public void setUp() throws Exception
     {
         super.setUpAndEnterScope();
-        dbDriver = new PropsConGenericDbDriver(errorReporter, transMgrProvider);
+        dbDriver = new PropsConSQLDbDriver(errorReporter, transMgrProvider);
     }
 
     protected String debugGetAllProps() throws SQLException

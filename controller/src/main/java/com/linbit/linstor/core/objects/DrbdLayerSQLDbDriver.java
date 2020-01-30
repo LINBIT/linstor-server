@@ -82,7 +82,7 @@ import java.util.TreeMap;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @Singleton
-public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
+public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
 {
     private static final String[] RSC_ALL_FIELDS =
     {
@@ -232,7 +232,7 @@ public class DrbdLayerGenericDbDriver implements DrbdLayerCtrlDatabaseDriver
     private final DynamicNumberPool minorPool;
 
     @Inject
-    public DrbdLayerGenericDbDriver(
+    public DrbdLayerSQLDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,

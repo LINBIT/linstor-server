@@ -40,7 +40,7 @@ import java.util.List;
 import com.google.inject.Provider;
 
 @Singleton
-public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDatabaseDriver
+public class ResourceLayerIdSQLDbDriver implements ResourceLayerIdCtrlDatabaseDriver
 {
     private static final String PK_FIELDS =
         LAYER_RESOURCE_ID;
@@ -77,7 +77,7 @@ public class ResourceLayerIdGenericDbDriver implements ResourceLayerIdCtrlDataba
     private final SingleColumnDatabaseDriver<AbsRscData<?, VlmProviderObject<?>>, Boolean> suspendDriver;
 
     @Inject
-    public ResourceLayerIdGenericDbDriver(
+    public ResourceLayerIdSQLDbDriver(
         ErrorReporter errorReporterRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )

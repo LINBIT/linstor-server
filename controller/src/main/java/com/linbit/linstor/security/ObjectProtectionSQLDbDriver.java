@@ -19,7 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @Singleton
-public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabaseDriver
+public class ObjectProtectionSQLDbDriver implements ObjectProtectionDatabaseDriver
 {
     private static final String TBL_OP      = DbConstants.TBL_SEC_OBJECT_PROTECTION;
     private static final String TBL_ACL     = DbConstants.TBL_SEC_ACL_MAP;
@@ -102,7 +102,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public ObjectProtectionGenericDbDriver(
+    public ObjectProtectionSQLDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transObjFactoryRef,

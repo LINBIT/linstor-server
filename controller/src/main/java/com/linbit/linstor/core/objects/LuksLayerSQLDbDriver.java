@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class LuksLayerGenericDbDriver implements LuksLayerCtrlDatabaseDriver
+public class LuksLayerSQLDbDriver implements LuksLayerCtrlDatabaseDriver
 {
     // no special table for resource-data
     private static final String VLM_ALL_FIELDS =
@@ -71,7 +71,7 @@ public class LuksLayerGenericDbDriver implements LuksLayerCtrlDatabaseDriver
     private final VlmPwDriver vlmPwDriver;
 
     @Inject
-    public LuksLayerGenericDbDriver(
+    public LuksLayerSQLDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,

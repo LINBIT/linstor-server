@@ -12,7 +12,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.StorageLayerGenericDbDriver.StorVlmInfoData;
+import com.linbit.linstor.core.objects.StorageLayerSQLDbDriver.StorVlmInfoData;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Column;

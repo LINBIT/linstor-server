@@ -36,14 +36,14 @@ import java.util.Map;
 import java.util.Set;
 
 @Singleton
-public class ResourceLayerETCDDriver extends BaseEtcdDriver implements ResourceLayerIdCtrlDatabaseDriver
+public class ResourceLayerIdETCDDriver extends BaseEtcdDriver implements ResourceLayerIdCtrlDatabaseDriver
 {
     private final ErrorReporter errorReporter;
     private final SingleColumnDatabaseDriver<AbsRscData<?, VlmProviderObject<?>>, AbsRscLayerObject<?>> parentDriver;
     private final SingleColumnDatabaseDriver<AbsRscData<?, VlmProviderObject<?>>, Boolean> suspendDriver;
 
     @Inject
-    public ResourceLayerETCDDriver(ErrorReporter errorReporterRef, Provider<TransactionMgrETCD> transMgrProviderRef)
+    public ResourceLayerIdETCDDriver(ErrorReporter errorReporterRef, Provider<TransactionMgrETCD> transMgrProviderRef)
     {
         super(transMgrProviderRef);
         errorReporter = errorReporterRef;

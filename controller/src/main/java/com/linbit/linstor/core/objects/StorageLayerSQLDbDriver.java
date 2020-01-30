@@ -58,7 +58,7 @@ import java.util.TreeMap;
 
 @SuppressWarnings("checkstyle:magicnumber")
 @Singleton
-public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriver
+public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
 {
     private static final String[] VLM_ALL_FIELDS =
     {
@@ -100,7 +100,7 @@ public class StorageLayerGenericDbDriver implements StorageLayerCtrlDatabaseDriv
     private Map<Integer, List<StorVlmInfoData>> cachedStorVlmInfoByRscLayerId;
 
     @Inject
-    public StorageLayerGenericDbDriver(
+    public StorageLayerSQLDbDriver(
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext accCtx,
         ResourceLayerIdDatabaseDriver rscIdDriverRef,

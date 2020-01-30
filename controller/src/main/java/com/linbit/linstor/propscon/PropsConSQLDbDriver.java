@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 @Singleton
-public class PropsConGenericDbDriver implements PropsConDatabaseDriver
+public class PropsConSQLDbDriver implements PropsConDatabaseDriver
 {
     private static final String TBL_PROP = DbConstants.TBL_PROPS_CONTAINERS;
     private static final String COL_INSTANCE = DbConstants.PROPS_INSTANCE;
@@ -51,7 +51,7 @@ public class PropsConGenericDbDriver implements PropsConDatabaseDriver
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     @Inject
-    public PropsConGenericDbDriver(
+    public PropsConSQLDbDriver(
         ErrorReporter errorReporterRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
