@@ -157,7 +157,7 @@ public class TestFactory
         ResourceDefinition resDfnRef,
         Node nodeRef,
         long initFlagsRef,
-        ResourceGenericDbDriver driverRef,
+        ResourceDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,

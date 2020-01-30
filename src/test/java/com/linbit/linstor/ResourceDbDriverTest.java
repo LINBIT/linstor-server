@@ -12,8 +12,8 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceGenericDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
@@ -21,6 +21,7 @@ import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 
@@ -34,7 +35,7 @@ import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ResourceGenericDbDriverTest extends GenericDbBase
+public class ResourceDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RESOURCES =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " + RESOURCE_FLAGS +
@@ -52,10 +53,11 @@ public class ResourceGenericDbDriverTest extends GenericDbBase
     private ObjectProtection objProt;
     private long initFlags;
 
-    @Inject private ResourceGenericDbDriver driver;
+    @Inject
+    private ResourceDbDriver driver;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public ResourceGenericDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
+    public ResourceDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
     {
         nodeName = new NodeName("TestNodeName");
         resName = new ResourceName("TestResName");
@@ -210,7 +212,7 @@ public class ResourceGenericDbDriverTest extends GenericDbBase
         nodesMap.put(nodeName, node);
         rscDfnMap.put(resName, resDfn);
 
-        Map<Resource, Resource.InitMaps> resList = driver.loadAll(nodesMap, rscDfnMap);
+        Map<Resource, Resource.InitMaps> resList = driver.loadAll(new Pair<>(nodesMap, rscDfnMap));
 
         assertNotNull(resList);
         assertEquals(1, resList.size());
@@ -303,48 +305,6 @@ public class ResourceGenericDbDriverTest extends GenericDbBase
 
         assertFalse(resultSet.next());
 
-        resultSet.close();
-        stmt.close();
-    }
-
-    @Test
-    public void testEnsureExists() throws Exception
-    {
-        PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCES);
-        ResultSet resultSet = stmt.executeQuery();
-
-        assertFalse(resultSet.next());
-        resultSet.close();
-
-        Resource res = TestFactory.createResource(
-            resUuid,
-            objProt,
-            resDfn,
-            node,
-            initFlags,
-            driver,
-            propsContainerFactory,
-            transObjFactory,
-            transMgrProvider,
-            new TreeMap<>(),
-            new TreeMap<>()
-        );
-        driver.ensureResExists(SYS_CTX, res);
-        commit();
-
-        resultSet = stmt.executeQuery();
-
-        assertTrue(resultSet.next());
-        assertFalse(resultSet.next());
-        resultSet.close();
-
-        driver.ensureResExists(SYS_CTX, res);
-        commit();
-
-        resultSet = stmt.executeQuery();
-
-        assertTrue(resultSet.next());
-        assertFalse(resultSet.next());
         resultSet.close();
         stmt.close();
     }
