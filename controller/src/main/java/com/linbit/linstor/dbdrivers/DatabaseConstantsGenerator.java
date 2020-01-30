@@ -232,6 +232,13 @@ public final class DatabaseConstantsGenerator
                 {
                     appendLine("return \"%s\";", tableName);
                 }
+                appendEmptyLine();
+                appendLine("@Override");
+                appendLine("public String toString()");
+                try (IndentLevel valuesMethod = new IndentLevel())
+                {
+                    appendLine("return \"Table %s\";", tableName);
+                }
             }
         }
 
@@ -354,6 +361,14 @@ public final class DatabaseConstantsGenerator
             {
                 appendLine("return %s;", field[1]);
             }
+        }
+
+        appendEmptyLine();
+        appendLine("@Override");
+        appendLine("public String toString()");
+        try (IndentLevel toString = new IndentLevel())
+        {
+            appendLine("return (table == null ? \"No table set\" : table ) + \", Column: \" + name;");
         }
     }
 

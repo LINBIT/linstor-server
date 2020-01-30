@@ -55,6 +55,12 @@ public class GeneratedDatabaseTables
         {
             return "KEY_VALUE_STORE";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table KEY_VALUE_STORE";
+        }
     }
 
     public static class LayerDrbdResources implements Table
@@ -90,6 +96,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "LAYER_DRBD_RESOURCES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_DRBD_RESOURCES";
         }
     }
 
@@ -133,6 +145,12 @@ public class GeneratedDatabaseTables
         {
             return "LAYER_DRBD_RESOURCE_DEFINITIONS";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_DRBD_RESOURCE_DEFINITIONS";
+        }
     }
 
     public static class LayerDrbdVolumes implements Table
@@ -164,6 +182,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "LAYER_DRBD_VOLUMES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_DRBD_VOLUMES";
         }
     }
 
@@ -199,6 +223,12 @@ public class GeneratedDatabaseTables
         {
             return "LAYER_DRBD_VOLUME_DEFINITIONS";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_DRBD_VOLUME_DEFINITIONS";
+        }
     }
 
     public static class LayerLuksVolumes implements Table
@@ -228,6 +258,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "LAYER_LUKS_VOLUMES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_LUKS_VOLUMES";
         }
     }
 
@@ -269,6 +305,12 @@ public class GeneratedDatabaseTables
         {
             return "LAYER_RESOURCE_IDS";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_RESOURCE_IDS";
+        }
     }
 
     public static class LayerStorageVolumes implements Table
@@ -303,6 +345,12 @@ public class GeneratedDatabaseTables
         {
             return "LAYER_STORAGE_VOLUMES";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_STORAGE_VOLUMES";
+        }
     }
 
     public static class LayerWritecacheVolumes implements Table
@@ -334,6 +382,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "LAYER_WRITECACHE_VOLUMES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_WRITECACHE_VOLUMES";
         }
     }
 
@@ -369,6 +423,12 @@ public class GeneratedDatabaseTables
         {
             return "NODES";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table NODES";
+        }
     }
 
     public static class NodeConnections implements Table
@@ -398,6 +458,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "NODE_CONNECTIONS";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table NODE_CONNECTIONS";
         }
     }
 
@@ -437,6 +503,12 @@ public class GeneratedDatabaseTables
         {
             return "NODE_NET_INTERFACES";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table NODE_NET_INTERFACES";
+        }
     }
 
     public static class NodeStorPool implements Table
@@ -473,6 +545,12 @@ public class GeneratedDatabaseTables
         {
             return "NODE_STOR_POOL";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table NODE_STOR_POOL";
+        }
     }
 
     public static class PropsContainers implements Table
@@ -502,6 +580,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "PROPS_CONTAINERS";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table PROPS_CONTAINERS";
         }
     }
 
@@ -536,6 +620,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "RESOURCES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table RESOURCES";
         }
     }
 
@@ -574,6 +664,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "RESOURCE_CONNECTIONS";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table RESOURCE_CONNECTIONS";
         }
     }
 
@@ -618,6 +714,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "RESOURCE_DEFINITIONS";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table RESOURCE_DEFINITIONS";
         }
     }
 
@@ -669,6 +771,12 @@ public class GeneratedDatabaseTables
         {
             return "RESOURCE_GROUPS";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table RESOURCE_GROUPS";
+        }
     }
 
     public static class SecAccessTypes implements Table
@@ -696,6 +804,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "SEC_ACCESS_TYPES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_ACCESS_TYPES";
         }
     }
 
@@ -727,6 +841,12 @@ public class GeneratedDatabaseTables
         {
             return "SEC_ACL_MAP";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_ACL_MAP";
+        }
     }
 
     public static class SecConfiguration implements Table
@@ -757,6 +877,12 @@ public class GeneratedDatabaseTables
         {
             return "SEC_CONFIGURATION";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_CONFIGURATION";
+        }
     }
 
     public static class SecDfltRoles implements Table
@@ -784,6 +910,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "SEC_DFLT_ROLES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_DFLT_ROLES";
         }
     }
 
@@ -821,6 +953,12 @@ public class GeneratedDatabaseTables
         {
             return "SEC_IDENTITIES";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_IDENTITIES";
+        }
     }
 
     public static class SecIdRoleMap implements Table
@@ -847,6 +985,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "SEC_ID_ROLE_MAP";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_ID_ROLE_MAP";
         }
     }
 
@@ -879,6 +1023,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "SEC_OBJECT_PROTECTION";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_OBJECT_PROTECTION";
         }
     }
 
@@ -914,6 +1064,12 @@ public class GeneratedDatabaseTables
         {
             return "SEC_ROLES";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_ROLES";
+        }
     }
 
     public static class SecTypes implements Table
@@ -943,6 +1099,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "SEC_TYPES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_TYPES";
         }
     }
 
@@ -974,6 +1136,12 @@ public class GeneratedDatabaseTables
         {
             return "SEC_TYPE_RULES";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table SEC_TYPE_RULES";
+        }
     }
 
     public static class StorPoolDefinitions implements Table
@@ -1003,6 +1171,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "STOR_POOL_DEFINITIONS";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table STOR_POOL_DEFINITIONS";
         }
     }
 
@@ -1040,6 +1214,12 @@ public class GeneratedDatabaseTables
         {
             return "VOLUMES";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table VOLUMES";
+        }
     }
 
     public static class VolumeConnections implements Table
@@ -1075,6 +1255,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "VOLUME_CONNECTIONS";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table VOLUME_CONNECTIONS";
         }
     }
 
@@ -1112,6 +1298,12 @@ public class GeneratedDatabaseTables
         {
             return "VOLUME_DEFINITIONS";
         }
+
+        @Override
+        public String toString()
+        {
+            return "Table VOLUME_DEFINITIONS";
+        }
     }
 
     public static class VolumeGroups implements Table
@@ -1143,6 +1335,12 @@ public class GeneratedDatabaseTables
         public String getName()
         {
             return "VOLUME_GROUPS";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table VOLUME_GROUPS";
         }
     }
 
@@ -1392,6 +1590,12 @@ public class GeneratedDatabaseTables
         public Table getTable()
         {
             return table;
+        }
+
+        @Override
+        public String toString()
+        {
+            return (table == null ? "No table set" : table ) + ", Column: " + name;
         }
     }
 }
