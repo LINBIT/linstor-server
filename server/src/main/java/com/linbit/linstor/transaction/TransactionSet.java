@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -22,6 +23,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     private final CollectionDatabaseDriver<PARENT, VALUE> dbDriver;
     private final Set<VALUE> backingSet;
     private final Set<VALUE> oldValues;
+    private boolean isDirty = false;
 
     public TransactionSet(
         PARENT parentRef,
@@ -33,7 +35,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
         super(transMgrProviderRef);
         parent = parentRef;
         backingSet = backingSetRef == null ? new HashSet<>() : backingSetRef;
-        oldValues = new HashSet<>();
+        oldValues = new LinkedHashSet<>();
         dbDriver = dbDriverRef == null ? new NoOpCollectionDatabaseDriver<>() : dbDriverRef;
     }
 
@@ -47,7 +49,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     @Override
     public boolean isDirty()
     {
-        return !oldValues.isEmpty();
+        return !oldValues.equals(backingSet);
     }
 
     @Override
@@ -55,6 +57,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     {
         assert (TransactionMgr.isCalledFromTransactionMgr("commit"));
         oldValues.clear();
+        isDirty = false;
     }
 
     @Override
@@ -64,6 +67,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
         backingSet.clear();
         backingSet.addAll(oldValues);
         oldValues.clear();
+        isDirty = false;
     }
 
     @Override
@@ -121,14 +125,18 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     @Override
     public boolean add(VALUE element)
     {
+        markDirty();
         boolean ret = backingSet.add(element);
-        try
+        if (ret)
         {
-            dbDriver.insert(parent, element, backingSet);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new LinStorDBRuntimeException("A database exception occurred while adding an element", exc);
+            try
+            {
+                dbDriver.insert(parent, element, backingSet);
+            }
+            catch (DatabaseException exc)
+            {
+                throw new LinStorDBRuntimeException("A database exception occurred while adding an element", exc);
+            }
         }
         return ret;
     }
@@ -137,6 +145,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     @Override
     public boolean remove(Object obj)
     {
+        markDirty();
         boolean ret = backingSet.remove(obj);
         if (ret) // also prevents class cast exception
         {
@@ -150,6 +159,22 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
             }
         }
         return ret;
+    }
+
+    private void markDirty()
+    {
+        if (!isDirty)
+        {
+            synchronized (oldValues)
+            {
+                if (!isDirty)
+                {
+                    oldValues.addAll(backingSet);
+                    activateTransMgr();
+                    isDirty = true;
+                }
+            }
+        }
     }
 
     @Override

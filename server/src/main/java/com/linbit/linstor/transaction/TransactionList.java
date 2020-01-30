@@ -303,6 +303,7 @@ public class TransactionList<PARENT, VALUE>
                 if (!isDirty)
                 {
                     oldValues.addAll(backingList);
+                    activateTransMgr();
                     isDirty = true;
                 }
             }
