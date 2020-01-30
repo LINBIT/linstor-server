@@ -38,7 +38,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
-import com.linbit.linstor.core.objects.ResourceGroupGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
 import com.linbit.linstor.core.objects.StorPoolControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionControllerFactory;
@@ -771,7 +771,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     protected ResourceGroup createDefaultResourceGroup(AccessContext initCtx)
         throws InvalidNameException, AccessDeniedException, DatabaseException
     {
-        ResourceGroup rscGrp = ((ResourceGroupGenericDbDriver) rscGrpDbDriver).loadAll().keySet().stream()
+        ResourceGroup rscGrp = ((ResourceGroupDbDriver) rscGrpDbDriver).loadAll(null).keySet().stream()
             .filter(grp -> grp.getName().displayValue.equals(InternalApiConsts.DEFAULT_RSC_GRP_NAME))
             .findFirst()
             .get();
