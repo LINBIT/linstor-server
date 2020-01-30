@@ -49,7 +49,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-public class NodeGenericDbDriverTest extends GenericDbBase
+public class NodeDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_NODES =
         " SELECT " + NODE_NAME + ", " + NODE_DSP_NAME + ", " + NODE_FLAGS + ", " + NODE_TYPE +
@@ -86,7 +86,7 @@ public class NodeGenericDbDriverTest extends GenericDbBase
     private Node node;
     private ResourceGroup dfltRscGrp;
 
-    public NodeGenericDbDriverTest() throws Exception
+    public NodeDbDriverTest() throws Exception
     {
         nodeName = new NodeName("TestNodeName");
     }
