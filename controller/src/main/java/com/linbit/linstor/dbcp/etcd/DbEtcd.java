@@ -151,11 +151,13 @@ public class DbEtcd implements ControllerETCDDatabase
                             (dbVersion - 1) + " -> " + dbVersion
                     );
                 }
+                errorReporter.logDebug("Upgrading DB to version: " + dbVersion);
                 migrationMethod.migrate(etcdTx);
 
                 etcdTx.put(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + (dbVersion + 1));
 
                 etcdTxMgr.commit();
+                etcdTx = etcdTxMgr.getTransaction();
             }
         }
         catch (Exception exc)
