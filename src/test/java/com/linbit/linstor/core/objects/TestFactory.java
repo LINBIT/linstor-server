@@ -293,7 +293,7 @@ public class TestFactory
         UUID uuidRef,
         Volume volSrcRef,
         Volume volDstRef,
-        VolumeConnectionGenericDbDriver driverRef,
+        VolumeConnectionDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef

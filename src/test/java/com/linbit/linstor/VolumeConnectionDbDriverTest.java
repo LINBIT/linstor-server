@@ -19,7 +19,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
-import com.linbit.linstor.core.objects.VolumeConnectionGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -42,7 +42,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-public class VolumeConnectionGenericDbDriverTest extends GenericDbBase
+public class VolumeConnectionDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_VLM_CON_DFNS =
         " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " + NODE_NAME_DST + ", " +
@@ -73,13 +73,14 @@ public class VolumeConnectionGenericDbDriverTest extends GenericDbBase
     private Volume volSrc;
     private Volume volDst;
 
-    @Inject private VolumeConnectionGenericDbDriver driver;
+    @Inject
+    private VolumeConnectionDbDriver driver;
 
     private Integer nodeIdSrc;
     private Integer nodeIdDst;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public VolumeConnectionGenericDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
+    public VolumeConnectionDbDriverTest() throws InvalidNameException, ValueOutOfRangeException
     {
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
@@ -204,7 +205,7 @@ public class VolumeConnectionGenericDbDriverTest extends GenericDbBase
         Map<Triple<NodeName, ResourceName, VolumeNumber>, Volume> vlmMap = new HashMap<>();
         addToMap(vlmMap, volSrc);
         addToMap(vlmMap, volDst);
-        List<VolumeConnection> cons = driver.loadAll(vlmMap);
+        List<VolumeConnection> cons = driver.loadAllAsList(vlmMap);
 
         assertNotNull(cons);
 
