@@ -265,7 +265,7 @@ public class TestFactory
         UUID uuidRef,
         ObjectProtection objProtRef,
         StorPoolName spNameRef,
-        StorPoolDefinitionGenericDbDriver driverRef,
+        StorPoolDefinitionDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,

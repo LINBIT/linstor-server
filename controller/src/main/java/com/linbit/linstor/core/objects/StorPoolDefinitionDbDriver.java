@@ -73,27 +73,31 @@ public class StorPoolDefinitionDbDriver
     {
         if (disklessStorPoolDfn == null)
         {
-            StorPoolName storPoolName;
-            try
+            loadAll(null); // trigger loading disklessStorPoolDfn if already in database
+            if (disklessStorPoolDfn == null)
             {
-                storPoolName = new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME);
-            }
-            catch (InvalidNameException exc)
-            {
-                throw new ImplementationError("Invalid hardcoded default diskless stor pool name", exc);
-            }
+                StorPoolName storPoolName;
+                try
+                {
+                    storPoolName = new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME);
+                }
+                catch (InvalidNameException exc)
+                {
+                    throw new ImplementationError("Invalid hardcoded default diskless stor pool name", exc);
+                }
 
-            disklessStorPoolDfn = new StorPoolDefinition(
-                java.util.UUID.randomUUID(),
-                getObjectProtection(ObjectProtection.buildPath(storPoolName)),
-                storPoolName,
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                new TreeMap<>()
-            );
-            create(disklessStorPoolDfn);
+                disklessStorPoolDfn = new StorPoolDefinition(
+                    java.util.UUID.randomUUID(),
+                    getObjectProtection(ObjectProtection.buildPath(storPoolName)),
+                    storPoolName,
+                    this,
+                    propsContainerFactory,
+                    transObjFactory,
+                    transMgrProvider,
+                    new TreeMap<>()
+                );
+                create(disklessStorPoolDfn);
+            }
         }
         return disklessStorPoolDfn;
     }

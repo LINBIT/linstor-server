@@ -15,7 +15,7 @@ import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorPoolGenericDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.GenericDbBase;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 
-public class StorPoolGenericDbDriverTest extends GenericDbBase
+public class StorPoolDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_STOR_POOLS =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + POOL_NAME + ", " + DRIVER_NAME +
@@ -49,13 +49,14 @@ public class StorPoolGenericDbDriverTest extends GenericDbBase
     private java.util.UUID uuid;
 
     private StorPoolDefinition spdd;
-    @Inject private StorPoolDefinitionGenericDbDriver spdDriver;
+    @Inject
+    private StorPoolDefinitionDbDriver spdDriver;
     @Inject private StorPoolGenericDbDriver driver;
 
     private FreeSpaceMgr fsm;
     private FreeSpaceMgr disklessFsm;
 
-    public StorPoolGenericDbDriverTest() throws InvalidNameException
+    public StorPoolDbDriverTest() throws InvalidNameException
     {
         nodeName = new NodeName("TestNodeName");
         spName = new StorPoolName("TestStorPoolDefinition");
@@ -164,7 +165,7 @@ public class StorPoolGenericDbDriverTest extends GenericDbBase
 
         tmpNodesMap.put(nodeName, node);
 
-        tmpStorPoolDfnMap = spdDriver.loadAll().keySet().stream().collect(
+        tmpStorPoolDfnMap = spdDriver.loadAll(null).keySet().stream().collect(
             Collectors.toMap(
                 tmpSpdd -> tmpSpdd.getName(),
                 Function.identity()

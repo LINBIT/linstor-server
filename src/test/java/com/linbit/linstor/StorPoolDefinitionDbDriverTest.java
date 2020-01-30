@@ -1,29 +1,30 @@
 package com.linbit.linstor;
 
-import javax.inject.Inject;
-
-import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.StorPoolDefinitionGenericDbDriver;
-import com.linbit.linstor.core.objects.TestFactory;
-import com.linbit.linstor.security.GenericDbBase;
-import com.linbit.linstor.security.ObjectProtection;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Map;
-import java.util.TreeMap;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class StorPoolDefinitionGenericDbDriverTest extends GenericDbBase
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
+import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.security.GenericDbBase;
+import com.linbit.linstor.security.ObjectProtection;
+
+import javax.inject.Inject;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class StorPoolDefinitionDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_STOR_POOL_DFNS_EXCEPT_DEFAULT =
         " SELECT " + UUID + ", " + POOL_NAME + ", " + POOL_DSP_NAME +
@@ -37,7 +38,8 @@ public class StorPoolDefinitionGenericDbDriverTest extends GenericDbBase
 
     private StorPoolDefinition spdd;
 
-    @Inject private StorPoolDefinitionGenericDbDriver driver;
+    @Inject
+    private StorPoolDefinitionDbDriver driver;
 
     @SuppressWarnings("checkstyle:magicnumber")
     @Before
@@ -158,7 +160,7 @@ public class StorPoolDefinitionGenericDbDriverTest extends GenericDbBase
         StorPoolName spName2 = new StorPoolName("StorPoolName2");
         storPoolDefinitionFactory.create(SYS_CTX, spName2);
 
-        Map<StorPoolDefinition, StorPoolDefinition.InitMaps> storpools = driver.loadAll();
+        Map<StorPoolDefinition, StorPoolDefinition.InitMaps> storpools = driver.loadAll(null);
 
         StorPoolName disklessStorPoolName = new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME);
         assertNotNull(findStorPoolDefinitionbyName(storpools, disklessStorPoolName));

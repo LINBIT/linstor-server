@@ -18,7 +18,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotGenericDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeGenericDbDriver;
-import com.linbit.linstor.core.objects.StorPoolDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorPoolGenericDbDriver;
 import com.linbit.linstor.core.objects.StorageLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionGenericDbDriver;
@@ -98,7 +98,7 @@ public class TestDbModule extends AbstractModule
         bind(ResourceDatabaseDriver.class).to(ResourceDbDriver.class);
         bind(VolumeDefinitionDatabaseDriver.class).to(VolumeDefinitionGenericDbDriver.class);
         bind(VolumeDatabaseDriver.class).to(VolumeGenericDbDriver.class);
-        bind(StorPoolDefinitionDatabaseDriver.class).to(StorPoolDefinitionGenericDbDriver.class);
+        bind(StorPoolDefinitionDatabaseDriver.class).to(StorPoolDefinitionDbDriver.class);
         bind(StorPoolDatabaseDriver.class).to(StorPoolGenericDbDriver.class);
         bind(NetInterfaceDatabaseDriver.class).to(NetInterfaceDbDriver.class);
         bind(NodeConnectionDatabaseDriver.class).to(NodeConnectionDbDriver.class);
