@@ -352,7 +352,7 @@ public class TestFactory
         VolumeNumber volNrRef,
         long volSizeRef,
         long flagValueRef,
-        VolumeDefinitionGenericDbDriver driverRef,
+        VolumeDefinitionDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,

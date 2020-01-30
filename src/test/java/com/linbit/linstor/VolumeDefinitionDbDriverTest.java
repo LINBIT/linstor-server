@@ -11,7 +11,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
@@ -31,7 +31,7 @@ import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
 
-public class VolumeDefinitionGenericDbDriverTest extends GenericDbBase
+public class VolumeDefinitionDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_VOL_DFN =
         " SELECT " + UUID + ", " + RESOURCE_NAME + ", " + VLM_NR + ", " +
@@ -49,7 +49,8 @@ public class VolumeDefinitionGenericDbDriverTest extends GenericDbBase
 
     private VolumeDefinition volDfn;
 
-    @Inject private VolumeDefinitionGenericDbDriver driver;
+    @Inject
+    private VolumeDefinitionDbDriver driver;
 
     private ResourceGroup dfltRscGrp;
 
@@ -176,7 +177,7 @@ public class VolumeDefinitionGenericDbDriverTest extends GenericDbBase
         driver.create(volDfn);
         resDfn.putVolumeDefinition(SYS_CTX, volDfn);
 
-        VolumeDefinition loadedVd = (VolumeDefinition) resDfn.getVolumeDfn(SYS_CTX, volNr);
+        VolumeDefinition loadedVd = resDfn.getVolumeDfn(SYS_CTX, volNr);
 
         assertNotNull(loadedVd);
         assertEquals(resName, loadedVd.getResourceDefinition().getName());
