@@ -125,7 +125,7 @@ public class TestFactory
         Resource resDstRef,
         TcpPortNumber portRef,
         DynamicNumberPool tcpPortPoolRef,
-        ResourceConnectionGenericDbDriver driverRef,
+        ResourceConnectionDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,

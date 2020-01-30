@@ -11,7 +11,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceConnectionGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -34,7 +34,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
+public class ResourceConnectionDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RES_CON_DFNS =
         " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " +
@@ -53,7 +53,8 @@ public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
 
     private ResourceConnection resCon;
 
-    @Inject private ResourceConnectionGenericDbDriver driver;
+    @Inject
+    private ResourceConnectionDbDriver driver;
 
     private Integer nodeIdSrc;
     private Integer nodeIdDst;
@@ -62,7 +63,7 @@ public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
     private Resource resDst;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public ResourceConnectionGenericDbDriverTest() throws InvalidNameException
+    public ResourceConnectionDbDriverTest() throws InvalidNameException
     {
         resName = new ResourceName("testResourceName");
         resPort = 9001;
@@ -146,7 +147,7 @@ public class ResourceConnectionGenericDbDriverTest extends GenericDbBase
         Map<Pair<NodeName, ResourceName>, Resource> rscmap = new HashMap<>();
         rscmap.put(new Pair<NodeName, ResourceName>(sourceName, resName), resSrc);
         rscmap.put(new Pair<NodeName, ResourceName>(targetName, resName), resDst);
-        List<ResourceConnection> cons = driver.loadAll(rscmap);
+        List<ResourceConnection> cons = driver.loadAllAsList(rscmap);
 
         assertNotNull(cons);
 
