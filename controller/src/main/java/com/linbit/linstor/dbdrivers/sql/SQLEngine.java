@@ -49,6 +49,7 @@ public class SQLEngine implements DbEngine
 
     private final ErrorReporter errorReporter;
     private final Provider<TransactionMgrSQL> transMgrProvider;
+    private final HashMap<Table, String> selectStatements;
     private final HashMap<Table, String> insertStatements;
     private final HashMap<Table, String> deleteStatements;
 
@@ -61,6 +62,7 @@ public class SQLEngine implements DbEngine
         errorReporter = errorReporterRef;
         transMgrProvider = transMgrProviderRef;
 
+        selectStatements = new HashMap<>();
         insertStatements = new HashMap<>();
         deleteStatements = new HashMap<>();
     }
@@ -103,7 +105,7 @@ public class SQLEngine implements DbEngine
 
     private String getSelectStatement(Table table)
     {
-        String sql = insertStatements.get(table);
+        String sql = selectStatements.get(table);
         if (sql == null)
         {
             StringBuilder sqlBuilder = new StringBuilder();
@@ -116,6 +118,7 @@ public class SQLEngine implements DbEngine
             sqlBuilder.append(" FROM ").append(table.getName());
 
             sql = sqlBuilder.toString();
+            selectStatements.put(table, sql);
         }
         return sql;
     }
