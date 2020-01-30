@@ -67,7 +67,7 @@ public class TestFactory
         UUID uuidRef,
         Node nodeSrcRef,
         Node nodeDstRef,
-        NodeConnectionGenericDbDriver driverRef,
+        NodeConnectionDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef

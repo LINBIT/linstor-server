@@ -1,28 +1,30 @@
 package com.linbit.linstor;
 
-import javax.inject.Inject;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.objects.NodeConnection;
-import com.linbit.linstor.core.objects.NodeConnectionGenericDbDriver;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
-import org.junit.Before;
-import org.junit.Test;
+
+import javax.inject.Inject;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
-public class NodeConnectionGenericDbDriverTest extends GenericDbBase
+public class NodeConnectionDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RES_CON_DFNS =
         " SELECT " + UUID + ", " + NODE_NAME_SRC + ", " + NODE_NAME_DST +
@@ -36,9 +38,10 @@ public class NodeConnectionGenericDbDriverTest extends GenericDbBase
     private Node nodeDst;
 
     private NodeConnection nodeCon;
-    @Inject private NodeConnectionGenericDbDriver driver;
+    @Inject
+    private NodeConnectionDbDriver driver;
 
-    public NodeConnectionGenericDbDriverTest() throws InvalidNameException
+    public NodeConnectionDbDriverTest() throws InvalidNameException
     {
         sourceName = new NodeName("testNodeSource");
         targetName = new NodeName("testNodeTarget");
@@ -91,7 +94,7 @@ public class NodeConnectionGenericDbDriverTest extends GenericDbBase
     {
         driver.create(nodeCon);
 
-        List<NodeConnection> cons = driver.loadAll(nodesMap);
+        List<NodeConnection> cons = driver.loadAllAsList(nodesMap);
 
         assertNotNull(cons);
 
