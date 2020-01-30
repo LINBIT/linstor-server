@@ -12,7 +12,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.types.NodeId;
@@ -39,7 +39,7 @@ import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ResourceDefinitionGenericDbDriverTest extends GenericDbBase
+public class ResourceDefinitionDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_RESOURCE_DEFINITIONS =
         " SELECT " + UUID + ", " + RESOURCE_NAME + ", " + RESOURCE_DSP_NAME + ", " +
@@ -59,13 +59,14 @@ public class ResourceDefinitionGenericDbDriverTest extends GenericDbBase
     private Node node1;
 
     private ResourceDefinition resDfn;
-    @Inject private ResourceDefinitionGenericDbDriver driver;
+    @Inject
+    private ResourceDefinitionDbDriver driver;
     @Inject private ObjectProtectionDatabaseDriver objProtDriver;
 
     private ResourceGroup dfltRscGrp;
 
     @SuppressWarnings("checkstyle:magicnumber")
-    public ResourceDefinitionGenericDbDriverTest() throws InvalidNameException
+    public ResourceDefinitionDbDriverTest() throws InvalidNameException
     {
         resName = new ResourceName("TestResName");
         port = 4242;

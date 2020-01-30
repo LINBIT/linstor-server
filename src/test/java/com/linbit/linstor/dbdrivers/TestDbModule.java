@@ -10,7 +10,7 @@ import com.linbit.linstor.core.objects.NodeConnectionGenericDbDriver;
 import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionGenericDbDriver;
-import com.linbit.linstor.core.objects.ResourceDefinitionGenericDbDriver;
+import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroupGenericDbDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdGenericDbDriver;
@@ -94,7 +94,7 @@ public class TestDbModule extends AbstractModule
         bind(PropsConDatabaseDriver.class).to(PropsConGenericDbDriver.class);
         bind(NodeDatabaseDriver.class).to(NodeGenericDbDriver.class);
         bind(ResourceGroupDatabaseDriver.class).to(ResourceGroupGenericDbDriver.class);
-        bind(ResourceDefinitionDatabaseDriver.class).to(ResourceDefinitionGenericDbDriver.class);
+        bind(ResourceDefinitionDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);
         bind(ResourceDatabaseDriver.class).to(ResourceGenericDbDriver.class);
         bind(VolumeDefinitionDatabaseDriver.class).to(VolumeDefinitionGenericDbDriver.class);
         bind(VolumeDatabaseDriver.class).to(VolumeGenericDbDriver.class);

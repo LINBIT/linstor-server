@@ -192,7 +192,7 @@ public class TestFactory
         byte[] extName,
         long flagValueRef,
         List<DeviceLayerKind> layerStackRef,
-        ResourceDefinitionGenericDbDriver driverRef,
+        ResourceDefinitionDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
