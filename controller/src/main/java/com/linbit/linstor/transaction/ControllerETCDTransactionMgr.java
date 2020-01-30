@@ -3,6 +3,7 @@ package com.linbit.linstor.transaction;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
 
 import java.util.ArrayList;
 import java.util.HashMap;

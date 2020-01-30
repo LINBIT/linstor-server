@@ -12,9 +12,9 @@ import com.linbit.linstor.core.repository.StorPoolDefinitionProtectionRepository
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.transaction.TransactionException;
-import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgrGenerator;
-import com.linbit.linstor.transaction.TransactionMgrUtil;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
 import javax.inject.Inject;
 

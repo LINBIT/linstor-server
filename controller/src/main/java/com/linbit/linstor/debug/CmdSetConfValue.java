@@ -10,7 +10,7 @@ import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Named;
 import java.io.PrintStream;

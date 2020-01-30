@@ -30,9 +30,9 @@ import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.FileCommands;
 import com.linbit.linstor.storage.utils.FileUtils;
 import com.linbit.linstor.storage.utils.FileUtils.FileInfo;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.storage.utils.LosetupCommands;
 import com.linbit.linstor.storage.utils.PmemUtils;
-import com.linbit.linstor.transaction.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

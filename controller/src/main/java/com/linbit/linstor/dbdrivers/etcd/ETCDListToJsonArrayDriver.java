@@ -8,7 +8,7 @@ import com.linbit.linstor.dbdrivers.DbEngine.DataToString;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.TransactionMgrETCD;
+import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.StringUtils;
 

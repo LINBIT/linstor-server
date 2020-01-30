@@ -30,7 +30,7 @@ import com.linbit.linstor.storage.utils.PmemUtils;
 import com.linbit.linstor.storage.utils.ZfsCommands;
 import com.linbit.linstor.storage.utils.ZfsUtils;
 import com.linbit.linstor.storage.utils.ZfsUtils.ZfsInfo;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

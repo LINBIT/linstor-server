@@ -2,7 +2,7 @@ package com.linbit.linstor.numberpool;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.linstor.transaction.AbsTransactionObject;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import java.util.List;
 import java.util.Map;

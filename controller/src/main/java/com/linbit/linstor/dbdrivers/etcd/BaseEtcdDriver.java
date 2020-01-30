@@ -4,7 +4,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.transaction.EtcdTransaction;
-import com.linbit.linstor.transaction.TransactionMgrETCD;
+import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
 
 import javax.inject.Provider;
 

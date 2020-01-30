@@ -7,7 +7,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
 

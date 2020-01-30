@@ -50,7 +50,7 @@ import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.adapter.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;

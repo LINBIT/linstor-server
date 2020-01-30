@@ -3,7 +3,7 @@ package com.linbit.linstor.dbdrivers.etcd;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.transaction.TransactionMgrETCD;
+import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
 
 import javax.inject.Provider;
 

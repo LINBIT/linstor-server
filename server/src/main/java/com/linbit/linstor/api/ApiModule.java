@@ -7,9 +7,9 @@ import com.linbit.linstor.api.protobuf.ApiCallDescriptor;
 import com.linbit.linstor.netcom.Message;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgrETCD;
-import com.linbit.linstor.transaction.TransactionMgrSQL;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
+import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 
 import java.util.List;
 

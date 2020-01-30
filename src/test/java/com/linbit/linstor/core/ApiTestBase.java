@@ -26,9 +26,9 @@ import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.Role;
 import com.linbit.linstor.security.SecurityType;
-import com.linbit.linstor.transaction.ControllerSQLTransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgrSQL;
+import com.linbit.linstor.transaction.manager.ControllerSQLTransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 
 import javax.inject.Inject;
 import javax.inject.Named;

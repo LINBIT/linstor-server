@@ -2,8 +2,9 @@ package com.linbit.linstor.propscon;
 
 import com.linbit.linstor.dbdrivers.SatellitePropDriver;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.SatelliteTransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+
 import org.junit.Before;
 import org.junit.Test;
 

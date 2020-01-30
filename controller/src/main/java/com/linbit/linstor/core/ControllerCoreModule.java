@@ -9,7 +9,7 @@ import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.transaction.TransactionMap;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Named;

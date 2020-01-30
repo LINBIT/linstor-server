@@ -15,7 +15,7 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.FileCommands;
 import com.linbit.linstor.storage.utils.LosetupCommands;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

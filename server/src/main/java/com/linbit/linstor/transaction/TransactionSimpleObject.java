@@ -4,8 +4,10 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpObjectDatabaseDriver;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
+
 import java.util.Objects;
 
 public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObject

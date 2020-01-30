@@ -24,9 +24,9 @@ import com.linbit.linstor.security.IdentityName;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SignInException;
 import com.linbit.linstor.transaction.TransactionException;
-import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgrGenerator;
-import com.linbit.linstor.transaction.TransactionMgrUtil;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
 import javax.inject.Inject;
 import javax.ws.rs.container.AsyncResponse;

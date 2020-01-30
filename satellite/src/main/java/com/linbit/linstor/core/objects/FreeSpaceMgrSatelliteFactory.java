@@ -1,6 +1,6 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

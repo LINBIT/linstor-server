@@ -18,7 +18,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmDfnObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nullable;
 import javax.inject.Provider;

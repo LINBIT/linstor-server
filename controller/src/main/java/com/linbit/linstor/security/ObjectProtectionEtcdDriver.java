@@ -12,8 +12,8 @@ import com.linbit.linstor.dbdrivers.etcd.ETCDSingleColumnDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.transaction.TransactionMgrETCD;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SEC_ACL_MAP;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SEC_OBJECT_PROTECTION;

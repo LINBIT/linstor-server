@@ -1,5 +1,7 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+
 import javax.inject.Provider;
 
 import java.util.List;

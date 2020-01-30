@@ -4,8 +4,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import java.sql.SQLException;
 

@@ -20,7 +20,7 @@ import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.EtcdTransaction;
-import com.linbit.linstor.transaction.TransactionMgrETCD;
+import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;

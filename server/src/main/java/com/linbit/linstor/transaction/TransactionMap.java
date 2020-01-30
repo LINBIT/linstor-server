@@ -1,18 +1,19 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpMapDatabaseDriver;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+
+import javax.inject.Provider;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-import javax.inject.Provider;
-
-import com.linbit.linstor.LinStorDBRuntimeException;
-import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
-import com.linbit.linstor.dbdrivers.noop.NoOpMapDatabaseDriver;
 
 public class TransactionMap<KEY, VALUE extends TransactionObject>
     extends AbsTransactionObject implements Map<KEY, VALUE>

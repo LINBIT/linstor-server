@@ -23,9 +23,9 @@ import com.linbit.linstor.security.DummySecurityInitializer;
 import com.linbit.linstor.security.TestApiModule;
 import com.linbit.linstor.security.TestSecurityModule;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
-import com.linbit.linstor.transaction.SatelliteTransactionMgr;
-import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.manager.SatelliteTransactionMgrModule;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

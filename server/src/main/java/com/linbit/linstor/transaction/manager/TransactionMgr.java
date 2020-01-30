@@ -1,4 +1,7 @@
-package com.linbit.linstor.transaction;
+package com.linbit.linstor.transaction.manager;
+
+import com.linbit.linstor.transaction.TransactionException;
+import com.linbit.linstor.transaction.TransactionObject;
 
 import java.util.regex.Pattern;
 

@@ -16,7 +16,7 @@ import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.TransactionMgrETCD;
+import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_KIND;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_PARENT_ID;

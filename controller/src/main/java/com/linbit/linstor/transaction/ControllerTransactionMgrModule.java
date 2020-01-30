@@ -1,6 +1,8 @@
 package com.linbit.linstor.transaction;
 
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.transaction.manager.ControllerSQLTransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
 
 import com.google.inject.AbstractModule;
 

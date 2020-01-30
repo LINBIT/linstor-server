@@ -1,4 +1,4 @@
-package com.linbit.linstor.transaction;
+package com.linbit.linstor.transaction.manager;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

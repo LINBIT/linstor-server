@@ -7,8 +7,8 @@ import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelpe
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.transaction.TransactionMgrGenerator;
-import com.linbit.linstor.transaction.TransactionMgrUtil;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
 import com.google.inject.Inject;
 

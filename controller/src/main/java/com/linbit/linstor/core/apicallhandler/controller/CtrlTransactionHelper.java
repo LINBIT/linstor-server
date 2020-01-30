@@ -2,7 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.core.apicallhandler.response.ApiTransactionException;
 import com.linbit.linstor.transaction.TransactionException;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

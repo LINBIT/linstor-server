@@ -18,7 +18,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.transaction.TransactionMgrSQL;
+import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
 

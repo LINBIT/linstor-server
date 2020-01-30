@@ -2,9 +2,9 @@ package com.linbit.linstor.security;
 
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.transaction.SatelliteTransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
 

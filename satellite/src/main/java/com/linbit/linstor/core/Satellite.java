@@ -47,7 +47,7 @@ import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
-import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
+import com.linbit.linstor.transaction.manager.SatelliteTransactionMgrModule;
 
 import javax.inject.Inject;
 import javax.inject.Named;

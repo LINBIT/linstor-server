@@ -2,6 +2,7 @@ package com.linbit.linstor.transaction;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
 

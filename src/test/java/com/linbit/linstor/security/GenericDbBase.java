@@ -64,11 +64,11 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.transaction.ControllerSQLTransactionMgr;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
-import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgrSQL;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.manager.ControllerSQLTransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 
 import javax.inject.Inject;
 import javax.inject.Named;

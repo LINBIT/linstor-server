@@ -15,8 +15,8 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.AbsTransactionObject;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Provider;

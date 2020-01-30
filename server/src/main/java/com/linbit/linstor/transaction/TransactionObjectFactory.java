@@ -8,6 +8,8 @@ import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

@@ -5,9 +5,9 @@ import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
-import com.linbit.linstor.transaction.SatelliteTransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.testutils.SimpleIterator;
 
 import static com.linbit.linstor.security.AccessType.CHANGE;

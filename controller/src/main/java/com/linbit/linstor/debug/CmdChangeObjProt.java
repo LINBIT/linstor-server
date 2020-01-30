@@ -33,7 +33,7 @@ import com.linbit.linstor.security.SecTypeName;
 import com.linbit.linstor.security.SecurityType;
 import com.linbit.linstor.security.ShutdownProtHolder;
 import com.linbit.linstor.transaction.TransactionException;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;

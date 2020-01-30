@@ -35,7 +35,7 @@ import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.SpdkCommands;
 import com.linbit.linstor.storage.utils.SpdkUtils;
 import com.linbit.linstor.storage.utils.SpdkUtils.LvsInfo;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
 

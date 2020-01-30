@@ -8,7 +8,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
-import com.linbit.linstor.transaction.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

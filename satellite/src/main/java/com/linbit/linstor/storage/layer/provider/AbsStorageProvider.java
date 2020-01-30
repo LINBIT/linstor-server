@@ -38,7 +38,7 @@ import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.utils.DmStatCommands;
 import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
 import com.linbit.linstor.storage.utils.SpdkCommands;
-import com.linbit.linstor.transaction.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;

@@ -1,6 +1,9 @@
-package com.linbit.linstor.transaction;
+package com.linbit.linstor.transaction.manager;
 
 import com.linbit.linstor.ControllerSQLDatabase;
+import com.linbit.linstor.transaction.TransactionException;
+import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectCollection;
 
 import java.sql.Connection;
 import java.sql.SQLException;

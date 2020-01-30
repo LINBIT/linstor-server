@@ -13,7 +13,7 @@ import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.TransactionMgrSQL;
+import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 
 import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.LAYER_RESOURCE_ID;

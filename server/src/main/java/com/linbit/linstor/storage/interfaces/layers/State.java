@@ -1,8 +1,8 @@
 package com.linbit.linstor.storage.interfaces.layers;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 public class State implements TransactionObject
 {

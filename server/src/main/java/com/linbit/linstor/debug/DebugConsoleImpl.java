@@ -5,9 +5,9 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.linstor.transaction.TransactionMgrGenerator;
-import com.linbit.linstor.transaction.TransactionMgrUtil;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
