@@ -320,7 +320,7 @@ public class TestFactory
         Resource resRef,
         VolumeDefinition volDfnRef,
         long flagValueRef,
-        VolumeGenericDbDriver driverRef,
+        VolumeDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,

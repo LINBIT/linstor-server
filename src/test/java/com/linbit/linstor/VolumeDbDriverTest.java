@@ -17,8 +17,8 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.VolumeGenericDbDriver;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -40,7 +40,7 @@ import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.Test;
 
-public class VolumeGenericDbDriverTest extends GenericDbBase
+public class VolumeDbDriverTest extends GenericDbBase
 {
     private static final String SELECT_ALL_VOLS =
         " SELECT " + UUID + ", " + NODE_NAME + ", " + RESOURCE_NAME + ", " +
@@ -68,7 +68,8 @@ public class VolumeGenericDbDriverTest extends GenericDbBase
 
     private java.util.UUID uuid;
 
-    @Inject private VolumeGenericDbDriver driver;
+    @Inject
+    private VolumeDbDriver driver;
 
     @Before
     @SuppressWarnings("checkstyle:magicnumber")
@@ -234,7 +235,7 @@ public class VolumeGenericDbDriverTest extends GenericDbBase
         rscMap.put(new Pair<>(nodeName, resName), res);
         vlmDfnMap.put(new Pair<>(resName, volNr), volDfn);
 
-        Map<Volume, Volume.InitMaps> vlmMap = driver.loadAll(rscMap, vlmDfnMap);
+        Map<Volume, Volume.InitMaps> vlmMap = driver.loadAll(new Pair<>(rscMap, vlmDfnMap));
 
         assertEquals(1, vlmMap.size());
 
