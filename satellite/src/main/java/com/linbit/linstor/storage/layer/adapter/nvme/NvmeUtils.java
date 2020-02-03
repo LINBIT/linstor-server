@@ -130,7 +130,7 @@ public class NvmeUtils
                 if (port == null)
                 {
                     port = Integer.toString(IANA_DEFAULT_PORT);
-                };
+                }
 
                 OutputData output = extCmdFactory.create().exec(
                     SPDK_RPC_SCRIPT,
@@ -281,7 +281,7 @@ public class NvmeUtils
                 if (portIdx == null)
                 {
                     throw new StorageException(
-                        "No ports directory for NVMe subsystem \'" + subsystemName + "\' exists!"
+                        "No ports directory for NVMe subsystem '" + subsystemName + "' exists!"
                     );
                 }
 
@@ -374,7 +374,7 @@ public class NvmeUtils
             List<String> subsystemNames = discover(nvmeRscData, transportType, ipAddr, port, nodeName);
             if (!subsystemNames.contains(subsystemName))
             {
-                throw new StorageException("Failed to discover subsystem name \'" + subsystemName + "\'!");
+                throw new StorageException("Failed to discover subsystem name '" + subsystemName + "'!");
             }
 
             OutputData output = extCmdFactory.create().exec(
@@ -721,7 +721,7 @@ public class NvmeUtils
         throws IOException, ChildProcessTimeoutException, InterruptedException
     {
         int tries = isWaiting ? 0 : NVME_GREP_SLEEP_MAX_WAIT_TIME - 1;
-        OutputData output = null;
+        OutputData output;
         boolean extCmdSuccess;
         do
         {
