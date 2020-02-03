@@ -1,8 +1,8 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;

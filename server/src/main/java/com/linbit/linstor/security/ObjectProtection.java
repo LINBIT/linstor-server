@@ -2,7 +2,6 @@ package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -11,6 +10,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionObject;

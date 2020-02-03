@@ -1,9 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.CollectionDatabaseDriver;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
-import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.LUKSVolume;
@@ -16,6 +14,8 @@ import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Nodes;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
+import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;

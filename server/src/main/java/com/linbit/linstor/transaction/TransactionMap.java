@@ -9,10 +9,10 @@ import java.util.Set;
 
 import javax.inject.Provider;
 
-import com.linbit.MapDatabaseDriver;
 import com.linbit.NoOpMapDatabaseDriver;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 
 public class TransactionMap<KEY, VALUE extends TransactionObject>
     extends AbsTransactionObject implements Map<KEY, VALUE>

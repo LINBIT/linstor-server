@@ -1,8 +1,8 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.types.TcpPortNumber;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 /**

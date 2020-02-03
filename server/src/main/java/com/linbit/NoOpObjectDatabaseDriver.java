@@ -1,5 +1,7 @@
 package com.linbit;
 
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+
 public class NoOpObjectDatabaseDriver<PARENT, ELEMENT> implements SingleColumnDatabaseDriver<PARENT, ELEMENT>
 {
     @Override

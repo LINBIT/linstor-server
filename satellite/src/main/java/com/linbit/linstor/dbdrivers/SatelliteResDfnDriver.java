@@ -1,10 +1,10 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.CollectionDatabaseDriver;
 import com.linbit.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 

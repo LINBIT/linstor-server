@@ -1,9 +1,9 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 

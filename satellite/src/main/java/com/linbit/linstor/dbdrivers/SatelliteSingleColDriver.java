@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 
 public class SatelliteSingleColDriver<NOOP_KEY, NOOP> implements SingleColumnDatabaseDriver<NOOP_KEY, NOOP>
 {

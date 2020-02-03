@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
@@ -12,6 +11,7 @@ import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;

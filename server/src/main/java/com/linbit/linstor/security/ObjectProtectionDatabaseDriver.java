@@ -1,7 +1,7 @@
 package com.linbit.linstor.security;
 
-import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 
 public interface ObjectProtectionDatabaseDriver
 {

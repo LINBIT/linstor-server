@@ -1,6 +1,7 @@
 package com.linbit;
 
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 
 public class NoOpMapDatabaseDriver<T, U> implements MapDatabaseDriver<T, U>
 {
