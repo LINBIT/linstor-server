@@ -1,11 +1,11 @@
 package com.linbit.linstor.security;
 
-import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpObjectDatabaseDriver;
 import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
 import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;

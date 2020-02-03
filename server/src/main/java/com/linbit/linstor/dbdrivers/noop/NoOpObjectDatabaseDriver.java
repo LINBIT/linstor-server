@@ -1,4 +1,4 @@
-package com.linbit;
+package com.linbit.linstor.dbdrivers.noop;
 
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 

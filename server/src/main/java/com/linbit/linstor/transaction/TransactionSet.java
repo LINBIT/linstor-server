@@ -1,9 +1,9 @@
 package com.linbit.linstor.transaction;
 
-import com.linbit.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpCollectionDatabaseDriver;
 
 import javax.inject.Provider;
 import java.util.Arrays;

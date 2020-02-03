@@ -1,9 +1,9 @@
 package com.linbit.linstor.transaction;
 
 import com.linbit.ImplementationError;
-import com.linbit.NoOpObjectDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpObjectDatabaseDriver;
 
 import javax.inject.Provider;
 import java.util.Objects;
