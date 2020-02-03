@@ -23,8 +23,9 @@ public class TestExtCmd extends ExtCmd
 
     public TestExtCmd()
     {
-        super(new GenericTimer<String, Action<String>>(),
-            new StdErrorReporter("LINSTOR-UNITTESTS", Paths.get("build/test-logs"), true, "", null, () -> null)
+        super(
+            new GenericTimer<String, Action<String>>(),
+            new StdErrorReporter("LINSTOR-UNITTESTS", Paths.get("build/test-logs"), true, "", null, null, () -> null)
         );
     }
 
@@ -140,14 +141,12 @@ public class TestExtCmd extends ExtCmd
                 {
                     equals = true;
                 }
-                else
-                if (obj instanceof Command)
+                else if (obj instanceof Command)
                 {
                     Command otherCmd = (Command) obj;
                     equals = Arrays.equals(commandParts, otherCmd.commandParts);
                 }
-                else
-                if (obj instanceof String[])
+                else if (obj instanceof String[])
                 {
                     equals = Arrays.equals(commandParts, (String[]) obj);
                 }
@@ -173,7 +172,6 @@ public class TestExtCmd extends ExtCmd
         }
     }
 
-
     /**
      * Simple class extending {@link ExtCmd.OutputData} such that it can be instantiated
      * publicly.
@@ -191,7 +189,7 @@ public class TestExtCmd extends ExtCmd
         public String toString()
         {
             return "TestOutputData [stdoutData=[" + new String(stdoutData) + "], stderrData=[" +
-                   new String(stderrData) + "], exitCode=" + exitCode + "]";
+                new String(stderrData) + "], exitCode=" + exitCode + "]";
         }
     }
 
@@ -199,7 +197,6 @@ public class TestExtCmd extends ExtCmd
      * Class where expected external commands can be registered and their expected outputs.
      * Additionally tracks how often a command gets called. Also offers method to list all
      * uncalled commands.
-     *
      * This class does not support command orders.
      *
      * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
@@ -241,7 +238,7 @@ public class TestExtCmd extends ExtCmd
         public HashSet<Command> getUncalledCommands()
         {
             HashSet<Command> commands = new HashSet<>();
-            for (Entry<Command, Integer> entry: commandsCalled.entrySet())
+            for (Entry<Command, Integer> entry : commandsCalled.entrySet())
             {
                 if (entry.getValue() == 0)
                 {

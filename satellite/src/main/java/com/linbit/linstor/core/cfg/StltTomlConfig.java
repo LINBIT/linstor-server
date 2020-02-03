@@ -34,10 +34,12 @@ public class StltTomlConfig
     public static class Logging
     {
         private String level;
+        private String linstor_level;
 
         public void applyTo(StltConfig cfg)
         {
             cfg.setLogLevel(level);
+            cfg.setLinstorLogLevel(linstor_level);
         }
     }
 

@@ -126,7 +126,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     private static final int PROPS_COL_ID_VAL = 3;
 
     protected static StdErrorReporter errorReporter =
-        new StdErrorReporter("TESTS", Paths.get("build/test-logs"), false, "", null, () -> null);
+        new StdErrorReporter("TESTS", Paths.get("build/test-logs"), false, "", null, null, () -> null);
 
     protected static final AccessContext SYS_CTX = DummySecurityInitializer.getSystemAccessContext();
     protected static final AccessContext PUBLIC_CTX = DummySecurityInitializer.getPublicAccessContext();
@@ -152,49 +152,82 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Mock
     protected Peer mockPeer;
 
-    @Mock @Bind @Named(NumberPoolModule.MINOR_NUMBER_POOL)
+    @Mock
+    @Bind
+    @Named(NumberPoolModule.MINOR_NUMBER_POOL)
     protected DynamicNumberPool minorNrPoolMock;
 
-    @Mock @Bind @Named(NumberPoolModule.TCP_PORT_POOL)
+    @Mock
+    @Bind
+    @Named(NumberPoolModule.TCP_PORT_POOL)
     protected DynamicNumberPool tcpPortPoolMock;
 
-    @Mock @Bind @Named(NumberPoolModule.LAYER_RSC_ID_POOL)
+    @Mock
+    @Bind
+    @Named(NumberPoolModule.LAYER_RSC_ID_POOL)
     protected DynamicNumberPool layerRscIdPoolMock;
     protected AtomicInteger layerRscIdAtomicId = new AtomicInteger();
 
     // @Inject private DbAccessor secureDbDriver;
     // @Inject private DatabaseDriver persistenceDbDriver;
-    @Inject private SecurityTestUtils securityTestUtils;
-    @Inject protected CoreModule.NodesMap nodesMap;
-    @Inject protected CoreModule.ResourceDefinitionMap rscDfnMap;
-    @Inject protected CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    @Inject
+    private SecurityTestUtils securityTestUtils;
+    @Inject
+    protected CoreModule.NodesMap nodesMap;
+    @Inject
+    protected CoreModule.ResourceDefinitionMap rscDfnMap;
+    @Inject
+    protected CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
-    @Inject protected NodeRepository nodeRepository;
-    @Inject protected ResourceDefinitionRepository resourceDefinitionRepository;
-    @Inject protected StorPoolDefinitionRepository storPoolDefinitionRepository;
-    @Inject protected FreeSpaceMgrRepository freeSpaceMgrRepository;
+    @Inject
+    protected NodeRepository nodeRepository;
+    @Inject
+    protected ResourceDefinitionRepository resourceDefinitionRepository;
+    @Inject
+    protected StorPoolDefinitionRepository storPoolDefinitionRepository;
+    @Inject
+    protected FreeSpaceMgrRepository freeSpaceMgrRepository;
 
-    @Inject protected ObjectProtectionFactory objectProtectionFactory;
-    @Inject protected PropsContainerFactory propsContainerFactory;
-    @Inject protected NodeControllerFactory nodeFactory;
-    @Inject protected ResourceConnectionControllerFactory resourceConnectionFactory;
-    @Inject protected ResourceControllerFactory resourceFactory;
-    @Inject protected StorPoolDefinitionControllerFactory storPoolDefinitionFactory;
-    @Inject protected VolumeConnectionFactory volumeConnectionFactory;
-    @Inject protected NodeConnectionFactory nodeConnectionFactory;
-    @Inject protected StorPoolControllerFactory storPoolFactory;
-    @Inject protected FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
-    @Inject protected VolumeControllerFactory volumeFactory;
-    @Inject protected VolumeDefinitionControllerFactory volumeDefinitionFactory;
-    @Inject protected ResourceDefinitionControllerFactory resourceDefinitionFactory;
-    @Inject protected ResourceGroupControllerFactory resourceGroupFactory;
-    @Inject protected NetInterfaceFactory netInterfaceFactory;
+    @Inject
+    protected ObjectProtectionFactory objectProtectionFactory;
+    @Inject
+    protected PropsContainerFactory propsContainerFactory;
+    @Inject
+    protected NodeControllerFactory nodeFactory;
+    @Inject
+    protected ResourceConnectionControllerFactory resourceConnectionFactory;
+    @Inject
+    protected ResourceControllerFactory resourceFactory;
+    @Inject
+    protected StorPoolDefinitionControllerFactory storPoolDefinitionFactory;
+    @Inject
+    protected VolumeConnectionFactory volumeConnectionFactory;
+    @Inject
+    protected NodeConnectionFactory nodeConnectionFactory;
+    @Inject
+    protected StorPoolControllerFactory storPoolFactory;
+    @Inject
+    protected FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
+    @Inject
+    protected VolumeControllerFactory volumeFactory;
+    @Inject
+    protected VolumeDefinitionControllerFactory volumeDefinitionFactory;
+    @Inject
+    protected ResourceDefinitionControllerFactory resourceDefinitionFactory;
+    @Inject
+    protected ResourceGroupControllerFactory resourceGroupFactory;
+    @Inject
+    protected NetInterfaceFactory netInterfaceFactory;
 
-    @Inject protected LinStorScope testScope;
-    @Inject protected TransactionObjectFactory transObjFactory;
-    @Inject protected Provider<TransactionMgrSQL> transMgrProvider;
+    @Inject
+    protected LinStorScope testScope;
+    @Inject
+    protected TransactionObjectFactory transObjFactory;
+    @Inject
+    protected Provider<TransactionMgrSQL> transMgrProvider;
 
-    @Inject protected ResourceGroupDatabaseDriver rscGrpDbDriver;
+    @Inject
+    protected ResourceGroupDatabaseDriver rscGrpDbDriver;
 
     @BeforeClass
     public static void setUpBeforeClass()
@@ -428,8 +461,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(
             "INSERT INTO " + TBL_SEC_IDENTITIES +
-            " (" + IDENTITY_NAME + ", " + IDENTITY_DSP_NAME + ") " +
-            " VALUES (?, ?)"
+                " (" + IDENTITY_NAME + ", " + IDENTITY_DSP_NAME + ") " +
+                " VALUES (?, ?)"
         );
         stmt.setString(1, name.value);
         stmt.setString(2, name.displayValue);
@@ -442,8 +475,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(
             "INSERT INTO " + TBL_SEC_TYPES +
-            " (" + TYPE_NAME + ", " + TYPE_DSP_NAME + ") " +
-            " VALUES (?, ?)"
+                " (" + TYPE_NAME + ", " + TYPE_DSP_NAME + ") " +
+                " VALUES (?, ?)"
         );
         stmt.setString(1, name.value);
         stmt.setString(2, name.displayValue);
@@ -456,8 +489,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     {
         PreparedStatement stmt = transMgr.getConnection().prepareStatement(
             "INSERT INTO " + TBL_SEC_ROLES +
-            " (" + ROLE_NAME + ", " + ROLE_DSP_NAME + ", " + DOMAIN_NAME + ") " +
-            " VALUES (?, ?, ?)"
+                " (" + ROLE_NAME + ", " + ROLE_DSP_NAME + ", " + DOMAIN_NAME + ") " +
+                " VALUES (?, ?, ?)"
         );
         stmt.setString(1, name.value);
         stmt.setString(2, name.displayValue);

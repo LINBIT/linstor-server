@@ -159,12 +159,14 @@ public class CtrlTomlConfig
     static class Logging
     {
         private String level;
+        private String linstor_level;
         private String rest_access_log_path;
         private RestAccessLogMode rest_access_log_mode;
 
         public void applyTo(CtrlConfig cfg)
         {
             cfg.setLogLevel(level);
+            cfg.setLinstorLogLevel(linstor_level);
             cfg.setLogRestAccessLogPath(rest_access_log_path);
             cfg.setLogRestAccessMode(rest_access_log_mode);
         }

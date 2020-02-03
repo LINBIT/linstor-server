@@ -105,7 +105,6 @@ public class WorkerPoolTest
         Assert.assertEquals("Worker threads still running", prefixedThreadCount, 0);
     }
 
-
     @Test
     public void testSumbitSimpleTask() throws InterruptedException, ExecutionException, TimeoutException
     {
@@ -210,7 +209,6 @@ public class WorkerPoolTest
         );
     }
 
-
     private void exec(Runnable task, long millisec)
         throws InterruptedException, ExecutionException, TimeoutException
     {
@@ -247,7 +245,11 @@ public class WorkerPoolTest
 
         @Override
         public String reportError(
-            Level logLevel, Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo
+            Level logLevel,
+            Throwable errorInfo,
+            AccessContext accCtx,
+            Peer client,
+            String contextInfo
         )
         {
             unexpected.add(errorInfo);
@@ -255,7 +257,12 @@ public class WorkerPoolTest
         }
 
         @Override
-        public String reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
+        public String reportError(
+            Throwable errorInfo,
+            AccessContext accCtx,
+            Peer client,
+            String contextInfo
+        )
         {
             unexpected.add(errorInfo);
             return null; // no error report, no logName
@@ -306,7 +313,8 @@ public class WorkerPoolTest
 
         private void log(String type, String format, Object[] args)
         {
-            System.err.printf("%s %s\\n",
+            System.err.printf(
+                "%s %s\\n",
                 type,
                 String.format(
                     format,
@@ -316,7 +324,7 @@ public class WorkerPoolTest
         }
 
         @Override
-        public boolean setLogLevel(AccessContext accCtx, Level level) throws AccessDeniedException
+        public boolean setLogLevel(AccessContext accCtx, Level level, Level linstorLevel) throws AccessDeniedException
         {
             // Tracing on/off not implemented, no-op
             return false;
@@ -353,7 +361,7 @@ public class WorkerPoolTest
 
         private WorkerPoolBuilder()
         {
-            threadPrefix = DEFAULT_THREAD_PREFIX  + "_" + Integer.toString(ID_GEN.incrementAndGet());
+            threadPrefix = DEFAULT_THREAD_PREFIX + "_" + Integer.toString(ID_GEN.incrementAndGet());
         }
 
         public WorkerPool build()
@@ -384,6 +392,7 @@ public class WorkerPoolTest
             threadPrefix = prefixRef;
             return this;
         }
+
         public WorkerPoolBuilder errorReporter(ErrorReporter reporter)
         {
             errorReporter = reporter;

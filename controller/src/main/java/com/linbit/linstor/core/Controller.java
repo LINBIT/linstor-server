@@ -202,7 +202,8 @@ public final class Controller
             {
                 errorReporter.setLogLevel(
                     initCtx,
-                    Level.valueOf(linstorCfgRef.getLogLevel().toUpperCase())
+                    Level.valueOf(linstorCfgRef.getLogLevel().toUpperCase()),
+                    Level.valueOf(linstorCfgRef.getLinstorLogLevel().toUpperCase())
                 );
             }
             catch (IllegalArgumentException exc)
@@ -425,10 +426,7 @@ public final class Controller
         System.setProperty("log.module", LinStor.CONTROLLER_MODULE);
         System.setProperty("log.directory", cfg.getLogDirectory());
 
-        System.out.printf(
-            "%s, Module %s\n",
-            LinStor.PROGRAM, LinStor.CONTROLLER_MODULE
-        );
+        System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.CONTROLLER_MODULE);
         LinStor.printStartupInfo();
 
         StdErrorReporter errorLog = new StdErrorReporter(
@@ -437,6 +435,7 @@ public final class Controller
             cfg.isLogPrintStackTrace(),
             LinStor.getHostName(),
             cfg.getLogLevel(),
+            cfg.getLinstorLogLevel(),
             () -> null
         );
 
@@ -467,20 +466,20 @@ public final class Controller
             /*
              * Dynamic loading is very slow compared to static loading, each .loadClasses
              * costs around ~400ms on my system. so we do it static now, there are only 4 event classes anyway
-
-            List<Class<? extends EventSerializer>> eventSerializers = classPathLoader.loadClasses(
-                ProtobufEventSerializer.class.getPackage().getName(),
-                packageSuffixes,
-                EventSerializer.class,
-                ProtobufEventSerializer.class
-            );
-
-            List<Class<? extends EventHandler>> eventHandlers = classPathLoader.loadClasses(
-                ProtobufEventHandler.class.getPackage().getName(),
-                packageSuffixes,
-                EventHandler.class,
-                ProtobufEventHandler.class
-            );
+             * 
+             * List<Class<? extends EventSerializer>> eventSerializers = classPathLoader.loadClasses(
+             *      ProtobufEventSerializer.class.getPackage().getName(),
+             *      packageSuffixes,
+             *      EventSerializer.class,
+             *      ProtobufEventSerializer.class
+             * );
+             * 
+             * List<Class<? extends EventHandler>> eventHandlers = classPathLoader.loadClasses(
+             *      ProtobufEventHandler.class.getPackage().getName(),
+             *      packageSuffixes,
+             *      EventHandler.class,
+             *      ProtobufEventHandler.class
+             * );
              */
 
             List<Class<? extends EventSerializer>> eventSerializers = Arrays.asList(
@@ -492,9 +491,11 @@ public final class Controller
                 ResourceStateEventHandler.class,
                 VolumeDiskStateEventHandler.class
             );
-            errorLog.logInfo(String.format(
-                "API classes loading finished: %dms",
-                (System.currentTimeMillis() - startAPIClassLoadingTime))
+            errorLog.logInfo(
+                String.format(
+                    "API classes loading finished: %dms",
+                    (System.currentTimeMillis() - startAPIClassLoadingTime)
+                )
             );
 
             errorLog.logInfo("Dependency injection started.");
@@ -523,9 +524,11 @@ public final class Controller
                 new ControllerDebugModule(),
                 new ControllerTransactionMgrModule(dbType)
             );
-            errorLog.logInfo(String.format(
+            errorLog.logInfo(
+                String.format(
                     "Dependency injection finished: %dms",
-                    (System.currentTimeMillis() - startDepInjectionTime))
+                    (System.currentTimeMillis() - startDepInjectionTime)
+                )
             );
 
             instance = injector.getInstance(Controller.class);

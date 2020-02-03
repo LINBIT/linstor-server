@@ -27,6 +27,7 @@ public abstract class LinstorConfig
     protected boolean logPrintStackTrace = false;
     protected String logDirectory = "./logs";
     protected String logLevel = "INFO";
+    protected String linstorLogLevel = "INFO";
 
     /**
      * Order or priority of config sources (top has highest priority)
@@ -36,6 +37,7 @@ public abstract class LinstorConfig
      * 4) default values
      *
      * @param cmdLineArgs
+     *
      * @return
      */
     public LinstorConfig(String[] cmdLineArgs)
@@ -61,8 +63,11 @@ public abstract class LinstorConfig
     }
 
     protected abstract void applyDefaultValues();
+
     protected abstract void applyEnvVars();
+
     protected abstract void applyCmdLineArgs(String[] cmdLineArgs);
+
     protected abstract void applyTomlArgs();
 
     public void setConfigDir(String configDirRef)
@@ -106,6 +111,14 @@ public abstract class LinstorConfig
         }
     }
 
+    public void setLinstorLogLevel(String linstorLogLevelRef)
+    {
+        if (linstorLogLevelRef != null)
+        {
+            linstorLogLevel = linstorLogLevelRef;
+        }
+    }
+
     public String getConfigDir()
     {
         return configDir;
@@ -134,6 +147,11 @@ public abstract class LinstorConfig
     public String getLogLevel()
     {
         return logLevel;
+    }
+
+    public String getLinstorLogLevel()
+    {
+        return linstorLogLevel;
     }
 
 }

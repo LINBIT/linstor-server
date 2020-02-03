@@ -1,14 +1,14 @@
 package com.linbit.linstor.testutils;
 
-import java.nio.file.Path;
-
-import org.slf4j.event.Level;
-
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+
+import java.nio.file.Path;
+
+import org.slf4j.event.Level;
 
 public class EmptyErrorReporter implements ErrorReporter
 {
@@ -104,7 +104,11 @@ public class EmptyErrorReporter implements ErrorReporter
 
     @Override
     public String reportProblem(
-        Level logLevel, LinStorException errorInfo, AccessContext accCtx, Peer client, String contextInfo
+        Level logLevel,
+        LinStorException errorInfo,
+        AccessContext accCtx,
+        Peer client,
+        String contextInfo
     )
     {
         if (printStacktraces)
@@ -115,7 +119,7 @@ public class EmptyErrorReporter implements ErrorReporter
     }
 
     @Override
-    public boolean setLogLevel(AccessContext accCtx, Level levelRef) throws AccessDeniedException
+    public boolean setLogLevel(AccessContext accCtx, Level levelRef, Level linstorLevelRef) throws AccessDeniedException
     {
         return false;
     }
@@ -125,7 +129,6 @@ public class EmptyErrorReporter implements ErrorReporter
     {
         return Level.TRACE;
     }
-
 
     @Override
     public boolean hasAtLeastLogLevel(Level leveRef)

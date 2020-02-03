@@ -49,12 +49,17 @@ public class ResourceDefinitionSatelliteTest
 
     private java.util.UUID resDfnUuid;
 
-    @Inject private VolumeDefinitionSatelliteFactory volumeDefinitionFactory;
-    @Inject private ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
-    @Inject private ResourceGroupSatelliteFactory resourceGroupFactory;
+    @Inject
+    private VolumeDefinitionSatelliteFactory volumeDefinitionFactory;
+    @Inject
+    private ResourceDefinitionSatelliteFactory resourceDefinitionFactory;
+    @Inject
+    private ResourceGroupSatelliteFactory resourceGroupFactory;
 
-    @Inject private LinStorScope testScope;
-    @Inject private Provider<TransactionMgr> transMgrProvider;
+    @Inject
+    private LinStorScope testScope;
+    @Inject
+    private Provider<TransactionMgr> transMgrProvider;
 
     @SuppressWarnings("checkstyle:magicnumber")
     public ResourceDefinitionSatelliteTest() throws InvalidNameException, ValueOutOfRangeException
@@ -69,7 +74,7 @@ public class ResourceDefinitionSatelliteTest
     {
         Injector injector = Guice.createInjector(
             new GuiceConfigModule(),
-            new LoggingModule(new StdErrorReporter("TESTS", Paths.get("build/test-logs"), true, "", null, () -> null)),
+            new LoggingModule(new StdErrorReporter("TESTS", Paths.get("build/test-logs"), true, "", null, null, () -> null)),
             new TestSecurityModule(SYS_CTX),
             new CoreModule(),
             new SatelliteDbModule(),
@@ -126,7 +131,7 @@ public class ResourceDefinitionSatelliteTest
         );
     }
 
-    @Test (expected = ImplementationError.class)
+    @Test(expected = ImplementationError.class)
     /**
      * Check that an active transaction on an object can't be replaced
      */

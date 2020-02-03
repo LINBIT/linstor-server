@@ -5,9 +5,11 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.slf4j.event.Level;
 
 public class StderrErrorReporter extends BaseErrorReporter implements ErrorReporter
@@ -32,7 +34,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
     }
 
     @Override
-    public boolean setLogLevel(AccessContext accCtx, Level levelRef) throws AccessDeniedException
+    public boolean setLogLevel(AccessContext accCtx, Level levelRef, Level linstorLevelRef) throws AccessDeniedException
     {
         return false;
     }
@@ -206,9 +208,9 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
             reportHeader(output, reportNr, client);
 
             // Error description/cause/correction/details report
-            String causeMsg         = errorInfo.getCauseText();
-            String correctionMsg    = errorInfo.getCorrectionText();
-            String detailsMsg       = errorInfo.getDetailsText();
+            String causeMsg = errorInfo.getCauseText();
+            String correctionMsg = errorInfo.getCorrectionText();
+            String detailsMsg = errorInfo.getDetailsText();
 
             output.println("Description:");
             AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, descriptionMsg);
@@ -247,8 +249,8 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
             // Report the error and any nested errors
             int loopCtr = 0;
             for (Throwable nestedErrorInfo = errorInfo.getCause();
-                 nestedErrorInfo != null;
-                 nestedErrorInfo = nestedErrorInfo.getCause())
+                nestedErrorInfo != null;
+                nestedErrorInfo = nestedErrorInfo.getCause())
             {
                 output.println("Caused by:\n==========\n");
 

@@ -1,13 +1,13 @@
 package com.linbit.linstor.logging;
 
-import java.nio.file.Path;
-
-import org.slf4j.event.Level;
-
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+
+import java.nio.file.Path;
+
+import org.slf4j.event.Level;
 
 /**
  * Generates / formats error reports
@@ -17,7 +17,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 public interface ErrorReporter
 {
     // TODO: javadoc
-
     /**
      * Indicates if at least the given LogLevel is enabled.
      * ERROR < WARN < INFO < DEBUG < TRACE
@@ -26,6 +25,7 @@ public interface ErrorReporter
 
     /**
      * Returns the current log level;
+     *
      * @return
      */
     Level getCurrentLogLevel();
@@ -35,16 +35,22 @@ public interface ErrorReporter
      *
      * @param accCtx The access context of the subject performing the change
      * @param flag {@code true} to enable tracing, {@code false} to disable tracing
+     *
      * @return true if setting the log level was successful. False otherwise.
+     *
      * @throws AccessDeniedException if the access context is not authorized to perform the change
      */
-    boolean setLogLevel(AccessContext accCtx, Level level)
+    boolean setLogLevel(AccessContext accCtx, Level level, Level linstorLevel)
         throws AccessDeniedException;
 
     void logTrace(String format, Object... args);
+
     void logDebug(String format, Object... args);
+
     void logInfo(String format, Object... args);
+
     void logWarning(String format, Object... args);
+
     void logError(String format, Object... args);
 
     /**
@@ -56,10 +62,10 @@ public interface ErrorReporter
 
     /**
      * Reports any kind of error, especially ones that are not expected during normal operation
-     *
+     * 
      * E.g., internal errors that may require debugging, detected implementation errors,
      * inability to load parts of the program (missing class files), etc.
-     *
+     * 
      * Implementations of the methods specified in this interface are not supposed to throw any
      * exceptions, not even RuntimeExceptions, because if the ErrorReporter is not working,
      * there is no way to report such exceptions anyway.
@@ -69,21 +75,21 @@ public interface ErrorReporter
      * or may be logged to the standard error output if appropriate, or may be ignored completely
      * by whatever component of the program is trying to use the respective ErrorReporter
      * implementation.
-     *
-     * This method calls {@link ErrorReporter#reportError(Level, Throwable)} with {@link Level#ERROR} as default
-     * logLevel.
+     * This method calls {@link ErrorReporter#reportError(Level, Throwable)} with
+     * {@link Level#ERROR} as default logLevel.
      *
      * @param errorInfo
+     *
      * @return the logName of the generated report; may be null if no report was created
      */
     String reportError(Throwable errorInfo);
 
     /**
      * Reports any kind of error, especially ones that are not expected during normal operation
-     *
+     * 
      * E.g., internal errors that may require debugging, detected implementation errors,
      * inability to load parts of the program (missing class files), etc.
-     *
+     * 
      * Implementations of the methods specified in this interface are not supposed to throw any
      * exceptions, not even RuntimeExceptions, because if the ErrorReporter is not working,
      * there is no way to report such exceptions anyway.
@@ -98,18 +104,19 @@ public interface ErrorReporter
      * @param errorInfo
      *
      * @return the logName of the generated report; may be null if no report was created
-    */
+     */
     String reportError(Level logLevel, Throwable errorInfo);
 
     /**
      * Reports any kind of error, especially ones that are not expected during normal operation.
-     * Calls {@link ErrorReporter#reportError(Level, Throwable, AccessContext, Peer, String)} with {@link Level#ERROR}
-     * as default logLevel.
+     * Calls {@link ErrorReporter#reportError(Level, Throwable, AccessContext, Peer, String)}
+     * with {@link Level#ERROR} as default logLevel.
      *
      * @param errorInfo
      * @param accCtx
      * @param client
      * @param contextInfo
+     *
      * @return the logName of the generated report; may be null if no report was created
      */
     String reportError(
@@ -128,6 +135,7 @@ public interface ErrorReporter
      * @param accCtx
      * @param client
      * @param contextInfo
+     *
      * @return the logName of the generated report; may be null if no report was created
      */
     String reportError(
@@ -141,7 +149,7 @@ public interface ErrorReporter
 
     /**
      * Reports less severe problems, such as the ones expected during normal operation of linstor
-     *
+     * 
      * E.g., a StorageException caused by running out of space, an exhausted numbers pool, a user-specified
      * value being out of range, etc.
      *
@@ -149,6 +157,7 @@ public interface ErrorReporter
      * @param accCtx
      * @param client
      * @param contextInfo
+     *
      * @return the logName of the generated report; may be null if no report was created
      */
     String reportProblem(

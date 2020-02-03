@@ -44,7 +44,6 @@ public class DbConnectionPoolInitializer implements DbInitializer
         String dbType = getDbType(connectionUrl);
 
         dbConnPool.initializeDataSource(connectionUrl);
-
         dbConnPool.migrate(dbType, withStartupVer);
 
         testDbConnection();

@@ -41,7 +41,6 @@ import org.slf4j.event.Level;
 
 /**
  * Standard error report generator
- *
  * Logs to SLF4J and writes detailed problem report files
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -62,6 +61,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         boolean printStackTraces,
         String nodeName,
         String logLevelRef,
+        String linstorLogLevelRef,
         Provider<AccessContext> peerCtxProviderRef
     )
     {
@@ -85,7 +85,10 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         {
             try
             {
-                setLogLevelImpl(Level.valueOf(logLevelRef.toUpperCase()));
+                setLogLevelImpl(
+                    Level.valueOf(logLevelRef.toUpperCase()),
+                    Level.valueOf(linstorLogLevelRef.toUpperCase())
+                );
             }
             catch (IllegalArgumentException exc)
             {
@@ -139,23 +142,19 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         {
             level = Level.TRACE;
         }
-        else
-        if (crtLogger.isDebugEnabled())
+        else if (crtLogger.isDebugEnabled())
         {
             level = Level.DEBUG;
         }
-        else
-        if (crtLogger.isInfoEnabled())
+        else if (crtLogger.isInfoEnabled())
         {
             level = Level.INFO;
         }
-        else
-        if (crtLogger.isWarnEnabled())
+        else if (crtLogger.isWarnEnabled())
         {
             level = Level.WARN;
         }
-        else
-        if (crtLogger.isErrorEnabled())
+        else if (crtLogger.isErrorEnabled())
         {
             level = Level.ERROR;
         }
@@ -163,14 +162,27 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public boolean setLogLevel(AccessContext accCtx, Level level)
+    public boolean setLogLevel(AccessContext accCtx, Level level, Level linstorLevel)
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        return setLogLevelImpl(level);
+        boolean success = true;
+        if (level != null && linstorLevel != null)
+        {
+            success = setLogLevelImpl(level, linstorLevel);
+        }
+        else if (level != null)
+        {
+            success = setLogLevelImpl(level, null);
+        }
+        else if (linstorLevel != null)
+        {
+            success = setLogLevelImpl(null, linstorLevel);
+        }
+        return success;
     }
 
-    private boolean setLogLevelImpl(Level level)
+    private boolean setLogLevelImpl(Level level, Level linstorLevel)
     {
         // FIXME: Setting the trace mode only works with Logback as a backend,
         // but e.g. with SLF4J's SimpleLogger, this method has no effect
@@ -182,12 +194,16 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         {
             ch.qos.logback.classic.Logger crtLogbackLogger = (ch.qos.logback.classic.Logger) crtLogger;
 
-            ch.qos.logback.classic.Level logBackLevel = ch.qos.logback.classic.Level.toLevel(level.toString());
-            crtLogbackLogger.setLevel(logBackLevel);
-            success = true;
-
-            if (mainLogger instanceof ch.qos.logback.classic.Logger)
+            if (level != null)
             {
+                ch.qos.logback.classic.Level logBackLevel = ch.qos.logback.classic.Level.toLevel(level.toString());
+                crtLogbackLogger.setLevel(logBackLevel);
+                success = true;
+            }
+            if (mainLogger instanceof ch.qos.logback.classic.Logger && linstorLevel != null)
+            {
+                ch.qos.logback.classic.Level logBackLevel = ch.qos.logback.classic.Level
+                    .toLevel(linstorLevel.toString());
                 ((ch.qos.logback.classic.Logger) mainLogger).setLevel(logBackLevel);
             }
             else
@@ -203,7 +219,6 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     {
         return reportError(Level.ERROR, errorInfo, null, null, null);
     }
-
 
     @Override
     public String reportError(Level logLevel, Throwable errorInfo)
@@ -275,7 +290,6 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 {
                     output.println("Caused by:\n==========\n");
                 }
-
 
                 reportExceptionDetails(output, curErrorInfo, loopCtr == 0 ? contextInfo : null);
 
@@ -408,9 +422,11 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                     errorInfo.getCause().printStackTrace();
                 }
                 int loopCtr = 0;
-                for (Throwable nestedErrorInfo = errorInfo.getCause();
-                     nestedErrorInfo != null;
-                     nestedErrorInfo = nestedErrorInfo.getCause())
+                for (
+                    Throwable nestedErrorInfo = errorInfo.getCause();
+                    nestedErrorInfo != null;
+                    nestedErrorInfo = nestedErrorInfo.getCause()
+                )
                 {
                     output.println("Caused by:\n==========\n");
 
@@ -482,7 +498,8 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
 
     private String getLogName(long reportNr)
     {
-        return String.format("%s-%06d",
+        return String.format(
+            "%s-%06d",
             instanceId,
             reportNr
         );
@@ -534,7 +551,8 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         boolean withText,
         final Optional<Date> since,
         final Optional<Date> to,
-        final Set<String> ids)
+        final Set<String> ids
+    )
     {
         TreeSet<ErrorReport> errors = new TreeSet<>();
         final List<String> fileIds = ids.stream().map(s -> "ErrorReport-" + s).collect(Collectors.toList());
@@ -618,7 +636,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                                 );
                             }
                         }
-                        catch (IOException /*| ParseException*/ ignored)
+                        catch (IOException /* | ParseException */ ignored)
                         {
                         }
                     }

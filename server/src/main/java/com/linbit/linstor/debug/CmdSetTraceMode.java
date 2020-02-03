@@ -1,9 +1,11 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Privilege;
+
+import javax.inject.Inject;
+
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,9 +14,9 @@ import org.slf4j.event.Level;
 
 public class CmdSetTraceMode extends BaseDebugCmd
 {
-    private static final String PRM_MODE_NAME   = "MODE";
-    private static final String PRM_ENABLED     = "ENABLED";
-    private static final String PRM_DISABLED    = "DISABLED";
+    private static final String PRM_MODE_NAME = "MODE";
+    private static final String PRM_ENABLED = "ENABLED";
+    private static final String PRM_DISABLED = "DISABLED";
 
     private static final Map<String, String> PARAMETER_DESCRIPTIONS = new TreeMap<>();
     static
@@ -54,8 +56,7 @@ public class CmdSetTraceMode extends BaseDebugCmd
         PrintStream debugErr,
         AccessContext accCtx,
         Map<String, String> parameters
-    )
-        throws Exception
+    ) throws Exception
     {
         String prmMode = parameters.get(PRM_MODE_NAME);
         if (prmMode != null)
@@ -64,13 +65,12 @@ public class CmdSetTraceMode extends BaseDebugCmd
             privCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
             if (prmMode.equalsIgnoreCase(PRM_ENABLED))
             {
-                errorReporter.setLogLevel(privCtx, Level.TRACE);
+                errorReporter.setLogLevel(privCtx, null, Level.TRACE);
                 debugOut.println("New TRACE level logging mode: ENABLED");
             }
-            else
-            if (prmMode.equalsIgnoreCase(PRM_DISABLED))
+            else if (prmMode.equalsIgnoreCase(PRM_DISABLED))
             {
-                errorReporter.setLogLevel(privCtx, Level.DEBUG);
+                errorReporter.setLogLevel(privCtx, null, Level.DEBUG);
                 debugOut.println("New TRACE level logging mode: DISABLED");
             }
             else

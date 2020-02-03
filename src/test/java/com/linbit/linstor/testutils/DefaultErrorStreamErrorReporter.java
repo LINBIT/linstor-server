@@ -1,14 +1,14 @@
 package com.linbit.linstor.testutils;
 
-import java.nio.file.Path;
-
-import org.slf4j.event.Level;
-
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+
+import java.nio.file.Path;
+
+import org.slf4j.event.Level;
 
 public class DefaultErrorStreamErrorReporter implements ErrorReporter
 {
@@ -68,8 +68,8 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     public String reportError(Throwable errorInfo, AccessContext accCtx, Peer client, String contextInfo)
     {
         System.err.println("AccCtx: Identity      : " + accCtx.subjectId.name.value + "\n" +
-                           "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
-                           "        Role          :" + accCtx.subjectRole.name.value
+            "        SecurityDomain: " + accCtx.subjectDomain.name.value + "\n" +
+            "        Role          :" + accCtx.subjectRole.name.value
         );
         System.err.println("Peer id: " + client);
         System.err.println(contextInfo);
@@ -119,7 +119,7 @@ public class DefaultErrorStreamErrorReporter implements ErrorReporter
     }
 
     @Override
-    public boolean setLogLevel(AccessContext accCtx, Level levelRef) throws AccessDeniedException
+    public boolean setLogLevel(AccessContext accCtx, Level levelRef, Level linstorLevelRef) throws AccessDeniedException
     {
         // Tracing on/off not implemented, no-op
         return false;
