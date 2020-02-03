@@ -1,4 +1,4 @@
-package com.linbit.linstor.dbdrivers.satellite;
+package com.linbit.linstor.dbdrivers;
 
 import com.linbit.SingleColumnDatabaseDriver;
 import com.linbit.linstor.core.objects.Volume;

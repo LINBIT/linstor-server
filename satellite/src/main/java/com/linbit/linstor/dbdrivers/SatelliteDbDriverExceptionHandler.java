@@ -1,4 +1,4 @@
-package com.linbit.linstor.dbdrivers.satellite;
+package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.security.AccessDeniedException;

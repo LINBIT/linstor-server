@@ -1,4 +1,4 @@
-package com.linbit.linstor.dbdrivers.satellite;
+package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
