@@ -12,7 +12,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -43,7 +43,7 @@ public class VolumeDbDriver
         Volume.InitMaps,
         Pair<Map<Pair<NodeName, ResourceName>, ? extends Resource>,
             Map<Pair<ResourceName, VolumeNumber>, ? extends VolumeDefinition>>>
-    implements VolumeCtrlDatabaseDriver
+    implements VolumeDatabaseDriver
 {
 
     private final PropsContainerFactory propsContainerFactory;

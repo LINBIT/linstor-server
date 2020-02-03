@@ -13,7 +13,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -37,7 +37,7 @@ import java.util.TreeMap;
 @Singleton
 public class StorPoolDefinitionDbDriver
     extends AbsDatabaseDriver<StorPoolDefinition, StorPoolDefinition.InitMaps, Void>
-    implements StorPoolDefinitionCtrlDatabaseDriver
+    implements StorPoolDefinitionDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;

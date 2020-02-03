@@ -15,7 +15,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -43,7 +43,7 @@ import java.util.TreeMap;
 @Singleton
 public class SnapshotDbDriver extends
     AbsDatabaseDriver<Snapshot, Snapshot.InitMaps, Pair<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
-    implements SnapshotCtrlDatabaseDriver
+    implements SnapshotDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;

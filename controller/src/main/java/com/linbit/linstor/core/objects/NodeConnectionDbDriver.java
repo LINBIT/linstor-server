@@ -10,7 +10,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -33,7 +33,7 @@ import java.util.Map;
 @Singleton
 public class NodeConnectionDbDriver
     extends AbsDatabaseDriver<NodeConnection, Void, Map<NodeName, ? extends Node>>
-    implements NodeConnectionCtrlDatabaseDriver
+    implements NodeConnectionDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;

@@ -14,7 +14,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -43,7 +43,7 @@ import java.util.function.Function;
 @Singleton
 public class VolumeDefinitionDbDriver extends
     AbsDatabaseDriver<VolumeDefinition, VolumeDefinition.InitMaps, Map<ResourceName, ResourceDefinition>>
-    implements VolumeDefinitionCtrlDatabaseDriver
+    implements VolumeDefinitionDatabaseDriver
 {
     private final StateFlagsPersistence<VolumeDefinition> flagsDriver;
     private final SingleColumnDatabaseDriver<VolumeDefinition, Long> volumeSizeDriver;

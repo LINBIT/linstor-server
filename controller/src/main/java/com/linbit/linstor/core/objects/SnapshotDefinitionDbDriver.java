@@ -15,7 +15,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -52,7 +52,7 @@ public class SnapshotDefinitionDbDriver
     extends AbsDatabaseDriver<SnapshotDefinition,
         SnapshotDefinition.InitMaps,
         Map<ResourceName, ResourceDefinition>>
-    implements SnapshotDefinitionCtrlDatabaseDriver
+    implements SnapshotDefinitionDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;

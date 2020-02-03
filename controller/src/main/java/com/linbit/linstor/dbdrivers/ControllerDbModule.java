@@ -45,46 +45,29 @@ import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
@@ -114,37 +97,21 @@ public class ControllerDbModule extends AbstractModule
     {
         bind(DatabaseDriver.class).to(DatabaseLoader.class);
 
-        bind(ResourceDefinitionCtrlDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);
         bind(ResourceDefinitionDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);
-        bind(ResourceGroupCtrlDatabaseDriver.class).to(ResourceGroupDbDriver.class);
         bind(ResourceGroupDatabaseDriver.class).to(ResourceGroupDbDriver.class);
-        bind(VolumeGroupCtrlDatabaseDriver.class).to(VolumeGroupDbDriver.class);
         bind(VolumeGroupDatabaseDriver.class).to(VolumeGroupDbDriver.class);
-        bind(VolumeCtrlDatabaseDriver.class).to(VolumeDbDriver.class);
         bind(VolumeDatabaseDriver.class).to(VolumeDbDriver.class);
-        bind(ResourceCtrlDatabaseDriver.class).to(ResourceDbDriver.class);
         bind(ResourceDatabaseDriver.class).to(ResourceDbDriver.class);
-        bind(VolumeDefinitionCtrlDatabaseDriver.class).to(VolumeDefinitionDbDriver.class);
         bind(VolumeDefinitionDatabaseDriver.class).to(VolumeDefinitionDbDriver.class);
-        bind(StorPoolDefinitionCtrlDatabaseDriver.class).to(StorPoolDefinitionDbDriver.class);
         bind(StorPoolDefinitionDatabaseDriver.class).to(StorPoolDefinitionDbDriver.class);
-        bind(StorPoolCtrlDatabaseDriver.class).to(StorPoolDbDriver.class);
         bind(StorPoolDatabaseDriver.class).to(StorPoolDbDriver.class);
-        bind(NetInterfaceCtrlDatabaseDriver.class).to(NetInterfaceDbDriver.class);
         bind(NetInterfaceDatabaseDriver.class).to(NetInterfaceDbDriver.class);
-        bind(NodeConnectionCtrlDatabaseDriver.class).to(NodeConnectionDbDriver.class);
         bind(NodeConnectionDatabaseDriver.class).to(NodeConnectionDbDriver.class);
-        bind(ResourceConnectionCtrlDatabaseDriver.class).to(ResourceConnectionDbDriver.class);
         bind(ResourceConnectionDatabaseDriver.class).to(ResourceConnectionDbDriver.class);
-        bind(VolumeConnectionCtrlDatabaseDriver.class).to(VolumeConnectionDbDriver.class);
         bind(VolumeConnectionDatabaseDriver.class).to(VolumeConnectionDbDriver.class);
-        bind(SnapshotDefinitionCtrlDatabaseDriver.class).to(SnapshotDefinitionDbDriver.class);
         bind(SnapshotDefinitionDatabaseDriver.class).to(SnapshotDefinitionDbDriver.class);
-        bind(SnapshotVolumeDefinitionCtrlDatabaseDriver.class).to(SnapshotVolumeDefinitionDbDriver.class);
         bind(SnapshotVolumeDefinitionDatabaseDriver.class).to(SnapshotVolumeDefinitionDbDriver.class);
-        bind(SnapshotCtrlDatabaseDriver.class).to(SnapshotDbDriver.class);
         bind(SnapshotDatabaseDriver.class).to(SnapshotDbDriver.class);
-        bind(SnapshotVolumeCtrlDatabaseDriver.class).to(SnapshotVolumeDbDriver.class);
         bind(SnapshotVolumeDatabaseDriver.class).to(SnapshotVolumeDbDriver.class);
         bind(KeyValueStoreCtrlDatabaseDriver.class).to(KeyValueStoreDbDriver.class);
         bind(KeyValueStoreDatabaseDriver.class).to(KeyValueStoreDbDriver.class);
@@ -161,7 +128,6 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(PropsConDatabaseDriver.class).to(PropsConSQLDbDriver.class);
 
-                bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
 
                 bind(ResourceLayerIdCtrlDatabaseDriver.class).to(ResourceLayerIdSQLDbDriver.class);
@@ -189,7 +155,6 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(PropsConDatabaseDriver.class).to(PropsConETCDDriver.class);
 
-                bind(NodeCtrlDatabaseDriver.class).to(NodeETCDDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeETCDDriver.class);
 
                 bind(ResourceLayerIdCtrlDatabaseDriver.class).to(ResourceLayerIdETCDDriver.class);
