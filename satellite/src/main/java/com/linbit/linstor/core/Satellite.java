@@ -108,9 +108,11 @@ public final class Satellite
     @Inject
     public Satellite(
         ErrorReporter errorReporterRef,
-        @SystemContext AccessContext sysCtxRef,
+        @SystemContext
+        AccessContext sysCtxRef,
         CoreTimer timerEventSvcRef,
-        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        @Named(CoreModule.RECONFIGURATION_LOCK)
+        ReadWriteLock reconfigurationLockRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         DeviceManager devMgrRef,
         DrbdEventPublisher drbdEventPublisherRef,
@@ -147,12 +149,21 @@ public final class Satellite
 
         try
         {
+            Level tmpLinLevel = null;
+            try
+            {
+                tmpLinLevel = Level.valueOf(stltCfg.getLinstorLogLevel().toUpperCase());
+            }
+            catch (IllegalArgumentException exc)
+            {
+                errorReporter.logError("Invalid Linstor Log level '" + stltCfg.getLinstorLogLevel() + "'");
+            }
             try
             {
                 errorReporter.setLogLevel(
                     sysCtx,
                     Level.valueOf(stltCfg.getLogLevel().toUpperCase()),
-                    Level.valueOf(stltCfg.getLinstorLogLevel().toUpperCase())
+                    tmpLinLevel
                 );
             }
             catch (IllegalArgumentException exc)
@@ -237,7 +248,7 @@ public final class Satellite
             if (keepResPattern != null)
             {
                 errorReporter.logInfo("Removing res files from " + varDrbdPath + ", keeping files matching regex: " +
-                    keepResPattern.pattern()
+                        keepResPattern.pattern()
                 );
                 keepFunc = (path) -> keepResPattern.matcher(path.getFileName().toString()).find();
             }

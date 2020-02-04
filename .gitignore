@@ -41,3 +41,4 @@ test-support/TestProcess
 /server/
 deploy_satellite.sh
 /controller/
+/satellite/

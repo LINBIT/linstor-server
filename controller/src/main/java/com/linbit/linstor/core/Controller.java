@@ -137,9 +137,11 @@ public final class Controller
     @Inject
     public Controller(
         ErrorReporter errorReporterRef,
-        @SystemContext AccessContext sysCtxRef,
+        @SystemContext
+        AccessContext sysCtxRef,
         CoreTimer timerEventSvcRef,
-        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        @Named(CoreModule.RECONFIGURATION_LOCK)
+        ReadWriteLock reconfigurationLockRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         ControllerDatabase controllerDatabaseRef,
         DbInitializer dbConnectionPoolInitializerRef,
@@ -148,7 +150,8 @@ public final class Controller
         DbDataInitializer dbDataInitializerRef,
         DbNumberPoolInitializer dbNumberPoolInitializerRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(LinStor.CONTROLLER_PROPS)
+        Props ctrlConfRef,
         CoreModule.NodesMap nodesMapRef,
         TaskScheduleService taskScheduleServiceRef,
         PingTask pingTaskRef,
@@ -198,12 +201,22 @@ public final class Controller
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
+            Level tmpLinLevel = null;
+            try
+            {
+                tmpLinLevel = Level.valueOf(linstorCfgRef.getLinstorLogLevel().toUpperCase());
+            }
+            catch (IllegalArgumentException exc)
+            {
+                errorReporter.logError("Invalid Linstor Log level '" + linstorCfgRef.getLinstorLogLevel() + "'");
+            }
+
             try
             {
                 errorReporter.setLogLevel(
                     initCtx,
                     Level.valueOf(linstorCfgRef.getLogLevel().toUpperCase()),
-                    Level.valueOf(linstorCfgRef.getLinstorLogLevel().toUpperCase())
+                    tmpLinLevel
                 );
             }
             catch (IllegalArgumentException exc)
