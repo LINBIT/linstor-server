@@ -6,10 +6,11 @@ import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.systemstarter.StartupInitializer;
 
 import javax.inject.Inject;
 
-public class DbSecurityInitializer
+public class DbSecurityInitializer implements StartupInitializer
 {
     private final ErrorReporter errorReporter;
     private final AccessContext initCtx;

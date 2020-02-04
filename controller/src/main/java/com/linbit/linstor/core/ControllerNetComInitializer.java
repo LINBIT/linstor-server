@@ -26,6 +26,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
@@ -52,8 +53,9 @@ import java.util.Map;
 
 import org.slf4j.event.Level;
 
-public final class ControllerNetComInitializer
+public final class ControllerNetComInitializer implements StartupInitializer
 {
+    private static final String PROPSCON_KEY_NETCOM = "netcom";
     private static final String PROPSCON_KEY_NETCOM_BINDADDR = "bindaddress";
     private static final String PROPSCON_KEY_NETCOM_PORT = "port";
     private static final String PROPSCON_KEY_NETCOM_TYPE = "type";
@@ -189,14 +191,12 @@ public final class ControllerNetComInitializer
         return netComSvc != null || sysSvc != null;
     }
 
-    public void initNetComServices(
-        Props netComProps,
-        ErrorReporter errorLogRef,
-        AccessContext initCtx
-    )
+    @Override
+    public void initialize()
         throws SystemServiceStartException
     {
-        errorLogRef.logInfo("Initializing network communications services");
+        errorReporter.logInfo("Initializing network communications services");
+        Props netComProps = ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null);
 
         if (netComProps == null)
         {
@@ -220,13 +220,13 @@ public final class ControllerNetComInitializer
                 initNetComService(
                     namespaceStr,
                     netComProps,
-                    errorLogRef,
-                    initCtx
+                    errorReporter,
+                    sysCtx
                 );
             }
             catch (SystemServiceStartException sysSvcStartExc)
             {
-                errorLogRef.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
+                errorReporter.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
             }
         }
     }

@@ -53,6 +53,10 @@ import com.linbit.linstor.security.DbCoreObjProtInitializer;
 import com.linbit.linstor.security.DbSecurityInitializer;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
+import com.linbit.linstor.systemstarter.GrizzlyInitializer;
+import com.linbit.linstor.systemstarter.StartupInitializer;
+import com.linbit.linstor.systemstarter.NetComServiceException;
+import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.tasks.LogArchiveTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -67,6 +71,7 @@ import javax.inject.Named;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -233,26 +238,30 @@ public final class Controller
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
-            dbInitializer.initialize(!linstorCfgRef.isDbVersionCheckDisabled());
+            GrizzlyInitializer grizzlyInit = new GrizzlyInitializer(
+                injector,
+                errorReporter,
+                ctrlCfg,
+                systemServicesMap
+            );
 
+            ArrayList<StartupInitializer> startOrderlist = new ArrayList<>();
+
+            startOrderlist.add(new ServiceStarter(timerEventSvc));
+            startOrderlist.add(dbInitializer);
+            startOrderlist.add(new ServiceStarter(controllerDb));
             // Object protection loading has a hidden dependency on initializing the security objects
             // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).
             // Hence the security objects should be initialized first.
-            dbSecurityInitializer.initialize();
+            startOrderlist.add(dbSecurityInitializer);
+            startOrderlist.add(dbCoreObjProtInitializer);
+            startOrderlist.add(dbDataInitializer);
+            startOrderlist.add(dbNumberPoolInitializer);
+            startOrderlist.add(new ServiceStarter(taskScheduleService));
+            startOrderlist.add(controllerNetComInitializer);
+            startOrderlist.add(grizzlyInit);
 
-            dbCoreObjProtInitializer.initialize();
-            dbDataInitializer.initialize();
-            dbNumberPoolInitializer.initialize();
-
-            initializeRestServer(injector);
-
-            applicationLifecycleManager.startSystemServices(systemServicesMap.values());
-
-            controllerNetComInitializer.initNetComServices(
-                ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null),
-                errorReporter,
-                initCtx
-            );
+            applicationLifecycleManager.startSystemServices(startOrderlist);
 
             whitelistProps.overrideDrbdProperties();
 
@@ -267,6 +276,10 @@ public final class Controller
                 "Initialization failed.",
                 accessExc
             );
+        }
+        catch (NetComServiceException exc)
+        {
+            errorReporter.reportProblem(Level.ERROR, exc, null, null, null);
         }
         finally
         {
@@ -479,14 +492,14 @@ public final class Controller
             /*
              * Dynamic loading is very slow compared to static loading, each .loadClasses
              * costs around ~400ms on my system. so we do it static now, there are only 4 event classes anyway
-             * 
+             *
              * List<Class<? extends EventSerializer>> eventSerializers = classPathLoader.loadClasses(
              *      ProtobufEventSerializer.class.getPackage().getName(),
              *      packageSuffixes,
              *      EventSerializer.class,
              *      ProtobufEventSerializer.class
              * );
-             * 
+             *
              * List<Class<? extends EventHandler>> eventHandlers = classPathLoader.loadClasses(
              *      ProtobufEventHandler.class.getPackage().getName(),
              *      packageSuffixes,

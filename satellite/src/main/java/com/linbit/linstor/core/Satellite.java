@@ -18,7 +18,6 @@ import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.devmgr.DevMgrModule;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -42,6 +41,10 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SatelliteSecurityModule;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.security.StltCoreObjProtInitializer;
+import com.linbit.linstor.systemstarter.StartupInitializer;
+import com.linbit.linstor.systemstarter.NetComInitializer;
+import com.linbit.linstor.systemstarter.NetComServiceException;
+import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.SatelliteTransactionMgrModule;
@@ -53,6 +56,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -191,6 +195,23 @@ public final class Satellite
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
+            SystemService devMgrService = (SystemService) devMgr;
+            NetComInitializer netComInitializer = new NetComInitializer(satelliteNetComInitializer, initCtx);
+
+            ArrayList<StartupInitializer> startOrderlist = new ArrayList<>();
+
+            startOrderlist.add(new ServiceStarter(timerEventSvc));
+            startOrderlist.add(new ServiceStarter(fsWatchSvc));
+            if (vsnCheck.hasDrbd9())
+            {
+                startOrderlist.add(new ServiceStarter(drbdEventSvc));
+                startOrderlist.add(new ServiceStarter(drbdEventPublisher));
+            }
+            startOrderlist.add(new ServiceStarter(devMgrService));
+            startOrderlist.add(stltCoreObjProtInitializer);
+            errorReporter.logInfo("Initializing main network communications service");
+            startOrderlist.add(netComInitializer);
+
             systemServicesMap.put(fsWatchSvc.getInstanceName(), fsWatchSvc);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
             if (vsnCheck.hasDrbd9())
@@ -198,19 +219,10 @@ public final class Satellite
                 systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
                 systemServicesMap.put(drbdEventPublisher.getInstanceName(), drbdEventPublisher);
             }
-            SystemService devMgrService = (SystemService) devMgr;
             systemServicesMap.put(devMgrService.getInstanceName(), devMgrService);
 
-            stltCoreObjProtInitializer.initialize();
+            applicationLifecycleManager.startSystemServices(startOrderlist);
 
-            applicationLifecycleManager.startSystemServices(systemServicesMap.values());
-
-            errorReporter.logInfo("Initializing main network communications service");
-            if (!satelliteNetComInitializer.initMainNetComService(initCtx))
-            {
-                reconfigurationLock.writeLock().unlock();
-                System.exit(InternalApiConsts.EXIT_CODE_NETCOM_ERROR);
-            }
         }
         catch (AccessDeniedException accessExc)
         {
@@ -220,9 +232,10 @@ public final class Satellite
                 accessExc
             );
         }
-        catch (DatabaseException exc)
+        catch (NetComServiceException exc)
         {
-            throw new ImplementationError(exc);
+            reconfigurationLock.writeLock().unlock();
+            System.exit(InternalApiConsts.EXIT_CODE_NETCOM_ERROR);
         }
         finally
         {
@@ -397,7 +410,7 @@ public final class Satellite
             /*
              * Dynamic loading is very slow compared to static loading, each .loadClasses
              * costs around ~400ms on my system. so we do it static now, there are only 4 event classes anyway
-             * 
+             *
              * List<Class<? extends EventSerializer>> eventSerializers = classPathLoader.loadClasses(
              *      ProtobufEventSerializer.class.getPackage().getName(),
              *      packageSuffixes,

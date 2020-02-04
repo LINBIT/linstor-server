@@ -17,6 +17,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
@@ -30,7 +31,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import com.google.inject.Key;
 
-public class DbDataInitializer
+public class DbDataInitializer implements StartupInitializer
 {
     private final ErrorReporter errorReporter;
     private final AccessContext initCtx;

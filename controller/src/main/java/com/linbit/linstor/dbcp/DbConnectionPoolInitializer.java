@@ -36,7 +36,7 @@ public class DbConnectionPoolInitializer implements DbInitializer
     }
 
     @Override
-    public void initialize(boolean withStartupVer) throws InitializationException
+    public void initialize() throws InitializationException
     {
         errorLog.logInfo("Initializing the database connection pool");
 
@@ -44,7 +44,7 @@ public class DbConnectionPoolInitializer implements DbInitializer
         String dbType = getDbType(connectionUrl);
 
         dbConnPool.initializeDataSource(connectionUrl);
-        dbConnPool.migrate(dbType, withStartupVer);
+        dbConnPool.migrate(dbType, !ctrlCfg.isDbVersionCheckDisabled());
 
         testDbConnection();
     }

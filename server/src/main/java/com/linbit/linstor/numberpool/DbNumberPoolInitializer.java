@@ -11,6 +11,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.systemstarter.StartupInitializer;
 
 import static com.linbit.linstor.numberpool.NumberPoolModule.LAYER_RSC_ID_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.MINOR_NUMBER_POOL;
@@ -21,7 +22,7 @@ import javax.inject.Named;
 
 import java.util.Iterator;
 
-public class DbNumberPoolInitializer
+public class DbNumberPoolInitializer implements StartupInitializer
 {
     private final ErrorReporter errorReporter;
     private final AccessContext initCtx;

@@ -1,9 +1,11 @@
 package com.linbit.linstor.dbcp;
 
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.systemstarter.StartupInitializer;
 
-public interface DbInitializer
+public interface DbInitializer extends StartupInitializer
 {
-    void initialize(boolean withStartupVer)
+    @Override
+    void initialize()
         throws InitializationException;
 }

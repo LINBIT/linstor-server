@@ -10,6 +10,7 @@ import com.linbit.linstor.core.repository.ResourceDefinitionProtectionRepository
 import com.linbit.linstor.core.repository.ResourceGroupProtectionRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionProtectionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
+import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.TransactionMgr;
 import com.linbit.linstor.transaction.TransactionMgrGenerator;
@@ -17,7 +18,7 @@ import com.linbit.linstor.transaction.TransactionMgrUtil;
 
 import javax.inject.Inject;
 
-public class DbCoreObjProtInitializer
+public class DbCoreObjProtInitializer implements StartupInitializer
 {
     private final AccessContext initCtx;
     private final ObjectProtectionFactory objectProtectionFactory;
