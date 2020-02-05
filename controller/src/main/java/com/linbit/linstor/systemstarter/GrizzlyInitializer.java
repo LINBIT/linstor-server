@@ -6,7 +6,6 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.api.rest.v1.config.GrizzlyHttpService;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.systemstarter.StartupInitializer;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -109,5 +108,11 @@ public class GrizzlyInitializer implements StartupInitializer
     public void awaitShutdown(long timeout)
     {
         grizzlyHttpService.awaitShutdown(timeout);
+    }
+
+    @Override
+    public SystemService getSystemService()
+    {
+        return grizzlyHttpService;
     }
 }

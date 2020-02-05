@@ -12,6 +12,7 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.ShutdownProtHolder;
 import com.linbit.linstor.systemstarter.NetComServiceException;
+import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 
 import javax.inject.Inject;
@@ -70,22 +71,21 @@ public class ApplicationLifecycleManager
     {
         this.services = services;
         // Start services
-        for (StartupInitializer sysSvc : services)
+        for (StartupInitializer service : services)
         {
-            if (sysSvc instanceof SystemService)
+            SystemService sysService = service.getSystemService();
+            if (sysService != null)
             {
-
-                SystemService systemService = (SystemService) sysSvc;
                 errorReporter.logInfo(
-                String.format(
-                    "Starting service instance '%s' of type %s",
-                        systemService.getInstanceName().displayValue, systemService.getServiceName().displayValue
+                    String.format(
+                        "Starting service instance '%s' of type %s",
+                        sysService.getInstanceName().displayValue, sysService.getServiceName().displayValue
                 )
             );
             }
             try
             {
-                sysSvc.initialize();
+                service.initialize();
             }
             catch (SystemServiceStartException startExc)
             {
@@ -108,14 +108,13 @@ public class ApplicationLifecycleManager
         for (int i = services.size()-1; i >= 0; i--)
         {
             StartupInitializer service = services.get(i);
-            if (service instanceof SystemService)
+            SystemService sysService = service.getSystemService();
+            if (sysService != null)
             {
-
-                SystemService systemService = (SystemService) service;
                 errorReporter.logInfo(
                     String.format(
                         "Shutting down service instance '%s' of type %s",
-                        systemService.getInstanceName().displayValue, systemService.getServiceName().displayValue
+                        sysService.getInstanceName().displayValue, sysService.getServiceName().displayValue
                     )
                 );
             }
@@ -123,12 +122,12 @@ public class ApplicationLifecycleManager
             {
                 service.shutdown();
 
-                if (service instanceof SystemService)
+                if (sysService != null)
                 {
                     errorReporter.logInfo(
                         String.format(
                             "Waiting for service instance '%s' to complete shutdown",
-                            ((SystemService) service).getInstanceName().displayValue
+                            sysService.getInstanceName().displayValue
                         )
                     );
                 }

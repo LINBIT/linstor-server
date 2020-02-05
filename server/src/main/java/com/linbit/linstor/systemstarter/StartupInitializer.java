@@ -1,5 +1,6 @@
 package com.linbit.linstor.systemstarter;
 
+import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -20,5 +21,10 @@ public interface StartupInitializer
 
     default void awaitShutdown(long timeout) throws InterruptedException
     {
+    }
+
+    default SystemService getSystemService()
+    {
+        return null;
     }
 }

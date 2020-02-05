@@ -31,4 +31,10 @@ public class ServiceStarter implements StartupInitializer
     {
         service.awaitShutdown(timeout);
     }
+
+    @Override
+    public SystemService getSystemService()
+    {
+        return service;
+    }
 }
