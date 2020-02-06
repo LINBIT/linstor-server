@@ -43,6 +43,8 @@ public final class SatelliteNetComInitializer
     private final Map<ServiceName, SystemService> systemServicesMap;
     private final StltConfig stltCfg;
 
+    public TcpConnector netComSvc;
+
     @Inject
     public SatelliteNetComInitializer(
         ErrorReporter errorReporterRef,
@@ -75,8 +77,6 @@ public final class SatelliteNetComInitializer
         {
             InetAddress addr = InetAddress.getByName(bindAddressStr);
             SocketAddress bindAddress = new InetSocketAddress(addr, port);
-
-            TcpConnector netComSvc = null;
 
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_PLAIN))
             {

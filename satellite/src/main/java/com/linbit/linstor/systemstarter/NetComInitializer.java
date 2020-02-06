@@ -25,4 +25,16 @@ public class NetComInitializer implements StartupInitializer
             throw new NetComServiceException("Initialisation of SatelliteNetComServices failed.");
         }
     }
+
+    @Override
+    public void shutdown()
+    {
+        sncInitializer.netComSvc.shutdown();
+    }
+
+    @Override
+    public void awaitShutdown(long timeout) throws InterruptedException
+    {
+        sncInitializer.netComSvc.awaitShutdown(timeout);
+    }
 }

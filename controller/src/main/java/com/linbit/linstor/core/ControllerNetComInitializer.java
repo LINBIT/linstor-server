@@ -85,6 +85,8 @@ public final class ControllerNetComInitializer implements StartupInitializer
     private final TransactionMgrGenerator transactionMgrGenerator;
     private final CtrlConfig ctrlCfg;
 
+    private TcpConnector netComSvc;
+
     @Inject
     public ControllerNetComInitializer(
         ErrorReporter errorReporterRef,
@@ -231,6 +233,18 @@ public final class ControllerNetComInitializer implements StartupInitializer
         }
     }
 
+    @Override
+    public void shutdown()
+    {
+        netComSvc.shutdown();
+    }
+
+    @Override
+    public void awaitShutdown(long timeout) throws InterruptedException
+    {
+        netComSvc.awaitShutdown(timeout);
+    }
+
     private Path resolveConfigFilePath(final String filePath)
     {
         Path path = Paths.get(filePath);
@@ -256,7 +270,6 @@ public final class ControllerNetComInitializer implements StartupInitializer
 
         SocketAddress bindAddress = new InetSocketAddress(bindAddressStr, port);
 
-        TcpConnector netComSvc = null;
         if (type.equals(PROPSCON_NETCOM_TYPE_PLAIN))
         {
             netComSvc = new TcpConnectorService(
