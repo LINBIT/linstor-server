@@ -188,7 +188,7 @@ public class CtrlTomlConfig
 
     static class Etcd
     {
-        private Long ops_per_transaction;
+        private Integer ops_per_transaction;
 
         public void applyTo(CtrlConfig cfg)
         {

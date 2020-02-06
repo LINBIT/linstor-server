@@ -36,7 +36,7 @@ public class CtrlConfig extends LinstorConfig
     /*
      * Database.ETCD
      */
-    private long etcdOperationsPerTransaction = 128;
+    private int etcdOperationsPerTransaction = 128;
 
     /*
      * Logging
@@ -210,7 +210,7 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setEtcdOperationsPerTransaction(Long etcdOperationsPerTransactionRef)
+    public void setEtcdOperationsPerTransaction(Integer etcdOperationsPerTransactionRef)
     {
         if (etcdOperationsPerTransactionRef != null)
         {
@@ -399,7 +399,7 @@ public class CtrlConfig extends LinstorConfig
         return dbDisableVersionCheck;
     }
 
-    public long getEtcdOperationsPerTransaction()
+    public int getEtcdOperationsPerTransaction()
     {
         return etcdOperationsPerTransaction;
     }

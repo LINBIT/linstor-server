@@ -1,37 +1,36 @@
 package com.linbit.linstor.transaction;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-import com.ibm.etcd.api.RequestOp;
-import com.ibm.etcd.api.TxnRequest;
 import com.ibm.etcd.api.TxnResponse;
+import com.ibm.etcd.client.kv.KvClient.FluentTxnOps;
 
 public class ControllerETCDTransactionMgr implements TransactionMgrETCD
 {
     private final ControllerETCDDatabase etcdDb;
     private final TransactionObjectCollection transactionObjectCollection;
-    private final long maxOpsPerTx;
+    private final int maxOpsPerTx;
+    private final ControllerETCDRollbackMgr rollbackMgr;
+
     private EtcdTransaction currentTransaction;
 
-    public ControllerETCDTransactionMgr(ControllerETCDDatabase controllerETCDDatabase, long maxOpsPerTxRef)
+    public ControllerETCDTransactionMgr(ControllerETCDDatabase controllerETCDDatabase, int maxOpsPerTxRef)
     {
         etcdDb = controllerETCDDatabase;
         maxOpsPerTx = maxOpsPerTxRef;
         transactionObjectCollection = new TransactionObjectCollection();
         currentTransaction = createNewEtcdTx();
+
+        rollbackMgr = new ControllerETCDRollbackMgr(controllerETCDDatabase, maxOpsPerTxRef);
     }
 
     private EtcdTransaction createNewEtcdTx()
     {
-        currentTransaction = new EtcdTransaction(etcdDb);
-        return currentTransaction;
+        return new EtcdTransaction(etcdDb);
     }
 
     @Override
@@ -49,96 +48,59 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
     @Override
     public void commit() throws TransactionException
     {
-        removeDuplucateRequests();
+        List<FluentTxnOps<?>> txList = rollbackMgr.prepare(currentTransaction);
 
-        // TODO check for errors
-        TxnResponse txnResponse = EtcdTransaction.requestWithRetry(currentTransaction.etcdTx);
+        boolean allSucceeded = true;
+        TxnResponse txnResponse = null;
+        for (FluentTxnOps<?> tx : txList)
+        {
+            txnResponse = EtcdTransaction.requestWithRetry(tx);
+            if (!txnResponse.getSucceeded())
+            {
+                allSucceeded = false;
+            }
+        }
 
-        if (txnResponse.getSucceeded())
+        if (allSucceeded)
         {
             transactionObjectCollection.commitAll();
 
             clearTransactionObjects();
 
             currentTransaction = createNewEtcdTx();
+
+            rollbackMgr.cleanup();
         }
         else
         {
             currentTransaction = createNewEtcdTx();
-            throw new TransactionException("ETCD commit failed.",
+            throw new TransactionException(
+                "ETCD commit failed.",
                 new LinStorDBRuntimeException(txnResponse.toString())
             );
         }
     }
 
-    private void removeDuplucateRequests()
-    {
-        // ETCD does not allow duplicate updates for the same key
-        TxnRequest request = currentTransaction.etcdTx.asRequest();
-        List<RequestOp> successList = new ArrayList<>(request.getSuccessList());
-        // we do not use .elseDo(), thus we also only have success entries
-
-        HashMap<String, RequestOp> lastReqMap = new HashMap<>();
-        for (RequestOp req : successList)
-        {
-            String key;
-            switch (req.getRequestCase())
-            {
-                case REQUEST_DELETE_RANGE:
-                    key = req.getRequestDeleteRange().getKey().toStringUtf8();
-                    break;
-                case REQUEST_NOT_SET:
-                    key = null;
-                    break;
-                case REQUEST_PUT:
-                    key = req.getRequestPut().getKey().toStringUtf8();
-                    break;
-                case REQUEST_RANGE:
-                    key = req.getRequestRange().getKey().toStringUtf8();
-                    break;
-                case REQUEST_TXN:
-                    key = null;
-                    break;
-                default:
-                    throw new ImplementationError("Unknown ETCD Request case: " + req.getRequestCase());
-            }
-            if (key != null)
-            {
-                lastReqMap.put(key, req);
-            }
-        }
-        EtcdTransaction actualTransaction = new EtcdTransaction(etcdDb);
-        for (RequestOp req : lastReqMap.values())
-        {
-            switch (req.getRequestCase())
-            {
-                case REQUEST_DELETE_RANGE:
-                    actualTransaction.etcdTx.delete(req.getRequestDeleteRangeOrBuilder());
-                    break;
-                case REQUEST_PUT:
-                    actualTransaction.etcdTx.put(req.getRequestPutOrBuilder());
-                    break;
-                case REQUEST_RANGE:
-                    actualTransaction.etcdTx.get(req.getRequestRangeOrBuilder());
-                    break;
-                case REQUEST_NOT_SET:
-                case REQUEST_TXN:
-                    break;
-                default:
-                    throw new ImplementationError("Unknown ETCD Request case: " + req.getRequestCase());
-            }
-        }
-        currentTransaction = actualTransaction;
-    }
-
     @Override
     public void rollback() throws TransactionException
     {
+        rollbackMgr.rollback();
+
         transactionObjectCollection.rollbackAll();
 
         currentTransaction = createNewEtcdTx();
 
         clearTransactionObjects();
+    }
+
+    /**
+     * If the last run of the controller still left some rollback entries - try to
+     * perform the rollback that was aborted for some reason in the previous run.
+     */
+    public void rollbackIfNeeded()
+    {
+        rollbackMgr.loadRollbackEntries();
+        rollbackMgr.rollback();
     }
 
     @Override

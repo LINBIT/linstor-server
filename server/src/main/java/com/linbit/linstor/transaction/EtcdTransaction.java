@@ -7,6 +7,7 @@ import com.linbit.linstor.ControllerETCDDatabase;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -28,12 +29,17 @@ public class EtcdTransaction
     private final KvClient kvClient;
 
     FluentTxnOps<?> etcdTx;
+    final TreeSet<String> changedKeys;
+    final TreeMap<String, Boolean> deletedKeys;
 
     public EtcdTransaction(ControllerETCDDatabase etcdDbRef)
     {
         etcdDb = etcdDbRef;
         kvClient = etcdDb.getKvClient();
         etcdTx = kvClient.batch();
+
+        changedKeys = new TreeSet<>();
+        deletedKeys = new TreeMap<>();
     }
 
     /*
@@ -42,6 +48,7 @@ public class EtcdTransaction
     public void put(String key, String value)
     {
         etcdTx.put(PutRequest.newBuilder().setKey(bs(key)).setValue(bs(value)).build());
+        changedKeys.add(key);
     }
 
     /*
@@ -56,6 +63,7 @@ public class EtcdTransaction
             delBuilder = delBuilder.setRangeEnd(KeyUtils.plusOne(bsKey));
         }
         etcdTx.delete(delBuilder.build());
+        deletedKeys.put(key, recursive);
     }
 
 
@@ -137,5 +145,10 @@ public class EtcdTransaction
             throw new TransactionException("No connection to ETCD server", exc);
         }
         return ret;
+    }
+
+    int getKeyCount()
+    {
+        return changedKeys.size() + deletedKeys.size();
     }
 }

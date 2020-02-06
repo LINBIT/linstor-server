@@ -106,6 +106,7 @@ public class DbEtcd implements ControllerETCDDatabase
     public void migrate(String dbType)
     {
         ControllerETCDTransactionMgr etcdTxMgr = txMgrGenerator.startTransaction();
+        etcdTxMgr.rollbackIfNeeded();
         EtcdTransaction etcdTx = etcdTxMgr.getTransaction();
 
         Map<String, String> dbHistoryVersionResponse = etcdTx.get(DB_HISTORY_VERSION_KEY);
