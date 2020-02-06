@@ -17,6 +17,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -70,8 +71,8 @@ public class ErrorReports
             since,
             to,
             withContent,
-            0,
-            0
+            limit,
+            offset
         );
     }
 
