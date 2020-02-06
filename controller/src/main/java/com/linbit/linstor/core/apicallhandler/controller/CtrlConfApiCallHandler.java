@@ -2,13 +2,9 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.crypto.LengthPadding;
-import com.linbit.crypto.SymmetricKeyCipher;
-import com.linbit.crypto.SymmetricKeyCipher.CipherStrength;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -19,8 +15,9 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
-import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
+import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.objects.Node;
@@ -38,17 +35,12 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionMgr;
-import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -65,41 +57,20 @@ import com.google.inject.Provider;
 @Singleton
 public class CtrlConfApiCallHandler
 {
-    private static final String NAMESPACE_ENCRYPTED = "encrypted";
-    private static final String KEY_CRYPT_HASH = "masterhash";
-    private static final String KEY_CRYPT_KEY = "masterkey";
-    private static final String KEY_PASSPHRASE_SALT = "passphrasesalt";
-    private static final int MASTER_KEY_BYTES = 16; // TODO make configurable
-    private static final int MASTER_KEY_SALT_BYTES = 16; // TODO make configurable
-
-    private static MessageDigest sha512;
 
     private ErrorReporter errorReporter;
     private final SystemConfRepository systemConfRepository;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorNrPool;
     private final Provider<AccessContext> peerAccCtx;
-    private final CtrlSecurityObjects ctrlSecObj;
     private final Provider<Peer> peerProvider;
     private final Provider<TransactionMgr> transMgrProvider;
 
     private final CtrlStltSerializer ctrlStltSrzl;
     private final NodesMap nodesMap;
-    private final AccessContext apiCtx;
     private final WhitelistProps whitelistProps;
-    private final LengthPadding cryptoLenPad;
+    private final EncryptionHelper encHelper;
 
-    static
-    {
-        try
-        {
-            sha512 = MessageDigest.getInstance("SHA-512");
-        }
-        catch (NoSuchAlgorithmException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
 
     @Inject
     public CtrlConfApiCallHandler(
@@ -108,14 +79,12 @@ public class CtrlConfApiCallHandler
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlSecurityObjects ctrlSecObjRef,
         Provider<Peer> peerProviderRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        @ApiContext AccessContext apiCtxRef,
         CoreModule.NodesMap nodesMapRef,
         CtrlStltSerializer ctrlStltSrzlRef,
         WhitelistProps whitelistPropsRef,
-        LengthPadding cryptoLenPadRef
+        EncryptionHelper encHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -123,15 +92,13 @@ public class CtrlConfApiCallHandler
         tcpPortPool = tcpPortPoolRef;
         minorNrPool = minorNrPoolRef;
         peerAccCtx = peerAccCtxRef;
-        ctrlSecObj = ctrlSecObjRef;
         peerProvider = peerProviderRef;
         transMgrProvider = transMgrProviderRef;
 
-        apiCtx = apiCtxRef;
         nodesMap = nodesMapRef;
         ctrlStltSrzl = ctrlStltSrzlRef;
         whitelistProps = whitelistPropsRef;
-        cryptoLenPad = cryptoLenPadRef;
+        encHelper = encHelperRef;
     }
 
     private void updateSatelliteConf() throws AccessDeniedException
@@ -490,13 +457,12 @@ public class CtrlConfApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            Props namespace = systemConfRepository.getCtrlConfForView(peerAccCtx.get())
-                .getNamespace(NAMESPACE_ENCRYPTED).orElse(null);
+            Props namespace = encHelper.getEncryptedNamespace(peerAccCtx.get());
             if (namespace == null || namespace.isEmpty())
             {
                 ResponseUtils.reportStatic(
                     null,
-                    NAMESPACE_ENCRYPTED + " namespace is empty",
+                    EncryptionHelper.NAMESPACE_ENCRYPTED + " namespace is empty",
                     ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                     null, // objRefs
                     apiCallRc,
@@ -507,10 +473,10 @@ public class CtrlConfApiCallHandler
             }
             else
             {
-                byte[] decryptedMasterKey = getDecryptedMasterKey(namespace, passphrase, apiCallRc);
+                byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(namespace, passphrase);
                 if (decryptedMasterKey != null)
                 {
-                    setCryptKey(decryptedMasterKey);
+                    encHelper.setCryptKey(decryptedMasterKey);
 
                     ResponseUtils.reportSuccessStatic(
                         "Passphrase accepted",
@@ -520,7 +486,7 @@ public class CtrlConfApiCallHandler
                         null,
                         errorReporter
                     );
-                } // else: report added in getDecryptedMasterKey method
+                }
             }
         }
         catch (AccessDeniedException exc)
@@ -552,6 +518,35 @@ public class CtrlConfApiCallHandler
                 peerProvider.get()
             );
         }
+        catch (MissingKeyPropertyException exc)
+        {
+            ResponseUtils.addAnswerStatic(
+                "Could not restore crypt passphrase as one of the following properties is not set:\n" +
+                    "'" + EncryptionHelper.KEY_CRYPT_HASH + "', '" + EncryptionHelper.KEY_CRYPT_KEY + "', '" +
+                    EncryptionHelper.KEY_PASSPHRASE_SALT + "'",
+                "This is either an implementation error or a user has manually removed one of the " +
+                    "mentioned protperties.",
+                null, // details
+                null, // correction
+                ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
+                null, // objectRefs
+                null, // errorId
+                apiCallRc
+            );
+        }
+        catch (IncorrectPassphraseException exc)
+        {
+            ResponseUtils.addAnswerStatic(
+                "Could not restore master passphrase as the given old passphrase was incorrect",
+                "Wrong passphrase", // cause
+                null, // details
+                "Enter the correct passphrase", // correction
+                ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
+                null, // objectRefs
+                null, // errorId
+                apiCallRc
+            );
+        }
         catch (LinStorException exc)
         {
             ResponseUtils.reportStatic(
@@ -575,22 +570,22 @@ public class CtrlConfApiCallHandler
         long mask = ApiConsts.MASK_CTRL_CONF;
         try
         {
-            Props namespace = systemConfRepository.getCtrlConfForChange(peerAccCtx.get())
-                .getNamespace(NAMESPACE_ENCRYPTED).orElse(null);
+            Props namespace = encHelper.getEncryptedNamespace(peerAccCtx.get());
 
             if (oldPassphrase == null)
             {
                 mask |= ApiConsts.MASK_CRT;
-                if (namespace == null || namespace.getProp(KEY_CRYPT_KEY) == null)
+                if (namespace == null || namespace.getProp(EncryptionHelper.KEY_CRYPT_KEY) == null)
                 {
                     // no oldPassphrase and empty namespace means that
                     // this is the initial passphrase
-                    byte[] masterKey = SecretGenerator.generateSecret(MASTER_KEY_BYTES);
-                    setPassphraseImpl(
+                    byte[] masterKey = encHelper.generateSecret();
+                    encHelper.setPassphraseImpl(
                         newPassphrase,
-                        masterKey
+                        masterKey,
+                        peerAccCtx.get()
                     );
-                    setCryptKey(masterKey);
+                    encHelper.setCryptKey(masterKey);
                     ResponseUtils.reportSuccessStatic(
                          "Crypt passphrase created.",
                          null, // details
@@ -632,14 +627,13 @@ public class CtrlConfApiCallHandler
                 }
                 else
                 {
-                    byte[] decryptedMasterKey = getDecryptedMasterKey(
+                    byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(
                         namespace,
-                        oldPassphrase,
-                        apiCallRc
+                        oldPassphrase
                     );
                     if (decryptedMasterKey != null)
                     {
-                        setPassphraseImpl(newPassphrase, decryptedMasterKey);
+                        encHelper.setPassphraseImpl(newPassphrase, decryptedMasterKey, peerAccCtx.get());
                         ResponseUtils.reportSuccessStatic(
                             "Crypt passphrase updated",
                             null, // details
@@ -648,7 +642,7 @@ public class CtrlConfApiCallHandler
                             null, // objectRefs
                             errorReporter
                        );
-                    } // else: error was already reported in getDecryptedMasterKey method
+                    }
                 }
             }
 
@@ -708,6 +702,35 @@ public class CtrlConfApiCallHandler
                 peerProvider.get()
             );
         }
+        catch (MissingKeyPropertyException exc)
+        {
+            ResponseUtils.addAnswerStatic(
+                "Could not restore crypt passphrase as one of the following properties is not set:\n" +
+                    "'" + EncryptionHelper.KEY_CRYPT_HASH + "', '" + EncryptionHelper.KEY_CRYPT_KEY + "', '" +
+                    EncryptionHelper.KEY_PASSPHRASE_SALT + "'",
+                "This is either an implementation error or a user has manually removed one of the " +
+                    "mentioned protperties.",
+                null, // details
+                null, // correction
+                ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
+                null, // objectRefs
+                null, // errorId
+                apiCallRc
+            );
+        }
+        catch (IncorrectPassphraseException exc)
+        {
+            ResponseUtils.addAnswerStatic(
+                "Could not restore master passphrase as the given old passphrase was incorrect",
+                "Wrong passphrase", // cause
+                null, // details
+                "Enter the correct passphrase", // correction
+                ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
+                null, // objectRefs
+                null, // errorId
+                apiCallRc
+            );
+        }
         catch (LinStorException exc)
         {
             ResponseUtils.reportStatic(
@@ -722,144 +745,6 @@ public class CtrlConfApiCallHandler
             );
         }
         return apiCallRc;
-    }
-
-    boolean passphraseExists() throws AccessDeniedException
-    {
-        Props namespace = systemConfRepository.getCtrlConfForView(peerAccCtx.get()).getNamespace(NAMESPACE_ENCRYPTED)
-            .orElse(null);
-
-        boolean exists = false;
-        if (namespace != null)
-        {
-            String masterHashStr = namespace.getProp(KEY_CRYPT_HASH);
-            String encryptedMasterKeyStr = namespace.getProp(KEY_CRYPT_KEY);
-            String passphraseSaltStr = namespace.getProp(KEY_PASSPHRASE_SALT);
-
-            exists = masterHashStr != null &&
-                encryptedMasterKeyStr != null &&
-                passphraseSaltStr != null;
-        }
-        return exists;
-    }
-
-    private void setPassphraseImpl(String newPassphrase, byte[] masterKey)
-        throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException, LinStorException
-    {
-        Props ctrlConf = systemConfRepository.getCtrlConfForChange(peerAccCtx.get());
-
-        // Add length padding to the master key, encrypt with the new passphrase and a generated salt,
-        // and store the encrypted key, the salt and a hash of the length padded key in the database
-        byte[] salt = SecretGenerator.generateSecret(MASTER_KEY_SALT_BYTES);
-        SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithPassword(
-            salt,
-            newPassphrase.getBytes(StandardCharsets.UTF_8),
-            CipherStrength.KEY_LENGTH_128 // TODO if MASTER_KEY_BYTES is configurable, this also has to be configurable
-        );
-
-        byte[] encodedData = cryptoLenPad.conceal(masterKey);
-        // Store a hash of the length padded key in the database
-        sha512.reset();
-        byte[] hash = sha512.digest(encodedData);
-        ctrlConf.setProp(KEY_CRYPT_HASH, Base64.encode(hash), NAMESPACE_ENCRYPTED);
-        byte[] encryptedMasterKey = cipher.encrypt(encodedData);
-
-        ctrlConf.setProp(KEY_CRYPT_KEY, Base64.encode(encryptedMasterKey), NAMESPACE_ENCRYPTED);
-        ctrlConf.setProp(KEY_PASSPHRASE_SALT, Base64.encode(salt), NAMESPACE_ENCRYPTED);
-
-        transMgrProvider.get().commit();
-    }
-
-    private byte[] getDecryptedMasterKey(Props namespace, String oldPassphrase, ApiCallRcImpl apiCallRc)
-        throws InvalidKeyException, LinStorException
-    {
-        byte[] ret = null;
-        String masterHashStr = namespace.getProp(KEY_CRYPT_HASH);
-        String encryptedMasterKeyStr = namespace.getProp(KEY_CRYPT_KEY);
-        String passphraseSaltStr = namespace.getProp(KEY_PASSPHRASE_SALT);
-
-        if (
-            masterHashStr == null ||
-            encryptedMasterKeyStr == null ||
-            passphraseSaltStr == null
-        )
-        {
-            ResponseUtils.addAnswerStatic(
-                "Could not restore crypt passphrase as one of the following properties is not set:\n" +
-                    "'" + KEY_CRYPT_HASH + "', '" + KEY_CRYPT_KEY + "', '" + KEY_PASSPHRASE_SALT + "'",
-                "This is either an implementation error or a user has manually removed one of the " +
-                    "mentioned protperties.",
-                null, // details
-                null, // correction
-                ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
-                null, // objectRefs
-                null, // errorId
-                apiCallRc
-            );
-        }
-        else
-        {
-            byte[] passphraseSalt = Base64.decode(passphraseSaltStr);
-            byte[] encryptedMasterKey = Base64.decode(encryptedMasterKeyStr);
-
-            SymmetricKeyCipher ciper =  SymmetricKeyCipher.getInstanceWithPassword(
-                passphraseSalt,
-                oldPassphrase.getBytes(StandardCharsets.UTF_8),
-                CipherStrength.KEY_LENGTH_128
-            );
-            // TODO: if MASTER_KEY_BYTES is configurable, the CipherStrength also has to be configurable
-
-            byte[] decryptedData = ciper.decrypt(encryptedMasterKey);
-
-            sha512.reset();
-            byte[] hashedMasterKey = sha512.digest(decryptedData);
-
-            if (Arrays.equals(hashedMasterKey, Base64.decode(masterHashStr)))
-            {
-                ret = cryptoLenPad.retrieve(decryptedData);
-            }
-            else
-            {
-                ResponseUtils.addAnswerStatic(
-                    "Could not restore master passphrase as the given old passphrase was incorrect",
-                    "Wrong passphrase", // cause
-                    null, // details
-                    "Enter the correct passphrase", // correction
-                    ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
-                    null, // objectRefs
-                    null, // errorId
-                    apiCallRc
-                );
-            }
-        }
-        return ret;
-    }
-
-    private void setCryptKey(byte[] cryptKey)
-    {
-        ctrlSecObj.setCryptKey(cryptKey);
-
-        for (Node node : nodesMap.values())
-        {
-            Peer peer;
-            try
-            {
-                peer = node.getPeer(apiCtx);
-                peer.sendMessage(
-                    ctrlStltSrzl.onewayBuilder(InternalApiConsts.API_CRYPT_KEY)
-                        .cryptKey(
-                            cryptKey,
-                            peer.getFullSyncId(),
-                            peer.getNextSerializerId()
-                        )
-                        .build()
-                );
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-        }
     }
 
     private void setTcpPort(

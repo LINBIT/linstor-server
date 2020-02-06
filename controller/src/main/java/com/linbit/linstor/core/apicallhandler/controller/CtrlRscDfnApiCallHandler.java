@@ -20,6 +20,7 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMapExtName;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -102,6 +103,7 @@ public class CtrlRscDfnApiCallHandler
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscLayerDataFactory ctrlLayerStackHelper;
+    private final EncryptionHelper encHelper;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -123,7 +125,8 @@ public class CtrlRscDfnApiCallHandler
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
-        CtrlRscLayerDataFactory ctrlLayerStackHelperRef
+        CtrlRscLayerDataFactory ctrlLayerStackHelperRef,
+        EncryptionHelper encHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -145,6 +148,7 @@ public class CtrlRscDfnApiCallHandler
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
+        encHelper = encHelperRef;
     }
 
     public ApiCallRc createResourceDefinition(
@@ -261,7 +265,7 @@ public class CtrlRscDfnApiCallHandler
         byte[] masterKey = secObjs.getCryptKey();
         if ((masterKey == null || masterKey.length == 0))
         {
-            boolean passphraseExists = ctrlConfApiCallHandler.passphraseExists();
+            boolean passphraseExists = encHelper.passphraseExists(peerAccCtx.get());
 
             String warnMsg = "The master key has not yet been set. Creating volume definitions within \n" +
                 "an encrypted resource definition will fail!";

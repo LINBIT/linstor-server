@@ -65,6 +65,11 @@ public class CtrlConfig extends LinstorConfig
     private String ldapSearchBase;
     private String ldapSearchFilter;
 
+    /*
+     * Encryption
+     */
+    private String masterPassphrase;
+
     public CtrlConfig(String[] args)
     {
         super(args);
@@ -327,6 +332,14 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
+    public void setMasterPassphrase(String passphraseRef)
+    {
+        if (passphraseRef != null)
+        {
+            masterPassphrase = passphraseRef;
+        }
+    }
+
     public String getDbUser()
     {
         return dbUser;
@@ -450,5 +463,10 @@ public class CtrlConfig extends LinstorConfig
     public String getLdapSearchFilter()
     {
         return ldapSearchFilter;
+    }
+
+    public String getMasterPassphrase()
+    {
+        return masterPassphrase;
     }
 }

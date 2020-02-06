@@ -172,11 +172,22 @@ public class CtrlTomlConfig
         }
     }
 
+    static class Encrypt
+    {
+        private String passphrase;
+
+        public void applyTo(CtrlConfig cfg)
+        {
+            cfg.setMasterPassphrase(passphrase);
+        }
+    }
+
     private HTTP http = new HTTP();
     private HTTPS https = new HTTPS();
     private LDAP ldap = new LDAP();
     private DB db = new DB();
     private Logging logging = new Logging();
+    private Encrypt encrypt = new Encrypt();
 
     /**
      * Getter needed by {@link LinstorConfigTool}
@@ -193,5 +204,6 @@ public class CtrlTomlConfig
         ldap.applyTo(cfg);
         db.applyTo(cfg);
         logging.applyTo(cfg);
+        encrypt.applyTo(cfg);
     }
 }

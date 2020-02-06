@@ -18,12 +18,10 @@ import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
-import com.linbit.linstor.api.rest.v1.config.GrizzlyHttpService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlConfigModule;
-import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
@@ -53,10 +51,12 @@ import com.linbit.linstor.security.DbCoreObjProtInitializer;
 import com.linbit.linstor.security.DbSecurityInitializer;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
+import com.linbit.linstor.systemstarter.ConnectNodesInitializer;
 import com.linbit.linstor.systemstarter.GrizzlyInitializer;
-import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.systemstarter.NetComServiceException;
+import com.linbit.linstor.systemstarter.PassphraseInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
+import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.tasks.LogArchiveTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -69,11 +69,9 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -139,6 +137,8 @@ public final class Controller
 
     private final CtrlConfig ctrlCfg;
 
+    private final PassphraseInitializer passphraseInitializer;
+
     @Inject
     public Controller(
         ErrorReporter errorReporterRef,
@@ -166,7 +166,8 @@ public final class Controller
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
         WhitelistProps whitelistPropsRef,
-        CtrlConfig ctrlCfgRef
+        CtrlConfig ctrlCfgRef,
+        PassphraseInitializer passphraseInitializerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -192,6 +193,7 @@ public final class Controller
         controllerNetComInitializer = controllerNetComInitializerRef;
         whitelistProps = whitelistPropsRef;
         ctrlCfg = ctrlCfgRef;
+        passphraseInitializer = passphraseInitializerRef;
     }
 
     public void start(Injector injector, CtrlConfig linstorCfgRef)
@@ -238,6 +240,12 @@ public final class Controller
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
 
+            ConnectNodesInitializer connectNodesInitializer = new ConnectNodesInitializer(
+                errorReporter,
+                nodesMap,
+                reconnectorTask,
+                initCtx
+            );
             GrizzlyInitializer grizzlyInit = new GrizzlyInitializer(
                 injector,
                 errorReporter,
@@ -259,13 +267,16 @@ public final class Controller
             startOrderlist.add(dbNumberPoolInitializer);
             startOrderlist.add(new ServiceStarter(taskScheduleService));
             startOrderlist.add(controllerNetComInitializer);
+            startOrderlist.add(connectNodesInitializer);
+            if (ctrlCfg.getMasterPassphrase() != null)
+            {
+                startOrderlist.add(passphraseInitializer);
+            }
             startOrderlist.add(grizzlyInit);
 
             applicationLifecycleManager.startSystemServices(startOrderlist);
 
             whitelistProps.overrideDrbdProperties();
-
-            connectToKnownNodes(errorReporter, initCtx);
 
             errorReporter.logInfo("Controller initialized");
         }
@@ -284,83 +295,6 @@ public final class Controller
         finally
         {
             reconfigurationLock.writeLock().unlock();
-        }
-    }
-
-    private String restBindAddress(final String bindAddr, final int bindPort)
-    {
-        String restBindAddress;
-
-        // Detect IPv6 addresses since they require a different bind address format
-        if (bindAddr.indexOf(':') != -1)
-        {
-            restBindAddress = String.format("[%s]:%d", bindAddr, bindPort);
-        }
-        else
-        {
-            restBindAddress = String.format("%s:%d", bindAddr, bindPort);
-        }
-
-        return restBindAddress;
-    }
-
-    private void initializeRestServer(Injector injector)
-    {
-        boolean restEnabled = ctrlCfg.isRestEnabled();
-
-        try
-        {
-            Path keyStorePath = null;
-            String keyStorePassword;
-            Path trustStorePath = null;
-            String trustStorePassword;
-            final String keyStorePathProp = ctrlCfg.getRestSecureKeystore();
-            final String trustStorePathProp = ctrlCfg.getRestSecureTruststore();
-            if (keyStorePathProp != null && ctrlCfg.isRestSecureEnabled())
-            {
-                keyStorePath = Paths.get(keyStorePathProp);
-                if (!keyStorePath.isAbsolute())
-                {
-                    keyStorePath = ctrlCfg.getConfigPath().resolve(keyStorePath);
-                }
-            }
-            if (trustStorePathProp != null)
-            {
-                trustStorePath = Paths.get(trustStorePathProp);
-                if (!trustStorePath.isAbsolute())
-                {
-                    trustStorePath = ctrlCfg.getConfigPath().resolve(trustStorePath);
-                }
-            }
-
-            keyStorePassword = ctrlCfg.getRestSecureKeystorePassword();
-            trustStorePassword = ctrlCfg.getRestSecureTruststorePassword();
-
-            if (restEnabled)
-            {
-                final GrizzlyHttpService grizzlyHttpService = new GrizzlyHttpService(
-                    injector,
-                    errorReporter,
-                    systemServicesMap,
-                    ctrlCfg.getRestBindAddressWithPort(),
-                    ctrlCfg.getRestSecureBindAddressWithPort(),
-                    keyStorePath,
-                    keyStorePassword,
-                    trustStorePath,
-                    trustStorePassword,
-                    ctrlCfg.getLogRestAccessLogPath(),
-                    ctrlCfg.getLogRestAccessMode()
-                );
-                systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
-            }
-        }
-        catch (Exception exc)
-        {
-            String reportId = errorReporter.reportError(Level.ERROR, exc);
-            errorReporter.logError(
-                "Initialization of the REST service failed, see error report %s for details",
-                reportId
-            );
         }
     }
 
@@ -402,21 +336,6 @@ public final class Controller
                 "Suspected removal of privileges from the system context.",
                 accExc
             );
-        }
-    }
-
-    private void connectToKnownNodes(final ErrorReporter errorLogRef, final AccessContext initCtx)
-    {
-        if (!nodesMap.isEmpty())
-        {
-            errorLogRef.logInfo("Reconnecting to previously known nodes");
-            Collection<Node> nodes = nodesMap.values();
-            reconnectorTask.startReconnecting(nodes, initCtx);
-            errorLogRef.logInfo("Reconnect requests sent");
-        }
-        else
-        {
-            errorLogRef.logInfo("No known nodes.");
         }
     }
 
