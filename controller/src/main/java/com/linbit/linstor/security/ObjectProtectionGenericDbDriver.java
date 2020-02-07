@@ -143,7 +143,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
     public void deleteOp(String objectPath) throws DatabaseException
     {
         errorReporter.logTrace("Deleting ObjectProtection %s", getObjProtId(objectPath));
-        try (PreparedStatement stmt = getConnection().prepareStatement(OP_DELETE))
+        try (PreparedStatement stmt = getConnection().prepareStatement(ACL_DELETE_ALL))
         {
             stmt.setString(1, objectPath);
 
@@ -153,7 +153,7 @@ public class ObjectProtectionGenericDbDriver implements ObjectProtectionDatabase
         {
             throw new DatabaseException(sqlExc);
         }
-        try (PreparedStatement stmt = getConnection().prepareStatement(ACL_DELETE_ALL))
+        try (PreparedStatement stmt = getConnection().prepareStatement(OP_DELETE))
         {
             stmt.setString(1, objectPath);
 
