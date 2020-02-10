@@ -166,7 +166,7 @@ public class CtrlTomlConfig
         public void applyTo(CtrlConfig cfg)
         {
             cfg.setLogLevel(level);
-            cfg.setLinstorLogLevel(linstor_level);
+            cfg.setLogLevelLinstor(linstor_level);
             cfg.setLogRestAccessLogPath(rest_access_log_path);
             cfg.setLogRestAccessMode(rest_access_log_mode);
         }

@@ -10,9 +10,9 @@ public class LinstorEnvParser
 
     public static void applyTo(LinstorConfig cfg)
     {
-        cfg.setConfigDir(getEnv(LS_CONFIG_DIRECTORY, Function.identity(), ""));
-        cfg.setLogDirectory(getEnv(LS_LOG_DIRECTORY, Function.identity(), "."));
-        cfg.setLogLevel(getEnv(LS_LOG_LEVEL, Function.identity()));
+        cfg.setConfigDir(getEnv(LS_CONFIG_DIRECTORY));
+        cfg.setLogDirectory(getEnv(LS_LOG_DIRECTORY));
+        cfg.setLogLevel(getEnv(LS_LOG_LEVEL));
     }
 
     protected static String getEnv(String env)

@@ -39,7 +39,7 @@ public class StltTomlConfig
         public void applyTo(StltConfig cfg)
         {
             cfg.setLogLevel(level);
-            cfg.setLinstorLogLevel(linstor_level);
+            cfg.setLogLevelLinstor(linstor_level);
         }
     }
 

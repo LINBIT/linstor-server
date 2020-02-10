@@ -211,11 +211,11 @@ public final class Controller
             Level tmpLinLevel = null;
             try
             {
-                tmpLinLevel = Level.valueOf(linstorCfgRef.getLinstorLogLevel().toUpperCase());
+                tmpLinLevel = Level.valueOf(linstorCfgRef.getLogLevelLinstor().toUpperCase());
             }
             catch (IllegalArgumentException exc)
             {
-                errorReporter.logError("Invalid Linstor Log level '" + linstorCfgRef.getLinstorLogLevel() + "'");
+                errorReporter.logError("Invalid Linstor Log level '" + linstorCfgRef.getLogLevelLinstor() + "'");
             }
 
             try
@@ -380,7 +380,7 @@ public final class Controller
             cfg.isLogPrintStackTrace(),
             LinStor.getHostName(),
             cfg.getLogLevel(),
-            cfg.getLinstorLogLevel(),
+            cfg.getLogLevelLinstor(),
             () -> null
         );
 

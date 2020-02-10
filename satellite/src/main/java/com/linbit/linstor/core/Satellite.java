@@ -156,11 +156,11 @@ public final class Satellite
             Level tmpLinLevel = null;
             try
             {
-                tmpLinLevel = Level.valueOf(stltCfg.getLinstorLogLevel().toUpperCase());
+                tmpLinLevel = Level.valueOf(stltCfg.getLogLevelLinstor().toUpperCase());
             }
             catch (IllegalArgumentException exc)
             {
-                errorReporter.logError("Invalid Linstor Log level '" + stltCfg.getLinstorLogLevel() + "'");
+                errorReporter.logError("Invalid Linstor Log level '" + stltCfg.getLogLevelLinstor() + "'");
             }
             try
             {
@@ -386,7 +386,7 @@ public final class Satellite
             cfg.isLogPrintStackTrace(),
             cfg.getStltOverrideNodeName() != null ? cfg.getStltOverrideNodeName() : LinStor.getHostName(),
             cfg.getLogLevel(),
-            cfg.getLinstorLogLevel(),
+            cfg.getLogLevelLinstor(),
             () -> null
         );
 

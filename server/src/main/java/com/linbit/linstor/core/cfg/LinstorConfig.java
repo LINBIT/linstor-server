@@ -13,8 +13,8 @@ public abstract class LinstorConfig
         APPEND, ROTATE_HOURLY, ROTATE_DAILY, NO_LOG;
     }
 
-    protected String configDir = "./";
-    protected Path configPath = Paths.get(".");
+    protected String configDir;
+    protected Path configPath;
 
     /*
      * Debug
@@ -24,10 +24,10 @@ public abstract class LinstorConfig
     /*
      * Logging
      */
-    protected boolean logPrintStackTrace = false;
-    protected String logDirectory = "./logs";
-    protected String logLevel = "INFO";
-    protected String linstorLogLevel = "INFO";
+    protected boolean logPrintStackTrace;
+    protected String logDirectory;
+    protected String logLevel;
+    protected String logLevelLinstor;
 
     /**
      * Order or priority of config sources (top has highest priority)
@@ -62,7 +62,14 @@ public abstract class LinstorConfig
         }
     }
 
-    protected abstract void applyDefaultValues();
+    protected void applyDefaultValues()
+    {
+        setConfigDir("./");
+        setDebugConsoleEnable(false);
+        setLogDirectory("./logs");
+        setLogLevel("INFO");
+        setLogLevelLinstor("INFO");
+    }
 
     protected abstract void applyEnvVars();
 
@@ -111,11 +118,11 @@ public abstract class LinstorConfig
         }
     }
 
-    public void setLinstorLogLevel(String linstorLogLevelRef)
+    public void setLogLevelLinstor(String linstorLogLevelRef)
     {
         if (linstorLogLevelRef != null)
         {
-            linstorLogLevel = linstorLogLevelRef;
+            logLevelLinstor = linstorLogLevelRef;
         }
     }
 
@@ -149,9 +156,9 @@ public abstract class LinstorConfig
         return logLevel;
     }
 
-    public String getLinstorLogLevel()
+    public String getLogLevelLinstor()
     {
-        return linstorLogLevel;
+        return logLevelLinstor;
     }
 
 }

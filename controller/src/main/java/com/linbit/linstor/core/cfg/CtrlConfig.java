@@ -79,6 +79,7 @@ public class CtrlConfig extends LinstorConfig
     @Override
     protected void applyDefaultValues()
     {
+        super.applyDefaultValues();
         setDbConnectionUrl("jdbc:h2:/var/lib/linstor/linstordb");
         setDbDisableVersionCheck(false);
 
