@@ -30,6 +30,11 @@ class StltCmdLineArgsParser
         description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
     private String logLevel;
 
+    @CommandLine.Option(names = {"--log-level-linstor"},
+        description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
+    private String logLevelLinstor;
+
+
     @CommandLine.Option(names = {"-v", "--version"}, versionHelp = true, description = "Show the version number")
     private Boolean versionInfoRequested;
 
@@ -113,6 +118,7 @@ class StltCmdLineArgsParser
         stltCfg.setStltOverrideNodeName(linArgParser.nodeName);
 
         stltCfg.setLogLevel(linArgParser.logLevel);
+        stltCfg.setLogLevelLinstor(linArgParser.logLevelLinstor);
     }
 
     private StltCmdLineArgsParser()

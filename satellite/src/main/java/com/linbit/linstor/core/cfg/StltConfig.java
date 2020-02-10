@@ -36,6 +36,7 @@ public class StltConfig extends LinstorConfig
     @Override
     protected void applyDefaultValues()
     {
+        super.applyDefaultValues();
         setNetBindAddress("::0");
         setNetPort(3366);
         setNetType("plain");

@@ -154,25 +154,34 @@ public final class Satellite
         try
         {
             Level tmpLinLevel = null;
+            String logLevelLinstorStr = stltCfg.getLogLevelLinstor();
+            String logLevelStr = stltCfg.getLogLevel();
             try
             {
-                tmpLinLevel = Level.valueOf(stltCfg.getLogLevelLinstor().toUpperCase());
+                if (logLevelLinstorStr != null)
+                {
+                    tmpLinLevel = Level.valueOf(logLevelLinstorStr.toUpperCase());
+                }
+                else
+                {
+                    tmpLinLevel = Level.valueOf(logLevelStr.toUpperCase());
+                }
             }
             catch (IllegalArgumentException exc)
             {
-                errorReporter.logError("Invalid Linstor Log level '" + stltCfg.getLogLevelLinstor() + "'");
+                errorReporter.logError("Invalid Linstor Log level '" + logLevelLinstorStr + "'");
             }
             try
             {
                 errorReporter.setLogLevel(
                     sysCtx,
-                    Level.valueOf(stltCfg.getLogLevel().toUpperCase()),
+                    Level.valueOf(logLevelStr.toUpperCase()),
                     tmpLinLevel
                 );
             }
             catch (IllegalArgumentException exc)
             {
-                errorReporter.logError("Invalid Log level '" + stltCfg.getLogLevel() + "'");
+                errorReporter.logError("Invalid Log level '" + logLevelStr + "'");
             }
 
             try

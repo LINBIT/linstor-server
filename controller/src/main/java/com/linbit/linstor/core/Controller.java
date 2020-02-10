@@ -209,26 +209,35 @@ public final class Controller
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
 
             Level tmpLinLevel = null;
+            String logLevelLinstorStr = linstorCfgRef.getLogLevelLinstor();
+            String logLevelStr = linstorCfgRef.getLogLevel();
             try
             {
-                tmpLinLevel = Level.valueOf(linstorCfgRef.getLogLevelLinstor().toUpperCase());
+                if (logLevelLinstorStr != null)
+                {
+                    tmpLinLevel = Level.valueOf(logLevelLinstorStr.toUpperCase());
+                }
+                else
+                {
+                    tmpLinLevel = Level.valueOf(logLevelStr.toUpperCase());
+                }
             }
             catch (IllegalArgumentException exc)
             {
-                errorReporter.logError("Invalid Linstor Log level '" + linstorCfgRef.getLogLevelLinstor() + "'");
+                errorReporter.logError("Invalid Linstor Log level '" + logLevelLinstorStr + "'");
             }
 
             try
             {
                 errorReporter.setLogLevel(
                     initCtx,
-                    Level.valueOf(linstorCfgRef.getLogLevel().toUpperCase()),
+                    Level.valueOf(logLevelStr.toUpperCase()),
                     tmpLinLevel
                 );
             }
             catch (IllegalArgumentException exc)
             {
-                errorReporter.logError("Invalid Log level '" + linstorCfgRef.getLogLevel() + "'");
+                errorReporter.logError("Invalid Log level '" + logLevelStr + "'");
             }
 
             taskScheduleService.addTask(pingTask);

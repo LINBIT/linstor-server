@@ -35,6 +35,10 @@ class CtrlCmdLineArgsParser
         description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
     private String logLevel;
 
+    @CommandLine.Option(names = {"--log-level-linstor"},
+        description = "The desired log level. Options: ERROR, WARN, INFO, DEBUG, TRACE")
+    private String logLevelLinstor;
+
     @CommandLine.Option(
         names = {"--rest-bind"},
         description = "Bind address for the REST HTTP server. e.g. 0.0.0.0:3370"
@@ -128,6 +132,7 @@ class CtrlCmdLineArgsParser
         linstorCfgRef.setDebugConsoleEnable(linArgParser.debugConsole);
 
         linstorCfgRef.setLogLevel(linArgParser.logLevel);
+        linstorCfgRef.setLogLevelLinstor(linArgParser.logLevelLinstor);
 
         linstorCfgRef.setDbDisableVersionCheck(linArgParser.disableDbVersionCheck);
     }

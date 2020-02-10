@@ -85,9 +85,15 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         {
             try
             {
+
+                String linstorLogLevel = linstorLogLevelRef;
+                if (linstorLogLevel == null)
+                {
+                    linstorLogLevel = logLevelRef;
+                }
                 setLogLevelImpl(
                     Level.valueOf(logLevelRef.toUpperCase()),
-                    Level.valueOf(linstorLogLevelRef.toUpperCase())
+                    Level.valueOf(linstorLogLevel.toUpperCase())
                 );
             }
             catch (IllegalArgumentException exc)

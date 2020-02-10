@@ -68,7 +68,7 @@ public abstract class LinstorConfig
         setDebugConsoleEnable(false);
         setLogDirectory("./logs");
         setLogLevel("INFO");
-        setLogLevelLinstor("INFO");
+        // logLevelLinstor stays null. if null, it will inherit value from logLevel
     }
 
     protected abstract void applyEnvVars();
