@@ -51,9 +51,18 @@ LABEL name="linstor-controller" \
 
 COPY COPYING /licenses/gpl-3.0.txt
 
+ENV PSK=https://packages.linbit.com/package-signing-pubkey.asc
+ENV REPO=/etc/yum.repos.d/linbit.repo
+RUN curl "$PSK" >/tmp/psk.asc && rpm --import /tmp/psk.asc && rm /tmp/psk.asc && \
+  printf '[linstor-client]\nname=Linstor Client - $basearch \
+    \nbaseurl=http://packages.linbit.com/piraeus/rhel7/drbd-9.0/$basearch \
+    \nenabled=1\ngpgcheck=1\ngpgkey=%s\n' "$PSK" | tee "$REPO"
+
 COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
-  yum install -y which && yum install -y /tmp/linstor-common*.rpm /tmp/linstor-controller*.rpm && yum clean all -y
+  yum install -y which && \
+  yum install -y linstor-client /tmp/linstor-common*.rpm /tmp/linstor-controller*.rpm && \
+  rm /tmp/*.rpm && yum clean all -y
 
 RUN groupadd linstor
 RUN useradd -m -g linstor linstor
