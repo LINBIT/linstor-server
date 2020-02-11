@@ -44,6 +44,73 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         providerList = deviceProviderKindsRef == null ? Collections.emptyList() : deviceProviderKindsRef;
     }
 
+    public static AutoSelectFilterPojo merge(
+        AutoSelectFilterApi... cfgArr
+    )
+    {
+        Integer placeCount = null;
+        List<String> replicasOnDifferentList = null;
+        List<String> replicasOnSameList = null;
+        String notPlaceWithRscRegex = null;
+        List<String> notPlaceWithRscList = null;
+        String storPoolNameStr = null;
+        List<DeviceLayerKind> layerStack = null;
+        List<DeviceProviderKind> providerList = null;
+        Boolean disklessOnRemaining = null;
+
+        for (AutoSelectFilterApi cfgApi : cfgArr)
+        {
+            if (placeCount == null)
+            {
+                placeCount = cfgApi.getReplicaCount();
+            }
+            if (replicasOnDifferentList == null)
+            {
+                replicasOnDifferentList = cfgApi.getReplicasOnDifferentList();
+            }
+            if (replicasOnSameList == null)
+            {
+                replicasOnSameList = cfgApi.getReplicasOnSameList();
+            }
+            if (notPlaceWithRscList == null)
+            {
+                notPlaceWithRscList = cfgApi.getDoNotPlaceWithRscList();
+            }
+            if (notPlaceWithRscRegex == null)
+            {
+                notPlaceWithRscRegex = cfgApi.getDoNotPlaceWithRscRegex();
+            }
+            if (storPoolNameStr == null)
+            {
+                storPoolNameStr = cfgApi.getStorPoolNameStr();
+            }
+            if (layerStack == null)
+            {
+                layerStack = cfgApi.getLayerStackList();
+            }
+            if (providerList == null)
+            {
+                providerList = cfgApi.getProviderList();
+            }
+            if (disklessOnRemaining == null)
+            {
+                disklessOnRemaining = cfgApi.getDisklessOnRemaining();
+            }
+        }
+
+        return new AutoSelectFilterPojo(
+            placeCount,
+            storPoolNameStr,
+            notPlaceWithRscList,
+            notPlaceWithRscRegex,
+            replicasOnSameList,
+            replicasOnDifferentList,
+            layerStack,
+            providerList,
+            disklessOnRemaining
+        );
+    }
+
     @Override
     public Integer getReplicaCount()
     {

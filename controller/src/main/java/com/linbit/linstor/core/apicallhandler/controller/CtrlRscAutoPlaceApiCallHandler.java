@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -21,6 +22,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -31,6 +33,7 @@ import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -39,6 +42,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -106,9 +110,7 @@ public class CtrlRscAutoPlaceApiCallHandler
 
     public Flux<ApiCallRc> autoPlace(
         String rscNameStr,
-        AutoSelectFilterApi selectFilter,
-        boolean disklessOnRemainingNodes,
-        List<String> layerStackStrList
+        AutoSelectFilterApi selectFilter
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -132,9 +134,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 () -> autoPlaceInTransaction(
                     rscNameStr,
                     selectFilter,
-                    disklessOnRemainingNodes,
-                    context,
-                    layerStackStrList
+                    context
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -142,13 +142,19 @@ public class CtrlRscAutoPlaceApiCallHandler
 
     Flux<ApiCallRc> autoPlaceInTransaction(
         String rscNameStr,
-        AutoSelectFilterApi selectFilter,
-        boolean disklessOnRemainingNodes,
-        ResponseContext context,
-        List<String> layerStackStrList
+        AutoSelectFilterApi selectFilterRef,
+        ResponseContext context
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
+
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+        AutoSelectorConfig rscGrpSelectConfig = rscDfn.getResourceGroup().getAutoPlaceConfig();
+
+        AutoSelectFilterPojo mergedSelectFilter = AutoSelectFilterPojo.merge(
+            selectFilterRef,
+            rscGrpSelectConfig.getApiData()
+        );
 
         /*
          * If the resource is already deployed on X nodes, and the placement count now is Y:
@@ -159,10 +165,13 @@ public class CtrlRscAutoPlaceApiCallHandler
          * case Y < X
          * error.
          */
-        List<Resource> alreadyPlaced =
-            privilegedStreamResources(ctrlApiDataLoader.loadRscDfn(rscNameStr, true)).collect(Collectors.toList());
+        List<Resource> alreadyPlaced = privilegedStreamResources(
+            ctrlApiDataLoader.loadRscDfn(rscNameStr, true)
+        ).collect(Collectors.toList());
 
-        int additionalPlaceCount = Optional.ofNullable(selectFilter.getReplicaCount()).orElse(0) - alreadyPlaced.size();
+        int additionalPlaceCount = Optional.ofNullable(
+            mergedSelectFilter.getReplicaCount()
+        ).orElse(0) - alreadyPlaced.size();
 
         if (additionalPlaceCount < 0)
         {
@@ -170,9 +179,9 @@ public class CtrlRscAutoPlaceApiCallHandler
         }
 
         String storPoolName;
-        if (alreadyPlaced.isEmpty() || selectFilter.getStorPoolNameStr() != null)
+        if (alreadyPlaced.isEmpty() || mergedSelectFilter.getStorPoolNameStr() != null)
         {
-            storPoolName = selectFilter.getStorPoolNameStr();
+            storPoolName = mergedSelectFilter.getStorPoolNameStr();
         }
         else
         {
@@ -189,7 +198,7 @@ public class CtrlRscAutoPlaceApiCallHandler
 
         Flux<ApiCallRc> deploymentResponses;
         Flux<ApiCallRc> autoFlux;
-        if (additionalPlaceCount == 0 && !disklessOnRemainingNodes)
+        if (additionalPlaceCount == 0 && !mergedSelectFilter.getDisklessOnRemaining())
         {
             responseConverter.addWithDetail(responses, context,
                 makeAlreadyDeployedResponse(
@@ -204,17 +213,17 @@ public class CtrlRscAutoPlaceApiCallHandler
         {
             AutoStorPoolSelectorConfig autoStorPoolSelectorConfig = new AutoStorPoolSelectorConfig(
                 additionalPlaceCount,
-                selectFilter.getReplicasOnDifferentList(),
-                selectFilter.getReplicasOnSameList(),
-                selectFilter.getDoNotPlaceWithRscRegex(),
+                mergedSelectFilter.getReplicasOnDifferentList(),
+                mergedSelectFilter.getReplicasOnSameList(),
+                mergedSelectFilter.getDoNotPlaceWithRscRegex(),
                 Stream.concat(
-                    selectFilter.getDoNotPlaceWithRscList().stream(),
+                    mergedSelectFilter.getDoNotPlaceWithRscList().stream(),
                     // Do not attempt to re-use nodes that already have this resource
                     Stream.of(rscNameStr)
                 ).collect(Collectors.toList()),
                 storPoolName,
-                selectFilter.getLayerStackList(),
-                selectFilter.getProviderList()
+                mergedSelectFilter.getLayerStackList(),
+                mergedSelectFilter.getProviderList()
             );
 
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);
@@ -236,10 +245,10 @@ public class CtrlRscAutoPlaceApiCallHandler
                     context,
                     responses,
                     rscNameStr,
-                    disklessOnRemainingNodes,
+                    mergedSelectFilter.getDisklessOnRemaining(),
                     candidate,
                     null,
-                    layerStackStrList
+                    mergedSelectFilter.getLayerStackList()
                 );
 
                 autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr).getFlux();
@@ -262,8 +271,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                     storPoolName,
                     rscSize,
                     autoStorPoolSelectorConfig,
-                    disklessOnRemainingNodes,
-                    layerStackStrList
+                    mergedSelectFilter.getDisklessOnRemaining(),
+                    mergedSelectFilter.getLayerStackList()
                 );
             }
         }
@@ -283,8 +292,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         String storPoolName,
         long rscSize,
         AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
-        boolean disklessOnRemainingNodes,
-        List<String> layerStackStrList
+        Boolean disklessOnRemainingNodes,
+        List<DeviceLayerKind> layerStackStrList
     )
     {
         return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
@@ -313,9 +322,9 @@ public class CtrlRscAutoPlaceApiCallHandler
         String storPoolName,
         long rscSize,
         AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
-        boolean disklessOnRemainingNodes,
+        Boolean disklessOnRemainingNodes,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        List<String> layerStackStrList
+        List<DeviceLayerKind> layerStackList
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -337,7 +346,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             disklessOnRemainingNodes,
             candidate,
             thinFreeCapacities,
-            layerStackStrList
+            layerStackList
         );
 
         Flux<ApiCallRc> autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr).getFlux();
@@ -403,15 +412,22 @@ public class CtrlRscAutoPlaceApiCallHandler
         ResponseContext context,
         ApiCallRcImpl responses,
         String rscNameStr,
-        boolean disklessOnRemainingNodes,
+        Boolean disklessOnRemainingNodes,
         Candidate bestCandidate,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        List<String> layerStackStr
+        List<DeviceLayerKind> layerStackList
     )
     {
         Map<String, String> rscPropsMap = new TreeMap<>();
         String selectedStorPoolName = bestCandidate.storPoolName.displayValue;
         rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, selectedStorPoolName);
+
+        // FIXME: createResourceDb expects a list of String instead of a list of deviceLayerKinds...
+        List<String> layerStackStrList = new ArrayList<>();
+        for (DeviceLayerKind kind : layerStackList)
+        {
+            layerStackStrList.add(kind.name());
+        }
 
         Set<Resource> deployedResources = new TreeSet<>();
         for (Node node : bestCandidate.nodes)
@@ -424,7 +440,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 Collections.emptyList(),
                 null,
                 thinFreeCapacities,
-                layerStackStr
+                layerStackStrList
             ).extractApiCallRc(responses);
             deployedResources.add(rsc);
 
@@ -435,7 +451,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             );
         }
 
-        if (disklessOnRemainingNodes)
+        if (disklessOnRemainingNodes != null && disklessOnRemainingNodes)
         {
             // TODO: allow other diskless storage pools
             rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
@@ -458,7 +474,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                                 Collections.emptyList(),
                                 null,
                                 thinFreeCapacities,
-                                layerStackStr
+                                layerStackStrList
                             ).extractApiCallRc(responses)
                         );
                     }

@@ -370,11 +370,6 @@ public class CtrlRscGrpApiCallHandler
 
                 if (newReplicaCount != null)
                 {
-                    List<String> layerListStr = new ArrayList<>();
-                    for (DeviceLayerKind kind : autoPlaceConfig.getLayerStackList(peerCtx))
-                    {
-                        layerListStr.add(kind.toString());
-                    }
 
                     for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx))
                     {
@@ -390,10 +385,7 @@ public class CtrlRscGrpApiCallHandler
                             reRunAutoPlace = reRunAutoPlace.concatWith(
                                 ctrlRscAutoPlaceApiCallHandler.autoPlace(
                                     rscDfn.getName().displayValue,
-                                    autoApiRef,
-                                    // autoPlaceConfig.disklessOnRemaining might be null
-                                    Boolean.TRUE.equals(autoPlaceConfig.getDisklessOnRemaining(peerCtx)),
-                                    layerListStr
+                                    autoApiRef
                                 )
                             );
                         }
@@ -766,9 +758,7 @@ public class CtrlRscGrpApiCallHandler
                 deployedResources = ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
                     rscDfnNameRef,
                     autoSelectFilterPojo,
-                    Boolean.TRUE.equals(autoPlaceConfig.getDisklessOnRemaining(peerCtx)),
-                    contextRef,
-                    layerStackStr
+                    contextRef
                 );
             }
             else

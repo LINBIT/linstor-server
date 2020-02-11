@@ -20,6 +20,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 
 import javax.inject.Provider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -117,6 +118,40 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
         );
     }
 
+    public AutoSelectorConfig(
+        AutoSelectorConfig baseCfg,
+        AutoSelectFilterApi priorityApi,
+        ResourceGroupDatabaseDriver driver,
+        TransactionObjectFactory transObjFactory,
+        Provider<? extends TransactionMgr> transMgrProvider
+    )
+    {
+        this(
+            baseCfg.rscGrp,
+            get(priorityApi.getReplicaCount(), baseCfg.replicaCount),
+            get(priorityApi.getStorPoolNameStr(), baseCfg.storPoolName),
+            get(priorityApi.getDoNotPlaceWithRscList(), baseCfg.doNotPlaceWithRscList),
+            get(priorityApi.getDoNotPlaceWithRscRegex(), baseCfg.doNotPlaceWithRscRegex),
+            get(priorityApi.getReplicasOnSameList(), baseCfg.replicasOnSameList),
+            get(priorityApi.getReplicasOnDifferentList(), baseCfg.replicasOnDifferentList),
+            get(priorityApi.getLayerStackList(), baseCfg.layerStack),
+            get(priorityApi.getProviderList(), baseCfg.allowedProviderList),
+            get(priorityApi.getDisklessOnRemaining(), baseCfg.disklessOnRemaining),
+            driver,
+            transObjFactory,
+            transMgrProvider
+        );
+    }
+
+    private static <T> T get(T value, TransactionSimpleObject<?, T> dflt)
+    {
+        return value == null ? dflt.get() : value;
+    }
+
+    private static <T> List<T> get(List<T> value, TransactionList<?, T> dflt)
+    {
+        return value == null ? dflt : new ArrayList<>(value);
+    }
 
     @Override
     public UUID debugGetVolatileUuid()
@@ -208,7 +243,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     }
 
 
-    public AutoSelectFilterApi getApiData(AccessContext accCtxRef) throws AccessDeniedException
+    public AutoSelectFilterApi getApiData()
     {
         return new AutoSelectFilterPojo(
             replicaCount.get(),

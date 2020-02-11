@@ -312,7 +312,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
             description.get(),
             rscDfnGrpProps.map(),
             vlmGrpApiList,
-            autoPlaceConfig.getApiData(accCtxRef)
+            autoPlaceConfig.getApiData()
         );
     }
 

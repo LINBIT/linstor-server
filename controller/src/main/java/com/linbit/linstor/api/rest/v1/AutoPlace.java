@@ -17,6 +17,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,11 +62,12 @@ public class AutoPlace
                 autoPlaceRequest.select_filter.place_count = 2;
             }
 
+            autoPlaceRequest.select_filter.diskless_on_remaining = autoPlaceRequest.diskless_on_remaining;
+            autoPlaceRequest.select_filter.layer_stack = autoPlaceRequest.layer_list;
+
             Flux<ApiCallRc> flux = ctrlRscAutoPlaceApiCallHandler.autoPlace(
                 rscName,
-                new Json.AutoSelectFilterData(autoPlaceRequest.select_filter),
-                autoPlaceRequest.diskless_on_remaining,
-                autoPlaceRequest.layer_list
+                new Json.AutoSelectFilterData(autoPlaceRequest.select_filter)
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_AUTO_PLACE_RSC, request));
 
