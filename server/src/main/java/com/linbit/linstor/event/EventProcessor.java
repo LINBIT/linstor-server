@@ -19,10 +19,13 @@ import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+
+import reactor.core.publisher.Flux;
 
 /**
  * Processes incoming events
@@ -33,6 +36,7 @@ public class EventProcessor
     private final ErrorReporter errorReporter;
     private final Map<String, Provider<EventHandler>> eventHandlers;
     private final LockGuardFactory lockGuardFactory;
+    private final Provider<Peer> peerProvider;
 
     // Synchronizes access to incomingEventStreamStore and pendingEventsPerPeer
     private final ReentrantLock eventHandlingLock;
@@ -43,12 +47,14 @@ public class EventProcessor
     public EventProcessor(
         ErrorReporter errorReporterRef,
         Map<String, Provider<EventHandler>> eventHandlersRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        Provider<Peer> peerProviderRef
     )
     {
         errorReporter = errorReporterRef;
         eventHandlers = eventHandlersRef;
         lockGuardFactory = lockGuardFactoryRef;
+        peerProvider = peerProviderRef;
 
         eventHandlingLock = new ReentrantLock();
         incomingEventStreamStore = new EventStreamStoreImpl();
@@ -84,17 +90,16 @@ public class EventProcessor
         }
     }
 
-    public void handleEvent(
+    public Flux<?> handleEvent(
         String eventAction,
         String eventName,
         String resourceNameStr,
         Integer volumeNr,
         String snapshotNameStr,
-        Peer peer,
         InputStream eventDataIn
     )
     {
-        try (LockGuard lockGuard = lockGuardFactory.build(LockGuardFactory.LockType.READ, NODES_MAP))
+        try (LockGuard lockGuard = lockGuardFactory.build(LockGuardFactory.LockType.WRITE, NODES_MAP))
         {
             eventHandlingLock.lock();
             try
@@ -113,9 +118,16 @@ public class EventProcessor
                     SnapshotName snapshotName =
                         snapshotNameStr != null ? new SnapshotName(snapshotNameStr) : null;
 
-                    EventIdentifier eventIdentifier = new EventIdentifier(eventName, new ObjectIdentifier(
-                        peer.getNode().getName(), resourceName, volumeNumber, snapshotName
-                    ));
+                    Peer peer = peerProvider.get();
+                    EventIdentifier eventIdentifier = new EventIdentifier(
+                        eventName,
+                        new ObjectIdentifier(
+                            peer.getNode().getName(),
+                            resourceName,
+                            volumeNumber,
+                            snapshotName
+                        )
+                    );
 
                     incomingEventStreamStore.addEventStreamIfNew(eventIdentifier);
 
@@ -141,6 +153,7 @@ public class EventProcessor
                 eventHandlingLock.unlock();
             }
         }
+        return Flux.empty();
     }
 
     private void executeNoConnection(
