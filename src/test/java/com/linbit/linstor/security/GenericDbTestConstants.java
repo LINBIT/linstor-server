@@ -335,8 +335,8 @@ public interface GenericDbTestConstants
         "    VALUES ('/sys/controller/storPoolMap', 'PUBLIC', 7)",
         "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE) \n" +
         "    VALUES ('/sys/controller/conf', 'PUBLIC', 1)",
-        "INSERT INTO RESOURCE_GROUPS(UUID, RESOURCE_GROUP_NAME, RESOURCE_GROUP_DSP_NAME)" +
-        "    VALUES ('a52e934a-9fd9-44cb-9db1-716dcd13aae3', 'DFLTRSCGRP', 'DfltRscGrp')",
+        "INSERT INTO RESOURCE_GROUPS(UUID, RESOURCE_GROUP_NAME, RESOURCE_GROUP_DSP_NAME, REPLICA_COUNT)" +
+            "    VALUES ('a52e934a-9fd9-44cb-9db1-716dcd13aae3', 'DFLTRSCGRP', 'DfltRscGrp', 2)",
         "INSERT INTO SEC_OBJECT_PROTECTION (OBJECT_PATH, CREATOR_IDENTITY_NAME, OWNER_ROLE_NAME, SECURITY_TYPE_NAME)\n" +
         "    VALUES ('/resourcegroups/DFLTRSCGRP', 'SYSTEM', 'SYSADM', 'SHARED')",
         "INSERT INTO SEC_ACL_MAP (OBJECT_PATH, ROLE_NAME, ACCESS_TYPE)\n" +

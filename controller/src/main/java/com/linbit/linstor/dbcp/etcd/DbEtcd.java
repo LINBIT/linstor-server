@@ -17,6 +17,7 @@ import com.linbit.linstor.dbcp.migration.etcd.Migration_02_AutoQuorumAndTiebreak
 import com.linbit.linstor.dbcp.migration.etcd.Migration_03_DelProp_SnapshotRestore;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_04_DisklessFlagSplit;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_05_UnifyResourcesAndSnapshots;
+import com.linbit.linstor.dbcp.migration.etcd.Migration_06_RscGrpDfltReplCount;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -126,6 +127,7 @@ public class DbEtcd implements ControllerETCDDatabase
         // ("3" + "1").
         migrations.put(31, Migration_04_DisklessFlagSplit::migrate);
         migrations.put(32, Migration_05_UnifyResourcesAndSnapshots::migrate);
+        migrations.put(33, Migration_06_RscGrpDfltReplCount::migrate);
 
         try
         {

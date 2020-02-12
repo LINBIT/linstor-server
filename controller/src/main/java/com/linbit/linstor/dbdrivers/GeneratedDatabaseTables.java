@@ -632,7 +632,7 @@ public class GeneratedDatabaseTables
         public static final Column RESOURCE_GROUP_DSP_NAME = new Column("RESOURCE_GROUP_DSP_NAME", Types.VARCHAR, false, false);
         public static final Column DESCRIPTION = new Column("DESCRIPTION", Types.VARCHAR, false, true);
         public static final Column LAYER_STACK = new Column("LAYER_STACK", Types.VARCHAR, false, true);
-        public static final Column REPLICA_COUNT = new Column("REPLICA_COUNT", Types.INTEGER, false, true);
+        public static final Column REPLICA_COUNT = new Column("REPLICA_COUNT", Types.INTEGER, false, false);
         public static final Column POOL_NAME = new Column("POOL_NAME", Types.VARCHAR, false, true);
         public static final Column DO_NOT_PLACE_WITH_RSC_REGEX = new Column("DO_NOT_PLACE_WITH_RSC_REGEX", Types.VARCHAR, false, true);
         public static final Column DO_NOT_PLACE_WITH_RSC_LIST = new Column("DO_NOT_PLACE_WITH_RSC_LIST", Types.VARCHAR, false, true);

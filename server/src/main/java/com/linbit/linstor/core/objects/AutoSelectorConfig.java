@@ -63,7 +63,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
 
         replicaCount = transactionObjectFactoryRef.createTransactionSimpleObject(
             rscGrpRef,
-            replicaCountRef,
+            replicaCountRef == null ? 2 : replicaCountRef,
             dbDriverRef.getReplicaCountDriver()
         );
         storPoolName = transactionObjectFactoryRef.createTransactionSimpleObject(
