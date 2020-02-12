@@ -5,6 +5,7 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -103,7 +104,7 @@ public class TcpConnectorPeer implements Peer
     private Object attachment;
 
     protected volatile boolean connected = false;
-    protected ConnectionStatus connectionStatus = ConnectionStatus.OFFLINE;
+    protected ApiConsts.ConnectionStatus connectionStatus = ApiConsts.ConnectionStatus.OFFLINE;
     protected boolean authenticated = false;
     protected boolean fullSyncFailed = false;
 
@@ -499,13 +500,13 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public ConnectionStatus getConnectionStatus()
+    public ApiConsts.ConnectionStatus getConnectionStatus()
     {
         return connectionStatus;
     }
 
     @Override
-    public void setConnectionStatus(ConnectionStatus status)
+    public void setConnectionStatus(ApiConsts.ConnectionStatus status)
     {
         connectionStatus = status;
     }
@@ -790,7 +791,7 @@ public class TcpConnectorPeer implements Peer
         // just to be sure, that even if some component still sends an update, it should be
         // an invalid one. -1 will make it look like an out-dated update for the satellite.
         fullSyncId = -1;
-        connectionStatus = ConnectionStatus.FULL_SYNC_FAILED;
+        connectionStatus = ApiConsts.ConnectionStatus.FULL_SYNC_FAILED;
     }
 
     @Override

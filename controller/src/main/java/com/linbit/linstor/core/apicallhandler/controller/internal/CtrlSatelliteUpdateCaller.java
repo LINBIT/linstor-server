@@ -97,7 +97,7 @@ public class CtrlSatelliteUpdateCaller
             for (Node nodeToContact : nodesToContact)
             {
                 Peer peer = nodeToContact.getPeer(apiCtx);
-                if (peer != null && peer.getConnectionStatus() == Peer.ConnectionStatus.ONLINE)
+                if (peer != null && peer.getConnectionStatus() == ApiConsts.ConnectionStatus.ONLINE)
                 {
                     Flux<ApiCallRc> response = updateSatellite(nodeToContact, changedMessage);
 

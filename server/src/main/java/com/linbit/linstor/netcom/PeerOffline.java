@@ -2,6 +2,7 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
@@ -172,9 +173,9 @@ public class PeerOffline implements Peer
     }
 
     @Override
-    public ConnectionStatus getConnectionStatus()
+    public ApiConsts.ConnectionStatus getConnectionStatus()
     {
-        ConnectionStatus status = ConnectionStatus.OFFLINE;
+        ApiConsts.ConnectionStatus status = ApiConsts.ConnectionStatus.OFFLINE;
         try
         {
             InetAddress[] allMyIps = InetAddress.getAllByName(InetAddress.getLocalHost().getCanonicalHostName());
@@ -182,7 +183,7 @@ public class PeerOffline implements Peer
             {
                 if (localAddress().getAddress().equals(inetAddress))
                 {
-                    status = Peer.ConnectionStatus.ONLINE;
+                    status = ApiConsts.ConnectionStatus.ONLINE;
                     break;
                 }
             }
@@ -194,7 +195,7 @@ public class PeerOffline implements Peer
     }
 
     @Override
-    public void setConnectionStatus(ConnectionStatus status)
+    public void setConnectionStatus(ApiConsts.ConnectionStatus status)
     {
     }
 

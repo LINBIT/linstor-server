@@ -3,17 +3,16 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -64,7 +63,7 @@ public class CtrlSatelliteConnectionNotifier
             while (rscIter.hasNext())
             {
                 Resource rsc = rscIter.next();
-                if (rsc.getNode().getPeer(apiCtx).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
+                if (rsc.getNode().getPeer(apiCtx).getConnectionStatus() != ApiConsts.ConnectionStatus.ONLINE)
                 {
                     allOnline = false;
                     break;

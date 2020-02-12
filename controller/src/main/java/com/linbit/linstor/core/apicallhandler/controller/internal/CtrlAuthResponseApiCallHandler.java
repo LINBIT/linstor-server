@@ -132,7 +132,7 @@ public class CtrlAuthResponseApiCallHandler
             )
             {
                 peer.setAuthenticated(true);
-                peer.setConnectionStatus(Peer.ConnectionStatus.CONNECTED);
+                peer.setConnectionStatus(ApiConsts.ConnectionStatus.CONNECTED);
                 peer.getExtToolsManager().updateExternalToolsInfo(externalToolsInfoList);
 
                 logExternaltools(peer, nodeUname);
@@ -197,7 +197,7 @@ public class CtrlAuthResponseApiCallHandler
             }
             else
             {
-                peer.setConnectionStatus(Peer.ConnectionStatus.VERSION_MISMATCH);
+                peer.setConnectionStatus(ApiConsts.ConnectionStatus.VERSION_MISMATCH);
                 errorReporter.logError(
                     String.format(
                         "Satellite '%s' version mismatch(v%d.%d.%d).",
@@ -218,7 +218,7 @@ public class CtrlAuthResponseApiCallHandler
         {
             peer.setAuthenticated(false);
 
-            peer.setConnectionStatus(Peer.ConnectionStatus.AUTHENTICATION_ERROR);
+            peer.setConnectionStatus(ApiConsts.ConnectionStatus.AUTHENTICATION_ERROR);
 
             for (RcEntry entry : apiCallResponse.getEntries())
             {

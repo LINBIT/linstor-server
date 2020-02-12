@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apis;
 
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.netcom.Peer;
 
 import java.util.List;
@@ -11,7 +12,7 @@ public interface NodeApi
     String getName();
     String getType();
     UUID getUuid();
-    Peer.ConnectionStatus connectionStatus();
+    ApiConsts.ConnectionStatus connectionStatus();
     Map<String, String> getProps();
     long getFlags();
     List<NetInterfaceApi> getNetInterfaces();

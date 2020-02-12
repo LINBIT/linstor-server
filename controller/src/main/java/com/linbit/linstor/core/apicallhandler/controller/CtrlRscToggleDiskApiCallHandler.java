@@ -40,7 +40,6 @@ import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.layer.resource.RscDrbdLayerHelper;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -64,7 +63,6 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -479,7 +477,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             {
                 Resource currentRsc = rscIterator.next();
                 Node node = currentRsc.getNode();
-                if (node.getPeer(apiCtx).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
+                if (node.getPeer(apiCtx).getConnectionStatus() != ApiConsts.ConnectionStatus.ONLINE)
                 {
                     offlineWarnings.addEntry(ResponseUtils.makeNotConnectedWarning(node.getName()));
                 }

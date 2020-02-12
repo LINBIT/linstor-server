@@ -171,7 +171,7 @@ public class CtrlVlmCrtApiHelper
         }
         for (StorPool storPool : poolsToCheck)
         {
-            if (getPeerPrivileged(rsc.getNode()).getConnectionStatus() == Peer.ConnectionStatus.ONLINE &&
+            if (getPeerPrivileged(rsc.getNode()).getConnectionStatus() == ApiConsts.ConnectionStatus.ONLINE &&
                 !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
             )
             {

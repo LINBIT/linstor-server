@@ -747,7 +747,7 @@ public class Node extends BaseTransactionObject
             activeStltConn.get() != null ? activeStltConn.get().getApiData(accCtx) : null,
             nodeConns,
             getProps(accCtx).map(),
-            tmpPeer != null ? tmpPeer.getConnectionStatus() : Peer.ConnectionStatus.UNKNOWN,
+            tmpPeer != null ? tmpPeer.getConnectionStatus() : ApiConsts.ConnectionStatus.UNKNOWN,
             fullSyncId,
             updateId,
             extToolsManager.getSupportedLayers().stream()

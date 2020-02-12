@@ -199,7 +199,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                 Collection<Node> affectedNodes = CtrlSatelliteUpdater.findNodesToContact(apiCtx, node);
                 for (Node affectedNode: affectedNodes)
                 {
-                    if (getPeerPrivileged(affectedNode).getConnectionStatus() != Peer.ConnectionStatus.ONLINE)
+                    if (getPeerPrivileged(affectedNode).getConnectionStatus() != ApiConsts.ConnectionStatus.ONLINE)
                     {
                         responses.addEntry(ResponseUtils.makeNotConnectedWarning(affectedNode.getName()));
                     }

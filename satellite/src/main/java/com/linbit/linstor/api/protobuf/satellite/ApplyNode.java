@@ -2,13 +2,13 @@ package com.linbit.linstor.api.protobuf.satellite;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
-import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNodeConn;
@@ -61,7 +61,7 @@ public class ApplyNode implements ApiCall
             null,
             extractNodeConns(nodeMsg.getNodeConnsList()),
             nodeMsg.getPropsMap(),
-            Peer.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller
+            ApiConsts.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller
             fullSyncId,
             updateId,
             null,

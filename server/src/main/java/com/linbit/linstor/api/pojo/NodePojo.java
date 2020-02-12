@@ -1,8 +1,8 @@
 package com.linbit.linstor.api.pojo;
 
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
-import com.linbit.linstor.netcom.Peer;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -14,7 +14,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final UUID nodeUuid;
     private final String nodeName;
     private final String nodeType;
-    private final Peer.ConnectionStatus connectionStatus;
+    private final ApiConsts.ConnectionStatus connectionStatus;
     private final long nodeFlags;
     private final List<NetInterfaceApi> nodeNetInterfaces;
     private final NetInterfaceApi nodeActiveStltConn;
@@ -36,7 +36,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         @Nullable final NetInterfaceApi nodeActiveStltConnRef,
         final List<NodeConnPojo> nodeConnsRef,
         final Map<String, String> nodePropsRef,
-        final Peer.ConnectionStatus connectionStatusRef,
+        final ApiConsts.ConnectionStatus connectionStatusRef,
         final Long fullSyncIdRef,
         final Long updateIdRef,
         final List<String> deviceLayerKindNamesRef,
@@ -86,7 +86,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     }
 
     @Override
-    public Peer.ConnectionStatus connectionStatus()
+    public ApiConsts.ConnectionStatus connectionStatus()
     {
         return connectionStatus;
     }

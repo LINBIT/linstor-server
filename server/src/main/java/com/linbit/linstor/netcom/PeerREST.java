@@ -2,6 +2,7 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
@@ -10,7 +11,6 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import javax.net.ssl.SSLException;
-
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -161,13 +161,13 @@ public class PeerREST implements Peer
     }
 
     @Override
-    public ConnectionStatus getConnectionStatus()
+    public ApiConsts.ConnectionStatus getConnectionStatus()
     {
-        return ConnectionStatus.UNKNOWN;
+        return ApiConsts.ConnectionStatus.UNKNOWN;
     }
 
     @Override
-    public void setConnectionStatus(ConnectionStatus status)
+    public void setConnectionStatus(ApiConsts.ConnectionStatus status)
     {
     }
 

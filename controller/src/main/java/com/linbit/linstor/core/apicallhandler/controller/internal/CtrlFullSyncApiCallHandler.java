@@ -186,7 +186,7 @@ public class CtrlFullSyncApiCallHandler
                         Flux.just(
                             ApiCallRcImpl.singletonApiCallRc(
                                 ApiCallRcImpl.simpleEntry(
-                                    ApiConsts.CONN_STATUS_AUTHENTICATED,
+                                    ApiConsts.ConnectionStatus.AUTHENTICATED.getValue(),
                                     "Node '" + satelliteNode.getName().displayValue + "' authenticated"
                                 )
                                 .setDetails(details.toString())

@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
@@ -86,7 +87,7 @@ public class CtrlFullSyncResponseApiCallHandler
 
     private Flux<?> fullSyncSuccessInScope(Peer satellitePeerRef, ResponseContext context)
     {
-        satellitePeerRef.setConnectionStatus(Peer.ConnectionStatus.ONLINE);
+        satellitePeerRef.setConnectionStatus(ApiConsts.ConnectionStatus.ONLINE);
 
         Node localNode = satellitePeerRef.getNode();
 

@@ -30,7 +30,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_ENCRYPT_TYPE;
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NET_PORT;
-import static com.linbit.linstor.netcom.Peer.ConnectionStatus.NO_STLT_CONN;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
@@ -301,7 +300,7 @@ class CtrlNetIfApiCallHandler
                 // no active satellite connection configured
                 if (node.getActiveStltConn(peerAccCtx.get()) == null)
                 {
-                    node.getPeer(apiCtx).setConnectionStatus(NO_STLT_CONN);
+                    node.getPeer(apiCtx).setConnectionStatus(ApiConsts.ConnectionStatus.NO_STLT_CONN);
 
                     throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                         ApiConsts.WARN_NO_STLT_CONN_DEFINED,

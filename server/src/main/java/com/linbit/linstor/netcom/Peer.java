@@ -2,34 +2,20 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.common.Ping;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
-
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_AUTHENTICATION_ERROR;
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_CONNECTED;
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_FULL_SYNC_FAILED;
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_HOSTNAME_MISMATCH;
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_NO_STLT_CONN;
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_OFFLINE;
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_ONLINE;
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_OTHER_CONTROLLER;
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_UNKNOWN;
-import static com.linbit.linstor.api.ApiConsts.CONN_STATUS_VERSION_MISMATCH;
-
-import javax.net.ssl.SSLException;
-
-import java.io.ByteArrayInputStream;
-import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.concurrent.locks.ReadWriteLock;
-
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+
+import javax.net.ssl.SSLException;
+import java.io.ByteArrayInputStream;
+import java.net.InetSocketAddress;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * Represents the peer of a connection
@@ -39,50 +25,6 @@ import reactor.core.publisher.Flux;
 public interface Peer
 {
     int MAX_INCOMING_QUEUE_SIZE = 1000;
-
-    enum ConnectionStatus
-    {
-        OFFLINE(CONN_STATUS_OFFLINE),
-        CONNECTED(CONN_STATUS_CONNECTED), // connection established
-        ONLINE(CONN_STATUS_ONLINE), // USABLE state, after full sync
-        VERSION_MISMATCH(CONN_STATUS_VERSION_MISMATCH), // Version mismatch between satellite and controller
-        FULL_SYNC_FAILED(CONN_STATUS_FULL_SYNC_FAILED), // FullSync failed
-        AUTHENTICATION_ERROR(CONN_STATUS_AUTHENTICATION_ERROR),
-        UNKNOWN(CONN_STATUS_UNKNOWN),
-        HOSTNAME_MISMATCH(CONN_STATUS_HOSTNAME_MISMATCH), // Hostname set by controller does not match local `uname -n`
-        OTHER_CONTROLLER(CONN_STATUS_OTHER_CONTROLLER), // Satellite received a connection from a new(er) controller
-        NO_STLT_CONN(CONN_STATUS_NO_STLT_CONN); // No satellite connection configured for the node
-
-
-        private int status;
-        ConnectionStatus(int statusRef)
-        {
-            this.status = statusRef;
-        }
-
-        public int value()
-        {
-            return status;
-        }
-
-        public static ConnectionStatus fromInt(int statusType)
-        {
-            ConnectionStatus found = null;
-            for (int idx = 0; idx < values().length; idx++)
-            {
-                if (statusType == values()[idx].status)
-                {
-                    found = values()[idx];
-                }
-            }
-
-            if (found == null)
-            {
-                throw new IllegalArgumentException();
-            }
-            return found;
-        }
-    }
 
     /**
      * Returns a unique identifier for this peer object
@@ -216,9 +158,9 @@ public interface Peer
      */
     boolean isConnected();
 
-    ConnectionStatus getConnectionStatus();
+    ApiConsts.ConnectionStatus getConnectionStatus();
 
-    void setConnectionStatus(ConnectionStatus status);
+    void setConnectionStatus(ApiConsts.ConnectionStatus status);
 
     /**
      * Returns false if no connection is established yet.

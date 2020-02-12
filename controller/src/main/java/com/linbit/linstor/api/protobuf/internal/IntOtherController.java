@@ -2,6 +2,7 @@ package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -38,7 +39,7 @@ public class IntOtherController implements ApiCall
     {
         Peer satellite = peerProvider.get();
         satellite.setAuthenticated(false);
-        satellite.setConnectionStatus(Peer.ConnectionStatus.OTHER_CONTROLLER);
+        satellite.setConnectionStatus(ApiConsts.ConnectionStatus.OTHER_CONTROLLER);
         satellite.closeConnection(false);
         errorReporter.logWarning(
             "Satellite " + satellite.getNode().getName() + " has established a connection to a different controller"
