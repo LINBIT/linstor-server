@@ -11,6 +11,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
 import com.linbit.linstor.storage.DevicePoolHandler;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 
 import javax.inject.Inject;
@@ -55,31 +56,39 @@ public class CreateDevicePool implements ApiCall
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        List<String> devicePaths = msgCreateDevicePool.getDevicePathsList();
-        ArrayList<String> lvmDevicePaths = new ArrayList<>(devicePaths);
-        if (msgCreateDevicePool.hasVdoArguments())
+        DeviceProviderKind kind = ProtoDeserializationUtils.parseDeviceProviderKind(
+            msgCreateDevicePool.getProviderKind());
+
+        apiCallRc.addEntries(devicePoolHandler.checkPoolExists(kind, msgCreateDevicePool.getPoolName()));
+
+        if (!apiCallRc.hasErrors())
         {
-            lvmDevicePaths.clear();
-            for (final String rawDevicePath : devicePaths)
+            List<String> devicePaths = msgCreateDevicePool.getDevicePathsList();
+            ArrayList<String> lvmDevicePaths = new ArrayList<>(devicePaths);
+            if (msgCreateDevicePool.hasVdoArguments())
             {
-                lvmDevicePaths.add(devicePoolHandler.createVdoDevice(
-                    apiCallRc,
-                    rawDevicePath,
-                    msgCreateDevicePool.getPoolName(),
-                    msgCreateDevicePool.getLogicalSizeKib(),
-                    msgCreateDevicePool.getVdoArguments().getSlabSizeKib()
+                lvmDevicePaths.clear();
+                for (final String rawDevicePath : devicePaths)
+                {
+                    lvmDevicePaths.add(devicePoolHandler.createVdoDevice(
+                        apiCallRc,
+                        rawDevicePath,
+                        msgCreateDevicePool.getPoolName(),
+                        msgCreateDevicePool.getLogicalSizeKib(),
+                        msgCreateDevicePool.getVdoArguments().getSlabSizeKib()
+                    ));
+                }
+            }
+
+            if (!lvmDevicePaths.isEmpty() && !apiCallRc.hasErrors())
+            {
+                apiCallRc.addEntries(devicePoolHandler.createDevicePool(
+                    kind,
+                    lvmDevicePaths,
+                    RaidLevel.valueOf(msgCreateDevicePool.getRaidLevel().name()),
+                    msgCreateDevicePool.getPoolName()
                 ));
             }
-        }
-
-        if (!lvmDevicePaths.isEmpty() && !apiCallRc.hasErrors())
-        {
-            apiCallRc.addEntries(devicePoolHandler.createDevicePool(
-                ProtoDeserializationUtils.parseDeviceProviderKind(msgCreateDevicePool.getProviderKind()),
-                lvmDevicePaths,
-                RaidLevel.valueOf(msgCreateDevicePool.getRaidLevel().name()),
-                msgCreateDevicePool.getPoolName()
-            ));
         }
 
         peerProvider.get().sendMessage(

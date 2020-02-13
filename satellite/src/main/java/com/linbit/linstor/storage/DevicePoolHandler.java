@@ -1,6 +1,5 @@
 package com.linbit.linstor.storage;
 
-import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -10,12 +9,13 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.storage.utils.LvmCommands;
+import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.SpdkCommands;
 import com.linbit.linstor.storage.utils.ZfsCommands;
+import com.linbit.linstor.storage.utils.ZfsUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,7 +107,7 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(createSPDKPool(devicePaths, poolName));
                 break;
 
-                // the following cases make no sense, hence the fall-throughs
+            // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             case FILE: // fall-through
@@ -135,11 +135,11 @@ public class DevicePoolHandler
                 LvmCommands.pvCreate(extCmdFactory.create(), devicePath);
                 apiCallRc.addEntry(
                     ApiCallRcImpl.entryBuilder(
-                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
+                        ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
                         String.format("PV for device '%s' created.", devicePath)
                     )
-                    .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
-                    .build()
+                        .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
+                        .build()
                 );
             }
             LvmCommands.vgCreate(extCmdFactory.create(), poolName, raidLevel, devicePaths);
@@ -328,7 +328,8 @@ public class DevicePoolHandler
             List<String> nvmeBdevs = new ArrayList<>();
             for (final String pciAddress : pciAddresses)
             {
-                final String bdev_name = new String(SpdkCommands.nvmeBdevCreate(extCmdFactory.create(), pciAddress).stdoutData).trim();
+                final String bdev_name = new String(SpdkCommands.nvmeBdevCreate(
+                    extCmdFactory.create(), pciAddress).stdoutData).trim();
                 nvmeBdevs.add(bdev_name);
                 apiCallRc.addEntry(
                     ApiCallRcImpl.entryBuilder(
@@ -355,8 +356,8 @@ public class DevicePoolHandler
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
                     String.format("Lvol store for devices [%s] with name '%s' created.",
-                            String.join(", ", pciAddresses),
-                            poolName)
+                        String.join(", ", pciAddresses),
+                        poolName)
                 )
                     .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
                     .build()
@@ -387,7 +388,8 @@ public class DevicePoolHandler
                     .build()
             );
 
-            if (new String(SpdkCommands.listRaidBdevsAll(extCmdFactory.create()).stdoutData).trim().matches("(.*)\\b"+poolName+"\\b(.*)"))
+            if (new String(SpdkCommands.listRaidBdevsAll(
+                extCmdFactory.create()).stdoutData).trim().matches("(.*)\\b" + poolName + "\\b(.*)"))
             {
                 SpdkCommands.nvmeRaidBdevRemove(extCmdFactory.create(), poolName);
                 apiCallRc.addEntry(
@@ -461,6 +463,47 @@ public class DevicePoolHandler
                 break;
         }
 
+        return apiCallRc;
+    }
+
+    public ApiCallRc checkPoolExists(
+        final DeviceProviderKind deviceProviderKind,
+        final String poolName
+    )
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try
+        {
+            switch (deviceProviderKind)
+            {
+                case LVM_THIN: // fall-through
+                case LVM:
+                    if (LvmUtils.checkVgExistsBool(extCmdFactory.create(), poolName))
+                    {
+                        apiCallRc.addEntry("Volume group name already used.", ApiConsts.FAIL_EXISTS_STOR_POOL);
+                    }
+                    break;
+                case ZFS_THIN: // no differentiation between ZFS and ZFS_THIN pool. fall-through
+                case ZFS:
+                    if (ZfsUtils.getZPoolList(extCmdFactory.create()).contains(poolName))
+                    {
+                        apiCallRc.addEntry("Zpool name already used.", ApiConsts.FAIL_EXISTS_STOR_POOL);
+                    }
+                    break;
+                case SPDK: // fall-through for now
+                // the following cases make no sense, hence the fall-throughs
+                case DISKLESS: // fall-through
+                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
+                case FILE: // fall-through
+                case FILE_THIN: // fall-through
+                default:
+                    break;
+            }
+        }
+        catch (StorageException storExc)
+        {
+            apiCallRc.addEntry("Unable to check storage pools", ApiConsts.FAIL_STOR_POOL_CONFIGURATION_ERROR);
+        }
         return apiCallRc;
     }
 }
