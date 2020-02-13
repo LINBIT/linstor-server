@@ -154,7 +154,6 @@ public class EtcdUtils
         return ret;
     }
 
-    @UsedByMigration
     public static String extractPrimaryKey(String key)
     {
         // key is something like

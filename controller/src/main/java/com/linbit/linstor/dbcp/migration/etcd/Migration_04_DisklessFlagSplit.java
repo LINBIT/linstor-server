@@ -7,8 +7,12 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+@EtcdMigration(
+    description = "Split DISKLESS flag into DRBD_DISKLESS and NVME_INITIATOR",
+    version = 31
+)
 // corresponds to Migration_2019_11_12_DisklessFlagSplit
-public class Migration_04_DisklessFlagSplit extends EtcdMigration
+public class Migration_04_DisklessFlagSplit extends BaseEtcdMigration
 {
     private static final long FLAG_DISKLESS = 1L << 2;
     private static final long FLAG_DRBD_DISKLESS = FLAG_DISKLESS | 1L << 8;
@@ -22,7 +26,8 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
     private static final String KIND_DRBD = "DRBD";
     private static final String KIND_NVME = "NVME";
 
-    public static void migrate(EtcdTransaction tx)
+    @Override
+    public void migrate(EtcdTransaction tx)
     {
         TreeMap<String, String> allRscLayer = tx.get("LINSTOR/LAYER_RESOURCE_IDS", true);
 
@@ -38,7 +43,7 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
                     String nodeName;
                     String rscName;
                     {
-                        String composedKey = EtcdUtils.extractPrimaryKey(key);
+                        String composedKey = extractPrimaryKey(key);
                         String[] split = EtcdUtils.splitPks(composedKey, false);
                         nodeName = split[0];
                         rscName = split[1];
@@ -54,7 +59,7 @@ public class Migration_04_DisklessFlagSplit extends EtcdMigration
         for (Entry<String, String> rscLayer : allRscLayer.entrySet())
         {
             String etcdKey = rscLayer.getKey();
-            long layerRscId = Long.parseLong(EtcdUtils.extractPrimaryKey(etcdKey));
+            long layerRscId = Long.parseLong(extractPrimaryKey(etcdKey));
 
             LayerRscHolder layerRscHolder = rscDataMap.get(layerRscId);
             {

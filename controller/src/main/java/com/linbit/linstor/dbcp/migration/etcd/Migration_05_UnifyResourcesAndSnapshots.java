@@ -21,8 +21,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@EtcdMigration(
+    description = "Unify resources and snapshots",
+    version = 32
+)
 // corresponds to Migration_2019_11_21_UnifyResourceAndSnapshot
-public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
+public class Migration_05_UnifyResourcesAndSnapshots extends BaseEtcdMigration
 {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -109,7 +113,8 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
 
     private static final String NULL = ":null";
 
-    public static void migrate(EtcdTransaction tx) throws JsonMappingException, JsonProcessingException
+    @Override
+    public void migrate(EtcdTransaction tx) throws Exception
     {
         Function<String, String> simpleExtend = name -> name + PK_DELIMITER;
         Function<String, String> simpleDuplicate = name -> name.replace(PK_DELIMITER, PK_DELIMITER + PK_DELIMITER);
@@ -162,7 +167,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         deleteSnapshotTables(tx);
     }
 
-    private static void addEmptySnapshotNameEntry(
+    private void addEmptySnapshotNameEntry(
         EtcdTransaction tx,
         Pair<String, Function<String, String>>... tables
     )
@@ -170,7 +175,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         addEmptyColumn(tx, CLM_SNAP_NAME, tables);
     }
 
-    private static void addEmptySnapshotDisplayName(
+    private void addEmptySnapshotDisplayName(
         EtcdTransaction tx,
         Pair<String, Function<String, String>>... tables
     )
@@ -178,7 +183,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         addEmptyColumn(tx, CLM_SNAP_DSP_NAME, tables);
     }
 
-    private static void addEmptyColumn(
+    private void addEmptyColumn(
         EtcdTransaction tx,
         String columnName,
         Pair<String, Function<String, String>>... pairsRef
@@ -194,7 +199,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             for (String pk : pks)
             {
                 tx.put(
-                    buildColumnKeyPre07(
+                    buildKeyStr(
                         pair.a,
                         columnName,
                         pair.b.apply(pk)
@@ -205,12 +210,12 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             for (Entry<String, String> oldEntry : readTable.entrySet())
             {
                 String oldKey = oldEntry.getKey();
-                String oldComposedKey = EtcdUtils.extractPrimaryKey(oldKey);
+                String oldComposedKey = extractPrimaryKey(oldKey);
                 String oldClm = getColumnName(oldKey);
                 tx.delete(oldKey, false);
-                tx.delete(buildColumnKeyPre07(pair.a, oldClm, oldComposedKey), false);
+                tx.delete(buildKeyStr(pair.a, oldClm, oldComposedKey), false);
                 tx.put(
-                    buildColumnKeyPre07(
+                    buildKeyStr(
                         pair.a,
                         oldClm,
                         pair.b.apply(oldComposedKey)
@@ -221,7 +226,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         }
     }
 
-    private static void copySnapshotDefinitionsIntoResourceDefinitions(EtcdTransaction tx)
+    private void copySnapshotDefinitionsIntoResourceDefinitions(EtcdTransaction tx)
     {
         // we will need a reference from snapshotDfn to "parent" resourceDfn.uuid
         TreeMap<String, String> rscDfnNameToUuid = new TreeMap<>();
@@ -232,7 +237,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                 String key = entry.getKey();
                 if (key.endsWith(CLM_UUID))
                 {
-                    String pk = EtcdUtils.extractPrimaryKey(key); // only RESOURCE_NAME
+                    String pk = extractPrimaryKey(key); // only RESOURCE_NAME
                     rscDfnNameToUuid.put(pk, entry.getValue());
                 }
             }
@@ -248,7 +253,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             String col = getColumnName(entryKey);
 
             String[] pk = EtcdUtils.splitPks(
-                EtcdUtils.extractPrimaryKey(entryKey), // RESOURCE_NAME,SNAPSHOT_NAME
+                extractPrimaryKey(entryKey), // RESOURCE_NAME,SNAPSHOT_NAME
                 false
             );
 
@@ -260,23 +265,23 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                     // SnapshotDefinitions
 
                     tx.put(
-                        buildColumnKeyPre07(TBL_RSC_DFN, CLM_PARENT_UUID, pk),
+                        buildKeyStr(TBL_RSC_DFN, CLM_PARENT_UUID, pk),
                         rscDfnNameToUuid.get(pk[0])
                     );
 
                     tx.put(
-                        buildColumnKeyPre07(TBL_RSC_DFN, CLM_LAYER_STACK, pk),
+                        buildKeyStr(TBL_RSC_DFN, CLM_LAYER_STACK, pk),
                         "'[]'"
                     );
                     tx.put(
-                        buildColumnKeyPre07(TBL_RSC_DFN, CLM_RSC_GRP_NAME, pk),
+                        buildKeyStr(TBL_RSC_DFN, CLM_RSC_GRP_NAME, pk),
                         InternalApiConsts.DEFAULT_RSC_GRP_NAME.toUpperCase()
                     );
                     break;
                 case CLM_SNAP_FLAGS:
                     // rename SNAPSHOT_FLAGS to RESOURCE_FLAGS
                     tx.put(
-                        buildColumnKeyPre07(TBL_RSC_DFN, CLM_RSC_FLAGS, pk),
+                        buildKeyStr(TBL_RSC_DFN, CLM_RSC_FLAGS, pk),
                         entryValue
                     );
                     copyData = false; // DO NOT copy old SNAPSHOT_FLAGS
@@ -286,12 +291,12 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             }
             if (copyData)
             {
-                tx.put(buildColumnKeyPre07(TBL_RSC_DFN, col, pk), entryValue);
+                tx.put(buildKeyStr(TBL_RSC_DFN, col, pk), entryValue);
             }
         }
     }
 
-    private static void copySnapshotVolumeDefinitionsIntoVolumeDefinitions(EtcdTransaction tx)
+    private void copySnapshotVolumeDefinitionsIntoVolumeDefinitions(EtcdTransaction tx)
     {
         TreeMap<String, String> snapVlmDfnTbl = tx.get("LINSTOR/" + TBL_SNAP_VLM_DFN, true);
         for (Entry<String, String> entry : snapVlmDfnTbl.entrySet())
@@ -300,25 +305,25 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             String entryValue = entry.getValue();
 
             // RESOURCE_NAME, SNAPSHOT_NAME, VLM_NR
-            String[] composedPk = EtcdUtils.splitPks(extractPrimaryKeyPre07(entryKey), false);
+            String[] composedPk = EtcdUtils.splitPks(extractPrimaryKey(entryKey), false);
             String col = getColumnName(entryKey);
 
             if (CLM_SNAP_FLAGS.equals(col))
             {
                 // rename SNAPSHOT_FLAGS to VLM_FLAGS
                 tx.put(
-                    buildColumnKeyPre07(TBL_VLM_DFN, CLM_VLM_FLAGS, composedPk),
+                    buildKeyStr(TBL_VLM_DFN, CLM_VLM_FLAGS, composedPk),
                     entryValue
                 );
             }
             else
             {
-                tx.put(buildColumnKeyPre07(TBL_VLM_DFN, col, composedPk), entryValue);
+                tx.put(buildKeyStr(TBL_VLM_DFN, col, composedPk), entryValue);
             }
         }
     }
 
-    private static void copySnapshotsIntoResources(EtcdTransaction tx)
+    private void copySnapshotsIntoResources(EtcdTransaction tx)
     {
         TreeSet<String> doNotCopy = new TreeSet<>();
         doNotCopy.add(CLM_NODE_ID);
@@ -331,7 +336,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             String entryValue = entry.getValue();
 
             // NODE_NAME, RESOURCE_NAME, SNAPSHOT_NAME
-            String[] composedPk = EtcdUtils.splitPks(EtcdUtils.extractPrimaryKey(entryKey), false);
+            String[] composedPk = EtcdUtils.splitPks(extractPrimaryKey(entryKey), false);
             String col = getColumnName(entryKey);
 
             boolean copyData = true;
@@ -340,7 +345,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                 case CLM_SNAP_FLAGS:
                     // rename SNAPSHOT_FLAGS to RESOURCE_FLAGS
                     tx.put(
-                        buildColumnKeyPre07(TBL_RSC, CLM_RSC_FLAGS, composedPk),
+                        buildKeyStr(TBL_RSC, CLM_RSC_FLAGS, composedPk),
                         entryValue
                     );
                     break;
@@ -364,12 +369,12 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
 
             if (copyData)
             {
-                tx.put(buildColumnKeyPre07(TBL_RSC, col, composedPk), entryValue);
+                tx.put(buildKeyStr(TBL_RSC, col, composedPk), entryValue);
             }
         }
     }
 
-    private static void copySnapshotVolumesIntoVolumes(EtcdTransaction tx)
+    private void copySnapshotVolumesIntoVolumes(EtcdTransaction tx)
     {
         TreeMap<String, String> snapDfnTbl = tx.get("LINSTOR/" + TBL_SNAP_VLM, true);
         for (Entry<String, String> entry : snapDfnTbl.entrySet())
@@ -378,7 +383,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             String entryValue = entry.getValue();
 
             // NODE_NAME, RESOURCE_NAME, SNAPSHOT_NAME, VLM_NR
-            String[] composedPk = EtcdUtils.splitPks(EtcdUtils.extractPrimaryKey(entryKey), false);
+            String[] composedPk = EtcdUtils.splitPks(extractPrimaryKey(entryKey), false);
             String col = getColumnName(entryKey);
 
             boolean copyData = true;
@@ -389,14 +394,14 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                     // SnapshotVolumes
 
                     tx.put(
-                        buildColumnKeyPre07(TBL_VLM, CLM_VLM_FLAGS, composedPk),
+                        buildKeyStr(TBL_VLM, CLM_VLM_FLAGS, composedPk),
                         "0"
                     );
                     break;
                 case CLM_SNAP_FLAGS:
                     // rename SNAPSHOT_FLAGS to VOLUME_FLAGS
                     tx.put(
-                        buildColumnKeyPre07(TBL_VLM, CLM_VLM_FLAGS, composedPk),
+                        buildKeyStr(TBL_VLM, CLM_VLM_FLAGS, composedPk),
                         entryValue
                     );
                     copyData = false; // DO NOT copy old SNAPSHOT_FLAGS
@@ -414,12 +419,12 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             }
             if (copyData)
             {
-                tx.put(buildColumnKeyPre07(TBL_VLM, col, composedPk), entryValue);
+                tx.put(buildKeyStr(TBL_VLM, col, composedPk), entryValue);
             }
         }
     }
 
-    private static void createObjectProtectionForSnapshotDefinitions(EtcdTransaction tx)
+    private void createObjectProtectionForSnapshotDefinitions(EtcdTransaction tx)
     {
         String[] pubRolesForObjProtColms = new String[]
         {
@@ -432,7 +437,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         for (Entry<String, String> entry : snapDfnTbl.entrySet())
         {
             String[] composedKey = EtcdUtils.splitPks(
-                EtcdUtils.extractPrimaryKey(entry.getKey()), // RESOURCE_NAME,SNAPSHOT_NAME
+                extractPrimaryKey(entry.getKey()), // RESOURCE_NAME,SNAPSHOT_NAME
                 false
             );
 
@@ -443,7 +448,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             for (String clm : pubRolesForObjProtColms)
             {
                 tx.put(
-                    buildColumnKeyPre07(
+                    buildKeyStr(
                         TBL_OBJ_PROT,
                         clm,
                         objProtPath
@@ -453,7 +458,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             }
 
             tx.put(
-                buildColumnKeyPre07(
+                buildKeyStr(
                     TBL_ACL,
                     CLM_ROLE_NAME,
                     objProtPath
@@ -461,7 +466,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                 "PUBLIC"
             );
             tx.put(
-                buildColumnKeyPre07(
+                buildKeyStr(
                     TBL_ACL,
                     CLM_ACCESS_TYPE,
                     objProtPath
@@ -471,7 +476,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         }
     }
 
-    private static void createLayerDataForSnapshots(EtcdTransaction tx)
+    private void createLayerDataForSnapshots(EtcdTransaction tx)
         throws JsonMappingException, JsonProcessingException
     {
         HashMap<Key, String> storPoolToKind = new HashMap<>();
@@ -482,7 +487,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                 String col = getColumnName(entry.getKey());
                 if (CLM_DRIVER_NAME.equals(col))
                 {
-                    String pk = EtcdUtils.extractPrimaryKey(entry.getKey());
+                    String pk = extractPrimaryKey(entry.getKey());
                     String[] composedKey = EtcdUtils.splitPks(pk, false);
                     storPoolToKind.put(new Key(composedKey[0], composedKey[1]), entry.getValue());
                 }
@@ -585,7 +590,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         }
     }
 
-    private static void createLayerDrbdRscDfnEntry(
+    private void createLayerDrbdRscDfnEntry(
         EtcdTransaction tx,
         String rscName,
         String snapName
@@ -613,7 +618,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         );
     }
 
-    private static void createLayerDrbdVlmDfnEntry(
+    private void createLayerDrbdVlmDfnEntry(
         EtcdTransaction tx,
         String rscName,
         String snapName,
@@ -638,7 +643,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         );
     }
 
-    private static String join(String delimiter, String... arr)
+    private String join(String delimiter, String... arr)
     {
         StringBuilder sb = new StringBuilder();
         for (String elem : arr)
@@ -652,7 +657,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         return sb.toString();
     }
 
-    private static Integer createLayerDrbdRscEntry(
+    private Integer createLayerDrbdRscEntry(
         EtcdTransaction tx,
         int myId,
         Integer parentId,
@@ -680,7 +685,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         return myId;
     }
 
-    private static void createLayerDrbdVlmEntry(
+    private void createLayerDrbdVlmEntry(
         EtcdTransaction tx,
         Integer parentId,
         String vlmNr
@@ -698,7 +703,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         );
     }
 
-    private static void createLayerLuksVlmEntry(
+    private void createLayerLuksVlmEntry(
         EtcdTransaction tx,
         Integer parentIdRef,
         String vlmNr
@@ -716,7 +721,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         );
     }
 
-    private static Integer createLayerRscIdEntry(
+    private Integer createLayerRscIdEntry(
         EtcdTransaction tx,
         int myId,
         String nodeName,
@@ -742,7 +747,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         return myId;
     }
 
-    private static void createLayerStorVlmEntry(
+    private void createLayerStorVlmEntry(
         EtcdTransaction tx,
         Integer parentId,
         String vlmNr,
@@ -759,7 +764,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         write(tx, TBL_LAYER_S_V, parentId + PK_DELIMITER + vlmNr, relativeMap);
     }
 
-    private static void write(
+    private void write(
         EtcdTransaction tx,
         String table,
         String combinedPk,
@@ -781,7 +786,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
         }
     }
 
-    private static void deleteSnapshotTables(EtcdTransaction tx)
+    private void deleteSnapshotTables(EtcdTransaction tx)
     {
         String[] tablesToDelete = new String[]
         {

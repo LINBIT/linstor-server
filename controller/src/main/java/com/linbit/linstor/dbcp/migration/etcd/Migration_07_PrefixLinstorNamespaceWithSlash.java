@@ -8,9 +8,14 @@ import java.util.TreeMap;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-public class Migration_07_PrefixLinstorNamespaceWithSlash extends EtcdMigration
+@EtcdMigration(
+    description = "Prefix all linstor etcd keys with /",
+    version = 34
+)
+public class Migration_07_PrefixLinstorNamespaceWithSlash extends BaseEtcdMigration
 {
-    public static void migrate(EtcdTransaction tx) throws JsonMappingException, JsonProcessingException
+    @Override
+    public void migrate(EtcdTransaction tx) throws JsonMappingException, JsonProcessingException
     {
         TreeMap<String, String> allKeys = tx.get("LINSTOR/", true);
         for (Entry<String, String> entry : allKeys.entrySet())

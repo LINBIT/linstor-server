@@ -1,6 +1,5 @@
 package com.linbit.linstor.core;
 
-import com.google.common.reflect.ClassPath;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -10,6 +9,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import com.google.common.reflect.ClassPath;
 
 public class ClassPathLoader
 {
@@ -41,7 +42,7 @@ public class ClassPathLoader
     )
     {
         List<Class<? extends T>> classes = packageSuffixes.stream()
-            .map(packageSuffix -> basePackage + "." + packageSuffix)
+            .map(packageSuffix -> packageSuffix.isEmpty() ? basePackage : (basePackage + "." + packageSuffix))
             .map(fullQualPkgName -> loadClasses(fullQualPkgName, requiredClass))
             .flatMap(List::stream)
             .filter(clazz -> clazz.getAnnotation(requiredAnnotation) != null)

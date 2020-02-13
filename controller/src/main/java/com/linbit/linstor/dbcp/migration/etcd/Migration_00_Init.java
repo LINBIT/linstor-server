@@ -17,22 +17,26 @@ import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
 @SuppressWarnings("checkstyle:typename")
-public class Migration_00_Init extends EtcdMigration
+@EtcdMigration(
+    description = "Initial data",
+    version = 0
+)
+public class Migration_00_Init extends BaseEtcdMigration
 {
     private static final String PRIMARY_KEY_DELI = ":";
 
-    private static void secConfiguration(
+    private void secConfiguration(
         EtcdTransaction tx,
         String entryKey,
         String entryDspKey,
         String entryValue
     )
     {
-        tx.put(buildColumnKeyPre07(SecConfiguration.ENTRY_DSP_KEY, entryKey), entryDspKey);
-        tx.put(buildColumnKeyPre07(SecConfiguration.ENTRY_VALUE, entryKey), entryValue);
+        tx.put(buildColumnKey(SecConfiguration.ENTRY_DSP_KEY, entryKey), entryDspKey);
+        tx.put(buildColumnKey(SecConfiguration.ENTRY_VALUE, entryKey), entryValue);
     }
 
-    private static void secIdentities(
+    private void secIdentities(
         EtcdTransaction tx,
         String identityName,
         String identityDspName,
@@ -40,25 +44,25 @@ public class Migration_00_Init extends EtcdMigration
         boolean idLocked
     )
     {
-        tx.put(buildColumnKeyPre07(SecIdentities.IDENTITY_NAME, identityName), identityName);
-        tx.put(buildColumnKeyPre07(SecIdentities.IDENTITY_DSP_NAME, identityName), identityDspName);
-        tx.put(buildColumnKeyPre07(SecIdentities.ID_ENABLED, identityName), Boolean.toString(idEnabled).toUpperCase());
-        tx.put(buildColumnKeyPre07(SecIdentities.ID_LOCKED, identityName), Boolean.toString(idLocked).toUpperCase());
+        tx.put(buildColumnKey(SecIdentities.IDENTITY_NAME, identityName), identityName);
+        tx.put(buildColumnKey(SecIdentities.IDENTITY_DSP_NAME, identityName), identityDspName);
+        tx.put(buildColumnKey(SecIdentities.ID_ENABLED, identityName), Boolean.toString(idEnabled).toUpperCase());
+        tx.put(buildColumnKey(SecIdentities.ID_LOCKED, identityName), Boolean.toString(idLocked).toUpperCase());
     }
 
-    private static void secTypes(
+    private void secTypes(
         EtcdTransaction tx,
         String typeName,
         String typeDspName,
         boolean typeEnabled
     )
     {
-        tx.put(buildColumnKeyPre07(SecTypes.TYPE_NAME, typeName), typeName);
-        tx.put(buildColumnKeyPre07(SecTypes.TYPE_DSP_NAME, typeName), typeDspName);
-        tx.put(buildColumnKeyPre07(SecTypes.TYPE_ENABLED, typeName), Boolean.toString(typeEnabled).toUpperCase());
+        tx.put(buildColumnKey(SecTypes.TYPE_NAME, typeName), typeName);
+        tx.put(buildColumnKey(SecTypes.TYPE_DSP_NAME, typeName), typeDspName);
+        tx.put(buildColumnKey(SecTypes.TYPE_ENABLED, typeName), Boolean.toString(typeEnabled).toUpperCase());
     }
 
-    private static void secRoles(
+    private void secRoles(
         EtcdTransaction tx,
         String roleName,
         String roleDspName,
@@ -67,37 +71,35 @@ public class Migration_00_Init extends EtcdMigration
         int rolePrivileges
     )
     {
-        tx.put(buildColumnKeyPre07(SecRoles.ROLE_NAME, roleName), roleName);
-        tx.put(buildColumnKeyPre07(SecRoles.ROLE_DSP_NAME, roleName), roleDspName);
-        tx.put(buildColumnKeyPre07(SecRoles.DOMAIN_NAME, roleName), domainName);
-        tx.put(buildColumnKeyPre07(SecRoles.ROLE_ENABLED, roleName), Boolean.toString(roleEnabled).toUpperCase());
-        tx.put(buildColumnKeyPre07(SecRoles.ROLE_PRIVILEGES, roleName), Integer.toString(rolePrivileges));
+        tx.put(buildColumnKey(SecRoles.ROLE_NAME, roleName), roleName);
+        tx.put(buildColumnKey(SecRoles.ROLE_DSP_NAME, roleName), roleDspName);
+        tx.put(buildColumnKey(SecRoles.DOMAIN_NAME, roleName), domainName);
+        tx.put(buildColumnKey(SecRoles.ROLE_ENABLED, roleName), Boolean.toString(roleEnabled).toUpperCase());
+        tx.put(buildColumnKey(SecRoles.ROLE_PRIVILEGES, roleName), Integer.toString(rolePrivileges));
     }
 
-    private static void secIdRoleMap(
+    private void secIdRoleMap(
         EtcdTransaction tx,
         String identityName,
         String roleName
     )
     {
         final String pk = identityName + PRIMARY_KEY_DELI + roleName;
-        tx.put(buildColumnKeyPre07(SecIdRoleMap.IDENTITY_NAME, pk), identityName);
-        tx.put(buildColumnKeyPre07(SecIdRoleMap.ROLE_NAME, pk), roleName);
+        tx.put(buildColumnKey(SecIdRoleMap.IDENTITY_NAME, pk), identityName);
+        tx.put(buildColumnKey(SecIdRoleMap.ROLE_NAME, pk), roleName);
     }
 
-    private static void secAccessTypes(
+    private void secAccessTypes(
         EtcdTransaction tx,
         String accessTypeName,
         int accessTypeValue
     )
     {
-        tx.put(buildColumnKeyPre07(SecAccessTypes.ACCESS_TYPE_NAME, accessTypeName), accessTypeName);
-        tx.put(
-            buildColumnKeyPre07(SecAccessTypes.ACCESS_TYPE_VALUE, accessTypeName), Integer.toString(accessTypeValue)
-        );
+        tx.put(buildColumnKey(SecAccessTypes.ACCESS_TYPE_NAME, accessTypeName), accessTypeName);
+        tx.put(buildColumnKey(SecAccessTypes.ACCESS_TYPE_VALUE, accessTypeName), Integer.toString(accessTypeValue));
     }
 
-    private static void secTypeRules(
+    private void secTypeRules(
         EtcdTransaction tx,
         String domainName,
         String typeName,
@@ -105,23 +107,23 @@ public class Migration_00_Init extends EtcdMigration
     )
     {
         final String pk = domainName + PRIMARY_KEY_DELI + typeName;
-        tx.put(buildColumnKeyPre07(SecTypeRules.DOMAIN_NAME, pk), domainName);
-        tx.put(buildColumnKeyPre07(SecTypeRules.TYPE_NAME, pk), typeName);
-        tx.put(buildColumnKeyPre07(SecTypeRules.ACCESS_TYPE, pk), Integer.toString(accessType));
+        tx.put(buildColumnKey(SecTypeRules.DOMAIN_NAME, pk), domainName);
+        tx.put(buildColumnKey(SecTypeRules.TYPE_NAME, pk), typeName);
+        tx.put(buildColumnKey(SecTypeRules.ACCESS_TYPE, pk), Integer.toString(accessType));
     }
 
-    private static void secDfltRoles(
+    private void secDfltRoles(
         EtcdTransaction tx,
         String identityName,
         String roleName
     )
     {
         final String pk = identityName;
-        tx.put(buildColumnKeyPre07(SecDfltRoles.IDENTITY_NAME, pk), identityName);
-        tx.put(buildColumnKeyPre07(SecDfltRoles.ROLE_NAME, pk), roleName);
+        tx.put(buildColumnKey(SecDfltRoles.IDENTITY_NAME, pk), identityName);
+        tx.put(buildColumnKey(SecDfltRoles.ROLE_NAME, pk), roleName);
     }
 
-    private static void secObjectProtection(
+    private void secObjectProtection(
         EtcdTransaction tx,
         String objectPath,
         String creatorIdentityName,
@@ -130,13 +132,13 @@ public class Migration_00_Init extends EtcdMigration
     )
     {
         final String pk = objectPath;
-        tx.put(buildColumnKeyPre07(SecObjectProtection.OBJECT_PATH, pk), objectPath);
-        tx.put(buildColumnKeyPre07(SecObjectProtection.CREATOR_IDENTITY_NAME, pk), creatorIdentityName);
-        tx.put(buildColumnKeyPre07(SecObjectProtection.OWNER_ROLE_NAME, pk), ownerRoleName);
-        tx.put(buildColumnKeyPre07(SecObjectProtection.SECURITY_TYPE_NAME, pk), securityTypeName);
+        tx.put(buildColumnKey(SecObjectProtection.OBJECT_PATH, pk), objectPath);
+        tx.put(buildColumnKey(SecObjectProtection.CREATOR_IDENTITY_NAME, pk), creatorIdentityName);
+        tx.put(buildColumnKey(SecObjectProtection.OWNER_ROLE_NAME, pk), ownerRoleName);
+        tx.put(buildColumnKey(SecObjectProtection.SECURITY_TYPE_NAME, pk), securityTypeName);
     }
 
-    private static void secAclMap(
+    private void secAclMap(
         EtcdTransaction tx,
         String objectPath,
         String roleName,
@@ -144,12 +146,12 @@ public class Migration_00_Init extends EtcdMigration
     )
     {
         final String pk = objectPath + PRIMARY_KEY_DELI + roleName;
-        tx.put(buildColumnKeyPre07(SecAclMap.OBJECT_PATH, pk), objectPath);
-        tx.put(buildColumnKeyPre07(SecAclMap.ROLE_NAME, pk), roleName);
-        tx.put(buildColumnKeyPre07(SecAclMap.ACCESS_TYPE, pk), Integer.toString(accessType));
+        tx.put(buildColumnKey(SecAclMap.OBJECT_PATH, pk), objectPath);
+        tx.put(buildColumnKey(SecAclMap.ROLE_NAME, pk), roleName);
+        tx.put(buildColumnKey(SecAclMap.ACCESS_TYPE, pk), Integer.toString(accessType));
     }
 
-    private static void storPoolDefinitions(
+    private void storPoolDefinitions(
         EtcdTransaction tx,
         String uuid,
         String poolName,
@@ -157,12 +159,12 @@ public class Migration_00_Init extends EtcdMigration
     )
     {
         final String pk = poolName;
-        tx.put(buildColumnKeyPre07(StorPoolDefinitions.UUID, pk), uuid);
-        tx.put(buildColumnKeyPre07(StorPoolDefinitions.POOL_NAME, pk), poolName);
-        tx.put(buildColumnKeyPre07(StorPoolDefinitions.POOL_DSP_NAME, pk), poolDspName);
+        tx.put(buildColumnKey(StorPoolDefinitions.UUID, pk), uuid);
+        tx.put(buildColumnKey(StorPoolDefinitions.POOL_NAME, pk), poolName);
+        tx.put(buildColumnKey(StorPoolDefinitions.POOL_DSP_NAME, pk), poolDspName);
     }
 
-    private static void resourceGroups(
+    private void resourceGroups(
         EtcdTransaction tx,
         String uuid,
         String resourceGroupName,
@@ -170,12 +172,12 @@ public class Migration_00_Init extends EtcdMigration
     )
     {
         final String pk = resourceGroupName;
-        tx.put(buildColumnKeyPre07(ResourceGroups.UUID, pk), uuid);
-        tx.put(buildColumnKeyPre07(ResourceGroups.RESOURCE_GROUP_NAME, pk), resourceGroupName);
-        tx.put(buildColumnKeyPre07(ResourceGroups.RESOURCE_GROUP_DSP_NAME, pk), resourceGroupDspName);
+        tx.put(buildColumnKey(ResourceGroups.UUID, pk), uuid);
+        tx.put(buildColumnKey(ResourceGroups.RESOURCE_GROUP_NAME, pk), resourceGroupName);
+        tx.put(buildColumnKey(ResourceGroups.RESOURCE_GROUP_DSP_NAME, pk), resourceGroupDspName);
     }
 
-    private static void propsContainers(
+    private void propsContainers(
         EtcdTransaction tx,
         String propsInstance,
         String propKey,
@@ -190,7 +192,8 @@ public class Migration_00_Init extends EtcdMigration
         );
     }
 
-    public static void migrate(EtcdTransaction tx)
+    @Override
+    public void migrate(EtcdTransaction tx)
     {
         // push init values
         secConfiguration(tx, "SECURITYLEVEL", "SecurityLevel", "NO_SECURITY");

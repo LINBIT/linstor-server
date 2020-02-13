@@ -6,16 +6,12 @@ import com.linbit.ServiceName;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
+import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.core.ClassPathLoader;
 import com.linbit.linstor.core.cfg.CtrlConfig;
-import com.linbit.linstor.dbcp.migration.etcd.Migration_00_Init;
-import com.linbit.linstor.dbcp.migration.etcd.Migration_01_DelEmptyRscExtNames;
-import com.linbit.linstor.dbcp.migration.etcd.Migration_02_AutoQuorumAndTiebreaker;
-import com.linbit.linstor.dbcp.migration.etcd.Migration_03_DelProp_SnapshotRestore;
-import com.linbit.linstor.dbcp.migration.etcd.Migration_04_DisklessFlagSplit;
-import com.linbit.linstor.dbcp.migration.etcd.Migration_05_UnifyResourcesAndSnapshots;
-import com.linbit.linstor.dbcp.migration.etcd.Migration_06_RscGrpDfltReplCount;
-import com.linbit.linstor.dbcp.migration.etcd.Migration_07_PrefixLinstorNamespaceWithSlash;
+import com.linbit.linstor.dbcp.migration.etcd.BaseEtcdMigration;
+import com.linbit.linstor.dbcp.migration.etcd.EtcdMigration;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -28,6 +24,9 @@ import javax.inject.Singleton;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -104,7 +103,7 @@ public class DbEtcd implements ControllerETCDDatabase
     }
 
     @Override
-    public void migrate(String dbType)
+    public void migrate(String dbType) throws InitializationException
     {
         ControllerETCDTransactionMgr etcdTxMgr = txMgrGenerator.startTransaction();
         etcdTxMgr.rollbackIfNeeded();
@@ -116,48 +115,57 @@ public class DbEtcd implements ControllerETCDDatabase
             ? Integer.parseInt(dbHistoryVersionResponse.values().iterator().next())
             : 0;
 
-        if (dbVersion == 0)
+        ClassPathLoader classPathLoader = new ClassPathLoader(errorReporter);
+        List<Class<? extends BaseEtcdMigration>> etcdMigrationClasses = classPathLoader.loadClasses(
+            BaseEtcdMigration.class.getPackage().getName(),
+            Collections.singletonList(""),
+            BaseEtcdMigration.class,
+            EtcdMigration.class
+        );
+
+        TreeMap<Integer, BaseEtcdMigration> migrations = new TreeMap<>();
+        try
         {
-            Migration_00_Init.migrate(etcdTx);
-            dbVersion++;
-            etcdTxMgr.commit();
+            for (Class<? extends BaseEtcdMigration> etcdMigrationClass : etcdMigrationClasses)
+            {
+                BaseEtcdMigration migration = etcdMigrationClass.newInstance();
+                int version = migration.getVersion();
+                if (migrations.containsKey(version))
+                {
+                    throw new ImplementationError(
+                        "Duplicated migration version: " + version + ". " +
+                        migrations.get(version).getDescription() + " " +
+                        migration.getDescription()
+                    );
+                }
+                migrations.put(version, migration);
+            }
+
+            checkIfAllMigrationsLinked(migrations);
         }
-        TreeMap<Integer, EtcdMigrationMethod> migrations = new TreeMap<>();
-        migrations.put(0, Migration_00_Init::migrate);
-        migrations.put(1, Migration_01_DelEmptyRscExtNames::migrate);
-        migrations.put(2, Migration_02_AutoQuorumAndTiebreaker::migrate);
-        migrations.put(3, Migration_03_DelProp_SnapshotRestore::migrate);
-        // we introduced a bug where instead of writing (3+1) we accidentally written
-        // ("3" + "1").
-        migrations.put(31, Migration_04_DisklessFlagSplit::migrate);
-        migrations.put(32, Migration_05_UnifyResourcesAndSnapshots::migrate);
-        migrations.put(33, Migration_06_RscGrpDfltReplCount::migrate);
-        migrations.put(34, Migration_07_PrefixLinstorNamespaceWithSlash::migrate);
+        catch (InstantiationException | IllegalAccessException exc)
+        {
+            throw new InitializationException("Failed to migrate ETCD server", exc);
+        }
 
         try
         {
             int highestKey = migrations.lastKey();
-            for (; dbVersion <= highestKey; dbVersion++)
+            while (dbVersion <= highestKey)
             {
-                if (dbVersion == 4)
-                {
-                    // we introduced a bug where instead of writing (3+1) we accidentally written
-                    // ("3" + "1").
-                    dbVersion = 31;
-                }
-
-                EtcdMigrationMethod migrationMethod = migrations.get(dbVersion);
-                if (migrationMethod == null)
+                BaseEtcdMigration migration = migrations.get(dbVersion);
+                if (migration == null)
                 {
                     throw new ImplementationError(
                         "missing migration from dbVersion " +
                             (dbVersion - 1) + " -> " + dbVersion
                     );
                 }
-                errorReporter.logDebug("Upgrading DB to version: " + dbVersion);
-                migrationMethod.migrate(etcdTx);
+                errorReporter.logDebug("Migration DB: " + dbVersion + ": " + migration.getDescription());
+                migration.migrate(etcdTx);
 
-                etcdTx.put(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + (dbVersion + 1));
+                dbVersion = migration.getNextVersion();
+                etcdTx.put(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + dbVersion);
 
                 etcdTxMgr.commit();
                 etcdTx = etcdTxMgr.getTransaction();
@@ -292,8 +300,25 @@ public class DbEtcd implements ControllerETCDDatabase
         }
     }
 
-    private interface EtcdMigrationMethod
+    private void checkIfAllMigrationsLinked(TreeMap<Integer, BaseEtcdMigration> migrationsRef)
     {
-        void migrate(EtcdTransaction tx) throws Exception;
+        List<BaseEtcdMigration> unreachableMigrations = new ArrayList<>(migrationsRef.values());
+        BaseEtcdMigration current = migrationsRef.get(0);
+        while (current != null)
+        {
+            unreachableMigrations.remove(current);
+            current = migrationsRef.get(current.getNextVersion());
+        }
+        if (!unreachableMigrations.isEmpty())
+        {
+            StringBuilder errorMsg = new StringBuilder("Found unreachable migrations: ");
+            for (BaseEtcdMigration mig : unreachableMigrations)
+            {
+                errorMsg.append("  ").append(mig.getVersion()).append(" -> ").append(mig.getNextVersion())
+                    .append(": ").append(mig.getClass().getSimpleName()).append(", ")
+                    .append(mig.getDescription()).append("\n");
+            }
+            throw new ImplementationError(errorMsg.toString());
+        }
     }
 }
