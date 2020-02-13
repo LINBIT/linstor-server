@@ -194,7 +194,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             for (String pk : pks)
             {
                 tx.put(
-                    EtcdUtils.buildKeyStr(
+                    buildColumnKeyPre07(
                         pair.a,
                         columnName,
                         pair.b.apply(pk)
@@ -208,9 +208,9 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                 String oldComposedKey = EtcdUtils.extractPrimaryKey(oldKey);
                 String oldClm = getColumnName(oldKey);
                 tx.delete(oldKey, false);
-                tx.delete(EtcdUtils.buildKeyStr(pair.a, oldClm, oldComposedKey), false);
+                tx.delete(buildColumnKeyPre07(pair.a, oldClm, oldComposedKey), false);
                 tx.put(
-                    EtcdUtils.buildKeyStr(
+                    buildColumnKeyPre07(
                         pair.a,
                         oldClm,
                         pair.b.apply(oldComposedKey)
@@ -260,23 +260,23 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                     // SnapshotDefinitions
 
                     tx.put(
-                        EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_PARENT_UUID, pk),
+                        buildColumnKeyPre07(TBL_RSC_DFN, CLM_PARENT_UUID, pk),
                         rscDfnNameToUuid.get(pk[0])
                     );
 
                     tx.put(
-                        EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_LAYER_STACK, pk),
+                        buildColumnKeyPre07(TBL_RSC_DFN, CLM_LAYER_STACK, pk),
                         "'[]'"
                     );
                     tx.put(
-                        EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_RSC_GRP_NAME, pk),
+                        buildColumnKeyPre07(TBL_RSC_DFN, CLM_RSC_GRP_NAME, pk),
                         InternalApiConsts.DEFAULT_RSC_GRP_NAME.toUpperCase()
                     );
                     break;
                 case CLM_SNAP_FLAGS:
                     // rename SNAPSHOT_FLAGS to RESOURCE_FLAGS
                     tx.put(
-                        EtcdUtils.buildKeyStr(TBL_RSC_DFN, CLM_RSC_FLAGS, pk),
+                        buildColumnKeyPre07(TBL_RSC_DFN, CLM_RSC_FLAGS, pk),
                         entryValue
                     );
                     copyData = false; // DO NOT copy old SNAPSHOT_FLAGS
@@ -286,7 +286,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             }
             if (copyData)
             {
-                tx.put(EtcdUtils.buildKeyStr(TBL_RSC_DFN, col, pk), entryValue);
+                tx.put(buildColumnKeyPre07(TBL_RSC_DFN, col, pk), entryValue);
             }
         }
     }
@@ -300,20 +300,20 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             String entryValue = entry.getValue();
 
             // RESOURCE_NAME, SNAPSHOT_NAME, VLM_NR
-            String[] composedPk = EtcdUtils.splitPks(EtcdUtils.extractPrimaryKey(entryKey), false);
+            String[] composedPk = EtcdUtils.splitPks(extractPrimaryKeyPre07(entryKey), false);
             String col = getColumnName(entryKey);
 
             if (CLM_SNAP_FLAGS.equals(col))
             {
                 // rename SNAPSHOT_FLAGS to VLM_FLAGS
                 tx.put(
-                    EtcdUtils.buildKeyStr(TBL_VLM_DFN, CLM_VLM_FLAGS, composedPk),
+                    buildColumnKeyPre07(TBL_VLM_DFN, CLM_VLM_FLAGS, composedPk),
                     entryValue
                 );
             }
             else
             {
-                tx.put(EtcdUtils.buildKeyStr(TBL_VLM_DFN, col, composedPk), entryValue);
+                tx.put(buildColumnKeyPre07(TBL_VLM_DFN, col, composedPk), entryValue);
             }
         }
     }
@@ -340,7 +340,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                 case CLM_SNAP_FLAGS:
                     // rename SNAPSHOT_FLAGS to RESOURCE_FLAGS
                     tx.put(
-                        EtcdUtils.buildKeyStr(TBL_RSC, CLM_RSC_FLAGS, composedPk),
+                        buildColumnKeyPre07(TBL_RSC, CLM_RSC_FLAGS, composedPk),
                         entryValue
                     );
                     break;
@@ -364,7 +364,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
 
             if (copyData)
             {
-                tx.put(EtcdUtils.buildKeyStr(TBL_RSC, col, composedPk), entryValue);
+                tx.put(buildColumnKeyPre07(TBL_RSC, col, composedPk), entryValue);
             }
         }
     }
@@ -389,14 +389,14 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                     // SnapshotVolumes
 
                     tx.put(
-                        EtcdUtils.buildKeyStr(TBL_VLM, CLM_VLM_FLAGS, composedPk),
+                        buildColumnKeyPre07(TBL_VLM, CLM_VLM_FLAGS, composedPk),
                         "0"
                     );
                     break;
                 case CLM_SNAP_FLAGS:
                     // rename SNAPSHOT_FLAGS to VOLUME_FLAGS
                     tx.put(
-                        EtcdUtils.buildKeyStr(TBL_VLM, CLM_VLM_FLAGS, composedPk),
+                        buildColumnKeyPre07(TBL_VLM, CLM_VLM_FLAGS, composedPk),
                         entryValue
                     );
                     copyData = false; // DO NOT copy old SNAPSHOT_FLAGS
@@ -414,7 +414,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             }
             if (copyData)
             {
-                tx.put(EtcdUtils.buildKeyStr(TBL_VLM, col, composedPk), entryValue);
+                tx.put(buildColumnKeyPre07(TBL_VLM, col, composedPk), entryValue);
             }
         }
     }
@@ -443,7 +443,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             for (String clm : pubRolesForObjProtColms)
             {
                 tx.put(
-                    EtcdUtils.buildKeyStr(
+                    buildColumnKeyPre07(
                         TBL_OBJ_PROT,
                         clm,
                         objProtPath
@@ -453,7 +453,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
             }
 
             tx.put(
-                EtcdUtils.buildKeyStr(
+                buildColumnKeyPre07(
                     TBL_ACL,
                     CLM_ROLE_NAME,
                     objProtPath
@@ -461,7 +461,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends EtcdMigration
                 "PUBLIC"
             );
             tx.put(
-                EtcdUtils.buildKeyStr(
+                buildColumnKeyPre07(
                     TBL_ACL,
                     CLM_ACCESS_TYPE,
                     objProtPath

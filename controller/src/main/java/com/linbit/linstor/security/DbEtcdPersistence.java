@@ -195,7 +195,7 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
     private String extractPrimaryKey(String key)
     {
         // key is something like
-        // LINSTOR/$table/$composedPk/$column = $valueOfColumn
+        // /LINSTOR/$table/$composedPk/$column = $valueOfColumn
         int postDelimIdx = key.lastIndexOf(EtcdUtils.PATH_DELIMITER);
         int preDelimIdx = key.lastIndexOf(EtcdUtils.PATH_DELIMITER, postDelimIdx - 1);
         return key.substring(preDelimIdx + 1, postDelimIdx);

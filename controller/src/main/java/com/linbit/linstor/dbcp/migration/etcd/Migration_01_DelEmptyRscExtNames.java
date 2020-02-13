@@ -1,6 +1,5 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
-import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
 import java.util.Map.Entry;
@@ -11,7 +10,7 @@ public class Migration_01_DelEmptyRscExtNames extends EtcdMigration
 {
     public static void migrate(EtcdTransaction tx)
     {
-        TreeMap<String, String> rscDfnTbl = tx.get(EtcdUtils.buildKey("RESOURCE_DEFINITIONS"), true);
+        TreeMap<String, String> rscDfnTbl = tx.get(LINSTOR_PREFIX_PRE_07 + "RESOURCE_DEFINITIONS", true);
 
         for (Entry<String, String> entry : rscDfnTbl.entrySet())
         {

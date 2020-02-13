@@ -101,7 +101,7 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
         );
         // we did not specify the full PK, only the rscLayerId. PK should be something like
         // <rscId>:<vlmNr>
-        // however, the returned etcdKey is something like "LINSTOR/<table>/<rscId>/"
+        // however, the returned etcdKey is something like "/LINSTOR/<table>/<rscId>/"
         // as we are using the --prefix, we need to cut away the last '/' in order to get all
         // volumes of this <rscId>
         etcdKey = etcdKey.substring(0, etcdKey.length() - EtcdUtils.PATH_DELIMITER.length());

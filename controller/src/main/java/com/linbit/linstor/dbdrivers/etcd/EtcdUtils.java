@@ -28,7 +28,7 @@ public class EtcdUtils
     public static final String PATH_DELIMITER = "/";
     @UsedByMigration
     public static final String PK_DELIMITER = ":";
-    public static final String LINSTOR_PREFIX = "LINSTOR" + PATH_DELIMITER;
+    public static final String LINSTOR_PREFIX = PATH_DELIMITER + "LINSTOR" + PATH_DELIMITER;
 
     private static final Deadline DEFAULT_DEADLINE = Deadline.after(60, TimeUnit.SECONDS);
 
@@ -158,8 +158,8 @@ public class EtcdUtils
     public static String extractPrimaryKey(String key)
     {
         // key is something like
-        // LINSTOR/$table/$composedPk/$column = $valueOfColumn
-        int tableStartIdx = key.indexOf(PATH_DELIMITER);
+        // /LINSTOR/$table/$composedPk/$column = $valueOfColumn
+        int tableStartIdx = LINSTOR_PREFIX.length();
         int composedKeyStartIdx = key.indexOf(PATH_DELIMITER, tableStartIdx + 1);
         int composedKeyEndIdx = key.lastIndexOf(PATH_DELIMITER);
 

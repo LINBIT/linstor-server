@@ -26,12 +26,12 @@ import javax.inject.Singleton;
  * <p>
  * That exception WILL happen when we are declaring a Node as lost, as we first update the node
  * and afterwards delete it. If all goes well, both of this operations happen in the same request. <br/>
- * The result is an put to LINSTOR/NODES/nodeName/COLUMN, and a delete to LINSTOR/NODES/nodeName (this triggers
+ * The result is an put to /LINSTOR/NODES/nodeName/COLUMN, and a delete to /LINSTOR/NODES/nodeName (this triggers
  * the "duplicate key given in txn request" exception).
  * </p>
  * <p>
  * To prevent this, this driver simply does not use the ranged delete request (i.e. not deleting
- * LINSTOR/NODES/nodeName), instead this driver deletes all columns one by one and let
+ * /LINSTOR/NODES/nodeName), instead this driver deletes all columns one by one and let
  * {@link ControllerETCDTransactionMgr#removeDuplucateRequests} clean up the issue, preventing the exception
  * </p>
  */
