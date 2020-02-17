@@ -36,13 +36,7 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
     public Map<String, String> loadAll(String instanceName) throws DatabaseException
     {
         errorReporter.logTrace("Loading properties for instance %s", getId(instanceName));
-        String etcdNamespace = EtcdUtils.buildKey(GeneratedDatabaseTables.PROPS_CONTAINERS, instanceName);
-        /*
-         * buildKeys adds a trailing / at the end of our "primary key".
-         * However, instanceName is only the first part of our primary key, and the trailing / prevents
-         * ETCD finding the rest of the primary key
-         */
-        etcdNamespace = etcdNamespace.substring(0, etcdNamespace.length() - EtcdUtils.PATH_DELIMITER.length());
+        String etcdNamespace = getEtcdKey(instanceName, null);
         Map<String, String> etcdMap = namespace(etcdNamespace).get(true);
 
         final int propsKeyStart = etcdNamespace.length() + EtcdUtils.PK_DELIMITER.length();
@@ -58,12 +52,38 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
         return propsMap;
     }
 
+    private String getEtcdKey(String instanceName, String key)
+    {
+        String etcdKey = EtcdUtils.buildKey(GeneratedDatabaseTables.PROPS_CONTAINERS, instanceName);
+        /*
+         * buildKeys adds a trailing / at the end of our "primary key".
+         * However, if key is null, we most likely need this etcdKey for recursive call, which means
+         * we have to get rid of the trailing /
+         * Otherwise, the instanceName and the key should be separated with : instead of /
+         */
+        etcdKey = etcdKey.substring(0, etcdKey.length() - EtcdUtils.PATH_DELIMITER.length());
+        if (key != null)
+        {
+            etcdKey += EtcdUtils.PK_DELIMITER + key;
+        }
+        return etcdKey;
+    }
+
     @Override
     public void persist(String instanceName, String key, String value) throws DatabaseException
     {
         errorReporter.logTrace("Storing property %s", getId(instanceName, key, value));
-        namespace(GeneratedDatabaseTables.PROPS_CONTAINERS, instanceName)
-            .put(key, value);
+        /*
+         * DO NOT use
+         * namespace(..., instanceName).put(key, value);
+         * that generates a key like
+         * /LINSTOR/PROPS_CONTAINERS//$instanceName/$key = $value
+         * but the loader expects all keys to have the format
+         * /LINSTOR/PROPS_CONTAINERS//$instanceName:$key = $value
+         * (':' instead of '/')
+         */
+        namespace(getEtcdKey(instanceName, key))
+            .put("", value);
     }
 
     @Override
@@ -79,7 +99,7 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
     public void remove(String instanceName, String key) throws DatabaseException
     {
         errorReporter.logTrace("Removing property %s", getId(instanceName, key));
-        namespace(EtcdUtils.buildKey(key, GeneratedDatabaseTables.PROPS_CONTAINERS, instanceName))
+        namespace(getEtcdKey(instanceName, key))
             .delete(false);
     }
 
@@ -97,7 +117,7 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
     {
         errorReporter.logTrace("Removing all properties by instance %s", getId(instanceName));
 
-        namespace(GeneratedDatabaseTables.PROPS_CONTAINERS, instanceName)
+        namespace(getEtcdKey(instanceName, null))
             .delete(true);
     }
 
