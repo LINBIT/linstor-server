@@ -1367,7 +1367,7 @@ public class DrbdLayer implements DeviceLayer
                 if (haveFatVlm)
                 {
                     errorReporter.logTrace("Setting resource primary on %s", drbdRscData.getSuffixedResourceName());
-                    setResourcePrimary(drbdRscData);
+                    setResourceUpToDate(drbdRscData);
                 }
 
                 MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
@@ -1384,7 +1384,7 @@ public class DrbdLayer implements DeviceLayer
         return rscState.getVlmLayerObjects().values().stream().allMatch(DrbdVlmData::isMetaDataNew);
     }
 
-    private void setResourcePrimary(DrbdRscData<Resource> drbdRscData) throws StorageException
+    private void setResourceUpToDate(DrbdRscData<Resource> drbdRscData) throws StorageException
     {
         try
         {
@@ -1396,7 +1396,7 @@ public class DrbdLayer implements DeviceLayer
             // * let the user choose which satellite should be primary (or let it be handled by auto-promote)
             drbdUtils.secondary(drbdRscData);
         }
-        catch (ExtCmdFailedException cmdExc)
+        catch (ExtCmdFailedException | StorageException cmdExc)
         {
             throw new StorageException(
                 "Starting the initial resync of the DRBD resource '" + drbdRscData.getSuffixedResourceName() +

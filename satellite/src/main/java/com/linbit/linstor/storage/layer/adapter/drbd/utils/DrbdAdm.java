@@ -9,8 +9,11 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.linstor.core.types.NodeId;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.layer.provider.utils.Commands;
+import com.linbit.linstor.storage.layer.provider.utils.Commands.RetryHandler;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -125,17 +128,20 @@ public class DrbdAdm
 
     /**
      * Switches a DRBD resource to primary mode
+     *
+     * @throws StorageException
      */
     public void primary(
         DrbdRscData<Resource> drbdRscData,
         boolean force,
         boolean withDrbdSetup
     )
-        throws ExtCmdFailedException
+        throws StorageException
     {
+
+        List<String> command = new ArrayList<>();
         if (withDrbdSetup)
         {
-            List<String> command = new ArrayList<>();
             command.add(DRBDSETUP_UTIL);
             if (force)
             {
@@ -143,20 +149,45 @@ public class DrbdAdm
             }
             command.add("primary");
             command.add(drbdRscData.getSuffixedResourceName());
-
-            execute(command);
         }
         else
         {
+            command.add(DRBDADM_UTIL);
+            command.add("-vvv");
+            command.add("primary");
             if (force)
             {
-                simpleAdmCommand(drbdRscData, null, "primary", "--force");
+                command.add("--force");
             }
-            else
-            {
-                simpleAdmCommand(drbdRscData, null, "primary");
-            }
+            command.add(drbdRscData.getSuffixedResourceName());
         }
+
+
+        String[] commandArr = command.toArray(new String[command.size()]);
+        Commands.genericExecutor(
+            extCmdFactory.create(),
+            commandArr,
+            "Failed to set resource '" + drbdRscData.getSuffixedResourceName() + "' to primary",
+            "Failed to set resource '" + drbdRscData.getSuffixedResourceName() + "' to primary",
+            new RetryHandler()
+            {
+                private int retryCount = 3;
+
+                @Override
+                public boolean skip(OutputData outDataRef)
+                {
+                    return false;
+                }
+
+                @Override
+                public boolean retry(OutputData outputDataRef)
+                {
+                    String errStr = new String(outputDataRef.stderrData);
+                    return errStr.contains("Concurrent state changes detected and aborted") &&
+                        retryCount-- > 0;
+                }
+            }
+        );
     }
 
     /**

@@ -10,19 +10,29 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.SpdkUtils;
 import com.linbit.utils.StringUtils;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-
 import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
+
+import java.io.IOException;
+import java.util.Collection;
 
 public class Commands
 {
     public interface RetryHandler
     {
-        boolean retry(OutputData outputData);
-
+        /**
+         * If skip returns true, the failed executed external command
+         * is completely ignored. No exception is thrown.
+         *
+         * @param outData
+         */
         boolean skip(OutputData outData);
+
+        /**
+         * If retry returns true the command will be executed again.
+         *
+         * @param outputData
+         */
+        boolean retry(OutputData outputData);
     }
 
     public static final RetryHandler NO_RETRY = new NoRetryHandler();
