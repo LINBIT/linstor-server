@@ -138,7 +138,7 @@ class CtrlVlmDfnApiCallHandler
                 rscList.add(iterateResource.next());
             }
 
-            List<VolumeDefinition> vlmDfnsCreated = createVlmDfns(rscDfn, vlmDfnWithPayloadApiListRef);
+            List<VolumeDefinition> vlmDfnsCreated = createVlmDfns(responses, rscDfn, vlmDfnWithPayloadApiListRef);
 
             for (VolumeDefinition vlmDfn : vlmDfnsCreated)
             {
@@ -169,6 +169,7 @@ class CtrlVlmDfnApiCallHandler
     }
 
     List<VolumeDefinition> createVlmDfns(
+        ApiCallRcImpl responses,
         ResourceDefinition rscDfn,
         List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiListRef
     )
@@ -176,7 +177,7 @@ class CtrlVlmDfnApiCallHandler
         List<VolumeDefinition> vlmDfns = new ArrayList<>();
         for (VolumeDefinitionWtihCreationPayload vlmDfnApi : vlmDfnWithPayloadApiListRef)
         {
-            vlmDfns.add(createVlmDfn(rscDfn, vlmDfnApi));
+            vlmDfns.add(createVlmDfn(responses, rscDfn, vlmDfnApi));
         }
         return vlmDfns;
     }
@@ -185,6 +186,7 @@ class CtrlVlmDfnApiCallHandler
      * Throws contextualized exceptions.
      */
     VolumeDefinition createVlmDfn(
+        ApiCallRcImpl responses,
         ResourceDefinition rscDfn,
         VolumeDefinitionWtihCreationPayload vlmDfnApiRef
     )
@@ -219,7 +221,8 @@ class CtrlVlmDfnApiCallHandler
             Props vlmDfnProps = getVlmDfnProps(vlmDfn);
             Map<String, String> propsMap = vlmDfnProps.map();
 
-            ctrlPropsHelper.fillProperties(LinStorObject.VOLUME_DEFINITION, vlmDfnApiRef.getVlmDfn().getProps(),
+            ctrlPropsHelper.fillProperties(
+                responses, LinStorObject.VOLUME_DEFINITION, vlmDfnApiRef.getVlmDfn().getProps(),
                 vlmDfnProps, ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
 
             if (vlmDfnProps.getProp(ApiConsts.KEY_DRBD_CURRENT_GI, ApiConsts.NAMESPC_DRBD_OPTIONS) == null)

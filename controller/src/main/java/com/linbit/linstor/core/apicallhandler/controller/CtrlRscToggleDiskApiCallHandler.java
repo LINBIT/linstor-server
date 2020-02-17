@@ -312,6 +312,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         else
         {
             ctrlPropsHelper.fillProperties(
+                responses,
                 LinStorObject.RESOURCE,
                 Collections.singletonMap(ApiConsts.KEY_STOR_POOL_NAME, storPoolNameStr),
                 rscProps,

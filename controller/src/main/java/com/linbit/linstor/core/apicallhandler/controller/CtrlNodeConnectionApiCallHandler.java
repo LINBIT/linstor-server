@@ -92,7 +92,11 @@ class CtrlNodeConnectionApiCallHandler
             NodeConnection nodeConn = createNodeConn(node1, node2);
 
             ctrlPropsHelper.fillProperties(
-                LinStorObject.NODE_CONN, nodeConnPropsMap, getProps(nodeConn), ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
+                responses,
+                LinStorObject.NODE_CONN,
+                nodeConnPropsMap,
+                getProps(nodeConn),
+                ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
 
             ctrlTransactionHelper.commit();
 
@@ -141,8 +145,8 @@ class CtrlNodeConnectionApiCallHandler
             Props props = getProps(nodeConn);
 
             ctrlPropsHelper.fillProperties(
-                LinStorObject.NODE_CONN, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
-            ctrlPropsHelper.remove(LinStorObject.NODE_CONN, props, deletePropKeys, deletePropNamespaces);
+                responses, LinStorObject.NODE_CONN, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
+            ctrlPropsHelper.remove(responses, LinStorObject.NODE_CONN, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

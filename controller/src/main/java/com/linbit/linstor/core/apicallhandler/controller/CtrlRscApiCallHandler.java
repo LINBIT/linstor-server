@@ -183,8 +183,10 @@ public class CtrlRscApiCallHandler
                 ApiConsts.MASK_RSC
             );
 
-            ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
-            ctrlPropsHelper.remove(LinStorObject.RESOURCE, props, deletePropKeys, deletePropNamespacesRef);
+            ctrlPropsHelper.fillProperties(
+                apiCallRcs, LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
+            ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.RESOURCE, props, deletePropKeys, deletePropNamespacesRef);
 
             ctrlTransactionHelper.commit();
 

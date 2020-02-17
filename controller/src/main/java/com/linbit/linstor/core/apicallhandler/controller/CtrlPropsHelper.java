@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -365,16 +366,18 @@ public class CtrlPropsHelper
     }
 
     public void fillProperties(
+        ApiCallRcImpl apiCallRc,
         LinStorObject linstorObj,
         Map<String, String> sourceProps,
         Props targetProps,
         long failAccDeniedRc
     )
     {
-        fillProperties(linstorObj, sourceProps, targetProps, failAccDeniedRc, new ArrayList<>());
+        fillProperties(apiCallRc, linstorObj, sourceProps, targetProps, failAccDeniedRc, new ArrayList<>());
     }
 
     public void fillProperties(
+        ApiCallRcImpl apiCallRc,
         LinStorObject linstorObj,
         Map<String, String> sourceProps,
         Props targetProps,
@@ -443,8 +446,7 @@ public class CtrlPropsHelper
                     throw new ApiDatabaseException(exc);
                 }
             }
-            else
-            if (propsWhiteList.isKeyKnown(linstorObj, key))
+            else if (propsWhiteList.isKeyKnown(linstorObj, key))
             {
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property value")
@@ -461,6 +463,14 @@ public class CtrlPropsHelper
                     .build()
                 );
             }
+        }
+
+        if (!sourceProps.isEmpty())
+        {
+            apiCallRc.addEntry(
+                "Successfully set property key(s): " + String.join(",", sourceProps.keySet()),
+                linstorObj.apiMask | ApiConsts.MASK_CRT | ApiConsts.CREATED
+            );
         }
     }
 
@@ -480,6 +490,7 @@ public class CtrlPropsHelper
     }
 
     public void remove(
+        ApiCallRcImpl apiCallRc,
         LinStorObject linstorObj,
         Props props,
         Collection<String> deletePropKeys,
@@ -487,7 +498,7 @@ public class CtrlPropsHelper
     )
         throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
-        List<String> ignoredKeys = Arrays.asList(ApiConsts.NAMESPC_AUXILIARY + "/");
+        List<String> ignoredKeys = Collections.singletonList(ApiConsts.NAMESPC_AUXILIARY + "/");
 
         for (String key : deletePropKeys)
         {
@@ -528,6 +539,14 @@ public class CtrlPropsHelper
                 props.removeNamespace(deleteNamespace);
             }
             // else, noop
+        }
+
+        if (!deletePropKeys.isEmpty())
+        {
+            apiCallRc.addEntry(
+                "Successfully deleted property key(s): " + String.join(",", deletePropKeys),
+                linstorObj.apiMask | ApiConsts.MASK_DEL | ApiConsts.DELETED
+            );
         }
     }
 

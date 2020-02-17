@@ -111,6 +111,7 @@ public class CtrlVlmGrpApiCallHandler
     }
 
     public <T extends VolumeGroupApi> List<VolumeGroup> createVlmGrps(
+        ApiCallRcImpl responses,
         ResourceGroup rscGrpRef,
         List<T> vlmGrpPojoListRef
     )
@@ -130,7 +131,7 @@ public class CtrlVlmGrpApiCallHandler
         List<VolumeGroup> vlmGrps = new ArrayList<>();
         for (VolumeGroupApi vlmGrpPojo : vlmGrpPojoListRef)
         {
-            vlmGrps.add(createVolumeGroup(rscGrpRef, vlmGrpPojo));
+            vlmGrps.add(createVolumeGroup(responses, rscGrpRef, vlmGrpPojo));
         }
         return vlmGrps;
     }
@@ -169,7 +170,7 @@ public class CtrlVlmGrpApiCallHandler
 
             ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
 
-            List<VolumeGroup> vlmGrpsCreated = createVlmGrps(rscGrp, vlmGrpApiListRef);
+            List<VolumeGroup> vlmGrpsCreated = createVlmGrps(responses, rscGrp, vlmGrpApiListRef);
 
             ctrlTransactionHelper.commit();
 
@@ -284,12 +285,14 @@ public class CtrlVlmGrpApiCallHandler
             VolumeGroup vlmGrp = ctrlApiDataLoader.loadVlmGrp(rscGrpNameStr, vlmNrInt, true);
             Props props = vlmGrp.getProps(peerAccCtx.get());
             ctrlPropsHelper.fillProperties(
+                apiCallRcs,
                 LinStorObject.VOLUME_DEFINITION,
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_VLM_GRP
             );
             ctrlPropsHelper.remove(
+                apiCallRcs,
                 LinStorObject.VOLUME_DEFINITION,
                 props,
                 deletePropKeys,
@@ -396,6 +399,7 @@ public class CtrlVlmGrpApiCallHandler
     }
 
     private VolumeGroup createVolumeGroup(
+        ApiCallRcImpl responses,
         ResourceGroup rscGrpRef,
         VolumeGroupApi vlmGrpApiRef
     )
@@ -420,6 +424,7 @@ public class CtrlVlmGrpApiCallHandler
             );
 
             ctrlPropsHelper.fillProperties(
+                responses,
                 LinStorObject.VOLUME_DEFINITION,
                 vlmGrpApiRef.getProps(),
                 getVlmGrpProps(vlmGrp),

@@ -154,7 +154,11 @@ public class CtrlNodeApiCallHandler
             node = createNode(nodeName, type);
 
             ctrlPropsHelper.fillProperties(
-                LinStorObject.NODE, propsMap, ctrlPropsHelper.getProps(node), ApiConsts.FAIL_ACC_DENIED_NODE);
+                responses,
+                LinStorObject.NODE,
+                propsMap,
+                ctrlPropsHelper.getProps(node),
+                ApiConsts.FAIL_ACC_DENIED_NODE);
 
             for (NetInterfaceApi netIfApi : netIfs)
             {
@@ -325,8 +329,10 @@ public class CtrlNodeApiCallHandler
             }
 
             Props props = ctrlPropsHelper.getProps(node);
-            ctrlPropsHelper.fillProperties(LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE);
-            ctrlPropsHelper.remove(LinStorObject.NODE, props, deletePropKeys, deleteNamespaces);
+            ctrlPropsHelper.fillProperties(
+                apiCallRcs, LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE);
+            ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.NODE, props, deletePropKeys, deleteNamespaces);
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(

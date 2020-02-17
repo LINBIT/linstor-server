@@ -207,10 +207,10 @@ public class CtrlRscDfnApiCallHandler
                 context.getObjRefs().put(ApiConsts.KEY_RSC_DFN, rscDfn.getName().displayValue);
             }
 
-            ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE_DEFINITION, props,
+            ctrlPropsHelper.fillProperties(responses, LinStorObject.RESOURCE_DEFINITION, props,
                 ctrlPropsHelper.getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
-            List<VolumeDefinition> createdVlmDfns = vlmDfnHandler.createVlmDfns(rscDfn, volDescrMap);
+            List<VolumeDefinition> createdVlmDfns = vlmDfnHandler.createVlmDfns(responses, rscDfn, volDescrMap);
 
             resourceDefinitionRepository.put(apiCtx, rscDfn);
 
@@ -391,12 +391,14 @@ public class CtrlRscDfnApiCallHandler
                 Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
 
                 ctrlPropsHelper.fillProperties(
+                    apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     overrideProps,
                     rscDfnProps,
                     ApiConsts.FAIL_ACC_DENIED_RSC_DFN
                 );
                 ctrlPropsHelper.remove(
+                    apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     rscDfnProps,
                     deletePropKeys,

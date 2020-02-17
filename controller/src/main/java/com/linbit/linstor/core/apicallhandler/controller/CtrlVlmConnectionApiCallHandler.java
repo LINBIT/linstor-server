@@ -96,7 +96,11 @@ class CtrlVlmConnectionApiCallHandler
             VolumeConnection vlmConn = createVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
 
             ctrlPropsHelper.fillProperties(
-                LinStorObject.VOLUME_CONN, vlmConnPropsMap, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
+                responses,
+                LinStorObject.VOLUME_CONN,
+                vlmConnPropsMap,
+                getProps(vlmConn),
+                ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
 
             ctrlTransactionHelper.commit();
 
@@ -147,8 +151,13 @@ class CtrlVlmConnectionApiCallHandler
             Props props = getProps(vlmConn);
 
             ctrlPropsHelper.fillProperties(
-                LinStorObject.VOLUME_CONN, overrideProps, getProps(vlmConn), ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
-            ctrlPropsHelper.remove(LinStorObject.VOLUME_CONN, props, deletePropKeys, deletePropNamespaces);
+                responses,
+                LinStorObject.VOLUME_CONN,
+                overrideProps,
+                getProps(vlmConn),
+                ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
+            ctrlPropsHelper.remove(
+                responses, LinStorObject.VOLUME_CONN, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

@@ -115,7 +115,8 @@ class CtrlStorPoolDfnApiCallHandler
             requireStorPoolDfnChangeAccess();
 
             StorPoolDefinition storPoolDfn = createStorPool(storPoolNameStr);
-            ctrlPropsHelper.fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, storPoolDfnProps,
+            ctrlPropsHelper.fillProperties(
+                responses, LinStorObject.STORAGEPOOL_DEFINITION, storPoolDfnProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
 
             storPoolDefinitionRepository.put(apiCtx, storPoolDfn.getName(), storPoolDfn);
@@ -188,9 +189,11 @@ class CtrlStorPoolDfnApiCallHandler
 
             Props props = getProps(storPoolDfn);
 
-            ctrlPropsHelper.fillProperties(LinStorObject.STORAGEPOOL_DEFINITION, overrideProps,
+            ctrlPropsHelper.fillProperties(
+                apiCallRcs, LinStorObject.STORAGEPOOL_DEFINITION, overrideProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
-            ctrlPropsHelper.remove(LinStorObject.STORAGEPOOL_DEFINITION, props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.STORAGEPOOL_DEFINITION, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

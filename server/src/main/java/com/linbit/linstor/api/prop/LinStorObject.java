@@ -4,30 +4,33 @@ import com.linbit.linstor.api.ApiConsts;
 
 public enum LinStorObject
 {
-    NODE,
-    NET_IF,
-    NODE_CONN,
-    RESOURCE_DEFINITION,
-    RESOURCE,
-    RSC_CONN,
-    VOLUME_DEFINITION,
-    VOLUME,
-    VOLUME_CONN,
-    CONTROLLER,
-    STORAGEPOOL,
-    STORAGEPOOL_DEFINITION,
-    SNAPSHOT,
-    KVS,
+    NODE(ApiConsts.MASK_NODE),
+    NET_IF(ApiConsts.MASK_NET_IF),
+    NODE_CONN(ApiConsts.MASK_NODE_CONN),
+    RESOURCE_DEFINITION(ApiConsts.MASK_RSC_DFN),
+    RESOURCE(ApiConsts.MASK_RSC),
+    RSC_CONN(ApiConsts.MASK_RSC_CONN),
+    VOLUME_DEFINITION(ApiConsts.MASK_VLM_DFN),
+    VOLUME(ApiConsts.MASK_VLM),
+    VOLUME_CONN(ApiConsts.MASK_VLM_CONN),
+    CONTROLLER(ApiConsts.MASK_CTRL_CONF),
+    STORAGEPOOL(ApiConsts.MASK_STOR_POOL),
+    STORAGEPOOL_DEFINITION(ApiConsts.MASK_STOR_POOL_DFN),
+    SNAPSHOT(ApiConsts.MASK_SNAPSHOT),
+    KVS(ApiConsts.MASK_KVS),
     // The various DRBD Proxy configuration sections are considered separate objects for the purposes of setting
     // properties, even though the properties are stored in the resource definition
-    DRBD_PROXY,
-    DRBD_PROXY_ZSTD,
-    DRBD_PROXY_ZLIB,
-    DRBD_PROXY_LZMA,
-    DRBD_PROXY_LZ4;
+    DRBD_PROXY(0),
+    DRBD_PROXY_ZSTD(0),
+    DRBD_PROXY_ZLIB(0),
+    DRBD_PROXY_LZMA(0),
+    DRBD_PROXY_LZ4(0);
 
-    LinStorObject()
+    public final long apiMask;
+
+    LinStorObject(long apiMaskRef)
     {
+        apiMask = apiMaskRef;
     }
 
     public static LinStorObject drbdProxyCompressionObject(String compressionType)

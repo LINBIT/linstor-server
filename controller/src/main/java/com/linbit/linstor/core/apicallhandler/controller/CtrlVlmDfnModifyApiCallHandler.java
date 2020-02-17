@@ -160,6 +160,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         List<String> vlmDfnFlagsRef
     )
     {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
         VolumeNumber vlmNr = LinstorParsingUtils.asVlmNr(vlmNrInt);
         VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, true);
@@ -171,15 +172,30 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 "UUID check failed. Given UUID: " + vlmDfnUuid + ". Persisted UUID: " + vlmDfn.getUuid()
             ));
         }
-        Props props = getVlmDfnProps(vlmDfn);
-        Map<String, String> propsMap = props.map();
 
-        ctrlPropsHelper.fillProperties(LinStorObject.VOLUME_DEFINITION, overrideProps,
+        ctrlPropsHelper.fillProperties(responses, LinStorObject.VOLUME_DEFINITION, overrideProps,
             getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
 
-        for (String delKey : deletePropKeys)
+        try
         {
-            propsMap.remove(delKey);
+            ctrlPropsHelper.remove(
+                responses,
+                LinStorObject.VOLUME_DEFINITION,
+                getVlmDfnProps(vlmDfn),
+                deletePropKeys,
+                Collections.emptyList());
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "Access denied to remove property",
+                ApiConsts.FAIL_ACC_DENIED_VLM
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
         }
 
         Pair<Set<Flags>, Set<Flags>> flagPair = FlagsHelper.extractFlagsToEnableOrDisable(
@@ -261,14 +277,12 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         ctrlTransactionHelper.commit();
 
-        ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(
-            ApiSuccessUtils.defaultModifiedEntry(vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn))
-        );
+        responses.addEntry(ApiSuccessUtils.defaultModifiedEntry(vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
 
         Flux<ApiCallRc> updateResponses = updateSatellites(rscName, vlmNr, sizeChanges);
 
         return Flux
-            .just(responses)
+            .just((ApiCallRc) responses)
             .concatWith(updateResponses);
     }
 

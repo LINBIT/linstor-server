@@ -100,7 +100,7 @@ public class CtrlDrbdProxyModifyApiCallHandler
             {
                 Map<String, String> map = props.map();
 
-                ctrlPropsHelper.fillProperties(LinStorObject.DRBD_PROXY, overrideProps,
+                ctrlPropsHelper.fillProperties(responses, LinStorObject.DRBD_PROXY, overrideProps,
                     props, ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
                 for (String delKey : deletePropKeys)
@@ -137,12 +137,13 @@ public class CtrlDrbdProxyModifyApiCallHandler
                     }
 
                     ctrlPropsHelper.fillProperties(
+                        responses,
                         LinStorObject.RESOURCE_DEFINITION,
                         Collections.singletonMap(FULL_KEY_COMPRESSION_TYPE, compressionType),
                         props,
                         ApiConsts.FAIL_ACC_DENIED_RSC_DFN
                     );
-                    ctrlPropsHelper.fillProperties(linStorObject, compressionProps,
+                    ctrlPropsHelper.fillProperties(responses, linStorObject, compressionProps,
                         props, ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
                 }
             }

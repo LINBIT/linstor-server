@@ -138,8 +138,10 @@ public class CtrlVlmApiCallHandler
 
             Props props = ctrlPropsHelper.getProps(vlm);
 
-            ctrlPropsHelper.fillProperties(LinStorObject.VOLUME, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_VLM);
-            ctrlPropsHelper.remove(LinStorObject.VOLUME, props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.fillProperties(
+                apiCallRcs, LinStorObject.VOLUME, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_VLM);
+            ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.VOLUME, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

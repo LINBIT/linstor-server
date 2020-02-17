@@ -152,6 +152,7 @@ public class CtrlStorPoolCrtApiCallHandler
             );
 
             ctrlPropsHelper.fillProperties(
+                responses,
                 LinStorObject.STORAGEPOOL,
                 storPoolPropsMap, ctrlPropsHelper.getProps(storPool),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL

@@ -139,6 +139,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED,
+                ApiConsts.CREATED,
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -166,6 +168,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 1,
                 true,
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             // Name and order the options so that the expected choice is in the middle in terms of creation sequence
@@ -196,6 +199,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 1,
                 true,
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt")
@@ -222,6 +226,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 1,
                 true,
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt")
@@ -270,6 +275,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -299,6 +306,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -386,6 +395,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -425,6 +436,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .stltBuilder("stlt1")
@@ -464,6 +477,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -553,6 +568,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 1,
                 true,
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -601,6 +617,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
                 .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -651,6 +669,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
                 .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -699,6 +719,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 5,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -767,6 +792,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 100 * GB)
@@ -813,6 +840,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -859,6 +890,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -906,6 +939,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -931,6 +966,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 3,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
@@ -975,6 +1012,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -1002,6 +1041,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 4,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
@@ -1072,6 +1113,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
@@ -1111,6 +1154,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 TEST_RSC_NAME,
                 2,
                 true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)

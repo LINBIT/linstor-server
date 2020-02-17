@@ -264,7 +264,8 @@ public class CtrlRscCrtApiHelper
         Resource rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
         Props rscProps = ctrlPropsHelper.getProps(rsc);
 
-        ctrlPropsHelper.fillProperties(LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
+        ctrlPropsHelper.fillProperties(
+            responses, LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
 
         if (ctrlVlmCrtApiHelper.isDiskless(rsc) && storPoolNameStr == null)
         {
@@ -287,7 +288,7 @@ public class CtrlRscCrtApiHelper
             Props vlmProps = ctrlPropsHelper.getProps(vlmData);
 
             ctrlPropsHelper.fillProperties(
-                LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
+                responses, LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
         }
 
         Iterator<VolumeDefinition> iterateVolumeDfn = getVlmDfnIterator(rscDfn);

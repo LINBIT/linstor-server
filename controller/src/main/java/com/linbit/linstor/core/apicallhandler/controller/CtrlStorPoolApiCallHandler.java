@@ -159,12 +159,14 @@ public class CtrlStorPoolApiCallHandler
             );
 
             ctrlPropsHelper.fillProperties(
+                apiCallRcs,
                 LinStorObject.STORAGEPOOL,
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
             );
-            ctrlPropsHelper.remove(LinStorObject.STORAGEPOOL, props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.STORAGEPOOL, props, deletePropKeys, deletePropNamespaces);
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(

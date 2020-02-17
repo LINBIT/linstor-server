@@ -107,7 +107,11 @@ class CtrlRscConnectionApiCallHandler
                 ctrlRscConnectionHelper.createRscConn(nodeName1Str, nodeName2Str, rscNameStr, null);
 
             ctrlPropsHelper.fillProperties(
-                LinStorObject.RSC_CONN, rscConnPropsMap, getProps(rscConn), ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
+                apiCallRcs,
+                LinStorObject.RSC_CONN,
+                rscConnPropsMap,
+                getProps(rscConn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_CONN);
 
             ctrlTransactionHelper.commit();
 
@@ -231,13 +235,14 @@ class CtrlRscConnectionApiCallHandler
             keysIgnored.add(ApiConsts.NAMESPC_CONNECTION_PATHS + "/");
 
             ctrlPropsHelper.fillProperties(
+                apiCallRcs,
                 LinStorObject.RSC_CONN,
                 overrideProps,
                 getProps(rscConn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN,
                 keysIgnored
             );
-            ctrlPropsHelper.remove(LinStorObject.RSC_CONN, props, deletePropKeys, deletePropNamespaces);
+            ctrlPropsHelper.remove(apiCallRcs, LinStorObject.RSC_CONN, props, deletePropKeys, deletePropNamespaces);
 
             ctrlTransactionHelper.commit();
 

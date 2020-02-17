@@ -218,6 +218,7 @@ public class CtrlRscGrpApiCallHandler
             ResourceGroup rscGrp = createResourceGroup(rscGrpPojoRef);
 
             ctrlPropsHelper.fillProperties(
+                responses,
                 LinStorObject.RESOURCE_DEFINITION,
                 rscGrpPojoRef.getProps(),
                 rscGrp.getProps(peerAccCtx.get()),
@@ -225,6 +226,7 @@ public class CtrlRscGrpApiCallHandler
             );
 
             List<VolumeGroup> createdVlmGrps = ctrlVlmGrpApiCallHandler.createVlmGrps(
+                responses,
                 rscGrp,
                 rscGrpPojoRef.getVlmGrpList()
             );
@@ -348,12 +350,14 @@ public class CtrlRscGrpApiCallHandler
             {
                 Props rscDfnGrpProps = rscGrpData.getProps(peerCtx);
                 ctrlPropsHelper.fillProperties(
+                    apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     overrideProps,
                     rscDfnGrpProps,
                     ApiConsts.FAIL_ACC_DENIED_RSC_GRP
                 );
                 ctrlPropsHelper.remove(
+                    apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     rscDfnGrpProps,
                     deletePropKeysRef,
