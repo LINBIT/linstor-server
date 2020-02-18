@@ -51,7 +51,15 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
     @Override
     public Flux<ApiCallRc> updateNode(UUID nodeUuid, NodeName name)
     {
-        return update(cachedUpdates.nodeUpdates.computeIfAbsent(name, ignored -> new UpdateNotification(nodeUuid)));
+        UpdateNotification updateNotification;
+        synchronized (sched)
+        {
+            updateNotification = cachedUpdates.nodeUpdates.computeIfAbsent(
+                name,
+                ignored -> new UpdateNotification(nodeUuid)
+            );
+        }
+        return update(updateNotification);
     }
 
     @Override
@@ -62,15 +70,29 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
     )
     {
         Resource.ResourceKey resourceKey = new Resource.ResourceKey(nodeName, resourceName);
-        return update(cachedUpdates.rscUpdates.computeIfAbsent(
-            resourceKey, ignored -> new UpdateNotification(rscUuid)));
+        UpdateNotification updateNotification;
+        synchronized (sched)
+        {
+            updateNotification = cachedUpdates.rscUpdates.computeIfAbsent(
+                resourceKey,
+                ignored -> new UpdateNotification(rscUuid)
+            );
+        }
+        return update(updateNotification);
     }
 
     @Override
     public Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, StorPoolName storPoolName)
     {
-        return update(cachedUpdates.storPoolUpdates.computeIfAbsent(
-            storPoolName, ignored -> new UpdateNotification(storPoolUuid)));
+        UpdateNotification updateNotification;
+        synchronized (sched)
+        {
+            updateNotification = cachedUpdates.storPoolUpdates.computeIfAbsent(
+                storPoolName,
+                ignored -> new UpdateNotification(storPoolUuid)
+            );
+        }
+        return update(updateNotification);
     }
 
     @Override
@@ -81,8 +103,15 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
     )
     {
         SnapshotDefinition.Key snapshotKey = new SnapshotDefinition.Key(resourceName, snapshotName);
-        return update(cachedUpdates.snapshotUpdates.computeIfAbsent(
-            snapshotKey, ignored -> new UpdateNotification(snapshotUuid)));
+        UpdateNotification updateNotification;
+        synchronized (sched)
+        {
+            updateNotification = cachedUpdates.snapshotUpdates.computeIfAbsent(
+                snapshotKey,
+                ignored -> new UpdateNotification(snapshotUuid)
+            );
+        }
+        return update(updateNotification);
     }
 
     public void collectUpdateNotifications(
