@@ -7,6 +7,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
@@ -736,7 +737,18 @@ public class Node extends BaseTransactionObject
         }
 
         Peer tmpPeer = getPeer(accCtx);
-        ExtToolsManager extToolsManager = peer.getExtToolsManager();
+        ExtToolsManager extToolsManager;
+        ConnectionStatus connectionStatus;
+        if (tmpPeer != null)
+        {
+            extToolsManager = tmpPeer.getExtToolsManager();
+            connectionStatus = tmpPeer.getConnectionStatus();
+        }
+        else
+        {
+            extToolsManager = new ExtToolsManager(); // no known supported tools
+            connectionStatus = ApiConsts.ConnectionStatus.UNKNOWN;
+        }
 
         return new NodePojo(
             getUuid(),
@@ -747,7 +759,7 @@ public class Node extends BaseTransactionObject
             activeStltConn.get() != null ? activeStltConn.get().getApiData(accCtx) : null,
             nodeConns,
             getProps(accCtx).map(),
-            tmpPeer != null ? tmpPeer.getConnectionStatus() : ApiConsts.ConnectionStatus.UNKNOWN,
+            connectionStatus,
             fullSyncId,
             updateId,
             extToolsManager.getSupportedLayers().stream()
