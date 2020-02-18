@@ -32,6 +32,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -68,6 +69,7 @@ public class CtrlRscCrtApiCallHandler
     private final CtrlRscAutoHelper autoHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final CtrlRscToggleDiskApiCallHandler toggleDiskHelper;
+    private final CtrlApiDataLoader dataLoader;
 
     @Inject
     public CtrlRscCrtApiCallHandler(
@@ -80,7 +82,8 @@ public class CtrlRscCrtApiCallHandler
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
         CtrlRscAutoHelper autoHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
-        CtrlRscToggleDiskApiCallHandler toggleDiskHelperRef
+        CtrlRscToggleDiskApiCallHandler toggleDiskHelperRef,
+        CtrlApiDataLoader dataLoaderRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -93,6 +96,7 @@ public class CtrlRscCrtApiCallHandler
         autoHelper = autoHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         toggleDiskHelper = toggleDiskHelperRef;
+        dataLoader = dataLoaderRef;
     }
 
     public Flux<ApiCallRc> createResource(
@@ -184,18 +188,26 @@ public class CtrlRscCrtApiCallHandler
             else
             {
                 autoHelper.removeTiebreakerFlag(tiebreaker);
+
+                String storPoolNameStr = rscapi.getProps().get(ApiConsts.KEY_STOR_POOL_NAME);
+                String nodeNameStr = rscapi.getNodeName();
+                StorPool storPool = storPoolNameStr == null ? null
+                    : dataLoader.loadStorPool(storPoolNameStr, nodeNameStr, false);
+
                 boolean isDiskless =
                     FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DISKLESS) || // needed for compatibility
                     FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DRBD_DISKLESS) ||
-                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.NVME_INITIATOR);
+                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.NVME_INITIATOR) ||
+                    (storPool != null && storPool.getDeviceProviderKind().equals(DeviceProviderKind.DISKLESS));
+
                 if (!isDiskless)
                 {
                     // target resource is diskful
                     autoFlux.add(
                         toggleDiskHelper.resourceToggleDisk(
-                            rscapi.getNodeName(),
+                            nodeNameStr,
                             rscapi.getName(),
-                            rscapi.getProps().get(ApiConsts.KEY_STOR_POOL_NAME),
+                            storPoolNameStr,
                             null,
                             false
                         )

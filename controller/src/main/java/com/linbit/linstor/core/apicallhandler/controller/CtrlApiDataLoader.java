@@ -427,9 +427,9 @@ public class CtrlApiDataLoader
         return storPoolDfn;
     }
 
-    public StorPool loadStorPool(String stringRef, String nodeNameStrRef, boolean failIfNullRef)
+    public StorPool loadStorPool(String storPoolNameStr, String nodeNameStrRef, boolean failIfNullRef)
     {
-        StorPoolDefinition storPoolDfn = loadStorPoolDfn(stringRef, failIfNullRef);
+        StorPoolDefinition storPoolDfn = loadStorPoolDfn(storPoolNameStr, failIfNullRef);
         Node node = loadNode(nodeNameStrRef, failIfNullRef);
 
         StorPool ret = null;
