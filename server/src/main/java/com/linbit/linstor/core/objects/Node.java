@@ -19,6 +19,8 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerController;
+import com.linbit.linstor.netcom.PeerOffline;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -40,6 +42,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+import com.linbit.utils.LocalInetAddresses;
 
 import javax.inject.Provider;
 
@@ -50,7 +53,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -216,6 +221,7 @@ public class Node extends BaseTransactionObject
             nodeProps,
             deleted, activeStltConn
         );
+
     }
 
 
@@ -449,6 +455,36 @@ public class Node extends BaseTransactionObject
         }
     }
 
+    public void setOfflinePeer(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+
+        final String nodeName = clNodeName.displayValue;
+        if (Node.Type.CONTROLLER.equals(nodeType.get()))
+        {
+            boolean isLocal = false;
+            Set<String> allMyIps = LocalInetAddresses.LOCAL_ADDRESSES;
+            for (Entry<NetInterfaceName, NetInterface> entry : netInterfaceMap.entrySet())
+            {
+                String ipAddress = entry.getValue().getAddress(accCtx).getAddress();
+                for (String inetAddress : allMyIps)
+                {
+                    if (ipAddress.equals(inetAddress))
+                    {
+                        isLocal = true;
+                        break;
+                    }
+                }
+            }
+            peer = new PeerController(nodeName, this, isLocal);
+        }
+        else
+        {
+            peer = new PeerOffline(nodeName, this);
+        }
+    }
 
     public Iterator<NetInterface> iterateNetInterfaces(AccessContext accCtx)
         throws AccessDeniedException

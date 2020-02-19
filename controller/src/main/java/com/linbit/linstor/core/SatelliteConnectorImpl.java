@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.objects.Node;
@@ -135,7 +134,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
             }
             else
             {
-                CtrlNodeCrtApiCallHandler.setOfflinePeer(node, accCtx);
+                node.setOfflinePeer(accCtx);
                 errorReporter.logDebug(
                     "Not connecting to " + nodeType.name() + " node: '" + node.getName().getDisplayName() + "'"
                 );

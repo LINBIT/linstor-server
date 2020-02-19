@@ -7,6 +7,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ public class ExtToolsManager
                 )
             );
         }
+        updateExternalToolsInfo(Collections.emptyList());
     }
 
     public void updateExternalToolsInfo(List<ExtToolsInfo> infoList)

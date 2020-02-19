@@ -12,9 +12,7 @@ import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -24,7 +22,6 @@ import reactor.core.publisher.Flux;
 public class PeerOffline implements Peer
 {
     private final String peerId;
-    private final InetSocketAddress inetSocketAddress;
     private final Node node;
     static ServiceName serviceName;
 
@@ -45,20 +42,15 @@ public class PeerOffline implements Peer
 
     public PeerOffline(
         String peerIdRef,
-        InetSocketAddress inetAddress,
         Node nodeRef
     )
     {
         peerId = peerIdRef;
-        inetSocketAddress = inetAddress;
         node = nodeRef;
         satelliteStateLock = new ReentrantReadWriteLock(true);
         extToolMgr = new ExtToolsManager();
 
-        if (node != null)
-        {
-            satelliteState = new SatelliteState();
-        }
+        satelliteState = new SatelliteState();
     }
 
     @Override
@@ -175,23 +167,7 @@ public class PeerOffline implements Peer
     @Override
     public ApiConsts.ConnectionStatus getConnectionStatus()
     {
-        ApiConsts.ConnectionStatus status = ApiConsts.ConnectionStatus.OFFLINE;
-        try
-        {
-            InetAddress[] allMyIps = InetAddress.getAllByName(InetAddress.getLocalHost().getCanonicalHostName());
-            for (InetAddress inetAddress : allMyIps)
-            {
-                if (localAddress().getAddress().equals(inetAddress))
-                {
-                    status = ApiConsts.ConnectionStatus.ONLINE;
-                    break;
-                }
-            }
-        }
-        catch (UnknownHostException ignored)
-        {
-        }
-        return status;
+        return ApiConsts.ConnectionStatus.OFFLINE;
     }
 
     @Override
@@ -261,7 +237,7 @@ public class PeerOffline implements Peer
     @Override
     public InetSocketAddress localAddress()
     {
-        return inetSocketAddress;
+        return null;
     }
 
     @Override

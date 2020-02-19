@@ -109,6 +109,7 @@ public class NodeControllerFactory
             transMgrProvider
         );
         dbDriver.create(node);
+        node.setOfflinePeer(accCtx);
 
         return node;
     }

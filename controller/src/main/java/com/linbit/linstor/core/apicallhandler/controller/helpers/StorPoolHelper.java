@@ -147,10 +147,7 @@ public class StorPoolHelper
         {
             // TODO try to skip creation of dfltDisklessStorPool if no DRBD is available
             Peer peer = node.getPeer(peerAccCtx.get());
-            isKindAllowed =
-                peer == null || // if we are creating the node we also create a dfltDisklessStorPool
-                // where this peer will be uninitialized
-                peer.getExtToolsManager().isProviderSupported(kind);
+            isKindAllowed = peer.getExtToolsManager().isProviderSupported(kind);
         }
         catch (AccessDeniedException exc)
         {

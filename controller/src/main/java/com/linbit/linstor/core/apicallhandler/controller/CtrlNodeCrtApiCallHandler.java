@@ -18,13 +18,11 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.netcom.PeerOffline;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -38,11 +36,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import reactor.core.publisher.Flux;
 
@@ -197,7 +193,7 @@ public class CtrlNodeCrtApiCallHandler
             }
             else
             {
-                setOfflinePeer(node, apiCtx);
+                node.setOfflinePeer(apiCtx);
             }
         }
         catch (AccessDeniedException exc)
@@ -271,22 +267,5 @@ public class CtrlNodeCrtApiCallHandler
         }
         return Flux.<ApiCallRc> just(apiCallRcImpl)
             .concatWith(Flux.merge(autoFluxes));
-    }
-
-    public static void setOfflinePeer(Node node, AccessContext accCtx)
-        throws AccessDeniedException
-    {
-        final String nodeName = node.getName().displayValue;
-        String ipAddress = "127.0.0.1";
-        Optional<NetInterface> netIf = node.streamNetInterfaces(accCtx).findFirst();
-        if (netIf.isPresent())
-        {
-            ipAddress = netIf.get().getAddress(accCtx).getAddress();
-        }
-        node.setPeer(accCtx, new PeerOffline(
-            nodeName,
-            new InetSocketAddress(ipAddress, ApiConsts.DFLT_CTRL_PORT_PLAIN),
-            node)
-        );
     }
 }
