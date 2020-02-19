@@ -60,6 +60,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
             Node.Type nodeType = node.getNodeType(accCtx);
             if (
                 nodeType.equals(Node.Type.SATELLITE) ||
+                nodeType.equals(Node.Type.OPENFLEX_TARGET) ||
                 nodeType.equals(Node.Type.COMBINED)
             )
             {

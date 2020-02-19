@@ -42,6 +42,7 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
+import com.linbit.linstor.storage.data.provider.openflex.OpenflexTargetVlmData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -437,6 +438,26 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         writecacheVlmDataRef.setCacheDevice(vlmPojoRef.getDevicePathCache());
         writecacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         writecacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
+    }
+
+    @Override
+    protected VlmProviderObject<Resource> createOpenflexTargetVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException
+    {
+        throw new ImplementationError("Received unknown openflex target storage volume from satellite");
+    }
+
+    @Override
+    protected void mergeOpenflexTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
+    {
+        OpenflexTargetVlmData<Resource> sfTargetData = (OpenflexTargetVlmData<Resource>) vlmDataRef;
+        sfTargetData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
     }
 
 }

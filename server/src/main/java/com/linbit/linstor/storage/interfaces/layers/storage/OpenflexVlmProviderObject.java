@@ -5,12 +5,12 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.layers.State;
 
 /**
- * Marker interface for holding common states between {@link SfInitiatorVlmProviderObject}
- * and {@link SfTargetVlmProviderObject}.
+ * Marker interface for holding common states between a potential OpenflexInitiatorVlmProviderObject
+ * and {@link OpenflexTargetVlmProviderObject}.
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface SfVlmProviderObject<RSC extends AbsResource<RSC>> extends VlmProviderObject<RSC>
+public interface OpenflexVlmProviderObject<RSC extends AbsResource<RSC>> extends VlmProviderObject<RSC>
 {
     /** This state should never be seen by user, as it should only be used to close the vlmDiskStateEvent-stream */
     State INTERNAL_REMOVE = new State(true, true, "Removing");

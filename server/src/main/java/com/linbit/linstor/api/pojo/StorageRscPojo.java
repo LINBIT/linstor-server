@@ -12,6 +12,7 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.OPENFLEX_TARGET;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SPDK;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
@@ -274,5 +275,24 @@ public class StorageRscPojo implements RscLayerDataApi
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, FILE_THIN);
         }
+    }
+
+    public static class OpenflexVlmPojo extends AbsVlmProviderPojo
+    {
+
+        public OpenflexVlmPojo(
+            int vlmNrRef,
+            String devicePathRef,
+            long allocatedSizeRef,
+            long usableSizeRef,
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
+        )
+        {
+            super(
+                vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, OPENFLEX_TARGET
+            );
+        }
+
     }
 }

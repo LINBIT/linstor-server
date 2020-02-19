@@ -21,6 +21,7 @@ import com.linbit.linstor.api.pojo.StorageRscPojo.FileThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SpdkVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
@@ -456,6 +457,9 @@ public class ProtoLayerUtils
             case SPDK:
                 ret = new SpdkVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
+            case OPENFLEX_TARGET:
+                ret = new OpenflexVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:
                 throw new ImplementationError(
@@ -479,7 +483,8 @@ public class ProtoLayerUtils
             case ZFS: // fall-trough
             case ZFS_THIN: // fall-trough
             case FILE: // fall-through
-            case FILE_THIN:
+            case FILE_THIN: // fall-through
+            case OPENFLEX_TARGET:
                 vlmDfnApi = null;
                 break;
             case UNKNOWN_PROVIDER: // fall-through

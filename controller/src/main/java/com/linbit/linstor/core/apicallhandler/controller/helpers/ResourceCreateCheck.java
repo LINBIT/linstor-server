@@ -1,13 +1,17 @@
 package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils.execPrivileged;
@@ -30,6 +34,8 @@ public class ResourceCreateCheck
     private boolean hasDrbd;
     private boolean hasNvmeTarget;
     private boolean hasNvmeInitiator;
+    private boolean hasOpenflexTarget;
+    private boolean hasOpenflexInitiator;
 
     @Inject
     public ResourceCreateCheck(@ApiContext AccessContext accessContextRef)
@@ -41,6 +47,7 @@ public class ResourceCreateCheck
     {
         NVME_TARGET,
         NVME_INITIATOR,
+        OPENFLEX_TARGET
     }
 
     /**
@@ -74,6 +81,17 @@ public class ResourceCreateCheck
                         );
                     }
                     break;
+                case OPENFLEX_TARGET:
+                    if (hasOpenflexTarget)
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_EXISTS_OPENFLEX_TARGET_PER_RSC_DFN,
+                                "Only one openflex target per resource definition allowed!"
+                            )
+                        );
+                    }
+                    break;
                 default:
                     // no further checks needed in this case
             }
@@ -87,6 +105,30 @@ public class ResourceCreateCheck
     private ResourceRole getCreatedResourceRole(List<Volume> volumes)
     {
         ResourceRole ret = null;
+
+        try
+        {
+            for (Volume vlm : volumes)
+            {
+                List<DeviceLayerKind> layerStack = LayerUtils.getLayerStack(vlm.getAbsResource(), accessContext);
+                if (layerStack.contains(DeviceLayerKind.NVME))
+                {
+                    if (vlm.getAbsResource().getNode().getNodeType(accessContext).equals(Node.Type.OPENFLEX_TARGET))
+                    {
+                        ret = ResourceRole.OPENFLEX_TARGET;
+                    }
+                    else
+                    {
+                        ret = vlm.getAbsResource().isNvmeInitiator(accessContext) ?
+                            ResourceRole.NVME_INITIATOR : ResourceRole.NVME_TARGET;
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
 
         if (volumes.stream().anyMatch(
             vlm -> execPrivileged(

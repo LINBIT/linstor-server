@@ -16,6 +16,7 @@ import com.linbit.linstor.storage.utils.ZfsUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -112,6 +113,7 @@ public class DevicePoolHandler
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             case FILE: // fall-through
             case FILE_THIN: // fall-through
+            case OPENFLEX_TARGET: // fall-through
             default:
                 apiCallRc.addEntry(
                     ApiCallRcImpl.simpleEntry(
@@ -453,6 +455,7 @@ public class DevicePoolHandler
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             case FILE: // fall-through
             case FILE_THIN: // fall-through
+            case OPENFLEX_TARGET: // fall-through
             default:
                 apiCallRc.addEntry(
                     ApiCallRcImpl.simpleEntry(
@@ -492,6 +495,7 @@ public class DevicePoolHandler
                     break;
                 case SPDK: // fall-through for now
                 // the following cases make no sense, hence the fall-throughs
+                case OPENFLEX_TARGET: // fall-through
                 case DISKLESS: // fall-through
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
                 case FILE: // fall-through

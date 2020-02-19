@@ -31,7 +31,11 @@ public class ExtToolsInfo
         versionMajor = versionMajorRef;
         versionMinor = versionMinorRef;
         versionPatch = versionPatchRef;
-        notSupportedReasons = new ArrayList<>(notSupportedReasonsRef);
+        notSupportedReasons = new ArrayList<>();
+        if (notSupportedReasonsRef != null)
+        {
+            notSupportedReasons.addAll(notSupportedReasonsRef);
+        }
     }
 
     public final ExtTools getTool()

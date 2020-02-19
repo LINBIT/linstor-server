@@ -39,6 +39,31 @@ public class StorageConstants
     public static final Map<String, String> KEY_DESCRIPTION = new HashMap<>();
 
     /*
+     * Openflex
+     */
+    // public static final String CONFIG_OF_URL_KEY = ApiConsts.KEY_STOR_POOL_OF_URL;
+    // public static final String CONFIG_OF_STOR_SVC_KEY = ApiConsts.KEY_STOR_POOL_OF_STOR_SVC;
+    // public static final String CONFIG_OF_STOR_POOL_KEY = ApiConsts.KEY_STOR_POOL_OF_STOR_POOL;
+    // public static final String CONFIG_OF_USER_NAME_KEY = ApiConsts.KEY_STOR_POOL_OF_USER_NAME;
+    // public static final String CONFIG_OF_USER_PW_KEY = ApiConsts.KEY_STOR_POOL_OF_USER_PW;
+    // public static final String CONFIG_OF_POLL_TIMEOUT_VLM_CRT_KEY = ApiConsts.KEY_STOR_POOL_OF_POLL_TIMEOUT_VLM_CRT;
+    // public static final String CONFIG_OF_POLL_RETRIES_VLM_CRT_KEY = ApiConsts.KEY_STOR_POOL_OF_POLL_RETRIES_VLM_CRT;
+    // public static final String CONFIG_OF_POLL_TIMEOUT_ATTACH_VLM_KEY =
+    // ApiConsts.KEY_STOR_POOL_OF_POLL_TIMEOUT_ATTACH_VLM;
+    // public static final String CONFIG_OF_POLL_RETRIES_ATTACH_VLM_KEY =
+    // ApiConsts.KEY_STOR_POOL_OF_POLL_RETRIES_ATTACH_VLM;
+    // public static final String CONFIG_OF_POLL_TIMEOUT_GREP_NVME_UUID_KEY =
+    // ApiConsts.KEY_STOR_POOL_OF_POLL_TIMEOUT_GREP_NVME_UUID;
+    // public static final String CONFIG_OF_POLL_RETRIES_GREP_NVME_UUID_KEY =
+    // ApiConsts.KEY_STOR_POOL_OF_POLL_RETRIES_GREP_NVME_UUID;
+    // public static final String CONFIG_OF_COMPOSED_DEVICE_NAME_KEY = ApiConsts.KEY_STOR_POOL_OF_COMPOSED_DEVICE_NAME;
+    // public static final String CONFIG_OF_RETRY_COUNT_KEY = ApiConsts.KEY_STOR_POOL_OF_RETRY_COUNT;
+    // public static final String CONFIG_OF_RETRY_DELAY_KEY = ApiConsts.KEY_STOR_POOL_OF_RETRY_DELAY;
+
+    // public static final int CONFIG_OF_RETRY_COUNT_DEFAULT = 5;
+    // public static final long CONFIG_OF_RETRY_DELAY_DEFAULT = 2000L;
+
+    /*
      * FILE
      */
     public static final String CONFIG_FILE_DIRECTORY_KEY = ApiConsts.KEY_STOR_POOL_FILE_DIRECTORY;

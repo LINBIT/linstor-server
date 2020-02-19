@@ -22,6 +22,7 @@ public class NumberPoolModule extends AbstractModule
 
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String TCP_PORT_POOL = "TcpPortPool";
+    public static final String OPENFLEX_TARGET_PORT_POOL = "OpenflexTargetPortPool";
     public static final String LAYER_RSC_ID_POOL = "LayerRscIdPool";
 
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
@@ -37,6 +38,11 @@ public class NumberPoolModule extends AbstractModule
     // invalid ranges (e.g. -1 for port), we will fall back to these defaults
     private static final int DEFAULT_TCP_PORT_MIN = 7000;
     private static final int DEFAULT_TCP_PORT_MAX = 7999;
+
+    private static final int DEFAULT_OF_TARGET_TCP_PORT_MIN = 10_000;
+    private static final int DEFAULT_OF_TARGET_TCP_PORT_MAX = 10_999;
+
+    private static final String OF_TARGET_TCP_ELEMENT_NAME = "Openflex target TCP port";
 
     private static final int LAYER_RSC_ID_MIN = 0;
     private static final int LAYER_RSC_ID_MAX = BitmapPool.MAX_CAPACITY - 1;
@@ -84,6 +90,26 @@ public class NumberPoolModule extends AbstractModule
             TcpPortNumber.PORT_NR_MAX,
             DEFAULT_TCP_PORT_MIN,
             DEFAULT_TCP_PORT_MAX
+        );
+    }
+
+    @Provides
+    @Singleton
+    @Named(OPENFLEX_TARGET_PORT_POOL)
+    public DynamicNumberPool ofTargetPortPool(
+        ErrorReporter errorReporter,
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
+    )
+    {
+        return new DynamicNumberPoolImpl(
+            errorReporter,
+            ctrlConfRef,
+            ApiConsts.KEY_OF_TARGET_PORT_AUTO_RANGE,
+            OF_TARGET_TCP_ELEMENT_NAME,
+            TcpPortNumber::tcpPortNrCheck,
+            TcpPortNumber.PORT_NR_MAX,
+            DEFAULT_OF_TARGET_TCP_PORT_MIN,
+            DEFAULT_OF_TARGET_TCP_PORT_MAX
         );
     }
 

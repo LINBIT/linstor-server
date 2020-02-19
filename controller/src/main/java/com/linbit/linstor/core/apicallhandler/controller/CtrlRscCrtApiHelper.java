@@ -421,6 +421,7 @@ public class CtrlRscCrtApiHelper
                         DeviceProviderKind devProviderKind = storageVlm.getStorPool().getDeviceProviderKind();
                         switch (devProviderKind)
                         {
+                            case OPENFLEX_TARGET: // fall-through
                             case DISKLESS:
                                 // ignored
                                 break;

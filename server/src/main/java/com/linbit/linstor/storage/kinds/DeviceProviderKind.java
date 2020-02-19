@@ -5,6 +5,7 @@ import com.linbit.linstor.storage.FileDriverKind;
 import com.linbit.linstor.storage.FileThinDriverKind;
 import com.linbit.linstor.storage.LvmDriverKind;
 import com.linbit.linstor.storage.LvmThinDriverKind;
+import com.linbit.linstor.storage.OpenflexTargetDriverKind;
 import com.linbit.linstor.storage.SpdkDriverKind;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
@@ -80,6 +81,14 @@ public enum DeviceProviderKind
         false,
         new SpdkDriverKind(),
         ExtTools.SPDK
+    ),
+    OPENFLEX_TARGET(
+        false,
+        false,
+        false,
+        true,
+        false,
+        new OpenflexTargetDriverKind()
     ),
     FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER(
         false,

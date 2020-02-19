@@ -35,6 +35,7 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
+import com.linbit.linstor.storage.data.provider.openflex.OpenflexTargetVlmData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -79,7 +80,6 @@ public class LayerDataFactory
         WritecacheLayerDatabaseDriver writecacheDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
-
         Provider<TransactionMgr> transMgrProviderRef,
         TransactionObjectFactory transObjFactoryRef
     )
@@ -277,6 +277,25 @@ public class LayerDataFactory
         );
         luksDbDriver.persist(luksVlmData);
         return luksVlmData;
+    }
+
+    public <RSC extends AbsResource<RSC>> OpenflexTargetVlmData<RSC> createOpenflexTargetData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> rscData,
+        StorPool storPoolRef
+    )
+        throws DatabaseException
+    {
+        OpenflexTargetVlmData<RSC> ofTargetData = new OpenflexTargetVlmData<RSC>(
+            vlm,
+            rscData,
+            storPoolRef,
+            storageDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+        storageDbDriver.persist(ofTargetData);
+        return ofTargetData;
     }
 
     public <RSC extends AbsResource<RSC>> StorageRscData<RSC> createStorageRscData(

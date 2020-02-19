@@ -104,6 +104,8 @@ public class DeviceProviderMapper
             case SPDK:
                 devProvider = spdkProvider;
                 break;
+            case OPENFLEX_TARGET:
+                throw new ImplementationError("Openflex does not have a deviceProvider, but is a layer instead");
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 throw new ImplementationError("A volume from a layer was asked for its provider type");
             default:

@@ -536,6 +536,25 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
+    protected VlmProviderObject<Resource> createOpenflexTargetVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        return layerDataFactory.createOpenflexTargetData(vlmRef, storRscDataRef, storPoolRef);
+    }
+
+    @Override
+    protected void mergeOpenflexTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
+    {
+        // ignoring allocatedSize
+    }
+
+    @Override
     protected void setStorPool(VlmProviderObject<Resource> vlmDataRef, StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException
     {

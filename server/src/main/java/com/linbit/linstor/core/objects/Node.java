@@ -939,6 +939,12 @@ public class Node extends BaseTransactionObject
         ),
         AUXILIARY(
             4, Collections.emptyList()
+        ),
+        OPENFLEX_TARGET(
+            5,
+            Arrays.asList(
+                DeviceProviderKind.OPENFLEX_TARGET
+            )
         );
 
         private final int flag;

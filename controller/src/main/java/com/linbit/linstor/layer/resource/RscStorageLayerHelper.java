@@ -174,6 +174,12 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                         storPool
                     );
                     break;
+                case OPENFLEX_TARGET:
+                    vlmData = layerDataFactory.createOpenflexTargetData(
+                        vlm,
+                        rscData,
+                        storPool
+                    );
                 case LVM:
                     vlmData = layerDataFactory.createLvmData(vlm, rscData, storPool);
                     break;
@@ -323,6 +329,8 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                     storPool
                 );
                 break;
+            case OPENFLEX_TARGET:
+                throw new ImplementationError("Restoring from snapshots is not supported for openflex-setups");
             case FILE:
             case FILE_THIN:
                 vlmData = layerDataFactory.createFileData(vlmRef, storRscData, providerKind, storPool);

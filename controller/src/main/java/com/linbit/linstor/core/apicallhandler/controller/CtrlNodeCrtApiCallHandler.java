@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -163,20 +164,31 @@ public class CtrlNodeCrtApiCallHandler
         Node node;
         try
         {
-            node = ctrlNodeApiCallHandler.createNodeImpl(
-                nodeNameStr,
-                nodeTypeStr,
-                netIfs,
-                propsMap,
-                responses,
-                context,
-                false,
-                true
-            );
+            Node.Type nodeType = LinstorParsingUtils.asNodeType(nodeTypeStr);
+
+            if (Node.Type.OPENFLEX_TARGET.equals(nodeType))
+            {
+                node = ctrlNodeApiCallHandler.createOpenflexTargetNode(
+                    nodeNameStr,
+                    propsMap
+                ).extractApiCallRc(responses);
+            }
+            else
+            {
+                node = ctrlNodeApiCallHandler.createNodeImpl(
+                    nodeNameStr,
+                    nodeTypeStr,
+                    netIfs,
+                    propsMap,
+                    responses,
+                    context,
+                    false,
+                    true
+                );
+            }
 
             flux = Flux.<ApiCallRc>just(responses);
 
-            Node.Type nodeType = node.getNodeType(apiCtx);
             if (!Node.Type.CONTROLLER.equals(nodeType) &&
                 !Node.Type.AUXILIARY.equals(nodeType))
             {

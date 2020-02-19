@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.16
+      - Added support for Openflex
     * 1.0.15
       - Added connections map to the DRBD resource layer data
     * 1.0.14
@@ -73,7 +75,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.15
+  version: 1.0.16
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -278,6 +280,10 @@ paths:
         - `DrbdMetaType` - enum
             * external
             * internal
+
+        - `StorDriver/Openflex/UserName` - regex[`.*`]
+        - `StorDriver/Openflex/UserPw` - regex[`.*`]
+        - `StorDriver/Openflex/Url` - regex[`.*`]
 
         - `sys/fs/blkio_throttle_read` - long
 
@@ -3481,6 +3487,7 @@ components:
             - Satellite
             - Combined
             - Auxiliary
+            - Openflex_Target
         flags:
           type: array
           items:
@@ -3586,6 +3593,7 @@ components:
         - LVM_THIN
         - ZFS
         - ZFS_THIN
+        - OPENFLEX_TARGET
         - FILE
         - FILE_THIN
         - SPDK

@@ -135,6 +135,9 @@ public class ProtoDeserializationUtils
                 case SPDK:
                     kind = DeviceProviderKind.SPDK;
                     break;
+                case OPENFLEX_TARGET:
+                    kind = DeviceProviderKind.OPENFLEX_TARGET;
+                    break;
                 case UNKNOWN_PROVIDER: // fall-through
                 case UNRECOGNIZED: // fall-through
                 default:

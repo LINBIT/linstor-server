@@ -8,6 +8,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.OpenFlexTargetProcessManager;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -25,14 +26,18 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_ENCRYPT_TYPE;
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NET_PORT;
+import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_NODE_TYPE;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -53,6 +58,8 @@ class CtrlNetIfApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final OpenFlexTargetProcessManager ofTargetProcMgr;
+    private final DynamicNumberPool ofTargetPortPool;
 
     @Inject
     CtrlNetIfApiCallHandler(
@@ -64,7 +71,9 @@ class CtrlNetIfApiCallHandler
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        OpenFlexTargetProcessManager ofTargetProcMgrRef,
+        @Named(NumberPoolModule.OPENFLEX_TARGET_PORT_POOL) DynamicNumberPool ofTargetPortPoolRef
     )
     {
         apiCtx = apiCtxRef;
@@ -76,6 +85,8 @@ class CtrlNetIfApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        ofTargetProcMgr = ofTargetProcMgrRef;
+        ofTargetPortPool = ofTargetPortPoolRef;
     }
 
     public ApiCallRc createNetIf(
@@ -100,6 +111,15 @@ class CtrlNetIfApiCallHandler
         {
             Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
 
+            if (Node.Type.OPENFLEX_TARGET.equals(node.getNodeType(apiCtx)))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        FAIL_INVLD_NODE_TYPE,
+                        "Only one network interface allowed for 'openflex target' nodes" // FIXME?
+                    )
+                );
+            }
             NetInterfaceName netIfName = LinstorParsingUtils.asNetInterfaceName(netIfNameStr);
             NetInterface netIf = createNetIf(node, netIfName, address, stltPort, stltEncrType);
 
@@ -175,6 +195,18 @@ class CtrlNetIfApiCallHandler
                 !isModifyingActiveStltConn && setActive ||
                 isModifyingActiveStltConn && (addressStr != null || stltPort != null && stltEncrType != null);
 
+            if (needsReconnect && Node.Type.OPENFLEX_TARGET.equals(nodeType))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.entryBuilder(
+                        FAIL_INVLD_NODE_TYPE,
+                        "Modifying netinterface " + getNetIfDescriptionInline(netIf) + " failed"
+                    )
+                        .setCause("Changing the address of a openflex target is prohibited")
+                        .build()
+                );
+            }
+
             if (addressStr != null)
             {
                 setAddress(netIf, addressStr);
@@ -184,7 +216,22 @@ class CtrlNetIfApiCallHandler
             {
                 TcpPortNumber oldPort = netIf.getStltConnPort(apiCtx);
                 boolean needsStartProc = false;
+
+                if (
+                    oldPort != null && stltPort != oldPort.value &&
+                    Node.Type.OPENFLEX_TARGET.equals(nodeType)
+                )
+                {
+                    ofTargetProcMgr.stopProcess(netIf.getNode());
+                    ofTargetPortPool.deallocate(oldPort.value);
+                    ofTargetPortPool.allocate(stltPort);
+                    needsStartProc = true;
+                }
                 needsReconnect = setStltConn(netIf, stltPort, stltEncrType) || setActive;
+                if (needsStartProc)
+                {
+                    ofTargetProcMgr.startLocalSatelliteProcess(node);
+                }
             }
 
             if (setActive)

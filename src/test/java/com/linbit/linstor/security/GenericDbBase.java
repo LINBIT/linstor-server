@@ -164,6 +164,11 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @Mock
     @Bind
+    @Named(NumberPoolModule.OPENFLEX_TARGET_PORT_POOL)
+    protected DynamicNumberPool openflexPortPoolMock;
+
+    @Mock
+    @Bind
     @Named(NumberPoolModule.LAYER_RSC_ID_POOL)
     protected DynamicNumberPool layerRscIdPoolMock;
     protected AtomicInteger layerRscIdAtomicId = new AtomicInteger();

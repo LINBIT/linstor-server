@@ -513,6 +513,25 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     }
 
     @Override
+    protected VlmProviderObject<Snapshot> createOpenflexTargetVlmData(
+        AbsVolume<Snapshot> vlmRef,
+        StorageRscData<Snapshot> storSnapDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        return null; // snapshots not supported in openflex-setups
+    }
+
+    @Override
+    protected void mergeOpenflexTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Snapshot> vlmDataRef)
+        throws DatabaseException
+    {
+        // ignoring allocatedSize
+    }
+
+    @Override
     protected void setStorPool(VlmProviderObject<Snapshot> vlmDataRef, StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException
     {

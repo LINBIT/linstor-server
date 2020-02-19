@@ -325,6 +325,7 @@ public class LinstorParsingUtils
             case "LVM": // fall-through
             case "SPDK": // fall-through
             case "ZFS": // fall-through
+            case "OPENFLEX": // fall-through
                 kind = DeviceLayerKind.STORAGE;
                 break;
             case "NVME":
@@ -401,6 +402,10 @@ public class LinstorParsingUtils
                 break;
             case "SPDK":
                 kind = DeviceProviderKind.SPDK;
+                break;
+            case "OPENFLEX":
+            case "OPENFLEX_TARGET":
+                kind = DeviceProviderKind.OPENFLEX_TARGET;
                 break;
             default:
                 throw new ApiRcException(

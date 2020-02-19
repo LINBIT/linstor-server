@@ -57,6 +57,7 @@ import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.systemstarter.ConnectNodesInitializer;
 import com.linbit.linstor.systemstarter.GrizzlyInitializer;
 import com.linbit.linstor.systemstarter.NetComServiceException;
+import com.linbit.linstor.systemstarter.OpenflexTargetProceMgrInit;
 import com.linbit.linstor.systemstarter.PassphraseInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.StartupInitializer;
@@ -134,6 +135,7 @@ public final class Controller
     private final DebugConsoleCreator debugConsoleCreator;
     private final ControllerNetComInitializer controllerNetComInitializer;
 
+    private final OpenFlexTargetProcessManager openflexTargetProcessManager;
     private final WhitelistProps whitelistProps;
 
     private RetryResourcesTask retryResourcesTask;
@@ -168,6 +170,7 @@ public final class Controller
         LogArchiveTask logArchiveTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
+        OpenFlexTargetProcessManager openFlexTargetProcessManagerRef,
         WhitelistProps whitelistPropsRef,
         CtrlConfig ctrlCfgRef,
         PassphraseInitializer passphraseInitializerRef
@@ -194,6 +197,7 @@ public final class Controller
         retryResourcesTask = retryResourcesTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
+        openflexTargetProcessManager = openFlexTargetProcessManagerRef;
         whitelistProps = whitelistPropsRef;
         ctrlCfg = ctrlCfgRef;
         passphraseInitializer = passphraseInitializerRef;
@@ -265,6 +269,10 @@ public final class Controller
                 systemServicesMap
             );
 
+            OpenflexTargetProceMgrInit openflexTargetProcessMgrInit = new OpenflexTargetProceMgrInit(
+                openflexTargetProcessManager
+            );
+
             ArrayList<StartupInitializer> startOrderlist = new ArrayList<>();
 
             startOrderlist.add(new ServiceStarter(timerEventSvc));
@@ -280,6 +288,7 @@ public final class Controller
             startOrderlist.add(new ServiceStarter(taskScheduleService));
             startOrderlist.add(controllerNetComInitializer);
             startOrderlist.add(connectNodesInitializer);
+            startOrderlist.add(openflexTargetProcessMgrInit);
             if (ctrlCfg.getMasterPassphrase() != null)
             {
                 startOrderlist.add(passphraseInitializer);
