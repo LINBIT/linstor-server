@@ -4,6 +4,7 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
@@ -27,16 +28,15 @@ import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 
@@ -45,7 +45,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -169,73 +168,23 @@ public class CtrlRscCrtApiCallHandler
         {
             ResourceApi rscapi = rscWithPayloadApi.getRscApi();
 
-            Resource tiebreaker = autoHelper.getTiebreakerResource(rscapi.getNodeName(), rscapi.getName());
-            if (tiebreaker == null)
-            {
-                deployedResources.add(
-                    ctrlRscCrtApiHelper.createResourceDb(
-                        rscapi.getNodeName(),
-                        rscapi.getName(),
-                        rscapi.getFlags(),
-                        rscapi.getProps(),
-                        rscapi.getVlmList(),
-                        rscWithPayloadApi.getDrbdNodeId(),
-                        thinFreeCapacities,
-                        rscWithPayloadApi.getLayerStack()
-                    ).extractApiCallRc(responses)
-                );
-            }
-            else
-            {
-                autoHelper.removeTiebreakerFlag(tiebreaker);
+            Pair<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper.createResourceDb(
+                rscapi.getNodeName(),
+                rscapi.getName(),
+                rscapi.getFlags(),
+                rscapi.getProps(),
+                rscapi.getVlmList(),
+                rscWithPayloadApi.getDrbdNodeId(),
+                thinFreeCapacities,
+                rscWithPayloadApi.getLayerStack()
+            );
 
-                String storPoolNameStr = rscapi.getProps().get(ApiConsts.KEY_STOR_POOL_NAME);
-                String nodeNameStr = rscapi.getNodeName();
-                StorPool storPool = storPoolNameStr == null ? null
-                    : dataLoader.loadStorPool(storPoolNameStr, nodeNameStr, false);
-
-                boolean isDiskless =
-                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DISKLESS) || // needed for compatibility
-                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.DRBD_DISKLESS) ||
-                    FlagsHelper.isFlagEnabled(rscapi.getFlags(), Resource.Flags.NVME_INITIATOR) ||
-                    (storPool != null && storPool.getDeviceProviderKind().equals(DeviceProviderKind.DISKLESS));
-
-                if (!isDiskless)
-                {
-                    // target resource is diskful
-                    autoFlux.add(
-                        toggleDiskHelper.resourceToggleDisk(
-                            nodeNameStr,
-                            rscapi.getName(),
-                            storPoolNameStr,
-                            null,
-                            false
-                        )
-                    );
-                }
-                else
-                {
-                    // target resource is diskless.
-                    NodeName tiebreakerNodeName = tiebreaker.getNode().getName();
-                    autoFlux.add(
-                        ctrlSatelliteUpdateCaller.updateSatellites(
-                            tiebreaker.getDefinition(),
-                            Flux.empty() // if failed, there is no need for the retry-task to wait for readyState
-                            // this is only true as long as there is no other flux concatenated after readyResponses
-                        )
-                        .transform(
-                            updateResponses -> CtrlResponseUtils.combineResponses(
-                                updateResponses,
-                                LinstorParsingUtils.asRscName(rscapi.getName()),
-                                Collections.singleton(tiebreakerNodeName),
-                                "Removed TIE_BREAKER flag from resource {1} on {0}",
-                                "Update of resource {1} on '" + tiebreakerNodeName + "' applied on node {0}"
-                            )
-                        )
-                    );
-                }
-            }
+            autoFlux.addAll(createdRsc.objA);
             rscNameStrsForAutoHelper.add(rscapi.getName());
+            if (createdRsc.objA.isEmpty())
+            {
+                deployedResources.add(createdRsc.objB.extractApiCallRc(responses));
+            }
         }
 
         for (String rscNameStr : rscNameStrsForAutoHelper)

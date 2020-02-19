@@ -41,6 +41,7 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
@@ -377,7 +378,18 @@ public class CtrlRscGrpApiCallHandler
 
                     for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx))
                     {
-                        int rscCount = rscDfn.getResourceCount();
+                        long rscCount = rscDfn.streamResource(apiCtx)
+                            .filter(rsc ->
+                            {
+                                try
+                                {
+                                    return !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER);
+                                }
+                                catch (AccessDeniedException exc)
+                                {
+                                    throw new ImplementationError(exc);
+                                }
+                            }).count();
                         if (rscCount < newReplicaCount)
                         {
                             errorReporter.logDebug(

@@ -7,6 +7,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
@@ -37,6 +38,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -167,7 +169,19 @@ public class CtrlRscAutoPlaceApiCallHandler
          */
         List<Resource> alreadyPlaced = privilegedStreamResources(
             ctrlApiDataLoader.loadRscDfn(rscNameStr, true)
-        ).collect(Collectors.toList());
+        )
+            .filter(rsc ->
+            {
+                try
+                {
+                    return !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER);
+                }
+                catch (AccessDeniedException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+            })
+            .collect(Collectors.toList());
 
         int additionalPlaceCount = Optional.ofNullable(
             mergedSelectFilter.getReplicaCount()
@@ -241,7 +255,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             {
                 Candidate candidate = bestCandidate.get();
 
-                Set<Resource> deployedResources = createResources(
+                Pair<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = createResources(
                     context,
                     responses,
                     rscNameStr,
@@ -255,10 +269,11 @@ public class CtrlRscAutoPlaceApiCallHandler
 
                 ctrlTransactionHelper.commit();
 
-                deploymentResponses = deployedResources.isEmpty() ?
-                    autoFlux :
-                    ctrlRscCrtApiHelper.deployResources(context, deployedResources)
-                        .concatWith(autoFlux);
+                deploymentResponses = deployedResources.objB.isEmpty() ? Flux.empty()
+                    : ctrlRscCrtApiHelper.deployResources(context, deployedResources.objB);
+                deploymentResponses = Flux.merge(deployedResources.objA)
+                    .concatWith(deploymentResponses)
+                    .concatWith(autoFlux);
             }
             else
             {
@@ -339,7 +354,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         Candidate candidate = bestCandidate
             .orElseThrow(() -> failNotEnoughCandidates(storPoolName, rscSize));
 
-        Set<Resource> deployedResources = createResources(
+        Pair<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = createResources(
             context,
             responses,
             rscNameStr,
@@ -353,13 +368,14 @@ public class CtrlRscAutoPlaceApiCallHandler
 
         ctrlTransactionHelper.commit();
 
-        Flux<ApiCallRc> deploymentResponses = deployedResources.isEmpty() ?
+        Flux<ApiCallRc> deploymentResponses = deployedResources.objB.isEmpty() ?
             autoFlux :
-            ctrlRscCrtApiHelper.deployResources(context, deployedResources)
+            ctrlRscCrtApiHelper.deployResources(context, deployedResources.objB)
                 .concatWith(autoFlux);
 
         return Flux
             .<ApiCallRc>just(responses)
+            .concatWith(Flux.concat(deployedResources.objA))
             .concatWith(deploymentResponses);
     }
 
@@ -408,7 +424,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             .collect(Collectors.toList());
     }
 
-    private Set<Resource> createResources(
+    private Pair<List<Flux<ApiCallRc>>, Set<Resource>> createResources(
         ResponseContext context,
         ApiCallRcImpl responses,
         String rscNameStr,
@@ -418,6 +434,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         List<DeviceLayerKind> layerStackList
     )
     {
+        List<Flux<ApiCallRc>> autoFlux = new ArrayList<>();
+
         Map<String, String> rscPropsMap = new TreeMap<>();
         String selectedStorPoolName = bestCandidate.storPoolName.displayValue;
         rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, selectedStorPoolName);
@@ -432,7 +450,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         Set<Resource> deployedResources = new TreeSet<>();
         for (Node node : bestCandidate.nodes)
         {
-            Resource rsc = ctrlRscCrtApiHelper.createResourceDb(
+            Pair<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper.createResourceDb(
                 node.getName().displayValue,
                 rscNameStr,
                 0L,
@@ -441,7 +459,9 @@ public class CtrlRscAutoPlaceApiCallHandler
                 null,
                 thinFreeCapacities,
                 layerStackStrList
-            ).extractApiCallRc(responses);
+            );
+            Resource rsc = createdRsc.objB.extractApiCallRc(responses);
+            autoFlux.addAll(createdRsc.objA);
             deployedResources.add(rsc);
 
             // bypass the whilteList
@@ -461,12 +481,18 @@ public class CtrlRscAutoPlaceApiCallHandler
             {
                 try
                 {
+                    Resource deployedResource = disklessNode.getResource(
+                        apiCtx,
+                        LinstorParsingUtils.asRscName(rscNameStr)
+                    );
                     if (
                         disklessNode.getNodeType(apiCtx) == Node.Type.SATELLITE && // only deploy on satellites
-                        disklessNode.getResource(apiCtx, LinstorParsingUtils.asRscName(rscNameStr)) == null)
+                            (deployedResource == null ||
+                                deployedResource.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER))
+                    )
                     {
-                        deployedResources.add(
-                            ctrlRscCrtApiHelper.createResourceDb(
+                        Pair<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createdRsc = ctrlRscCrtApiHelper
+                            .createResourceDb(
                                 disklessNode.getName().displayValue,
                                 rscNameStr,
                                 Resource.Flags.DRBD_DISKLESS.flagValue | Resource.Flags.NVME_INITIATOR.flagValue,
@@ -475,8 +501,9 @@ public class CtrlRscAutoPlaceApiCallHandler
                                 null,
                                 thinFreeCapacities,
                                 layerStackStrList
-                            ).extractApiCallRc(responses)
                         );
+                        deployedResources.add(createdRsc.objB.extractApiCallRc(responses));
+                        autoFlux.addAll(createdRsc.objA);
                     }
                 }
                 catch (AccessDeniedException accDeniedExc)
@@ -503,7 +530,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             .build()
         );
 
-        return deployedResources;
+        return new Pair<>(autoFlux, deployedResources);
     }
 
     private long calculateResourceDefinitionSize(String rscNameStr)

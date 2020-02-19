@@ -57,6 +57,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.utils.AccessUtils;
+import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.api.ApiConsts.MASK_STOR_POOL;
@@ -70,6 +71,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +98,8 @@ public class CtrlRscCrtApiHelper
     private final Provider<AccessContext> peerAccCtx;
     private final ResourceCreateCheck resourceCreateCheck;
     private final CtrlRscLayerDataFactory layerDataHelper;
+    private final Provider<CtrlRscAutoHelper> autoHelper;
+    private final Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelper;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -111,7 +115,9 @@ public class CtrlRscCrtApiHelper
         ResourceControllerFactory resourceFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ResourceCreateCheck resourceCreateCheckRef,
-        CtrlRscLayerDataFactory layerDataHelperRef
+        CtrlRscLayerDataFactory layerDataHelperRef,
+        Provider<CtrlRscAutoHelper> autoHelperRef,
+        Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -127,6 +133,8 @@ public class CtrlRscCrtApiHelper
         peerAccCtx = peerAccCtxRef;
         resourceCreateCheck = resourceCreateCheckRef;
         layerDataHelper = layerDataHelperRef;
+        autoHelper = autoHelperRef;
+        toggleDiskHelper = toggleDiskHelperRef;
     }
 
     /**
@@ -139,7 +147,7 @@ public class CtrlRscCrtApiHelper
      *
      * @return the newly created resource
      */
-    public ApiCallRcWith<Resource> createResourceDb(
+    public Pair<List<Flux<ApiCallRc>>, ApiCallRcWith<Resource>> createResourceDb(
         String nodeNameStr,
         String rscNameStr,
         long flags,
@@ -150,171 +158,229 @@ public class CtrlRscCrtApiHelper
         List<String> layerStackStrListRef
     )
     {
+        List<Flux<ApiCallRc>> autoFlux = new ArrayList<>();
+        Resource rsc;
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
-        List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
-
-        if (layerStack.isEmpty())
+        Resource tiebreaker = autoHelper.get().getTiebreakerResource(nodeNameStr, rscNameStr);
+        if (tiebreaker != null)
         {
-            layerStack = getLayerStack(rscDfn);
-            if (layerStack.isEmpty())
-            {
-                Set<List<DeviceLayerKind>> existingLayerStacks = extractExistingLayerStacks(rscDfn);
-                switch (existingLayerStacks.size())
-                {
-                    case 0:  // ignore, will be filled later by CtrlLayerDataHelper#createDefaultLayerStack
-                        // but that method requires the resource to already exist.
-                        break;
-                    case 1:
-                        layerStack = existingLayerStacks.iterator().next();
-                        break;
-                    default:
-                        throw new ApiRcException(
-                            ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_INVLD_LAYER_STACK,
-                                "Could not figure out what layer-list to default to."
-                            )
-                                .setDetails(
-                                    "Layer lists of already existing resources: \n   " +
-                                        StringUtils.join(existingLayerStacks, "\n   ")
-                                )
-                                .setCorrection("Please specify a layer-list")
-                        );
+            rsc = tiebreaker;
+            autoHelper.get().removeTiebreakerFlag(tiebreaker);
+            String storPoolNameStr = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
+            StorPool storPool = storPoolNameStr == null ? null
+                : ctrlApiDataLoader.loadStorPool(storPoolNameStr, nodeNameStr, false);
 
-                }
+            boolean isDiskless = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS) || // needed for
+                                                                                              // compatibility
+                FlagsHelper.isFlagEnabled(flags, Resource.Flags.DRBD_DISKLESS) ||
+                FlagsHelper.isFlagEnabled(flags, Resource.Flags.NVME_INITIATOR) ||
+                (storPool != null && storPool.getDeviceProviderKind().equals(DeviceProviderKind.DISKLESS));
+
+            if (!isDiskless)
+            {
+                // target resource is diskful
+                autoFlux.add(
+                    toggleDiskHelper.get().resourceToggleDisk(
+                        nodeNameStr,
+                        rscNameStr,
+                        storPoolNameStr,
+                        null,
+                        false
+                    )
+                );
+            }
+            else
+            {
+                // target resource is diskless.
+                NodeName tiebreakerNodeName = tiebreaker.getNode().getName();
+                autoFlux.add(
+                    ctrlSatelliteUpdateCaller.updateSatellites(
+                        tiebreaker.getDefinition(),
+                        Flux.empty() // if failed, there is no need for the retry-task to wait for readyState
+                        // this is only true as long as there is no other flux concatenated after readyResponses
+                    )
+                        .transform(
+                            updateResponses -> CtrlResponseUtils.combineResponses(
+                                updateResponses,
+                                rscDfn.getName(),
+                                Collections.singleton(tiebreakerNodeName),
+                                "Removed TIE_BREAKER flag from resource {1} on {0}",
+                                "Update of resource {1} on '" + tiebreakerNodeName + "' applied on node {0}"
+                            )
+                        )
+                );
             }
         }
         else
         {
-            if (!layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
-            {
-                layerStack.add(DeviceLayerKind.STORAGE);
-                warnAddedStorageLayer(responses);
-            }
-        }
+            List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
 
-        // compatibility
-        String storPoolNameStr = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
-        StorPool storPool = storPoolNameStr == null ? null : ctrlApiDataLoader.loadStorPool(
-            storPoolNameStr,
-            nodeNameStr,
-            false
-        );
-        boolean isStorPoolDiskless = storPool != null && !storPool.getDeviceProviderKind().hasBackingDevice();
-
-        boolean isDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS);
-        boolean isDrbdDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DRBD_DISKLESS);
-        boolean isNvmeInitiatorSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.NVME_INITIATOR);
-
-        if (
-            (isDisklessSet && !isDrbdDisklessSet && !isNvmeInitiatorSet) ||
-            (!isDisklessSet && isStorPoolDiskless)
-        )
-        {
             if (layerStack.isEmpty())
             {
-                flags |= Resource.Flags.DRBD_DISKLESS.flagValue;
+                layerStack = getLayerStack(rscDfn);
+                if (layerStack.isEmpty())
+                {
+                    Set<List<DeviceLayerKind>> existingLayerStacks = extractExistingLayerStacks(rscDfn);
+                    switch (existingLayerStacks.size())
+                    {
+                        case 0:  // ignore, will be filled later by CtrlLayerDataHelper#createDefaultLayerStack
+                            // but that method requires the resource to already exist.
+                            break;
+                        case 1:
+                            layerStack = existingLayerStacks.iterator().next();
+                            break;
+                        default:
+                            throw new ApiRcException(
+                                ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.FAIL_INVLD_LAYER_STACK,
+                                    "Could not figure out what layer-list to default to."
+                                )
+                                    .setDetails(
+                                        "Layer lists of already existing resources: \n   " +
+                                            StringUtils.join(existingLayerStacks, "\n   ")
+                                    )
+                                    .setCorrection("Please specify a layer-list")
+                            );
+
+                    }
+                }
             }
             else
             {
-                Flags disklessNvmeOrDrbd = CompatibilityUtils.mapDisklessFlagToNvmeOrDrbd(layerStack);
-                if (storPool != null)
+                if (!layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
                 {
-                    if (disklessNvmeOrDrbd.equals(Resource.Flags.DRBD_DISKLESS))
-                    {
-                        responses.addEntry(makeFlaggedDrbdDisklessWarning(storPool));
-                    }
-                    else
-                    {
-                        responses.addEntry(makeFlaggedNvmeInitiatorWarning(storPool));
-                    }
-                }
-                flags |= disklessNvmeOrDrbd.flagValue;
-
-                if (
-                    FlagsHelper.isFlagEnabled(
-                        flags,
-                        Resource.Flags.DRBD_DISKLESS,
-                        Resource.Flags.NVME_INITIATOR
-                    )
-                )
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_LAYER_STACK,
-                            "Could not figure out how to interpret the deprecated --diskless flag."
-                        )
-                            .setDetails(
-                                "The general DISKLESS flag is deprecated. If both layers, DRBD and NVME, should " +
-                                    "be used LINSTOR has to figure out if the resource should be diskful for DRBD " +
-                                    "(required NVME_INITIATOR) or diskless for DRBD (requires DRBD_DISKLESS). " +
-                                    "Using the deprecated DISKLESS flag is not supported for this case."
-                            )
-                            .setCorrection("Use either a non-deprecated flag or do not use both layers")
-                    );
+                    layerStack.add(DeviceLayerKind.STORAGE);
+                    warnAddedStorageLayer(responses);
                 }
             }
-        }
 
-        resourceCreateCheck.getAndSetDeployedResourceRoles(rscDfn);
+            // compatibility
+            String storPoolNameStr = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
+            StorPool storPool = storPoolNameStr == null ? null
+                : ctrlApiDataLoader.loadStorPool(
+                    storPoolNameStr,
+                    nodeNameStr,
+                    false
+                );
+            boolean isStorPoolDiskless = storPool != null && !storPool.getDeviceProviderKind().hasBackingDevice();
 
-        Resource rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
-        Props rscProps = ctrlPropsHelper.getProps(rsc);
+            boolean isDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS);
+            boolean isDrbdDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DRBD_DISKLESS);
+            boolean isNvmeInitiatorSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.NVME_INITIATOR);
 
-        ctrlPropsHelper.fillProperties(
-            responses, LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC);
+            if (
+                (isDisklessSet && !isDrbdDisklessSet && !isNvmeInitiatorSet) ||
+                    (!isDisklessSet && isStorPoolDiskless)
+            )
+            {
+                if (layerStack.isEmpty())
+                {
+                    flags |= Resource.Flags.DRBD_DISKLESS.flagValue;
+                }
+                else
+                {
+                    Flags disklessNvmeOrDrbd = CompatibilityUtils.mapDisklessFlagToNvmeOrDrbd(layerStack);
+                    if (storPool != null)
+                    {
+                        if (disklessNvmeOrDrbd.equals(Resource.Flags.DRBD_DISKLESS))
+                        {
+                            responses.addEntry(makeFlaggedDrbdDisklessWarning(storPool));
+                        }
+                        else
+                        {
+                            responses.addEntry(makeFlaggedNvmeInitiatorWarning(storPool));
+                        }
+                    }
+                    flags |= disklessNvmeOrDrbd.flagValue;
 
-        if (ctrlVlmCrtApiHelper.isDiskless(rsc) && storPoolNameStr == null)
-        {
-            rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
-        }
+                    if (
+                        FlagsHelper.isFlagEnabled(
+                            flags,
+                            Resource.Flags.DRBD_DISKLESS,
+                            Resource.Flags.NVME_INITIATOR
+                        )
+                    )
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_INVLD_LAYER_STACK,
+                                "Could not figure out how to interpret the deprecated --diskless flag."
+                            )
+                                .setDetails(
+                                    "The general DISKLESS flag is deprecated. If both layers, DRBD and NVME, should " +
+                                        "be used LINSTOR has to figure out if the resource should be diskful for DRBD " +
+                                        "(required NVME_INITIATOR) or diskless for DRBD (requires DRBD_DISKLESS). " +
+                                        "Using the deprecated DISKLESS flag is not supported for this case."
+                                )
+                                .setCorrection("Use either a non-deprecated flag or do not use both layers")
+                        );
+                    }
+                }
+            }
 
-        List<Volume> createdVolumes = new ArrayList<>();
+            resourceCreateCheck.getAndSetDeployedResourceRoles(rscDfn);
 
-        for (VolumeApi vlmApi : vlmApiList)
-        {
-            VolumeDefinition vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
-
-            Volume vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
-                rsc,
-                vlmDfn,
-                thinFreeCapacities
-            ).extractApiCallRc(responses);
-            createdVolumes.add(vlmData);
-
-            Props vlmProps = ctrlPropsHelper.getProps(vlmData);
+            rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
+            Props rscProps = ctrlPropsHelper.getProps(rsc);
 
             ctrlPropsHelper.fillProperties(
-                responses, LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM);
-        }
+                responses, LinStorObject.RESOURCE, rscPropsMap, rscProps, ApiConsts.FAIL_ACC_DENIED_RSC
+            );
 
-        Iterator<VolumeDefinition> iterateVolumeDfn = getVlmDfnIterator(rscDfn);
-        while (iterateVolumeDfn.hasNext())
-        {
-            VolumeDefinition vlmDfn = iterateVolumeDfn.next();
-
-            // first check if we probably just deployed a vlm for this vlmDfn
-            if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
+            if (ctrlVlmCrtApiHelper.isDiskless(rsc) && storPoolNameStr == null)
             {
-                // not deployed yet.
+                rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
+            }
 
-                Volume vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
+            List<Volume> createdVolumes = new ArrayList<>();
+
+            for (VolumeApi vlmApi : vlmApiList)
+            {
+                VolumeDefinition vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
+
+                Volume vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                     rsc,
                     vlmDfn,
                     thinFreeCapacities
                 ).extractApiCallRc(responses);
-                createdVolumes.add(vlm);
+                createdVolumes.add(vlmData);
 
-                setDrbdPropsForThinVolumesIfNeeded(vlm);
+                Props vlmProps = ctrlPropsHelper.getProps(vlmData);
+
+                ctrlPropsHelper.fillProperties(
+                    responses, LinStorObject.VOLUME, vlmApi.getVlmProps(), vlmProps, ApiConsts.FAIL_ACC_DENIED_VLM
+                );
             }
+
+            Iterator<VolumeDefinition> iterateVolumeDfn = getVlmDfnIterator(rscDfn);
+            while (iterateVolumeDfn.hasNext())
+            {
+                VolumeDefinition vlmDfn = iterateVolumeDfn.next();
+
+                // first check if we probably just deployed a vlm for this vlmDfn
+                if (rsc.getVolume(vlmDfn.getVolumeNumber()) == null)
+                {
+                    // not deployed yet.
+
+                    Volume vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
+                        rsc,
+                        vlmDfn,
+                        thinFreeCapacities
+                    ).extractApiCallRc(responses);
+                    createdVolumes.add(vlm);
+
+                    setDrbdPropsForThinVolumesIfNeeded(vlm);
+                }
+            }
+
+            resourceCreateCheck.checkCreatedResource(createdVolumes);
         }
 
-        resourceCreateCheck.checkCreatedResource(createdVolumes);
-
-        return new ApiCallRcWith<>(responses, rsc);
+        return new Pair<>(autoFlux, new ApiCallRcWith<>(responses, rsc));
     }
 
     private void warnAddedStorageLayer(ApiCallRcImpl responsesRef)

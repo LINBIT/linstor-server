@@ -182,6 +182,8 @@ public class CtrlRscAutoTieBreakerHelper
                             }
                             else
                             {
+                                // we can ignore the .objA of the returned pair as we are just about to create
+                                // a tiebreaker
                                 tieBreaker = rscCrtApiHelper.createResourceDb(
                                     node.getName().displayValue,
                                     rscDfn.getName().displayValue,
@@ -191,7 +193,7 @@ public class CtrlRscAutoTieBreakerHelper
                                     null,
                                     Collections.emptyMap(),
                                     Collections.emptyList()
-                                ).extractApiCallRc(apiCallRcImpl);
+                                ).objB.extractApiCallRc(apiCallRcImpl);
 
                                 apiCallRcImpl.addEntries(
                                     ApiCallRcImpl.singleApiCallRc(
