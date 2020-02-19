@@ -215,6 +215,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
             // Pass the DB type to the migrations
             .placeholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, dbType))
             .locations(LinstorMigration.class.getPackage().getName())
+            .ignoreFutureMigrations(false)
             .load()
             .migrate();
     }
