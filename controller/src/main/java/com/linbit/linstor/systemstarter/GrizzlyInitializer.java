@@ -101,13 +101,19 @@ public class GrizzlyInitializer implements StartupInitializer
     @Override
     public void shutdown()
     {
-        grizzlyHttpService.shutdown();
+        if ( grizzlyHttpService != null)
+        {
+            grizzlyHttpService.shutdown();
+        }
     }
 
     @Override
     public void awaitShutdown(long timeout)
     {
-        grizzlyHttpService.awaitShutdown(timeout);
+        if (grizzlyHttpService != null)
+        {
+            grizzlyHttpService.awaitShutdown(timeout);
+        }
     }
 
     @Override
