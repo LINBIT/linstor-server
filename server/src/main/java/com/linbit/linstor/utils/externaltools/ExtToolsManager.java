@@ -32,20 +32,6 @@ public class ExtToolsManager
         unsupportedLayers = new TreeMap<>();
         unsupportedProviders = new TreeMap<>();
         infoMap = new TreeMap<>();
-        for (ExtTools tool : ExtTools.values())
-        {
-            infoMap.put(
-                tool,
-                new ExtToolsInfo(
-                    tool,
-                    false,
-                    null,
-                    null,
-                    null,
-                    Arrays.asList("No information from satellite yet")
-                )
-            );
-        }
         updateExternalToolsInfo(Collections.emptyList());
     }
 
@@ -59,6 +45,23 @@ public class ExtToolsManager
         for (ExtToolsInfo info : infoList)
         {
             infoMap.put(info.getTool(), info);
+        }
+        for (ExtTools tool : ExtTools.values())
+        {
+            if (!infoMap.containsKey(tool))
+            {
+                infoMap.put(
+                    tool,
+                    new ExtToolsInfo(
+                        tool,
+                        false,
+                        null,
+                        null,
+                        null,
+                        Arrays.asList("No information from satellite yet")
+                    )
+                );
+            }
         }
 
         for (DeviceLayerKind devLayerKind : DeviceLayerKind.values())
