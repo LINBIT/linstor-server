@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.responses;
+
+message File
+{
+    required string title = 1;
+    required uint64 time = 2;
+    required string text = 3;
+}

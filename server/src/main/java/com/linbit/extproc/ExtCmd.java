@@ -1,16 +1,17 @@
 package com.linbit.extproc;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.regex.Pattern;
-
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
 import com.linbit.utils.StringUtils;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.regex.Pattern;
 
 /**
  * Runs an external command, logs and saves its output
@@ -40,30 +41,37 @@ public class ExtCmd extends ChildProcessHandler
     public void asyncExec(String... command)
         throws IOException
     {
-        exec(ProcessBuilder.Redirect.INHERIT, command);
+        exec(ProcessBuilder.Redirect.INHERIT, null, command);
     }
 
     public void pipeAsyncExec(ProcessBuilder.Redirect stdinRedirect, String... command)
         throws IOException
     {
-        exec(ProcessBuilder.Redirect.PIPE, command);
+        exec(ProcessBuilder.Redirect.PIPE, null, command);
     }
 
     public OutputData exec(String... command)
         throws IOException, ChildProcessTimeoutException
     {
-        exec(ProcessBuilder.Redirect.INHERIT, command);
+        exec(ProcessBuilder.Redirect.INHERIT, null, command);
+        return syncProcess();
+    }
+
+    public OutputData exec(File directory, String... command)
+        throws IOException, ChildProcessTimeoutException
+    {
+        exec(ProcessBuilder.Redirect.INHERIT, directory, command);
         return syncProcess();
     }
 
     public OutputData pipeExec(ProcessBuilder.Redirect stdinRedirect, String... command)
         throws IOException, ChildProcessTimeoutException
     {
-        exec(stdinRedirect, command);
+        exec(stdinRedirect, null, command);
         return syncProcess();
     }
 
-    public OutputStream exec(ProcessBuilder.Redirect stdinRedirect, String... command)
+    public OutputStream exec(ProcessBuilder.Redirect stdinRedirect, File directory, String... command)
         throws IOException
     {
         execCommand = command;
@@ -72,6 +80,7 @@ public class ExtCmd extends ChildProcessHandler
         errLog.logDebug("Executing command: %s", execCommandStr);
 
         ProcessBuilder pBuilder = new ProcessBuilder();
+        pBuilder.directory(directory);
         pBuilder.command(command);
         pBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
         pBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);

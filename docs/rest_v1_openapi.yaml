@@ -24,6 +24,7 @@ info:
     * 1.2.0
        - Added optional AutoSelectFilter to resource-group/spawn
        - Added /v1/nodes/{node}/config, that allows you to get and set the satellite config
+       - Added /v1/sos-report to create bug reports you can send to linbit
     * 1.1.0
        - Added /v1/view/snapshots for a faster all in one snapshot list
        - Filter lists by properties:
@@ -3301,12 +3302,7 @@ paths:
           description: Only show error reports of this node
           schema:
             type: string
-        - name: since
-          in: query
-          description: Unix timestamp from the starting interval
-          schema:
-            type: integer
-            format: int64
+        - $ref: '#/components/parameters/Since'
         - name: to
           in: query
           description: Unix timestamp to the ending interval
@@ -3353,12 +3349,7 @@ paths:
           description: Only show error reports of this node
           schema:
             type: string
-        - name: since
-          in: query
-          description: Unix timestamp from the starting interval
-          schema:
-            type: integer
-            format: int64
+        - $ref: '#/components/parameters/Since'
         - name: to
           in: query
           description: Unix timestamp to the ending interval
@@ -3666,6 +3657,43 @@ paths:
               pool_name: ssd_fast
               logcal_size_kib: 5368709120
               vdo_enable: false
+  /v1/sos-report:
+    get:
+      tags:
+        - developers
+      operationId: createSOSReport
+      summary: creates a SOS report in the log directory of the controller
+      parameters:
+        - $ref: '#/components/parameters/Node'
+        - $ref: '#/components/parameters/Since'
+      responses:
+        '201':
+          description: SOS report created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/sos-report/download:
+    get:
+      tags:
+        - developers
+      operationId: downloadSOSReport
+      summary: request sos report to download
+      parameters:
+        - $ref: '#/components/parameters/Node'
+        - $ref: '#/components/parameters/Since'
+      responses:
+        '200':
+          description: SOS report ready to download as binary octet stream .tar.gz
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '500':
+          $ref: '#/components/responses/OperationFailed'
 
 components:
   parameters:
@@ -3744,6 +3772,13 @@ components:
         type: integer
         format: int32
         description: Volume number of the definition
+    Since:
+      name: since
+      in: query
+      description: Unix epoch milliseconds
+      schema:
+        type: integer
+        format: int64
   responses:
     InvalidInput:
       description: invalid input, or request failed

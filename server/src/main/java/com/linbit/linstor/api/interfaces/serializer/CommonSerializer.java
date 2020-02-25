@@ -8,6 +8,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import java.util.Date;
@@ -77,7 +78,11 @@ public interface CommonSerializer
             Set<String> ids
         );
 
+        CommonSerializerBuilder requestSosReport(Date since);
+
         CommonSerializerBuilder errorReports(Set<ErrorReport> errorReports);
+
+        CommonSerializerBuilder sosReport(String text, Set<LinstorFile> errorReports);
 
         CommonSerializerBuilder filter(
             Set<NodeName> nodesFilter,

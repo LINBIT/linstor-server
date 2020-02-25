@@ -60,6 +60,7 @@ public class CryptSetupCommands implements Luks
             };
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
+                null,
                 command
             );
             outputStream.write(cryptKey);
@@ -102,6 +103,7 @@ public class CryptSetupCommands implements Luks
             // open cryptsetup
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
+                null,
                 CRYPTSETUP, "open", "--tries", "1", dev, CRYPT_PREFIX + targetIdentifier
             );
             outputStream.write(cryptKey);

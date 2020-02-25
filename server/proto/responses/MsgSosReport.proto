@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.responses;
+
+import "responses/File.proto";
+
+// Contains an SOS report
+// Requested by: MsgReqSosReport, ApiConsts.API_REQ_SOS_REPORT
+message MsgSosReport
+{
+    required string node_name = 1;
+    required File file = 2;
+}

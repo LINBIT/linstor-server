@@ -279,4 +279,6 @@ public interface DbEngine
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
         ValueOutOfRangeException, MdException;
+
+    String getDbDump() throws DatabaseException;
 }

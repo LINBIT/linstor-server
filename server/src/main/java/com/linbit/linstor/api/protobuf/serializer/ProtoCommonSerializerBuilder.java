@@ -53,6 +53,7 @@ import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.CacheRscOuterClass.CacheRsc;
@@ -112,8 +113,11 @@ import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
+import com.linbit.linstor.proto.requests.MsgReqSosReportOuterClass.MsgReqSosReport;
+import com.linbit.linstor.proto.responses.FileOuterClass.File;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
+import com.linbit.linstor.proto.responses.MsgSosReportOuterClass.MsgSosReport;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -603,6 +607,42 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setNetPort(netPort)
             .setNetType(netType);
         return bld;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder requestSosReport(Date since)
+    {
+        try
+        {
+            MsgReqSosReport.Builder bld = MsgReqSosReport.newBuilder();
+            bld.setSince(since.getTime()).build().writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder sosReport(String nodeName, Set<LinstorFile> errorReports)
+    {
+        try
+        {
+            MsgSosReport.Builder bld = MsgSosReport.newBuilder();
+            File.Builder fileBld = File.newBuilder();
+            for (LinstorFile errReport : errorReports)
+            {
+                fileBld.setTitle(errReport.getFileName()).setTime(errReport.getDateTime().getTime())
+                    .setText(errReport.getText());
+                bld.setFile(fileBld).setNodeName(nodeName).build().writeDelimitedTo(baos);
+            }
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
     }
 
     @Override

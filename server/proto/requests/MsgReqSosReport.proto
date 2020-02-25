@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.requests;
+
+// request an SOS report
+
+// ApiConsts.API_REQ_SOS_REPORT
+// replied with: a list of MsgSosReport
+message MsgReqSosReport
+{
+    required uint64 since = 1;
+}

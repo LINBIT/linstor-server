@@ -11,9 +11,11 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
+import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.DbEngine;
+import com.linbit.linstor.dbdrivers.sql.dump.DbDump;
+import com.linbit.linstor.dbdrivers.sql.dump.SqlDump;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -452,5 +454,12 @@ public class SQLEngine implements DbEngine
             }
         }
         return idx;
+    }
+
+    @Override
+    public String getDbDump() throws DatabaseException
+    {
+        DbDump dump = SqlDump.getDump(getConnection());
+        return dump.serializeHuman();
     }
 }

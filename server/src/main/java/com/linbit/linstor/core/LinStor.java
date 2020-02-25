@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +22,8 @@ public abstract class LinStor
     private static final int MEGA_BYTE = 1048576;
 
     public static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+
+    public static final DateFormat JOURNALCTL_DF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     // ============================================================
     // Product and version information
@@ -80,6 +84,14 @@ public abstract class LinStor
 
     public static void printStartupInfo()
     {
+        System.out.println(linstorInfo());
+        System.out.println();
+
+        System.out.println("System components initialization in progress\n");
+    }
+
+    public static String linstorInfo()
+    {
         String unknown = "unknown";
         Properties sysProps = System.getProperties();
         String jvmSpecVersion = sysProps.getProperty("java.vm.specification.version", unknown);
@@ -92,7 +104,7 @@ public abstract class LinStor
         int cpus = rt.availableProcessors();
         long availMem = rt.maxMemory() / MEGA_BYTE;
 
-        System.out.printf(
+        return String.format(
             "Version:            %s (%s)\n" +
             "Build time:         %s\n" +
             "Java Version:       %s\n" +
@@ -106,9 +118,6 @@ public abstract class LinStor
             osName, osVersion,
             sysArch, cpus, availMem
         );
-        System.out.println();
-
-        System.out.println("System components initialization in progress\n");
     }
 
     /**
@@ -119,10 +128,15 @@ public abstract class LinStor
      */
     static String getHostName()
     {
+        return getUname("-n");
+    }
+
+    public static String getUname(String param)
+    {
         String uname = "";
         try
         {
-            Process process = new ProcessBuilder("uname", "-n").start();
+            Process process = new ProcessBuilder("uname", param).start();
             process.waitFor(1, TimeUnit.SECONDS);
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
             uname = br.readLine().trim();

@@ -64,6 +64,8 @@ public class InternalApiConsts
     public static final String API_MOD_STLT_CONFIG = "ModifyStltConfig";
     public static final String API_MOD_STLT_CONFIG_RESP = "ModifyStltConfigResp";
 
+    public static final String API_RSP_SOS_REPORT = "ResponseSosReport";
+
     /*
      * Event stream actions
      */
