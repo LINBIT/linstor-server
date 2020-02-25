@@ -71,5 +71,10 @@ RUN chown -R root:linstor /etc/linstor /var/lib/linstor /var/log/linstor-control
 RUN chmod g+w /etc/linstor /var/lib/linstor /var/log/linstor-controller
 
 EXPOSE 3376/tcp 3377/tcp 3370/tcp 3371/tcp
+
+COPY scripts/entry.sh /
+
 USER linstor
-ENTRYPOINT ["/usr/share/linstor-server/bin/Controller", "--logs=/var/log/linstor-controller", "--config-directory=/etc/linstor"]
+
+CMD ["startController"]
+ENTRYPOINT ["/entry.sh"]

@@ -66,4 +66,8 @@ RUN yum install -y cryptsetup && yum clean all -y
 RUN sed -i 's/udev_rules.*=.*/udev_rules=0/' /etc/lvm/lvm.conf
 
 EXPOSE 3366/tcp 3367/tcp
-ENTRYPOINT ["/usr/share/linstor-server/bin/Satellite", "--logs=/var/log/linstor-satellite", "--config-directory=/etc/linstor", "--skip-hostname-check"]
+
+COPY scripts/entry.sh /
+
+CMD ["startSatellite"]
+ENTRYPOINT ["/entry.sh"]
