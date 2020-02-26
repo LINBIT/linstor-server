@@ -188,8 +188,10 @@ public class DbEtcd implements ControllerETCDDatabase
     {
         try
         {
-            etcdClient.close();
-            atomicStarted.set(false);
+            if (atomicStarted.compareAndSet(true, false))
+            {
+                etcdClient.close();
+            }
         }
         catch (Exception exc)
         {
@@ -255,6 +257,7 @@ public class DbEtcd implements ControllerETCDDatabase
         }
 
         etcdClient = builder.build();
+        atomicStarted.set(true);
     }
 
     @Override
