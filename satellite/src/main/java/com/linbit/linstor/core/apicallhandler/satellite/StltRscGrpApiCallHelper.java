@@ -44,7 +44,7 @@ class StltRscGrpApiCallHelper
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
-    public StltRscGrpApiCallHelper(
+     StltRscGrpApiCallHelper(
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext apiCtxRef,
         DeviceManager deviceManagerRef,

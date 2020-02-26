@@ -128,7 +128,8 @@ public class GrizzlyHttpService implements SystemService
                             response.setContentLength(INDEX_CONTENT.length());
                             response.getWriter().write(INDEX_CONTENT);
                         }
-                        else if (request.getHttpHandlerPath().equals("/health"))
+                        else
+                        if (request.getHttpHandlerPath().equals("/health"))
                         {
                             try
                             {
@@ -188,7 +189,8 @@ public class GrizzlyHttpService implements SystemService
                             response.setContentLength(INDEX_CONTENT.length());
                             response.getWriter().write(INDEX_CONTENT);
                         }
-                        else if (request.getHttpHandlerPath().equals("/health"))
+                        else
+                        if (request.getHttpHandlerPath().equals("/health"))
                         {
                             try
                             {
@@ -489,7 +491,8 @@ class LinstorMapper implements ExceptionMapper<Exception>
             apiCallRc.addEntries(((ApiRcException) exc).getApiCallRc());
             respStatus = javax.ws.rs.core.Response.Status.BAD_REQUEST;
         }
-        else if (exc instanceof JsonMappingException ||
+        else
+        if (exc instanceof JsonMappingException ||
             exc instanceof JsonParseException)
         {
             apiCallRc.addEntry(
@@ -503,7 +506,8 @@ class LinstorMapper implements ExceptionMapper<Exception>
             );
             respStatus = javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
         }
-        else if (exc instanceof NotFoundException)
+        else
+        if (exc instanceof NotFoundException)
         {
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(

@@ -18,6 +18,10 @@ public class SpdkCommands
      // requires "/usr/bin/rpc.py" symlink to "spdk-19.07/scripts/rpc.py" script in host OS
     public static final String SPDK_RPC_SCRIPT = "rpc.py";
 
+    private SpdkCommands()
+    {
+    }
+
     public static OutputData lvs(ExtCmd extCmd) throws StorageException
     {
         return genericExecutor(

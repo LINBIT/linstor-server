@@ -126,7 +126,8 @@ public class CtrlStorPoolListApiCallHandler
                                         )
                                     );
                                 }
-                                else if (storageInfo == null)
+                                else
+                                if (storageInfo == null)
                                 {
                                     freeCapacity = storPool.getFreeSpaceTracker()
                                         .getFreeCapacityLastUpdated(peerAccCtx.get()).orElse(null);

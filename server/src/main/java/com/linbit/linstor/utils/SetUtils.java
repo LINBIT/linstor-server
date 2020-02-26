@@ -6,6 +6,10 @@ import java.util.TreeSet;
 
 public class SetUtils
 {
+    private SetUtils()
+    {
+    }
+    
     @SafeVarargs
     public static <T extends Comparable<T>> TreeSet<T> mergeIntoTreeSet(Set<T>... sets)
     {

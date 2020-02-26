@@ -22,6 +22,10 @@ public class SpdkConfigReader
     public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
+    private SpdkConfigReader()
+    {
+    }
+
     public static void checkVolumeGroupEntry(ExtCmd extCmd, Props props)
         throws StorageException
     {
@@ -59,7 +63,7 @@ public class SpdkConfigReader
                     null
                 );
             }
-            
+
             // throws an exception if volume group does not exist
             SpdkUtils.checkVgExists(extCmd, volumeGroup);
         }

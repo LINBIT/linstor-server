@@ -43,20 +43,24 @@ public class MkfsUtils
                 current.append(chr);
                 escaping = false;
             }
-            else if (chr == '\\' && !(quoting && quoteChar == '\''))
+            else
+            if (chr == '\\' && !(quoting && quoteChar == '\''))
             {
                 escaping = true;
             }
-            else if (quoting && chr == quoteChar)
+            else
+            if (quoting && chr == quoteChar)
             {
                 quoting = false;
             }
-            else if (!quoting && (chr == '\'' || chr == '"'))
+            else
+            if (!quoting && (chr == '\'' || chr == '"'))
             {
                 quoting = true;
                 quoteChar = chr;
             }
-            else if (!quoting && Character.isWhitespace(chr))
+            else
+            if (!quoting && Character.isWhitespace(chr))
             {
                 if (current.length() > 0)
                 {
@@ -189,7 +193,8 @@ public class MkfsUtils
                             }
                             MkfsUtils.makeExt4(extCmdFactory.create(), devicePath, mkfsParametes);
                         }
-                        else if (fsType.equals(ApiConsts.VAL_FS_TYPE_XFS))
+                        else
+                        if (fsType.equals(ApiConsts.VAL_FS_TYPE_XFS))
                         {
                             if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject, false))
                             {

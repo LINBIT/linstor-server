@@ -134,7 +134,7 @@ public class LayerUtils
         private boolean endAllowed = false;
         private DeviceLayerKind kind;
 
-        public LayerNode(DeviceLayerKind kindRef)
+        LayerNode(DeviceLayerKind kindRef)
         {
             kind = kindRef;
         }

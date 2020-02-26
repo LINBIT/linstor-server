@@ -48,7 +48,8 @@ public class Pair<A, B> implements Comparable<Pair<A, B>>
         {
             eq = otherPair.objA == null ? 0 : -1;
         }
-        else if (objA instanceof Comparable)
+        else
+        if (objA instanceof Comparable)
         {
             eq = otherPair.objA == null ? 1 : ((Comparable<A>) objA).compareTo(otherPair.objA);
         }
@@ -58,7 +59,8 @@ public class Pair<A, B> implements Comparable<Pair<A, B>>
             {
                 eq = otherPair.objB == null ? 0 : -1;
             }
-            else if (objB instanceof Comparable)
+            else
+            if (objB instanceof Comparable)
             {
                 eq = otherPair.objB == null ? 1 : ((Comparable<B>) objB).compareTo(otherPair.objB);
             }

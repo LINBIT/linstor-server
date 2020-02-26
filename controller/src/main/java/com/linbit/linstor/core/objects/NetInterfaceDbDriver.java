@@ -147,7 +147,8 @@ public class NetInterfaceDbDriver
                     {
                         portInt = ((Integer) portObj).intValue();
                     }
-                    else if (portObj instanceof Short)
+                    else
+                    if (portObj instanceof Short)
                     {
                         portInt = ((Short) portObj).intValue();
                     }

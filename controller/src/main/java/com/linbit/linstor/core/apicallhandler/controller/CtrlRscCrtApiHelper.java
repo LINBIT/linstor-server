@@ -523,7 +523,8 @@ public class CtrlRscCrtApiHelper
             readyResponses = Mono.just(responseConverter.addContextAll(
                 makeNoVolumesMessage(rscName), context, false));
         }
-        else if (allDiskless(rscDfn))
+        else
+        if (allDiskless(rscDfn))
         {
             readyResponses = Mono.just(makeAllDisklessMessage(rscName));
         }

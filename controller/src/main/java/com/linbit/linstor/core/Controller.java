@@ -359,7 +359,8 @@ public final class Controller
         {
             dbType = DatabaseDriverInfo.DatabaseType.SQL;
         }
-        else if (dbConnectionUrl.startsWith("etcd"))
+        else
+        if (dbConnectionUrl.startsWith("etcd"))
         {
             dbType = DatabaseDriverInfo.DatabaseType.ETCD;
         }

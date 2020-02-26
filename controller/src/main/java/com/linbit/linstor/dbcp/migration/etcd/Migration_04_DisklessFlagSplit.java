@@ -98,7 +98,8 @@ public class Migration_04_DisklessFlagSplit extends BaseEtcdMigration
                         flag |= FLAG_DRBD_DISKLESS;
                         update = true;
                     }
-                    else if (layerRscHolder.kind.equals(KIND_NVME))
+                    else
+                    if (layerRscHolder.kind.equals(KIND_NVME))
                     {
                         flag |= FLAG_NVME_INITIATOR;
                         update = true;
@@ -117,7 +118,7 @@ public class Migration_04_DisklessFlagSplit extends BaseEtcdMigration
         public A a;
         public B b;
 
-        public Pair(A aRef, B bRef)
+        Pair(A aRef, B bRef)
         {
             a = aRef;
             b = bRef;
@@ -167,7 +168,7 @@ public class Migration_04_DisklessFlagSplit extends BaseEtcdMigration
         public String rscName;
         public String kind;
 
-        public LayerRscHolder()
+        LayerRscHolder()
         {
         }
 

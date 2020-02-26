@@ -21,6 +21,10 @@ public class PmemUtils
     private static final String MODE = "mode";
     private static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
+    private PmemUtils()
+    {
+    }
+
     public static boolean supportsDax(ExtCmd extCmd, String dev) throws StorageException
     {
         return supportsDax(extCmd, Collections.singletonList(dev));

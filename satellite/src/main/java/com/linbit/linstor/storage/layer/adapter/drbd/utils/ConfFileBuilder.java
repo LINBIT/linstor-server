@@ -381,7 +381,8 @@ public class ConfFileBuilder
                                             firstNode = secondNode;
                                             secondNode = temp;
                                         }
-                                        else if (!(firstNode.getName().value.equalsIgnoreCase(firstNodeName) &&
+                                        else
+                                        if (!(firstNode.getName().value.equalsIgnoreCase(firstNodeName) &&
                                                 secondNode.getName().value.equalsIgnoreCase(secondNodeName)))
                                         {
                                             throw new ImplementationError(

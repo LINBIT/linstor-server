@@ -126,7 +126,8 @@ public class ExternalNameConverter
                 // Valid characters in the input data are copied
                 genOutput[idx] = genInput[idx];
             }
-            else if (isReplaceableChar(genInput[idx]))
+            else
+            if (isReplaceableChar(genInput[idx]))
             {
                 // Most punctuation characters that are rather unlikely to be the only significant
                 // difference between two names are all replaced by a single replacement character

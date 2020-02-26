@@ -141,12 +141,14 @@ public class TestExtCmd extends ExtCmd
                 {
                     equals = true;
                 }
-                else if (obj instanceof Command)
+                else
+                if (obj instanceof Command)
                 {
                     Command otherCmd = (Command) obj;
                     equals = Arrays.equals(commandParts, otherCmd.commandParts);
                 }
-                else if (obj instanceof String[])
+                else
+                if (obj instanceof String[])
                 {
                     equals = Arrays.equals(commandParts, (String[]) obj);
                 }

@@ -109,7 +109,8 @@ public class ScopeRunner
         {
             apiCallDescription = "Background operation";
         }
-        else if (apiCallId != 0L)
+        else
+        if (apiCallId != 0L)
         {
             apiCallDescription = "API call " + apiCallId;
         }

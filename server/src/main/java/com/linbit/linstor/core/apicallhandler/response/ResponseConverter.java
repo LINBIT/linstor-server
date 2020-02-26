@@ -121,7 +121,8 @@ public class ResponseConverter
                 }
             }
         }
-        else if (exc instanceof ApiAccessDeniedException)
+        else
+        if (exc instanceof ApiAccessDeniedException)
         {
             ApiAccessDeniedException acExc = (ApiAccessDeniedException) exc;
             apiCallRc.addEntry(ApiCallRcImpl
@@ -133,7 +134,8 @@ public class ResponseConverter
                 .build()
             );
         }
-        else if (exc instanceof ApiTransactionException)
+        else
+        if (exc instanceof ApiTransactionException)
         {
             ApiTransactionException sqlExc = (ApiTransactionException) exc;
             apiCallRc.addEntry(ApiCallRcImpl

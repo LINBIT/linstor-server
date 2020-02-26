@@ -39,11 +39,13 @@ public class EventWaiter
                         // The flux completes when the event stream is closed, which is not expected here
                         sink.error(new EventStreamClosedException());
                     }
-                    else if (signal.isOnError())
+                    else
+                    if (signal.isOnError())
                     {
                         sink.error(signal.getThrowable());
                     }
-                    else if (signal.isOnNext())
+                    else
+                    if (signal.isOnNext())
                     {
                         sink.next(signal.get());
                     }

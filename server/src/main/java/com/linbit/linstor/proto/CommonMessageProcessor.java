@@ -501,7 +501,8 @@ public class CommonMessageProcessor implements MessageProcessor
                 apiMapEntry.transactional
             );
         }
-        else if (apiObj instanceof ApiCallReactive)
+        else
+        if (apiObj instanceof ApiCallReactive)
         {
             Flux<byte[]> executionFlux = Mono
                 .fromCallable(() -> ((ApiCallReactive) apiObj).executeReactive(msgDataIn))

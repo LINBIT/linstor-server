@@ -8,6 +8,10 @@ class CtrlEnvParser
     public static final String LS_REST_BIND_ADDRESS_SECURE = "LS_REST_BIND_ADDRESS_SECURE";
     public static final String MASTER_PASSPHRASE = "MASTER_PASSPHRASE";
 
+    private CtrlEnvParser()
+    {
+    }
+
     static void applyTo(CtrlConfig cfg)
     {
         LinstorEnvParser.applyTo(cfg);

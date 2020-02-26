@@ -217,7 +217,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             unsetFlag(vlmDfn, VolumeDefinition.Flags.GROSS_SIZE);
             updateForResize = true;
         }
-        else if (shouldGrossFlagBeEnabled)
+        else
+        if (shouldGrossFlagBeEnabled)
         {
             if (hasDeployedVolumes)
             {

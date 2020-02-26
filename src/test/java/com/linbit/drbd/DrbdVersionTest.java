@@ -84,7 +84,8 @@ public class DrbdVersionTest
                     0
             );
         }
-        else if (version >= DRBD9_MAJOR_VSN)
+        else
+        if (version >= DRBD9_MAJOR_VSN)
         {
             outputData = new TestExtCmd.TestOutputData(
                     command.getRawCommand(),
@@ -97,7 +98,8 @@ public class DrbdVersionTest
                     "",
                     0);
         }
-        else if (version == DRBD8_MAJOR_VSN)
+        else
+        if (version == DRBD8_MAJOR_VSN)
         {
             outputData = new TestExtCmd.TestOutputData(
                     command.getRawCommand(),
@@ -110,7 +112,8 @@ public class DrbdVersionTest
                     "",
                     0);
         }
-        else if (version == PROVOKE_NUMBER_FORMAT_EXCEPTION)
+        else
+        if (version == PROVOKE_NUMBER_FORMAT_EXCEPTION)
         {
             outputData = new TestExtCmd.TestOutputData(
                     command.getRawCommand(),

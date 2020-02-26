@@ -699,7 +699,8 @@ public class DrbdLayer implements DeviceLayer
                         volumesToDelete.add(drbdVlmData);
                     }
                 }
-                else if (rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING))
+                else
+                if (rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DISK_REMOVING))
                 {
                     if (drbdVlmData.hasDisk() && !drbdVlmData.hasFailed())
                     {

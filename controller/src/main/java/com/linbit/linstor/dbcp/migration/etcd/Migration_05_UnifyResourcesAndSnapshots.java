@@ -842,7 +842,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends BaseEtcdMigration
 
         private Map<String, SnapVlmInfo> vlmMap = new TreeMap<>();
 
-        public SnapInfo(Key key)
+        SnapInfo(Key key)
         {
             nodeName = (String) key.keys[0];
             rscName = (String) key.keys[1];
@@ -860,7 +860,7 @@ public class Migration_05_UnifyResourcesAndSnapshots extends BaseEtcdMigration
         A a;
         B b;
 
-        public Pair(A aRef, B bRef)
+        Pair(A aRef, B bRef)
         {
             a = aRef;
             b = bRef;

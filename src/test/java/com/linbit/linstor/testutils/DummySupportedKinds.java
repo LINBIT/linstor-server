@@ -12,6 +12,10 @@ public class DummySupportedKinds
 {
     public static final int VERSION_MAJOR_HIGH_ENOUGH = 20;
 
+    private DummySupportedKinds()
+    {
+    }
+
     public static ArrayList<ExtToolsInfo> convertSupportedExtTools(
         Collection<ExtTools> supportedExtTools
     )

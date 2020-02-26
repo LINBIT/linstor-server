@@ -277,11 +277,13 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
                 {
                     ret = null;
                 }
-                else if (col.getSqlType() == Types.VARCHAR)
+                else
+                if (col.getSqlType() == Types.VARCHAR)
                 {
                     ret = new ArrayList<>(OBJ_MAPPER.readValue((String) value, List.class));
                 }
-                else if (col.getSqlType() == Types.BLOB)
+                else
+                if (col.getSqlType() == Types.BLOB)
                 {
                     ret = new ArrayList<>(OBJ_MAPPER.readValue((byte[]) value, List.class));
                 }

@@ -184,13 +184,15 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setMsgType(MsgHeaderOuterClass.MsgHeader.MsgType.ONEWAY)
                 .setMsgContent(msgContent);
         }
-        else if (msgContent == null)
+        else
+        if (msgContent == null)
         {
             headerBuilder
                 .setMsgType(MsgHeaderOuterClass.MsgHeader.MsgType.COMPLETE)
                 .setApiCallId(apiCallId);
         }
-        else if (isAnswer)
+        else
+        if (isAnswer)
         {
             headerBuilder
                 .setMsgType(MsgHeaderOuterClass.MsgHeader.MsgType.ANSWER)

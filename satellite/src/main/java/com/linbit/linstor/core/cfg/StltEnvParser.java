@@ -9,6 +9,10 @@ public class StltEnvParser
     public static final String LS_OVERRIDE_NODE_NAME = "LS_OVERRIDE_NODE_NAME";
     public static final String LS_BIND_ADDRESS = "LS_BIND_ADDRESS";
 
+    private StltEnvParser()
+    {
+    }
+
     public static void applyTo(StltConfig cfg)
     {
         LinstorEnvParser.applyTo(cfg);

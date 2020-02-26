@@ -169,7 +169,8 @@ public class ResourceConnection extends BaseTransactionObject
         {
             node = connectionKey.getSource().getNode();
         }
-        else if (connectionKey.getTarget().getNode().getName().equals(nodeName))
+        else
+        if (connectionKey.getTarget().getNode().getName().equals(nodeName))
         {
             node = connectionKey.getTarget().getNode();
         }

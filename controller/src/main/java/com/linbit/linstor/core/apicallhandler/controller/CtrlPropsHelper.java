@@ -446,7 +446,8 @@ public class CtrlPropsHelper
                     throw new ApiDatabaseException(exc);
                 }
             }
-            else if (propsWhiteList.isKeyKnown(linstorObj, key))
+            else
+            if (propsWhiteList.isKeyKnown(linstorObj, key))
             {
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property value")

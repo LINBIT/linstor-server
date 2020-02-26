@@ -45,11 +45,13 @@ public class DatabaseInfo
         {
             dbProd = DbProduct.H2;
         }
-        else if (dbUpperName.equals(ID_DB2))
+        else
+        if (dbUpperName.equals(ID_DB2))
         {
             dbProd = DbProduct.DB2;
         }
-        else if (dbUpperName.startsWith(ID_DB2))
+        else
+        if (dbUpperName.startsWith(ID_DB2))
         {
             int splitIdx = dbUpperName.indexOf('/');
             if (splitIdx != -1)
@@ -61,11 +63,13 @@ public class DatabaseInfo
                 }
             }
         }
-        else if (dbUpperName.equals(ID_PGSQL))
+        else
+        if (dbUpperName.equals(ID_PGSQL))
         {
             dbProd = DbProduct.POSTGRESQL;
         }
-        else if (dbUpperName.equals(ID_MYSQL))
+        else
+        if (dbUpperName.equals(ID_MYSQL))
         {
             String dbVsn = databaseProductVersion;
             dbVsn = dbVsn.toUpperCase();
@@ -78,11 +82,13 @@ public class DatabaseInfo
                 dbProd = DbProduct.MYSQL;
             }
         }
-        else if (dbUpperName.equals(SUB_ID_MARIADB))
+        else
+        if (dbUpperName.equals(SUB_ID_MARIADB))
         {
             dbProd = DbProduct.MARIADB;
         }
-        else if (dbUpperName.equals(ID_ETCD))
+        else
+        if (dbUpperName.equals(ID_ETCD))
         {
             dbProd = DbProduct.ETCD;
         }

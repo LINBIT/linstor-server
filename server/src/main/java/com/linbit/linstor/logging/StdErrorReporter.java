@@ -148,19 +148,23 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         {
             level = Level.TRACE;
         }
-        else if (crtLogger.isDebugEnabled())
+        else
+        if (crtLogger.isDebugEnabled())
         {
             level = Level.DEBUG;
         }
-        else if (crtLogger.isInfoEnabled())
+        else
+        if (crtLogger.isInfoEnabled())
         {
             level = Level.INFO;
         }
-        else if (crtLogger.isWarnEnabled())
+        else
+        if (crtLogger.isWarnEnabled())
         {
             level = Level.WARN;
         }
-        else if (crtLogger.isErrorEnabled())
+        else
+        if (crtLogger.isErrorEnabled())
         {
             level = Level.ERROR;
         }
@@ -177,11 +181,13 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         {
             success = setLogLevelImpl(level, linstorLevel);
         }
-        else if (level != null)
+        else
+        if (level != null)
         {
             success = setLogLevelImpl(level, null);
         }
-        else if (linstorLevel != null)
+        else
+        if (linstorLevel != null)
         {
             success = setLogLevelImpl(null, linstorLevel);
         }

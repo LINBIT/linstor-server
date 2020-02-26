@@ -104,7 +104,8 @@ public class CtrlSatelliteUpdater
                     {
                         responses.addEntry(ResponseUtils.makeFullSyncFailedResponse(satellitePeer));
                     }
-                    else if (satellitePeer.isConnected())
+                    else
+                    if (satellitePeer.isConnected())
                     {
                         satellitePeer.sendMessage(changedMessage);
                     }

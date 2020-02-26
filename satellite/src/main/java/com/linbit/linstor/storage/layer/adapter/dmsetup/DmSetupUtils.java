@@ -24,6 +24,10 @@ public class DmSetupUtils
         Pattern.MULTILINE
     );
 
+    private DmSetupUtils()
+    {
+    }
+
     public static Set<String> list(ExtCmd extCmd, String target) throws StorageException
     {
         Set<String> ret = new HashSet<>();

@@ -104,11 +104,13 @@ public class ApiCallRcRestUtils
                 {
                     status = Response.Status.NOT_FOUND;
                 }
-                else if (rc.getReturnCode() == ApiConsts.FAIL_SIGN_IN)
+                else
+                if (rc.getReturnCode() == ApiConsts.FAIL_SIGN_IN)
                 {
                     status = Response.Status.FORBIDDEN;
                 }
-                else if (rc.getReturnCode() == ApiConsts.FAIL_SIGN_IN_MISSING_CREDENTIALS)
+                else
+                if (rc.getReturnCode() == ApiConsts.FAIL_SIGN_IN_MISSING_CREDENTIALS)
                 {
                     status = Response.Status.UNAUTHORIZED;
                     header.put("WWW-Authenticate", "Basic realm=\"Linstor\"");

@@ -9,6 +9,10 @@ public class LinstorEnvParser
     public static final String LS_LOG_LEVEL = "LS_LOG_LEVEL";
     public static final String LS_LOG_LEVEL_LINSTOR = "LS_LOG_LEVEL_LINSTOR";
 
+    private LinstorEnvParser()
+    {
+    }
+
     public static void applyTo(LinstorConfig cfg)
     {
         cfg.setConfigDir(getEnv(LS_CONFIG_DIRECTORY));

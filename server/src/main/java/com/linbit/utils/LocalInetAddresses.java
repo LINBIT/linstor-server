@@ -11,6 +11,10 @@ public class LocalInetAddresses
 {
     public static final Set<String> LOCAL_ADDRESSES;
 
+    private LocalInetAddresses()
+    {
+    }
+
     static
     {
         Set<String> tmp = new HashSet<>(Arrays.asList("127.0.0.1", "127.0.1.1", "::1"));

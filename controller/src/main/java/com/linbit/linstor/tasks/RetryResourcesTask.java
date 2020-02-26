@@ -82,7 +82,8 @@ public class RetryResourcesTask implements Task
                 added = true;
                 failedResources.put(rsc, new RetryConfig(rsc, nextStepRef));
             }
-            else if (config.fluxAfterSuccess == null)
+            else
+            if (config.fluxAfterSuccess == null)
             {
                 config.fluxAfterSuccess = nextStepRef;
             }

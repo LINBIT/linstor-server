@@ -11,6 +11,10 @@ import java.util.List;
 
 public class CompatibilityUtils
 {
+    private CompatibilityUtils()
+    {
+    }
+
     public static Resource.Flags mapDisklessFlagToNvmeOrDrbd(List<DeviceLayerKind> layerList)
     {
         Resource.Flags ret;

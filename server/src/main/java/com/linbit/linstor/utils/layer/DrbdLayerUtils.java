@@ -13,6 +13,11 @@ import java.util.Set;
 
 public class DrbdLayerUtils
 {
+
+    private DrbdLayerUtils()
+    {
+    }
+
     public static boolean isAnyDrbdResourceExpected(AccessContext accCtx, Resource rscRef)
         throws AccessDeniedException
     {

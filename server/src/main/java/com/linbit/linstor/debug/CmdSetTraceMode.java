@@ -68,7 +68,8 @@ public class CmdSetTraceMode extends BaseDebugCmd
                 errorReporter.setLogLevel(privCtx, null, Level.TRACE);
                 debugOut.println("New TRACE level logging mode: ENABLED");
             }
-            else if (prmMode.equalsIgnoreCase(PRM_DISABLED))
+            else
+            if (prmMode.equalsIgnoreCase(PRM_DISABLED))
             {
                 errorReporter.setLogLevel(privCtx, null, Level.DEBUG);
                 debugOut.println("New TRACE level logging mode: DISABLED");

@@ -262,7 +262,8 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         {
             compareTo = ((Volume) vlm).compareTo((Volume) otherVolume);
         }
-        else if (vlm instanceof SnapshotVolume && otherVolume instanceof SnapshotVolume)
+        else
+        if (vlm instanceof SnapshotVolume && otherVolume instanceof SnapshotVolume)
         {
             compareTo = ((SnapshotVolume) vlm).compareTo((SnapshotVolume) otherVolume);
         }

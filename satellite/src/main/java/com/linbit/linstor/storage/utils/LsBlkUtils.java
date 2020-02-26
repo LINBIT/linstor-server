@@ -17,6 +17,10 @@ public class LsBlkUtils
 
     private static final int MAJOR_DRBD_NR = 147;
 
+    private LsBlkUtils()
+    {
+    }
+
     private static List<String> splitFields(final String line)
     {
         ArrayList<String> fields = new ArrayList<>();

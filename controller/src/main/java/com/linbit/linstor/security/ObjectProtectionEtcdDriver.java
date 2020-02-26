@@ -138,7 +138,8 @@ public class ObjectProtectionEtcdDriver extends BaseEtcdDriver implements Object
                 errorReporter.logWarning("ObjectProtection not found in DB %s", getObjProtId(objectPathRef));
             }
         }
-        else if (composedOpKeys.size() > 1)
+        else
+        if (composedOpKeys.size() > 1)
         {
             throw new ImplementationError("Unexpected count of object protections found: " + composedOpKeys.size());
         }
@@ -189,7 +190,8 @@ public class ObjectProtectionEtcdDriver extends BaseEtcdDriver implements Object
                 {
                     name = "IdentityName";
                 }
-                else if (role == null)
+                else
+                if (role == null)
                 {
                     name = "RoleName";
                 }

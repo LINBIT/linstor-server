@@ -223,7 +223,8 @@ public class SysFsHandler
             }
             deviceThrottleMap.remove(identifier);
         }
-        else if (
+        else
+        if (
             expectedThrottle != null &&
             (knownThrottle == null || !knownThrottle.equals(expectedThrottle))
         )

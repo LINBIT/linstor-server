@@ -11,11 +11,13 @@ public class TransactionMgrUtil
         {
             initScope.seed(TransactionMgrSQL.class, (TransactionMgrSQL) transMgr);
         }
-        else if (transMgr instanceof TransactionMgrETCD)
+        else
+        if (transMgr instanceof TransactionMgrETCD)
         {
             initScope.seed(TransactionMgrETCD.class, (TransactionMgrETCD) transMgr);
         }
-        else if (transMgr instanceof SatelliteTransactionMgr)
+        else
+        if (transMgr instanceof SatelliteTransactionMgr)
         {
 
         }

@@ -156,11 +156,13 @@ public class EventBroker
                 .event(peerWatchId, eventIdentifier, ApiConsts.EVENT_STREAM_VALUE)
                 .bytes(eventSerializer.writeEventValue(signal.get()));
         }
-        else if (signal.isOnComplete())
+        else
+        if (signal.isOnComplete())
         {
             builder.event(peerWatchId, eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED);
         }
-        else if (signal.isOnError() && signal.getThrowable() instanceof PeerNotConnectedException)
+        else
+        if (signal.isOnError() && signal.getThrowable() instanceof PeerNotConnectedException)
         {
             builder.event(peerWatchId, eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION);
         }

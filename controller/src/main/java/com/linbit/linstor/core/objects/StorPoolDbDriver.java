@@ -147,7 +147,7 @@ public class StorPoolDbDriver
         private final Map<String, VlmProviderObject<Resource>> vlmMap;
         private final Map<String, VlmProviderObject<Snapshot>> snapVlmMap;
 
-        public InitMapsImpl(
+        InitMapsImpl(
             Map<String, VlmProviderObject<Resource>> vlmMapRef,
             Map<String, VlmProviderObject<Snapshot>> snapVlmMapRef
         )

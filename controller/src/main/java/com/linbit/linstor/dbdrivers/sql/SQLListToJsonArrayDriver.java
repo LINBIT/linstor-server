@@ -32,7 +32,7 @@ class SQLListToJsonArrayDriver<DATA, LIST_TYPE> implements CollectionDatabaseDri
 
     private final DatabaseTable table;
 
-    public SQLListToJsonArrayDriver(
+    SQLListToJsonArrayDriver(
         SQLEngine sqlEngineRef,
         ErrorReporter errorReporterRef,
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,

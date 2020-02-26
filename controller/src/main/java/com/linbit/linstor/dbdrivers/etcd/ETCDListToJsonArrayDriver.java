@@ -35,7 +35,7 @@ class ETCDListToJsonArrayDriver<DATA, LIST_TYPE> extends BaseEtcdDriver
 
     private final DatabaseTable table;
 
-    public ETCDListToJsonArrayDriver(
+    ETCDListToJsonArrayDriver(
         ErrorReporter errorReporterRef,
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
         Column columnToUpdateRef,

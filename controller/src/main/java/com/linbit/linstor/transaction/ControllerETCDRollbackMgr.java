@@ -110,7 +110,8 @@ public class ControllerETCDRollbackMgr
                                 .build()
                         );
                     }
-                    else if (key.startsWith(NAMESPACE_ROLLBACK_UPDATE))
+                    else
+                    if (key.startsWith(NAMESPACE_ROLLBACK_UPDATE))
                     {
                         key = key.substring(NAMESPACE_ROLLBACK_UPDATE.length());
                         tx.put(

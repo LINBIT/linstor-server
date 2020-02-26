@@ -118,7 +118,8 @@ public class NvmeLayer implements DeviceLayer
                 nvmeUtils.disconnect(nvmeRscData);
             }
             // connect
-            else if (!nvmeRscData.exists() &&
+            else
+            if (!nvmeRscData.exists() &&
                 !nvmeRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE)
             )
             {
@@ -168,7 +169,7 @@ public class NvmeLayer implements DeviceLayer
                 if (nvmeRscData.exists())
                 {
                     // Update volumes
-                    final String subsystemName = nvmeUtils.getNvmeSubsystemPrefix(nvmeRscData)
+                    final String subsystemName = NvmeUtils.getNvmeSubsystemPrefix(nvmeRscData)
                             + nvmeRscData.getSuffixedResourceName();
                     final String subsystemDirectory = NVME_SUBSYSTEMS_PATH + subsystemName;
 
