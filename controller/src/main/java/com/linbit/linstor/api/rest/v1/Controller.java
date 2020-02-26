@@ -6,6 +6,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.Pair;
 
@@ -34,17 +35,20 @@ public class Controller
     private final ObjectMapper objectMapper;
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
+    private final CtrlConfig ctrlCfg;
 
     @Inject
     public Controller(
         ErrorReporter errorReporterRef,
         RequestHelper requestHelperRef,
-        CtrlApiCallHandler ctrlApiCallHandlerRef
+        CtrlApiCallHandler ctrlApiCallHandlerRef,
+        CtrlConfig ctrlCfgRef
     )
     {
         errorReporter = errorReporterRef;
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
+        ctrlCfg = ctrlCfgRef;
 
         objectMapper = new ObjectMapper();
     }
@@ -150,6 +154,68 @@ public class Controller
             resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
 
+        return resp;
+    }
+
+    @GET
+    @Path("info")
+    public Response info(
+        @Context Request request
+    )
+    {
+        JsonGenTypes.ControllerInfo controllerInfo = new JsonGenTypes.ControllerInfo();
+        /*
+         * Blacklisted Properties:
+         * 
+         * ctrlCfg.getDbClientKeyPassword();
+         * ctrlCfg.getDbClientKeyPkcs8Pem();
+         * ctrlCfg.getDbPassword();
+         * ctrlCfg.getDbUser();
+         * ctrlCfg.getMasterPassphrase();
+         * ctrlCfg.getRestSecureKeystore();
+         * ctrlCfg.getRestSecureKeystorePassword();
+         * ctrlCfg.getRestSecureTruststore();
+         * ctrlCfg.getRestSecureTruststorePassword();
+         */
+        controllerInfo.config_dir = ctrlCfg.getConfigDir();
+        controllerInfo.config_path = ctrlCfg.getConfigPath().toString();
+        controllerInfo.db_ca_certificate = ctrlCfg.getDbCaCertificate();
+        controllerInfo.db_client_certificate = ctrlCfg.getDbClientCertificate();
+        controllerInfo.db_connection_url = ctrlCfg.getDbConnectionUrl();
+        controllerInfo.db_in_memory = ctrlCfg.getDbInMemory();
+        controllerInfo.db_version_check_disabled = ctrlCfg.isDbVersionCheckDisabled();
+        controllerInfo.debug_console_enabled = ctrlCfg.isDebugConsoleEnabled();
+        controllerInfo.etcd_operations_per_transaction = ctrlCfg.getEtcdOperationsPerTransaction();
+        controllerInfo.ldap_dn = ctrlCfg.getLdapDn();
+        controllerInfo.ldap_enabled = ctrlCfg.isLdapEnabled();
+        controllerInfo.ldap_public_access_allowed = ctrlCfg.isLdapPublicAccessAllowed();
+        controllerInfo.ldap_search_base = ctrlCfg.getLdapSearchBase();
+        controllerInfo.ldap_search_filter = ctrlCfg.getLdapSearchFilter();
+        controllerInfo.ldap_uri = ctrlCfg.getLdapUri();
+        controllerInfo.log_directory = ctrlCfg.getLogDirectory();
+        controllerInfo.log_level = ctrlCfg.getLogLevel();
+        controllerInfo.log_level_linstor = ctrlCfg.getLogLevelLinstor();
+        controllerInfo.log_print_stack_trace = ctrlCfg.isLogPrintStackTrace();
+        controllerInfo.log_rest_access_log_path = ctrlCfg.getLogRestAccessLogPath();
+        controllerInfo.log_rest_access_mode = ctrlCfg.getLogRestAccessMode().toString();
+        controllerInfo.rest_bind_address_with_port = ctrlCfg.getRestBindAddressWithPort();
+        controllerInfo.rest_enabled = ctrlCfg.isRestEnabled();
+        controllerInfo.rest_secure_bind_address_with_port = ctrlCfg.getRestSecureBindAddressWithPort();
+        controllerInfo.rest_secure_enabled = ctrlCfg.isRestSecureEnabled();
+
+        Response resp;
+        try
+        {
+            resp = Response
+                .status(Response.Status.OK)
+                .entity(objectMapper.writeValueAsString(controllerInfo))
+                .build();
+        }
+        catch (JsonProcessingException exc)
+        {
+            errorReporter.reportError(exc);
+            resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
         return resp;
     }
 }

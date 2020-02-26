@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.14
+      - Added /v1/controller/info, that gives you the controller config information
     * 1.0.13
       - Fixed broken volume definition modify `flags` handling
       - Added flags to volume groups (create/modify)
@@ -69,7 +71,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.13
+  version: 1.0.14
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -2783,6 +2785,22 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/controller/info:
+    get:
+      tags:
+        - developers
+      summary: show controller config info
+      operationId: controllerInfo
+      description: |
+        Show Controller config info
+
+      responses:
+        '200':
+          description: Controller config info object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControllerInfo'
   /v1/controller/version:
     get:
       tags:
@@ -4342,6 +4360,60 @@ components:
           type: array
           items:
             type: string
+    ControllerInfo:
+      type: object
+      properties:
+        config_dir:
+          type: string
+        config_path:
+          type: string
+        debug_console_enabled:
+          type: boolean
+        log_print_stack_trace:
+          type: boolean
+        log_directory:
+          type: string
+        log_level:
+          type: string
+        log_level_linstor:
+          type: string
+        db_connection_url:
+          type: string
+        db_ca_certificate:
+          type: string
+        db_client_certificate:
+          type: string
+        db_in_memory:
+          type: string
+        db_version_check_disabled:
+          type: boolean
+        etcd_operations_per_transaction:
+          type: integer
+          format: int32
+        log_rest_access_log_path:
+          type: string
+        log_rest_access_mode:
+          type: string
+        rest_enabled:
+          type: boolean
+        rest_bind_address_with_port:
+          type: string
+        rest_secure_enabled:
+          type: boolean
+        rest_secure_bind_address_with_port:
+          type: string
+        ldap_enabled:
+          type: boolean
+        ldap_public_access_allowed:
+          type: boolean
+        ldap_uri:
+          type: string
+        ldap_dn:
+          type: string
+        ldap_search_base:
+          type: string
+        ldap_search_filter:
+          type: string
     ControllerVersion:
       type: object
       properties:

@@ -665,6 +665,36 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerInfo
+    {
+        public String config_dir;
+        public String config_path;
+        public Boolean debug_console_enabled;
+        public Boolean log_print_stack_trace;
+        public String log_directory;
+        public String log_level;
+        public String log_level_linstor;
+        public String db_connection_url;
+        public String db_ca_certificate;
+        public String db_client_certificate;
+        public String db_in_memory;
+        public Boolean db_version_check_disabled;
+        public Integer etcd_operations_per_transaction;
+        public String log_rest_access_log_path;
+        public String log_rest_access_mode;
+        public Boolean rest_enabled;
+        public String rest_bind_address_with_port;
+        public Boolean rest_secure_enabled;
+        public String rest_secure_bind_address_with_port;
+        public Boolean ldap_enabled;
+        public Boolean ldap_public_access_allowed;
+        public String ldap_uri;
+        public String ldap_dn;
+        public String ldap_search_base;
+        public String ldap_search_filter;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ControllerVersion
     {
         public String version;
