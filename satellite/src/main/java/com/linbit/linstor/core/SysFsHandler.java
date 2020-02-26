@@ -302,7 +302,7 @@ public class SysFsHandler
     private void setSpdkIO(String path, String key, String data) throws StorageException
     {
             String parameter = SPDK_THROTTLE_READ_MBPS;
-            if (key == ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE)
+            if (ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE.equals(key))
             {
                 parameter = SPDK_THROTTLE_WRITE_MBPS;
             }
