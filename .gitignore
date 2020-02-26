@@ -9,6 +9,10 @@ nbproject/
 nbproject/build-impl.xml
 bin/
 .externalToolBuilders/
+controller/.externalToolBuilders/
+server/.externalToolBuilders/
+linstor-server/.externalToolBuilders/
+satellite/.externalToolBuilders/
 
 # build output
 server/generated*
