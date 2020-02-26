@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.layer.provider;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
@@ -33,23 +34,20 @@ public interface DeviceProvider
         throws AccessDeniedException, DatabaseException, StorageException;
 
     /**
-     * @return the capacity of the used storage pool.
+     * @return an instance of {@link SpaceInfo} containing the total capacity as well as the currently free space
+     * of the given storage pool
+     *
      * @throws StorageException
      * @throws AccessDeniedException
      */
-    long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException;
-
-    /**
-     * @return the free space of the used storage pool.
-     * @throws StorageException
-     * @throws AccessDeniedException
-     */
-    long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException;
+    SpaceInfo getSpaceInfo(StorPool storPoolRef)
+        throws AccessDeniedException, StorageException;
 
     /**
      * Checks if the given {@link StorPool} has a valid configuration for all involved {@link DeviceLayer}s.
      *
      * @param config
+     *
      * @throws StorageException
      * @throws AccessDeniedException
      */

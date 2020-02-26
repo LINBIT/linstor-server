@@ -322,16 +322,6 @@ public class StorageLayer implements DeviceLayer
         return ret;
     }
 
-    public long getFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
-    {
-        return deviceProviderMapper.getDeviceProviderByStorPool(storPool).getPoolFreeSpace(storPool);
-    }
-
-    public long getCapacity(StorPool storPool) throws StorageException, AccessDeniedException
-    {
-        return deviceProviderMapper.getDeviceProviderByStorPool(storPool).getPoolCapacity(storPool);
-    }
-
     public Map<StorPool, Either<SpaceInfo, ApiRcException>> getFreeSpaceOfAccessedStoagePools()
         throws AccessDeniedException
     {
@@ -376,10 +366,7 @@ public class StorageLayer implements DeviceLayer
     public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
         throws AccessDeniedException, StorageException
     {
-        return new SpaceInfo(
-            getCapacity(storPool),
-            getFreeSpace(storPool)
-        );
+        return deviceProviderMapper.getDeviceProviderByStorPool(storPool).getSpaceInfo(storPool);
     }
 
     public void checkStorPool(StorPool storPool) throws StorageException, AccessDeniedException, DatabaseException

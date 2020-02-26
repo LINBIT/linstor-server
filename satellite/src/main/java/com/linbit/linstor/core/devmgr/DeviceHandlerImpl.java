@@ -826,10 +826,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             {
                 freeSpaces.put(
                     storPool,
-                    new SpaceInfo(
-                        storageLayer.getCapacity(storPool),
-                        storageLayer.getFreeSpace(storPool)
-                    )
+                    storageLayer.getStoragePoolSpaceInfo(storPool)
                 );
             }
             catch (StorageException exc)

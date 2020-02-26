@@ -11,6 +11,7 @@ import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -823,10 +824,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     public abstract void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
 
     @Override
-    public abstract long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException;
-
-    @Override
-    public abstract long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException;
+    public abstract SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException;
 
     protected abstract String getStorageName(StorPool storPoolRef) throws AccessDeniedException, StorageException;
 

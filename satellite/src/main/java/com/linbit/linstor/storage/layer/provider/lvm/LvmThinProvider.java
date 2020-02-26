@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.layer.provider.lvm;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -218,35 +219,28 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
     {
         String vgForLvs = getVolumeGroupForLvs(storPool);
         String thinPool = getThinPool(storPool);
-        Long ret = LvmUtils.getThinTotalSize(
+        Long capacity = LvmUtils.getThinTotalSize(
             extCmdFactory.create(),
             Collections.singleton(vgForLvs)
         ).get(thinPool);
-        if (ret == null)
+        if (capacity == null)
         {
             throw new StorageException("Thin pool \'" + thinPool + "\' does not exist.");
         }
-        return ret;
-    }
 
-    @Override
-    public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
-    {
-        String vgForLvs = getVolumeGroupForLvs(storPool);
-        String thinPool = getThinPool(storPool);
-        Long ret = LvmUtils.getThinFreeSize(
+        Long freeSpace = LvmUtils.getThinFreeSize(
             extCmdFactory.create(),
             Collections.singleton(vgForLvs)
         ).get(thinPool);
-        if (ret == null)
+        if (freeSpace == null)
         {
             throw new StorageException("Thin pool \'" + thinPool + "\' does not exist.");
         }
-        return ret;
+        return new SpaceInfo(capacity, freeSpace);
     }
 
     @Override

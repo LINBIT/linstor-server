@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -572,15 +573,12 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        return FileUtils.getPoolCapacity(extCmdFactory.create(), getStorageDirectory(storPool));
-    }
-
-    @Override
-    public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
-    {
-        return FileUtils.getFreeSpace(extCmdFactory.create(), getStorageDirectory(storPool));
+        Path dir = getStorageDirectory(storPool);
+        long capacity = FileUtils.getPoolCapacity(extCmdFactory.create(), dir);
+        long freeSpace = FileUtils.getFreeSpace(extCmdFactory.create(), dir);
+        return new SpaceInfo(capacity, freeSpace);
     }
 
     @Override

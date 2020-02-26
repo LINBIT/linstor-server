@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -403,7 +404,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     }
 
     @Override
-    public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
     {
         String vg = getVolumeGroup(storPool);
         if (vg == null)
@@ -414,22 +415,12 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             extCmdFactory.create(),
             Collections.singleton(vg)
         ).get(vg);
-        return capacity == null ? SIZE_OF_NOT_FOUND_STOR_POOL : capacity;
-    }
-
-    @Override
-    public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
-    {
-        String vg = getVolumeGroup(storPool);
-        if (vg == null)
-        {
-            throw new StorageException("Unset volume group for " + storPool);
-        }
         Long freespace = SpdkUtils.getVgFreeSize(
             extCmdFactory.create(),
             Collections.singleton(vg)
         ).get(vg);
-        return freespace == null ? SIZE_OF_NOT_FOUND_STOR_POOL : freespace;
+
+        return new SpaceInfo(capacity, freespace);
     }
 
     @Override

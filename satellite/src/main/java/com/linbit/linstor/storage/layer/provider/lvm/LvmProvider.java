@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -34,8 +35,8 @@ import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.storage.utils.PmemUtils;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -422,7 +423,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
     {
         String vg = getVolumeGroup(storPool);
         if (vg == null)
@@ -433,22 +434,11 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             extCmdFactory.create(),
             Collections.singleton(vg)
         ).get(vg);
-        return capacity == null ? SIZE_OF_NOT_FOUND_STOR_POOL : capacity;
-    }
-
-    @Override
-    public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
-    {
-        String vg = getVolumeGroup(storPool);
-        if (vg == null)
-        {
-            throw new StorageException("Unset volume group for " + storPool);
-        }
         Long freespace = LvmUtils.getVgFreeSize(
             extCmdFactory.create(),
             Collections.singleton(vg)
         ).get(vg);
-        return freespace == null ? SIZE_OF_NOT_FOUND_STOR_POOL : freespace;
+        return new SpaceInfo(capacity, freespace);
     }
 
     /*

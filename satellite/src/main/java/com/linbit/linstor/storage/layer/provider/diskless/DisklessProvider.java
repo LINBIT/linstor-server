@@ -1,10 +1,13 @@
 package com.linbit.linstor.storage.layer.provider.diskless;
 
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
 
@@ -18,6 +21,13 @@ import java.util.List;
 @Singleton
 public class DisklessProvider implements DeviceProvider
 {
+    private static final SpaceInfo DEFAULT_DISKLESS_SPACE_INFO;
+
+    static
+    {
+        DEFAULT_DISKLESS_SPACE_INFO = new SpaceInfo(Long.MAX_VALUE, Long.MAX_VALUE);
+    }
+
     @Inject
     public DisklessProvider()
     {
@@ -59,15 +69,9 @@ public class DisklessProvider implements DeviceProvider
     }
 
     @Override
-    public long getPoolCapacity(StorPool storPool)
+    public SpaceInfo getSpaceInfo(StorPool storPoolRef) throws AccessDeniedException, StorageException
     {
-        return Long.MAX_VALUE;
-    }
-
-    @Override
-    public long getPoolFreeSpace(StorPool storPool)
-    {
-        return Long.MAX_VALUE;
+        return DEFAULT_DISKLESS_SPACE_INFO;
     }
 
     @Override

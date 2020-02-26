@@ -277,9 +277,6 @@ public class StltApiCallHandlerUtils
         throws AccessDeniedException, StorageException, DatabaseException
     {
         storageLayer.checkStorPool(storPool);
-        return new SpaceInfo(
-            storageLayer.getCapacity(storPool),
-            storageLayer.getFreeSpace(storPool)
-        );
+        return storageLayer.getStoragePoolSpaceInfo(storPool);
     }
 }

@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.layer.provider.zfs;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
@@ -107,28 +108,25 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
-    public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
     {
         String zPoolName = getZpoolOnlyName(storPool);
 
         // do not use the thin version, we have to ask the actual zpool, not the thin "pool"
-        return ZfsUtils.getZPoolTotalSize(
+        long capacity = ZfsUtils.getZPoolTotalSize(
             extCmdFactory.create(),
             Collections.singleton(zPoolName)
         ).get(zPoolName);
-    }
 
-    @Override
-    public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
-    {
         String thinZpoolName = getZPool(storPool);
         if (thinZpoolName == null)
         {
             throw new StorageException("Unset thin zfs dataset for " + storPool);
         }
-
-        return ZfsUtils.getThinZPoolsList(
+        long freeSpace = ZfsUtils.getThinZPoolsList(
             extCmdFactory.create()
         ).get(thinZpoolName).usableSize;
+
+        return new SpaceInfo(capacity, freeSpace);
     }
 }

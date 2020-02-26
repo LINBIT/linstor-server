@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.layer.provider.zfs;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -367,40 +368,31 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    public long getPoolCapacity(StorPool storPool) throws StorageException, AccessDeniedException
-    {
-        String poolName = getZPool(storPool);
-        if (poolName == null)
-        {
-            throw new StorageException("Unset zfs dataset for " + storPool);
-        }
-
-        int idx = poolName.indexOf(File.separator);
-        if (idx == -1)
-        {
-            idx = poolName.length();
-        }
-        String rootPoolName = poolName.substring(0, idx);
-
-        // do not use sub pool, we have to ask the actual zpool, not the sub dataset
-        return ZfsUtils.getZPoolTotalSize(
-            extCmdFactory.create(),
-            Collections.singleton(rootPoolName)
-        ).get(rootPoolName);
-    }
-
-    @Override
-    public long getPoolFreeSpace(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
     {
         String zPool = getZPool(storPool);
         if (zPool == null)
         {
-            throw new StorageException("Unset zpool for " + storPool);
+            throw new StorageException("Unset zfs dataset for " + storPool);
         }
-        return ZfsUtils.getZPoolFreeSize(
+        int idx = zPool.indexOf(File.separator);
+        if (idx == -1)
+        {
+            idx = zPool.length();
+        }
+        String rootPoolName = zPool.substring(0, idx);
+
+        // do not use sub pool, we have to ask the actual zpool, not the sub dataset
+        long capacity = ZfsUtils.getZPoolTotalSize(
+            extCmdFactory.create(),
+            Collections.singleton(rootPoolName)
+        ).get(rootPoolName);
+        long freeSpace = ZfsUtils.getZPoolFreeSize(
             extCmdFactory.create(),
             Collections.singleton(zPool)
         ).get(zPool);
+
+        return new SpaceInfo(capacity, freeSpace);
     }
 
     @Override
