@@ -42,6 +42,8 @@ public class StltExtToolsChecker
         .compile("(?:cryptsetup )?(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern LVM_VERSION_PATTERN = Pattern
         .compile("(?:\\s*LVM vesion:\\s*)?(\\d+)\\.(\\d+)\\.(\\d+)");
+    private static final Pattern LVM_THIN_VERSION_PATTERN = Pattern
+        .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern ZFS_VERSION_PATTERN = Pattern
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern NVME_VERSION_PATTERN = Pattern
@@ -72,6 +74,7 @@ public class StltExtToolsChecker
             getDrbdProxyInfo(),
             getCryptSetupInfo(),
             getLvmInfo(),
+            getLvmThinInfo(),
             getZfsInfo(),
             getNvmeInfo(),
             getSpdkInfo(),
@@ -125,6 +128,11 @@ public class StltExtToolsChecker
     private ExtToolsInfo getLvmInfo()
     {
         return infoBy3MatchGroupPattern(LVM_VERSION_PATTERN, ExtTools.LVM, "lvm", "version");
+    }
+
+    private ExtToolsInfo getLvmThinInfo()
+    {
+        return infoBy3MatchGroupPattern(LVM_THIN_VERSION_PATTERN, ExtTools.LVM_THIN, "thin_check", "-V");
     }
 
     private ExtToolsInfo getZfsInfo()

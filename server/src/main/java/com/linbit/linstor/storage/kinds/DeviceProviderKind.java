@@ -36,7 +36,7 @@ public enum DeviceProviderKind
         true,
         true,
         new LvmThinDriverKind(),
-        ExtTools.LVM
+        ExtTools.LVM_THIN
     ),
     ZFS(
         true,

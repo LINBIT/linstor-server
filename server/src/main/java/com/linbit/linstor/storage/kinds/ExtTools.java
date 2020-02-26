@@ -4,7 +4,7 @@ public enum ExtTools
 {
     DRBD9, DRBD_PROXY,
     CRYPT_SETUP,
-    LVM,
+    LVM, LVM_THIN,
     ZFS,
     NVME,
     SPDK,

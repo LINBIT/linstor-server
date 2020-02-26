@@ -1046,6 +1046,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case LVM:
                 ret = ExternalTools.LVM;
                 break;
+            case LVM_THIN:
+                ret = ExternalTools.LVM_THIN;
+                break;
             case NVME:
                 ret = ExternalTools.NVME;
                 break;

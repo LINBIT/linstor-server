@@ -322,6 +322,9 @@ public class ProtoDeserializationUtils
             case LVM:
                 tool = ExtTools.LVM;
                 break;
+            case LVM_THIN:
+                tool = ExtTools.LVM_THIN;
+                break;
             case NVME:
                 tool = ExtTools.NVME;
                 break;

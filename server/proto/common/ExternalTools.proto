@@ -12,6 +12,7 @@ message ExternalToolsInfo
         DRBD_PROXY = 2;
         CRYPT_SETUP = 3;
         LVM = 4;
+        LVM_THIN = 9;
         ZFS = 5;
         NVME = 6;
         SPDK = 7;
