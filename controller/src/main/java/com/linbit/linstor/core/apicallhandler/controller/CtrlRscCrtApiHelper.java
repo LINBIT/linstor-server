@@ -266,7 +266,14 @@ public class CtrlRscCrtApiHelper
                     nodeNameStr,
                     false
                 );
-            boolean isStorPoolDiskless = storPool != null && !storPool.getDeviceProviderKind().hasBackingDevice();
+
+            boolean isStorPoolDiskless = false;
+            boolean isStorPoolOpenflex = false;
+            if (storPool != null)
+            {
+                isStorPoolDiskless = !storPool.getDeviceProviderKind().hasBackingDevice();
+                isStorPoolOpenflex = storPool.getDeviceProviderKind().equals(DeviceProviderKind.OPENFLEX_TARGET);
+            }
 
             boolean isDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS);
             boolean isDrbdDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DRBD_DISKLESS);
@@ -274,7 +281,7 @@ public class CtrlRscCrtApiHelper
 
             if (
                 (isDisklessSet && !isDrbdDisklessSet && !isNvmeInitiatorSet) ||
-                    (!isDisklessSet && isStorPoolDiskless)
+                (!isDisklessSet && isStorPoolDiskless)
             )
             {
                 if (layerStack.isEmpty())
@@ -320,6 +327,16 @@ public class CtrlRscCrtApiHelper
                         );
                     }
                 }
+            }
+
+            if (isStorPoolOpenflex && !layerStack.contains(DeviceLayerKind.NVME))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_LAYER_STACK,
+                        "Selecting a storage pool with the openflex driver requires NVME to be included in the layer-list"
+                    )
+                );
             }
 
             resourceCreateCheck.getAndSetDeployedResourceRoles(rscDfn);
