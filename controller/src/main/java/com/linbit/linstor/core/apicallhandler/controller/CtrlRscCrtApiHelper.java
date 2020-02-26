@@ -623,7 +623,7 @@ public class CtrlRscCrtApiHelper
                 layerStackRef
             );
 
-            Set<DeviceLayerKind> unsupportedLayers = getUnsupportedLayers(rsc);
+            List<DeviceLayerKind> unsupportedLayers = getUnsupportedLayers(rsc);
             if (!unsupportedLayers.isEmpty())
             {
                 throw new ApiRcException(
@@ -699,10 +699,10 @@ public class CtrlRscCrtApiHelper
         return rsc;
     }
 
-    private Set<DeviceLayerKind> getUnsupportedLayers(Resource rsc) throws AccessDeniedException
+    private List<DeviceLayerKind> getUnsupportedLayers(Resource rsc) throws AccessDeniedException
     {
-        Set<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
-            rsc.getLayerData(peerAccCtx.get())
+        List<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
+            rsc.getLayerData(peerAccCtx.get()), peerAccCtx.get()
         );
         usedDeviceLayerKinds.removeAll(
             rsc.getNode()

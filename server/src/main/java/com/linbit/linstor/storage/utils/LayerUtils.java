@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
@@ -20,7 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 public class LayerUtils
 {
@@ -188,20 +188,36 @@ public class LayerUtils
         return !LayerUtils.getChildLayerDataByKind(rscData, kind).isEmpty();
     }
 
-    public static Set<DeviceLayerKind> getUsedDeviceLayerKinds(
-        AbsRscLayerObject<?> rscLayerObject
-    )
+    public static List<DeviceLayerKind> getUsedDeviceLayerKinds(
+        AbsRscLayerObject<?> rscLayerObject,
+        AccessContext accCtx
+    ) throws AccessDeniedException
     {
-        Set<DeviceLayerKind> ret = new TreeSet<>();
-        LinkedList<AbsRscLayerObject<?>> rscDataToExplore = new LinkedList<>();
-        rscDataToExplore.add(rscLayerObject);
-        while (!rscDataToExplore.isEmpty())
-        {
-            AbsRscLayerObject<?> rscData = rscDataToExplore.removeFirst();
-            ret.add(rscData.getLayerKind());
-            rscDataToExplore.addAll(rscData.getChildren());
+        List<DeviceLayerKind> usedLayers = new ArrayList<>();
+
+        AbsRscLayerObject<?> curLayerObject = rscLayerObject;
+
+        while (curLayerObject != null) {
+            DeviceLayerKind kind = curLayerObject.getLayerKind();
+            usedLayers.add(kind);
+
+            if (DeviceLayerKind.NVME.equals(kind))
+            {
+                if (((NvmeRscData<?>) curLayerObject).isInitiator(accCtx))
+                {
+                    // we do not care about layers below us
+                    break;
+                }
+                else
+                {
+                    // we do not care about layers above us
+                    usedLayers.clear();
+                    usedLayers.add(kind);
+                }
+            }
+            curLayerObject = curLayerObject.getChildBySuffix("");
         }
-        return ret;
+        return usedLayers;
     }
 
     public static List<DeviceLayerKind> getLayerStack(AbsResource<?> rscRef, AccessContext accCtx)
