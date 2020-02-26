@@ -67,6 +67,9 @@ class StltCmdLineArgsParser
     @CommandLine.Option(names = {"--override-node-name"}, description = "Overrides node name used in error reports.")
     private String nodeName;
 
+    @CommandLine.Option(names= {"--openflex"}, hidden = true)
+    private boolean openflex;
+
     static void parseCommandLine(String[] args, StltConfig stltCfg)
     {
         StltCmdLineArgsParser linArgParser = new StltCmdLineArgsParser();
@@ -107,6 +110,8 @@ class StltCmdLineArgsParser
                 System.exit(InternalApiConsts.EXIT_CODE_CMDLINE_ERROR);
             }
         }
+
+        stltCfg.setOpenflex(linArgParser.openflex);
 
         stltCfg.setLogDirectory(linArgParser.logDirectory);
 

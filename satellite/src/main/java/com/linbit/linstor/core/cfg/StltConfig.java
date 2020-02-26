@@ -12,6 +12,7 @@ import com.moandjiezana.toml.Toml;
 public class StltConfig extends LinstorConfig
 {
     private String stltOverrideNodeName;
+    private boolean openflex;
 
     private Pattern drbdKeepResPattern;
 
@@ -37,6 +38,9 @@ public class StltConfig extends LinstorConfig
     protected void applyDefaultValues()
     {
         super.applyDefaultValues();
+
+        setOpenflex(false);
+
         setNetBindAddress("::0");
         setNetPort(3366);
         setNetType("plain");
@@ -73,6 +77,16 @@ public class StltConfig extends LinstorConfig
                 System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
             }
         }
+    }
+
+    public boolean isOpenflex()
+    {
+        return openflex;
+    }
+
+    public void setOpenflex(boolean openflexRef)
+    {
+        openflex = openflexRef;
     }
 
     public Pattern getDrbdKeepResPattern()

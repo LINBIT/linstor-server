@@ -193,7 +193,8 @@ public class OpenFlexTargetProcessManager
                 "-d",
                 "--override-node-name", node.getName().displayValue,
                 "--logs", ofErrLogDir.toAbsolutePath().toString(),
-                "-c", ctrlConf.getConfigDir()
+                "-c", ctrlConf.getConfigDir(),
+                "--openflex"
             );
             pb.redirectErrorStream(true);
             File stltLog = errorReporter.getLogDirectory().resolve(
