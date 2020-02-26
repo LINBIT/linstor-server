@@ -4,6 +4,7 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -54,17 +55,20 @@ public class StltExtToolsChecker
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
     private final ExtCmdFactory extCmdFactory;
+    private final StltConfig stltCfg;
 
     @Inject
     public StltExtToolsChecker(
         ErrorReporter errorReporterRef,
         DrbdVersion drbdVersionCheckRef,
-        ExtCmdFactory extCmdFactoryRef
+        ExtCmdFactory extCmdFactoryRef,
+        StltConfig stltCfgRef
     )
     {
         errorReporter = errorReporterRef;
         drbdVersionCheck = drbdVersionCheckRef;
         extCmdFactory = extCmdFactoryRef;
+        stltCfg = stltCfgRef;
     }
 
     public List<ExtToolsInfo> getExternalTools()
@@ -144,16 +148,23 @@ public class StltExtToolsChecker
     {
         ExtToolsInfo ret;
 
-        List<String> modprobeFailures = new ArrayList<>();
-        check(modprobeFailures, "modprobe", "nvmet_rdma");
-        check(modprobeFailures, "modprobe", "nvme_rdma");
-        if (!modprobeFailures.isEmpty())
+        if (stltCfg.isOpenflex())
         {
-            ret = new ExtToolsInfo(ExtTools.NVME, false, null, null, null, modprobeFailures);
+            ret = new ExtToolsInfo(ExtTools.NVME, true, null, null, null, null);
         }
         else
         {
-            ret = infoBy3MatchGroupPattern(NVME_VERSION_PATTERN, ExtTools.NVME, false, "nvme", "version");
+            List<String> modprobeFailures = new ArrayList<>();
+            check(modprobeFailures, "modprobe", "nvmet_rdma");
+            check(modprobeFailures, "modprobe", "nvme_rdma");
+            if (!modprobeFailures.isEmpty())
+            {
+                ret = new ExtToolsInfo(ExtTools.NVME, false, null, null, null, modprobeFailures);
+            }
+            else
+            {
+                ret = infoBy3MatchGroupPattern(NVME_VERSION_PATTERN, ExtTools.NVME, false, "nvme", "version");
+            }
         }
         return ret;
     }
