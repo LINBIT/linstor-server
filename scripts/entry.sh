@@ -1,5 +1,15 @@
 #!/bin/sh
 
+if mountpoint -q /host/proc; then
+	lvmpath=$(command -v lvm)
+	mv "$lvmpath" "${lvmpath}.distro"
+	cat <<'EOF' > "$lvmpath"
+#!/bin/sh
+nsenter --mount=/host/proc/1/ns/mnt -- "$(basename $0)" "$@"
+EOF
+	chmod +x "$lvmpath"
+fi
+
 case $1 in
 	startSatellite)
 		shift

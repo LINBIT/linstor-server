@@ -51,7 +51,7 @@ COPY COPYING /licenses/gpl-3.0.txt
 
 COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
-  yum install -y which lvm2 && yum install -y /tmp/linstor-common*.rpm /tmp/linstor-satellite*.rpm && yum clean all -y
+  yum install -y which lvm2 util-linux && yum install -y /tmp/linstor-common*.rpm /tmp/linstor-satellite*.rpm && yum clean all -y
 
 COPY --from=builder /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 /etc/pki/rpm-gpg/
 RUN { \
