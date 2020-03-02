@@ -39,6 +39,7 @@ import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -217,6 +218,8 @@ public class CtrlRscCrtApiHelper
         }
         else
         {
+            LayerPayload payload = new LayerPayload();
+            payload.getDrbdRsc().nodeId = nodeIdInt;
             List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
 
             if (layerStack.isEmpty())
@@ -341,7 +344,7 @@ public class CtrlRscCrtApiHelper
 
             resourceCreateCheck.getAndSetDeployedResourceRoles(rscDfn);
 
-            rsc = createResource(rscDfn, node, nodeIdInt, flags, layerStack);
+            rsc = createResource(rscDfn, node, payload, flags, layerStack);
             Props rscProps = ctrlPropsHelper.getProps(rsc);
 
             ctrlPropsHelper.fillProperties(
@@ -617,7 +620,7 @@ public class CtrlRscCrtApiHelper
     Resource createResource(
         ResourceDefinition rscDfn,
         Node node,
-        Integer nodeIdIntRef,
+        LayerPayload payload,
         long flags,
         List<DeviceLayerKind> layerStackRef
     )
@@ -636,7 +639,7 @@ public class CtrlRscCrtApiHelper
                 peerAccCtx.get(),
                 rscDfn,
                 node,
-                nodeIdIntRef,
+                payload,
                 Resource.Flags.restoreFlags(flags),
                 layerStackRef
             );

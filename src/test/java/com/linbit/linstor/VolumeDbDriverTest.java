@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -106,11 +107,13 @@ public class VolumeDbDriverTest extends GenericDbBase
         );
 
         nodeId = 7;
+        LayerPayload payload = new LayerPayload();
+        payload.getDrbdRsc().nodeId = nodeId;
         res = resourceFactory.create(
             SYS_CTX,
             resDfn,
             node,
-            nodeId,
+            payload,
             null,
             Collections.emptyList()
         );

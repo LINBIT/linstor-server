@@ -29,6 +29,7 @@ import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
@@ -414,11 +415,13 @@ public class NodeDbDriverTest extends GenericDbBase
             storPool2.getProps(SYS_CTX).setProp(storPool2TestKey, storPool2TestValue);
 
             // node1 res
+            LayerPayload payload1 = new LayerPayload();
+            payload1.getDrbdRsc().nodeId = node1Id;
             Resource res1 = resourceFactory.create(
                 SYS_CTX,
                 resDfn,
                 node1,
-                node1Id,
+                payload1,
                 new Resource.Flags[]
                 {
                     Resource.Flags.CLEAN
@@ -441,11 +444,13 @@ public class NodeDbDriverTest extends GenericDbBase
             vol1Uuid = vol1.getUuid();
 
             // node2 res
+            LayerPayload payload2 = new LayerPayload();
+            payload2.getDrbdRsc().nodeId = node2Id;
             Resource res2 = resourceFactory.create(
                 SYS_CTX,
                 resDfn,
                 node2,
-                node2Id,
+                payload2,
                 new Resource.Flags[]
                 {
                     Resource.Flags.CLEAN

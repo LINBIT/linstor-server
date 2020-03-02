@@ -14,6 +14,7 @@ import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -104,8 +105,13 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
         nodeIdSrc = 13;
         nodeIdDst = 14;
 
-        resSrc = resourceFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, Collections.emptyList());
-        resDst = resourceFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, Collections.emptyList());
+        LayerPayload payLoadSrc = new LayerPayload();
+        payLoadSrc.getDrbdRsc().nodeId = nodeIdSrc;
+        LayerPayload payLoadDst = new LayerPayload();
+        payLoadDst.getDrbdRsc().nodeId = nodeIdDst;
+
+        resSrc = resourceFactory.create(SYS_CTX, resDfn, nodeSrc, payLoadSrc, null, Collections.emptyList());
+        resDst = resourceFactory.create(SYS_CTX, resDfn, nodeDst, payLoadDst, null, Collections.emptyList());
 
         resCon = TestFactory.createResourceConnection(
             uuid,

@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -108,8 +109,13 @@ public class ConnectionPropsTest extends GenericDbBase
             dfltRscGrp
         );
 
-        res1 = resourceFactory.create(SYS_CTX, resDfn, node1, nodeId1, null, Collections.emptyList());
-        res2 = resourceFactory.create(SYS_CTX, resDfn, node2, nodeId2, null, Collections.emptyList());
+        LayerPayload payload1 = new LayerPayload();
+        payload1.getDrbdRsc().nodeId = nodeId1;
+        LayerPayload payload2 = new LayerPayload();
+        payload2.getDrbdRsc().nodeId = nodeId2;
+
+        res1 = resourceFactory.create(SYS_CTX, resDfn, node1, payload1, null, Collections.emptyList());
+        res2 = resourceFactory.create(SYS_CTX, resDfn, node2, payload2, null, Collections.emptyList());
 
         storPoolDfn = storPoolDefinitionFactory.create(SYS_CTX, storPoolName);
 

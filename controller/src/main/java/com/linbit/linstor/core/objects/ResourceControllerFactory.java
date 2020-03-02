@@ -57,7 +57,7 @@ public class ResourceControllerFactory
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         Node node,
-        Integer nodeIdIntRef,
+        LayerPayload payload,
         Resource.Flags[] initFlags,
         List<DeviceLayerKind> layerStackRef
     )
@@ -80,10 +80,7 @@ public class ResourceControllerFactory
             throw new ImplementationError("Lowest layer has to be a STORAGE layer. " + new ArrayList<>(layerStack));
         }
 
-        // TODO: might be a good idea to create this object earlier
-        LayerPayload payload = new LayerPayload();
-        payload.getDrbdRsc().nodeId = nodeIdIntRef;
-        layerStackHelper.ensureStackDataExists(rscData, layerStack, payload);
+        layerStackHelper.ensureStackDataExists(rscData, layerStack, payload == null ? new LayerPayload() : payload);
 
         return rscData;
     }

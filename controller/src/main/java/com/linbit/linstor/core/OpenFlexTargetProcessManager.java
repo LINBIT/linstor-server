@@ -51,7 +51,7 @@ public class OpenFlexTargetProcessManager
     private final AccessContext sysCtx;
     private final CtrlConfig ctrlConf;
 
-    private final transient Map<Node, Process> childSatellites;
+    private final transient Map<String, Process> childSatellites;
 
     @Inject
     public OpenFlexTargetProcessManager(
@@ -141,6 +141,35 @@ public class OpenFlexTargetProcessManager
         return satellitePath;
     }
 
+    public void startLocalSatelliteProcess(Node node) throws IOException, PortAlreadyInUseException
+    {
+        Iterator<NetInterface> netIfIt;
+        try
+        {
+            netIfIt = node.iterateNetInterfaces(sysCtx);
+            Integer port = null;
+            while (netIfIt.hasNext())
+            {
+                NetInterface netIf = netIfIt.next();
+                if (port != null)
+                {
+                    throw new ImplementationError("Openflex target node has more than one network interface!");
+                }
+                port = netIf.getStltConnPort(sysCtx).value;
+            }
+            if (port == null)
+            {
+                throw new ImplementationError("Openflex target node has no network interfaces");
+            }
+
+            startLocalSatelliteProcess(node.getName().displayValue, port);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("System context has not enough privileges", exc);
+        }
+    }
+
     /**
      * <p>
      * Starts a satellite process with parameters
@@ -163,61 +192,38 @@ public class OpenFlexTargetProcessManager
      * @throws IOException
      * @throws PortAlreadyInUseException
      */
-    public void startLocalSatelliteProcess(Node node) throws IOException, PortAlreadyInUseException
+    public void startLocalSatelliteProcess(String nodeNameStr, Integer port) throws IOException, PortAlreadyInUseException
     {
-        try
-        {
-            Iterator<NetInterface> netIfIt = node.iterateNetInterfaces(sysCtx);
-            Integer port = null;
-            while (netIfIt.hasNext())
-            {
-                NetInterface netIf = netIfIt.next();
-                if (port != null)
-                {
-                    throw new ImplementationError("Openflex target node has more than one network interface!");
-                }
-                port = netIf.getStltConnPort(sysCtx).value;
-            }
-            if (port == null)
-            {
-                throw new ImplementationError("Openflex target node has no network interfaces");
-            }
+        Path ofSatLogDir = errorReporter.getLogDirectory().resolve(SATELLITE_LOG_DIRECTORY);
+        Path ofErrLogDir = ofSatLogDir.resolve(String.format(SATELLITE_ERR_LOG_DIRECTORY, port));
+        ProcessBuilder pb = new ProcessBuilder(
+            getSatellitePath().toString(),
+            "-s",
+            "--port", Integer.toString(port),
+            "--bind-address", LOCALHOST,
+            "-d",
+            "--override-node-name", nodeNameStr,
+            "--logs", ofErrLogDir.toAbsolutePath().toString(),
+            "-c", ctrlConf.getConfigDir(),
+            "--openflex"
+        );
+        pb.redirectErrorStream(true);
+        File stltLog = errorReporter.getLogDirectory().resolve(
+            String.format(SATELLITE_OUT_FILE_FORMAT, port)
+        ).toFile();
+        stltLog.getParentFile().mkdirs(); // just to be sure
+        pb.redirectOutput(stltLog);
 
-            Path ofSatLogDir = errorReporter.getLogDirectory().resolve(SATELLITE_LOG_DIRECTORY);
-            Path ofErrLogDir = ofSatLogDir.resolve(String.format(SATELLITE_ERR_LOG_DIRECTORY, port));
-            ProcessBuilder pb = new ProcessBuilder(
-                getSatellitePath().toString(),
-                "-s",
-                "--port", Integer.toString(port),
-                "--bind-address", LOCALHOST,
-                "-d",
-                "--override-node-name", node.getName().displayValue,
-                "--logs", ofErrLogDir.toAbsolutePath().toString(),
-                "-c", ctrlConf.getConfigDir(),
-                "--openflex"
-            );
-            pb.redirectErrorStream(true);
-            File stltLog = errorReporter.getLogDirectory().resolve(
-                String.format(SATELLITE_OUT_FILE_FORMAT, port)
-            ).toFile();
-            stltLog.getParentFile().mkdirs(); // just to be sure
-            pb.redirectOutput(stltLog);
+        ensurePortisAvailable(port);
 
-            ensurePortisAvailable(port);
+        Process proc = pb.start();
 
-            Process proc = pb.start();
+        // create node usually waits for the first connection attempt - we should wait here a bit
+        // so the just started satellite starts and can be connected
 
-            // create node usually waits for the first connection attempt - we should wait here a bit
-            // so the just started satellite starts and can be connected
+        waitForStart(port);
 
-            waitForStart(port);
-
-            childSatellites.put(node, proc);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError("System context has not enough privileges", exc);
-        }
+        childSatellites.put(nodeNameStr.toUpperCase(), proc);
     }
 
     private void waitForStart(Integer portRef)
@@ -256,7 +262,7 @@ public class OpenFlexTargetProcessManager
 
     public void stopProcess(Node node)
     {
-        Process process = childSatellites.get(node);
+        Process process = childSatellites.get(node.getName().value);
         if (process == null)
         {
             errorReporter.logWarning("No openflex-target satellite process found");

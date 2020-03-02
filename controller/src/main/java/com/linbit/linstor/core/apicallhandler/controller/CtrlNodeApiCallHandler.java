@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -21,6 +22,7 @@ import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -61,6 +63,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -251,57 +254,56 @@ public class CtrlNodeApiCallHandler
             ApiOperation.makeRegisterOperation(),
             nodeNameStr
         );
+
+        int ofTargetPort = 0;
+
+        boolean retry = true;
+        while (retry)
+        {
+            try
+            {
+                ofTargetPort = ofTargetPortPool.autoAllocate();
+
+                // throws PortAlreadyInUseException
+                ofTargetProcMgr.startLocalSatelliteProcess(nodeNameStr, ofTargetPort);
+
+                retry = false;
+            }
+            catch (PortAlreadyInUseException exc)
+            {
+                // ignored, try the next port
+            }
+            catch (ExhaustedPoolException exc)
+            {
+                throw new ApiException(exc);
+            }
+            catch (IOException exc)
+            {
+                throw new ApiException(exc);
+            }
+        }
         try
         {
-            boolean retry = true;
-            while (retry)
-            {
-                retry = false;
-                try
-                {
-                    int sfTargetPort = ofTargetPortPool.autoAllocate();
-                    List<NetInterfaceApi> netIfs = new ArrayList<>();
-                    netIfs.add(
-                        new NetInterfacePojo(
-                            UUID.randomUUID(),
-                            DEFAULT_NETIF,
-                            "127.0.0.1",
-                            sfTargetPort,
-                            ApiConsts.VAL_NETCOM_TYPE_PLAIN
-                        )
-                    );
-                    node = createNodeImpl(
-                        nodeNameStr,
-                        Node.Type.OPENFLEX_TARGET.name(),
-                        netIfs,
-                        propsMap,
-                        responses,
-                        context,
-                        true,
-                        false
-                    );
-                    ofTargetProcMgr.startLocalSatelliteProcess(node);
-                    ctrlTransactionHelper.commit();
-                }
-                catch (PortAlreadyInUseException exc)
-                {
-                    /*
-                     * By rolling back the transaction, we undo the node-creation.
-                     * The process was not started either.
-                     * The only thing that remains from our previous try is the port-allocation
-                     * of ofTargetPortPool, which should remember that the just tried port is
-                     * unavailable.
-                     * The only thing we have to do here is to retry the node-creation, with a new
-                     * port number
-                     */
-                    ctrlTransactionHelper.rollback();
-                    if (node != null)
-                    {
-                        reconnectorTask.removePeer(node.getPeer(apiCtx));
-                    }
-                    retry = true;
-                }
-            }
+            List<NetInterfaceApi> netIfs = new ArrayList<>();
+            netIfs.add(
+                new NetInterfacePojo(
+                    UUID.randomUUID(),
+                    DEFAULT_NETIF,
+                    "127.0.0.1",
+                    ofTargetPort,
+                    ApiConsts.VAL_NETCOM_TYPE_PLAIN
+                )
+            );
+            node = createNodeImpl(
+                nodeNameStr,
+                Node.Type.OPENFLEX_TARGET.name(),
+                netIfs,
+                propsMap,
+                responses,
+                context,
+                false,
+                true
+            );
         }
         catch (Exception | ImplementationError exc)
         {

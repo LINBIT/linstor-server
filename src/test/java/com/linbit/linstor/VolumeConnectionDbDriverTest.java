@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -132,8 +133,12 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
         nodeIdSrc = 13;
         nodeIdDst = 14;
 
-        resSrc = resourceFactory.create(SYS_CTX, resDfn, nodeSrc, nodeIdSrc, null, Collections.emptyList());
-        resDst = resourceFactory.create(SYS_CTX, resDfn, nodeDst, nodeIdDst, null, Collections.emptyList());
+        LayerPayload payloadSrc = new LayerPayload();
+        payloadSrc.getDrbdRsc().nodeId = nodeIdSrc;
+        LayerPayload payloadDst = new LayerPayload();
+        payloadDst.getDrbdRsc().nodeId = nodeIdDst;
+        resSrc = resourceFactory.create(SYS_CTX, resDfn, nodeSrc, payloadSrc, null, Collections.emptyList());
+        resDst = resourceFactory.create(SYS_CTX, resDfn, nodeDst, payloadDst, null, Collections.emptyList());
 
         storPoolDfn = storPoolDefinitionFactory.create(SYS_CTX, storPoolName);
         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);

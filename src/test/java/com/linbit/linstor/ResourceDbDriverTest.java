@@ -15,6 +15,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlagsBits;
@@ -132,11 +133,13 @@ public class ResourceDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
+        LayerPayload payload = new LayerPayload();
+        payload.getDrbdRsc().nodeId = nodeId;
         resourceFactory.create(
             SYS_CTX,
             resDfn,
             node,
-            nodeId,
+            payload,
             new Resource.Flags[] {Resource.Flags.DELETE},
             Collections.emptyList()
         );
@@ -231,11 +234,13 @@ public class ResourceDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
+        LayerPayload payload = new LayerPayload();
+        payload.getDrbdRsc().nodeId = nodeId;
         Resource storedInstance = resourceFactory.create(
             SYS_CTX,
             resDfn,
             node,
-            nodeId,
+            payload,
             null,
             Collections.emptyList()
         );
@@ -329,6 +334,8 @@ public class ResourceDbDriverTest extends GenericDbBase
         node.addResource(SYS_CTX, res);
         resDfn.addResource(SYS_CTX, res);
 
-        resourceFactory.create(SYS_CTX, resDfn, node, nodeId, null, Collections.emptyList());
+        LayerPayload payload = new LayerPayload();
+        payload.getDrbdRsc().nodeId = nodeId;
+        resourceFactory.create(SYS_CTX, resDfn, node, payload, null, Collections.emptyList());
     }
 }
