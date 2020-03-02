@@ -746,7 +746,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
 
         errorReporter.logTrace(
-            "Layer '%s' updating gross size of volume '%s/%d' (usable: %d",
+            "Layer '%s' updating gross size of volume '%s/%d' (usable: %d)",
             nextLayer.getName(),
             vlmData.getRscLayerObject().getSuffixedResourceName(),
             vlmData.getVlmNr().value,
@@ -794,6 +794,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     // TODO: create delete volume / resource methods that (for now) only perform the actual .delete()
     // command. This method should be a central point for future logging or other extensions / purposes
 
+    @Override
     public void fullSyncApplied(Node localNode)
     {
         fullSyncApplied.set(true);
@@ -810,11 +811,28 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     // FIXME: this method also needs to be called when the localnode's properties change, not just
     // (as currently) when a fullSync was applied
+    @Override
     public void localNodePropsChanged(Props localNodeProps)
     {
         layerFactory.streamDeviceHandlers().forEach(
             rscLayer ->
                 rscLayer.setLocalNodeProps(localNodeProps));
+    }
+
+    @Override
+    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException
+    {
+        SpaceInfo spaceInfo;
+        try
+        {
+            storageLayer.checkStorPool(storPool);
+            spaceInfo = storageLayer.getStoragePoolSpaceInfo(storPool);
+        }
+        catch (AccessDeniedException | DatabaseException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return spaceInfo;
     }
 
     private void updateChangedFreeSpaces()

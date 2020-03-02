@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -32,6 +33,7 @@ import com.linbit.utils.Either;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,7 +56,8 @@ public class StltApiCallHandlerUtils
     private final ReadWriteLock rscDfnMapLock;
     private final StorageLayer storageLayer;
     private final DeviceProviderMapper deviceProviderMapper;
-    private LockGuardFactory lockGuardFactory;
+    private final LockGuardFactory lockGuardFactory;
+    private final Provider<DeviceManager> devMgr;
 
     @Inject
     public StltApiCallHandlerUtils(
@@ -66,7 +69,8 @@ public class StltApiCallHandlerUtils
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         StorageLayer storageLayerRef,
         DeviceProviderMapper deviceProviderMapperRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        Provider<DeviceManager> devMgrProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -78,6 +82,7 @@ public class StltApiCallHandlerUtils
         storageLayer = storageLayerRef;
         deviceProviderMapper = deviceProviderMapperRef;
         lockGuardFactory = lockGuardFactoryRef;
+        devMgr = devMgrProviderRef;
     }
 
     public Map<Volume.Key, Either<Long, ApiRcException>> getVlmAllocatedCapacities(
@@ -250,7 +255,6 @@ public class StltApiCallHandlerUtils
     }
 
     private Either<SpaceInfo, ApiRcException> getStoragePoolSpaceInfoOrError(StorPool storPool)
-        throws AccessDeniedException
     {
         Either<SpaceInfo, ApiRcException> result;
         try
@@ -266,17 +270,12 @@ public class StltApiCallHandlerUtils
                 storageExc
             ));
         }
-        catch (DatabaseException exc)
-        {
-            throw new ImplementationError(exc);
-        }
         return result;
     }
 
     public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
-        throws AccessDeniedException, StorageException, DatabaseException
+        throws StorageException
     {
-        storageLayer.checkStorPool(storPool);
-        return storageLayer.getStoragePoolSpaceInfo(storPool);
+        return devMgr.get().getSpaceInfo(storPool);
     }
 }

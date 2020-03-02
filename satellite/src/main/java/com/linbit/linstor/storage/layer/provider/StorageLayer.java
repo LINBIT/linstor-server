@@ -153,8 +153,7 @@ public class StorageLayer implements DeviceLayer
                 ).objB.add(snapVlmProviderObject);
             }
         }
-        for (Entry<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> entry : groupedData.entrySet()
-        )
+        for (Entry<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> entry : groupedData.entrySet())
         {
             DeviceProvider deviceProvider = entry.getKey();
             Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> pair = entry.getValue();

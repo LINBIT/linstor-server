@@ -63,6 +63,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -183,7 +184,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
     private final StltApiCallHandlerUtils apiCallHandlerUtils;
 
-    private final DeviceHandlerImpl devHandler;
+    private final DeviceHandler devHandler;
     private ResourceStateEvent resourceStateEvent;
 
 
@@ -209,7 +210,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         Scheduler scheduler,
         UpdateMonitor updateMonitorRef,
         ResourceStateEvent resourceStateEventRef,
-        DeviceHandlerImpl deviceHandlerRef,
+        DeviceHandler deviceHandlerRef,
         DrbdVersion drbdVersionRef
     )
     {
@@ -1191,6 +1192,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         {
             rcfgWrLock.unlock();
         }
+    }
+
+    @Override
+    public SpaceInfo getSpaceInfo(StorPool storPoolRef) throws StorageException
+    {
+        // TODO: maybe we should synchronize with sched?
+        return devHandler.getSpaceInfo(storPoolRef);
     }
 
     private void requestControllerUpdates(boolean updateController)

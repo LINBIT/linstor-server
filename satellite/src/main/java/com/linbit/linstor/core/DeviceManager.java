@@ -1,12 +1,14 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 
@@ -29,4 +31,6 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
 
     StltUpdateTracker getUpdateTracker();
     void forceWakeUpdateNotifications();
+
+    SpaceInfo getSpaceInfo(StorPool storPoolRef) throws StorageException;
 }
