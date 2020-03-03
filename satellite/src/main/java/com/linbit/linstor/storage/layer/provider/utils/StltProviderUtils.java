@@ -12,7 +12,7 @@ public class StltProviderUtils
         long size;
         if (vlmData.exists())
         {
-            size = Commands.getBlockSizeInKib(extCmd, vlmData.getDevicePath());
+            size = getAllocatedSize(vlmData.getDevicePath(), extCmd);
         }
         else
         {
@@ -25,6 +25,12 @@ public class StltProviderUtils
             );
         }
         return size;
+    }
+
+    public static long getAllocatedSize(String blockdef, ExtCmd extCmd)
+        throws StorageException
+    {
+        return Commands.getBlockSizeInKib(extCmd, blockdef);
     }
 
     private StltProviderUtils()

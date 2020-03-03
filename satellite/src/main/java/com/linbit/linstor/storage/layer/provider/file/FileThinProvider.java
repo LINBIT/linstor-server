@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.layer.provider.file;
 
+import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -14,6 +15,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.FileCommands;
+import com.linbit.linstor.storage.utils.FileUtils;
 import com.linbit.linstor.storage.utils.LosetupCommands;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
@@ -76,6 +78,24 @@ public class FileThinProvider extends FileProvider
         LosetupCommands.resize(
             extCmdFactory.create(),
             fileData.getDevicePath()
+        );
+    }
+
+    @Override
+    protected long getAllocatedSizeFileImpl(ExtCmd extCmd, String pathRef) throws StorageException
+    {
+        return FileUtils.getThinAllocatedSize(
+            extCmd,
+            pathRef
+        );
+    }
+
+    @Override
+    protected long getAllocatedSize(FileData<Resource> fileData) throws StorageException
+    {
+        return FileUtils.getThinAllocatedSize(
+            extCmdFactory.create(),
+            getFullQualifiedIdentifier(fileData)
         );
     }
 

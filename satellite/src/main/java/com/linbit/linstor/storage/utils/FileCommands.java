@@ -157,6 +157,22 @@ public class FileCommands
         );
     }
 
+    public static OutputData getAllocatedThinSize(ExtCmd extCmd, String storagePathRef) throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                "stat",
+                "-c",
+                "%B %b", // size of one block in bytes, number of allocated blocks
+                storagePathRef
+            },
+            "Failed to fetch allocated size of " + storagePathRef,
+            "Failed to fetch allocated size of " + storagePathRef
+        );
+    }
+
     private FileCommands()
     {
     }

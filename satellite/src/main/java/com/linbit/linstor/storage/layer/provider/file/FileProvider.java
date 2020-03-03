@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.layer.provider.file;
 
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -25,14 +26,15 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.storage.layer.provider.AbsStorageProvider;
 import com.linbit.linstor.storage.layer.provider.WipeHandler;
+import com.linbit.linstor.storage.layer.provider.utils.StltProviderUtils;
 import com.linbit.linstor.storage.layer.provider.utils.StorageConfigReader;
 import com.linbit.linstor.storage.utils.DeviceLayerUtils;
 import com.linbit.linstor.storage.utils.FileCommands;
 import com.linbit.linstor.storage.utils.FileUtils;
 import com.linbit.linstor.storage.utils.FileUtils.FileInfo;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.storage.utils.LosetupCommands;
 import com.linbit.linstor.storage.utils.PmemUtils;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -155,7 +157,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         }
     }
 
-    private String getFullQualifiedIdentifier(FileData<?> fileData)
+    protected String getFullQualifiedIdentifier(FileData<?> fileData)
     {
         Path storageDirectory = fileData.getStorageDirectory();
         if (storageDirectory == null)
@@ -469,11 +471,15 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             );
         }
 
-        Map<String, FileInfo> infoList = FileUtils.getInfoList(extCmdFactory.create());
+        Map<String, FileInfo> infoList = FileUtils.getInfoList(
+            extCmdFactory.create(),
+            path -> getAllocatedSizeFileImpl(extCmdFactory.create(), path)
+        );
         for (Entry<String, FileInfo> entry : infoList.entrySet())
         {
             String backingFile = entry.getKey();
-            backingFileToFileDataMap.remove(backingFile);
+            FileData<Resource> fileData = backingFileToFileDataMap.remove(backingFile);
+
             LOSETUP_DEVICES.put(entry.getValue().loPath.toString(), backingFile);
         }
 
@@ -503,6 +509,11 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         }
 
         return infoList;
+    }
+
+    protected long getAllocatedSizeFileImpl(ExtCmd extCmd, String pathRef) throws StorageException
+    {
+        return StltProviderUtils.getAllocatedSize(pathRef, extCmd);
     }
 
     @Override

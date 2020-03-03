@@ -5,6 +5,7 @@ import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.ExceptionThrowingFunction;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -43,9 +44,27 @@ public class FileUtils
                 SizeUnit.UNIT_KiB
             );
         }
+
+        public FileInfo(
+            Path loPathRef,
+            Path backingPathRef,
+            ExceptionThrowingFunction<String, Long, StorageException> allocatedSizeGetterRef
+        )
+            throws StorageException
+        {
+            loPath = loPathRef;
+
+            directory = backingPathRef.getParent();
+            identifier = backingPathRef.getFileName().toString();
+
+            size = allocatedSizeGetterRef.accept(backingPathRef.toString());
+        }
     }
 
-    public static Map<String, FileInfo> getInfoList(ExtCmd extCmd)
+    public static Map<String, FileInfo> getInfoList(
+        ExtCmd extCmd,
+        ExceptionThrowingFunction<String, Long, StorageException> allocatedSizeGetter
+    )
         throws StorageException
     {
         OutputData outputData = LosetupCommands.list(extCmd);
@@ -66,7 +85,8 @@ public class FileUtils
                         data[LosetupCommands.LOSETUP_LIST_BACK_FILE_IDX],
                         new FileInfo(
                             Paths.get(data[LosetupCommands.LOSETUP_LIST_DEV_NAME_IDX]),
-                            Paths.get(data[LosetupCommands.LOSETUP_LIST_BACK_FILE_IDX])
+                            Paths.get(data[LosetupCommands.LOSETUP_LIST_BACK_FILE_IDX]),
+                            allocatedSizeGetter
                         )
                     );
                 }
@@ -93,6 +113,36 @@ public class FileUtils
         return ret;
     }
 
+    public static long getThinAllocatedSize(ExtCmd extCmd, String storagePath) throws StorageException
+    {
+        final OutputData outputData = FileCommands.getAllocatedThinSize(extCmd, storagePath);
+        final String stdOut = new String(outputData.stdoutData).trim();
+
+        final String[] split = stdOut.split(" ");
+        final long blockSize;
+        final long allocatedBlocks;
+        try
+        {
+            blockSize = Long.parseLong(split[0]);
+        }
+        catch (NumberFormatException exc)
+        {
+            throw new StorageException("Failed to parse blocksize '" + split[0] + "'", exc);
+        }
+        try
+        {
+            allocatedBlocks = Long.parseLong(split[1]);
+        }
+        catch (NumberFormatException exc)
+        {
+            throw new StorageException("Failed to parse blocksize '" + split[1] + "'", exc);
+        }
+        return SizeConv.convert(
+            blockSize * allocatedBlocks,
+            SizeUnit.UNIT_B,
+            SizeUnit.UNIT_KiB
+        );
+    }
 
     public static long getPoolCapacity(ExtCmd extCmd, Path storageDirectoryRef) throws StorageException
     {
