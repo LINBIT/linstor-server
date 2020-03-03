@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.4.2
+Version: 1.4.3
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -134,6 +134,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Tue Mar 3 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.4.3-1
+- New upstream release. Remove ETCD trans-limit, bug fixes.
+
 * Mon Jan 27 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.4.2-1
 - New upstream release. VlmGrp gross-size, resize bug-fix.
 

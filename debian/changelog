@@ -1,3 +1,65 @@
+linstor-server (1.4.3-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * nvmeutils: code cleanup
+  * dbdriver: fix incorrect delete order
+  * db-init: remove ON DELETE RESTRICT
+  * migration: remove ON DELETE CASCADE from remaining constraints
+  * Use new ConnectionStatus enum const
+  * physical-storage: check if pool name is used before creating
+
+  [ Gabor Hernadi ]
+  * Config: Refactored config parsing
+  * Startup: fixed SystemService shutdown info
+  * Cfg,Env: Fixed wrong default values
+  * Cfg,log-level: Changed behavior for better compatibility
+  * RscDfn: Extended auto-place api call
+  * RscGrp: ReplicaCount is now automatically set to 2
+  * Added etcd.ops_per_transaction to toml
+  * ETCD: encapsuled all operations into EtcdTransaction class
+  * DB: Added toString methods to GeneratedDbTables
+  * ETCD: fixed migration
+  * SQLEngine: Fixed select statement generating bug
+  * RscDfnDbDriver: Removed deprecated SQL driver
+  * DB: renamed layer specific *Generic drivers to *SQL
+  * Tests,DB: renamed PropsContainerDbDriver tests
+  * DB: removed deprecated KeyValueStoreGenericDbDriver
+  * DB: removed deprecated NetInterfaceGenericDbDriver
+  * DB: removed deprecated NodeConnectionGenericDbDriver
+  * DB: removed deprecated ResourceConnectionGenericDbDriver
+  * DB: removed deprecated ResourceGenericDbDriver
+  * DB: removed deprecated SnapshotDefinitionGenericDbDriver
+  * DB: removed deprecated SnapshotVolumeDefinitionGenericDbDriver
+  * DB: removed deprecated StorPoolDefinitionGenericDbDriver
+  * DB: removed deprecated VolumeConnectionGenericDbDriver
+  * DB: removed deprecated SnapshotGenericDbDriver
+  * DB: removed deprecated SnapshotVolumeGenericDbDriver
+  * DB: removed deprecated VolumeDefinitionGenericDbDriver
+  * DB: removed deprecated VolumeGenericDbDriver
+  * DB: removed deprecated ResourceGroupGenericDbDriver
+  * DB: removed deprecated StorPoolGenericDbDriver
+  * Tests,DB: renamed NodeDbDriverTest
+  * DB: Removed deprecated *CtrlDatabaseDriver interfaces
+  * DB: Extracted Table and Column to dedicated interface
+  * DB: Moved stlt specific drivers to satellite project
+  * DB: moved interfaces of update drivers to dedicated package
+  * DB: Moved Noop drivers to dedicated package
+  * Moved TxMgr to dedicated package
+  * Tx: Fixed rollback bug + added tests
+
+  [ Johanna Kucera ]
+  * gitignore: added database files
+  * logging: added level by components
+  * logging: add correct error messages
+  * service ordering: implement correct ordering for starting and stopping services
+  * Passphrase: implemented automated initialization of passphrase
+  * startup order: added shutdown for NetCom
+
+  [ Roland Kammerer ]
+  * docker,controller: add client for debugging
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 03 Mar 2020 14:52:27 +0000
+
 linstor-server (1.4.2-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
