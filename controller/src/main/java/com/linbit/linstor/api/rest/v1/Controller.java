@@ -158,15 +158,15 @@ public class Controller
     }
 
     @GET
-    @Path("info")
+    @Path("config")
     public Response info(
         @Context Request request
     )
     {
-        JsonGenTypes.ControllerInfo controllerInfo = new JsonGenTypes.ControllerInfo();
+        JsonGenTypes.ControllerConfig controllerConfig = new JsonGenTypes.ControllerConfig();
         /*
          * Blacklisted Properties:
-         * 
+         *
          * ctrlCfg.getDbClientKeyPassword();
          * ctrlCfg.getDbClientKeyPkcs8Pem();
          * ctrlCfg.getDbPassword();
@@ -177,38 +177,55 @@ public class Controller
          * ctrlCfg.getRestSecureTruststore();
          * ctrlCfg.getRestSecureTruststorePassword();
          */
-        controllerInfo.config_dir = ctrlCfg.getConfigDir();
-        controllerInfo.config_path = ctrlCfg.getConfigPath().toString();
-        controllerInfo.db_ca_certificate = ctrlCfg.getDbCaCertificate();
-        controllerInfo.db_client_certificate = ctrlCfg.getDbClientCertificate();
-        controllerInfo.db_connection_url = ctrlCfg.getDbConnectionUrl();
-        controllerInfo.db_in_memory = ctrlCfg.getDbInMemory();
-        controllerInfo.db_version_check_disabled = ctrlCfg.isDbVersionCheckDisabled();
-        controllerInfo.debug_console_enabled = ctrlCfg.isDebugConsoleEnabled();
-        controllerInfo.etcd_operations_per_transaction = ctrlCfg.getEtcdOperationsPerTransaction();
-        controllerInfo.ldap_dn = ctrlCfg.getLdapDn();
-        controllerInfo.ldap_enabled = ctrlCfg.isLdapEnabled();
-        controllerInfo.ldap_public_access_allowed = ctrlCfg.isLdapPublicAccessAllowed();
-        controllerInfo.ldap_search_base = ctrlCfg.getLdapSearchBase();
-        controllerInfo.ldap_search_filter = ctrlCfg.getLdapSearchFilter();
-        controllerInfo.ldap_uri = ctrlCfg.getLdapUri();
-        controllerInfo.log_directory = ctrlCfg.getLogDirectory();
-        controllerInfo.log_level = ctrlCfg.getLogLevel();
-        controllerInfo.log_level_linstor = ctrlCfg.getLogLevelLinstor();
-        controllerInfo.log_print_stack_trace = ctrlCfg.isLogPrintStackTrace();
-        controllerInfo.log_rest_access_log_path = ctrlCfg.getLogRestAccessLogPath();
-        controllerInfo.log_rest_access_mode = ctrlCfg.getLogRestAccessMode().toString();
-        controllerInfo.rest_bind_address_with_port = ctrlCfg.getRestBindAddressWithPort();
-        controllerInfo.rest_enabled = ctrlCfg.isRestEnabled();
-        controllerInfo.rest_secure_bind_address_with_port = ctrlCfg.getRestSecureBindAddressWithPort();
-        controllerInfo.rest_secure_enabled = ctrlCfg.isRestSecureEnabled();
+
+        controllerConfig.config = new JsonGenTypes.ControllerConfigConfig();
+        controllerConfig.config.dir = ctrlCfg.getConfigDir();
+
+        controllerConfig.db = new JsonGenTypes.ControllerConfigDb();
+        controllerConfig.db.ca_certificate = ctrlCfg.getDbCaCertificate();
+        controllerConfig.db.client_certificate = ctrlCfg.getDbClientCertificate();
+        controllerConfig.db.connection_url = ctrlCfg.getDbConnectionUrl();
+        controllerConfig.db.in_memory = ctrlCfg.getDbInMemory();
+        controllerConfig.db.version_check_disabled = ctrlCfg.isDbVersionCheckDisabled();
+
+        controllerConfig.db.etcd = new JsonGenTypes.ControllerConfigDbEtcd();
+        controllerConfig.db.etcd.operations_per_transaction = ctrlCfg.getEtcdOperationsPerTransaction();
+
+        controllerConfig.debug = new JsonGenTypes.ControllerConfigDebug();
+        controllerConfig.debug.console_enabled = ctrlCfg.isDebugConsoleEnabled();
+
+        controllerConfig.ldap = new JsonGenTypes.ControllerConfigLdap();
+        controllerConfig.ldap.dn = ctrlCfg.getLdapDn();
+        controllerConfig.ldap.enabled = ctrlCfg.isLdapEnabled();
+        controllerConfig.ldap.public_access_allowed = ctrlCfg.isLdapPublicAccessAllowed();
+        controllerConfig.ldap.search_base = ctrlCfg.getLdapSearchBase();
+        controllerConfig.ldap.search_filter = ctrlCfg.getLdapSearchFilter();
+        controllerConfig.ldap.uri = ctrlCfg.getLdapUri();
+
+        controllerConfig.log = new JsonGenTypes.ControllerConfigLog();
+        controllerConfig.log.directory = ctrlCfg.getLogDirectory();
+        controllerConfig.log.level = ctrlCfg.getLogLevel();
+        controllerConfig.log.level_linstor = ctrlCfg.getLogLevelLinstor();
+        controllerConfig.log.print_stack_trace = ctrlCfg.isLogPrintStackTrace();
+        controllerConfig.log.rest_access_log_path = ctrlCfg.getLogRestAccessLogPath();
+        controllerConfig.log.rest_access_mode = ctrlCfg.getLogRestAccessMode().name();
+
+        controllerConfig.http = new JsonGenTypes.ControllerConfigHttp();
+        controllerConfig.http.enabled = ctrlCfg.isRestEnabled();
+        controllerConfig.http.listen_address = ctrlCfg.getRestBindAddress();
+        controllerConfig.http.port = ctrlCfg.getRestBindPort();
+
+        controllerConfig.https = new JsonGenTypes.ControllerConfigHttps();
+        controllerConfig.https.enabled = ctrlCfg.isRestSecureEnabled();
+        controllerConfig.https.listen_address = ctrlCfg.getRestSecureBindAddress();
+        controllerConfig.https.port = ctrlCfg.getRestSecureBindPort();
 
         Response resp;
         try
         {
             resp = Response
                 .status(Response.Status.OK)
-                .entity(objectMapper.writeValueAsString(controllerInfo))
+                .entity(objectMapper.writeValueAsString(controllerConfig))
                 .build();
         }
         catch (JsonProcessingException exc)

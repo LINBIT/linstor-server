@@ -11,13 +11,9 @@ import com.moandjiezana.toml.Toml;
 public class CtrlConfig extends LinstorConfig
 {
     public static final String DEFAULT_HTTP_LISTEN_ADDRESS = "::";
+    public static final String DEFAULT_HTTPS_LISTEN_ADDRESS = "::";
     public static final int DEFAULT_HTTP_REST_PORT = 3370;
     public static final int DEFAULT_HTTPS_REST_PORT = 3371;
-
-    public static final String DEFAULT_HTTP_BIND_ADDR_WITH_PORT =
-        "[" + DEFAULT_HTTP_LISTEN_ADDRESS + "]:" + DEFAULT_HTTP_REST_PORT;
-    public static final String DEFAULT_HTTPS_BIND_ADDR_WITH_PORT =
-        "[" + DEFAULT_HTTP_LISTEN_ADDRESS + "]:" + DEFAULT_HTTPS_REST_PORT;
 
     /*
      * Database
@@ -48,13 +44,15 @@ public class CtrlConfig extends LinstorConfig
      * REST
      */
     private boolean restEnabled;
-    private String restBindAddressWithPort;
+    private String restBindAddress;
+    private int restBindPort;
 
     /*
      * REST.secure
      */
     private boolean restSecureEnabled;
-    private String restSecureBindAddressWithPort;
+    private String restSecureBindAddress;
+    private int restSecureBindPort;
     private String restSecureKeystore;
     private String restSecureKeystorePassword;
     private String restSecureTruststore;
@@ -92,10 +90,12 @@ public class CtrlConfig extends LinstorConfig
         setLogRestAccessMode(RestAccessLogMode.APPEND);
 
         setRestEnabled(true);
-        setRestBindAddressWithPort(DEFAULT_HTTP_BIND_ADDR_WITH_PORT);
+        setRestBindAddress(DEFAULT_HTTP_LISTEN_ADDRESS);
+        setRestBindPort(DEFAULT_HTTP_REST_PORT);
 
         setRestSecureEnabled(true);
-        setRestSecureBindAddressWithPort(DEFAULT_HTTPS_BIND_ADDR_WITH_PORT);
+        setRestSecureBindAddress(DEFAULT_HTTPS_LISTEN_ADDRESS);
+        setRestSecureBindPort(DEFAULT_HTTPS_REST_PORT);
         setRestSecureKeystorePassword("");
         setRestSecureTruststorePassword("");
 
@@ -242,11 +242,19 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestBindAddressWithPort(String restBindAddressWithPortRef)
+    public void setRestBindAddress(String restBindAddressRef)
     {
-        if (restBindAddressWithPortRef != null)
+        if (restBindAddressRef != null)
         {
-            restBindAddressWithPort = restBindAddressWithPortRef;
+            restBindAddress = restBindAddressRef;
+        }
+    }
+
+    public void setRestBindPort(Integer restBindPortRef)
+    {
+        if (restBindPortRef != null)
+        {
+            restBindPort = restBindPortRef;
         }
     }
 
@@ -258,11 +266,19 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
-    public void setRestSecureBindAddressWithPort(String restSecureBindAddressWithPortRef)
+    public void setRestSecureBindAddress(String restSecureBindAddressRef)
     {
-        if (restSecureBindAddressWithPortRef != null)
+        if (restSecureBindAddressRef != null)
         {
-            restSecureBindAddressWithPort = restSecureBindAddressWithPortRef;
+            restSecureBindAddress = restSecureBindAddressRef;
+        }
+    }
+
+    public void setRestSecureBindPort(Integer restSecureBindPortRef)
+    {
+        if (restSecureBindPortRef != null)
+        {
+            restSecureBindPort = restSecureBindPortRef;
         }
     }
 
@@ -421,7 +437,22 @@ public class CtrlConfig extends LinstorConfig
 
     public String getRestBindAddressWithPort()
     {
-        return restBindAddressWithPort;
+        String addr = restBindAddress;
+        if (addr.contains(":"))
+        {
+            addr = "[" + addr + "]"; // IPv6
+        }
+        return addr + ":" + restBindPort;
+    }
+
+    public String getRestBindAddress()
+    {
+        return restBindAddress;
+    }
+
+    public int getRestBindPort()
+    {
+        return restBindPort;
     }
 
     public boolean isRestSecureEnabled()
@@ -431,7 +462,22 @@ public class CtrlConfig extends LinstorConfig
 
     public String getRestSecureBindAddressWithPort()
     {
-        return restSecureBindAddressWithPort;
+        String addr = restSecureBindAddress;
+        if (addr.contains(":"))
+        {
+            addr = "[" + addr + "]"; // IPv6
+        }
+        return addr + ":" + restSecureBindPort;
+    }
+
+    public String getRestSecureBindAddress()
+    {
+        return restSecureBindAddress;
+    }
+
+    public int getRestSecureBindPort()
+    {
+        return restSecureBindPort;
     }
 
     public String getRestSecureKeystore()

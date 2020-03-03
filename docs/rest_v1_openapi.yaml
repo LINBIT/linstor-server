@@ -2785,22 +2785,22 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
         '500':
           $ref: '#/components/responses/OperationFailed'
-  /v1/controller/info:
+  /v1/controller/config:
     get:
       tags:
         - developers
-      summary: show controller config info
-      operationId: controllerInfo
+      summary: show controller config
+      operationId: ControllerConfig
       description: |
-        Show Controller config info
+        Show Controller config
 
       responses:
         '200':
-          description: Controller config info object
+          description: Controller config
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ControllerInfo'
+                $ref: '#/components/schemas/ControllerConfig'
   /v1/controller/version:
     get:
       tags:
@@ -4360,60 +4360,117 @@ components:
           type: array
           items:
             type: string
-    ControllerInfo:
+    ControllerConfig:
       type: object
       properties:
-        config_dir:
+        config:
+          $ref: '#/components/schemas/ControllerConfigConfig'
+        debug:
+          $ref: '#/components/schemas/ControllerConfigDebug'
+        log:
+          $ref: '#/components/schemas/ControllerConfigLog'
+        db:
+          $ref: '#/components/schemas/ControllerConfigDb'
+        http:
+          $ref: '#/components/schemas/ControllerConfigHttp'
+        https:
+          $ref: '#/components/schemas/ControllerConfigHttps'
+        ldap:
+          $ref: '#/components/schemas/ControllerConfigLdap'
+    ControllerConfigConfig:
+      type: object
+      properties:
+        dir:
           type: string
-        config_path:
-          type: string
-        debug_console_enabled:
+    ControllerConfigDebug:
+      type: object
+      properties:
+        console_enabled:
           type: boolean
-        log_print_stack_trace:
+    ControllerConfigLog:
+      type: object
+      properties:
+        print_stack_trace:
           type: boolean
-        log_directory:
+        directory:
           type: string
-        log_level:
+        level:
+          $ref: '#/components/schemas/LogLevel'
+        level_linstor:
+          $ref: '#/components/schemas/LogLevel'
+        rest_access_log_path:
           type: string
-        log_level_linstor:
+        rest_access_mode:
           type: string
-        db_connection_url:
+          enum:
+            - APPEND
+            - ROTATE_HOURLY
+            - ROTATE_DAILY
+            - NO_LOG
+    ControllerConfigDb:
+      type: object
+      properties:
+        connection_url:
           type: string
-        db_ca_certificate:
+        ca_certificate:
           type: string
-        db_client_certificate:
+        client_certificate:
           type: string
-        db_in_memory:
+        in_memory:
           type: string
-        db_version_check_disabled:
+        version_check_disabled:
           type: boolean
-        etcd_operations_per_transaction:
+        etcd:
+          $ref: '#/components/schemas/ControllerConfigDbEtcd'
+    ControllerConfigDbEtcd:
+      type: object
+      properties:
+        operations_per_transaction:
           type: integer
           format: int32
-        log_rest_access_log_path:
-          type: string
-        log_rest_access_mode:
-          type: string
-        rest_enabled:
+    ControllerConfigHttp:
+      type: object
+      properties:
+        enabled:
           type: boolean
-        rest_bind_address_with_port:
+        listen_address:
           type: string
-        rest_secure_enabled:
+        port:
+          type: integer
+          format: int32
+    ControllerConfigHttps:
+      type: object
+      properties:
+        enabled:
           type: boolean
-        rest_secure_bind_address_with_port:
+        listen_address:
           type: string
-        ldap_enabled:
+        port:
+          type: integer
+          format: int32
+    ControllerConfigLdap:
+      type: object
+      properties:
+        enabled:
           type: boolean
-        ldap_public_access_allowed:
+        public_access_allowed:
           type: boolean
-        ldap_uri:
+        uri:
           type: string
-        ldap_dn:
+        dn:
           type: string
-        ldap_search_base:
+        search_base:
           type: string
-        ldap_search_filter:
+        search_filter:
           type: string
+    LogLevel:
+      type: string
+      enum:
+        - ERROR
+        - WARN
+        - INFO
+        - DEBUG
+        - TRACE
     ControllerVersion:
       type: object
       properties:

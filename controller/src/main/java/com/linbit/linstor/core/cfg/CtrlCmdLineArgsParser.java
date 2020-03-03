@@ -1,9 +1,13 @@
 package com.linbit.linstor.core.cfg;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.utils.Pair;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Paths;
 
 import picocli.CommandLine;
@@ -124,9 +128,13 @@ class CtrlCmdLineArgsParser
             }
         }
 
-        linstorCfgRef.setRestBindAddressWithPort(linArgParser.restBindAddress);
+        Pair<String, Integer> restBind = splitIpPort(linArgParser.restBindAddress);
+        Pair<String, Integer> restSecureBind = splitIpPort(linArgParser.restBindAddressSecure);
 
-        linstorCfgRef.setRestSecureBindAddressWithPort(linArgParser.restBindAddressSecure);
+        linstorCfgRef.setRestBindAddress(restBind.objA);
+        linstorCfgRef.setRestBindPort(restBind.objB);
+        linstorCfgRef.setRestSecureBindAddress(restSecureBind.objA);
+        linstorCfgRef.setRestSecureBindPort(restSecureBind.objB);
 
         linstorCfgRef.setLogPrintStackTrace(linArgParser.printStackTrace);
         linstorCfgRef.setDebugConsoleEnable(linArgParser.debugConsole);
@@ -135,6 +143,37 @@ class CtrlCmdLineArgsParser
         linstorCfgRef.setLogLevelLinstor(linArgParser.logLevelLinstor);
 
         linstorCfgRef.setDbDisableVersionCheck(linArgParser.disableDbVersionCheck);
+    }
+
+    public static Pair<String, Integer> splitIpPort(String addrPort)
+    {
+        String addr = null;
+        Integer port = null;
+        if (addrPort != null)
+        {
+
+            String httpAddrPort = addrPort;
+            if (!httpAddrPort.startsWith("http://"))
+            {
+                httpAddrPort = "http://" + httpAddrPort;
+            }
+            URL url;
+            try
+            {
+                url = new URL(httpAddrPort);
+            }
+            catch (MalformedURLException exc)
+            {
+                throw new LinStorRuntimeException("Failed to parse ip:port '" + addrPort + "'", exc);
+            }
+            addr = url.getHost();
+            port = url.getPort();
+            if (port == -1)
+            {
+                port = null;
+            }
+        }
+        return new Pair<>(addr, port);
     }
 
     private CtrlCmdLineArgsParser()

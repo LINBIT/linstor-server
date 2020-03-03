@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.0.13";
+    public static final String REST_API_VERSION = "1.0.14";
 
     /**
      * Common api reply structure
@@ -665,34 +665,88 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ControllerInfo
+    public static class ControllerConfig
     {
-        public String config_dir;
-        public String config_path;
-        public Boolean debug_console_enabled;
-        public Boolean log_print_stack_trace;
-        public String log_directory;
-        public String log_level;
-        public String log_level_linstor;
-        public String db_connection_url;
-        public String db_ca_certificate;
-        public String db_client_certificate;
-        public String db_in_memory;
-        public Boolean db_version_check_disabled;
-        public Integer etcd_operations_per_transaction;
-        public String log_rest_access_log_path;
-        public String log_rest_access_mode;
-        public Boolean rest_enabled;
-        public String rest_bind_address_with_port;
-        public Boolean rest_secure_enabled;
-        public String rest_secure_bind_address_with_port;
-        public Boolean ldap_enabled;
-        public Boolean ldap_public_access_allowed;
-        public String ldap_uri;
-        public String ldap_dn;
-        public String ldap_search_base;
-        public String ldap_search_filter;
+        public ControllerConfigConfig config;
+        public ControllerConfigDebug debug;
+        public ControllerConfigLog log;
+        public ControllerConfigDb db;
+        public ControllerConfigHttp http;
+        public ControllerConfigHttps https;
+        public ControllerConfigLdap ldap;
     }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerConfigConfig
+    {
+        public String dir;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerConfigDebug
+    {
+        public Boolean console_enabled;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerConfigLog
+    {
+        public Boolean print_stack_trace;
+        public String directory;
+        public String level;
+        public String level_linstor;
+        public String rest_access_log_path;
+        public String rest_access_mode;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerConfigDb
+    {
+        public String connection_url;
+        public String ca_certificate;
+        public String client_certificate;
+        public String in_memory;
+        public Boolean version_check_disabled;
+        public ControllerConfigDbEtcd etcd;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerConfigDbEtcd
+    {
+        public Integer operations_per_transaction;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerConfigHttp
+    {
+        public Boolean enabled;
+        public String listen_address;
+        public Integer port;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerConfigHttps
+    {
+        public Boolean enabled;
+        public String listen_address;
+        public Integer port;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerConfigLdap
+    {
+        public Boolean enabled;
+        public Boolean public_access_allowed;
+        public String uri;
+        public String dn;
+        public String search_base;
+        public String search_filter;
+    }
+
+//    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+//    public static class LogLevel
+//    {
+//    }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ControllerVersion

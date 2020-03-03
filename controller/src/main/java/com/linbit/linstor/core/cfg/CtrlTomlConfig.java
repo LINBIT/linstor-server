@@ -14,30 +14,8 @@ public class CtrlTomlConfig
         public void applyTo(CtrlConfig cfg)
         {
             cfg.setRestEnabled(enabled);
-
-            if (listen_addr != null || port != null)
-            {
-                String bindAddr = CtrlConfig.DEFAULT_HTTP_LISTEN_ADDRESS;
-                int bindPort = CtrlConfig.DEFAULT_HTTP_REST_PORT;
-                if (listen_addr != null)
-                {
-                    if (listen_addr.contains(":"))
-                    {
-                        bindAddr = "[" + listen_addr + "]";
-                    }
-                    else
-                    {
-                        bindAddr = listen_addr;
-                    }
-                }
-
-                if (port != null)
-                {
-                    bindPort = port;
-                }
-
-                cfg.setRestBindAddressWithPort(bindAddr + ":" + bindPort);
-            }
+            cfg.setRestBindAddress(listen_addr);
+            cfg.setRestBindPort(port);
         }
     }
 
@@ -54,31 +32,8 @@ public class CtrlTomlConfig
         public void applyTo(CtrlConfig cfg)
         {
             cfg.setRestSecureEnabled(enabled);
-
-            if (listen_addr != null || port != null)
-            {
-                String bindAddr = CtrlConfig.DEFAULT_HTTP_LISTEN_ADDRESS;
-                int bindPort = CtrlConfig.DEFAULT_HTTPS_REST_PORT;
-                if (listen_addr != null)
-                {
-                    if (listen_addr.contains(":"))
-                    {
-                        bindAddr = "[" + listen_addr + "]";
-                    }
-                    else
-                    {
-                        bindAddr = listen_addr;
-                    }
-                }
-
-                if (port != null)
-                {
-                    bindPort = port;
-                }
-
-                cfg.setRestSecureBindAddressWithPort(bindAddr + ":" + bindPort);
-            }
-
+            cfg.setRestSecureBindAddress(listen_addr);
+            cfg.setRestSecureBindPort(port);
             cfg.setRestSecureKeystore(keystore);
             cfg.setRestSecureKeystorePassword(keystore_password);
             cfg.setRestSecureTruststore(truststore);
@@ -102,6 +57,7 @@ public class CtrlTomlConfig
             cfg.setLdapUri(uri);
             cfg.setLdapDn(dn);
             cfg.setLdapSearchBase(search_base);
+            cfg.setLdapSearchFilter(search_filter);
         }
     }
 

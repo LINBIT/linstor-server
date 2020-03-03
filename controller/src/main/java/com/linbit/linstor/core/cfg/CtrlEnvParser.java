@@ -1,5 +1,8 @@
 package com.linbit.linstor.core.cfg;
 
+import com.linbit.utils.Pair;
+
+import static com.linbit.linstor.core.cfg.CtrlCmdLineArgsParser.splitIpPort;
 import static com.linbit.linstor.core.cfg.LinstorEnvParser.getEnv;
 
 class CtrlEnvParser
@@ -16,8 +19,14 @@ class CtrlEnvParser
     {
         LinstorEnvParser.applyTo(cfg);
 
-        cfg.setRestBindAddressWithPort(getEnv(LS_REST_BIND_ADDRESS));
-        cfg.setRestSecureBindAddressWithPort(getEnv(LS_REST_BIND_ADDRESS_SECURE));
+        Pair<String, Integer> restBind = splitIpPort(getEnv(LS_REST_BIND_ADDRESS));
+        Pair<String, Integer> restSecureBind = splitIpPort(getEnv(LS_REST_BIND_ADDRESS_SECURE));
+
+        cfg.setRestBindAddress(restBind.objA);
+        cfg.setRestBindPort(restBind.objB);
+        cfg.setRestSecureBindAddress(restSecureBind.objA);
+        cfg.setRestSecureBindPort(restSecureBind.objB);
+
         cfg.setMasterPassphrase(getEnv(MASTER_PASSPHRASE));
     }
 }
