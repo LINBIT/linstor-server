@@ -22,7 +22,7 @@ info:
     Changelog:
 
     * 1.0.14
-      - Added /v1/controller/info, that gives you the controller config information
+      - Added /v1/controller/config, that gives you the controller config information
     * 1.0.13
       - Fixed broken volume definition modify `flags` handling
       - Added flags to volume groups (create/modify)
