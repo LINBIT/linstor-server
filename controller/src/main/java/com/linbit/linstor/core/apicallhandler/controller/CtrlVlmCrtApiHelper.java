@@ -200,6 +200,19 @@ public class CtrlVlmCrtApiHelper
                     );
                 }
             }
+            if (storPool.getDeviceProviderKind().equals(DeviceProviderKind.OPENFLEX_TARGET))
+            {
+                if (rsc.getVolumeCount() == 1)
+                {
+                    // rsc is an openflex target and has already one volume
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_VLM_COUNT,
+                            "Openflex based resources may only have one volumedefinition"
+                        )
+                    );
+                }
+            }
         }
 
         if (!disklessPools.isEmpty())
