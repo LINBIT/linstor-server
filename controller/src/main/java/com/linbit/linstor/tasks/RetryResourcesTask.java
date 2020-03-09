@@ -6,7 +6,6 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -54,20 +53,17 @@ public class RetryResourcesTask implements Task
 
     private final AccessContext sysCtx;
     private final CtrlStltSerializer serializer;
-    private final CtrlRscDeleteApiHelper rscDelHelper;
     private final ErrorReporter errorReporter;
 
     @Inject
     public RetryResourcesTask(
         @SystemContext AccessContext sysCtxRef,
         CtrlStltSerializer serializerRef,
-        CtrlRscDeleteApiHelper rscDelHelperRef,
         ErrorReporter errorReporterRef
     )
     {
         sysCtx = sysCtxRef;
         serializer = serializerRef;
-        rscDelHelper = rscDelHelperRef;
         errorReporter = errorReporterRef;
     }
 
