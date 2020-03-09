@@ -22,7 +22,6 @@ import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
-import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -275,11 +274,23 @@ public class CtrlNodeApiCallHandler
             }
             catch (ExhaustedPoolException exc)
             {
-                throw new ApiException(exc);
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_POOL_EXHAUSTED_OPENFLEX_TCP_PORT,
+                        "No TCP/IP port number could be allocated for the openflex_target node"
+                    ),
+                    exc
+                );
             }
             catch (IOException exc)
             {
-                throw new ApiException(exc);
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        nodeNameStr
+                    ),
+                    exc
+                );
             }
         }
         try

@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.jr.ob.JSON;
-
 public interface RestClient
 {
     enum RestOp
@@ -17,56 +15,37 @@ public interface RestClient
         GET, POST, PUT, PATCH, DELETE
     }
 
-    void addFailHandler(UnexpectedReturnCodeHandler handler);
+    <T> void addFailHandler(UnexpectedReturnCodeHandler<T> handler);
 
-    default RestResponse<Map<String, Object>> execute(
-        VlmProviderObject<Resource> vlmData,
-        RestOp op,
-        String restURL,
-        Map<String, String> httpHeaders,
-        Map<Object, Object> jsonMap,
-        List<Integer> expectedRcs
-    )
-        throws IOException, StorageException
-    {
-        return execute(
-            new RestHttpRequest(
-                vlmData,
-                op,
-                restURL,
-                httpHeaders,
-                JSON.std.asString(jsonMap),
-                expectedRcs
-            )
-        );
-    }
-
-    default RestResponse<Map<String, Object>> execute(
+    default <T> RestResponse<T> execute(
         VlmProviderObject<Resource> vlmData,
         RestOp op,
         String restURL,
         Map<String, String> httpHeaders,
         String jsonString,
-        List<Integer> expectedRcs
+        List<Integer> expectedRcs,
+        Class<T> responseClass
     )
         throws IOException, StorageException
     {
         return execute(
-            new RestHttpRequest(vlmData, op, restURL, httpHeaders, jsonString, expectedRcs)
+            new RestHttpRequest<>(vlmData, op, restURL, httpHeaders, jsonString, expectedRcs, responseClass)
         );
     }
 
-    RestResponse<Map<String, Object>> execute(RestHttpRequest request) throws IOException, StorageException;
+    <T> RestResponse<T> execute(RestHttpRequest<T> request) throws IOException, StorageException;
 
-    class RestHttpRequest
+    class RestHttpRequest<T>
     {
         final RestOp op;
         final String restURL;
         final Map<String, String> httpHeaders;
         final String payload;
         final List<Integer> expectedRcs;
+        final Class<T> responseClass;
 
         final VlmProviderObject<Resource> vlmData;
+
 
         RestHttpRequest(
             VlmProviderObject<Resource> vlmDataRef,
@@ -74,7 +53,8 @@ public interface RestClient
             String restURLRef,
             Map<String, String> httpHeadersRef,
             String payloadRef,
-            List<Integer> expectedRcsRef
+            List<Integer> expectedRcsRef,
+            Class<T> responseClassRef
         )
         {
             vlmData = vlmDataRef;
@@ -83,13 +63,14 @@ public interface RestClient
             httpHeaders = httpHeadersRef;
             payload = payloadRef;
             expectedRcs = expectedRcsRef;
+            responseClass = responseClassRef;
         }
     }
 
     @FunctionalInterface
-    interface UnexpectedReturnCodeHandler
+    interface UnexpectedReturnCodeHandler<T>
     {
-        void handle(RestResponse<Map<String, Object>> response);
+        void handle(RestResponse<T> response);
     }
 
     void setRetryCountOnStatusCode(int statusCode, int retryCount);

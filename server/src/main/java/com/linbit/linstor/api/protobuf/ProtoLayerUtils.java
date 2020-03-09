@@ -15,13 +15,15 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
-import com.linbit.linstor.api.pojo.StorageRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SpdkVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
@@ -36,6 +38,9 @@ import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlmDfn;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
 import com.linbit.linstor.proto.common.LuksRscOuterClass.LuksVlm;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
+import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRsc;
+import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRscDfn;
+import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexVlm;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass.RscDfnLayerData;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
@@ -47,6 +52,7 @@ import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class ProtoLayerUtils
 {
@@ -173,6 +179,31 @@ public class ProtoLayerUtils
                 }
             }
             break;
+            case OPENFLEX:
+                if (protoRscData.hasOpenflex())
+                {
+                    OpenflexRsc protoOpenflex = protoRscData.getOpenflex();
+                    OpenflexRscDfnPojo ofRscDfnPojo = extractOfRscDfn(
+                        protoOpenflex.getOpenflexRscDfn()
+                    );
+
+                    OpenflexRscPojo ofRscPojo = new OpenflexRscPojo(
+                        protoRscData.getId(),
+                        ofRscDfnPojo,
+                        new ArrayList<>(),
+                        protoRscData.getSuspend()
+                    );
+                    for (OpenflexVlm protoVlm : protoOpenflex.getOpenflexVlmsList())
+                    {
+                        ofRscPojo.getVolumeList().add(extractOpenflexVlm(protoVlm, fullSyncId, updateId));
+                    }
+                    ret = ofRscPojo;
+                }
+                else
+                {
+                    ret = null;
+                }
+                break;
             case WRITECACHE:
             {
                 if (protoRscData.hasWritecache())
@@ -245,6 +276,9 @@ public class ProtoLayerUtils
             case NVME:
                 str = "NVME";
                 break;
+            case OPENFLEX:
+                str = "OPENFLEX";
+                break;
             case WRITECACHE:
                 str = "WRITECACHE";
                 break;
@@ -271,9 +305,6 @@ public class ProtoLayerUtils
             RscDfnLayerDataApi rscDfnLayerDataApi;
             switch (rscDfnLayerData.getLayerType())
             {
-                case LUKS:
-                    rscDfnLayerDataApi = null;
-                    break;
                 case DRBD:
                     if (rscDfnLayerData.hasDrbd())
                     {
@@ -284,12 +315,19 @@ public class ProtoLayerUtils
                         rscDfnLayerDataApi = null;
                     }
                     break;
-                case STORAGE:
-                    rscDfnLayerDataApi = null;
+                case OPENFLEX:
+                    if (rscDfnLayerData.hasOpenflex())
+                    {
+                        rscDfnLayerDataApi = extractOfRscDfn(rscDfnLayerData.getOpenflex());
+                    }
+                    else
+                    {
+                        rscDfnLayerDataApi = null;
+                    }
                     break;
-                case NVME:
-                    rscDfnLayerDataApi = null;
-                    break;
+                case STORAGE: // fall-through
+                case LUKS: // fall-through
+                case NVME: // fall-through
                 case WRITECACHE:
                     rscDfnLayerDataApi = null;
                     break;
@@ -337,12 +375,9 @@ public class ProtoLayerUtils
                         vlmDfnLayerDataApi = null;
                     }
                     break;
-                case LUKS:
-                    vlmDfnLayerDataApi = null;
-                    break;
-                case NVME:
-                    vlmDfnLayerDataApi = null;
-                    break;
+                case LUKS: // fall-through
+                case NVME:// fall-through
+                case OPENFLEX:// fall-through
                 case WRITECACHE:
                     vlmDfnLayerDataApi = null;
                     break;
@@ -413,6 +448,15 @@ public class ProtoLayerUtils
         );
     }
 
+    private static OpenflexRscDfnPojo extractOfRscDfn(OpenflexRscDfn protoOfRscDfn)
+    {
+        OpenflexRscDfnPojo ofRscDfnPojo = new OpenflexRscDfnPojo(
+            protoOfRscDfn.getRscNameSuffix(),
+            protoOfRscDfn.getNqn()
+        );
+        return ofRscDfnPojo;
+    }
+
     private static VlmLayerDataApi extractStorageVlm(
         StorageVlm protoVlm,
         long fullSyncId,
@@ -458,8 +502,9 @@ public class ProtoLayerUtils
                 ret = new SpdkVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
             case OPENFLEX_TARGET:
-                ret = new OpenflexVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
-                break;
+                throw new ImplementationError(
+                    "Openflex volumes should be deserialized by openflex, not by storage deserializer"
+                );
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:
                 throw new ImplementationError(
@@ -506,6 +551,23 @@ public class ProtoLayerUtils
             protoNvmeVlm.getAllocatedSize(),
             protoNvmeVlm.getUsableSize(),
             protoNvmeVlm.getDiskState()
+        );
+    }
+
+    private static OpenflexVlmPojo extractOpenflexVlm(OpenflexVlm protoOfVlm, long fullSyncId, long updateId)
+    {
+        return new OpenflexVlmPojo(
+            protoOfVlm.getVlmNr(),
+            protoOfVlm.getDevicePath(),
+            protoOfVlm.getOpenflexId(),
+            protoOfVlm.getAllocatedSize(),
+            protoOfVlm.getUsableSize(),
+            protoOfVlm.getDiskState(),
+            ProtoDeserializationUtils.parseStorPool(
+                protoOfVlm.getStorPool(),
+                fullSyncId,
+                updateId
+            )
         );
     }
 

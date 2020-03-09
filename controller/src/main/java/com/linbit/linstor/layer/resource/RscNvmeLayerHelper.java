@@ -119,7 +119,7 @@ class RscNvmeLayerHelper
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
             ValueInUseException
     {
-        ensureTargetNodeNameIsSet(rscRef);
+        ensureTargetNodeNameIsSet(rscRef, apiCtx);
         return layerDataFactory.createNvmeRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,
@@ -131,12 +131,13 @@ class RscNvmeLayerHelper
     Resource getTarget(Resource initiator)
         throws AccessDeniedException, DatabaseException, ImplementationError, InvalidNameException
     {
-        ensureTargetNodeNameIsSet(initiator);
+        ensureTargetNodeNameIsSet(initiator, apiCtx);
         String nodeNameStr = initiator.getProps(apiCtx).getProp(InternalApiConsts.PROP_NVME_TARGET_NODE_NAME);
         return initiator.getResourceDefinition().getResource(apiCtx, new NodeName(nodeNameStr));
     }
 
-    private void ensureTargetNodeNameIsSet(Resource rscRef)
+    // also called by RscOpenflexLayerHelper
+    static void ensureTargetNodeNameIsSet(Resource rscRef, AccessContext apiCtx)
         throws AccessDeniedException, DatabaseException, ImplementationError
     {
         Props rscProps = rscRef.getProps(apiCtx);

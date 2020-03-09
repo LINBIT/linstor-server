@@ -15,6 +15,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
@@ -28,6 +29,9 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -35,7 +39,6 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
-import com.linbit.linstor.storage.data.provider.openflex.OpenflexTargetVlmData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -63,6 +66,7 @@ public class LayerDataFactory
     private final DrbdLayerDatabaseDriver drbdDbDriver;
     private final StorageLayerDatabaseDriver storageDbDriver;
     private final NvmeLayerDatabaseDriver nvmeDbDriver;
+    private final OpenflexLayerDatabaseDriver openflexDbDriver;
     private final WritecacheLayerDatabaseDriver writecacheDbDriver;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
@@ -77,6 +81,7 @@ public class LayerDataFactory
         DrbdLayerDatabaseDriver drbdDbDriverRef,
         StorageLayerDatabaseDriver storageDbDriverRef,
         NvmeLayerDatabaseDriver nvmeDbDriverRef,
+        OpenflexLayerDatabaseDriver openflexDbDriverRef,
         WritecacheLayerDatabaseDriver writecacheDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
@@ -89,6 +94,7 @@ public class LayerDataFactory
         drbdDbDriver = drbdDbDriverRef;
         storageDbDriver = storageDbDriverRef;
         nvmeDbDriver = nvmeDbDriverRef;
+        openflexDbDriver = openflexDbDriverRef;
         writecacheDbDriver = writecacheDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
@@ -279,25 +285,6 @@ public class LayerDataFactory
         return luksVlmData;
     }
 
-    public <RSC extends AbsResource<RSC>> OpenflexTargetVlmData<RSC> createOpenflexTargetData(
-        AbsVolume<RSC> vlm,
-        StorageRscData<RSC> rscData,
-        StorPool storPoolRef
-    )
-        throws DatabaseException
-    {
-        OpenflexTargetVlmData<RSC> ofTargetData = new OpenflexTargetVlmData<RSC>(
-            vlm,
-            rscData,
-            storPoolRef,
-            storageDbDriver,
-            transObjFactory,
-            transMgrProvider
-        );
-        storageDbDriver.persist(ofTargetData);
-        return ofTargetData;
-    }
-
     public <RSC extends AbsResource<RSC>> StorageRscData<RSC> createStorageRscData(
         int rscLayerId,
         AbsRscLayerObject<RSC> parentRscData,
@@ -356,6 +343,69 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
+    }
+
+    public <RSC extends AbsResource<RSC>> OpenflexRscDfnData<RSC> createOpenflexRscDfnData(
+        ResourceName nameRef,
+        String rscNameSuffixRef,
+        String nqnRef
+    )
+        throws DatabaseException
+    {
+        OpenflexRscDfnData<RSC> ofRscDfnData = new OpenflexRscDfnData<>(
+            nameRef,
+            rscNameSuffixRef,
+            new ArrayList<>(),
+            nqnRef,
+            openflexDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+
+        openflexDbDriver.create(ofRscDfnData);
+        return ofRscDfnData;
+    }
+
+    public <RSC extends AbsResource<RSC>> OpenflexRscData<RSC> createOpenflexRscData(
+        int rscLayerId,
+        RSC rsc,
+        OpenflexRscDfnData<RSC> rscDfnData,
+        AbsRscLayerObject<RSC> parentData
+    )
+        throws DatabaseException
+    {
+        OpenflexRscData<RSC> ofRscData = new OpenflexRscData<>(
+            rscLayerId,
+            rsc,
+            rscDfnData,
+            parentData,
+            new HashSet<>(),
+            new TreeMap<>(),
+            openflexDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+        resourceLayerIdDatabaseDriver.persist(ofRscData);
+        openflexDbDriver.create(ofRscData);
+        return ofRscData;
+    }
+
+    public <RSC extends AbsResource<RSC>> OpenflexVlmData<RSC> createOpenflexVlmData(
+        AbsVolume<RSC> vlm,
+        OpenflexRscData<RSC> rscData,
+        StorPool storPoolRef
+    )
+        throws DatabaseException
+    {
+        OpenflexVlmData<RSC> ofTargetData = new OpenflexVlmData<RSC>(
+            vlm,
+            rscData,
+            storPoolRef,
+            transObjFactory,
+            transMgrProvider
+        );
+        openflexDbDriver.persist(ofTargetData);
+        return ofTargetData;
     }
 
     public <RSC extends AbsResource<RSC>> WritecacheRscData<RSC> createWritecacheRscData(

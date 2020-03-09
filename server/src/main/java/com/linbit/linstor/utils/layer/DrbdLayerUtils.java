@@ -48,8 +48,9 @@ public class DrbdLayerUtils
         else
         {
             boolean hasNvmeBelow = !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.NVME).isEmpty();
+            boolean hasOpenflexBelow = !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.OPENFLEX).isEmpty();
             boolean isNvmeTarget = !rscFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR);
-            if (hasNvmeBelow && isNvmeTarget)
+            if ((hasNvmeBelow || hasOpenflexBelow) && isNvmeTarget)
             {
                 // target NVME will never return a device, so drbd will never exist
                 isDevExpected = false;

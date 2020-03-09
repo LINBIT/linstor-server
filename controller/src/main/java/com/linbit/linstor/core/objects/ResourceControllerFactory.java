@@ -75,9 +75,12 @@ public class ResourceControllerFactory
                 rscDfn.setLayerStack(accCtx, layerStack);
             }
         }
-        if (!layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
+        DeviceLayerKind lowestLayer = layerStack.get(layerStack.size() - 1);
+        if (!lowestLayer.equals(DeviceLayerKind.STORAGE) && !lowestLayer.equals(DeviceLayerKind.OPENFLEX))
         {
-            throw new ImplementationError("Lowest layer has to be a STORAGE layer. " + new ArrayList<>(layerStack));
+            throw new ImplementationError(
+                "Lowest layer has to be a STORAGE or an OPENFLEX layer. " + new ArrayList<>(layerStack)
+            );
         }
 
         layerStackHelper.ensureStackDataExists(rscData, layerStack, payload == null ? new LayerPayload() : payload);

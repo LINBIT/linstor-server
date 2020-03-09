@@ -24,9 +24,12 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.AbsRscData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -56,6 +59,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Class for processing NvmeRscData
@@ -327,19 +332,92 @@ public class NvmeUtils
     /**
      * Connects the NVMe Initiator to the Target after discovering available subsystems, given the subsystem name
      *
-     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
-     * @param accCtx        AccessContext needed to access properties and Target resource
+     * @param nvmeRscData
+     *     NvmeRscData object containing all needed information for this method
+     * @param accCtx
+     *     AccessContext needed to access properties and Target resource
+     *
+     * @throws StorageException
      */
-    public void connect(NvmeRscData<Resource> nvmeRscData, AccessContext accCtx)
-        throws StorageException
+    public void connect(NvmeRscData<Resource> nvmeRscData, AccessContext accCtx) throws StorageException
     {
-        final String subsystemName = getNvmeSubsystemPrefix(nvmeRscData) + nvmeRscData.getSuffixedResourceName();
+        try
+        {
+            connect(
+                nvmeRscData,
+                getNvmeSubsystemPrefix(nvmeRscData) + nvmeRscData.getSuffixedResourceName(),
+                getIpAddr(
+                    // TODO: check on controller
+                    nvmeRscData.getAbsResource().getDefinition().getResource(
+                        accCtx,
+                        new NodeName(
+                            nvmeRscData
+                                .getAbsResource()
+                                .getProps(accCtx)
+                                .getProp(InternalApiConsts.PROP_NVME_TARGET_NODE_NAME)
+                        )
+                    ),
+                    accCtx
+                ).getAddress(),
+                accCtx
+            );
+        }
+        catch (InvalidKeyException | AccessDeniedException | InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
 
+    public void connect(OpenflexRscData<Resource> ofRscData, AccessContext accCtx)
+        throws StorageException, AccessDeniedException
+    {
+
+        OpenflexRscData<Resource> targetRscData = null;
+        for (OpenflexRscData<Resource> ofRsc : ofRscData.getRscDfnLayerObject().getOfRscDataList())
+        {
+            if (ofRscData != ofRsc)
+            {
+                targetRscData = ofRsc;
+                break;
+            }
+        }
+        if (targetRscData == null)
+        {
+            throw new ImplementationError("No openflex target found");
+        }
+
+        Resource targetRsc = targetRscData.getAbsResource();
+        PriorityProps prioProps;
+        prioProps = new PriorityProps(
+            targetRsc.getProps(accCtx),
+            targetRsc.getNode().getProps(accCtx),
+            stltProps
+        );
+
+        connect(
+            ofRscData,
+            ofRscData.getRscDfnLayerObject().getNqn(),
+            prioProps.getProp(ApiConsts.KEY_STOR_POOL_OPENFLEX_STOR_DEV_HOST, ApiConsts.NAMESPC_STORAGE_DRIVER),
+            accCtx
+        );
+    }
+
+    public <
+        VLM_DATA extends VlmProviderObject<Resource>,
+        RSC_DATA extends AbsRscData<Resource, VLM_DATA>>
+        void connect(RSC_DATA rscData, String subsystemName, String ipAddr, AccessContext accCtx)
+            throws StorageException
+    {
         try
         {
             errorReporter.logDebug("NVMe: connecting initiator to: " + subsystemName);
 
-            ResourceDefinition rscDfn = nvmeRscData.getAbsResource().getResourceDefinition();
+            if (subsystemName == null || subsystemName.trim().isEmpty())
+            {
+                throw new ImplementationError("Invalid (empty) subsystem name: '" + subsystemName + "'");
+            }
+
+            ResourceDefinition rscDfn = rscData.getAbsResource().getResourceDefinition();
             final PriorityProps nvmePrioProps = new PriorityProps(
                 rscDfn.getProps(accCtx),
                 rscDfn.getResourceGroup().getProps(accCtx),
@@ -357,21 +435,8 @@ public class NvmeUtils
                 transportType = "rdma";
             }
 
-            String ipAddr = getIpAddr(// TODO: check on controller
-                rscDfn.getResource(
-                    accCtx,
-                    new NodeName(
-                        nvmeRscData
-                            .getAbsResource()
-                            .getProps(accCtx)
-                            .getProp(InternalApiConsts.PROP_NVME_TARGET_NODE_NAME)
-                    )
-                ),
-                accCtx
-            ).getAddress();
-
-            String nodeName = nvmeRscData.getAbsResource().getNode().getName().getDisplayName();
-            List<String> subsystemNames = discover(nvmeRscData, transportType, ipAddr, port, nodeName);
+            String nodeName = rscData.getAbsResource().getNode().getName().getDisplayName();
+            List<String> subsystemNames = discover(subsystemName, transportType, ipAddr, port, nodeName);
             if (!subsystemNames.contains(subsystemName))
             {
                 throw new StorageException("Failed to discover subsystem name '" + subsystemName + "'!");
@@ -392,7 +457,7 @@ public class NvmeUtils
         {
             throw new StorageException("Failed to connect to NVMe target!", exc);
         }
-        catch (InvalidNameException | AccessDeniedException | InvalidKeyException exc)
+        catch (AccessDeniedException | InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -401,18 +466,49 @@ public class NvmeUtils
     /**
      * Disconnects the NVMe Initiator from the Target, given the subsystem name
      *
-     * @param nvmeRscData NvmeRscData object containing all needed information for this method
+     * @param rscData
+     *     NvmeRscData object containing all needed information for this method
+     *
+     * @throws StorageException
      */
-    public void disconnect(NvmeRscData<Resource> nvmeRscData) throws StorageException
+    public void disconnect(NvmeRscData<Resource> nvmeRsc) throws StorageException
     {
-        final String subsystemName = getNvmeSubsystemPrefix(nvmeRscData) + nvmeRscData.getSuffixedResourceName();
+        disconnect(
+            nvmeRsc,
+            getNvmeSubsystemPrefix(nvmeRsc) + nvmeRsc.getSuffixedResourceName(),
+            NvmeRscData::setExists,
+            NvmeVlmData::setExists,
+            NvmeVlmData::getDevicePath
+        );
+    }
 
+    public void disconnect(OpenflexRscData<Resource> ofRsc) throws StorageException
+    {
+        disconnect(
+            ofRsc,
+            ofRsc.getRscDfnLayerObject().getNqn(),
+            OpenflexRscData::setExists,
+            OpenflexVlmData::setExists,
+            OpenflexVlmData::getDevicePath
+        );
+    }
+
+    public <
+        VLM_DATA extends VlmProviderObject<Resource>,
+        RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void disconnect(
+            RSC_DATA rscData,
+            String subsystemName,
+            BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
+            BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
+            Function<VLM_DATA, String> getDevPathVlmFunc
+        ) throws StorageException
+    {
         try
         {
             errorReporter.logDebug("NVMe: disconnecting initiator from: " + subsystemName);
 
             // workaround to prevent hanging `nvme disconnect`
-            if (isAnyMounted(nvmeRscData))
+            if (isAnyMounted(rscData, getDevPathVlmFunc))
             {
                 throw new StorageException("Cannot disconnect mounted nvme-device.");
             }
@@ -424,7 +520,7 @@ public class NvmeUtils
             );
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to disconnect from NVMe target!");
 
-            setExistsDeep(nvmeRscData, false);
+            setDeepExists(rscData, setExistsRscFunc, setExistsVlmFunc, false);
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
@@ -432,14 +528,19 @@ public class NvmeUtils
         }
     }
 
-    private boolean isAnyMounted(NvmeRscData<Resource> nvmeRscDataRef)
+    private <
+        VLM_DATA extends VlmProviderObject<Resource>,
+        RSC_DATA extends AbsRscData<Resource, VLM_DATA>> boolean isAnyMounted(
+            RSC_DATA rscData,
+            Function<VLM_DATA, String> getDevPathVlmFunc
+        )
         throws ChildProcessTimeoutException, IOException
     {
         boolean mounted = false;
         StringBuilder grepArg = new StringBuilder();
-        for (NvmeVlmData<Resource> vlm : nvmeRscDataRef.getVlmLayerObjects().values())
+        for (VLM_DATA vlmData : rscData.getVlmLayerObjects().values())
         {
-            grepArg.append(vlm.getDevicePath()).append("|");
+            grepArg.append(getDevPathVlmFunc.apply(vlmData)).append("|");
         }
         if (grepArg.length() > 0)
         {
@@ -498,13 +599,52 @@ public class NvmeUtils
     public boolean setDevicePaths(NvmeRscData<Resource> nvmeRscData, boolean isWaiting)
         throws StorageException
     {
-        boolean success = true;
-        final String subsystemName = getNvmeSubsystemPrefix(nvmeRscData) + nvmeRscData.getSuffixedResourceName();
+        return setDevicePaths(
+            isWaiting,
+            nvmeRscData,
+            getNvmeSubsystemPrefix(nvmeRscData) + nvmeRscData.getSuffixedResourceName(),
+            // (rscData, exists) -> setExistsDeep(rscData, exists)
+            NvmeRscData::setExists,
+            NvmeVlmData::setExists,
+            NvmeVlmData::setDevicePath
+        );
+    }
 
+    public boolean setDevicePaths(OpenflexRscData<Resource> ofRscData, boolean isWaiting)
+        throws StorageException
+    {
+        return setDevicePaths(
+            isWaiting,
+            ofRscData,
+            ofRscData.getRscDfnLayerObject().getNqn(),
+            // (rscData, exists) -> setExistsDeep(rscData, exists)
+            OpenflexRscData::setExists,
+            OpenflexVlmData::setExists,
+            OpenflexVlmData::setDevicePath
+        );
+    }
+
+    public <
+        VLM_DATA extends VlmProviderObject<Resource>,
+        RSC_DATA extends AbsRscData<Resource, VLM_DATA>> boolean setDevicePaths(
+            boolean isWaiting,
+            RSC_DATA rscData,
+            String subsystemName,
+            BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
+            BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
+            BiConsumer<VLM_DATA, String> setDevPathVlmFunc
+    )
+            throws StorageException
+    {
+        boolean success = true;
         try
         {
             errorReporter.logDebug("NVMe: trying to set device paths for: " + subsystemName);
 
+            if (subsystemName == null || subsystemName.trim().isEmpty())
+            {
+                throw new ImplementationError("Subsystemname cannot be empty: '" + subsystemName + "'");
+            }
             OutputData output = executeCmdAfterWaiting(
                 isWaiting,
                 "/bin/bash", "-c", "grep -H -r -w " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
@@ -513,7 +653,7 @@ public class NvmeUtils
             if (output == null)
             {
                 success = false;
-                setExistsDeep(nvmeRscData, false);
+                setDeepExists(rscData, setExistsRscFunc, setExistsVlmFunc, false);
             }
             else
             {
@@ -524,14 +664,14 @@ public class NvmeUtils
                 );
                 final String nvmeFabricsVlmPath = NVME_FABRICS_PATH + nvmeRscIdx + "/nvme" + nvmeRscIdx;
 
-                nvmeRscData.setExists(true);
+                setExistsRscFunc.accept(rscData, true);
 
-                for (NvmeVlmData<Resource> nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                for (VLM_DATA vlmData : rscData.getVlmLayerObjects().values())
                 {
                     output = executeCmdAfterWaiting(
                         isWaiting,
                         "/bin/bash", "-c",
-                        "grep -H -r -w " + (nvmeVlmData.getVlmNr().getValue() + 1) + " " +
+                        "grep -H -r -w " + (vlmData.getVlmNr().getValue() + 1) + " " +
                         nvmeFabricsVlmPath + "*n*/nsid"
 
                     );
@@ -546,7 +686,7 @@ public class NvmeUtils
                     if (output == null)
                     {
                         success = false;
-                        nvmeVlmData.setExists(false);
+                        setExistsVlmFunc.accept(vlmData, false);
                     }
                     else
                     {
@@ -563,8 +703,8 @@ public class NvmeUtils
                             nvmeNamespacePart.substring(nvmeNamespacePart.lastIndexOf('n') + 1)
                         );
 
-                        nvmeVlmData.setDevicePath("/dev/nvme" + nvmeRscIdx + "n" + nvmeVlmIdx);
-                        nvmeVlmData.setExists(true);
+                        setDevPathVlmFunc.accept(vlmData, "/dev/nvme" + nvmeRscIdx + "n" + nvmeVlmIdx);
+                        setExistsVlmFunc.accept(vlmData, true);
                     }
                 }
             }
@@ -575,6 +715,22 @@ public class NvmeUtils
         }
 
         return success;
+    }
+
+    private <
+        VLM_DATA extends VlmProviderObject<Resource>,
+        RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void setDeepExists(
+            RSC_DATA rscData,
+            BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
+            BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
+            boolean exists
+        )
+    {
+        setExistsRscFunc.accept(rscData, exists);
+        for (VLM_DATA vlmData : rscData.getVlmLayerObjects().values())
+        {
+            setExistsVlmFunc.accept(vlmData, exists);
+        }
     }
 
     /**
@@ -752,7 +908,7 @@ public class NvmeUtils
      * @return              List<String> of discovered subsystem names
      */
     private List<String> discover(
-        NvmeRscData<Resource> nvmeRscData,
+        String subsystemName,
         String transportType,
         String ipAddr,
         String port,
@@ -780,7 +936,7 @@ public class NvmeUtils
             {
                 if (outputLine.contains("subnqn:"))
                 {
-                    int idx = outputLine.indexOf(getNvmeSubsystemPrefix(nvmeRscData));
+                    int idx = outputLine.indexOf(subsystemName);
                     if (idx >= 0)
                     {
                         subsystemNames.add(outputLine.substring(idx));
@@ -936,8 +1092,13 @@ public class NvmeUtils
     public Resource getTargetResource(NvmeRscData<Resource> nvmeRscData, AccessContext accCtx)
         throws AccessDeniedException, StorageException
     {
-        Optional<Resource> targetRscOpt = nvmeRscData
-            .getAbsResource()
+        return getTargetResource(nvmeRscData.getAbsResource(), accCtx);
+    }
+
+    public Resource getTargetResource(Resource initiatorRsc, AccessContext accCtx)
+        throws AccessDeniedException, StorageException
+    {
+        Optional<Resource> targetRscOpt = initiatorRsc
             .getDefinition()
             .streamResource(accCtx).filter(
                 rsc ->

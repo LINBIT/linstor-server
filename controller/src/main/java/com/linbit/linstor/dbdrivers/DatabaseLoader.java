@@ -56,6 +56,7 @@ import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver.RscLayerInfo;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
@@ -139,6 +140,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final LuksLayerCtrlDatabaseDriver luksLayerDriver;
     private final StorageLayerCtrlDatabaseDriver storageLayerDriver;
     private final NvmeLayerCtrlDatabaseDriver nvmeLayerDriver;
+    private final OpenflexLayerCtrlDatabaseDriver openflexLayerDriver;
     private final WritecacheLayerCtrlDatabaseDriver writecacheLayerDriver;
     private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
     private final Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelper;
@@ -177,6 +179,7 @@ public class DatabaseLoader implements DatabaseDriver
         LuksLayerCtrlDatabaseDriver luksLayerDriverRef,
         StorageLayerCtrlDatabaseDriver storageLayerDriverRef,
         NvmeLayerCtrlDatabaseDriver nvmeLayerDriverRef,
+        OpenflexLayerCtrlDatabaseDriver openflexLayerDriverRef,
         WritecacheLayerCtrlDatabaseDriver writecacheLayerDriverRef,
         Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
         Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelperRef,
@@ -213,6 +216,7 @@ public class DatabaseLoader implements DatabaseDriver
         luksLayerDriver = luksLayerDriverRef;
         storageLayerDriver = storageLayerDriverRef;
         nvmeLayerDriver = nvmeLayerDriverRef;
+        openflexLayerDriver = openflexLayerDriverRef;
         writecacheLayerDriver = writecacheLayerDriverRef;
         ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
         ctrlSnapLayerDataHelper = ctrlSnapLayerDataHelperRef;
@@ -562,6 +566,7 @@ public class DatabaseLoader implements DatabaseDriver
         throws DatabaseException, AccessDeniedException
     {
         storageLayerDriver.fetchForLoadAll(tmpStorPoolMapRef);
+        openflexLayerDriver.fetchForLoadAll(tmpStorPoolMapRef, tmpRscDfnMapRef);
 
         // load RscDfnLayerObjects and VlmDfnLayerObjects
         drbdLayerDriver.loadLayerData(tmpRscDfnMapRef, tmpSnapDfnMapRef);
@@ -691,6 +696,14 @@ public class DatabaseLoader implements DatabaseDriver
                             break;
                         case NVME:
                             rscLayerObjectPair = nvmeLayerDriver.load(
+                                rsc,
+                                rli.id,
+                                rli.rscSuffix,
+                                parent
+                            );
+                            break;
+                        case OPENFLEX:
+                            rscLayerObjectPair = openflexLayerDriver.load(
                                 rsc,
                                 rli.id,
                                 rli.rscSuffix,

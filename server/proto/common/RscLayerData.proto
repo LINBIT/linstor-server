@@ -6,6 +6,7 @@ import "common/DrbdRsc.proto";
 import "common/LuksRsc.proto";
 import "common/StorageRsc.proto";
 import "common/NvmeRsc.proto";
+import "common/OpenflexRsc.proto";
 import "common/WritecacheRsc.proto";
 import "common/LayerType.proto";
 
@@ -21,6 +22,7 @@ message RscLayerData
     optional StorageRsc         storage = 8;
     optional NvmeRsc            nvme = 9;
     optional WritecacheRsc      writecache = 10;
+    optional OpenflexRsc        openflex = 12;
 
     required bool               suspend = 11;
 }

@@ -29,7 +29,6 @@ message StorageVlm
     optional FileVlm             file = 14;
     optional FileThinVlm         file_thin = 15;
     optional SpdkVlm             spdk = 16;
-    optional OpenflexVlm         openflex = 17;
 }
 
 message StorageVlmDfn
@@ -73,11 +72,6 @@ message FileVlm
 }
 
 message FileThinVlm
-{
-    // currently no special payload
-}
-
-message OpenflexVlm
 {
     // currently no special payload
 }

@@ -24,7 +24,6 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
-import com.linbit.linstor.storage.data.provider.openflex.OpenflexTargetVlmData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -304,16 +303,6 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
                     transMgrProvider
                 );
                 break;
-            case OPENFLEX_TARGET:
-                vlmProviderObj = new OpenflexTargetVlmData<>(
-                    vlmRef,
-                    rscDataRef,
-                    vlmInfo.storPool,
-                    this,
-                    transObjFactory,
-                    transMgrProvider
-                );
-                break;
             case ZFS: // fall-trough
             case ZFS_THIN:
                 vlmProviderObj = new ZfsData<>(
@@ -348,6 +337,10 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
                         transMgrProvider
                 );
                 break;
+            case OPENFLEX_TARGET:
+                throw new ImplementationError(
+                    "Openflex volumes should be loaded by openflex db driver, not by storage layer driver"
+                );
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unhandled storage type: " + vlmInfo.kind);
@@ -387,11 +380,20 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
     public void persist(VlmProviderObject<?> vlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating StorageVolume %s", getId(vlmDataRef));
+
+        DeviceProviderKind providerKind = vlmDataRef.getProviderKind();
+        if (providerKind.equals(DeviceProviderKind.FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER))
+        {
+            throw new ImplementationError(
+                "The given volume is not a storage volume, but a " + vlmDataRef.getLayerKind() +
+                    "! Use appropriate database driver"
+            );
+        }
         try (PreparedStatement stmt = getConnection().prepareStatement(INSERT_VLM))
         {
             stmt.setInt(1, vlmDataRef.getRscLayerObject().getRscLayerId());
             stmt.setInt(2, vlmDataRef.getVlmNr().value);
-            stmt.setString(3, vlmDataRef.getProviderKind().name());
+            stmt.setString(3, providerKind.name());
             stmt.setString(4, vlmDataRef.getStorPool().getNode().getName().value);
             stmt.setString(5, vlmDataRef.getStorPool().getName().value);
 
@@ -408,6 +410,7 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
     public void delete(VlmProviderObject<?> vlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Deleting StorageVolume %s", getId(vlmDataRef));
+
         try (PreparedStatement stmt = getConnection().prepareStatement(DELETE_VLM))
         {
             stmt.setInt(1, vlmDataRef.getRscLayerObject().getRscLayerId());

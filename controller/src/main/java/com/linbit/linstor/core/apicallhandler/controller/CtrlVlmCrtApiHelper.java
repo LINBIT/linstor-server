@@ -222,12 +222,15 @@ public class CtrlVlmCrtApiHelper
                     DeviceLayerKind.DRBD) &&
                 !LayerUtils.hasLayer(
                     CtrlRscToggleDiskApiCallHandler.getLayerData(peerAccCtx.get(), rsc),
-                    DeviceLayerKind.NVME)
+                    DeviceLayerKind.NVME) &&
+                !LayerUtils.hasLayer(
+                    CtrlRscToggleDiskApiCallHandler.getLayerData(peerAccCtx.get(), rsc),
+                    DeviceLayerKind.OPENFLEX)
             )
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_LAYER_STACK,
-                    "Diskless volume is only supported in combination with DRBD or NVME"
+                    "Diskless volume is only supported in combination with DRBD, NVME or OPENFLEX"
                 ));
             }
         }

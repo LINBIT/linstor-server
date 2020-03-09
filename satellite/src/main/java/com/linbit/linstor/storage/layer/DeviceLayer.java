@@ -1,5 +1,6 @@
 package com.linbit.linstor.storage.layer;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -15,8 +16,10 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.layer.adapter.nvme.OpenflexLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
+import com.linbit.linstor.storage.layer.provider.StorageLayer;
 
 import java.util.List;
 import java.util.Map;
@@ -85,6 +88,34 @@ public interface DeviceLayer
 
     void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
 
+    /**
+     * Most layers will no-op. Current exceptions are {@link StorageLayer} and {@link OpenflexLayer}
+     *
+     * @param storPoolRef
+     *
+     * @throws DatabaseException
+     * @throws AccessDeniedException
+     * @throws StorageException
+     */
+    default void checkStorPool(StorPool storPoolRef) throws StorageException, AccessDeniedException, DatabaseException
+    {
+        // noop
+    }
+
+    /**
+     * This method should only be implemented by layers managing storage.
+     * Those are currently {@link StorageLayer} and {@link OpenflexLayer}
+     *
+     * @throws StorageException
+     * @throws AccessDeniedException
+     */
+    default SpaceInfo getStoragePoolSpaceInfo(StorPool storPoolRef) throws AccessDeniedException, StorageException
+    {
+        throw new ImplementationError(
+            "Layer " + getClass().getSimpleName() + " does not directly handle (free / total) space information!"
+        );
+    }
+
     public interface NotificationListener
     {
         void notifyResourceDispatchResponse(ResourceName resourceName, ApiCallRc response);
@@ -108,4 +139,5 @@ public interface DeviceLayer
     {
         SUCCESS, NO_DEVICES_PROVIDED
     }
+
 }

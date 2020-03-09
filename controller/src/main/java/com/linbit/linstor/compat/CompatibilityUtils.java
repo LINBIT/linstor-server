@@ -21,9 +21,10 @@ public class CompatibilityUtils
 
         boolean hasDrdbKind = layerList.contains(DeviceLayerKind.DRBD);
         boolean hasNvmeKind = layerList.contains(DeviceLayerKind.NVME);
+        boolean hasOpenflexKind = layerList.contains(DeviceLayerKind.OPENFLEX);
 
         int kindCase = hasDrdbKind ? 1 : 0;
-        kindCase |= hasNvmeKind ? 2 : 0;
+        kindCase |= hasNvmeKind || hasOpenflexKind ? 2 : 0;
         switch (kindCase)
         {
             case 0:
@@ -37,11 +38,16 @@ public class CompatibilityUtils
             case 1: // drbd only
                 ret = Resource.Flags.DRBD_DISKLESS;
                 break;
-            case 2: // nvme only
+            case 2: // nvme or openflex
                 ret = Resource.Flags.NVME_INITIATOR;
                 break;
-            case 3: // nvme and drbd
-                if (layerList.indexOf(DeviceLayerKind.DRBD) < layerList.indexOf(DeviceLayerKind.NVME))
+            case 3: // (nvme or openflex) and drbd
+                int nvmeOpenflexIdx = layerList.indexOf(DeviceLayerKind.NVME);
+                if (nvmeOpenflexIdx == -1)
+                {
+                    nvmeOpenflexIdx = layerList.indexOf(DeviceLayerKind.OPENFLEX);
+                }
+                if (layerList.indexOf(DeviceLayerKind.DRBD) < nvmeOpenflexIdx)
                 {
                     ret = Resource.Flags.NVME_INITIATOR;
                 }

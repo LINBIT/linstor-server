@@ -302,6 +302,12 @@ public class StltApiCallHandler
 
                 doApplyControllerChanges(satelliteProps);
 
+                /*
+                 * At least openflex stor pools need the properties of the localnode in order to
+                 * query freeSpace (which is triggered by storPoolHandler.applyChanges)
+                 */
+                deviceManager.applyChangedNodeProps(controllerPeerConnector.getLocalNode().getProps(apiCtx));
+
                 for (StorPoolPojo storPool : storPools)
                 {
                     ChangedData appliedChanges = storPoolHandler.applyChanges(storPool);

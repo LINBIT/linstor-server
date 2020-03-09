@@ -16,6 +16,9 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -45,6 +48,9 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -536,25 +542,6 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
-    protected VlmProviderObject<Resource> createOpenflexTargetVlmData(
-        AbsVolume<Resource> vlmRef,
-        StorageRscData<Resource> storRscDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        return layerDataFactory.createOpenflexTargetData(vlmRef, storRscDataRef, storPoolRef);
-    }
-
-    @Override
-    protected void mergeOpenflexTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
-        throws DatabaseException
-    {
-        // ignoring allocatedSize
-    }
-
-    @Override
     protected void setStorPool(VlmProviderObject<Resource> vlmDataRef, StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException
     {
@@ -716,5 +703,87 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         {
             newParent.getChildren().add(child);
         }
+    }
+
+    @Override
+    protected OpenflexRscData<Resource> createOpenflexRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Resource> parentRef,
+        OpenflexRscDfnData<Resource> rscDfnDataRef,
+        OpenflexRscPojo nvmeRscPojoRef
+    ) throws DatabaseException, AccessDeniedException
+    {
+        OpenflexRscData<Resource> ofRscData = layerDataFactory.createOpenflexRscData(
+            nvmeRscPojoRef.getId(),
+            rscRef,
+            rscDfnDataRef,
+            parentRef
+        );
+        rscDfnDataRef.getOfRscDataList().add(ofRscData);
+        if (parentRef == null)
+        {
+            rscRef.setLayerData(apiCtx, ofRscData);
+        }
+        else
+        {
+            updateParent(ofRscData, parentRef);
+        }
+        return ofRscData;
+    }
+
+    @Override
+    protected void removeOpenflexVlm(OpenflexRscData<Resource> ofRscDataRef, VolumeNumber vlmNrRef)
+        throws DatabaseException, AccessDeniedException
+    {
+        ofRscDataRef.remove(apiCtx, vlmNrRef);
+    }
+
+    @Override
+    protected void createOpenflexVlm(
+        AbsVolume<Resource> vlm,
+        OpenflexRscData<Resource> ofRscData,
+        VolumeNumber vlmNr,
+        StorPool storPoolRef
+    ) throws DatabaseException
+    {
+        OpenflexVlmData<Resource> ofVlmData = layerDataFactory.createOpenflexVlmData(
+            vlm,
+            ofRscData,
+            storPoolRef
+        );
+        ofRscData.getVlmLayerObjects().put(vlmNr, ofVlmData);
+    }
+
+    @Override
+    protected void mergeOpenflexVlm(OpenflexVlmPojo vlmPojoRef, OpenflexVlmData<Resource> ofVlmDataRef)
+        throws DatabaseException, AccessDeniedException, InvalidNameException
+    {
+        ofVlmDataRef.setStorPool(apiCtx, getStoragePool(ofVlmDataRef.getVolume(), vlmPojoRef, false));
+    }
+
+    @Override
+    protected OpenflexRscDfnData<Resource> mergeOrCreateOpenflexRscDfnData(
+        Resource rscRef,
+        OpenflexRscDfnPojo ofRscDfnPojoRef
+    ) throws DatabaseException, AccessDeniedException
+    {
+        ResourceDefinition rscDfn = rscRef.getDefinition();
+        OpenflexRscDfnData<Resource> ofRscDfnData = rscDfn.getLayerData(
+            apiCtx, DeviceLayerKind.OPENFLEX, ofRscDfnPojoRef.getRscNameSuffix()
+        );
+        if (ofRscDfnData == null)
+        {
+            ofRscDfnData = layerDataFactory.createOpenflexRscDfnData(
+                rscDfn.getName(),
+                ofRscDfnPojoRef.getRscNameSuffix(),
+                ofRscDfnPojoRef.getNqn()
+            );
+            rscDfn.setLayerData(apiCtx, ofRscDfnData);
+        }
+        else
+        {
+            ofRscDfnData.setNqn(ofRscDfnPojoRef.getNqn());
+        }
+        return ofRscDfnData;
     }
 }

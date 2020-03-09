@@ -15,6 +15,9 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -33,6 +36,9 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -40,7 +46,6 @@ import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
-import com.linbit.linstor.storage.data.provider.openflex.OpenflexTargetVlmData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -113,6 +118,9 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
                 break;
             case NVME:
                 rscMerger = this::mergeNvmeRscData;
+                break;
+            case OPENFLEX:
+                rscMerger = this::mergeOpenflexRscData;
                 break;
             case WRITECACHE:
                 rscMerger = this::mergeWritecacheRscData;
@@ -254,6 +262,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, InvalidNameException
     {
         StorageRscPojo storRscPojo = (StorageRscPojo) rscDataPojo;
+
         StorageRscData<RSC> storRscData = null;
         if (parent == null)
         {
@@ -393,19 +402,9 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
                 }
                 break;
             case OPENFLEX_TARGET:
-                if (vlmData == null || !(vlmData instanceof OpenflexTargetVlmData))
-                {
-                    if (vlmData != null)
-                    {
-                        removeStorageVlm(storRscData, vlmNr);
-                    }
-                    vlmData = createOpenflexTargetVlmData(vlm, storRscData, vlmPojo, storPool);
-                }
-                else
-                {
-                    mergeOpenflexTargetVlmData(vlmPojo, vlmData);
-                }
-                break;
+                throw new ImplementationError(
+                    "Openflex volumes should be merged by openflex merger, not by storage merger"
+                );
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unexpected DeviceProviderKind: " + vlmPojo.getProviderKind());
@@ -472,6 +471,91 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         else
         {
             mergeNvmeVlm(vlmPojo, nvmeVlmData);
+        }
+    }
+
+    private OpenflexRscData<RSC> mergeOpenflexRscData(
+        RSC rsc,
+        RscLayerDataApi rscDataPojo,
+        AbsRscLayerObject<RSC> parent,
+        boolean ignoredRemoteResource
+    )
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException
+    {
+        OpenflexRscPojo ofRscPojo = (OpenflexRscPojo) rscDataPojo;
+
+        OpenflexRscDfnData<RSC> ofRscDfnData = mergeOrCreateOpenflexRscDfnData(
+            rsc,
+            ofRscPojo.getOpenflexRscDfn()
+        );
+
+        OpenflexRscData<RSC> ofRscData = null;
+        if (parent == null)
+        {
+            ofRscData = (OpenflexRscData<RSC>) rsc.getLayerData(apiCtx);
+        }
+        else
+        {
+            ofRscData = findChild(parent, rscDataPojo.getId());
+        }
+
+        if (ofRscData == null)
+        {
+            ofRscData = createOpenflexRscData(rsc, parent, ofRscDfnData, ofRscPojo);
+        }
+
+        // do not iterate over rsc.volumes as those might have changed in the meantime
+        // see gitlab 368
+        for (OpenflexVlmPojo vlmPojo : ofRscPojo.getVolumeList())
+        {
+            VolumeNumber vlmNr = new VolumeNumber(vlmPojo.getVlmNr());
+            AbsVolume<RSC> vlm = rsc.getVolume(vlmNr);
+            if (vlm == null)
+            {
+                removeOpenflexVlm(ofRscData, vlmNr);
+            }
+            else
+            {
+                createOrMergeOpenflexVlm(vlm, ofRscData, vlmPojo);
+            }
+        }
+        return ofRscData;
+    }
+
+    private void createOrMergeOpenflexVlm(
+        AbsVolume<RSC> vlm,
+        OpenflexRscData<RSC> ofRscData,
+        OpenflexVlmPojo vlmPojo
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+
+        OpenflexVlmData<RSC> nvmeVlmData = ofRscData.getVlmLayerObjects().get(vlmNr);
+        try
+        {
+            if (nvmeVlmData == null)
+            {
+                createOpenflexVlm(
+                    vlm,
+                    ofRscData,
+                    vlmNr,
+                    getStoragePool(
+                        vlm,
+                        vlmPojo,
+                        true
+                    )
+                );
+            }
+            else
+            {
+                mergeOpenflexVlm(vlmPojo, nvmeVlmData);
+            }
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
@@ -711,17 +795,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
 
     protected abstract void putVlmData(StorageRscData<RSC> storRscDataRef, VlmProviderObject<RSC> vlmDataRef);
 
-    protected abstract VlmProviderObject<RSC> createOpenflexTargetVlmData(
-        AbsVolume<RSC> vlmRef,
-        StorageRscData<RSC> storRscDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException, AccessDeniedException;
-
-    protected abstract void mergeOpenflexTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<RSC> vlmDataRef)
-        throws DatabaseException;
-
 
     /*
      * NVME layer methods
@@ -739,6 +812,37 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     protected abstract void createNvmeVlm(AbsVolume<RSC> vlm, NvmeRscData<RSC> nvmeRscData, VolumeNumber vlmNr);
 
     protected abstract void mergeNvmeVlm(NvmeVlmPojo vlmPojo, NvmeVlmData<RSC> nvmeVlmData);
+
+    /*
+     * Openflex layer methods
+     */
+    protected abstract OpenflexRscDfnData<RSC> mergeOrCreateOpenflexRscDfnData(
+        RSC rsc,
+        OpenflexRscDfnPojo ofRscDfnPojo
+    )
+        throws DatabaseException, AccessDeniedException;
+
+    protected abstract OpenflexRscData<RSC> createOpenflexRscData(
+        RSC rsc,
+        AbsRscLayerObject<RSC> parent,
+        OpenflexRscDfnData<RSC> rscDfnDataRef,
+        OpenflexRscPojo ofRscPojo
+    )
+        throws DatabaseException, AccessDeniedException;
+
+    protected abstract void removeOpenflexVlm(OpenflexRscData<RSC> ofRscData, VolumeNumber vlmNr)
+        throws DatabaseException, AccessDeniedException;
+
+    protected abstract void createOpenflexVlm(
+        AbsVolume<RSC> vlm,
+        OpenflexRscData<RSC> ofRscData,
+        VolumeNumber vlmNr,
+        StorPool storPoolRef
+    ) throws DatabaseException;
+
+    protected abstract void mergeOpenflexVlm(OpenflexVlmPojo vlmPojo, OpenflexVlmData<RSC> ofVlmData)
+        throws DatabaseException, AccessDeniedException, InvalidNameException;
+
 
     /*
      * Writecache layer methods

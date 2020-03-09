@@ -9,6 +9,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 
@@ -25,6 +26,7 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void markResourceForDispatch(ResourceName name);
     void markMultipleResourcesForDispatch(Set<ResourceName> rscSet);
 
+    void applyChangedNodeProps(Props propsRef);
     void fullSyncApplied(Node localNode) throws StorageException;
 
     void abortDeviceHandlers();
@@ -33,4 +35,5 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void forceWakeUpdateNotifications();
 
     SpaceInfo getSpaceInfo(StorPool storPoolRef) throws StorageException;
+
 }

@@ -174,12 +174,6 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                         storPool
                     );
                     break;
-                case OPENFLEX_TARGET:
-                    vlmData = layerDataFactory.createOpenflexTargetData(
-                        vlm,
-                        rscData,
-                        storPool
-                    );
                 case LVM:
                     vlmData = layerDataFactory.createLvmData(vlm, rscData, storPool);
                     break;
@@ -197,6 +191,11 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                 case SPDK:
                     vlmData = layerDataFactory.createSpdkData(vlm, rscData, storPool);
                     break;
+                case OPENFLEX_TARGET:
+                    throw new ImplementationError(
+                        "Openflex volumes should be handled by openflex, not by storage helper"
+                    );
+
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
                 default:
                     throw new ImplementationError("Unexpected kind: " + kind);

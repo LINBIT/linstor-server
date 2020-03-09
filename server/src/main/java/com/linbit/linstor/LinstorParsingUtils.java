@@ -324,9 +324,11 @@ public class LinstorParsingUtils
             case "STORAGE": // fall-through
             case "LVM": // fall-through
             case "SPDK": // fall-through
-            case "ZFS": // fall-through
-            case "OPENFLEX": // fall-through
+            case "ZFS":
                 kind = DeviceLayerKind.STORAGE;
+                break;
+            case "OPENFLEX":
+                kind = DeviceLayerKind.OPENFLEX;
                 break;
             case "NVME":
                 kind = DeviceLayerKind.NVME;

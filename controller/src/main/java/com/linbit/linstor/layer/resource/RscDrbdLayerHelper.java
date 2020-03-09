@@ -227,10 +227,11 @@ public class RscDrbdLayerHelper extends
         NodeId nodeId = null;
 
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
+        boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
         boolean isNvmeInitiator = rscRef.getStateFlags()
             .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
 
-        if (isNvmeBelow && isNvmeInitiator)
+        if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator)
         {
             // we need to find our nvme-target resource and copy the node-id from that target-resource
             Resource targetRsc = nvmeHelperProvider.get().getTarget(rscRef);
@@ -487,11 +488,13 @@ public class RscDrbdLayerHelper extends
         }
 
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
+        boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
         boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
             .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         boolean isDrbdDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
 
-        return !allVlmsUseInternalMetaData && !isDrbdDiskless && (!isNvmeBelow || isNvmeInitiator);
+        return !allVlmsUseInternalMetaData && !isDrbdDiskless &&
+            (!(isNvmeBelow || isOpenflexBelow) || isNvmeInitiator);
     }
 
     @Override

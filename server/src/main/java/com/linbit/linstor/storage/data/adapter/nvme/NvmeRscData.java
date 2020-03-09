@@ -69,8 +69,7 @@ public class NvmeRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public @Nullable
-    RscDfnLayerObject getRscDfnLayerObject()
+    public @Nullable RscDfnLayerObject getRscDfnLayerObject()
     {
         return null;
     }
@@ -154,9 +153,9 @@ public class NvmeRscData<RSC extends AbsResource<RSC>>
     public RscLayerDataApi asPojo(AccessContext accCtx) throws AccessDeniedException
     {
         List<NvmeVlmPojo> vlmPojos = new ArrayList<>();
-        for (NvmeVlmData<RSC> drbdVlmData : vlmMap.values())
+        for (NvmeVlmData<RSC> nvmeVlmData : vlmMap.values())
         {
-            vlmPojos.add(drbdVlmData.asPojo(accCtx));
+            vlmPojos.add(nvmeVlmData.asPojo(accCtx));
         }
         return new NvmeRscPojo(
             rscLayerId,

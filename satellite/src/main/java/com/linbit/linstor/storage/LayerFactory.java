@@ -6,6 +6,7 @@ import com.linbit.linstor.storage.layer.adapter.dmsetup.WritecacheLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
 import com.linbit.linstor.storage.layer.adapter.luks.LuksLayer;
 import com.linbit.linstor.storage.layer.adapter.nvme.NvmeLayer;
+import com.linbit.linstor.storage.layer.adapter.nvme.OpenflexLayer;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
 
 import javax.inject.Inject;
@@ -27,7 +28,8 @@ public class LayerFactory
         DrbdLayer drbdLayer,
         StorageLayer storageLayer,
         LuksLayer luksLayer,
-        WritecacheLayer writecacheLayer
+        WritecacheLayer writecacheLayer,
+        OpenflexLayer ofLayer
     )
     {
         devLayerLookupTable = new HashMap<>();
@@ -37,6 +39,7 @@ public class LayerFactory
         devLayerLookupTable.put(DeviceLayerKind.LUKS, luksLayer);
         devLayerLookupTable.put(DeviceLayerKind.STORAGE, storageLayer);
         devLayerLookupTable.put(DeviceLayerKind.WRITECACHE, writecacheLayer);
+        devLayerLookupTable.put(DeviceLayerKind.OPENFLEX, ofLayer);
     }
 
     public DeviceLayer getDeviceLayer(DeviceLayerKind kind)

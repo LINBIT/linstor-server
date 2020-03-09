@@ -5,7 +5,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;
@@ -19,6 +19,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.helpers.ApiUtils
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -47,7 +48,8 @@ public class ResourceCreateCheck
     {
         NVME_TARGET,
         NVME_INITIATOR,
-        OPENFLEX_TARGET
+        OPENFLEX_TARGET,
+        OPENFLEX_INITIATOR
     }
 
     /**
@@ -92,6 +94,16 @@ public class ResourceCreateCheck
                         );
                     }
                     break;
+                case OPENFLEX_INITIATOR:
+                    if (!hasOpenflexTarget)
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_MISSING_NVME_TARGET,
+                                "An Openflex Target needs to be created before the Initiator!"
+                            )
+                        );
+                    }
                 default:
                     // no further checks needed in this case
             }
@@ -113,15 +125,13 @@ public class ResourceCreateCheck
                 List<DeviceLayerKind> layerStack = LayerUtils.getLayerStack(vlm.getAbsResource(), accessContext);
                 if (layerStack.contains(DeviceLayerKind.NVME))
                 {
-                    if (vlm.getAbsResource().getNode().getNodeType(accessContext).equals(Node.Type.OPENFLEX_TARGET))
-                    {
-                        ret = ResourceRole.OPENFLEX_TARGET;
-                    }
-                    else
-                    {
-                        ret = vlm.getAbsResource().isNvmeInitiator(accessContext) ?
-                            ResourceRole.NVME_INITIATOR : ResourceRole.NVME_TARGET;
-                    }
+                    ret = vlm.getAbsResource().isNvmeInitiator(accessContext) ?
+                        ResourceRole.NVME_INITIATOR : ResourceRole.NVME_TARGET;
+                }
+                else if (layerStack.contains(DeviceLayerKind.OPENFLEX))
+                {
+                    ret = vlm.getAbsResource().isNvmeInitiator(accessContext) ?
+                        ResourceRole.OPENFLEX_INITIATOR : ResourceRole.OPENFLEX_TARGET;
                 }
             }
         }
@@ -132,8 +142,8 @@ public class ResourceCreateCheck
 
         if (volumes.stream().anyMatch(
             vlm -> execPrivileged(
-                    () -> LayerRscUtils.getLayerStack(vlm.getAbsResource(), accessContext).contains(DeviceLayerKind.NVME) &&
-                    !vlm.getAbsResource().isNvmeInitiator(accessContext)
+                () -> LayerRscUtils.getLayerStack(vlm.getAbsResource(), accessContext).contains(DeviceLayerKind.NVME) &&
+                !vlm.getAbsResource().isNvmeInitiator(accessContext)
             )
         ))
         {
@@ -151,6 +161,28 @@ public class ResourceCreateCheck
         {
             ret = ResourceRole.NVME_INITIATOR;
         }
+        else if (
+            volumes.stream().anyMatch(
+                vlm -> execPrivileged(
+                    () -> LayerRscUtils.getLayerStack(vlm.getAbsResource(), accessContext).contains(DeviceLayerKind.OPENFLEX) &&
+                        !vlm.getAbsResource().isNvmeInitiator(accessContext)
+                )
+            )
+        )
+        {
+            ret = ResourceRole.OPENFLEX_TARGET;
+        }
+        else if (
+            volumes.stream().anyMatch(
+                vlm -> execPrivileged(
+                    () -> LayerRscUtils.getLayerStack(vlm.getAbsResource(), accessContext).contains(DeviceLayerKind.OPENFLEX) &&
+                        vlm.getAbsResource().isNvmeInitiator(accessContext)
+                )
+            )
+        )
+        {
+            ret = ResourceRole.OPENFLEX_INITIATOR;
+        }
 
         return ret;
     }
@@ -164,20 +196,42 @@ public class ResourceCreateCheck
      */
     public void getAndSetDeployedResourceRoles(ResourceDefinition rscDfn)
     {
-        hasNvmeTarget = execPrivileged(
-            () -> rscDfn.streamResource(accessContext)).anyMatch(
-                rsc -> execPrivileged(
-                    () -> LayerRscUtils.getLayerStack(rsc, accessContext).contains(DeviceLayerKind.NVME) &&
-                    !rsc.isNvmeInitiator(accessContext)
-                )
-        );
-        hasNvmeInitiator = execPrivileged(
-            () -> rscDfn.streamResource(accessContext)).anyMatch(
-                rsc -> execPrivileged(
-                    () -> LayerRscUtils.getLayerStack(rsc, accessContext).contains(DeviceLayerKind.NVME) &&
-                    rsc.isNvmeInitiator(accessContext)
-                )
-        );
-        hasDrbd = execPrivileged(() -> !rscDfn.getLayerData(accessContext, DeviceLayerKind.DRBD).isEmpty());
+        try
+        {
+            Iterator<Resource> itRsc = rscDfn.iterateResource(accessContext);
+            while (itRsc.hasNext())
+            {
+                Resource rsc = itRsc.next();
+                List<DeviceLayerKind> layerStack = LayerRscUtils.getLayerStack(rsc, accessContext);
+                if (layerStack.contains(DeviceLayerKind.NVME))
+                {
+                    if (rsc.isNvmeInitiator(accessContext))
+                    {
+                        hasNvmeInitiator = true;
+                    }
+                    else
+                    {
+                        hasNvmeTarget = true;
+                    }
+                }
+                else if (layerStack.contains(DeviceLayerKind.OPENFLEX))
+                {
+                    if (rsc.isNvmeInitiator(accessContext))
+                    {
+                        hasOpenflexInitiator = true;
+                    }
+                    else
+                    {
+                        hasOpenflexTarget = true;
+                    }
+                }
+
+                hasDrbd = !rscDfn.getLayerData(accessContext, DeviceLayerKind.DRBD).isEmpty();
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 }

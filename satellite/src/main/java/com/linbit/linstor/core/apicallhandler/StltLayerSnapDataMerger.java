@@ -16,6 +16,9 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -46,6 +49,9 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
+import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -513,25 +519,6 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     }
 
     @Override
-    protected VlmProviderObject<Snapshot> createOpenflexTargetVlmData(
-        AbsVolume<Snapshot> vlmRef,
-        StorageRscData<Snapshot> storSnapDataRef,
-        VlmLayerDataApi vlmPojoRef,
-        StorPool storPoolRef
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        return null; // snapshots not supported in openflex-setups
-    }
-
-    @Override
-    protected void mergeOpenflexTargetVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Snapshot> vlmDataRef)
-        throws DatabaseException
-    {
-        // ignoring allocatedSize
-    }
-
-    @Override
     protected void setStorPool(VlmProviderObject<Snapshot> vlmDataRef, StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException
     {
@@ -597,6 +584,64 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
         // ignoring devicePath
         // ignoring diskState
         // ignoring usableSize
+    }
+
+    @Override
+    protected OpenflexRscData<Snapshot> createOpenflexRscData(
+        Snapshot snapRef,
+        AbsRscLayerObject<Snapshot> parentRef,
+        OpenflexRscDfnData<Snapshot> rscDfnDataRef,
+        OpenflexRscPojo ofRscPojoRef
+    ) throws DatabaseException, AccessDeniedException
+    {
+        OpenflexRscData<Snapshot> ofRscData = layerDataFactory.createOpenflexRscData(
+            ofRscPojoRef.getId(),
+            snapRef,
+            rscDfnDataRef,
+            parentRef
+        );
+        rscDfnDataRef.getOfRscDataList().add(ofRscData);
+        if (parentRef == null)
+        {
+            snapRef.setLayerData(apiCtx, ofRscData);
+        }
+        else
+        {
+            updateParent(ofRscData, parentRef);
+        }
+        return ofRscData;
+    }
+
+    @Override
+    protected void removeOpenflexVlm(OpenflexRscData<Snapshot> ofRscDataRef, VolumeNumber vlmNrRef)
+        throws DatabaseException, AccessDeniedException
+    {
+        ofRscDataRef.remove(apiCtx, vlmNrRef);
+    }
+
+    @Override
+    protected void createOpenflexVlm(
+        AbsVolume<Snapshot> vlmRef,
+        OpenflexRscData<Snapshot> ofSnapDataRef,
+        VolumeNumber vlmNrRef,
+        StorPool storPoolRef
+    ) throws DatabaseException
+    {
+        OpenflexVlmData<Snapshot> ofVlmData = layerDataFactory.createOpenflexVlmData(
+            vlmRef,
+            ofSnapDataRef,
+            storPoolRef
+        );
+        ofSnapDataRef.getVlmLayerObjects().put(vlmNrRef, ofVlmData);
+    }
+
+    @Override
+    protected void mergeOpenflexVlm(OpenflexVlmPojo vlmPojoRef, OpenflexVlmData<Snapshot> ofVlmDataRef)
+        throws DatabaseException, AccessDeniedException, InvalidNameException
+    {
+        ofVlmDataRef.setStorPool(apiCtx, getStoragePool(ofVlmDataRef.getVolume(), vlmPojoRef, false));
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
     }
 
     @Override
@@ -704,5 +749,15 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
         throws DatabaseException
     {
         // nothing special to merge
+    }
+
+    @Override
+    protected OpenflexRscDfnData<Snapshot> mergeOrCreateOpenflexRscDfnData(
+        Snapshot rscRef,
+        OpenflexRscDfnPojo ofRscDfnPojoRef
+    ) throws DatabaseException, AccessDeniedException
+    {
+        // TODO Auto-generated method stub
+        throw new ImplementationError("Not implemented yet");
     }
 }

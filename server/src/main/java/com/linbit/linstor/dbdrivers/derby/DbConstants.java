@@ -46,6 +46,8 @@ public class DbConstants
     public static final String TBL_LAYER_DRBD_VOLUMES    = "LAYER_DRBD_VOLUMES";
     public static final String TBL_LAYER_DRBD_VOLUME_DEFINITIONS = "LAYER_DRBD_VOLUME_DEFINITIONS";
     public static final String TBL_LAYER_LUKS_VOLUMES    = "LAYER_LUKS_VOLUMES";
+    public static final String TBL_LAYER_OPENFLEX_RESOURCE_DEFINITONS = "LAYER_OPENFLEX_RESOURCE_DEFINITIONS";
+    public static final String TBL_LAYER_OPENFLEX_VOLUMES = "LAYER_OPENFLEX_VOLUMES";
     public static final String TBL_LAYER_STORAGE_VOLUMES = "LAYER_STORAGE_VOLUMES";
     public static final String TBL_LAYER_WRITECACHE_VOLUMES = "LAYER_WRITECACHE_VOLUMES";
     public static final String TBL_RESOURCE_GROUPS       = "RESOURCE_GROUPS";
@@ -174,6 +176,9 @@ public class DbConstants
 
     // LAYER_LUKS_VOLUMES column names
     public static final String ENCRYPTED_PASSWORD = "ENCRYPTED_PASSWORD";
+
+    // LAYER_OPENFLEX_RESOURCE_DEFINITIONS column names
+    public static final String NQN = "NQN";
 
     // LAYER_STORAGE_VOLUMES column names
     public static final String PROVIDER_KIND = "PROVIDER_KIND";

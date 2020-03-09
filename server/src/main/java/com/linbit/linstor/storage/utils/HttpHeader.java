@@ -15,7 +15,11 @@ public class HttpHeader
     public static final int HTTP_BAD_REQUEST = 400;
     public static final int HTTP_NOT_FOUND = 404;
     public static final int HTTP_CONFLICT = 409;
+    public static final int HTTP_PRECONDITION_FAILED = 412;
+    public static final int HTTP_PRECONDITION_REQUIRED = 428;
+    public static final int HTTP_TOO_MANY_REQUESTS = 429;
 
+    public static final int HTTP_INTERNAL_SERVER_ERROR = 500;
     public static final int HTTP_SERVICE_UNAVAILABLE = 503;
 
     public static final String LOCATION_KEY = "Location";
@@ -23,6 +27,9 @@ public class HttpHeader
     public static final String CONTENT_TYPE_APP_JSON = "application/json";
     public static final String CONTENT_TYPE_APP_TEXT = "application/text";
     public static final String AUTH_KEY = "Authorization";
+
+    public static final String ETAG_KEY = "Etag";
+    public static final String IF_MATCH = "If-Match";
 
     public static Builder newBuilder()
     {

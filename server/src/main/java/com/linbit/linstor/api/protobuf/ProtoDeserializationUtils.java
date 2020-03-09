@@ -190,6 +190,9 @@ public class ProtoDeserializationUtils
             case WRITECACHE:
                 kind = DeviceLayerKind.WRITECACHE;
                 break;
+            case OPENFLEX:
+                kind = DeviceLayerKind.OPENFLEX;
+                break;
             case UNKNOWN_LAYER: // fall-through
             case UNRECOGNIZED: // fall-through
             default:

@@ -174,7 +174,8 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
             try
             {
-                if (vlm.getAbsResource().getLayerData(peerAccCtx.get()).getLayerKind().equals(DeviceLayerKind.NVME))
+                DeviceLayerKind layerKind = vlm.getAbsResource().getLayerData(peerAccCtx.get()).getLayerKind();
+                if (layerKind.equals(DeviceLayerKind.NVME))
                 {
                     throw new ApiRcException(ApiCallRcImpl
                         .entryBuilder(
@@ -184,6 +185,20 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                             )
                         )
                         .build()
+                    );
+                }
+                else
+                if (layerKind.equals(DeviceLayerKind.OPENFLEX))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl
+                            .entryBuilder(
+                                ApiConsts.MASK_VLM | ApiConsts.MASK_DEL | ApiConsts.FAIL_ACC_DENIED_VLM,
+                                String.format(
+                                    "Linstor does not support the deletion of single Openflex-volumes!\n" + vlm
+                                )
+                            )
+                            .build()
                     );
                 }
                 else

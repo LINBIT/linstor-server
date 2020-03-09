@@ -12,13 +12,13 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jr.ob.JSON;
 import org.apache.http.Header;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -37,6 +37,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 public class RestHttpClient implements RestClient
 {
+    public static final ObjectMapper OBJECT_MAPPER;
+
     private static final long DEFAULT_RETRY_DELAY = 1000;
     private static final long KIB = 1024;
 
@@ -47,6 +49,11 @@ public class RestHttpClient implements RestClient
     private final Map<Integer, Long> retryDelays = new TreeMap<>();
 
     private final ErrorReporter errorReporter;
+
+    static
+    {
+        OBJECT_MAPPER = new ObjectMapper();
+    }
 
     public RestHttpClient(ErrorReporter errorReporterRef)
     {
@@ -74,7 +81,7 @@ public class RestHttpClient implements RestClient
     }
 
     @Override
-    public RestResponse<Map<String, Object>> execute(RestHttpRequest request)
+    public <T> RestResponse<T> execute(RestHttpRequest<T> request)
         throws IOException, StorageException
     {
         HttpUriRequest req;
@@ -113,7 +120,7 @@ public class RestHttpClient implements RestClient
             req.addHeader(entry.getKey(), entry.getValue());
         }
 
-        RestHttpResponse restResponse = null;
+        RestHttpResponse<T> restResponse = null;
         int attemptNumber = 0;
         boolean retry;
         do
@@ -121,7 +128,7 @@ public class RestHttpClient implements RestClient
             retry = false;
             try (CloseableHttpResponse response = httpClient.execute(req);)
             {
-                byte[] responseContent = readContent(response);
+                byte[] jsonData = readContent(response);
                 Map<String, String> headers = new HashMap<>();
                 Header[] msgHeaders = response.getAllHeaders();
                 for (Header header : msgHeaders)
@@ -129,23 +136,23 @@ public class RestHttpClient implements RestClient
                     headers.put(header.getName(), header.getValue());
                 }
 
-                Map<String, Object> respRoot;
-                if (responseContent.length > 0)
+                T respObj;
+                if (jsonData.length > 0 && request.responseClass != null)
                 {
-                    respRoot = JSON.std.mapFrom(responseContent);
+                    respObj = OBJECT_MAPPER.readValue(jsonData, request.responseClass);
                 }
                 else
                 {
-                    respRoot = Collections.emptyMap();
+                    respObj = null;
                 }
 
                 int statusCode = response.getStatusLine().getStatusCode();
 
-                restResponse = new RestHttpResponse(
+                restResponse = new RestHttpResponse<>(
                     request,
                     statusCode,
                     headers,
-                    respRoot
+                    respObj
                 );
                 if (!request.expectedRcs.contains(statusCode))
                 {
@@ -166,7 +173,7 @@ public class RestHttpClient implements RestClient
 
                     if (retryCount == null || attemptNumber++ >= retryCount)
                     {
-                        for (UnexpectedReturnCodeHandler handler : handlers)
+                        for (UnexpectedReturnCodeHandler<T> handler : handlers)
                         {
                             handler.handle(restResponse);
                         }
@@ -229,30 +236,30 @@ public class RestHttpClient implements RestClient
         return result;
     }
 
-    private class RestHttpResponse implements RestResponse<Map<String, Object>>
+    private class RestHttpResponse<T> implements RestResponse<T>
     {
         private final int statusCode;
-        private final Map<String, Object> respRoot;
+        private final T response;
         private final Map<String, String> headers;
-        private final RestHttpRequest request;
+        private final RestHttpRequest<T> request;
 
         RestHttpResponse(
-            RestHttpRequest requestRef,
+            RestHttpRequest<T> requestRef,
             int statusCodeRef,
             Map<String, String> headersRef,
-            Map<String, Object> respRootRef
+            T responseRef
         )
         {
             request = requestRef;
             statusCode = statusCodeRef;
             headers = headersRef;
-            respRoot = respRootRef;
+            response = responseRef;
         }
 
         @Override
-        public Map<String, Object> getData()
+        public T getData()
         {
-            return respRoot;
+            return response;
         }
 
         @Override
@@ -289,6 +296,15 @@ public class RestHttpClient implements RestClient
 
         private String toString(Collection<Integer> shownExpectedRcs)
         {
+            String jsonResponse;
+            try
+            {
+                jsonResponse = JSON.std.asString(response);
+            }
+            catch (IOException exc)
+            {
+                jsonResponse = exc.getLocalizedMessage();
+            }
             return String.format(
                 "Request%n   %-8s %s%n   %-8s %s%n   %-8s %s%n   %-8s %s%n" +
                 "Response%n   %-23s %d%n   %-23s %s%n   %-23s %s%n   %-23s %s",
@@ -299,7 +315,7 @@ public class RestHttpClient implements RestClient
                 "Status code", statusCode,
                 "Expected status code(s)", shownExpectedRcs.toString(),
                 "HEaders", headers,
-                "Data", respRoot
+                "Data", jsonResponse
             );
         }
     }

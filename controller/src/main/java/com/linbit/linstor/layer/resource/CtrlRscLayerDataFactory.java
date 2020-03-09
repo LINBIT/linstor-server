@@ -30,7 +30,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
-import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -56,6 +55,7 @@ public class CtrlRscLayerDataFactory
     private final RscLuksLayerHelper luksLayerHelper;
     private final RscStorageLayerHelper storageLayerHelper;
     private final RscNvmeLayerHelper nvmeLayerHelper;
+    private final RscOpenflexLayerHelper ofLayerHelper;
     private final RscWritecacheLayerHelper writecacheLayerHelper;
 
     @Inject
@@ -67,6 +67,7 @@ public class CtrlRscLayerDataFactory
         RscLuksLayerHelper luksLayerHelperRef,
         RscStorageLayerHelper storageLayerHelperRef,
         RscNvmeLayerHelper nvmeLayerHelperRef,
+        RscOpenflexLayerHelper ofLayerHelperRef,
         RscWritecacheLayerHelper writecacheLayerHelperRef
     )
     {
@@ -77,6 +78,7 @@ public class CtrlRscLayerDataFactory
         luksLayerHelper = luksLayerHelperRef;
         storageLayerHelper = storageLayerHelperRef;
         nvmeLayerHelper = nvmeLayerHelperRef;
+        ofLayerHelper = ofLayerHelperRef;
         writecacheLayerHelper = writecacheLayerHelperRef;
     }
 
@@ -376,7 +378,7 @@ public class CtrlRscLayerDataFactory
 
     public StorPool getStorPool(
         Volume vlmRef,
-        StorageRscData<Resource> rscDataRef,
+        AbsRscLayerObject<Resource> rscDataRef,
         LayerPayload payloadRef
     )
         throws AccessDeniedException, InvalidKeyException, InvalidNameException
@@ -515,6 +517,9 @@ public class CtrlRscLayerDataFactory
                 break;
             case STORAGE:
                 layerHelper = storageLayerHelper;
+                break;
+            case OPENFLEX:
+                layerHelper = ofLayerHelper;
                 break;
             default:
                 throw new ImplementationError("Unknown device layer kind '" + kind + "'");

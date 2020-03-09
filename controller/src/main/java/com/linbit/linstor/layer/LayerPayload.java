@@ -18,6 +18,8 @@ public class LayerPayload
     public DrbdRscDfnPayload drbdRscDfn;
     public DrbdVlmDfnPayload drbdVlmDfn;
 
+    public OpenflexRscDfnPayload ofRscDfn;
+
     public Map<Pair<String, Integer>, StorageVlmPayload> storagePayload;
 
     public LayerPayload()
@@ -25,6 +27,9 @@ public class LayerPayload
         drbdRsc = new DrbdRscPayload();
         drbdRscDfn = new DrbdRscDfnPayload();
         drbdVlmDfn = new DrbdVlmDfnPayload();
+
+        ofRscDfn = new OpenflexRscDfnPayload();
+
         storagePayload = new TreeMap<>();
     }
 
@@ -62,6 +67,11 @@ public class LayerPayload
     public DrbdVlmDfnPayload getDrbdVlmDfn()
     {
         return drbdVlmDfn;
+    }
+
+    public class OpenflexRscDfnPayload
+    {
+        public String nqn;
     }
 
     public class StorageVlmPayload

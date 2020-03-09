@@ -11,7 +11,7 @@ public class Align
         {
             throw new IllegalArgumentException("Invalid base value for alignment, base = " + base);
         }
-        
+
         alignBase = base;
         maxAlignedValue = (Long.MAX_VALUE / base) * base;
     }

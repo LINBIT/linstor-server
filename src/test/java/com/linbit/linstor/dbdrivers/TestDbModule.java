@@ -9,6 +9,7 @@ import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.NodeGenericDbDriver;
 import com.linbit.linstor.core.objects.NvmeLayerSQLDbDriver;
+import com.linbit.linstor.core.objects.OpenflexLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
@@ -31,6 +32,7 @@ import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
@@ -114,6 +116,7 @@ public class TestDbModule extends AbstractModule
         bind(LuksLayerDatabaseDriver.class).to(LuksLayerSQLDbDriver.class);
         bind(StorageLayerDatabaseDriver.class).to(StorageLayerSQLDbDriver.class);
         bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerSQLDbDriver.class);
+        bind(OpenflexLayerDatabaseDriver.class).to(OpenflexLayerSQLDbDriver.class);
         bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerSQLDbDriver.class);
     }
 }

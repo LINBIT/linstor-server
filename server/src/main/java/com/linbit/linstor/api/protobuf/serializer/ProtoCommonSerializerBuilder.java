@@ -18,6 +18,9 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
+import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -65,6 +68,9 @@ import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeRsc;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
+import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRsc;
+import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRscDfn;
+import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexVlm;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
 import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
@@ -82,7 +88,6 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.FileThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmVlm;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.OpenflexVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
@@ -1048,6 +1053,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case NVME:
                 layerType = LayerType.NVME;
                 break;
+            case OPENFLEX:
+                layerType = LayerType.OPENFLEX;
+                break;
             case WRITECACHE:
                 layerType = LayerType.WRITECACHE;
                 break;
@@ -1111,20 +1119,19 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 {
                     switch (rscDfnLayerDataApi.getLayerKind())
                     {
-                        case LUKS:
-                            // no rsc-dfn related data
-                            break;
                         case DRBD:
                             builder.setDrbd(
                                 buildDrbdRscDfnData((DrbdRscDfnPojo) rscDfnLayerDataApi)
                             );
                             break;
-                        case STORAGE:
-                            // no rsc-dfn related data
+                        case OPENFLEX:
+                            builder.setOpenflex(
+                                buildOpenflexRscDfnData((OpenflexRscDfnPojo) rscDfnLayerDataApi)
+                            );
                             break;
-                        case NVME:
-                            // no rsc-dfn related data
-                            break;
+                        case LUKS: // fall-through
+                        case STORAGE: // fall-through
+                        case NVME: // fall-through
                         case WRITECACHE:
                             // no rsc-dfn related data
                             break;
@@ -1154,20 +1161,15 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 {
                     switch (vlmDfnLayerDataApi.getLayerKind())
                     {
-                        case LUKS:
-                            // no vlm-dfn related data
-                            break;
                         case DRBD:
                             builder.setDrbd(
                                 buildDrbdVlmDfnData((DrbdVlmDfnPojo) vlmDfnLayerDataApi)
                             );
                             break;
-                        case STORAGE:
-                            // no vlm-dfn related data
-                            break;
-                        case NVME:
-                            // no vlm-dfn related data
-                            break;
+                        case LUKS: // fall-through
+                        case STORAGE: // fall-through
+                        case NVME: // fall-through
+                        case OPENFLEX: // fall-through
                         case WRITECACHE:
                             // no vlm-dfn related data
                             break;
@@ -1217,6 +1219,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case NVME:
                     builder.setNvme(buildNvmeRscData((NvmeRscPojo) rscLayerPojo));
+                    break;
+                case OPENFLEX:
+                    builder.setOpenflex(buildOpenflexRscData((OpenflexRscPojo) rscLayerPojo));
                     break;
                 case WRITECACHE:
                     builder.setWritecache(buildWritecacheRscData((WritecacheRscPojo) rscLayerPojo));
@@ -1368,6 +1373,32 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .build();
         }
 
+        private static OpenflexRscDfn buildOpenflexRscDfnData(OpenflexRscDfnPojo ofRscDfnPojo)
+        {
+            OpenflexRscDfn.Builder builder = OpenflexRscDfn.newBuilder()
+                .setRscNameSuffix(ofRscDfnPojo.getRscNameSuffix());
+            if (ofRscDfnPojo.getNqn() != null)
+            {
+                builder.setNqn(ofRscDfnPojo.getNqn());
+            }
+            return builder.build();
+        }
+
+        private static OpenflexRsc buildOpenflexRscData(OpenflexRscPojo rscLayerPojoRef)
+        {
+            List<OpenflexVlm> openflexVlms = new ArrayList<>();
+            for (OpenflexVlmPojo openflexVlmPojo : rscLayerPojoRef.getVolumeList())
+            {
+                openflexVlms.add(buildOpenflexVlm(openflexVlmPojo));
+            }
+
+            return OpenflexRsc.newBuilder()
+                .setFlags(0) // TODO serialize flags as soon NvmeRscData get flags
+                .addAllOpenflexVlms(openflexVlms)
+                .setOpenflexRscDfn(buildOpenflexRscDfnData(rscLayerPojoRef.getOpenflexRscDfn()))
+                .build();
+        }
+
         private static WritecacheRsc buildWritecacheRscData(WritecacheRscPojo rscLayerPojoRef)
         {
             List<WritecacheVlm> protoVlms = new ArrayList<>();
@@ -1438,8 +1469,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     builder.setSpdk(SpdkVlm.newBuilder().build());
                     break;
                 case OPENFLEX_TARGET:
-                    builder.setOpenflex(OpenflexVlm.newBuilder().build());
-                    break;
+                    throw new ImplementationError(
+                        "Openflex volumes should be loaded by openflex serializer, not by storage serializer"
+                    );
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 default:
                     throw new ImplementationError("Unexpected provider kind: " + vlmPojo.getProviderKind());
@@ -1464,6 +1496,29 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             if (nvmeVlmPojo.getDiskState() != null)
             {
                 nvmeVlmBuilder.setDiskState(nvmeVlmPojo.getDiskState());
+            }
+
+            return nvmeVlmBuilder.build();
+        }
+
+        private static OpenflexVlm buildOpenflexVlm(OpenflexVlmPojo ofVlmPojo)
+        {
+            OpenflexVlm.Builder nvmeVlmBuilder = OpenflexVlm.newBuilder()
+                .setVlmNr(ofVlmPojo.getVlmNr())
+                .setStorPool(serializeStorPool(ofVlmPojo.getStorPoolApi()))
+                .setAllocatedSize(ofVlmPojo.getAllocatedSize())
+                .setUsableSize(ofVlmPojo.getUsableSize());
+            if (ofVlmPojo.getDevicePath() != null)
+            {
+                nvmeVlmBuilder.setDevicePath(ofVlmPojo.getDevicePath());
+            }
+            if (ofVlmPojo.getOpenflexId() != null)
+            {
+                nvmeVlmBuilder.setOpenflexId(ofVlmPojo.getOpenflexId());
+            }
+            if (ofVlmPojo.getDiskState() != null)
+            {
+                nvmeVlmBuilder.setDiskState(ofVlmPojo.getDiskState());
             }
 
             return nvmeVlmBuilder.build();

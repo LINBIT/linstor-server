@@ -39,6 +39,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.DeviceLayer.LayerProcessResult;
 import com.linbit.linstor.storage.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.storage.layer.adapter.nvme.OpenflexLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
 import com.linbit.linstor.storage.layer.provider.StorageLayer;
@@ -78,6 +79,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private final LayerFactory layerFactory;
     private final AtomicBoolean fullSyncApplied;
+    private final OpenflexLayer openflexLayer;
     private final StorageLayer storageLayer;
     private final ExtCmdFactory extCmdFactory;
 
@@ -91,6 +93,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         CtrlStltSerializer interComSerializerRef,
         Provider<NotificationListener> notificationListenerRef,
         LayerFactory layerFactoryRef,
+        OpenflexLayer openflexLayerRef,
         StorageLayer storageLayerRef,
         ResourceStateEvent resourceStateEventRef,
         ExtCmdFactory extCmdFactoryRef,
@@ -104,6 +107,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         notificationListener = notificationListenerRef;
 
         layerFactory = layerFactoryRef;
+        openflexLayer = openflexLayerRef;
         storageLayer = storageLayerRef;
         resourceStateEvent = resourceStateEventRef;
         extCmdFactory = extCmdFactoryRef;
@@ -825,8 +829,29 @@ public class DeviceHandlerImpl implements DeviceHandler
         SpaceInfo spaceInfo;
         try
         {
-            storageLayer.checkStorPool(storPool);
-            spaceInfo = storageLayer.getStoragePoolSpaceInfo(storPool);
+            DeviceLayer layer;
+            switch (storPool.getDeviceProviderKind())
+            {
+                case OPENFLEX_TARGET:
+                    layer = openflexLayer;
+                    break;
+                case DISKLESS: // fall-through
+                case FILE: // fall-through
+                case FILE_THIN: // fall-through
+                case LVM: // fall-through
+                case LVM_THIN: // fall-through
+                case SPDK: // fall-through
+                case ZFS: // fall-through
+                case ZFS_THIN:
+                    layer = storageLayer;
+                    break;
+                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                default:
+                    throw new ImplementationError("Unknown provider kind: " + storPool.getDeviceProviderKind());
+            }
+
+            layer.checkStorPool(storPool);
+            spaceInfo = layer.getStoragePoolSpaceInfo(storPool);
         }
         catch (AccessDeniedException | DatabaseException exc)
         {

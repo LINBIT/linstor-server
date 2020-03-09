@@ -25,6 +25,9 @@ public enum DeviceLayerKind
         true,
         ExtTools.WRITECACHE
     ),
+    OPENFLEX(
+        false
+    ),
     STORAGE(true);
     private final ExtTools[] startupVerifications;
 

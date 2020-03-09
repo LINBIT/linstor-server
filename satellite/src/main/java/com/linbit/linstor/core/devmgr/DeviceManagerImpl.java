@@ -486,6 +486,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     @Override
+    public void applyChangedNodeProps(Props propsRef)
+    {
+        devHandler.localNodePropsChanged(propsRef);
+    }
+
+    @Override
     public void fullSyncApplied(Node localNode) throws StorageException
     {
         synchronized (sched)

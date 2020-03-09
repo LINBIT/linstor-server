@@ -254,7 +254,10 @@ public class CtrlRscCrtApiHelper
             }
             else
             {
-                if (!layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
+                if (
+                    !layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE) &&
+                    !layerStack.contains(DeviceLayerKind.OPENFLEX)
+                )
                 {
                     layerStack.add(DeviceLayerKind.STORAGE);
                     warnAddedStorageLayer(responses);
@@ -332,7 +335,7 @@ public class CtrlRscCrtApiHelper
                 }
             }
 
-            if (isStorPoolOpenflex && !layerStack.contains(DeviceLayerKind.NVME))
+            if (isStorPoolOpenflex && !layerStack.contains(DeviceLayerKind.OPENFLEX))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

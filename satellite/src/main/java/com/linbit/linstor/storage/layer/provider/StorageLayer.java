@@ -362,12 +362,14 @@ public class StorageLayer implements DeviceLayer
         return result;
     }
 
+    @Override
     public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
         throws AccessDeniedException, StorageException
     {
         return deviceProviderMapper.getDeviceProviderByStorPool(storPool).getSpaceInfo(storPool);
     }
 
+    @Override
     public void checkStorPool(StorPool storPool) throws StorageException, AccessDeniedException, DatabaseException
     {
         DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
