@@ -257,24 +257,8 @@ public class ReconnectorTask implements Task
                             TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
 
                             // look for another netIf configured as satellite connection and set it as active
-                            NetInterface currentActiveStltConn = node
-                                .getActiveStltConn(config.peer.getAccessContext());
-                            Iterator<NetInterface> netIfIt = node
-                                .iterateNetInterfaces(config.peer.getAccessContext());
-                            while (netIfIt.hasNext())
-                            {
-                                NetInterface netInterface = netIfIt.next();
-                                if (!netInterface.equals(currentActiveStltConn) &&
-                                        netInterface.isUsableAsStltConn(config.peer.getAccessContext())
-                                )
-                                {
-                                    errorReporter.logDebug("Setting new active satellite connection: '" +
-                                        netInterface.getName() + "'"
-                                    );
-                                    node.setActiveStltConn(config.peer.getAccessContext(), netInterface);
-                                    break;
-                                }
-                            }
+                            setNetIf(node, config);
+
                             transMgr.commit();
                             synchronized (syncObj)
                             {
@@ -332,6 +316,59 @@ public class ReconnectorTask implements Task
             }
         }
         return RECONNECT_SLEEP;
+    }
+
+    private void setNetIf(Node node, ReconnectConfig config) throws AccessDeniedException, DatabaseException
+    {
+        NetInterface currentActiveStltConn = node
+            .getActiveStltConn(config.peer.getAccessContext());
+        Iterator<NetInterface> netIfIt = node
+            .iterateNetInterfaces(config.peer.getAccessContext());
+        NetInterface firstPossible = null;
+        boolean setIf = false;
+        while (netIfIt.hasNext())
+        {
+            NetInterface netInterface = netIfIt.next();
+            if (netInterface.isUsableAsStltConn(config.peer.getAccessContext()))
+            {
+                // NetIf usable as StltConn
+                if (!setIf && firstPossible == null && !netInterface.equals(currentActiveStltConn))
+                {
+                    // current connection not found yet, set default if none found
+                    firstPossible = netInterface;
+                }
+                else if (setIf)
+                {
+                    // already after current connection, set new connection
+                    errorReporter.logDebug(
+                        "Setting new active satellite connection: '" +
+                            netInterface.getName() + "' " +
+                            netInterface.getAddress(config.peer.getAccessContext()).getAddress()
+                    );
+                    node.setActiveStltConn(config.peer.getAccessContext(), netInterface);
+                    break;
+                }
+            }
+            if (netInterface.equals(currentActiveStltConn))
+            {
+                // current connection found, allow new connection after this
+                setIf = true;
+            }
+        }
+        if (currentActiveStltConn.equals(node.getActiveStltConn(config.peer.getAccessContext())))
+        {
+            // current connection not found, use default
+            if (firstPossible != null)
+            {
+                errorReporter.logDebug(
+                    "Setting new active satellite connection: '" +
+                        firstPossible.getName() + "' " +
+                        firstPossible.getAddress(config.peer.getAccessContext()).getAddress()
+                );
+                node.setActiveStltConn(config.peer.getAccessContext(), firstPossible);
+            }
+            // else do nothing and reuse current connection, since no other connection is valid
+        }
     }
 
     private ArrayList<ReconnectConfig> getFailedPeers()
