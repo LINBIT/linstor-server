@@ -29,6 +29,7 @@ import com.linbit.linstor.drbdstate.DrbdEventService;
 import com.linbit.linstor.drbdstate.DrbdStateModule;
 import com.linbit.linstor.event.EventModule;
 import com.linbit.linstor.event.serializer.EventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.ConnectionStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -430,7 +431,8 @@ public final class Satellite
 
             List<Class<? extends EventSerializer>> eventSerializers = Arrays.asList(
                 ResourceStateEventSerializer.class,
-                VolumeDiskStateEventSerializer.class
+                VolumeDiskStateEventSerializer.class,
+                ConnectionStateEventSerializer.class
             );
 
             errorLog.logInfo(

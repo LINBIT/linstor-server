@@ -95,6 +95,7 @@ import com.linbit.linstor.proto.common.VlmOuterClass;
 import com.linbit.linstor.proto.common.VlmOuterClass.Vlm;
 import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheRsc;
 import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheVlm;
+import com.linbit.linstor.proto.eventdata.EventConnStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
@@ -376,6 +377,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 eventBuilder.setSnapshotName(eventIdentifier.getSnapshotName().displayValue);
             }
 
+            if (eventIdentifier.getPeerNodeName() != null)
+            {
+                eventBuilder.setPeerName(eventIdentifier.getPeerNodeName().displayValue);
+            }
+
             eventBuilder.build().writeDelimitedTo(baos);
         }
         catch (IOException exc)
@@ -419,6 +425,23 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             }
 
             builder.build().writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder connectionState(String connectionState)
+    {
+        try
+        {
+            EventConnStateOuterClass.EventConnState.newBuilder()
+                .setConnectionState(connectionState)
+                .build()
+                .writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

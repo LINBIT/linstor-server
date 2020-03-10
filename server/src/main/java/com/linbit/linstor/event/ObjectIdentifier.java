@@ -10,6 +10,7 @@ import java.util.Objects;
 public class ObjectIdentifier
 {
     private final NodeName nodeName;
+    private final NodeName peerNodeName;
 
     private final ResourceName resourceName;
 
@@ -19,12 +20,12 @@ public class ObjectIdentifier
 
     public static ObjectIdentifier global()
     {
-        return new ObjectIdentifier(null, null, null, null);
+        return new ObjectIdentifier(null, null, null, null, null);
     }
 
     public static ObjectIdentifier node(NodeName nodeName)
     {
-        return new ObjectIdentifier(nodeName, null, null, null);
+        return new ObjectIdentifier(nodeName, null, null, null, null);
     }
 
     /**
@@ -32,7 +33,7 @@ public class ObjectIdentifier
      */
     public static ObjectIdentifier resourceDefinition(ResourceName resourceName)
     {
-        return new ObjectIdentifier(null, resourceName, null, null);
+        return new ObjectIdentifier(null, resourceName, null, null, null);
     }
 
     /**
@@ -41,18 +42,18 @@ public class ObjectIdentifier
     public static ObjectIdentifier volumeDefinition(
         ResourceName resourceName, VolumeNumber volumeNumber)
     {
-        return new ObjectIdentifier(null, resourceName, volumeNumber, null);
+        return new ObjectIdentifier(null, resourceName, volumeNumber, null, null);
     }
 
     public static ObjectIdentifier resource(NodeName nodeName, ResourceName resourceName)
     {
-        return new ObjectIdentifier(nodeName, resourceName, null, null);
+        return new ObjectIdentifier(nodeName, resourceName, null, null, null);
     }
 
     public static ObjectIdentifier volume(
         NodeName nodeName, ResourceName resourceName, VolumeNumber volumeNumber)
     {
-        return new ObjectIdentifier(nodeName, resourceName, volumeNumber, null);
+        return new ObjectIdentifier(nodeName, resourceName, volumeNumber, null, null);
     }
 
     /**
@@ -61,20 +62,28 @@ public class ObjectIdentifier
     public static ObjectIdentifier snapshotDefinition(
         ResourceName resourceName, SnapshotName snapshotName)
     {
-        return new ObjectIdentifier(null, resourceName, null, snapshotName);
+        return new ObjectIdentifier(null, resourceName, null, snapshotName, null);
     }
 
     public static ObjectIdentifier snapshot(
         NodeName nodeName, ResourceName resourceName, SnapshotName snapshotName)
     {
-        return new ObjectIdentifier(nodeName, resourceName, null, snapshotName);
+        return new ObjectIdentifier(nodeName, resourceName, null, snapshotName, null);
+    }
+
+    public static ObjectIdentifier connection(
+        NodeName localNode, NodeName remoteNode, ResourceName resourceName
+    )
+    {
+        return new ObjectIdentifier(localNode, resourceName, null, null, remoteNode);
     }
 
     public ObjectIdentifier(
         NodeName nodeNameRef,
         ResourceName resourceNameRef,
         VolumeNumber volumeNumberRef,
-        SnapshotName snapshotNameRef
+        SnapshotName snapshotNameRef,
+        NodeName remoteNodeRef
     )
     {
         if (volumeNumberRef != null && resourceNameRef == null)
@@ -90,6 +99,7 @@ public class ObjectIdentifier
         resourceName = resourceNameRef;
         volumeNumber = volumeNumberRef;
         snapshotName = snapshotNameRef;
+        peerNodeName = remoteNodeRef;
     }
 
     public NodeName getNodeName()
@@ -112,6 +122,11 @@ public class ObjectIdentifier
         return snapshotName;
     }
 
+    public NodeName getPeerNodeName()
+    {
+        return peerNodeName;
+    }
+
     @Override
     // Single exit point exception: Automatically generated code
     @SuppressWarnings("DescendantToken")
@@ -129,13 +144,14 @@ public class ObjectIdentifier
         return Objects.equals(nodeName, that.nodeName) &&
             Objects.equals(resourceName, that.resourceName) &&
             Objects.equals(volumeNumber, that.volumeNumber) &&
-            Objects.equals(snapshotName, that.snapshotName);
+            Objects.equals(snapshotName, that.snapshotName) &&
+            Objects.equals(peerNodeName, that.peerNodeName);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(nodeName, resourceName, volumeNumber, snapshotName);
+        return Objects.hash(nodeName, resourceName, volumeNumber, snapshotName, peerNodeName);
     }
 
     @Override

@@ -154,7 +154,7 @@ public class CtrlWatchApiCallHandler
                     UUID.randomUUID(), peer.get().getId(), peerWatchId,
                     new EventIdentifier(
                         eventName,
-                        new ObjectIdentifier(nodeName, resourceName, volumeNumber, snapshotName)
+                        new ObjectIdentifier(nodeName, resourceName, volumeNumber, snapshotName, null)
                     )
                 ));
 

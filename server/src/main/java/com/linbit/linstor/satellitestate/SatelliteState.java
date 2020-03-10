@@ -1,5 +1,7 @@
 package com.linbit.linstor.satellitestate;
 
+import com.linbit.linstor.api.pojo.ResourceState;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 
@@ -103,6 +105,33 @@ public class SatelliteState
         if (resourceState != null)
         {
             resourceState.unsetOnVolume(volumeNumber, setter);
+
+            if (resourceState.isEmpty())
+            {
+                resourceStates.remove(resourceName);
+            }
+        }
+    }
+
+    public void setOnConnection(
+        ResourceName resourceName,
+        NodeName node1,
+        NodeName node2,
+        String value)
+    {
+        resourceStates.computeIfAbsent(resourceName, ignored -> new SatelliteResourceState())
+            .setOnConnection(node1, node2, value);
+    }
+
+    public void unsetOnConnection(
+        ResourceName resourceName,
+        NodeName node1,
+        NodeName node2)
+    {
+        SatelliteResourceState resourceState = resourceStates.get(resourceName);
+        if (resourceState != null)
+        {
+            resourceState.unsetConnection(node1, node2);
 
             if (resourceState.isEmpty())
             {

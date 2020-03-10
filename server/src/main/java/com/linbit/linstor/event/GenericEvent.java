@@ -223,7 +223,8 @@ public class GenericEvent<T> implements LinstorTriggerableEvent<T>
 
                     for (SnapshotName snapshotName : snapshotNames)
                     {
-                        objectIdentifiers.add(new ObjectIdentifier(nodeName, resourceName, volumeNumber, snapshotName));
+                        objectIdentifiers.add(
+                            new ObjectIdentifier(nodeName, resourceName, volumeNumber, snapshotName, null));
                     }
                 }
             }

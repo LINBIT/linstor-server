@@ -54,6 +54,8 @@ public interface CommonSerializer
 
         CommonSerializerBuilder resourceStateEvent(UsageState usageState);
 
+        CommonSerializerBuilder connectionState(String connectionState);
+
         CommonSerializerBuilder requestErrorReports(
             Set<String> nodes,
             boolean withContent,

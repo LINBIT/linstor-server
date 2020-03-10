@@ -100,6 +100,11 @@ public class EventIdentifier
         return objectIdentifier.getSnapshotName();
     }
 
+    public NodeName getPeerNodeName()
+    {
+        return objectIdentifier.getPeerNodeName();
+    }
+
     public ObjectIdentifier getObjectIdentifier()
     {
         return objectIdentifier;

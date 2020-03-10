@@ -1,5 +1,6 @@
 package com.linbit.linstor.satellitestate;
 
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 
 import java.util.HashMap;
@@ -12,6 +13,7 @@ public class SatelliteResourceState
     private Boolean inUse;
 
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
+    private final Map<NodeName, Map<NodeName, String>> connectionStates = new HashMap<>();
 
     public SatelliteResourceState()
     {
@@ -23,6 +25,10 @@ public class SatelliteResourceState
         for (Map.Entry<VolumeNumber, SatelliteVolumeState> volumeStateEntry : other.volumeStates.entrySet())
         {
             volumeStates.put(volumeStateEntry.getKey(), new SatelliteVolumeState(volumeStateEntry.getValue()));
+        }
+        for (Map.Entry<NodeName, Map<NodeName, String>> connEntry : other.connectionStates.entrySet())
+        {
+            connectionStates.put(connEntry.getKey(), new HashMap<>(connEntry.getValue()));
         }
     }
 
@@ -68,8 +74,29 @@ public class SatelliteResourceState
         }
     }
 
+    public void setOnConnection(NodeName sourceNode, NodeName targetNode, String value)
+    {
+        Map<NodeName, String> connections = connectionStates.computeIfAbsent(sourceNode, ignored -> new HashMap<>());
+        connections.put(targetNode, value);
+    }
+
+    public void unsetConnection(NodeName sourceNode, NodeName targetNode)
+    {
+        Map<NodeName, String> connections = connectionStates.get(sourceNode);
+        connections.remove(targetNode);
+        if (connections.isEmpty())
+        {
+            connectionStates.remove(sourceNode);
+        }
+    }
+
+    public Map<NodeName, Map<NodeName, String>> getConnectionStates()
+    {
+        return connectionStates;
+    }
+
     public boolean isEmpty()
     {
-        return volumeStates.isEmpty();
+        return volumeStates.isEmpty() && connectionStates.isEmpty();
     }
 }

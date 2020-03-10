@@ -9,5 +9,6 @@ public enum WatchableObject
     RESOURCE,
     VOLUME,
     SNAPSHOT_DEFINITION,
-    SNAPSHOT
+    SNAPSHOT,
+    CONNECTION
 }

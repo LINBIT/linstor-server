@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -19,7 +20,6 @@ import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
@@ -96,6 +96,7 @@ public class EventProcessor
         String resourceNameStr,
         Integer volumeNr,
         String snapshotNameStr,
+        String peerNodeNameStr,
         InputStream eventDataIn
     )
     {
@@ -117,6 +118,7 @@ public class EventProcessor
                         volumeNr != null ? new VolumeNumber(volumeNr) : null;
                     SnapshotName snapshotName =
                         snapshotNameStr != null ? new SnapshotName(snapshotNameStr) : null;
+                    NodeName peerNodeName = peerNodeNameStr != null ? new NodeName(peerNodeNameStr) : null;
 
                     Peer peer = peerProvider.get();
                     EventIdentifier eventIdentifier = new EventIdentifier(
@@ -125,7 +127,8 @@ public class EventProcessor
                             peer.getNode().getName(),
                             resourceName,
                             volumeNumber,
-                            snapshotName
+                            snapshotName,
+                            peerNodeName
                         )
                     );
 

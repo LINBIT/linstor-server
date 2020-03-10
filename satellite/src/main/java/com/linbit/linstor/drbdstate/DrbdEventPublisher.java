@@ -4,12 +4,13 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.ConnectionStateEvent;
 import com.linbit.linstor.event.common.ResourceStateEvent;
-import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -30,6 +31,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     private final DrbdEventService drbdEventService;
     private final ResourceStateEvent resourceStateEvent;
     private final VolumeDiskStateEvent volumeDiskStateEvent;
+    private final ConnectionStateEvent connectionStateEvent;
 
     private ServiceName instanceName;
     private boolean started = false;
@@ -49,14 +51,15 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     @Inject
     public DrbdEventPublisher(
         DrbdEventService drbdEventServiceRef,
-        EventBroker eventBrokerRef,
         ResourceStateEvent resourceStateEventRef,
-        VolumeDiskStateEvent volumeDiskStateEventRef
+        VolumeDiskStateEvent volumeDiskStateEventRef,
+        ConnectionStateEvent connectionStateEventRef
     )
     {
         drbdEventService = drbdEventServiceRef;
         resourceStateEvent = resourceStateEventRef;
         volumeDiskStateEvent = volumeDiskStateEventRef;
+        connectionStateEvent = connectionStateEventRef;
 
         try
         {
@@ -255,5 +258,35 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     {
         DrbdVolume peerVolume = connection.getVolume(volumeNumber);
         return peerVolume != null && peerVolume.getDiskState() == DrbdVolume.DiskState.UP_TO_DATE;
+    }
+
+    @Override
+    public void connectionStateChanged(
+        DrbdResource resource, DrbdConnection connection, DrbdConnection.State previous, DrbdConnection.State current
+    )
+    {
+        try
+        {
+            connectionStateEvent.get().triggerEvent(
+                ObjectIdentifier.connection(null, new NodeName(connection.getConnectionName()), resource.getResName()),
+                current.toString());
+        }
+        catch (InvalidNameException ignored)
+        {
+        }
+    }
+
+    @Override
+    public void connectionDestroyed(DrbdResource resource, DrbdConnection connection)
+    {
+        try
+        {
+            connectionStateEvent.get().closeStream(
+                ObjectIdentifier.connection(null, new NodeName(connection.getConnectionName()), resource.getResName())
+            );
+        }
+        catch (InvalidNameException ignored)
+        {
+        }
     }
 }

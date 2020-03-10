@@ -55,6 +55,7 @@ import com.linbit.utils.Pair;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -460,9 +461,23 @@ public class Json
                 satelliteStates.get(linNodeName)
                     .getResourceStates().containsKey(rscNameRes))
             {
+                SatelliteResourceState satResState = satelliteStates
+                    .get(linNodeName).getResourceStates().get(rscNameRes);
                 rsc.state = new JsonGenTypes.ResourceState();
-                rsc.state.in_use = satelliteStates.get(linNodeName)
-                    .getResourceStates().get(rscNameRes).isInUse();
+                rsc.state.in_use = satResState.isInUse();
+
+                if (rscApi.getLayerData().getLayerKind() == DeviceLayerKind.DRBD)
+                {
+                    rsc.layer_object.drbd.connections = new HashMap<>();
+                    for (Map.Entry<NodeName, String> entry : satResState.getConnectionStates()
+                        .getOrDefault(linNodeName, new HashMap<>()).entrySet())
+                    {
+                        JsonGenTypes.DrbdConnection con = new JsonGenTypes.DrbdConnection();
+                        con.connected = entry.getValue().equals("Connected");
+                        con.message = entry.getValue();
+                        rsc.layer_object.drbd.connections.put(entry.getKey().displayValue, con);
+                    }
+                }
             }
         }
         catch (InvalidNameException ignored)

@@ -39,4 +39,7 @@ message MsgEvent
 
     // The name of the snapshot this relates to
     optional string snapshot_name = 8;
+
+    // Name of the peer node
+    optional string peer_name = 7;
 }

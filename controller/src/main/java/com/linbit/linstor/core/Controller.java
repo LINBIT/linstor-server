@@ -31,10 +31,13 @@ import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.debug.DebugModule;
 import com.linbit.linstor.event.EventModule;
+import com.linbit.linstor.event.common.ConnectionStateEvent;
 import com.linbit.linstor.event.handler.EventHandler;
+import com.linbit.linstor.event.handler.protobuf.controller.ConnectionStateEventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.ResourceStateEventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.VolumeDiskStateEventHandler;
 import com.linbit.linstor.event.serializer.EventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.ConnectionStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -439,12 +442,14 @@ public final class Controller
 
             List<Class<? extends EventSerializer>> eventSerializers = Arrays.asList(
                 ResourceStateEventSerializer.class,
-                VolumeDiskStateEventSerializer.class
+                VolumeDiskStateEventSerializer.class,
+                ConnectionStateEventSerializer.class
             );
 
             List<Class<? extends EventHandler>> eventHandlers = Arrays.asList(
                 ResourceStateEventHandler.class,
-                VolumeDiskStateEventHandler.class
+                VolumeDiskStateEventHandler.class,
+                ConnectionStateEventHandler.class
             );
             errorLog.logInfo(
                 String.format(

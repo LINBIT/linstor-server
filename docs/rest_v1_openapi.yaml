@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.15
+      - Added connections map to the DRBD resource layer data
     * 1.0.14
       - Added /v1/controller/config, that gives you the controller config information
     * 1.0.13
@@ -71,7 +73,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.14
+  version: 1.0.15
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -3872,6 +3874,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DrbdVolume'
+        connections:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/DrbdConnection'
     StorageResource:
       type: object
       properties:
@@ -3926,6 +3932,27 @@ components:
       properties:
         in_use:
           type: boolean
+    DrbdConnection:
+      type: object
+      properties:
+        connected:
+          type: boolean
+        message:
+          type: string
+          description: DRBD connection status
+          example: Connected
+          enum:
+            - StandAlone
+            - Disconnecting
+            - Unconnected
+            - Timeout
+            - BrokenPipe
+            - NetworkFailure
+            - ProtocolError
+            - Connecting
+            - TearDown
+            - Connected
+            - Unknown
     Resource:
       type: object
       properties:

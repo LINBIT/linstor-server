@@ -57,6 +57,7 @@ public class IntEvent implements ApiCallReactive
                     msgEvent.hasResourceName() ? msgEvent.getResourceName() : null,
                     msgEvent.hasVolumeNumber() ? msgEvent.getVolumeNumber() : null,
                     msgEvent.hasSnapshotName() ? msgEvent.getSnapshotName() : null,
+                    msgEvent.hasPeerName() ? msgEvent.getPeerName() : null,
                     msgDataIn
                 )
             )
