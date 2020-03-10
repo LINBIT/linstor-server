@@ -1,6 +1,8 @@
 package com.linbit.linstor.tasks;
 
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CtrlAuthenticator;
@@ -8,6 +10,7 @@ import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingAbortHandler;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -42,9 +45,9 @@ public class ReconnectorTask implements Task
     private static final int RECONNECT_SLEEP = 10_000;
 
     private final Object syncObj = new Object();
-    private final HashSet<Peer> peerSet = new HashSet<>();
 
     private final AccessContext apiCtx;
+    private final HashSet<ReconnectConfig> peerSet = new HashSet<>();
     private final ErrorReporter errorReporter;
     private PingTask pingTask;
     private final Provider<CtrlAuthenticator> authenticatorProvider;
@@ -53,7 +56,7 @@ public class ReconnectorTask implements Task
     private final LinStorScope reconnScope;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
-
+    private final SystemConfRepository systemConfRepo;
 
     @Inject
     public ReconnectorTask(
@@ -64,7 +67,8 @@ public class ReconnectorTask implements Task
         TransactionMgrGenerator transactionMgrGeneratorRef,
         LinStorScope reconnScopeRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef
+        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
+        SystemConfRepository systemConfRepoRef
     )
     {
         apiCtx = apiCtxRef;
@@ -75,6 +79,7 @@ public class ReconnectorTask implements Task
         lockGuardFactory = lockGuardFactoryRef;
         transactionMgrGenerator = transactionMgrGeneratorRef;
         snapShipAbortHandler = snapShipAbortHandlerRef;
+        systemConfRepo = systemConfRepoRef;
     }
 
     void setPingTask(PingTask pingTaskRef)
@@ -100,7 +105,14 @@ public class ReconnectorTask implements Task
             }
             else
             {
-                peerSet.add(peer);
+                try
+                {
+                    peerSet.add(new ReconnectConfig(peer, systemConfRepo));
+                }
+                catch (AccessDeniedException exc)
+                {
+                    errorReporter.reportError(exc);
+                }
             }
         }
 
@@ -151,7 +163,20 @@ public class ReconnectorTask implements Task
         boolean sendAuthentication = false;
         synchronized (syncObj)
         {
-            if (peerSet.remove(peer) && pingTask != null)
+            Object removed = null;
+            ReconnectConfig toRemove = null;
+            for (ReconnectConfig config : peerSet)
+            {
+                if (config.peer == peer)
+                {
+                    toRemove = config;
+                }
+            }
+            if (toRemove != null)
+            {
+                removed = peerSet.remove(toRemove);
+            }
+            if (removed != null && pingTask != null)
             {
                 sendAuthentication = true;
             }
@@ -174,7 +199,18 @@ public class ReconnectorTask implements Task
     {
         synchronized (syncObj)
         {
-            peerSet.remove(peer);
+            ReconnectConfig toRemove = null;
+            for (ReconnectConfig config : peerSet)
+            {
+                if (config.peer.equals(peer))
+                {
+                    toRemove = config;
+                }
+            }
+            if (toRemove != null)
+            {
+                peerSet.remove(toRemove);
+            }
             pingTask.remove(peer);
         }
     }
@@ -182,28 +218,28 @@ public class ReconnectorTask implements Task
     @Override
     public long run()
     {
-        ArrayList<Peer> localList;
+        ArrayList<ReconnectConfig> localList;
         synchronized (syncObj)
         {
-            localList = new ArrayList<>(peerSet);
+            localList = getFailedPeers();
         }
-        for (final Peer peer : localList)
+        for (final ReconnectConfig config : localList)
         {
-            if (peer.isConnected(false))
+            if (config.peer.isConnected(false))
             {
                 errorReporter.logTrace(
-                    peer + " has connected. Removed from reconnectList, added to pingList."
+                    config.peer + " has connected. Removed from reconnectList, added to pingList."
                 );
-                peerConnected(peer);
+                peerConnected(config.peer);
             }
             else
             {
                 errorReporter.logTrace(
-                    "Peer " + peer.getId() + " has not connected yet, retrying connect."
+                    "Peer " + config.peer.getId() + " has not connected yet, retrying connect."
                 );
                 try
                 {
-                    Node node = peer.getNode();
+                    Node node = config.peer.getNode();
                     if (node != null && !node.isDeleted())
                     {
                         boolean hasEnteredScope = false;
@@ -221,28 +257,28 @@ public class ReconnectorTask implements Task
                             TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
 
                             // look for another netIf configured as satellite connection and set it as active
-                            NetInterface currentActiveStltConn = node.getActiveStltConn(peer.getAccessContext());
-                            Iterator<NetInterface> netIfIt = node.iterateNetInterfaces(peer.getAccessContext());
+                            NetInterface currentActiveStltConn = node
+                                .getActiveStltConn(config.peer.getAccessContext());
+                            Iterator<NetInterface> netIfIt = node
+                                .iterateNetInterfaces(config.peer.getAccessContext());
                             while (netIfIt.hasNext())
                             {
                                 NetInterface netInterface = netIfIt.next();
                                 if (!netInterface.equals(currentActiveStltConn) &&
-                                    netInterface.isUsableAsStltConn(peer.getAccessContext()))
+                                        netInterface.isUsableAsStltConn(config.peer.getAccessContext())
+                                )
                                 {
                                     errorReporter.logDebug("Setting new active satellite connection: '" +
                                         netInterface.getName() + "'"
                                     );
-                                    node.setActiveStltConn(peer.getAccessContext(), netInterface);
+                                    node.setActiveStltConn(config.peer.getAccessContext(), netInterface);
                                     break;
                                 }
                             }
-
                             transMgr.commit();
                             synchronized (syncObj)
                             {
-                                // add the new peer and remove the old peer to the node
-                                peerSet.add(peer.getConnector().reconnect(peer));
-                                peerSet.remove(peer);
+                                peerSet.add(config.newPeer(config.peer.getConnector().reconnect(config.peer)));
                             }
                         }
                         catch (AccessDeniedException | DatabaseException exc)
@@ -276,21 +312,15 @@ public class ReconnectorTask implements Task
                         {
                             errorReporter.logTrace(
                                 "Peer %s's node is null (possibly rollbacked), removing from reconnect list",
-                                peer.getId()
+                                config.peer.getId()
                             );
                         }
                         else
                         {
                             errorReporter.logTrace(
                                 "Peer %s's node got deleted, removing from reconnect list",
-                                peer.getId()
+                                config.peer.getId()
                             );
-                        }
-
-                        synchronized (syncObj)
-                        {
-                            // no new peer, node is gone. remove the old peer
-                            peerSet.remove(peer);
                         }
                     }
                 }
@@ -302,6 +332,24 @@ public class ReconnectorTask implements Task
             }
         }
         return RECONNECT_SLEEP;
+    }
+
+    private ArrayList<ReconnectConfig> getFailedPeers()
+    {
+        ArrayList<ReconnectConfig> retry = new ArrayList<>();
+        for (ReconnectConfig config : peerSet)
+        {
+            System.out.println(config.aliveUntil);
+            if (System.currentTimeMillis() < config.aliveUntil)
+            {
+                retry.add(config);
+            }
+            else
+            {
+                // TODO: proclaim peer node DEAD
+            }
+        }
+        return retry;
     }
 
     public void startReconnecting(Collection<Node> nodes, AccessContext initCtx)
@@ -320,6 +368,67 @@ public class ReconnectorTask implements Task
                 errorReporter.logDebug("Reconnecting to node '" + node.getName() + "'.");
                 stltConnector.startConnecting(node, initCtx);
             }
+        }
+    }
+
+    private static class ReconnectConfig
+    {
+        private Peer peer;
+        private final long aliveUntil;
+
+        private ReconnectConfig(Peer peerRef, SystemConfRepository systemConfRepo)
+            throws AccessDeniedException
+        {
+            peer = peerRef;
+            PriorityProps props = new PriorityProps(
+                peer.getNode().getProps(peer.getAccessContext()),
+                systemConfRepo.getCtrlConfForView(peer.getAccessContext())
+            );
+            aliveUntil = System.currentTimeMillis() + Long.parseLong(
+                props.getProp(
+                    ApiConsts.KEY_NODE_MAX_OFFLINE_TIME,
+                    ApiConsts.NAMESPC_NODE,
+                    "18000000" // 5 hours
+                )
+            );
+        }
+
+        public ReconnectConfig newPeer(Peer peerRef)
+        {
+            peer = peerRef;
+            return this;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + (int) (aliveUntil ^ (aliveUntil >>> 32));
+            result = prime * result + ((peer == null) ? 0 : peer.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            ReconnectConfig other = (ReconnectConfig) obj;
+            if (aliveUntil != other.aliveUntil)
+                return false;
+            if (peer == null)
+            {
+                if (other.peer != null)
+                    return false;
+            }
+            else if (!peer.equals(other.peer))
+                return false;
+            return true;
         }
     }
 }
