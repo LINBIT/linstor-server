@@ -1,6 +1,7 @@
 package com.linbit.linstor.event;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
@@ -8,9 +9,6 @@ import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Signal;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -20,6 +18,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+
+import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Signal;
 
 @Singleton
 public class EventBroker
@@ -153,18 +155,18 @@ public class EventBroker
         if (signal.isOnNext())
         {
             builder
-                .event(peerWatchId, eventIdentifier, ApiConsts.EVENT_STREAM_VALUE)
+                .event(peerWatchId, eventIdentifier, InternalApiConsts.EVENT_STREAM_VALUE)
                 .bytes(eventSerializer.writeEventValue(signal.get()));
         }
         else
         if (signal.isOnComplete())
         {
-            builder.event(peerWatchId, eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_REMOVED);
+            builder.event(peerWatchId, eventIdentifier, InternalApiConsts.EVENT_STREAM_CLOSE_REMOVED);
         }
         else
         if (signal.isOnError() && signal.getThrowable() instanceof PeerNotConnectedException)
         {
-            builder.event(peerWatchId, eventIdentifier, ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION);
+            builder.event(peerWatchId, eventIdentifier, InternalApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION);
         }
         else
         {

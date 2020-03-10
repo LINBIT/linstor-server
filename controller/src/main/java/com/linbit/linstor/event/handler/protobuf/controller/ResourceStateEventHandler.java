@@ -1,8 +1,8 @@
 package com.linbit.linstor.event.handler.protobuf.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -29,12 +29,11 @@ import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.io.IOException;
 import java.io.InputStream;
 
 @ProtobufEventHandler(
-    eventName = ApiConsts.EVENT_RESOURCE_STATE
+    eventName = InternalApiConsts.EVENT_RESOURCE_STATE
 )
 @Singleton
 public class ResourceStateEventHandler implements EventHandler
@@ -70,7 +69,7 @@ public class ResourceStateEventHandler implements EventHandler
     {
         UsageState usageState;
 
-        if (eventAction.equals(ApiConsts.EVENT_STREAM_VALUE))
+        if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
             EventRscStateOuterClass.EventRscState eventRscState =
                 EventRscStateOuterClass.EventRscState.parseDelimitedFrom(eventDataIn);

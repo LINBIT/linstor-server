@@ -1,6 +1,6 @@
 package com.linbit.linstor.event.serializer.protobuf.common;
 
-import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.event.LinstorEvent;
 import com.linbit.linstor.event.WatchableObject;
@@ -13,7 +13,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @ProtobufEventSerializer(
-    eventName = ApiConsts.EVENT_RESOURCE_STATE,
+    eventName = InternalApiConsts.EVENT_RESOURCE_STATE,
     objectType = WatchableObject.RESOURCE
 )
 @Singleton

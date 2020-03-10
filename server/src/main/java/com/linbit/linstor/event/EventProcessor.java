@@ -3,7 +3,7 @@ package com.linbit.linstor.event;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -134,7 +134,7 @@ public class EventProcessor
                     errorReporter.logTrace("Peer %s, event '%s' %s", peer, eventIdentifier, eventAction);
                     eventHandlerProvider.get().execute(eventAction, eventIdentifier, eventDataIn);
 
-                    if (eventAction.equals(ApiConsts.EVENT_STREAM_CLOSE_REMOVED))
+                    if (eventAction.equals(InternalApiConsts.EVENT_STREAM_CLOSE_REMOVED))
                     {
                         incomingEventStreamStore.removeEventStream(eventIdentifier);
                     }
@@ -164,7 +164,7 @@ public class EventProcessor
         try
         {
             eventHandler.get().execute(
-                ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION, eventIdentifier, null);
+                InternalApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION, eventIdentifier, null);
         }
         catch (Exception exc)
         {

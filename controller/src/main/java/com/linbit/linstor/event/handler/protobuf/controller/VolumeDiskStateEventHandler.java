@@ -1,10 +1,10 @@
 package com.linbit.linstor.event.handler.protobuf.controller;
 
-import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
-import com.linbit.linstor.event.handler.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.EventHandler;
+import com.linbit.linstor.event.handler.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @ProtobufEventHandler(
-    eventName = ApiConsts.EVENT_VOLUME_DISK_STATE
+    eventName = InternalApiConsts.EVENT_VOLUME_DISK_STATE
 )
 @Singleton
 public class VolumeDiskStateEventHandler implements EventHandler
@@ -39,7 +39,7 @@ public class VolumeDiskStateEventHandler implements EventHandler
     {
         String diskState;
 
-        if (eventAction.equals(ApiConsts.EVENT_STREAM_VALUE))
+        if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
             EventVlmDiskStateOuterClass.EventVlmDiskState eventVlmDiskState =
                 EventVlmDiskStateOuterClass.EventVlmDiskState.parseDelimitedFrom(eventDataIn);

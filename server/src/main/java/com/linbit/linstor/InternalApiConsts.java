@@ -59,6 +59,21 @@ public class InternalApiConsts
     public static final String API_CREATE_DEVICE_POOL = "CreateDevicePool";
     public static final String API_DELETE_DEVICE_POOL = "DeleteDevicePool";
 
+    /*
+     * Event stream actions
+     */
+    public static final String EVENT_STREAM_VALUE = "Value";
+    public static final String EVENT_STREAM_CLOSE_NO_CONNECTION = "CloseNoConnection";
+    public static final String EVENT_STREAM_CLOSE_REMOVED = "CloseRemoved";
+
+    /*
+     * Events
+     */
+    public static final String EVENT_VOLUME_DISK_STATE = "VlmDiskState";
+    // State of resource based on DRBD status (or other underlying system)
+    public static final String EVENT_RESOURCE_STATE = "ResourceState";
+    public static final String EVENT_CONNECTION_STATE = "ConnectionState";
+
     public static final long API_AUTH_ERROR_HOST_MISMATCH = 1;
 
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";

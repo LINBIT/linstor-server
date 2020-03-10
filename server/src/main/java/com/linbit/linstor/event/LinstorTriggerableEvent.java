@@ -1,7 +1,7 @@
 package com.linbit.linstor.event;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.InternalApiConsts;
 
 public interface LinstorTriggerableEvent<T> extends LinstorEvent<T>
 {
@@ -15,13 +15,13 @@ public interface LinstorTriggerableEvent<T> extends LinstorEvent<T>
     {
         switch (eventStreamAction)
         {
-            case ApiConsts.EVENT_STREAM_VALUE:
+            case InternalApiConsts.EVENT_STREAM_VALUE:
                 triggerEvent(objectIdentifier, value);
                 break;
-            case ApiConsts.EVENT_STREAM_CLOSE_REMOVED:
+            case InternalApiConsts.EVENT_STREAM_CLOSE_REMOVED:
                 closeStream(objectIdentifier);
                 break;
-            case ApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION:
+            case InternalApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION:
                 closeStreamNoConnection(objectIdentifier);
                 break;
             default:
