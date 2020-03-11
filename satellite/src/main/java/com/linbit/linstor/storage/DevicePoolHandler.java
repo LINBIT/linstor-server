@@ -18,6 +18,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Singleton
@@ -134,7 +135,11 @@ public class DevicePoolHandler
         {
             for (final String devicePath : devicePaths)
             {
-                LvmCommands.pvCreate(extCmdFactory.create(), devicePath);
+                LvmCommands.pvCreate(
+                    extCmdFactory.create(),
+                    devicePath,
+                    LvmUtils.getLvmFilterByPhysicalVolumes(devicePath)
+                );
                 apiCallRc.addEntry(
                     ApiCallRcImpl.entryBuilder(
                         ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -144,7 +149,13 @@ public class DevicePoolHandler
                         .build()
                 );
             }
-            LvmCommands.vgCreate(extCmdFactory.create(), poolName, raidLevel, devicePaths);
+            LvmCommands.vgCreate(
+                extCmdFactory.create(),
+                poolName,
+                raidLevel,
+                devicePaths,
+                LvmUtils.getLvmFilterByPhysicalVolumes(devicePaths)
+            );
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -170,7 +181,15 @@ public class DevicePoolHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            LvmCommands.vgRemove(extCmdFactory.create(), poolName);
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(poolName),
+                filter -> LvmCommands.vgRemove(
+                    extCmdFactory.create(),
+                    poolName,
+                    filter
+                )
+            );
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -180,7 +199,11 @@ public class DevicePoolHandler
                     .build()
             );
 
-            LvmCommands.pvRemove(extCmdFactory.create(), devicePaths);
+            LvmCommands.pvRemove(
+                extCmdFactory.create(),
+                devicePaths,
+                LvmUtils.getLvmFilterByPhysicalVolumes(devicePaths)
+            );
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -207,10 +230,14 @@ public class DevicePoolHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            LvmCommands.createThinPool(
-                extCmdFactory.create(),
-                lvmPoolName,
-                thinPoolName
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(lvmPoolName),
+                config -> LvmCommands.createThinPool(
+                    extCmdFactory.create(),
+                    lvmPoolName,
+                    thinPoolName, config
+                )
             );
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
@@ -236,7 +263,16 @@ public class DevicePoolHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            LvmCommands.delete(extCmdFactory.create(), lvmPoolName, thinPoolName);
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(lvmPoolName),
+                config -> LvmCommands.delete(
+                    extCmdFactory.create(),
+                    lvmPoolName,
+                    thinPoolName,
+                    config
+                )
+            );
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,

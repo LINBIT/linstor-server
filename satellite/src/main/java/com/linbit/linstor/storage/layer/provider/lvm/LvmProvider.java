@@ -234,12 +234,17 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected void createLvImpl(LvmData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
-        LvmCommands.createFat(
-            extCmdFactory.create(),
-            vlmData.getVolumeGroup(),
-            asLvIdentifier(vlmData),
-            vlmData.getExepectedSize(),
-            "--type=" + getLvCreateType(vlmData)
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmData.getVolumeGroup()),
+            config -> LvmCommands.createFat(
+                extCmdFactory.create(),
+                vlmData.getVolumeGroup(),
+                asLvIdentifier(vlmData),
+                vlmData.getExepectedSize(),
+                config,
+                "--type=" + getLvCreateType(vlmData)
+            )
         );
     }
 
@@ -277,11 +282,16 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected void resizeLvImpl(LvmData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
-        LvmCommands.resize(
-            extCmdFactory.create(),
-            vlmData.getVolumeGroup(),
-            asLvIdentifier(vlmData),
-            vlmData.getExepectedSize()
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmData.getVolumeGroup()),
+            config -> LvmCommands.resize(
+                extCmdFactory.create(),
+                vlmData.getVolumeGroup(),
+                asLvIdentifier(vlmData),
+                vlmData.getExepectedSize(),
+                config
+            )
         );
     }
 
@@ -295,7 +305,16 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         if (true)
         {
             wipeHandler.quickWipe(devicePath);
-            LvmCommands.delete(extCmdFactory.create(), volumeGroup, oldLvmId);
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(vlmData.getVolumeGroup()),
+                config -> LvmCommands.delete(
+                    extCmdFactory.create(),
+                    volumeGroup,
+                    oldLvmId,
+                    config
+                )
+            );
             vlmData.setExists(false);
         }
         else
@@ -314,11 +333,16 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             );
             devicePath = devicePath.substring(0, lastIndexOf) + newLvmId;
 
-            LvmCommands.rename(
-                extCmdFactory.create(),
-                volumeGroup,
-                oldLvmId,
-                newLvmId
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(vlmData.getVolumeGroup()),
+                config -> LvmCommands.rename(
+                    extCmdFactory.create(),
+                    volumeGroup,
+                    oldLvmId,
+                    newLvmId,
+                    config
+                )
             );
 
             vlmData.setExists(false);
@@ -327,10 +351,15 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 devicePath,
                 ignored ->
                 {
-                    LvmCommands.delete(
-                        extCmdFactory.create(),
-                        volumeGroup,
-                        newLvmId
+                    LvmUtils.execWithRetry(
+                        extCmdFactory,
+                        Collections.singleton(vlmData.getVolumeGroup()),
+                        config -> LvmCommands.delete(
+                            extCmdFactory.create(),
+                            volumeGroup,
+                            newLvmId,
+                            config
+                        )
                     );
                 }
             );

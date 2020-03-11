@@ -76,10 +76,15 @@ public class LvmThinProvider extends LvmProvider
             lvmThinData.setAllocatedPercent(infoRef.dataPercent / 100.0f);
             if (!infoRef.attributes.contains("a"))
             {
-                LvmCommands.activateVolume(
-                    extCmdFactory.create(),
-                    lvmThinData.getVolumeGroup(),
-                    lvmThinData.getIdentifier()
+                LvmUtils.execWithRetry(
+                    extCmdFactory,
+                    Collections.singleton(vlmDataRef.getVolumeGroup()),
+                    config -> LvmCommands.activateVolume(
+                        extCmdFactory.create(),
+                        lvmThinData.getVolumeGroup(),
+                        lvmThinData.getIdentifier(),
+                        config
+                    )
                 );
             }
         }
@@ -91,17 +96,27 @@ public class LvmThinProvider extends LvmProvider
         LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
         String volumeGroup = vlmData.getVolumeGroup();
         String lvId = asLvIdentifier(vlmData);
-        LvmCommands.createThin(
-            extCmdFactory.create(),
-            volumeGroup,
-            vlmData.getThinPool(),
-            lvId,
-            vlmData.getExepectedSize()
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(volumeGroup),
+            config -> LvmCommands.createThin(
+                extCmdFactory.create(),
+                volumeGroup,
+                vlmData.getThinPool(),
+                lvId,
+                vlmData.getExepectedSize(),
+                config
+            )
         );
-        LvmCommands.activateVolume(
-            extCmdFactory.create(),
-            volumeGroup,
-            lvId
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(volumeGroup),
+            config -> LvmCommands.activateVolume(
+                extCmdFactory.create(),
+                volumeGroup,
+                lvId,
+                config
+            )
         );
     }
 
@@ -109,10 +124,15 @@ public class LvmThinProvider extends LvmProvider
     protected void deleteLvImpl(LvmData<Resource> lvmVlmData, String oldLvmId)
         throws StorageException, DatabaseException
     {
-        LvmCommands.delete(
-            extCmdFactory.create(),
-            lvmVlmData.getVolumeGroup(),
-            oldLvmId
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(lvmVlmData.getVolumeGroup()),
+            config -> LvmCommands.delete(
+                extCmdFactory.create(),
+                lvmVlmData.getVolumeGroup(),
+                oldLvmId,
+                config
+            )
         );
         lvmVlmData.setExists(false);
     }
@@ -131,12 +151,17 @@ public class LvmThinProvider extends LvmProvider
         throws StorageException, AccessDeniedException, DatabaseException
     {
         LvmThinData<Resource> vlmData = (LvmThinData<Resource>) vlmDataRef;
-        LvmCommands.createSnapshotThin(
-            extCmdFactory.create(),
-            vlmData.getVolumeGroup(),
-            vlmData.getThinPool(),
-            vlmData.getIdentifier(),
-            getFullQualifiedIdentifier(snapVlmRef)
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmData.getVolumeGroup()),
+            config -> LvmCommands.createSnapshotThin(
+                extCmdFactory.create(),
+                vlmData.getVolumeGroup(),
+                vlmData.getThinPool(),
+                vlmData.getIdentifier(),
+                getFullQualifiedIdentifier(snapVlmRef),
+                config
+            )
         );
     }
 
@@ -144,10 +169,15 @@ public class LvmThinProvider extends LvmProvider
     protected void deleteSnapshot(LvmData<Snapshot> snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        LvmCommands.delete(
-            extCmdFactory.create(),
-            getVolumeGroup(snapVlm.getStorPool()),
-            asSnapLvIdentifier(snapVlm)
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(snapVlm.getVolumeGroup()),
+            config -> LvmCommands.delete(
+                extCmdFactory.create(),
+                getVolumeGroup(snapVlm.getStorPool()),
+                asSnapLvIdentifier(snapVlm),
+                config
+            )
         );
         snapVlm.setExists(false);
     }
@@ -158,16 +188,26 @@ public class LvmThinProvider extends LvmProvider
     {
         String storageName = vlmData.getVolumeGroup();
         String targetId = asLvIdentifier(vlmData);
-        LvmCommands.restoreFromSnapshot(
-            extCmdFactory.create(),
-            sourceLvId + "_" + sourceSnapName,
-            storageName,
-            targetId
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmData.getVolumeGroup()),
+            config -> LvmCommands.restoreFromSnapshot(
+                extCmdFactory.create(),
+                sourceLvId + "_" + sourceSnapName,
+                storageName,
+                targetId,
+                config
+            )
         );
-        LvmCommands.activateVolume(
-            extCmdFactory.create(),
-            storageName,
-            targetId
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmData.getVolumeGroup()),
+            config -> LvmCommands.activateVolume(
+                extCmdFactory.create(),
+                storageName,
+                targetId,
+                config
+            )
         );
     }
 
@@ -186,16 +226,26 @@ public class LvmThinProvider extends LvmProvider
             rollbackTargetSnapshotName,
             vlmData.getVlmNr().value
         );
-        LvmCommands.deactivateVolume(
-            extCmdFactory.create(),
-            volumeGroup,
-            targetLvId
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmData.getVolumeGroup()),
+            config -> LvmCommands.deactivateVolume(
+                extCmdFactory.create(),
+                volumeGroup,
+                targetLvId,
+                config
+            )
         );
 
-        LvmCommands.rollbackToSnapshot(
-            extCmdFactory.create(),
-            volumeGroup,
-            snapshotId
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmData.getVolumeGroup()),
+            config -> LvmCommands.rollbackToSnapshot(
+                extCmdFactory.create(),
+                volumeGroup,
+                snapshotId,
+                config
+            )
         );
 
         // --merge removes the snapshot.
@@ -203,18 +253,28 @@ public class LvmThinProvider extends LvmProvider
         // Hence we create it again here.
         // The layers above have been stopped, so the content should be identical to the original snapshot.
 
-        LvmCommands.createSnapshotThin(
-            extCmdFactory.create(),
-            volumeGroup,
-            thinPool,
-            targetLvId,
-            snapshotId
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmData.getVolumeGroup()),
+            config -> LvmCommands.createSnapshotThin(
+                extCmdFactory.create(),
+                volumeGroup,
+                thinPool,
+                targetLvId,
+                snapshotId,
+                config
+            )
         );
 
-        LvmCommands.activateVolume(
-            extCmdFactory.create(),
-            volumeGroup,
-            targetLvId
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmData.getVolumeGroup()),
+            config -> LvmCommands.activateVolume(
+                extCmdFactory.create(),
+                volumeGroup,
+                targetLvId,
+                config
+            )
         );
     }
 
