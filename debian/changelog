@@ -1,3 +1,31 @@
+linstor-server (1.5.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rest-api-docu: fix changelog entry
+  * move EVENT_ consts to internal api
+  * drbd-connection: Monitor drbd connection states
+  * peeroffline: pretend full-sync is successful
+
+  [ Johanna Kucera ]
+  * Tests: added tests for class Align
+
+  [ Roland Kammerer ]
+  * containers,lvm: disable drbd devices
+
+  [ Gabor Hernadi ]
+  * RscCrt: Relaxed layer-list restrictions
+  * Openflex: Restoring reusable utilities from swordfish-implementation
+  * StltCfg: added --openflex cmdline option
+  * StltExtToolChecker: Openflex now reports support for NVMe
+  * Added openflex specifc checks for resource-creation
+  * StorageLayer: Combined getCapacity and getFreeSpace methods
+  * Stlt: fetching free space now goes through devMgr
+  * OpenflexProcessStarter: start process before creating node
+  * Openflex: Allow only 1 vlm per rsc
+  * Openflex: Added Openflex layer
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 11 Mar 2020 12:57:32 +0000
+
 linstor-server (1.4.3-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
@@ -51,7 +79,7 @@ linstor-server (1.4.3-1) experimental; urgency=medium
   * gitignore: added database files
   * logging: added level by components
   * logging: add correct error messages
-  * service ordering: implement correct ordering for starting and stopping services
+  * service ordering: implement correct ordering for starting and stopping [...]
   * Passphrase: implemented automated initialization of passphrase
   * startup order: added shutdown for NetCom
 

@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.4.3
+Version: 1.5.0
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -134,6 +134,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Wed Mar 11 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.5.0-1
+- New upstream release. OpenFlex support, drbd-connection info, bug fixes.
+
 * Tue Mar 3 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.4.3-1
 - New upstream release. Remove ETCD trans-limit, bug fixes.
 
