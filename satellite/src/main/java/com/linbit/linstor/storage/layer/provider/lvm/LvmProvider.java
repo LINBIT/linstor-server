@@ -120,7 +120,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         throws StorageException, AccessDeniedException, DatabaseException
     {
         final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
-            extCmdFactory.create(),
+            extCmdFactory,
             getAffectedVolumeGroups(vlmDataList, snapVlmDataList)
         );
 
@@ -340,7 +340,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        Map<String, Long> freeSizes = LvmUtils.getVgFreeSize(extCmdFactory.create(), changedStoragePoolStrings);
+        Map<String, Long> freeSizes = LvmUtils.getVgFreeSize(extCmdFactory, changedStoragePoolStrings);
         for (String storPool : changedStoragePoolStrings)
         {
             if (!freeSizes.containsKey(storPool))
@@ -359,7 +359,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         throws StorageException, AccessDeniedException
     {
         return LvmUtils.getLvsInfo(
-            extCmdFactory.create(),
+            extCmdFactory,
             getAffectedVolumeGroups(vlmDataList, snapVlms)
         );
     }
@@ -431,11 +431,11 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             throw new StorageException("Unset volume group for " + storPool);
         }
         Long capacity = LvmUtils.getVgTotalSize(
-            extCmdFactory.create(),
+            extCmdFactory,
             Collections.singleton(vg)
         ).get(vg);
         Long freespace = LvmUtils.getVgFreeSize(
-            extCmdFactory.create(),
+            extCmdFactory,
             Collections.singleton(vg)
         ).get(vg);
         return new SpaceInfo(capacity, freespace);
@@ -450,14 +450,14 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
         );
-        StorageConfigReader.checkVolumeGroupEntry(extCmdFactory.create(), props);
+        StorageConfigReader.checkVolumeGroupEntry(extCmdFactory, props);
         StorageConfigReader.checkToleranceFactor(props);
     }
 
     @Override
     public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
     {
-        List<String> pvs = LvmUtils.getPhysicalVolumes(extCmdFactory.create(), getVolumeGroup(storPoolRef));
+        List<String> pvs = LvmUtils.getPhysicalVolumes(extCmdFactory, getVolumeGroup(storPoolRef));
         if (PmemUtils.supportsDax(extCmdFactory.create(), pvs))
         {
             storPoolRef.setPmem(true);

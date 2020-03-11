@@ -224,7 +224,7 @@ public class LvmThinProvider extends LvmProvider
         String vgForLvs = getVolumeGroupForLvs(storPool);
         String thinPool = getThinPool(storPool);
         Long capacity = LvmUtils.getThinTotalSize(
-            extCmdFactory.create(),
+            extCmdFactory,
             Collections.singleton(vgForLvs)
         ).get(thinPool);
         if (capacity == null)
@@ -233,7 +233,7 @@ public class LvmThinProvider extends LvmProvider
         }
 
         Long freeSpace = LvmUtils.getThinFreeSize(
-            extCmdFactory.create(),
+            extCmdFactory,
             Collections.singleton(vgForLvs)
         ).get(thinPool);
         if (freeSpace == null)

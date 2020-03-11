@@ -4,7 +4,7 @@ import com.linbit.Checks;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.extproc.ExtCmd;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.StorageConstants;
@@ -22,7 +22,7 @@ public class StorageConfigReader
     public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
-    public static void checkVolumeGroupEntry(ExtCmd extCmd, Props props)
+    public static void checkVolumeGroupEntry(ExtCmdFactory extCmdFactory, Props props)
         throws StorageException
     {
         String volumeGroup;
@@ -60,7 +60,7 @@ public class StorageConfigReader
                 );
             }
 
-            LvmUtils.checkVgExists(extCmd, volumeGroup); // throws an exception
+            LvmUtils.checkVgExists(extCmdFactory, volumeGroup); // throws an exception
             // if volume group does not exist
         }
     }

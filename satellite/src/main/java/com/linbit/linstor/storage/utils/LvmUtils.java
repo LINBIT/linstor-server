@@ -2,8 +2,8 @@ package com.linbit.linstor.storage.utils;
 
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
-import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 
@@ -68,12 +68,12 @@ public class LvmUtils
     }
 
     public static HashMap<String, LvsInfo> getLvsInfo(
-        final ExtCmd ec,
+        final ExtCmdFactory ecf,
         final Set<String> volumeGroups
     )
         throws StorageException
     {
-        final OutputData output = LvmCommands.lvs(ec, volumeGroups);
+        final OutputData output = LvmCommands.lvs(ecf.create(), volumeGroups);
         final String stdOut = new String(output.stdoutData);
 
         final HashMap<String, LvsInfo> infoByIdentifier = new HashMap<>();
@@ -163,49 +163,54 @@ public class LvmUtils
     }
 
 
-    public static Map<String, Long> getExtentSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
+    public static Map<String, Long> getExtentSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
+        throws StorageException
     {
         return ParseUtils.parseSimpleTable(
-            LvmCommands.getExtentSize(extCmd, volumeGroups),
+            LvmCommands.getExtentSize(extCmdFactory.create(), volumeGroups),
             DELIMITER,
             "extent size"
         );
     }
 
-    public static Map<String, Long> getVgTotalSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
+    public static Map<String, Long> getVgTotalSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
+        throws StorageException
     {
         return ParseUtils.parseSimpleTable(
-            LvmCommands.getVgTotalSize(extCmd, volumeGroups),
+            LvmCommands.getVgTotalSize(extCmdFactory.create(), volumeGroups),
             DELIMITER,
             "total size"
         );
     }
 
-    public static Map<String, Long> getVgFreeSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
+    public static Map<String, Long> getVgFreeSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
+        throws StorageException
     {
         return ParseUtils.parseSimpleTable(
-            LvmCommands.getVgFreeSize(extCmd, volumeGroups),
+            LvmCommands.getVgFreeSize(extCmdFactory.create(), volumeGroups),
             DELIMITER,
             "free size"
         );
     }
 
-    public static Map<String, Long> getThinTotalSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
+    public static Map<String, Long> getThinTotalSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
+        throws StorageException
     {
         return ParseUtils.parseSimpleTable(
-            LvmCommands.getVgThinTotalSize(extCmd, volumeGroups),
+            LvmCommands.getVgThinTotalSize(extCmdFactory.create(), volumeGroups),
             DELIMITER,
             "total thin size"
         );
     }
 
-    public static Map<String, Long> getThinFreeSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
+    public static Map<String, Long> getThinFreeSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
+        throws StorageException
     {
         final int expectedColums = 3;
 
         final Map<String, Long> result = new HashMap<>();
 
-        OutputData output = LvmCommands.getVgThinFreeSize(extCmd, volumeGroups);
+        OutputData output = LvmCommands.getVgThinFreeSize(extCmdFactory.create(), volumeGroups);
         final String stdOut = new String(output.stdoutData);
         final String[] lines = stdOut.split("\n");
 
@@ -256,9 +261,9 @@ public class LvmUtils
         return result;
     }
 
-    public static boolean checkVgExistsBool(ExtCmd extCmd, String volumeGroup) throws StorageException
+    public static boolean checkVgExistsBool(ExtCmdFactory extCmdFactory, String volumeGroup) throws StorageException
     {
-        OutputData output = LvmCommands.listExistingVolumeGroups(extCmd);
+        OutputData output = LvmCommands.listExistingVolumeGroups(extCmdFactory.create());
         final String stdOut = new String(output.stdoutData);
         final String[] volumeGroups = stdOut.split("\n");
         for (String vg : volumeGroups)
@@ -271,17 +276,18 @@ public class LvmUtils
         return false;
     }
 
-    public static void checkVgExists(ExtCmd extCmd, String volumeGroup) throws StorageException
+    public static void checkVgExists(ExtCmdFactory extCmdFactory, String volumeGroup) throws StorageException
     {
-        if (!checkVgExistsBool(extCmd, volumeGroup))
+        if (!checkVgExistsBool(extCmdFactory, volumeGroup))
         {
             throw new StorageException("Volume group '" + volumeGroup + "' not found");
         }
     }
 
-    public static List<String> getPhysicalVolumes(ExtCmd extCmd, String volumeGroup) throws StorageException
+    public static List<String> getPhysicalVolumes(ExtCmdFactory extCmdFactory, String volumeGroup)
+        throws StorageException
     {
-        final OutputData output = LvmCommands.listPhysicalVolumes(extCmd, volumeGroup);
+        final OutputData output = LvmCommands.listPhysicalVolumes(extCmdFactory.create(), volumeGroup);
         final String stdOut = new String(output.stdoutData);
         final List<String> pvs = new ArrayList<>();
         final String[] lines = stdOut.split("\n");

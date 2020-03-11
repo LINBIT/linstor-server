@@ -481,7 +481,7 @@ public class DevicePoolHandler
             {
                 case LVM_THIN: // fall-through
                 case LVM:
-                    if (LvmUtils.checkVgExistsBool(extCmdFactory.create(), poolName))
+                    if (LvmUtils.checkVgExistsBool(extCmdFactory, poolName))
                     {
                         apiCallRc.addEntry("Volume group name already used.", ApiConsts.FAIL_EXISTS_STOR_POOL);
                     }
