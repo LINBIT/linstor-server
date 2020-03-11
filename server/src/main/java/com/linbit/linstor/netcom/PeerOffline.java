@@ -326,7 +326,7 @@ public class PeerOffline implements Peer
     @Override
     public boolean hasFullSyncFailed()
     {
-        return true;
+        return false;
     }
 
     @Override
