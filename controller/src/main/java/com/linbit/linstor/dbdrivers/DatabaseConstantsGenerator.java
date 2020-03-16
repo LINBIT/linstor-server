@@ -4,11 +4,12 @@ import com.linbit.ImplementationError;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.Stack;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 public final class DatabaseConstantsGenerator
@@ -35,13 +36,9 @@ public final class DatabaseConstantsGenerator
         "FLYWAY_SCHEMA_HISTORY"
     );
 
-    private final StringBuilder mainBuilder = new StringBuilder();
-    private final StringBuilder tableInstanceBuilder = new StringBuilder();
-    private final StringBuilder tableStaticInitializerBuilder = new StringBuilder();
-    private final Stack<StringBuilder> activeBuilder = new Stack<>();
-    private final TreeSet<String> tableNames = new TreeSet<>();
-    private final TreeSet<String> columnNames = new TreeSet<>();
+    private StringBuilder clazzBuilder;
     private int indentLevel = 0;
+    private TreeMap<String, Table> tbls = new TreeMap<>();
 
     public static String generateSqlConstants(Connection conRef)
     {
@@ -51,36 +48,92 @@ public final class DatabaseConstantsGenerator
     public static String generateSqlConstants(Connection conRef, String pkgStrRef, String clazzNameRef)
     {
         DatabaseConstantsGenerator generator = new DatabaseConstantsGenerator();
+        String generatedClass;
         try
         {
             String pkgStr = pkgStrRef == null ? DFLT_PACKAGE : pkgStrRef;
             String clazzName = clazzNameRef == null ? DFLT_CLAZZ_NAME : clazzNameRef;
 
-            generator.generate(conRef, pkgStr, clazzName);
+            generatedClass = generator.generate(conRef, pkgStr, clazzName);
         }
         catch (Exception exc)
         {
             throw new ImplementationError(exc);
         }
-        return generator.mainBuilder.toString();
+        return generatedClass;
     }
 
-    private void generate(Connection con, String pkgName, String clazzName) throws Exception
-    {
-        activeBuilder.add(mainBuilder);
 
-        appendLine("package %s;\n", pkgName);
-        for (String imp : IMPORTS)
+    private String generate(Connection con, String pkgName, String clazzName) throws Exception
+    {
+        extractTables(con);
+        String generatedTablesJavaClassSrc = render(pkgName, clazzName);
+
+        return generatedTablesJavaClassSrc;
+    }
+
+    private void extractTables(Connection con) throws SQLException
+    {
+        try
+        (
+            ResultSet tables = con.getMetaData().getTables(
+                null,
+                DB_SCHEMA,
+                null,
+                new String[] {TYPE_TABLE}
+            )
+        )
         {
-            if (imp == null)
+            while (tables.next())
             {
-                appendEmptyLine();
-            }
-            else
-            {
-                appendLine("import " + imp + ";");
+                String tblName = tables.getString("TABLE_NAME");
+                if (!IGNORED_TABLES.contains(tblName))
+                {
+                    Table tbl = new Table(tblName);
+
+                    Set<String> primaryKeys = new TreeSet<>();
+                    try (ResultSet primaryKeyResultSet = con.getMetaData().getPrimaryKeys(null, DB_SCHEMA, tblName))
+                    {
+                        while (primaryKeyResultSet.next())
+                        {
+                            primaryKeys.add(primaryKeyResultSet.getString("COLUMN_NAME"));
+                        }
+                    }
+
+                    try (
+                        ResultSet columns = con.getMetaData().getColumns(
+                            null,
+                            DB_SCHEMA,
+                            tblName,
+                            null
+                        )
+                    )
+                    {
+                        while (columns.next())
+                        {
+                            String clmName = columns.getString("COLUMN_NAME");
+                            tbl.columns.add(
+                                new Column(
+                                    clmName,
+                                    columns.getString("TYPE_NAME"),
+                                    primaryKeys.contains(clmName),
+                                    columns.getString("IS_NULLABLE").equalsIgnoreCase("yes")
+                                )
+                            );
+                        }
+                    }
+                    tbls.put(tbl.name, tbl);
+                }
             }
         }
+    }
+
+    private String render(String pkgName, String clazzName) throws Exception
+    {
+        clazzBuilder = new StringBuilder();
+
+        renderPackageAndImports(pkgName);
+
         appendEmptyLine();
         appendLine("public class %s", clazzName);
         try (IndentLevel clazzIndent = new IndentLevel())
@@ -89,42 +142,57 @@ public final class DatabaseConstantsGenerator
             try (IndentLevel constructor = new IndentLevel())
             {
             }
-            appendEmptyLine();
 
+            appendEmptyLine();
             appendLine("// Schema name");
             appendLine("public static final String DATABASE_SCHEMA_NAME = \"%s\";", DB_SCHEMA);
+            appendEmptyLine();
 
-            try
-            (
-                ResultSet tables = con.getMetaData().getTables(
-                    null,
-                    DB_SCHEMA,
-                    null,
-                    new String[] {TYPE_TABLE}
-                )
-            )
+            // tables and columns
+            for (Table tbl : tbls.values())
             {
-                while (tables.next())
-                {
-                    final String tableName = tables.getString("TABLE_NAME");
-                    if (!IGNORED_TABLES.contains(tableName))
-                    {
-                        generateTable(clazzName, con, tableName);
-                        tableNames.add(tableName);
-                    }
-                    appendEmptyLine();
-                }
+                renderTable(tbl);
+                appendEmptyLine();
             }
 
-            activeBuilder.peek().append(tableInstanceBuilder);
+            // table constants
+            for (Table tbl : tbls.values())
+            {
+                String tblNameCamelCase = toUpperCamelCase(tbl.name);
+                appendLine(
+                    "public static final %s %s = new %s();",
+                    tblNameCamelCase,
+                    tbl.name,
+                    tblNameCamelCase
+                );
+            }
 
+            /*
+             * static initializer setting .table variable of all Column instance to the
+             * corresponding table constant
+             */
             appendEmptyLine();
             appendLine("static");
             try (IndentLevel staticBlock = new IndentLevel())
             {
-                activeBuilder.peek().append(tableStaticInitializerBuilder);
+                for (Table tbl : tbls.values())
+                {
+                    String tblNameCamelCase = toUpperCamelCase(tbl.name);
+                    for (Column clm : tbl.columns)
+                    {
+                        appendLine(
+                            "%s.%s.table = %s;",
+                            tblNameCamelCase,
+                            clm.name,
+                            tbl.name
+                        );
+                    }
+                }
             }
 
+            /*
+             * ColumnImpl class implementing Column interface
+             */
             appendEmptyLine();
             generateColumnClass(
                 new String[][] {
@@ -137,120 +205,127 @@ public final class DatabaseConstantsGenerator
                     {INTERFACE_NAME, "table"}
                 }
             );
+
+        }
+        return clazzBuilder.toString();
+    }
+
+    private void renderPackageAndImports(String pkgName)
+    {
+        appendLine("package %s;", pkgName);
+        appendEmptyLine();
+        for (String imp : IMPORTS)
+        {
+            if (imp == null)
+            {
+                appendEmptyLine();
+            }
+            else
+            {
+                appendLine("import " + imp + ";");
+            }
+        }
+    }
+
+    private void renderTable(Table tbl)
+    {
+        String tblNameCamelCase = toUpperCamelCase(tbl.name);
+
+        List<String> primaryKeysFields = new ArrayList<>();
+        List<String> otherColumsFields = new ArrayList<>();
+        for (Column clm : tbl.columns)
+        {
+            String line = String.format(
+                "public static final %s %s = new %s(\"%s\", Types.%s, %s, %s);",
+                COLUMN_HOLDER_NAME,
+                clm.name,
+                COLUMN_HOLDER_NAME,
+                clm.name,
+                clm.sqlType,
+                clm.pk,
+                clm.nullable
+            );
+            if (clm.pk)
+            {
+                primaryKeysFields.add(line);
+            }
+            else
+            {
+                otherColumsFields.add(line);
+            }
+        }
+
+        appendLine("public static class %s implements %s", tblNameCamelCase, INTERFACE_NAME);
+        try (IndentLevel tblDfn = new IndentLevel())
+        {
+            // constructor
+            appendLine("private %s() { }", tblNameCamelCase);
+            appendEmptyLine();
+
+            // primary key(s)
+            appendLine("// Primary Key%s", primaryKeysFields.size() > 1 ? "s" : "");
+            for (String pkLine : primaryKeysFields)
+            {
+                appendLine(pkLine);
+            }
+
+            // remaining columns
+            if (!otherColumsFields.isEmpty())
+            {
+                appendEmptyLine();
+                for (String clmLine : otherColumsFields)
+                {
+                    appendLine(clmLine);
+                }
+            }
+
+            // Column[] ALL
+            appendEmptyLine();
+            appendLine("public static final Column[] ALL = new Column[]");
+            try (IndentLevel allColumns = new IndentLevel("{", "};", true, true))
+            {
+                for (Column clm : tbl.columns)
+                {
+                    appendLine("%s,", clm.name);
+                }
+                cutLastAndAppend(2, "\n");
+            }
+
+            // values()
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public Column[] values()");
+            try (IndentLevel valuesMethod = new IndentLevel())
+            {
+                appendLine("return ALL;");
+            }
+
+            // getName()
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public String getName()");
+            try (IndentLevel valuesMethod = new IndentLevel())
+            {
+                appendLine("return \"%s\";", tbl.name);
+            }
+
+            // toString()
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public String toString()");
+            try (IndentLevel valuesMethod = new IndentLevel())
+            {
+                appendLine("return \"Table %s\";", tbl.name);
+            }
         }
     }
 
     private void cutLastAndAppend(int cutLen, String appendAfter)
     {
-        StringBuilder sb = activeBuilder.peek();
-        sb.setLength(sb.length() - cutLen);
-        sb.append(appendAfter);
+        clazzBuilder.setLength(clazzBuilder.length() - cutLen);
+        clazzBuilder.append(appendAfter);
     }
 
-    private void generateTable(String outerTableName, Connection con, String tableName) throws Exception
-    {
-        Set<String> primaryKeys = new TreeSet<>();
-        try (ResultSet primaryKeyResultSet = con.getMetaData().getPrimaryKeys(null, DB_SCHEMA, tableName))
-        {
-            while (primaryKeyResultSet.next())
-            {
-                primaryKeys.add(primaryKeyResultSet.getString("COLUMN_NAME"));
-            }
-        }
-
-        String tableClassName = toUpperCamelCase(tableName);
-        appendLine("public static class %s implements %s", tableClassName, INTERFACE_NAME);
-        try (IndentLevel tblDfn = new IndentLevel())
-        {
-            appendLine("private %s() { }", tableClassName);
-            appendEmptyLine();
-            try (ResultSet columns = con.getMetaData().getColumns(
-                null,
-                DB_SCHEMA,
-                tableName,
-                null
-            ))
-            {
-                StringBuilder pkColumnBuilder = new StringBuilder();
-                StringBuilder nonPkColumnBuilder = new StringBuilder();
-
-                ArrayList<String> currentColumnNames = new ArrayList<>();
-                while (columns.next())
-                {
-                    final String colName = columns.getString("COLUMN_NAME");
-                    if (primaryKeys.contains(colName))
-                    {
-                        activeBuilder.push(pkColumnBuilder);
-                    }
-                    else
-                    {
-                        activeBuilder.push(nonPkColumnBuilder);
-                    }
-                    appendLine(
-                        "public static final %s %s = new %s(\"%s\", Types.%s, %s, %s);",
-                            COLUMN_HOLDER_NAME,
-                            colName,
-                            COLUMN_HOLDER_NAME,
-                            colName,
-                            columns.getString("TYPE_NAME"),
-                            Boolean.toString(primaryKeys.contains(colName)),
-                            Boolean.toString(columns.getString("IS_NULLABLE").equalsIgnoreCase("yes"))
-                        );
-                    activeBuilder.pop();
-                    columnNames.add(colName);
-                    currentColumnNames.add(colName);
-
-                    activeBuilder.push(tableStaticInitializerBuilder);
-                    appendLine("%s.%s.table = %s;", tableClassName, colName, tableName);
-                    activeBuilder.pop();
-                }
-                appendLine("// Primary Key%s", primaryKeys.size() > 1 ? "s" : "");
-                append(pkColumnBuilder.toString().trim() + "\n"); // trim should cut leading indentation, but it also
-                                                                  // cuts trailing newline
-                if (!nonPkColumnBuilder.toString().trim().isEmpty())
-                {
-                    appendEmptyLine();
-                    append(nonPkColumnBuilder.toString().trim() + "\n");
-                }
-
-                appendEmptyLine();
-                appendLine("public static final Column[] ALL = new Column[]");
-                try (IndentLevel allColumns = new IndentLevel("{", "};", true, true))
-                {
-                    for (String curColName : currentColumnNames)
-                    {
-                        appendLine("%s,", curColName);
-                    }
-                    cutLastAndAppend(2, "\n");
-                }
-                appendEmptyLine();
-                appendLine("@Override");
-                appendLine("public Column[] values()");
-                try (IndentLevel valuesMethod = new IndentLevel())
-                {
-                    appendLine("return ALL;");
-                }
-                appendEmptyLine();
-                appendLine("@Override");
-                appendLine("public String getName()");
-                try (IndentLevel valuesMethod = new IndentLevel())
-                {
-                    appendLine("return \"%s\";", tableName);
-                }
-                appendEmptyLine();
-                appendLine("@Override");
-                appendLine("public String toString()");
-                try (IndentLevel valuesMethod = new IndentLevel())
-                {
-                    appendLine("return \"Table %s\";", tableName);
-                }
-            }
-        }
-
-        activeBuilder.add(tableInstanceBuilder);
-        appendLine("public static final %s %s = new %s();", tableClassName, tableName, tableClassName);
-        activeBuilder.pop();
-    }
 
     private String toUpperCamelCase(String nameRef)
     {
@@ -262,11 +337,6 @@ public final class DatabaseConstantsGenerator
         char[] ret = nameRef.toCharArray();
         ret[0] = Character.toUpperCase(ret[0]);
         return new String(ret);
-    }
-
-    private String toLowerCamelCase(String nameRef)
-    {
-        return camelCase(nameRef.toLowerCase().toCharArray());
     }
 
     private String camelCase(char[] name)
@@ -383,7 +453,7 @@ public final class DatabaseConstantsGenerator
 
     private void appendEmptyLine()
     {
-        activeBuilder.peek().append("\n");
+        clazzBuilder.append("\n");
     }
 
     private void appendLine(String format, Object... args)
@@ -393,12 +463,11 @@ public final class DatabaseConstantsGenerator
 
     private StringBuilder append(String format, Object... args)
     {
-        StringBuilder builder = activeBuilder.peek();
         for (int indent = 0; indent < indentLevel; ++indent)
         {
-            builder.append(INDENT);
+            clazzBuilder.append(INDENT);
         }
-        return builder.append(String.format(format, args));
+        return clazzBuilder.append(String.format(format, args));
     }
 
     private DatabaseConstantsGenerator()
@@ -430,7 +499,7 @@ public final class DatabaseConstantsGenerator
             }
             else
             {
-                activeBuilder.peek().append(openStrRef);
+                clazzBuilder.append(openStrRef);
             }
             ++indentLevel;
         }
@@ -445,8 +514,35 @@ public final class DatabaseConstantsGenerator
             }
             else
             {
-                activeBuilder.peek().append(closeStr);
+                clazzBuilder.append(closeStr);
             }
+        }
+    }
+
+    private class Table
+    {
+        private String name;
+        private List<Column> columns = new ArrayList<>();
+
+        public Table(String nameRef)
+        {
+            name = nameRef;
+        }
+    }
+
+    private class Column
+    {
+        private String name;
+        private String sqlType;
+        private boolean pk;
+        private boolean nullable;
+
+        public Column(String colNameRef, String sqlColumnTypeRef, boolean isPkRef, boolean isNullableRef)
+        {
+            name = colNameRef;
+            sqlType = sqlColumnTypeRef;
+            pk = isPkRef;
+            nullable = isNullableRef;
         }
     }
 }
