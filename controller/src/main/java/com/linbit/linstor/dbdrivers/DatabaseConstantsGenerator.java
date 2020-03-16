@@ -6,7 +6,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
@@ -25,14 +25,15 @@ public final class DatabaseConstantsGenerator
         "java.sql.Types"
     };
 
+    public static final String DB_SCHEMA = "LINSTOR";
+    public static final String TYPE_TABLE = "TABLE";
+
     private static final String INTERFACE_NAME = "DatabaseTable";
     private static final String COLUMN_HOLDER_NAME = "ColumnImpl";
     private static final String COLUMN_INTERFACE_NAME = "Column";
     private static final String INDENT = "    ";
-    private static final String DB_SCHEMA = "LINSTOR";
-    private static final String TYPE_TABLE = "TABLE";
 
-    private static final List<String> IGNORED_TABLES = Arrays.asList(
+    private static final Set<String> IGNORED_TABLES = Collections.singleton(
         "FLYWAY_SCHEMA_HISTORY"
     );
 
@@ -66,17 +67,18 @@ public final class DatabaseConstantsGenerator
 
     private String generate(Connection con, String pkgName, String clazzName) throws Exception
     {
-        extractTables(con);
+        tbls = extractTables(con, IGNORED_TABLES);
         String generatedTablesJavaClassSrc = render(pkgName, clazzName);
 
         return generatedTablesJavaClassSrc;
     }
 
-    private void extractTables(Connection con) throws SQLException
+    public static TreeMap<String, Table> extractTables(Connection con, Set<String> ignoredTables) throws SQLException
     {
+        TreeMap<String, Table> tables = new TreeMap<>();
         try
         (
-            ResultSet tables = con.getMetaData().getTables(
+            ResultSet metaTables = con.getMetaData().getTables(
                 null,
                 DB_SCHEMA,
                 null,
@@ -84,10 +86,10 @@ public final class DatabaseConstantsGenerator
             )
         )
         {
-            while (tables.next())
+            while (metaTables.next())
             {
-                String tblName = tables.getString("TABLE_NAME");
-                if (!IGNORED_TABLES.contains(tblName))
+                String tblName = metaTables.getString("TABLE_NAME");
+                if (!ignoredTables.contains(tblName))
                 {
                     Table tbl = new Table(tblName);
 
@@ -101,7 +103,7 @@ public final class DatabaseConstantsGenerator
                     }
 
                     try (
-                        ResultSet columns = con.getMetaData().getColumns(
+                        ResultSet metaColumns = con.getMetaData().getColumns(
                             null,
                             DB_SCHEMA,
                             tblName,
@@ -109,23 +111,24 @@ public final class DatabaseConstantsGenerator
                         )
                     )
                     {
-                        while (columns.next())
+                        while (metaColumns.next())
                         {
-                            String clmName = columns.getString("COLUMN_NAME");
+                            String clmName = metaColumns.getString("COLUMN_NAME");
                             tbl.columns.add(
                                 new Column(
                                     clmName,
-                                    columns.getString("TYPE_NAME"),
+                                    metaColumns.getString("TYPE_NAME"),
                                     primaryKeys.contains(clmName),
-                                    columns.getString("IS_NULLABLE").equalsIgnoreCase("yes")
+                                    metaColumns.getString("IS_NULLABLE").equalsIgnoreCase("yes")
                                 )
                             );
                         }
                     }
-                    tbls.put(tbl.name, tbl);
+                    tables.put(tbl.name, tbl);
                 }
             }
         }
+        return tables;
     }
 
     private String render(String pkgName, String clazzName) throws Exception
@@ -519,30 +522,60 @@ public final class DatabaseConstantsGenerator
         }
     }
 
-    private class Table
+    public static class Table
     {
         private String name;
         private List<Column> columns = new ArrayList<>();
 
-        public Table(String nameRef)
+        private Table(String nameRef)
         {
             name = nameRef;
         }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public List<Column> getColumns()
+        {
+            return Collections.unmodifiableList(columns);
+        }
     }
 
-    private class Column
+    public static class Column
     {
         private String name;
         private String sqlType;
         private boolean pk;
         private boolean nullable;
 
-        public Column(String colNameRef, String sqlColumnTypeRef, boolean isPkRef, boolean isNullableRef)
+        private Column(String colNameRef, String sqlColumnTypeRef, boolean isPkRef, boolean isNullableRef)
         {
             name = colNameRef;
             sqlType = sqlColumnTypeRef;
             pk = isPkRef;
             nullable = isNullableRef;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public String getSqlType()
+        {
+            return sqlType;
+        }
+
+        public boolean isPk()
+        {
+            return pk;
+        }
+
+        public boolean isNullable()
+        {
+            return nullable;
         }
     }
 }
