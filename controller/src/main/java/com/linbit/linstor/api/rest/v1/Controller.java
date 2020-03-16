@@ -6,26 +6,35 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apis.ControllerConfigApi;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.util.HashSet;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import reactor.core.publisher.Flux;
 
 @Path("v1/controller")
 @Produces(MediaType.APPLICATION_JSON)
@@ -234,5 +243,62 @@ public class Controller
             resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
         return resp;
+    }
+    
+    private class ControllerConfigPojo implements ControllerConfigApi
+    {
+        private final JsonGenTypes.ControllerConfig config;
+
+        ControllerConfigPojo(JsonGenTypes.ControllerConfig configRef)
+        {
+            config = configRef;
+        }
+
+        public String getLogLevel()
+        {
+            return config.log.level;
+        }
+
+        public String getLogLevelLinstor()
+        {
+            return config.log.level_linstor;
+        }
+    }
+
+    @PUT
+    @Path("config")
+    public void setConfig(
+        @Context
+        Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        try
+        {
+            JsonGenTypes.ControllerConfig config = objectMapper
+                .readValue(jsonData, JsonGenTypes.ControllerConfig.class);
+            ControllerConfigPojo conf = new ControllerConfigPojo(config);
+            flux = ctrlApiCallHandler.setConfig(conf)
+                .subscriberContext(requestHelper.createContext("SetCtrlConfig", request));
+            
+        }
+        catch (JsonMappingException exc)
+        {
+            requestHelper
+                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.NOT_ACCEPTABLE));
+        }
+        catch (JsonProcessingException exc)
+        {
+            requestHelper
+                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.NOT_ACCEPTABLE));
+        }
+        catch (AccessDeniedException e)
+        {
+            requestHelper
+                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.UNAUTHORIZED));
+        }
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 }

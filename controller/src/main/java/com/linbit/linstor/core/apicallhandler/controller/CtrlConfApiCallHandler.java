@@ -15,11 +15,17 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
+import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.core.apis.ControllerConfigApi;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.core.types.MinorNumber;
@@ -35,6 +41,9 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -52,7 +61,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 
+import org.slf4j.event.Level;
+
 import com.google.inject.Provider;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlConfApiCallHandler
@@ -70,6 +83,11 @@ public class CtrlConfApiCallHandler
     private final NodesMap nodesMap;
     private final WhitelistProps whitelistProps;
     private final EncryptionHelper encHelper;
+    private final CtrlConfig ctrlCfg;
+    private final ScopeRunner scopeRunner;
+    private final ResponseConverter responseConverter;
+
+    private final LockGuardFactory lockGuardFactory;
 
 
     @Inject
@@ -84,7 +102,11 @@ public class CtrlConfApiCallHandler
         CoreModule.NodesMap nodesMapRef,
         CtrlStltSerializer ctrlStltSrzlRef,
         WhitelistProps whitelistPropsRef,
-        EncryptionHelper encHelperRef
+        EncryptionHelper encHelperRef,
+        LockGuardFactory lockGuardFactoryRef,
+        ScopeRunner scopeRunnerRef,
+        CtrlConfig ctrlCfgRef,
+        ResponseConverter responseConverterRef
     )
     {
         errorReporter = errorReporterRef;
@@ -99,6 +121,10 @@ public class CtrlConfApiCallHandler
         ctrlStltSrzl = ctrlStltSrzlRef;
         whitelistProps = whitelistPropsRef;
         encHelper = encHelperRef;
+        lockGuardFactory = lockGuardFactoryRef;
+        scopeRunner = scopeRunnerRef;
+        ctrlCfg = ctrlCfgRef;
+        responseConverter = responseConverterRef;
     }
 
     private void updateSatelliteConf() throws AccessDeniedException
@@ -142,6 +168,61 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
+    public Flux<ApiCallRc> setCtrlConfig(ControllerConfigApi config) throws AccessDeniedException
+    {
+        ResponseContext context = makeCtrlConfContext(ApiOperation.makeModifyOperation());
+        return scopeRunner.fluxInTransactionlessScope(
+            "set controller config", lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.CTRL_CONFIG), () ->
+            {
+                String logLevel = config.getLogLevel();
+                String logLevelLinstor = config.getLogLevelLinstor();
+                if (logLevel == null || logLevel.isEmpty())
+                {
+                    if (logLevelLinstor == null || logLevelLinstor.isEmpty())
+                    {
+                        // do nothing
+                    }
+                    else
+                    {
+                        ctrlCfg.setLogLevelLinstor(logLevelLinstor);
+                        errorReporter.setLogLevel(peerAccCtx.get(), null, Level.valueOf(logLevelLinstor.toUpperCase()));
+                    }
+                }
+                else
+                {
+                    ctrlCfg.setLogLevel(logLevel);
+                    if (logLevelLinstor == null || logLevelLinstor.isEmpty())
+                    {
+                        errorReporter.setLogLevel(peerAccCtx.get(), Level.valueOf(logLevel.toUpperCase()), null);
+                    }
+                    else
+                    {
+                        ctrlCfg.setLogLevelLinstor(logLevelLinstor);
+                        errorReporter.setLogLevel(
+                            peerAccCtx.get(), Level.valueOf(logLevel.toUpperCase()), Level.valueOf(logLevelLinstor.toUpperCase())
+                        );
+                    }
+                }
+                Flux<ApiCallRc> flux = Flux.empty();
+                return flux;
+            }
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    public static ResponseContext makeCtrlConfContext(
+        ApiOperation operation
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+
+        return new ResponseContext(
+            operation,
+            "Controller",
+            "controller",
+            ApiConsts.MASK_CTRL_CONF,
+            objRefs
+        );
+    }
 
     private ApiCallRcImpl deleteNamespace(String deleteNamespaceRef)
     {
