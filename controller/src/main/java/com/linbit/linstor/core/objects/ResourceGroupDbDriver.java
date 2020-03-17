@@ -13,7 +13,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -56,7 +56,7 @@ import java.util.function.Function;
 @Singleton
 public class ResourceGroupDbDriver
     extends AbsDatabaseDriver<ResourceGroup, ResourceGroup.InitMaps, Void>
-    implements ResourceGroupDatabaseDriver
+    implements ResourceGroupCtrlDatabaseDriver
 {
 
     private final PropsContainerFactory propsContainerFactory;

@@ -16,7 +16,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -44,7 +44,7 @@ import java.util.Objects;
 @Singleton
 public class NetInterfaceDbDriver
     extends AbsDatabaseDriver<NetInterface, Void, Map<NodeName, ? extends Node>>
-    implements NetInterfaceDatabaseDriver
+    implements NetInterfaceCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -145,7 +145,7 @@ public class NetInterfaceDbDriver
                     int portInt;
                     if (portObj instanceof Integer)
                     {
-                        portInt = ((Integer) portObj).intValue();
+                        portInt = ((Integer) portObj);
                     }
                     else
                     if (portObj instanceof Short)

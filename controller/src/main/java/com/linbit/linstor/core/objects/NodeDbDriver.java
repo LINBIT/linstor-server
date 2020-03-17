@@ -12,7 +12,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
-import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Singleton
-public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> implements NodeDatabaseDriver
+public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> implements NodeCtrlDatabaseDriver
 {
     protected final PropsContainerFactory propsContainerFactory;
     protected final TransactionObjectFactory transObjFactory;
@@ -156,7 +156,7 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
 
-        return new Pair<Node, Node.InitMaps>(
+        return new Pair<>(
             new Node(
                 raw.build(UUID, java.util.UUID::fromString),
                 getObjectProtection(ObjectProtection.buildPath(nodeName)),
