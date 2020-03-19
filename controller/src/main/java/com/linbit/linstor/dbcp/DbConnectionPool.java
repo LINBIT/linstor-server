@@ -396,7 +396,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
             }
             if (linstorConfig.getDbPassword() != null)
             {
-                props.setProperty("password", linstorConfig.getDbUser());
+                props.setProperty("password", linstorConfig.getDbPassword());
             }
             ConnectionFactory connFactory = new DriverManagerConnectionFactory(dbConnectionUrl, props);
             PoolableConnectionFactory poolConnFactory = new PoolableConnectionFactory(connFactory, null);
@@ -414,7 +414,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
             poolConnFactory.setMaxConnLifetimeMillis(DEFAULT_IDLE_TIMEOUT);
             poolConnFactory.setDefaultTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
 
-            dataSource = new PoolingDataSource<PoolableConnection>(connPool);
+            dataSource = new PoolingDataSource<>(connPool);
         }
     }
 
