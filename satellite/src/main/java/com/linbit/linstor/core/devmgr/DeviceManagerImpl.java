@@ -907,18 +907,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
                 /* DISPATCH NODES */
 
-                Set<Node> nodesToDelete = new TreeSet<>();
-                for (NodeName nodeName : dispatchNodes.keySet())
-                {
-                    synchronized (sched)
-                    {
-                        dispatchNodeResponses.put(
-                            nodeName,
-                            ApiCallRcImpl.singleApiCallRc(MODIFIED, "Node changes applied.")
-                        );
-                    }
-                }
-
                 if (abortDevHndFlag)
                 {
                     errLog.logTrace("Stopped dispatching node handlers due to abort request");
@@ -933,7 +921,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 respondToController(dispatchNodes, dispatchRscs, responseSinks);
 
                 // Cleanup deleted objects
-                deletedObjectsCleanup(nodesToDelete, remoteResourcesToDelete);
+                deletedObjectsCleanup(remoteResourcesToDelete);
             }
             finally
             {
@@ -989,6 +977,17 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             }
             dispatchRscResponses.clear();
 
+            for (NodeName nodeName : dispatchNodes.keySet())
+            {
+                synchronized (sched)
+                {
+                    dispatchNodeResponses.put(
+                        nodeName,
+                        ApiCallRcImpl.singleApiCallRc(MODIFIED, "Node changes applied.")
+                    );
+                }
+            }
+
             for (FluxSink<ApiCallRc> responseSink : responseSinks)
             {
                 responseSink.complete();
@@ -996,8 +995,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
-    private void deletedObjectsCleanup(Set<Node> nodesToDelete, Set<Resource> remoteResourcesToDelete)
-        throws AccessDeniedException
+    private void deletedObjectsCleanup(Set<Resource> remoteResourcesToDelete) throws AccessDeniedException
     {
         final Set<NodeName> localDelNodeSet = new TreeSet<>();
         final Set<ResourceName> localDelRscSet;
@@ -1081,7 +1079,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                             delRsc.delete(wrkCtx);
                             if (peerNode != controllerPeerConnector.getLocalNode())
                             {
-                                if (!(peerNode.getResourceCount() >= 1))
+                                if (peerNode.getResourceCount() < 1)
                                 {
                                     // This satellite does no longer have any peer resources
                                     // on the peer node, so is does not need to know about this
@@ -1156,16 +1154,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         {
                             curVlmDfn.delete(wrkCtx);
                         }
-                    }
-                }
-
-                // delete nodes
-                for (Node node : nodesToDelete)
-                {
-                    if (!node.isDeleted())
-                    {
-                        node.delete(wrkCtx);
-                        nodesMap.remove(node.getName());
                     }
                 }
 
