@@ -1,3 +1,12 @@
+linstor-server (1.5.1-1) experimental; urgency=medium
+
+  * Revert "DB: Removed deprecated *CtrlDatabaseDriver interfaces"
+  * Lvm: Replaced ExtCmd with ExtCmdFactory parameters
+  * Lvm: added --config option to filter required pvs
+  * Config: Actually using the dbPassword from config
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 23 Mar 2020 09:35:07 +0000
+
 linstor-server (1.5.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
