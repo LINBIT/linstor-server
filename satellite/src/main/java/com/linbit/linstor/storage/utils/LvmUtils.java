@@ -106,10 +106,12 @@ public class LvmUtils
 
                 if (pvSet.isEmpty())
                 {
-                    throw new StorageException("No physical volumes found for volumegroups " + vlmGrps);
+                    lvmConfig = "";
                 }
-
-                lvmConfig = getLvmFilterByPhysicalVolumes(pvSet);
+                else
+                {
+                    lvmConfig = getLvmFilterByPhysicalVolumes(pvSet);
+                }
 
                 CACHED_LVM_CONFIG_STRING.put(vlmGrps, lvmConfig);
                 CACHED_LVM_CONFIG_STRING.put(volumeGroups, lvmConfig);
@@ -408,7 +410,11 @@ public class LvmUtils
         final String[] lines = stdOut.split("\n");
         for (String line : lines)
         {
-            pvs.add(line.trim());
+            String trimmedLine = line.trim();
+            if (!trimmedLine.isEmpty())
+            {
+                pvs.add(line.trim());
+            }
         }
         return pvs;
     }

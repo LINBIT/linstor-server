@@ -12,6 +12,8 @@ import com.linbit.utils.StringUtils;
 import static com.linbit.linstor.storage.layer.provider.utils.Commands.genericExecutor;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -26,21 +28,56 @@ public class LvmCommands
     public static final int LVS_COL_DATA_PERCENT = 5;
     public static final int LVS_COL_ATTRIBUTES = 6;
 
+    private static String[] buildCmd(
+        String baseCmd,
+        String lvmConfig,
+        String[] appendedString,
+        String... baseOptions
+    )
+    {
+        return buildCmd(baseCmd, lvmConfig, Arrays.asList(appendedString), baseOptions);
+    }
+
+    private static String[] buildCmd(
+        String baseCmd,
+        String lvmConfig,
+        Collection<String> appendedString,
+        String... baseOptions
+    )
+    {
+        ArrayList<String> list = new ArrayList<>();
+        list.add(baseCmd);
+        if (lvmConfig != null && !lvmConfig.isEmpty())
+        {
+            list.add("--config");
+            list.add(lvmConfig);
+        }
+        for (String baseOpt : baseOptions)
+        {
+            list.add(baseOpt);
+        }
+        if (appendedString != null)
+        {
+            list.addAll(appendedString);
+        }
+        String[] cmdArr = new String[list.size()];
+        list.toArray(cmdArr);
+        return cmdArr;
+    }
+
     public static OutputData lvs(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig) throws StorageException
     {
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[] {
-                    "lvs",
-                    "--config", lvmConfig,
-                    "-o", "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr",
-                    "--separator", LvmUtils.DELIMITER,
-                    "--noheadings",
-                    "--units", "k",
-                    "--nosuffix"
-                },
-                volumeGroups
+            buildCmd(
+                "lvs",
+                lvmConfig,
+                volumeGroups,
+                "-o", "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr",
+                "--separator", LvmUtils.DELIMITER,
+                "--noheadings",
+                "--units", "k",
+                "--nosuffix"
             ),
             "Failed to list lvm volumes",
             "Failed to query 'lvs' info",
@@ -53,17 +90,15 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[] {
-                    "vgs",
-                    "--config", lvmConfig,
-                    "-o", "vg_name,vg_extent_size",
-                    "--separator", LvmUtils.DELIMITER,
-                    "--units", "k",
-                    "--noheadings",
-                    "--nosuffix"
-                },
-                volumeGroups
+            buildCmd(
+                "vgs",
+                lvmConfig,
+                volumeGroups,
+                "-o", "vg_name,vg_extent_size",
+                "--separator", LvmUtils.DELIMITER,
+                "--units", "k",
+                "--noheadings",
+                "--nosuffix"
             ),
             "Failed to query lvm extent size",
             "Failed to query extent size of volume group(s) " + volumeGroups,
@@ -83,15 +118,13 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[] {
-                    "lvcreate",
-                    "--config", lvmConfig,
-                    "--size", size + "k",
-                    "-n", volumeGroup + "/" + vlmId,
-                    "-y" // force, skip "wipe signature question"
-                },
-                additionalParameters
+            buildCmd(
+                "lvcreate",
+                lvmConfig,
+                additionalParameters,
+                "--size", size + "k",
+                "-n", volumeGroup + "/" + vlmId,
+                "-y" // force, skip "wipe signature question"
             ),
             "Failed to create lvm volume",
             "Failed to create new lvm volume '" + vlmId + "' in volume group '" + volumeGroup +
@@ -110,15 +143,14 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[] {
-                    "lvcreate",
-                    "--config", lvmConfig,
-                    "-l", "100%FREE",
-                    "-T",
-                    "-n", volumeGroupFull + "/" + thinPoolName
-                },
-                additionalParameters
+            buildCmd(
+                "lvcreate",
+                lvmConfig,
+                additionalParameters,
+                "-l", "100%FREE",
+                "-T",
+                "-n", volumeGroupFull + "/" +
+                    thinPoolName
             ),
             "Failed to create lvm volume",
             "Failed to create new lvm thin pool in volume group '" + volumeGroupFull + "'"
@@ -138,15 +170,13 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[] {
-                    "lvcreate",
-                    "--config", lvmConfig,
-                    "--virtualsize", size + "k", // -V
-                    "--thinpool", thinPoolName,
-                    "--name", volumeGroup + "/" + vlmId        // -n
-                },
-                additionalParameters
+            buildCmd(
+                "lvcreate",
+                lvmConfig,
+                additionalParameters,
+                "--virtualsize", size + "k", // -V
+                "--thinpool", thinPoolName,
+                "--name", volumeGroup + "/" + vlmId        // -n
             ),
             "Failed to create lvm volume",
             "Failed to create new lvm volume '" + vlmId + "' in volume group '" + volumeGroup +
@@ -159,12 +189,13 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            new String[] {
+            buildCmd(
                 "lvremove",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 "-f", // skip the "are you sure?"
                 volumeGroup + File.separator + vlmId
-            },
+            ),
             "Failed to delete lvm volume",
             "Failed to delete lvm volume '" + vlmId + "' from volume group '" + volumeGroup,
             new RetryIfDeviceBusy()
@@ -176,13 +207,13 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            new String[]
-            {
+            buildCmd(
                 "lvresize",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 "--size", size + "k",
                 volumeGroup + File.separator + vlmId
-            },
+            ),
             "Failed to resize lvm volume",
             "Failed to resize lvm volume '" + vlmId + "' in volume group '" + volumeGroup + "' to size " + size
         );
@@ -199,13 +230,14 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            new String[] {
+            buildCmd(
                 "lvrename",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 volumeGroup,
                 vlmCurrentId,
                 vlmNewId
-            },
+            ),
             "Failed to rename lvm volume from '" + vlmCurrentId + "' to '" + vlmNewId + "'",
             "Failed to rename lvm volume from '" + vlmCurrentId + "' to '" + vlmNewId + "'",
             new RetryHandler()
@@ -247,13 +279,14 @@ public class LvmCommands
             " within thin volume group " + volumeGroup + File.separator + thinPool;
         return genericExecutor(
             extCmd,
-            new String[] {
+            buildCmd(
                 "lvcreate",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 "--snapshot",
                 "--name", snapshotIdentifier,
-                volumeGroup + File.separator + identifier,
-            },
+                volumeGroup + File.separator + identifier
+            ),
             failMsg,
             failMsg
         );
@@ -272,13 +305,14 @@ public class LvmCommands
             " into new volume " + volumeGroup + File.separator + targetId;
         return genericExecutor(
             extCmd,
-            new String[] {
+            buildCmd(
                 "lvcreate",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 "--snapshot",
                 "--name", targetId,
                 volumeGroup + File.separator + sourceLvIdWithSnapName
-            },
+            ),
             failMsg,
             failMsg
         );
@@ -294,13 +328,13 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            new String[]
-            {
+            buildCmd(
                 "lvconvert",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 "--merge",
                 volumeGroup + File.separator + sourceResource
-            },
+            ),
             "Failed to rollback to snapshot " + volumeGroup + File.separator + sourceResource,
             "Failed to rollback to snapshot " + volumeGroup + File.separator + sourceResource
         );
@@ -311,18 +345,15 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[]
-                {
-                    "vgs",
-                    "--config", lvmConfig,
-                   "-o", "vg_name,vg_size",
-                    "--units", "k",
-                    "--separator", LvmUtils.DELIMITER,
-                    "--noheadings",
-                    "--nosuffix"
-                },
-                volumeGroups
+            buildCmd(
+                "vgs",
+                lvmConfig,
+                volumeGroups,
+               "-o", "vg_name,vg_size",
+                "--units", "k",
+                "--separator", LvmUtils.DELIMITER,
+                "--noheadings",
+                "--nosuffix"
             ),
             "Failed to query total size of volume group(s) " + volumeGroups,
             "Failed to query total size of volume group(s) " + volumeGroups,
@@ -335,18 +366,15 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[]
-                {
-                    "vgs",
-                    "--config", lvmConfig,
-                    "-o", "vg_name,vg_free",
-                    "--units", "k",
-                    "--separator", LvmUtils.DELIMITER,
-                    "--noheadings",
-                    "--nosuffix"
-                },
-                volumeGroups
+            buildCmd(
+                "vgs",
+                lvmConfig,
+                volumeGroups,
+                "-o", "vg_name,vg_free",
+                "--units", "k",
+                "--separator", LvmUtils.DELIMITER,
+                "--noheadings",
+                "--nosuffix"
             ),
             "Failed to query free size of volume group(s) " + volumeGroups,
             "Failed to query free size of volume group(s) " + volumeGroups,
@@ -359,19 +387,16 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[]
-                    {
-                        "lvs",
-                        "--config", lvmConfig,
-                        "-o", "lv_name,lv_size",
-                        "--units", "k",
-                        "--separator", LvmUtils.DELIMITER,
-                        "--noheadings",
-                        "--nosuffix"
-                    },
-                    volumeGroups
-                ),
+            buildCmd(
+                "lvs",
+                lvmConfig,
+                volumeGroups,
+                "-o", "lv_name,lv_size",
+                "--units", "k",
+                "--separator", LvmUtils.DELIMITER,
+                "--noheadings",
+                "--nosuffix"
+            ),
             "Failed to query total size of volume group(s) " + volumeGroups,
             "Failed to query total size of volume group(s) " + volumeGroups,
             Commands.SKIP_EXIT_CODE_CHECK
@@ -383,19 +408,16 @@ public class LvmCommands
     {
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[]
-                    {
-                        "vgs",
-                        "--config", lvmConfig,
-                        "-o", "lv_name,lv_size,data_percent",
-                        "--units", "b", // intentionally not "k" as usual
-                        "--separator", LvmUtils.DELIMITER,
-                        "--noheadings",
-                        "--nosuffix"
-                    },
-                    volumeGroups
-                ),
+            buildCmd(
+                "vgs",
+                lvmConfig,
+                volumeGroups,
+                "-o", "lv_name,lv_size,data_percent",
+                "--units", "b", // intentionally not "k" as usual
+                "--separator", LvmUtils.DELIMITER,
+                "--noheadings",
+                "--nosuffix"
+            ),
             "Failed to query free size of volume group(s) " + volumeGroups,
             "Failed to query free size of volume group(s) " + volumeGroups,
             Commands.SKIP_EXIT_CODE_CHECK
@@ -408,15 +430,15 @@ public class LvmCommands
         String failMsg = "Failed to activate volume " + volumeGroup + File.separator + targetId;
         return genericExecutor(
             extCmd,
-            new String[]
-            {
+            buildCmd(
                 "lvchange",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 "-ay",  // activate volume
                 "-K",   // these parameters are needed to set a
                 // snapshot to active and enabled
                 volumeGroup + File.separator + targetId
-            },
+            ),
             failMsg,
             failMsg
         );
@@ -428,13 +450,13 @@ public class LvmCommands
         String failMsg = "Failed to deactivate volume " + volumeGroup + File.separator + targetId;
         return genericExecutor(
             extCmd,
-            new String[]
-            {
+            buildCmd(
                 "lvchange",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 "-an",  // deactivate volume
                 volumeGroup + File.separator + targetId
-            },
+            ),
             failMsg,
             failMsg
         );
@@ -445,13 +467,13 @@ public class LvmCommands
         String failMsg = "Failed to query list of volume groups";
         return genericExecutor(
             extCmd,
-            new String[]
-            {
+            buildCmd(
                 "vgs",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 "-o", "vg_name",
                 "--noheadings"
-            },
+            ),
             failMsg,
             failMsg
         );
@@ -462,12 +484,12 @@ public class LvmCommands
         final String failMsg = "Failed to pvcreate on device: " + devicePath;
         return genericExecutor(
             extCmd,
-            new String[]
-            {
+            buildCmd(
                 "pvcreate",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 devicePath
-            },
+            ),
             failMsg,
             failMsg
         );
@@ -480,12 +502,9 @@ public class LvmCommands
         final String failMsg = "Failed to pvremove on device(s): " + String.join(", ", devicePaths);
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[]
-                {
-                    "pvremove",
-                    "--config", lvmConfig,
-                },
+            buildCmd(
+                "pvremove",
+                lvmConfig,
                 devicePaths
             ),
             failMsg,
@@ -506,14 +525,12 @@ public class LvmCommands
         final String failMsg = "Failed to vgcreate on device(s): " + String.join(" ", devicePaths);
         return genericExecutor(
             extCmd,
-            StringUtils.concat(
-                new String[]
-                {
-                    "vgcreate",
-                    "--config", lvmConfig,
-                    vgName
-                },
-                devicePaths),
+            buildCmd(
+                "vgcreate",
+                lvmConfig,
+                devicePaths,
+                vgName
+            ),
             failMsg,
             failMsg
         );
@@ -525,18 +542,17 @@ public class LvmCommands
         final String failMsg = "Failed to get physical devices for volume group: " + volumeGroupRef;
         return genericExecutor(
             extCmdRef,
-            StringUtils.concat(
-                new String[]
-                {
-                    "pvdisplay",
-                    "--columns",
-                    "-o",
-                    "pv_name",
-                    "-S",
-                    "vg_name=" + volumeGroupRef,
-                    "--noheadings",
-                    "--nosuffix"
-                }
+            buildCmd(
+                "pvdisplay",
+                null,
+                (Collection<String>) null,
+                "--columns",
+                "-o",
+                "pv_name",
+                "-S",
+                "vg_name=" + volumeGroupRef,
+                "--noheadings",
+                "--nosuffix"
             ),
             failMsg,
             failMsg
@@ -555,12 +571,12 @@ public class LvmCommands
         final String failMsg = "Failed to vgremove on volume group: " + vgName;
         return genericExecutor(
             extCmd,
-            new String[]
-            {
+            buildCmd(
                 "vgremove",
-                "--config", lvmConfig,
+                lvmConfig,
+                (Collection<String>) null,
                 vgName
-            },
+            ),
             failMsg,
             failMsg
         );
