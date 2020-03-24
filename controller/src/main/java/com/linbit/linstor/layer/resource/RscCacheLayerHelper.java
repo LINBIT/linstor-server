@@ -27,6 +27,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -191,12 +192,12 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     {
         // always return data and cache child
         List<ChildResourceData> children = new ArrayList<>();
-        children.add(new ChildResourceData(CacheRscData.SUFFIX_DATA));
+        children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA));
 
         if (needsCacheDevice(rscDataRef, layerListRef))
         {
-            children.add(new ChildResourceData(CacheRscData.SUFFIX_CACHE, DeviceLayerKind.STORAGE));
-            children.add(new ChildResourceData(CacheRscData.SUFFIX_META, DeviceLayerKind.STORAGE));
+            children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_CACHE_CACHE, DeviceLayerKind.STORAGE));
+            children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_CACHE_META, DeviceLayerKind.STORAGE));
         }
 
         return children;
@@ -226,11 +227,11 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
             .getVlmProviderObject(
                 vlmRef.getVolumeDefinition().getVolumeNumber()
             );
-        if (childRef.getSuffixedResourceName().contains(CacheRscData.SUFFIX_CACHE))
+        if (childRef.getSuffixedResourceName().contains(RscLayerSuffixes.SUFFIX_CACHE_CACHE))
         {
             pool = cacheVlmData.getCacheStorPool();
         }
-        else if (childRef.getSuffixedResourceName().contains(CacheRscData.SUFFIX_META))
+        else if (childRef.getSuffixedResourceName().contains(RscLayerSuffixes.SUFFIX_CACHE_META))
         {
             pool = cacheVlmData.getMetaStorPool();
         }

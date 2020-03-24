@@ -24,6 +24,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -180,10 +181,10 @@ public class WritecacheLayer implements DeviceLayer
     private void updateSize(WritecacheVlmData<Resource> vlmData, boolean fromUsable)
         throws AccessDeniedException, DatabaseException
     {
-        VlmProviderObject<Resource> dataChildVlmData = vlmData
-            .getChildBySuffix(WritecacheRscData.SUFFIX_DATA);
-        VlmProviderObject<Resource> cacheChildVlmData = vlmData
-            .getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
+        VlmProviderObject<Resource> dataChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+        VlmProviderObject<Resource> cacheChildVlmData = vlmData.getChildBySuffix(
+            RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE
+        );
 
         if (fromUsable)
         {
@@ -283,12 +284,12 @@ public class WritecacheLayer implements DeviceLayer
         }
 
         LayerProcessResult dataResult = resourceProcessorProvider.get().process(
-            rscData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA),
+            rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
             snapshotListRef,
             apiCallRcRef
         );
         LayerProcessResult metaResult;
-        AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
+        AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE);
         if (cacheRscChild == null)
         {
             // we might be an imaginary layer above an NVMe target which does not need a cache...
@@ -325,8 +326,10 @@ public class WritecacheLayer implements DeviceLayer
                 }
                 if (!vlmData.exists())
                 {
-                    VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_DATA);
-                    VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(WritecacheRscData.SUFFIX_CACHE);
+                    VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+                    VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(
+                        RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE
+                    );
                     boolean considerCacheAsPmem = false;
                     {
                         boolean allStorPoolsPmem = true;

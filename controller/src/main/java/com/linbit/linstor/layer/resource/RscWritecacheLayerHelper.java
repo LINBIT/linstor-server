@@ -27,6 +27,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -180,11 +181,11 @@ class RscWritecacheLayerHelper
     {
         // always return data and cache child
         List<ChildResourceData> children = new ArrayList<>();
-        children.add(new ChildResourceData(WritecacheRscData.SUFFIX_DATA));
+        children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA));
 
         if (needsCacheDevice(rscDataRef, layerListRef))
         {
-            children.add(new ChildResourceData(WritecacheRscData.SUFFIX_CACHE, DeviceLayerKind.STORAGE));
+            children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE, DeviceLayerKind.STORAGE));
         }
 
         return children;
@@ -211,7 +212,7 @@ class RscWritecacheLayerHelper
             .getVlmProviderObject(
                 vlmRef.getVolumeDefinition().getVolumeNumber()
             );
-        if (childRef.getSuffixedResourceName().contains(WritecacheRscData.SUFFIX_CACHE))
+        if (childRef.getSuffixedResourceName().contains(RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE))
         {
             pool = writecacheVlmData.getCacheStorPool();
         }

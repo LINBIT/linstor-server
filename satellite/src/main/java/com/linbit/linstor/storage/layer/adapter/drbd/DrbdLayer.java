@@ -39,6 +39,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -192,7 +193,7 @@ public class DrbdLayer implements DeviceLayer
             {
                 long netSize = drbdVlmData.getUsableSize();
 
-                VlmProviderObject<Resource> dataChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA);
+                VlmProviderObject<Resource> dataChild = drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
                 if (drbdVlmData.isUsingExternalMetaData())
                 {
                     long extMdSize = new MetaData().getExternalMdSize(
@@ -205,7 +206,8 @@ public class DrbdLayer implements DeviceLayer
                     dataChild.setUsableSize(netSize);
                     resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChild);
 
-                    VlmProviderObject<Resource> metaChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META);
+                    VlmProviderObject<Resource> metaChild = drbdVlmData
+                        .getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META);
                     if (metaChild != null)
                     {
                         // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
@@ -260,7 +262,7 @@ public class DrbdLayer implements DeviceLayer
             {
                 // let next layer calculate
                 VlmProviderObject<Resource> dataChildVlmData = drbdVlmData.getChildBySuffix(
-                    DrbdRscData.SUFFIX_DATA
+                    RscLayerSuffixes.SUFFIX_DATA
                 );
                 dataChildVlmData.setAllocatedSize(drbdVlmData.getAllocatedSize());
                 resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(dataChildVlmData);
@@ -272,7 +274,9 @@ public class DrbdLayer implements DeviceLayer
                     // calculate extMetaSize
                     long extMdSize;
 
-                    VlmProviderObject<Resource> metaChild = drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_META);
+                    VlmProviderObject<Resource> metaChild = drbdVlmData.getChildBySuffix(
+                        RscLayerSuffixes.SUFFIX_DRBD_META
+                    );
                     if (metaChild != null)
                     {
                         // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
@@ -429,7 +433,7 @@ public class DrbdLayer implements DeviceLayer
 
         if (!isDiskless || isDiskRemoving)
         {
-            AbsRscLayerObject<Resource> dataChild = drbdRscData.getChildBySuffix(DrbdRscData.SUFFIX_DATA);
+            AbsRscLayerObject<Resource> dataChild = drbdRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
             LayerProcessResult dataResult = resourceProcessorProvider.get().process(
                 dataChild,
                 snapshotList,
@@ -437,7 +441,7 @@ public class DrbdLayer implements DeviceLayer
             );
             LayerProcessResult metaResult = null;
 
-            AbsRscLayerObject<Resource> metaChild = drbdRscData.getChildBySuffix(DrbdRscData.SUFFIX_META);
+            AbsRscLayerObject<Resource> metaChild = drbdRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META);
             if (metaChild != null)
             {
                 metaResult = resourceProcessorProvider.get().process(
@@ -898,7 +902,7 @@ public class DrbdLayer implements DeviceLayer
             if (!skipInitSync)
             {
                 skipInitSync = VolumeUtils.getStorageDevices(
-                    drbdVlmData.getChildBySuffix(DrbdRscData.SUFFIX_DATA)
+                    drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
                 )
                     .stream()
                     .map(VlmProviderObject::getProviderKind)

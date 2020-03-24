@@ -32,9 +32,6 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, DrbdVlmData<RSC>>
     implements DrbdRscObject<RSC>
 {
-    public static final String SUFFIX_DATA = "";
-    public static final String SUFFIX_META = ".meta"; // . is not a valid character in ResourceName
-
     // unmodifiable data, once initialized
     private final DrbdRscDfnData<RSC> drbdRscDfnData;
     private final NodeId nodeId;

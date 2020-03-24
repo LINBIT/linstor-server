@@ -28,10 +28,6 @@ public class CacheRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, CacheVlmData<RSC>>
     implements CacheRscObject<RSC>
 {
-    public static final String SUFFIX_DATA = "";
-    public static final String SUFFIX_CACHE = ".cache";
-    public static final String SUFFIX_META = ".meta";
-
     private final CacheLayerDatabaseDriver cacheDbDriver;
 
     public CacheRscData(

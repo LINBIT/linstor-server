@@ -7,6 +7,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmObject;
@@ -178,7 +179,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
         }
         else
         {
-            VlmProviderObject<RSC> childVlm = getChildBySuffix(DrbdRscData.SUFFIX_META);
+            VlmProviderObject<RSC> childVlm = getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META);
             if (childVlm != null)
             {
                 // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
@@ -200,7 +201,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     @Override
     public String getBackingDevice()
     {
-        VlmProviderObject<RSC> childBySuffix = getChildBySuffix(DrbdRscData.SUFFIX_DATA);
+        VlmProviderObject<RSC> childBySuffix = getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
         String devicePath = null;
         if (childBySuffix != null)
         {

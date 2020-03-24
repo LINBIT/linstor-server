@@ -28,9 +28,6 @@ public class WritecacheRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, WritecacheVlmData<RSC>>
     implements WritecacheRscObject<RSC>
 {
-    public static final String SUFFIX_DATA = "";
-    public static final String SUFFIX_CACHE = ".cache";
-
     private final WritecacheLayerDatabaseDriver writecacheDbDriver;
 
     public WritecacheRscData(

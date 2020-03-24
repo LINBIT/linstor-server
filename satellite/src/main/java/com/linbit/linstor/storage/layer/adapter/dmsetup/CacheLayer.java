@@ -22,6 +22,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -161,9 +162,9 @@ public class CacheLayer implements DeviceLayer
     )
         throws AccessDeniedException, DatabaseException
     {
-        VlmProviderObject<Resource> dataChildVlmData = vlmData.getChildBySuffix(CacheRscData.SUFFIX_DATA);
-        VlmProviderObject<Resource> cacheChildVlmData = vlmData.getChildBySuffix(CacheRscData.SUFFIX_CACHE);
-        VlmProviderObject<Resource> metaChildVlmData = vlmData.getChildBySuffix(CacheRscData.SUFFIX_META);
+        VlmProviderObject<Resource> dataChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+        VlmProviderObject<Resource> cacheChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
+        VlmProviderObject<Resource> metaChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_META);
 
         if (fromUsable)
         {
@@ -260,14 +261,14 @@ public class CacheLayer implements DeviceLayer
         }
 
         LayerProcessResult dataResult = resourceProcessorProvider.get().process(
-            rscData.getChildBySuffix(CacheRscData.SUFFIX_DATA),
+            rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
             snapshotListRef,
             apiCallRcRef
         );
         LayerProcessResult metaResult;
         LayerProcessResult cacheResult;
-        AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(CacheRscData.SUFFIX_CACHE);
-        AbsRscLayerObject<Resource> metaRscChild = rscData.getChildBySuffix(CacheRscData.SUFFIX_META);
+        AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
+        AbsRscLayerObject<Resource> metaRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_META);
         if (cacheRscChild == null || metaRscChild == null)
         {
             // we might be an imaginary layer above an NVMe target which does not need a cache...
@@ -315,9 +316,13 @@ public class CacheLayer implements DeviceLayer
                 }
                 if (!vlmData.exists())
                 {
-                    VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(CacheRscData.SUFFIX_DATA);
-                    VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(CacheRscData.SUFFIX_CACHE);
-                    VlmProviderObject<Resource> metaChild = vlmData.getChildBySuffix(CacheRscData.SUFFIX_META);
+                    VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+                    VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(
+                        RscLayerSuffixes.SUFFIX_CACHE_CACHE
+                    );
+                    VlmProviderObject<Resource> metaChild = vlmData.getChildBySuffix(
+                        RscLayerSuffixes.SUFFIX_CACHE_META
+                    );
 
                     Map<String, String> dmsetupPolicyArgsMap = prioProps.renderRelativeMap(
                         ApiConsts.NAMESPC_CACHE_POLICY_ARGS

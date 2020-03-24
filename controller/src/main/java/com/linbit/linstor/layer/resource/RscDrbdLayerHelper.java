@@ -38,6 +38,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
@@ -450,7 +451,7 @@ public class RscDrbdLayerHelper extends
 
         if (needsMetaData(rscDataRef, layerListRef))
         {
-            ret.add(new ChildResourceData(DrbdRscData.SUFFIX_META, DeviceLayerKind.STORAGE));
+            ret.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DRBD_META, DeviceLayerKind.STORAGE));
         }
 
         return ret;
@@ -502,7 +503,7 @@ public class RscDrbdLayerHelper extends
         throws AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         StorPool metaStorPool = null;
-        if (childRef.getSuffixedResourceName().contains(DrbdRscData.SUFFIX_META))
+        if (childRef.getSuffixedResourceName().contains(RscLayerSuffixes.SUFFIX_DRBD_META))
         {
             DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) childRef.getParent()
                 .getVlmProviderObject(vlmRef.getVolumeDefinition().getVolumeNumber());
