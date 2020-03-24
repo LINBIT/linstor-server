@@ -57,6 +57,7 @@ public class CtrlRscLayerDataFactory
     private final RscNvmeLayerHelper nvmeLayerHelper;
     private final RscOpenflexLayerHelper ofLayerHelper;
     private final RscWritecacheLayerHelper writecacheLayerHelper;
+    private final RscCacheLayerHelper cacheLayerHelper;
 
     @Inject
     public CtrlRscLayerDataFactory(
@@ -68,7 +69,8 @@ public class CtrlRscLayerDataFactory
         RscStorageLayerHelper storageLayerHelperRef,
         RscNvmeLayerHelper nvmeLayerHelperRef,
         RscOpenflexLayerHelper ofLayerHelperRef,
-        RscWritecacheLayerHelper writecacheLayerHelperRef
+        RscWritecacheLayerHelper writecacheLayerHelperRef,
+        RscCacheLayerHelper cacheLayerHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -80,6 +82,7 @@ public class CtrlRscLayerDataFactory
         nvmeLayerHelper = nvmeLayerHelperRef;
         ofLayerHelper = ofLayerHelperRef;
         writecacheLayerHelper = writecacheLayerHelperRef;
+        cacheLayerHelper = cacheLayerHelperRef;
     }
 
     public List<DeviceLayerKind> getLayerStack(Resource rscRef)
@@ -514,6 +517,9 @@ public class CtrlRscLayerDataFactory
                 break;
             case WRITECACHE:
                 layerHelper = writecacheLayerHelper;
+                break;
+            case CACHE:
+                layerHelper = cacheLayerHelper;
                 break;
             case STORAGE:
                 layerHelper = storageLayerHelper;

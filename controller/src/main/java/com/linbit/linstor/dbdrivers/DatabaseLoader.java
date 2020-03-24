@@ -43,6 +43,7 @@ import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionCtrlDatabaseDriver;
@@ -141,6 +142,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final NvmeLayerCtrlDatabaseDriver nvmeLayerDriver;
     private final OpenflexLayerCtrlDatabaseDriver openflexLayerDriver;
     private final WritecacheLayerCtrlDatabaseDriver writecacheLayerDriver;
+    private final CacheLayerCtrlDatabaseDriver cacheLayerDriver;
     private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
     private final Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelper;
 
@@ -181,6 +183,7 @@ public class DatabaseLoader implements DatabaseDriver
         NvmeLayerCtrlDatabaseDriver nvmeLayerDriverRef,
         OpenflexLayerCtrlDatabaseDriver openflexLayerDriverRef,
         WritecacheLayerCtrlDatabaseDriver writecacheLayerDriverRef,
+        CacheLayerCtrlDatabaseDriver cacheLayerDriverRef,
         Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
         Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
@@ -218,6 +221,7 @@ public class DatabaseLoader implements DatabaseDriver
         nvmeLayerDriver = nvmeLayerDriverRef;
         openflexLayerDriver = openflexLayerDriverRef;
         writecacheLayerDriver = writecacheLayerDriverRef;
+        cacheLayerDriver = cacheLayerDriverRef;
         ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
         ctrlSnapLayerDataHelper = ctrlSnapLayerDataHelperRef;
 
@@ -712,6 +716,15 @@ public class DatabaseLoader implements DatabaseDriver
                             break;
                         case WRITECACHE:
                             rscLayerObjectPair = writecacheLayerDriver.load(
+                                rsc,
+                                rli.id,
+                                rli.rscSuffix,
+                                parent,
+                                tmpStorPoolMapRef
+                            );
+                            break;
+                        case CACHE:
+                            rscLayerObjectPair = cacheLayerDriver.load(
                                 rsc,
                                 rli.id,
                                 rli.rscSuffix,

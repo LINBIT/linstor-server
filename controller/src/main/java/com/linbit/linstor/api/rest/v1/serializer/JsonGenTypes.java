@@ -350,6 +350,12 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CacheResource
+    {
+        public List<CacheVolume> cache_volumes = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ResourceLayer
     {
         public List<ResourceLayer> children = Collections.emptyList();
@@ -361,6 +367,7 @@ public class JsonGenTypes
         public NVMEResource nvme;
         public OpenflexResource openflex;
         public WritecacheResource writecache;
+        public CacheResource cache;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -535,6 +542,30 @@ public class JsonGenTypes
          * block device path used as cache device
          */
         public String device_path_cache;
+        public Long allocated_size_kib;
+        public Long usable_size_kib;
+        /**
+         * String describing current volume state
+         */
+        public String disk_state;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CacheVolume
+    {
+        public Integer volume_number;
+        /**
+         * block device path
+         */
+        public String device_path;
+        /**
+         * block device path used as cache device
+         */
+        public String device_path_cache;
+        /**
+         * block device path used as meta device
+         */
+        public String device_meta_cache;
         public Long allocated_size_kib;
         public Long usable_size_kib;
         /**

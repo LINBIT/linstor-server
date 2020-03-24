@@ -16,6 +16,7 @@ import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
@@ -256,6 +257,7 @@ public class Json
                     case STORAGE:
                     case NVME:
                     case WRITECACHE:
+                    case CACHE:
                     default:
                         throw new ImplementationError("Not implemented kind case");
                 }
@@ -310,6 +312,7 @@ public class Json
                     case NVME:
                     case OPENFLEX:
                     case WRITECACHE:
+                    case CACHE:
                     default:
                         throw new ImplementationError("Not implemented Kind case");
                 }
@@ -394,6 +397,15 @@ public class Json
         return writecacheResource;
     }
 
+    public static JsonGenTypes.CacheResource pojoToCacheResource(CacheRscPojo cacheRscPojo)
+    {
+        JsonGenTypes.CacheResource cacheResource = new JsonGenTypes.CacheResource();
+        cacheResource.cache_volumes = cacheRscPojo.getVolumeList().stream()
+            .map(Json::pojoToCacheVolume)
+            .collect(Collectors.toList());
+        return cacheResource;
+    }
+
     public static JsonGenTypes.ResourceLayer apiToResourceLayer(RscLayerDataApi rscLayerDataApi)
     {
         JsonGenTypes.ResourceLayer resourceLayer = new JsonGenTypes.ResourceLayer();
@@ -427,6 +439,10 @@ public class Json
             case WRITECACHE:
                 WritecacheRscPojo writecacheRscPojo = (WritecacheRscPojo) rscLayerDataApi;
                 resourceLayer.writecache = pojoToWritecacheResource(writecacheRscPojo);
+                break;
+            case CACHE:
+                CacheRscPojo cacheRscPojo = (CacheRscPojo) rscLayerDataApi;
+                resourceLayer.cache = pojoToCacheResource(cacheRscPojo);
                 break;
             default:
         }
@@ -606,6 +622,20 @@ public class Json
         return writecacheVolume;
     }
 
+    public static JsonGenTypes.CacheVolume pojoToCacheVolume(
+        CacheRscPojo.CacheVlmPojo cacheVlmPojo
+    )
+    {
+        JsonGenTypes.CacheVolume cacheVolume = new JsonGenTypes.CacheVolume();
+        cacheVolume.volume_number = cacheVlmPojo.getVlmNr();
+        cacheVolume.device_path = cacheVlmPojo.getDevicePath();
+        cacheVolume.device_path_cache = cacheVlmPojo.getDevicePathCache();
+        cacheVolume.allocated_size_kib = cacheVlmPojo.getAllocatedSize();
+        cacheVolume.usable_size_kib = cacheVlmPojo.getUsableSize();
+        cacheVolume.disk_state = cacheVlmPojo.getDiskState();
+        return cacheVolume;
+    }
+
     public static JsonGenTypes.StorageVolume apiToStorageVolume(
         VlmLayerDataApi vlmLayerDataApi
     )
@@ -665,6 +695,10 @@ public class Json
                 case WRITECACHE:
                     WritecacheRscPojo.WritecacheVlmPojo writecacheVlmPojo = (WritecacheRscPojo.WritecacheVlmPojo) layerData.objB;
                     volumeLayerData.data = pojoToWritecacheVolume(writecacheVlmPojo);
+                    break;
+                case CACHE:
+                    CacheRscPojo.CacheVlmPojo cacheVlmPojo = (CacheRscPojo.CacheVlmPojo) layerData.objB;
+                    volumeLayerData.data = pojoToCacheVolume(cacheVlmPojo);
                     break;
                 default:
             }

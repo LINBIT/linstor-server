@@ -8,6 +8,7 @@ import "common/StorageRsc.proto";
 import "common/NvmeRsc.proto";
 import "common/OpenflexRsc.proto";
 import "common/WritecacheRsc.proto";
+import "common/CacheRsc.proto";
 import "common/LayerType.proto";
 
 // Shared properties of layered resource data. See DrbdRsc.proto, LuksRsc.proto and StorageRsc.proto for concrete types
@@ -23,6 +24,7 @@ message RscLayerData
     optional NvmeRsc            nvme = 9;
     optional WritecacheRsc      writecache = 10;
     optional OpenflexRsc        openflex = 12;
+    optional CacheRsc       cache = 13;
 
     required bool               suspend = 11;
 }

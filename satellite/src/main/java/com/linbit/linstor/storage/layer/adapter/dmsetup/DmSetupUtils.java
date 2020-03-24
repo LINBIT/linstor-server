@@ -89,7 +89,7 @@ public class DmSetupUtils
         );
     }
 
-    public static void create(
+    public static void createWritecache(
         ExtCmdFactory extCmdFactory,
         String identifierRef,
         String dataDevice,
@@ -127,6 +127,53 @@ public class DmSetupUtils
             },
             "Failed to create writecache device",
             "Failed to create writecache device"
+        );
+    }
+
+    public static void createCache(
+        ExtCmdFactory extCmdFactory,
+        String identifierRef,
+        String dataDevice,
+        String cacheDevice,
+        String metaDevice,
+        long blockSize,
+        String feature,
+        String policy,
+        String policyArgs
+    )
+        throws StorageException
+    {
+        long startSector = 0;
+        long endSector = Commands.getDeviceSizeInSectors(extCmdFactory.create(), dataDevice);
+
+        Commands.genericExecutor(
+            extCmdFactory.create(),
+            new String[]
+            {
+                // * dmsetup create myIdentifier --table "0 1562758832 writecache p /dev/sdb /dev/pmem0 4096 4
+                // high_watermark 10
+                "dmsetup",
+                "create",
+                identifierRef,
+                "--table",
+                // all following arguments have to be in one String-argument, not single array elements!
+                StringUtils.join(
+                    " ",
+                    startSector,
+                    endSector,
+                    "cache",
+                    metaDevice,
+                    cacheDevice,
+                    dataDevice,
+                    blockSize,
+                    "1", // 1 feature - not sure if there are more possible...
+                    feature,
+                    policy,
+                    policyArgs
+                )
+            },
+            "Failed to create cache device",
+            "Failed to create cache device"
         );
     }
 

@@ -16,6 +16,7 @@ import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
@@ -32,6 +33,8 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -68,6 +71,7 @@ public class LayerDataFactory
     private final NvmeLayerDatabaseDriver nvmeDbDriver;
     private final OpenflexLayerDatabaseDriver openflexDbDriver;
     private final WritecacheLayerDatabaseDriver writecacheDbDriver;
+    private final CacheLayerDatabaseDriver cacheDbDriver;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
 
@@ -83,6 +87,7 @@ public class LayerDataFactory
         NvmeLayerDatabaseDriver nvmeDbDriverRef,
         OpenflexLayerDatabaseDriver openflexDbDriverRef,
         WritecacheLayerDatabaseDriver writecacheDbDriverRef,
+        CacheLayerDatabaseDriver cacheDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -96,6 +101,7 @@ public class LayerDataFactory
         nvmeDbDriver = nvmeDbDriverRef;
         openflexDbDriver = openflexDbDriverRef;
         writecacheDbDriver = writecacheDbDriverRef;
+        cacheDbDriver = cacheDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
 
@@ -337,7 +343,7 @@ public class LayerDataFactory
         NvmeRscData<RSC> rscData
     )
     {
-        return new NvmeVlmData<RSC>(
+        return new NvmeVlmData<>(
             vlm,
             rscData,
             transObjFactory,
@@ -397,7 +403,7 @@ public class LayerDataFactory
     )
         throws DatabaseException
     {
-        OpenflexVlmData<RSC> ofTargetData = new OpenflexVlmData<RSC>(
+        OpenflexVlmData<RSC> ofTargetData = new OpenflexVlmData<>(
             vlm,
             rscData,
             storPoolRef,
@@ -443,6 +449,48 @@ public class LayerDataFactory
             rscData,
             cacheStorPool,
             writecacheDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+    }
+
+    public <RSC extends AbsResource<RSC>> CacheRscData<RSC> createCacheRscData(
+        int rscLayerId,
+        RSC rsc,
+        String rscNameSuffix,
+        AbsRscLayerObject<RSC> parentData
+    )
+        throws DatabaseException
+    {
+        CacheRscData<RSC> cacheRscData = new CacheRscData<>(
+            rscLayerId,
+            rsc,
+            parentData,
+            new HashSet<>(),
+            rscNameSuffix,
+            cacheDbDriver,
+            new TreeMap<>(),
+            transObjFactory,
+            transMgrProvider
+        );
+        resourceLayerIdDatabaseDriver.persist(cacheRscData);
+        cacheDbDriver.persist(cacheRscData);
+        return cacheRscData;
+    }
+
+    public <RSC extends AbsResource<RSC>> CacheVlmData<RSC> createCacheVlmData(
+        AbsVolume<RSC> vlm,
+        StorPool cacheStorPool,
+        StorPool metaStorPool,
+        CacheRscData<RSC> rscData
+    )
+    {
+        return new CacheVlmData<>(
+            vlm,
+            rscData,
+            cacheStorPool,
+            metaStorPool,
+            cacheDbDriver,
             transObjFactory,
             transMgrProvider
         );

@@ -13,6 +13,8 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -27,13 +29,12 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 @Singleton
-class SnapWritecacheLayerHelper
-    extends AbsSnapLayerHelper<
-        WritecacheRscData<Snapshot>, WritecacheVlmData<Snapshot>,
-        RscDfnLayerObject, VlmDfnLayerObject>
+class SnapCacheLayerHelper extends AbsSnapLayerHelper<
+    CacheRscData<Snapshot>, CacheVlmData<Snapshot>,
+    RscDfnLayerObject, VlmDfnLayerObject>
 {
     @Inject
-    SnapWritecacheLayerHelper(
+    SnapCacheLayerHelper(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
@@ -45,7 +46,7 @@ class SnapWritecacheLayerHelper
             apiCtxRef,
             layerDataFactoryRef,
             layerRscIdPoolRef,
-            DeviceLayerKind.WRITECACHE
+            DeviceLayerKind.CACHE
         );
     }
 
@@ -55,7 +56,7 @@ class SnapWritecacheLayerHelper
         String rscNameSuffixRef
     )
     {
-        // WritecacheLayer does not have resource-definition specific data
+        // CacheLayer does not have resource-definition specific data
         return null;
     }
 
@@ -65,18 +66,18 @@ class SnapWritecacheLayerHelper
         String rscNameSuffixRef
     )
     {
-        // WritecacheLayer does not have volume-definition specific data
+        // CacheLayer does not have volume-definition specific data
         return null;
     }
 
     @Override
-    protected WritecacheRscData<Snapshot> createSnapData(
+    protected CacheRscData<Snapshot> createSnapData(
         Snapshot snapRef,
         AbsRscLayerObject<Resource> rscDataRef,
         AbsRscLayerObject<Snapshot> parentRef
     ) throws AccessDeniedException, DatabaseException, ExhaustedPoolException
     {
-        return layerDataFactory.createWritecacheRscData(
+        return layerDataFactory.createCacheRscData(
             layerRscIdPool.autoAllocate(),
             snapRef,
             rscDataRef.getResourceNameSuffix(),
@@ -85,15 +86,16 @@ class SnapWritecacheLayerHelper
     }
 
     @Override
-    protected WritecacheVlmData<Snapshot> createSnapVlmLayerData(
+    protected CacheVlmData<Snapshot> createSnapVlmLayerData(
         SnapshotVolume snapVlmRef,
-        WritecacheRscData<Snapshot> snapDataRef,
+        CacheRscData<Snapshot> snapDataRef,
         VlmProviderObject<Resource> vlmProviderObjectRef
     ) throws DatabaseException, AccessDeniedException
     {
-        return layerDataFactory.createWritecacheVlmData(
+        return layerDataFactory.createCacheVlmData(
             snapVlmRef,
-            ((WritecacheVlmData<Resource>) vlmProviderObjectRef).getCacheStorPool(),
+            ((CacheVlmData<Resource>) vlmProviderObjectRef).getCacheStorPool(),
+            ((CacheVlmData<Resource>) vlmProviderObjectRef).getMetaStorPool(),
             snapDataRef
         );
     }

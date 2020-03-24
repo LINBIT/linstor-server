@@ -19,6 +19,8 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -52,6 +54,8 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -729,6 +733,88 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
 
     @Override
     protected void mergeWritecacheVlm(WritecacheVlmPojo vlmPojoRef, WritecacheVlmData<Snapshot> writecacheVlmDataRef)
+        throws DatabaseException
+    {
+        // (for now) ignoring everythin
+    }
+
+    @Override
+    protected CacheRscData<Snapshot> createCacheRscData(
+        Snapshot snapRef,
+        AbsRscLayerObject<Snapshot> parentRef,
+        CacheRscPojo cacheRscPojoRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        CacheRscData<Snapshot> cacheSnapData = layerDataFactory.createCacheRscData(
+            cacheRscPojoRef.getId(),
+            snapRef,
+            cacheRscPojoRef.getRscNameSuffix(),
+            parentRef
+        );
+        if (parentRef == null)
+        {
+            snapRef.setLayerData(apiCtx, cacheSnapData);
+        }
+        else
+        {
+            updateParent(cacheSnapData, parentRef);
+        }
+        return cacheSnapData;
+    }
+
+    @Override
+    protected void removeCacheVlm(
+        CacheRscData<Snapshot> cacheRscDataRef,
+        VolumeNumber vlmNrRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        cacheRscDataRef.remove(apiCtx, vlmNrRef);
+    }
+
+    @Override
+    protected void createCacheVlm(
+        AbsVolume<Snapshot> vlmRef,
+        CacheRscData<Snapshot> cacheRscDataRef,
+        CacheVlmPojo vlmPojoRef,
+        VolumeNumber vlmNrRef
+    ) throws AccessDeniedException, InvalidNameException
+    {
+        String cacheStorPoolNameStr = vlmPojoRef.getCacheStorPoolName();
+        StorPool cacheStorPool = null;
+        if (cacheStorPoolNameStr != null && !cacheStorPoolNameStr.trim().isEmpty())
+        {
+            cacheStorPool = vlmRef.getAbsResource().getNode().getStorPool(
+                apiCtx,
+                new StorPoolName(cacheStorPoolNameStr)
+            );
+        }
+        String metaStorPoolNameStr = vlmPojoRef.getMetaStorPoolName();
+        StorPool metaStorPool = null;
+        if (metaStorPoolNameStr != null && !metaStorPoolNameStr.trim().isEmpty())
+        {
+            metaStorPool = vlmRef.getAbsResource().getNode().getStorPool(
+                apiCtx,
+                new StorPoolName(metaStorPoolNameStr)
+            );
+        }
+
+        CacheVlmData<Snapshot> cacheVlmData = layerDataFactory.createCacheVlmData(
+            vlmRef,
+            cacheStorPool,
+            metaStorPool,
+            cacheRscDataRef
+        );
+
+        cacheRscDataRef.getVlmLayerObjects().put(vlmNrRef, cacheVlmData);
+    }
+
+    @Override
+    protected void mergeCacheVlm(
+        CacheVlmPojo vlmPojoRef,
+        CacheVlmData<Snapshot> cacheVlmDataRef
+    )
         throws DatabaseException
     {
         // (for now) ignoring everythin

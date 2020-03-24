@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.0.16
+       - Added CacheResource and CacheVolume schemas
     * 1.0.15
       - Added connections map to the DRBD resource layer data
       - Added support for Openflex
@@ -338,6 +340,34 @@ paths:
         - `Writecache/Options/Additional` - string
 
             Additional arguments passed through
+
+        - `Cache/OpMode` - String
+
+            The operation mode / "feature". Default is "smq"
+
+        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            The storage pool for the cache devices
+
+        - `Cache/CacheSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the cache device in % (0-100) or KiB otherwise. Default is 5%
+
+        - `Cache/MetaPool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            The storage pool for the meta devices. If not specified the Cache/CachePool is used.
+
+        - `Cache/MetaSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the meta device in % (0-100) or KiB otherwise. Default is 12M
+
+        - `Cache/Policy` - enum
+
+            The policy of the dm-cache
+
+            * mq
+            * smq
+            * cleaner
 
       responses:
         '200':
@@ -842,6 +872,34 @@ paths:
 
             Additional arguments passed through
 
+        - `Cache/OpMode` - String
+
+            The operation mode / "feature". Default is "smq"
+
+        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            The storage pool for the cache devices
+
+        - `Cache/CacheSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the cache device in % (0-100) or KiB otherwise. Default is 5%
+
+        - `Cache/MetaPool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            The storage pool for the meta devices. If not specified the Cache/CachePool is used.
+
+        - `Cache/MetaSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the meta device in % (0-100) or KiB otherwise. Default is 12M
+
+        - `Cache/Policy` - enum
+
+            The policy of the dm-cache
+
+            * mq
+            * smq
+            * cleaner
+
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -1178,6 +1236,34 @@ paths:
         - `Writecache/Options/Additional` - string
 
             Additional arguments passed through
+
+        - `Cache/OpMode` - String
+
+            The operation mode / "feature". Default is "smq"
+
+        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            The storage pool for the cache devices
+
+        - `Cache/CacheSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the cache device in % (0-100) or KiB otherwise. Default is 5%
+
+        - `Cache/MetaPool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            The storage pool for the meta devices. If not specified the Cache/CachePool is used.
+
+        - `Cache/MetaSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the meta device in % (0-100) or KiB otherwise. Default is 12M
+
+        - `Cache/Policy` - enum
+
+            The policy of the dm-cache
+
+            * mq
+            * smq
+            * cleaner
 
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
@@ -3346,7 +3432,6 @@ paths:
               logcal_size_kib: 5368709120
               vdo_enable: false
 
-
 components:
   parameters:
     Resource:
@@ -3658,6 +3743,7 @@ components:
         - STORAGE
         - NVME
         - WRITECACHE
+        - CACHE
         - OPENFLEX
     DrbdResourceDefinitionLayer:
       type: object
@@ -3931,6 +4017,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WritecacheVolume'
+    CacheResource:
+      type: object
+      properties:
+        cache_volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CacheVolume'
     ResourceLayer:
       type: object
       properties:
@@ -3954,6 +4047,8 @@ components:
           $ref: '#/components/schemas/OpenflexResource'
         writecache:
           $ref: '#/components/schemas/WritecacheResource'
+        cache:
+          $ref: '#/components/schemas/CacheResource'
     ResourceState:
       type: object
       properties:
@@ -4183,6 +4278,31 @@ components:
           type: string
           description: String describing current volume state
 
+    CacheVolume:
+      type: object
+      properties:
+        volume_number:
+          type: integer
+          format: int32
+        device_path:
+          type: string
+          description: block device path
+        device_path_cache:
+          type: string
+          description: block device path used as cache device
+        device_meta_cache:
+          type: string
+          description: block device path used as meta device
+        allocated_size_kib:
+          type: integer
+          format: int64
+        usable_size_kib:
+          type: integer
+          format: int64
+        disk_state:
+          type: string
+          description: String describing current volume state
+
     VolumeLayer:
       type: object
       properties:
@@ -4195,6 +4315,7 @@ components:
             - $ref: '#/components/schemas/StorageVolume'
             - $ref: '#/components/schemas/NVMEVolume'
             - $ref: '#/components/schemas/WritecacheVolume'
+            - $ref: '#/components/schemas/CacheVolume'
 
     Volume:
       type: object

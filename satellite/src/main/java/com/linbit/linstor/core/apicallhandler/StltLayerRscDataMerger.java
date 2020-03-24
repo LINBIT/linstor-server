@@ -19,6 +19,8 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -51,6 +53,8 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -672,6 +676,91 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     protected void mergeWritecacheVlm(
         WritecacheVlmPojo vlmPojo,
         WritecacheVlmData<Resource> writecacheVlmData
+    )
+    {
+        // ignoring allocatedSize
+        // ignoring devicePath
+        // ignoring devicePathCache
+        // ignoring diskState
+        // ignoring exists
+        // ignoring identifier
+        // ignoring usableSize
+        // ignoring cacheStorPool (cannot be updated / changed)
+    }
+
+    @Override
+    protected CacheRscData<Resource> createCacheRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Resource> parentRef,
+        CacheRscPojo cacheRscPojoRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        CacheRscData<Resource> cacheRscData;
+        cacheRscData = layerDataFactory.createCacheRscData(
+            cacheRscPojoRef.getId(),
+            rscRef,
+            cacheRscPojoRef.getRscNameSuffix(),
+            parentRef
+        );
+        if (parentRef == null)
+        {
+            rscRef.setLayerData(apiCtx, cacheRscData);
+        }
+        else
+        {
+            updateParent(cacheRscData, parentRef);
+        }
+        return cacheRscData;
+    }
+
+    @Override
+    protected void removeCacheVlm(CacheRscData<Resource> cacheRscDataRef, VolumeNumber vlmNrRef)
+        throws DatabaseException, AccessDeniedException
+    {
+        cacheRscDataRef.remove(apiCtx, vlmNrRef);
+    }
+
+    @Override
+    protected void createCacheVlm(
+        AbsVolume<Resource> vlmRef,
+        CacheRscData<Resource> cacheRscDataRef,
+        CacheVlmPojo vlmPojo,
+        VolumeNumber vlmNrRef
+    ) throws AccessDeniedException, InvalidNameException
+    {
+        String cacheStorPoolNameStr = vlmPojo.getCacheStorPoolName();
+        StorPool cacheStorPool = null;
+        if (cacheStorPoolNameStr != null && !cacheStorPoolNameStr.trim().isEmpty())
+        {
+            cacheStorPool = vlmRef.getAbsResource().getNode().getStorPool(
+                apiCtx,
+                new StorPoolName(cacheStorPoolNameStr)
+            );
+        }
+        String metaStorPoolNameStr = vlmPojo.getMetaStorPoolName();
+        StorPool metaStorPool = null;
+        if (metaStorPoolNameStr != null && !metaStorPoolNameStr.trim().isEmpty())
+        {
+            metaStorPool = vlmRef.getAbsResource().getNode().getStorPool(
+                apiCtx,
+                new StorPoolName(metaStorPoolNameStr)
+            );
+        }
+
+        CacheVlmData<Resource> cacheVlmData = layerDataFactory.createCacheVlmData(
+            vlmRef,
+            cacheStorPool,
+            metaStorPool,
+            cacheRscDataRef
+        );
+        cacheRscDataRef.getVlmLayerObjects().put(vlmNrRef, cacheVlmData);
+    }
+
+    @Override
+    protected void mergeCacheVlm(
+        CacheVlmPojo vlmPojo,
+        CacheVlmData<Resource> cacheVlmData
     )
     {
         // ignoring allocatedSize

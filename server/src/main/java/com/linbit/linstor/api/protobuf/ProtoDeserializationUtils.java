@@ -190,6 +190,9 @@ public class ProtoDeserializationUtils
             case WRITECACHE:
                 kind = DeviceLayerKind.WRITECACHE;
                 break;
+            case CACHE:
+                kind = DeviceLayerKind.CACHE;
+                break;
             case OPENFLEX:
                 kind = DeviceLayerKind.OPENFLEX;
                 break;

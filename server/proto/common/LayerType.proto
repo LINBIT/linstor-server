@@ -12,4 +12,5 @@ enum LayerType
     NVME = 4;
     WRITECACHE = 5;
     OPENFLEX = 6;
+    CACHE = 7;
 }

@@ -19,6 +19,8 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -41,6 +43,8 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -481,6 +485,47 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         writecacheVlmDataRef.setCacheDevice(vlmPojoRef.getDevicePathCache());
         writecacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         writecacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
+    }
+
+    @Override
+    protected CacheRscData<Resource> createCacheRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Resource> parentRef,
+        CacheRscPojo writecacheRscPojoRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        throw new ImplementationError("Received unknown cache resource from satellite");
+    }
+
+    @Override
+    protected void createCacheVlm(
+        AbsVolume<Resource> vlmRef,
+        CacheRscData<Resource> writecacheRscDataRef,
+        CacheVlmPojo vlmPojo,
+        VolumeNumber vlmNrRef
+    )
+    {
+        throw new ImplementationError("Missing cache volume from satellite");
+    }
+
+    @Override
+    protected void removeCacheVlm(CacheRscData<Resource> cacheRscDataRef, VolumeNumber vlmNrRef)
+        throws DatabaseException, AccessDeniedException
+    {
+        // ignored. A parent volume might have more volumes in one of its children than in an other one
+    }
+
+    @Override
+    protected void mergeCacheVlm(CacheVlmPojo vlmPojoRef, CacheVlmData<Resource> cacheVlmDataRef)
+        throws DatabaseException
+    {
+        cacheVlmDataRef.setAllocatedSize(vlmPojoRef.getAllocatedSize());
+        cacheVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
+        cacheVlmDataRef.setCacheDevice(vlmPojoRef.getDevicePathCache());
+        cacheVlmDataRef.setMetaDevice(vlmPojoRef.getDevicePathMeta());
+        cacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
+        cacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override

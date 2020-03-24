@@ -12,6 +12,7 @@ import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.NVME;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.OPENFLEX;
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.CACHE;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.WRITECACHE;
 
@@ -33,10 +34,11 @@ public class LayerUtils
     {
         TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE, OPENFLEX);
 
-        NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE, OPENFLEX);
+        NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE, OPENFLEX, CACHE);
         NODES.get(LUKS).addChildren(STORAGE, OPENFLEX);
-        NODES.get(NVME).addChildren(LUKS, STORAGE, WRITECACHE, OPENFLEX);
-        NODES.get(WRITECACHE).addChildren(NVME, LUKS, STORAGE, OPENFLEX);
+        NODES.get(NVME).addChildren(LUKS, STORAGE, WRITECACHE, CACHE, OPENFLEX);
+        NODES.get(WRITECACHE).addChildren(NVME, LUKS, STORAGE, CACHE, OPENFLEX);
+        NODES.get(CACHE).addChildren(NVME, LUKS, STORAGE, OPENFLEX, WRITECACHE);
 
         NODES.get(OPENFLEX).addChildren(STORAGE); // will be ignored, just adding for convenience
         // "every layerlist has to end with STORAGE"

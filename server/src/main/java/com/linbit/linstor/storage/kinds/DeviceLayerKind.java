@@ -25,6 +25,9 @@ public enum DeviceLayerKind
         true,
         ExtTools.WRITECACHE
     ),
+    CACHE(
+        true
+    ),
     OPENFLEX(
         false
     ),

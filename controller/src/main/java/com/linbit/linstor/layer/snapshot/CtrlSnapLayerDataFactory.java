@@ -33,6 +33,7 @@ public class CtrlSnapLayerDataFactory
     private final SnapNvmeLayerHelper nvmeLayerHelper;
     private final SnapOpenflexLayerHelper openflexLayerHelper;
     private final SnapWritecacheLayerHelper writecacheLayerHelper;
+    private final SnapCacheLayerHelper cacheLayerHelper;
 
     @Inject
     public CtrlSnapLayerDataFactory(
@@ -44,7 +45,8 @@ public class CtrlSnapLayerDataFactory
         SnapStorageLayerHelper storageLayerHelperRef,
         SnapNvmeLayerHelper nvmeLayerHelperRef,
         SnapOpenflexLayerHelper openflexLayerHelperRef,
-        SnapWritecacheLayerHelper writecacheLayerHelperRef
+        SnapWritecacheLayerHelper writecacheLayerHelperRef,
+        SnapCacheLayerHelper cacheLayerHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -56,6 +58,7 @@ public class CtrlSnapLayerDataFactory
         nvmeLayerHelper = nvmeLayerHelperRef;
         openflexLayerHelper = openflexLayerHelperRef;
         writecacheLayerHelper = writecacheLayerHelperRef;
+        cacheLayerHelper = cacheLayerHelperRef;
     }
 
     public void copyLayerData(
@@ -157,6 +160,9 @@ public class CtrlSnapLayerDataFactory
                 break;
             case WRITECACHE:
                 layerHelper = writecacheLayerHelper;
+                break;
+            case CACHE:
+                layerHelper = cacheLayerHelper;
                 break;
             default:
                 throw new ImplementationError("Unknown device layer kind '" + kind + "'");

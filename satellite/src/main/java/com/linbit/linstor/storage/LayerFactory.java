@@ -2,6 +2,7 @@ package com.linbit.linstor.storage;
 
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.layer.DeviceLayer;
+import com.linbit.linstor.storage.layer.adapter.dmsetup.CacheLayer;
 import com.linbit.linstor.storage.layer.adapter.dmsetup.WritecacheLayer;
 import com.linbit.linstor.storage.layer.adapter.drbd.DrbdLayer;
 import com.linbit.linstor.storage.layer.adapter.luks.LuksLayer;
@@ -29,6 +30,7 @@ public class LayerFactory
         StorageLayer storageLayer,
         LuksLayer luksLayer,
         WritecacheLayer writecacheLayer,
+        CacheLayer cacheLayer,
         OpenflexLayer ofLayer
     )
     {
@@ -39,6 +41,7 @@ public class LayerFactory
         devLayerLookupTable.put(DeviceLayerKind.LUKS, luksLayer);
         devLayerLookupTable.put(DeviceLayerKind.STORAGE, storageLayer);
         devLayerLookupTable.put(DeviceLayerKind.WRITECACHE, writecacheLayer);
+        devLayerLookupTable.put(DeviceLayerKind.CACHE, cacheLayer);
         devLayerLookupTable.put(DeviceLayerKind.OPENFLEX, ofLayer);
     }
 

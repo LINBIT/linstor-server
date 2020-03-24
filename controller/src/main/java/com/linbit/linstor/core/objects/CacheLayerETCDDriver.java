@@ -10,17 +10,15 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerWritecacheVolumes;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerCacheVolumes;
 import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
-import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
-import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
-import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
@@ -36,7 +34,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 @Singleton
-public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements WritecacheLayerCtrlDatabaseDriver
+public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCtrlDatabaseDriver
 {
     private static final int PK_V_LRI_ID_IDX = 0;
     private static final int PK_V_VLM_NR_IDX = 1;
@@ -47,7 +45,7 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
     private final TransactionObjectFactory transObjFactory;
 
     @Inject
-    public WritecacheLayerETCDDriver(
+    public CacheLayerETCDDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,
@@ -69,16 +67,17 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
     }
 
     /**
-     * Fully loads a {@link WritecacheRscData} object including its {@link WritecacheVlmData}
+     * Fully loads a {@link CacheRscData} object including its {@link CacheVlmData}
      *
      * @param parentRef
-     * @return a {@link Pair}, where the first object is the actual WritecacheRscData and the second object
+     * @return a {@link Pair}, where the first object is the actual CacheRscData and the second object
      * is the first objects backing list of the children-resource layer data. This list is expected to be filled
      * upon further loading, without triggering transaction (and possibly database-) updates.
      * @throws DatabaseException
      */
     @Override
-    public <RSC extends AbsResource<RSC>> Pair<WritecacheRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
+    public <
+        RSC extends AbsResource<RSC>> Pair<CacheRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
         RSC absRsc,
         int id,
         String rscSuffixRef,
@@ -88,8 +87,8 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
         throws DatabaseException
     {
         Set<AbsRscLayerObject<RSC>> children = new HashSet<>();
-        Map<VolumeNumber, WritecacheVlmData<RSC>> vlmMap = new TreeMap<>();
-        WritecacheRscData<RSC> writecacheRscData = new WritecacheRscData<>(
+        Map<VolumeNumber, CacheVlmData<RSC>> vlmMap = new TreeMap<>();
+        CacheRscData<RSC> cacheRscData = new CacheRscData<>(
             id,
             absRsc,
             parentRef,
@@ -103,7 +102,9 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
 
         int vlmNrInt = -1;
 
-        Map<String, String> etcdVlmMap = namespace(GeneratedDatabaseTables.LAYER_WRITECACHE_VOLUMES)
+        Map<String, String> etcdVlmMap = namespace(
+            GeneratedDatabaseTables.LAYER_CACHE_VOLUMES
+        )
             .get(true);
         Set<String> composedPkSet = EtcdUtils.getComposedPkList(etcdVlmMap);
         NodeName nodeName = absRsc.getNode().getName();
@@ -115,7 +116,8 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
                 String[] pks = EtcdUtils.splitPks(composedPk, false);
 
                 vlmNrInt = Integer.parseInt(pks[PK_V_VLM_NR_IDX]);
-                String cacheStorPoolNameStr = get(etcdVlmMap, LayerWritecacheVolumes.POOL_NAME, pks);
+                String cacheStorPoolNameStr = get(etcdVlmMap, LayerCacheVolumes.POOL_NAME_CACHE, pks);
+                String metaStorPoolNameStr = get(etcdVlmMap, LayerCacheVolumes.POOL_NAME_META, pks);
 
                 VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
 
@@ -126,13 +128,20 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
                         new StorPoolName(cacheStorPoolNameStr)
                     )
                 ).objA;
+                StorPool metaStorPool = tmpStorPoolMapRef.get(
+                    new Pair<>(
+                        nodeName,
+                        new StorPoolName(metaStorPoolNameStr)
+                    )
+                ).objA;
 
                 vlmMap.put(
                     vlm.getVolumeNumber(),
-                    new WritecacheVlmData<>(
+                    new CacheVlmData<>(
                         vlm,
-                        writecacheRscData,
+                        cacheRscData,
                         cacheStorPool,
+                        metaStorPool,
                         this,
                         transObjFactory,
                         transMgrProvider
@@ -144,72 +153,76 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
         {
             throw new LinStorDBRuntimeException(
                 "Failed to restore stored volume number " + vlmNrInt +
-                    " for resource layer id: " + writecacheRscData.getRscLayerId()
+                    " for resource layer id: " + cacheRscData
+                        .getRscLayerId()
             );
         }
         catch (InvalidNameException exc)
         {
             throw new LinStorDBRuntimeException(
                 "Failed to restore stored storage pool name '" + exc.invalidName +
-                    "' for resource layer id " + writecacheRscData.getRscLayerId() + " vlmNr: " + vlmNrInt
+                    "' for resource layer id " + cacheRscData.getRscLayerId() + " vlmNr: " +
+                    vlmNrInt
             );
         }
-        return new Pair<>(writecacheRscData, children);
+        return new Pair<>(cacheRscData, children);
     }
 
     @Override
-    public void persist(WritecacheRscData<?> writecacheRscDataRef) throws DatabaseException
+    public void persist(CacheRscData<?> cacheRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
-        // this method only exists if WritecacheRscData will get a database table in future.
+        // this method only exists if CacheRscData will get a database table in future.
     }
 
     @Override
-    public void delete(WritecacheRscData<?> writecacheRscDataRef) throws DatabaseException
+    public void delete(CacheRscData<?> cacheRscDataRef) throws DatabaseException
     {
         // no-op - there is no special database table.
-        // this method only exists if WritecacheRscData will get a database table in future.
+        // this method only exists if CacheRscData will get a database table in future.
     }
 
     @Override
-    public void persist(WritecacheVlmData<?> writecacheVlmDataRef) throws DatabaseException
+    public void persist(CacheVlmData<?> cacheVlmDataRef) throws DatabaseException
     {
-        errorReporter.logTrace("Creating WritecacheVlmData %s", getId(writecacheVlmDataRef));
-        StorPool extStorPool = writecacheVlmDataRef.getCacheStorPool();
-        getNamespace(writecacheVlmDataRef)
-            .put(LayerWritecacheVolumes.NODE_NAME, extStorPool.getNode().getName().value)
-            .put(LayerWritecacheVolumes.POOL_NAME, extStorPool.getName().value);
+        errorReporter.logTrace("Creating CacheVlmData %s", getId(cacheVlmDataRef));
+        StorPool cacheStorPool = cacheVlmDataRef.getCacheStorPool();
+        StorPool metaStorPool = cacheVlmDataRef.getMetaStorPool();
+        getNamespace(cacheVlmDataRef)
+            .put(LayerCacheVolumes.NODE_NAME, cacheStorPool.getNode().getName().value)
+            .put(LayerCacheVolumes.POOL_NAME_CACHE, cacheStorPool.getName().value)
+            .put(LayerCacheVolumes.POOL_NAME_META, metaStorPool.getName().value);
     }
 
     @Override
-    public void delete(WritecacheVlmData<?> writecacheVlmDataRef) throws DatabaseException
+    public void delete(CacheVlmData<?> cacheVlmDataRef) throws DatabaseException
     {
-        errorReporter.logTrace("Deleting WritecacheVlmData %s", getId(writecacheVlmDataRef));
-        getNamespace(writecacheVlmDataRef)
+        errorReporter.logTrace("Deleting CacheVlmData %s", getId(cacheVlmDataRef));
+        getNamespace(cacheVlmDataRef)
             .delete(true);
     }
 
-    private String getId(WritecacheRscData<?> writecacheRscData)
+    private String getId(CacheRscData<?> cacheRscData)
     {
-        return "(LayerRscId=" + writecacheRscData.getRscLayerId() +
-            ", SuffResName=" + writecacheRscData.getSuffixedResourceName() +
+        return "(LayerRscId=" + cacheRscData.getRscLayerId() +
+            ", SuffResName=" + cacheRscData.getSuffixedResourceName() +
             ")";
     }
 
-    private String getId(WritecacheVlmData<?> writecacheVlmData)
+    private String getId(CacheVlmData<?> cacheVlmData)
     {
-        return "(LayerRscId=" + writecacheVlmData.getRscLayerId() +
-            ", SuffResName=" + writecacheVlmData.getRscLayerObject().getSuffixedResourceName() +
-            ", VlmNr=" + writecacheVlmData.getVlmNr().value +
+        return "(LayerRscId=" + cacheVlmData.getRscLayerId() +
+            ", SuffResName=" + cacheVlmData.getRscLayerObject().getSuffixedResourceName() +
+            ", VlmNr=" + cacheVlmData.getVlmNr().value +
             ")";
     }
 
-    private FluentLinstorTransaction getNamespace(WritecacheVlmData<?> writecacheVlmDataRef)
+    private FluentLinstorTransaction getNamespace(CacheVlmData<?> cacheVlmDataRef)
     {
         return namespace(
-            GeneratedDatabaseTables.LAYER_WRITECACHE_VOLUMES,
-            Integer.toString(writecacheVlmDataRef.getRscLayerId()),
-            Integer.toString(writecacheVlmDataRef.getVlmNr().value)
+            GeneratedDatabaseTables.LAYER_CACHE_VOLUMES,
+            Integer.toString(cacheVlmDataRef.getRscLayerId()),
+            Integer.toString(cacheVlmDataRef.getVlmNr().value)
         );
     }
 

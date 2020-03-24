@@ -330,6 +330,46 @@ public class GeneratedDatabaseTables
         }
     }
 
+    public static class LayerCacheVolumes implements DatabaseTable
+    {
+        private LayerCacheVolumes() { }
+
+        // Primary Keys
+        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
+
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl POOL_NAME_CACHE = new ColumnImpl("POOL_NAME_CACHE", Types.VARCHAR, false, false);
+        public static final ColumnImpl POOL_NAME_META = new ColumnImpl("POOL_NAME_META", Types.VARCHAR, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            LAYER_RESOURCE_ID,
+            VLM_NR,
+            NODE_NAME,
+            POOL_NAME_CACHE,
+            POOL_NAME_META
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "LAYER_CACHE_VOLUMES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_CACHE_VOLUMES";
+        }
+    }
+
     public static class LayerResourceIds implements DatabaseTable
     {
         private LayerResourceIds() { }
@@ -1415,6 +1455,7 @@ public class GeneratedDatabaseTables
     public static final LayerLuksVolumes LAYER_LUKS_VOLUMES = new LayerLuksVolumes();
     public static final LayerOpenflexResourceDefinitions LAYER_OPENFLEX_RESOURCE_DEFINITIONS = new LayerOpenflexResourceDefinitions();
     public static final LayerOpenflexVolumes LAYER_OPENFLEX_VOLUMES = new LayerOpenflexVolumes();
+    public static final LayerCacheVolumes LAYER_CACHE_VOLUMES = new LayerCacheVolumes();
     public static final LayerResourceIds LAYER_RESOURCE_IDS = new LayerResourceIds();
     public static final LayerStorageVolumes LAYER_STORAGE_VOLUMES = new LayerStorageVolumes();
     public static final LayerWritecacheVolumes LAYER_WRITECACHE_VOLUMES = new LayerWritecacheVolumes();
@@ -1483,6 +1524,11 @@ public class GeneratedDatabaseTables
         LayerOpenflexVolumes.VLM_NR.table = LAYER_OPENFLEX_VOLUMES;
         LayerOpenflexVolumes.NODE_NAME.table = LAYER_OPENFLEX_VOLUMES;
         LayerOpenflexVolumes.POOL_NAME.table = LAYER_OPENFLEX_VOLUMES;
+        LayerCacheVolumes.LAYER_RESOURCE_ID.table = LAYER_CACHE_VOLUMES;
+        LayerCacheVolumes.VLM_NR.table = LAYER_CACHE_VOLUMES;
+        LayerCacheVolumes.NODE_NAME.table = LAYER_CACHE_VOLUMES;
+        LayerCacheVolumes.POOL_NAME_CACHE.table = LAYER_CACHE_VOLUMES;
+        LayerCacheVolumes.POOL_NAME_META.table = LAYER_CACHE_VOLUMES;
         LayerResourceIds.LAYER_RESOURCE_ID.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.NODE_NAME.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.RESOURCE_NAME.table = LAYER_RESOURCE_IDS;

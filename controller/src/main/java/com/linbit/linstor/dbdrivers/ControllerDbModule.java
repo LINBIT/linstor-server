@@ -15,6 +15,8 @@ import com.linbit.linstor.core.objects.NvmeLayerETCDDriver;
 import com.linbit.linstor.core.objects.NvmeLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.OpenflexLayerETCDDriver;
 import com.linbit.linstor.core.objects.OpenflexLayerSQLDbDriver;
+import com.linbit.linstor.core.objects.CacheLayerETCDDriver;
+import com.linbit.linstor.core.objects.CacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
@@ -58,6 +60,8 @@ import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
@@ -182,6 +186,8 @@ public class ControllerDbModule extends AbstractModule
                 bind(OpenflexLayerDatabaseDriver.class).to(OpenflexLayerSQLDbDriver.class);
                 bind(WritecacheLayerCtrlDatabaseDriver.class).to(WritecacheLayerSQLDbDriver.class);
                 bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerSQLDbDriver.class);
+                bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
+                bind(CacheLayerDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
                 break;
             case ETCD:
                 bind(ControllerDatabase.class).to(DbEtcd.class);
@@ -212,6 +218,8 @@ public class ControllerDbModule extends AbstractModule
                 bind(OpenflexLayerDatabaseDriver.class).to(OpenflexLayerETCDDriver.class);
                 bind(WritecacheLayerCtrlDatabaseDriver.class).to(WritecacheLayerETCDDriver.class);
                 bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerETCDDriver.class);
+                bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerETCDDriver.class);
+                bind(CacheLayerDatabaseDriver.class).to(CacheLayerETCDDriver.class);
                 break;
             default:
                 throw new RuntimeException("Unknown database type: " + dbType);
