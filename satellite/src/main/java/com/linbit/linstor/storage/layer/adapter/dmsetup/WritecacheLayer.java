@@ -117,17 +117,12 @@ public class WritecacheLayer implements DeviceLayer
             {
                 String devName = getIdentifier(vlmData);
                 boolean exists = false;
-                String devicePath = vlmData.getDevicePath();
-                if (devicePath != null)
+                for (String dmDev : dmDeviceNames)
                 {
-                    for (String dmDev : dmDeviceNames)
+                    if (dmDev.equals(devName))
                     {
-                        if (String.format(FORMAT_DEV_PATH, dmDev).equals(devicePath))
-                        {
-                            errorReporter.logTrace("Writecache: device exists: %s, nothing to do", devicePath);
-                            exists = true;
-                            break;
-                        }
+                        exists = true;
+                        break;
                     }
                 }
                 String identifier = devName;
@@ -141,6 +136,16 @@ public class WritecacheLayer implements DeviceLayer
                         identifier
                     );
                     vlmData.setDevicePath(null);
+                }
+                else
+                {
+                    errorReporter.logTrace("Writecache: device exists: %s, nothing to do", devName);
+                    vlmData.setDevicePath(
+                        String.format(
+                            FORMAT_DEV_PATH,
+                            identifier
+                        )
+                    );
                 }
             }
         }
