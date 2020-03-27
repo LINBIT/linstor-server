@@ -13,7 +13,10 @@ import com.linbit.utils.StringUtils;
 import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class Commands
 {
@@ -58,13 +61,26 @@ public class Commands
     )
         throws StorageException
     {
+        return genericExecutor(extCmd, command, failMsgExitCode, failMsgExc, retryHandler, Collections.emptyList());
+    }
+
+    public static OutputData genericExecutor(
+        ExtCmd extCmd,
+        String[] command,
+        String failMsgExitCode,
+        String failMsgExc,
+        RetryHandler retryHandler,
+        List<Integer> allowExitCodes
+    )
+        throws StorageException
+    {
         OutputData outData;
         try
         {
             outData = extCmd.exec(command);
 
             boolean skipExitCodeCheck = false;
-            while (outData.exitCode != ExtCmdUtils.DEFAULT_RET_CODE_OK)
+            while (!(outData.exitCode == ExtCmdUtils.DEFAULT_RET_CODE_OK || allowExitCodes.contains(outData.exitCode)))
             {
                 if (retryHandler.skip(outData))
                 {
@@ -83,8 +99,11 @@ public class Commands
 
             if (!skipExitCodeCheck)
             {
+                List<Integer> ignoreCodes = new ArrayList<>(allowExitCodes);
+                ignoreCodes.add(ExtCmdUtils.DEFAULT_RET_CODE_OK);
                 ExtCmdUtils.checkExitCode(
                     outData,
+                    ignoreCodes,
                     StorageException::new,
                     failMsgExitCode
                 );

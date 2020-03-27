@@ -8,6 +8,7 @@ import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -98,7 +99,9 @@ public class LsBlkUtils
                 "-o", "device"
             },
             "Failed execute blkid",
-            "Failed to execute blkid"
+            "Failed to execute blkid",
+            Commands.NO_RETRY,
+            Collections.singletonList(2)
         );
 
         final String blkIdResult = new String(outputData.stdoutData, StandardCharsets.UTF_8);

@@ -4,6 +4,9 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.StringUtils;
 
+import java.util.Collections;
+import java.util.List;
+
 public class ExtCmdUtils
 {
     public static final int DEFAULT_RET_CODE_OK = 0;
@@ -28,7 +31,7 @@ public class ExtCmdUtils
     )
         throws EXC
     {
-        checkExitCode(output, DEFAULT_RET_CODE_OK, excFactory, format, args);
+        checkExitCode(output, Collections.singletonList(DEFAULT_RET_CODE_OK), excFactory, format, args);
     }
 
     /**
@@ -40,7 +43,7 @@ public class ExtCmdUtils
      * @param command
      *            The <code>String[]</code> that was called (used in the
      *            exception message)
-     * @param expectedRetCode
+     * @param expectedRetCodes
      *            The expected return code - usually 0
      * @param excFactory
      *            The exception factory creating a new exception if the exitCode is unexpected
@@ -54,14 +57,14 @@ public class ExtCmdUtils
      */
     public static <EXC extends Exception> void checkExitCode(
         OutputData output,
-        int expectedRetCode,
+        List<Integer> expectedRetCodes,
         ExceptionFactory<EXC> excFactory,
         String format,
         Object... args
     )
         throws EXC
     {
-        if (output.exitCode != expectedRetCode)
+        if (!expectedRetCodes.contains(output.exitCode))
         {
             throw excFactory.createException(
                 format != null && format.length() > 0 ?
