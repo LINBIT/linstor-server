@@ -1,0 +1,15 @@
+image: linbit/linstor-build
+
+before_script:
+  - gradle -PoverrideVersion= getProtoc
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+test:
+  stage: test
+  script:
+    - gradle -PoverrideVersion= test
+  artifacts:
+    reports:
+      junit: build/test-results/test/TEST-*.xml
