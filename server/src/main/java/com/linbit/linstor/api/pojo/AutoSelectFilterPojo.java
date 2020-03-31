@@ -11,6 +11,7 @@ import java.util.List;
 public class AutoSelectFilterPojo implements AutoSelectFilterApi
 {
     private final @Nullable Integer placeCount; // null only allowed for resource groupss
+    private final @Nullable List<String> nodeNameList;
     private final @Nullable List<String> storPoolNameList;
     private final @Nullable List<String> doNotPlaceWithRscList;
     private final @Nullable String doNotPlaceWithRegex;
@@ -22,6 +23,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
 
     public AutoSelectFilterPojo(
         @Nullable Integer placeCountRef,
+        @Nullable List<String> nodeNameListRef,
         @Nullable List<String> storPoolNameListRef,
         @Nullable List<String> doNotPlaceWithRscListRef,
         @Nullable String doNotPlaceWithRegexRef,
@@ -33,6 +35,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     )
     {
         placeCount = placeCountRef;
+        nodeNameList = nodeNameListRef;
         storPoolNameList = storPoolNameListRef;
         doNotPlaceWithRscList = doNotPlaceWithRscListRef;
         doNotPlaceWithRegex = doNotPlaceWithRegexRef;
@@ -52,6 +55,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         List<String> replicasOnSameList = null;
         String notPlaceWithRscRegex = null;
         List<String> notPlaceWithRscList = null;
+        List<String> nodeNameList = null;
         List<String> storPoolNameList = null;
         List<DeviceLayerKind> layerStack = null;
         List<DeviceProviderKind> providerList = null;
@@ -83,6 +87,10 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             {
                 storPoolNameList = cfgApi.getStorPoolNameList();
             }
+            if (nodeNameList == null)
+            {
+                nodeNameList = cfgApi.getNodeNameList();
+            }
             if (layerStack == null)
             {
                 layerStack = cfgApi.getLayerStackList();
@@ -99,6 +107,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
 
         return new AutoSelectFilterPojo(
             placeCount,
+            nodeNameList,
             storPoolNameList,
             notPlaceWithRscList,
             notPlaceWithRscRegex,
@@ -114,6 +123,12 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     public @Nullable Integer getReplicaCount()
     {
         return placeCount;
+    }
+
+    @Override
+    public List<String> getNodeNameList()
+    {
+        return nodeNameList;
     }
 
     @Override

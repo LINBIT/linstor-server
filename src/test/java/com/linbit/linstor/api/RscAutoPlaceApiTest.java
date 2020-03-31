@@ -1273,6 +1273,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final int placeCount;
 
         private final List<String> doNotPlaceWithRscList = new ArrayList<>();
+        private final List<String> nodeNameList = new ArrayList<>();
         private final List<String> storPoolNameList = new ArrayList<>();
         private String doNotPlaceWithRscRegexStr = null;
 
@@ -1340,6 +1341,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
+        RscAutoPlaceApiCall addNode(String nodeNameRef)
+        {
+            nodeNameList.add(nodeNameRef);
+            return this;
+        }
+
         RscAutoPlaceApiCall addStorPool(String storPoolNameRef)
         {
             storPoolNameList.add(storPoolNameRef);
@@ -1369,9 +1376,15 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 {
 
                     @Override
-                        public List<String> getStorPoolNameList()
+                    public List<String> getNodeNameList()
                     {
-                            return storPoolNameList;
+                        return nodeNameList;
+                    }
+
+                    @Override
+                    public List<String> getStorPoolNameList()
+                    {
+                        return storPoolNameList;
                     }
 
                     @Override

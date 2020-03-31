@@ -50,6 +50,46 @@ public class GeneratedDatabaseTables
         }
     }
 
+    public static class LayerCacheVolumes implements DatabaseTable
+    {
+        private LayerCacheVolumes() { }
+
+        // Primary Keys
+        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
+
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl POOL_NAME_CACHE = new ColumnImpl("POOL_NAME_CACHE", Types.VARCHAR, false, false);
+        public static final ColumnImpl POOL_NAME_META = new ColumnImpl("POOL_NAME_META", Types.VARCHAR, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            LAYER_RESOURCE_ID,
+            VLM_NR,
+            NODE_NAME,
+            POOL_NAME_CACHE,
+            POOL_NAME_META
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "LAYER_CACHE_VOLUMES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_CACHE_VOLUMES";
+        }
+    }
+
     public static class LayerDrbdResources implements DatabaseTable
     {
         private LayerDrbdResources() { }
@@ -327,46 +367,6 @@ public class GeneratedDatabaseTables
         public String toString()
         {
             return "Table LAYER_OPENFLEX_VOLUMES";
-        }
-    }
-
-    public static class LayerCacheVolumes implements DatabaseTable
-    {
-        private LayerCacheVolumes() { }
-
-        // Primary Keys
-        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
-        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
-
-        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
-        public static final ColumnImpl POOL_NAME_CACHE = new ColumnImpl("POOL_NAME_CACHE", Types.VARCHAR, false, false);
-        public static final ColumnImpl POOL_NAME_META = new ColumnImpl("POOL_NAME_META", Types.VARCHAR, false, false);
-
-        public static final Column[] ALL = new Column[]
-        {
-            LAYER_RESOURCE_ID,
-            VLM_NR,
-            NODE_NAME,
-            POOL_NAME_CACHE,
-            POOL_NAME_META
-        };
-
-        @Override
-        public Column[] values()
-        {
-            return ALL;
-        }
-
-        @Override
-        public String getName()
-        {
-            return "LAYER_CACHE_VOLUMES";
-        }
-
-        @Override
-        public String toString()
-        {
-            return "Table LAYER_CACHE_VOLUMES";
         }
     }
 
@@ -838,6 +838,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl DESCRIPTION = new ColumnImpl("DESCRIPTION", Types.VARCHAR, false, true);
         public static final ColumnImpl LAYER_STACK = new ColumnImpl("LAYER_STACK", Types.VARCHAR, false, true);
         public static final ColumnImpl REPLICA_COUNT = new ColumnImpl("REPLICA_COUNT", Types.INTEGER, false, false);
+        public static final ColumnImpl NODE_NAME_LIST = new ColumnImpl("NODE_NAME_LIST", Types.VARCHAR, false, true);
         public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, true);
         public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_REGEX = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_REGEX", Types.VARCHAR, false, true);
         public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_LIST = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_LIST", Types.VARCHAR, false, true);
@@ -854,6 +855,7 @@ public class GeneratedDatabaseTables
             DESCRIPTION,
             LAYER_STACK,
             REPLICA_COUNT,
+            NODE_NAME_LIST,
             POOL_NAME,
             DO_NOT_PLACE_WITH_RSC_REGEX,
             DO_NOT_PLACE_WITH_RSC_LIST,
@@ -1448,6 +1450,7 @@ public class GeneratedDatabaseTables
     }
 
     public static final KeyValueStore KEY_VALUE_STORE = new KeyValueStore();
+    public static final LayerCacheVolumes LAYER_CACHE_VOLUMES = new LayerCacheVolumes();
     public static final LayerDrbdResources LAYER_DRBD_RESOURCES = new LayerDrbdResources();
     public static final LayerDrbdResourceDefinitions LAYER_DRBD_RESOURCE_DEFINITIONS = new LayerDrbdResourceDefinitions();
     public static final LayerDrbdVolumes LAYER_DRBD_VOLUMES = new LayerDrbdVolumes();
@@ -1455,7 +1458,6 @@ public class GeneratedDatabaseTables
     public static final LayerLuksVolumes LAYER_LUKS_VOLUMES = new LayerLuksVolumes();
     public static final LayerOpenflexResourceDefinitions LAYER_OPENFLEX_RESOURCE_DEFINITIONS = new LayerOpenflexResourceDefinitions();
     public static final LayerOpenflexVolumes LAYER_OPENFLEX_VOLUMES = new LayerOpenflexVolumes();
-    public static final LayerCacheVolumes LAYER_CACHE_VOLUMES = new LayerCacheVolumes();
     public static final LayerResourceIds LAYER_RESOURCE_IDS = new LayerResourceIds();
     public static final LayerStorageVolumes LAYER_STORAGE_VOLUMES = new LayerStorageVolumes();
     public static final LayerWritecacheVolumes LAYER_WRITECACHE_VOLUMES = new LayerWritecacheVolumes();
@@ -1489,6 +1491,11 @@ public class GeneratedDatabaseTables
         KeyValueStore.UUID.table = KEY_VALUE_STORE;
         KeyValueStore.KVS_NAME.table = KEY_VALUE_STORE;
         KeyValueStore.KVS_DSP_NAME.table = KEY_VALUE_STORE;
+        LayerCacheVolumes.LAYER_RESOURCE_ID.table = LAYER_CACHE_VOLUMES;
+        LayerCacheVolumes.VLM_NR.table = LAYER_CACHE_VOLUMES;
+        LayerCacheVolumes.NODE_NAME.table = LAYER_CACHE_VOLUMES;
+        LayerCacheVolumes.POOL_NAME_CACHE.table = LAYER_CACHE_VOLUMES;
+        LayerCacheVolumes.POOL_NAME_META.table = LAYER_CACHE_VOLUMES;
         LayerDrbdResources.LAYER_RESOURCE_ID.table = LAYER_DRBD_RESOURCES;
         LayerDrbdResources.PEER_SLOTS.table = LAYER_DRBD_RESOURCES;
         LayerDrbdResources.AL_STRIPES.table = LAYER_DRBD_RESOURCES;
@@ -1524,11 +1531,6 @@ public class GeneratedDatabaseTables
         LayerOpenflexVolumes.VLM_NR.table = LAYER_OPENFLEX_VOLUMES;
         LayerOpenflexVolumes.NODE_NAME.table = LAYER_OPENFLEX_VOLUMES;
         LayerOpenflexVolumes.POOL_NAME.table = LAYER_OPENFLEX_VOLUMES;
-        LayerCacheVolumes.LAYER_RESOURCE_ID.table = LAYER_CACHE_VOLUMES;
-        LayerCacheVolumes.VLM_NR.table = LAYER_CACHE_VOLUMES;
-        LayerCacheVolumes.NODE_NAME.table = LAYER_CACHE_VOLUMES;
-        LayerCacheVolumes.POOL_NAME_CACHE.table = LAYER_CACHE_VOLUMES;
-        LayerCacheVolumes.POOL_NAME_META.table = LAYER_CACHE_VOLUMES;
         LayerResourceIds.LAYER_RESOURCE_ID.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.NODE_NAME.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.RESOURCE_NAME.table = LAYER_RESOURCE_IDS;
@@ -1598,6 +1600,7 @@ public class GeneratedDatabaseTables
         ResourceGroups.DESCRIPTION.table = RESOURCE_GROUPS;
         ResourceGroups.LAYER_STACK.table = RESOURCE_GROUPS;
         ResourceGroups.REPLICA_COUNT.table = RESOURCE_GROUPS;
+        ResourceGroups.NODE_NAME_LIST.table = RESOURCE_GROUPS;
         ResourceGroups.POOL_NAME.table = RESOURCE_GROUPS;
         ResourceGroups.DO_NOT_PLACE_WITH_RSC_REGEX.table = RESOURCE_GROUPS;
         ResourceGroups.DO_NOT_PLACE_WITH_RSC_LIST.table = RESOURCE_GROUPS;

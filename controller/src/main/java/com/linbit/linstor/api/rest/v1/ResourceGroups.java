@@ -167,6 +167,7 @@ public class ResourceGroups
             }
             autoSelectFilter = new AutoSelectFilterPojo(
                 select_filter.place_count,
+                select_filter.node_name_list,
                 storPoolList,
                 select_filter.not_place_with_rsc,
                 select_filter.not_place_with_rsc_regex,

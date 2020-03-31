@@ -638,6 +638,7 @@ public class CtrlRscDfnApiCallHandler
                         null,
                         null,
                         null,
+                        null,
                         null
                     );
                     resourceGroupRepository.put(apiCtx, rscGrp);

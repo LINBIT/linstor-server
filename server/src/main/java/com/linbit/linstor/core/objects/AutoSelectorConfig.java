@@ -19,6 +19,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +32,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     private final ResourceGroup rscGrp;
 
     private final TransactionSimpleObject<ResourceGroup, Integer> replicaCount;
+    private final TransactionList<ResourceGroup, String> nodeNameList;
     private final TransactionList<ResourceGroup, String> storPoolNameList;
     private final TransactionList<ResourceGroup, String> doNotPlaceWithRscList;
     private final TransactionSimpleObject<ResourceGroup, String> doNotPlaceWithRscRegex;
@@ -43,6 +45,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     public AutoSelectorConfig(
         ResourceGroup rscGrpRef,
         Integer replicaCountRef,
+        List<String> nodeNameListRef,
         List<String> storPoolNameListRef,
         List<String> doNotPlaceWithRscListRef,
         String doNotPlaceWithRscRegexRef,
@@ -64,6 +67,11 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             rscGrpRef,
             replicaCountRef == null ? 2 : replicaCountRef,
             dbDriverRef.getReplicaCountDriver()
+        );
+        nodeNameList = transactionObjectFactoryRef.createTransactionPrimitiveList(
+            rscGrpRef,
+            nodeNameListRef,
+            dbDriverRef.getNodeNameDriver()
         );
         storPoolNameList = transactionObjectFactoryRef.createTransactionPrimitiveList(
             rscGrpRef,
@@ -128,6 +136,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
         this(
             baseCfg.rscGrp,
             get(priorityApi.getReplicaCount(), baseCfg.replicaCount),
+            get(priorityApi.getNodeNameList(), baseCfg.nodeNameList),
             get(priorityApi.getStorPoolNameList(), baseCfg.storPoolNameList),
             get(priorityApi.getDoNotPlaceWithRscList(), baseCfg.doNotPlaceWithRscList),
             get(priorityApi.getDoNotPlaceWithRscRegex(), baseCfg.doNotPlaceWithRscRegex),
@@ -179,6 +188,11 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     }
 
 
+    public List<String> getNodeNameList(AccessContext accCtx) throws AccessDeniedException
+    {
+        return protectedList(accCtx, nodeNameList);
+    }
+
     public List<String> getStorPoolNameList(AccessContext accCtx) throws AccessDeniedException
     {
         return protectedList(accCtx, storPoolNameList);
@@ -199,7 +213,6 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     {
         return protectedList(accCtx, replicasOnSameList);
     }
-
 
     public List<String> getReplicasOnDifferentList(AccessContext accCtx) throws AccessDeniedException
     {
@@ -229,6 +242,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     {
         return new AutoSelectFilterPojo(
             replicaCount.get(),
+            Collections.unmodifiableList(nodeNameList),
             Collections.unmodifiableList(storPoolNameList),
             Collections.unmodifiableList(doNotPlaceWithRscList),
             doNotPlaceWithRscRegex.get(),
@@ -247,6 +261,12 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             if (autoPlaceConfigRef.getReplicaCount() != null)
             {
                 replicaCount.set(autoPlaceConfigRef.getReplicaCount());
+            }
+            List<String> pojoNodeName = autoPlaceConfigRef.getNodeNameList();
+            if (pojoNodeName != null && !pojoNodeName.isEmpty())
+            {
+                nodeNameList.clear();
+                nodeNameList.addAll(pojoNodeName);
             }
             List<String> pojoStorPool = autoPlaceConfigRef.getStorPoolNameList();
             if (pojoStorPool != null && !pojoStorPool.isEmpty())

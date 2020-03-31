@@ -1,14 +1,5 @@
 package com.linbit.linstor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.TreeMap;
-
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.VolumeConnection;
@@ -18,6 +9,15 @@ import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.TreeMap;
 
 public class PriorityProps
 {
@@ -105,8 +105,8 @@ public class PriorityProps
     {
         Map<String, String> ret = new HashMap<>();
 
-        int nsLen = namespace.length();
-        if (nsLen > 0)
+        int nsLen = namespace == null ? 0 : namespace.length();
+        if (nsLen > 0 && !namespace.equals("/"))
         {
             nsLen++; // also cut the trailing "/"
         }

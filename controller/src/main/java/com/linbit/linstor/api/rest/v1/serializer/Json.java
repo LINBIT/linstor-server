@@ -10,13 +10,13 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
-import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
@@ -729,6 +729,12 @@ public class Json
         public Integer getReplicaCount()
         {
             return autoSelectFilter.place_count;
+        }
+
+        @Override
+        public List<String> getNodeNameList()
+        {
+            return autoSelectFilter.node_name_list;
         }
 
         @Override

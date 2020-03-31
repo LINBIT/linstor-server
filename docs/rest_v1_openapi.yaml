@@ -4534,6 +4534,10 @@ components:
         place_count:
           type: integer
           format: int32
+        node_name_list:
+          type: array
+          items:
+            type: string
         storage_pool:
           type: string
         storage_pool_list:

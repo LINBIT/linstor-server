@@ -30,5 +30,18 @@ public class Migration_2020_04_01_ChangeRscGrpStorPoolToList extends LinstorMigr
                 " SET POOL_NAME = " + MigrationUtils.concat(dbProduct, "'[\"'", "POOL_NAME", "'\"]'") +
                 " WHERE POOL_NAME IS NOT NULL"
         );
+
+        SQLUtils.runSql(
+            connection,
+            MigrationUtils.addColumn(
+                dbProduct,
+                "RESOURCE_GROUPS",
+                "NODE_NAME_LIST",
+                "VARCHAR(4096)",
+                true,
+                "[]",
+                "REPLICA_COUNT"
+            )
+        );
     }
 }

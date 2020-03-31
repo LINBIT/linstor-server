@@ -57,6 +57,13 @@ public class SatelliteRscGrpDriver implements ResourceGroupDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
+    public CollectionDatabaseDriver<ResourceGroup, String> getNodeNameDriver()
+    {
+        return (CollectionDatabaseDriver<ResourceGroup, String>) noopColDriver;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public CollectionDatabaseDriver<ResourceGroup, String> getStorPoolNameDriver()
     {
         return (CollectionDatabaseDriver<ResourceGroup, String>) noopColDriver;

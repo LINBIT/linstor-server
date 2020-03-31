@@ -706,6 +706,7 @@ public class JsonGenTypes
     public static class AutoSelectFilter
     {
         public Integer place_count;
+        public List<String> node_name_list = Collections.emptyList();
         public String storage_pool;
         public List<String> storage_pool_list = Collections.emptyList();
         public List<String> not_place_with_rsc = null;

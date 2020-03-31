@@ -686,6 +686,7 @@ public class MigrationUtils
         String prefix = null;
         String glue = ", ";
         String suffix = null;
+
         switch (dbProductRef)
         {
             case ASE:
@@ -731,6 +732,7 @@ public class MigrationUtils
         {
             sb.append(suffix);
         }
+
         return sb.toString();
     }
 

@@ -551,6 +551,7 @@ public class CtrlRscGrpApiCallHandler
         ResourceGroup rscGrp;
         try
         {
+            List<String> nodeNameList = null;
             Integer replicaCount = null;
             List<String> storPoolNameList = null;
             List<String> doNotPlaceWithRscList = null;
@@ -564,6 +565,7 @@ public class CtrlRscGrpApiCallHandler
             if (autoSelectFilter != null)
             {
                 replicaCount = autoSelectFilter.getReplicaCount();
+                nodeNameList = autoSelectFilter.getNodeNameList();
                 storPoolNameList = autoSelectFilter.getStorPoolNameList();
                 doNotPlaceWithRscList = autoSelectFilter.getDoNotPlaceWithRscList();
                 doNotPlaceWithRscRegex = autoSelectFilter.getDoNotPlaceWithRscRegex();
@@ -579,6 +581,7 @@ public class CtrlRscGrpApiCallHandler
                 rscGrpPojoRef.getDescription(),
                 layerStackList,
                 replicaCount,
+                nodeNameList,
                 storPoolNameList,
                 doNotPlaceWithRscList,
                 doNotPlaceWithRscRegex,
@@ -764,6 +767,7 @@ public class CtrlRscGrpApiCallHandler
             {
                 AutoSelectFilterApi autoSelectFilterPojo = new AutoSelectFilterPojo(
                     autoPlaceConfig.getReplicaCount(peerCtx),
+                    autoPlaceConfig.getNodeNameList(peerCtx),
                     autoPlaceConfig.getStorPoolNameList(peerCtx),
                     autoPlaceConfig.getDoNotPlaceWithRscList(peerCtx),
                     autoPlaceConfig.getDoNotPlaceWithRscRegex(peerCtx),

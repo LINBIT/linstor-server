@@ -78,6 +78,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
         String descriptionRef,
         List<DeviceLayerKind> autoPlaceLayerStackRef,
         Integer autoPlaceReplicaCountRef,
+        List<String> autoPlaceNodeNameListRef,
         List<String> autoPlaceStorPoolNameListRef,
         List<String> autoPlaceDoNotPlaceWithRscListRef,
         String autoPlaceDoNotPlaceWithRscRegexRef,
@@ -116,6 +117,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
         autoPlaceConfig = new AutoSelectorConfig(
             this,
             autoPlaceReplicaCountRef,
+            autoPlaceNodeNameListRef,
             autoPlaceStorPoolNameListRef,
             autoPlaceDoNotPlaceWithRscListRef,
             autoPlaceDoNotPlaceWithRscRegexRef,
