@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 public class ResourceGroup extends BaseTransactionObject implements DbgInstanceUuid,
     Comparable<ResourceGroup>, ProtectedObject
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<VolumeNumber, VolumeGroup> getVlmGrpMap();
         Map<ResourceName, ResourceDefinition> getRscDfnMap();
@@ -78,7 +78,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
         String descriptionRef,
         List<DeviceLayerKind> autoPlaceLayerStackRef,
         Integer autoPlaceReplicaCountRef,
-        String autoPlaceStorPoolNameRef,
+        List<String> autoPlaceStorPoolNameListRef,
         List<String> autoPlaceDoNotPlaceWithRscListRef,
         String autoPlaceDoNotPlaceWithRscRegexRef,
         List<String> autoPlaceReplicasOnSameListRef,
@@ -116,7 +116,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
         autoPlaceConfig = new AutoSelectorConfig(
             this,
             autoPlaceReplicaCountRef,
-            autoPlaceStorPoolNameRef,
+            autoPlaceStorPoolNameListRef,
             autoPlaceDoNotPlaceWithRscListRef,
             autoPlaceDoNotPlaceWithRscRegexRef,
             autoPlaceReplicasOnSameListRef,

@@ -22,7 +22,7 @@ public interface ResourceGroupDatabaseDriver extends GenericDatabaseDriver<Resou
      */
     SingleColumnDatabaseDriver<ResourceGroup, Integer> getReplicaCountDriver();
 
-    SingleColumnDatabaseDriver<ResourceGroup, String>  getStorPoolNameDriver();
+    CollectionDatabaseDriver<ResourceGroup, String> getStorPoolNameDriver();
 
     CollectionDatabaseDriver<ResourceGroup, String> getDoNotPlaceWithRscListDriver();
 

@@ -1,13 +1,5 @@
 package com.linbit.linstor.api;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -70,6 +62,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
 public class RscAutoPlaceApiTest extends ApiTestBase
@@ -262,7 +262,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 .addStorPool("fast1", 100 * GB)
                 .build()
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * TB)
-            .setStorPool("fast1")
+            .addStorPool("fast1")
         );
         expectNotDeployed(TEST_RSC_NAME);
     }
@@ -288,7 +288,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 .addStorPool("fast1", 100 * GB)
                 .build()
             .addVlmDfn(TEST_RSC_NAME, 0, 50 * GB)
-            .setStorPool("fast1")
+            .addStorPool("fast1")
         );
 
         expectDeployed(
@@ -378,7 +378,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .addVlmDfn(TEST_RSC_NAME, 0, 5 * TB)
 
             .doNotPlaceWith("avoid1")
-            .setStorPool("slow1")
+                .addStorPool("slow1")
 
             .addRscDfn("avoid1", TEST_TCP_PORT_NR + 1)
             .addVlmDfn("avoid1", 0, 2 * TB)
@@ -1047,7 +1047,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             )
             // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
             // should still know about the previously configured objects
-            .setStorPool("stor2")
+                .addStorPool(
+                    "stor2"
+                )
             .disklessOnRemaining(true)
         );
 
@@ -1271,7 +1273,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final int placeCount;
 
         private final List<String> doNotPlaceWithRscList = new ArrayList<>();
-        private String forceStorPool = null;
+        private final List<String> storPoolNameList = new ArrayList<>();
         private String doNotPlaceWithRscRegexStr = null;
 
         private final List<String> replicasOnSameNodePropList = new ArrayList<>();
@@ -1338,9 +1340,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
-        RscAutoPlaceApiCall setStorPool(String forceStorPoolRef)
+        RscAutoPlaceApiCall addStorPool(String storPoolNameRef)
         {
-            forceStorPool = forceStorPoolRef;
+            storPoolNameList.add(storPoolNameRef);
             return this;
         }
 
@@ -1367,9 +1369,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 {
 
                     @Override
-                    public String getStorPoolNameStr()
+                        public List<String> getStorPoolNameList()
                     {
-                        return forceStorPool;
+                            return storPoolNameList;
                     }
 
                     @Override

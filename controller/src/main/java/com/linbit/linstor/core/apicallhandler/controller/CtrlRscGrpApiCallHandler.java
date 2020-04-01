@@ -552,7 +552,7 @@ public class CtrlRscGrpApiCallHandler
         try
         {
             Integer replicaCount = null;
-            String storPoolNameStr = null;
+            List<String> storPoolNameList = null;
             List<String> doNotPlaceWithRscList = null;
             String doNotPlaceWithRscRegex = null;
             List<DeviceLayerKind> layerStackList = null;
@@ -564,7 +564,7 @@ public class CtrlRscGrpApiCallHandler
             if (autoSelectFilter != null)
             {
                 replicaCount = autoSelectFilter.getReplicaCount();
-                storPoolNameStr = autoSelectFilter.getStorPoolNameStr();
+                storPoolNameList = autoSelectFilter.getStorPoolNameList();
                 doNotPlaceWithRscList = autoSelectFilter.getDoNotPlaceWithRscList();
                 doNotPlaceWithRscRegex = autoSelectFilter.getDoNotPlaceWithRscRegex();
                 replicasOnSameList = autoSelectFilter.getReplicasOnSameList();
@@ -579,7 +579,7 @@ public class CtrlRscGrpApiCallHandler
                 rscGrpPojoRef.getDescription(),
                 layerStackList,
                 replicaCount,
-                storPoolNameStr,
+                storPoolNameList,
                 doNotPlaceWithRscList,
                 doNotPlaceWithRscRegex,
                 replicasOnSameList,
@@ -764,7 +764,7 @@ public class CtrlRscGrpApiCallHandler
             {
                 AutoSelectFilterApi autoSelectFilterPojo = new AutoSelectFilterPojo(
                     autoPlaceConfig.getReplicaCount(peerCtx),
-                    autoPlaceConfig.getStorPoolNameStr(peerCtx),
+                    autoPlaceConfig.getStorPoolNameList(peerCtx),
                     autoPlaceConfig.getDoNotPlaceWithRscList(peerCtx),
                     autoPlaceConfig.getDoNotPlaceWithRscRegex(peerCtx),
                     autoPlaceConfig.getReplicasOnSameList(peerCtx),
@@ -900,7 +900,7 @@ public class CtrlRscGrpApiCallHandler
                     selectFilter.getReplicasOnSameList(accCtx),
                     selectFilter.getDoNotPlaceWithRscRegex(accCtx),
                     selectFilter.getDoNotPlaceWithRscList(accCtx),
-                    selectFilter.getStorPoolNameStr(accCtx),
+                    selectFilter.getStorPoolNameList(accCtx),
                     selectFilter.getLayerStackList(accCtx),
                     selectFilter.getProviderList(accCtx)
                 );

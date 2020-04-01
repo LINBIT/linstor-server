@@ -9,6 +9,7 @@ import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceGroup;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
@@ -135,24 +136,7 @@ public class ResourceGroups
 //                rscGrpCreate.resource_definition.volume_definitions != null ?
 //                    rscGrpCreate.resource_definition.volume_definitions : new ArrayList<>();
 
-            AutoSelectFilterApi autoSelectFilter = null;
-            if (rscGrp.select_filter != null)
-            {
-                autoSelectFilter = new AutoSelectFilterPojo(
-                    rscGrp.select_filter.place_count,
-                    rscGrp.select_filter.storage_pool,
-                    rscGrp.select_filter.not_place_with_rsc,
-                    rscGrp.select_filter.not_place_with_rsc_regex,
-                    rscGrp.select_filter.replicas_on_same,
-                    rscGrp.select_filter.replicas_on_different,
-                    rscGrp.select_filter.layer_stack != null ?
-                        LinstorParsingUtils.asDeviceLayerKind(rscGrp.select_filter.layer_stack) : null,
-                    rscGrp.select_filter.provider_list != null ?
-                        LinstorParsingUtils.asProviderKind(rscGrp.select_filter.provider_list) : null,
-                    rscGrp.select_filter.diskless_on_remaining
-                );
-            }
-
+            AutoSelectFilterApi autoSelectFilter = selectFilterToApi(rscGrp.select_filter);
             ApiCallRc apiCallRc = ctrlApiCallHandler.createResourceGroup(
                 new RscGrpPojo(
                     null,
@@ -165,6 +149,36 @@ public class ResourceGroups
             );
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
         }, true);
+    }
+
+    private AutoSelectFilterApi selectFilterToApi(AutoSelectFilter select_filter)
+    {
+        AutoSelectFilterApi autoSelectFilter = null;
+        if (select_filter != null)
+        {
+            List<String> storPoolList = select_filter.storage_pool_list;
+            if (
+                (storPoolList == null || storPoolList.isEmpty()) &&
+                    select_filter.storage_pool != null &&
+                    !select_filter.storage_pool.isEmpty()
+            )
+            {
+                storPoolList = Collections.singletonList(select_filter.storage_pool);
+            }
+            autoSelectFilter = new AutoSelectFilterPojo(
+                select_filter.place_count,
+                storPoolList,
+                select_filter.not_place_with_rsc,
+                select_filter.not_place_with_rsc_regex,
+                select_filter.replicas_on_same,
+                select_filter.replicas_on_different,
+                LinstorParsingUtils.asDeviceLayerKind(select_filter.layer_stack),
+                LinstorParsingUtils.asProviderKind(select_filter.provider_list),
+                select_filter.diskless_on_remaining
+            );
+        }
+
+        return autoSelectFilter;
     }
 
     @PUT
@@ -182,23 +196,7 @@ public class ResourceGroups
             jsonData,
             JsonGenTypes.ResourceGroupModify.class
         );
-        AutoSelectFilterApi modifyAutoSelectFilter = null;
-        if (modifyData.select_filter != null)
-        {
-            modifyAutoSelectFilter = new AutoSelectFilterPojo(
-                modifyData.select_filter.place_count,
-                modifyData.select_filter.storage_pool,
-                modifyData.select_filter.not_place_with_rsc,
-                modifyData.select_filter.not_place_with_rsc_regex,
-                modifyData.select_filter.replicas_on_same,
-                modifyData.select_filter.replicas_on_different,
-                modifyData.select_filter.layer_stack != null ?
-                    LinstorParsingUtils.asDeviceLayerKind(modifyData.select_filter.layer_stack) : null,
-                modifyData.select_filter.provider_list != null ?
-                    LinstorParsingUtils.asProviderKind(modifyData.select_filter.provider_list) : null,
-                modifyData.select_filter.diskless_on_remaining
-            );
-        }
+        AutoSelectFilterApi modifyAutoSelectFilter = selectFilterToApi(modifyData.select_filter);
         Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.modify(
             rscGrpName,
             modifyData.description,

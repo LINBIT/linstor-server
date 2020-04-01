@@ -65,7 +65,7 @@ public class ResourceGroupDbDriver
     private final SingleColumnDatabaseDriver<ResourceGroup, String> descriptionDriver;
     private final CollectionDatabaseDriver<ResourceGroup, DeviceLayerKind> layerStackDriver;
     private final SingleColumnDatabaseDriver<ResourceGroup, Integer> replicaCountDriver;
-    private final SingleColumnDatabaseDriver<ResourceGroup, String> storPoolNameDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> storPoolNameDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscListDriver;
     private final SingleColumnDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscRegexDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnSameListDriver;
@@ -104,7 +104,7 @@ public class ResourceGroupDbDriver
             rscGrp -> toString(rscGrp.getAutoPlaceConfig().getLayerStackList(dbCtxRef))
         );
         setColumnSetter(REPLICA_COUNT, rscGrp -> rscGrp.getAutoPlaceConfig().getReplicaCount(dbCtxRef));
-        setColumnSetter(POOL_NAME, rscGrp -> rscGrp.getAutoPlaceConfig().getStorPoolNameStr(dbCtxRef));
+        setColumnSetter(POOL_NAME, rscGrp -> toString(rscGrp.getAutoPlaceConfig().getStorPoolNameList(dbCtxRef)));
         setColumnSetter(
             DO_NOT_PLACE_WITH_RSC_REGEX,
             rscGrp -> rscGrp.getAutoPlaceConfig().getDoNotPlaceWithRscRegex(dbCtxRef)
@@ -159,11 +159,7 @@ public class ResourceGroupDbDriver
             rscGrp -> Objects.toString(rscGrp.getAutoPlaceConfig().getReplicaCount(dbCtxRef)),
             Function.identity()
         );
-        storPoolNameDriver = generateSingleColumnDriver(
-            POOL_NAME,
-            rscGrp -> Objects.toString(rscGrp.getAutoPlaceConfig().getStorPoolNameStr(dbCtxRef)),
-            Function.identity()
-        );
+        storPoolNameDriver = generateCollectionToJsonStringArrayDriver(POOL_NAME);
         doNotPlaceWithRscListDriver = generateCollectionToJsonStringArrayDriver(DO_NOT_PLACE_WITH_RSC_LIST);
         doNotPlaceWithRscRegexDriver = generateSingleColumnDriver(
             DO_NOT_PLACE_WITH_RSC_REGEX,
@@ -199,7 +195,7 @@ public class ResourceGroupDbDriver
     }
 
     @Override
-    public SingleColumnDatabaseDriver<ResourceGroup, String> getStorPoolNameDriver()
+    public CollectionDatabaseDriver<ResourceGroup, String> getStorPoolNameDriver()
     {
         return storPoolNameDriver;
     }
@@ -293,7 +289,7 @@ public class ResourceGroupDbDriver
                 raw.get(DESCRIPTION),
                 DatabaseLoader.asDevLayerKindList(raw.getAsStringList(LAYER_STACK)),
                 replicaCount,
-                raw.get(POOL_NAME),
+                raw.getAsStringList(POOL_NAME),
                 raw.getAsStringList(DO_NOT_PLACE_WITH_RSC_LIST),
                 raw.get(DO_NOT_PLACE_WITH_RSC_REGEX),
                 replicasOnSame,

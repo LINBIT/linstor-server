@@ -57,6 +57,7 @@ import com.linbit.utils.Pair;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -715,6 +716,13 @@ public class Json
         public AutoSelectFilterData(JsonGenTypes.AutoSelectFilter autoSelectFilterRef)
         {
             autoSelectFilter = autoSelectFilterRef;
+            if (
+                (autoSelectFilterRef.storage_pool_list == null || autoSelectFilterRef.storage_pool_list.isEmpty()) &&
+                    autoSelectFilterRef.storage_pool != null
+            )
+            {
+                autoSelectFilterRef.storage_pool_list = Collections.singletonList(autoSelectFilterRef.storage_pool);
+            }
         }
 
         @Override
@@ -724,9 +732,9 @@ public class Json
         }
 
         @Override
-        public String getStorPoolNameStr()
+        public List<String> getStorPoolNameList()
         {
-            return autoSelectFilter.storage_pool;
+            return autoSelectFilter.storage_pool_list;
         }
 
         @Override
@@ -865,7 +873,11 @@ public class Json
             {
                 auto_select_filter.place_count = autoSelectApi.getReplicaCount();
             }
-            auto_select_filter.storage_pool = autoSelectApi.getStorPoolNameStr();
+            if (autoSelectApi.getStorPoolNameList() != null && autoSelectApi.getStorPoolNameList().size() == 1)
+            {
+                auto_select_filter.storage_pool = autoSelectApi.getStorPoolNameList().get(0);
+            }
+            auto_select_filter.storage_pool_list = autoSelectApi.getStorPoolNameList();
             auto_select_filter.not_place_with_rsc = autoSelectApi.getDoNotPlaceWithRscList();
             auto_select_filter.not_place_with_rsc_regex = autoSelectApi.getDoNotPlaceWithRscRegex();
             auto_select_filter.replicas_on_same = autoSelectApi.getReplicasOnSameList();

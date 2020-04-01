@@ -3,7 +3,6 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
@@ -67,7 +66,7 @@ public class ResourceGroupSatelliteFactory
         @Nullable String description,
         @Nullable List<DeviceLayerKind> layerStackRef,
         @Nullable Integer autoPlaceReplicaCountRef,
-        @Nullable String autoPlaceStorPoolNameRef,
+        @Nullable List<String> autoPlaceStorPoolListRef,
         @Nullable List<String> autoPlaceDoNotPlaceWithRscListRef,
         @Nullable String autoPlaceDoNotPlaceWithRscRegexRef,
         @Nullable List<String> autoPlaceReplicasOnSameListRef,
@@ -77,7 +76,7 @@ public class ResourceGroupSatelliteFactory
     )
         throws DatabaseException, AccessDeniedException
     {
-        ResourceGroup rscGrp = (ResourceGroup) rscGrpMap.get(rscGrpName);
+        ResourceGroup rscGrp = rscGrpMap.get(rscGrpName);
 
         if (rscGrp == null)
         {
@@ -92,7 +91,7 @@ public class ResourceGroupSatelliteFactory
                 description,
                 copy(layerStackRef),
                 autoPlaceReplicaCountRef,
-                autoPlaceStorPoolNameRef,
+                copy(autoPlaceStorPoolListRef),
                 copy(autoPlaceDoNotPlaceWithRscListRef),
                 autoPlaceDoNotPlaceWithRscRegexRef,
                 copy(autoPlaceReplicasOnSameListRef),

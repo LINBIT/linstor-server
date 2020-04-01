@@ -4536,6 +4536,10 @@ components:
           format: int32
         storage_pool:
           type: string
+        storage_pool_list:
+          type: array
+          items:
+            type: string
         not_place_with_rsc:
           type: array
           default: null

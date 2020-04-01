@@ -9,7 +9,7 @@ public interface AutoSelectFilterApi
 {
     Integer getReplicaCount();
 
-    String getStorPoolNameStr();
+    List<String> getStorPoolNameList();
 
     List<String> getDoNotPlaceWithRscList();
 

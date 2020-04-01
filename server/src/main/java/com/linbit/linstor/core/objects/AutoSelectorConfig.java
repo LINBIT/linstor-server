@@ -31,7 +31,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     private final ResourceGroup rscGrp;
 
     private final TransactionSimpleObject<ResourceGroup, Integer> replicaCount;
-    private final TransactionSimpleObject<ResourceGroup, String> storPoolName;
+    private final TransactionList<ResourceGroup, String> storPoolNameList;
     private final TransactionList<ResourceGroup, String> doNotPlaceWithRscList;
     private final TransactionSimpleObject<ResourceGroup, String> doNotPlaceWithRscRegex;
     private final TransactionList<ResourceGroup, String> replicasOnSameList;
@@ -43,7 +43,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     public AutoSelectorConfig(
         ResourceGroup rscGrpRef,
         Integer replicaCountRef,
-        String storPoolNameRef,
+        List<String> storPoolNameListRef,
         List<String> doNotPlaceWithRscListRef,
         String doNotPlaceWithRscRegexRef,
         List<String> replicasOnSameListRef,
@@ -65,9 +65,9 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             replicaCountRef == null ? 2 : replicaCountRef,
             dbDriverRef.getReplicaCountDriver()
         );
-        storPoolName = transactionObjectFactoryRef.createTransactionSimpleObject(
+        storPoolNameList = transactionObjectFactoryRef.createTransactionPrimitiveList(
             rscGrpRef,
-            storPoolNameRef,
+            storPoolNameListRef,
             dbDriverRef.getStorPoolNameDriver()
         );
         doNotPlaceWithRscList = transactionObjectFactoryRef.createTransactionPrimitiveList(
@@ -107,7 +107,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
         );
         transObjs = Arrays.asList(
             replicaCount,
-            storPoolName,
+            storPoolNameList,
             doNotPlaceWithRscList,
             doNotPlaceWithRscRegex,
             replicasOnSameList,
@@ -128,7 +128,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
         this(
             baseCfg.rscGrp,
             get(priorityApi.getReplicaCount(), baseCfg.replicaCount),
-            get(priorityApi.getStorPoolNameStr(), baseCfg.storPoolName),
+            get(priorityApi.getStorPoolNameList(), baseCfg.storPoolNameList),
             get(priorityApi.getDoNotPlaceWithRscList(), baseCfg.doNotPlaceWithRscList),
             get(priorityApi.getDoNotPlaceWithRscRegex(), baseCfg.doNotPlaceWithRscRegex),
             get(priorityApi.getReplicasOnSameList(), baseCfg.replicasOnSameList),
@@ -179,60 +179,43 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     }
 
 
-    public String getStorPoolNameStr(AccessContext accCtx) throws AccessDeniedException
+    public List<String> getStorPoolNameList(AccessContext accCtx) throws AccessDeniedException
     {
-        getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        return storPoolName.get();
+        return protectedList(accCtx, storPoolNameList);
     }
 
 
     public List<String> getDoNotPlaceWithRscList(AccessContext accCtx) throws AccessDeniedException
     {
-        ObjectProtection objProt = getObjProt();
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-
-        List<String> ret;
-        AccessType queryAccess = objProt.queryAccess(accCtx);
-
-        if (queryAccess.hasAccess(AccessType.CHANGE))
-        {
-            ret = doNotPlaceWithRscList;
-        }
-        else
-        {
-            ret = Collections.unmodifiableList(doNotPlaceWithRscList);
-        }
-        return ret;
+        return protectedList(accCtx, doNotPlaceWithRscList);
     }
-
 
     public String getDoNotPlaceWithRscRegex(AccessContext accCtx) throws AccessDeniedException
     {
         return doNotPlaceWithRscRegex.get();
     }
 
-
     public List<String> getReplicasOnSameList(AccessContext accCtx) throws AccessDeniedException
     {
-        return replicasOnSameList;
+        return protectedList(accCtx, replicasOnSameList);
     }
 
 
     public List<String> getReplicasOnDifferentList(AccessContext accCtx) throws AccessDeniedException
     {
-        return replicasOnDifferentList;
+        return protectedList(accCtx, replicasOnDifferentList);
     }
 
 
     public List<DeviceLayerKind> getLayerStackList(AccessContext accCtx) throws AccessDeniedException
     {
-        return layerStack;
+        return protectedList(accCtx, layerStack);
     }
 
 
     public List<DeviceProviderKind> getProviderList(AccessContext accCtx) throws AccessDeniedException
     {
-        return allowedProviderList;
+        return protectedList(accCtx, allowedProviderList);
     }
 
 
@@ -246,7 +229,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     {
         return new AutoSelectFilterPojo(
             replicaCount.get(),
-            storPoolName.get(),
+            Collections.unmodifiableList(storPoolNameList),
             Collections.unmodifiableList(doNotPlaceWithRscList),
             doNotPlaceWithRscRegex.get(),
             Collections.unmodifiableList(replicasOnSameList),
@@ -265,17 +248,11 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             {
                 replicaCount.set(autoPlaceConfigRef.getReplicaCount());
             }
-            String pojoStorPool = autoPlaceConfigRef.getStorPoolNameStr();
-            if (pojoStorPool != null)
+            List<String> pojoStorPool = autoPlaceConfigRef.getStorPoolNameList();
+            if (pojoStorPool != null && !pojoStorPool.isEmpty())
             {
-                if (pojoStorPool.isEmpty())
-                {
-                    storPoolName.set(null);
-                }
-                else
-                {
-                    storPoolName.set(pojoStorPool);
-                }
+                storPoolNameList.clear();
+                storPoolNameList.addAll(pojoStorPool);
             }
             Boolean disklessOnRemainingRef = autoPlaceConfigRef.getDisklessOnRemaining();
             if (disklessOnRemainingRef != null)
@@ -316,5 +293,28 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
                 replicasOnDifferentList.addAll(replicasOnDifferentListRef);
             }
         }
+    }
+
+    private <T> List<T> protectedList(
+        AccessContext accCtx,
+        List<T> list
+    )
+        throws AccessDeniedException
+    {
+        ObjectProtection objProt = getObjProt();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        List<T> ret;
+        AccessType queryAccess = objProt.queryAccess(accCtx);
+
+        if (queryAccess.hasAccess(AccessType.CHANGE))
+        {
+            ret = list;
+        }
+        else
+        {
+            ret = Collections.unmodifiableList(list);
+        }
+        return ret;
     }
 }

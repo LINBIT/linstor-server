@@ -5,12 +5,13 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
 
 public class AutoSelectFilterPojo implements AutoSelectFilterApi
 {
     private final @Nullable Integer placeCount; // null only allowed for resource groupss
-    private final @Nullable String storPoolNameStr;
+    private final @Nullable List<String> storPoolNameList;
     private final @Nullable List<String> doNotPlaceWithRscList;
     private final @Nullable String doNotPlaceWithRegex;
     private final @Nullable List<String> replicasOnSameList;
@@ -21,7 +22,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
 
     public AutoSelectFilterPojo(
         @Nullable Integer placeCountRef,
-        @Nullable String storPoolNameStrRef,
+        @Nullable List<String> storPoolNameListRef,
         @Nullable List<String> doNotPlaceWithRscListRef,
         @Nullable String doNotPlaceWithRegexRef,
         @Nullable List<String> replicasOnSameListRef,
@@ -32,7 +33,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     )
     {
         placeCount = placeCountRef;
-        storPoolNameStr = storPoolNameStrRef;
+        storPoolNameList = storPoolNameListRef;
         doNotPlaceWithRscList = doNotPlaceWithRscListRef;
         doNotPlaceWithRegex = doNotPlaceWithRegexRef;
         replicasOnSameList = replicasOnSameListRef;
@@ -51,7 +52,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         List<String> replicasOnSameList = null;
         String notPlaceWithRscRegex = null;
         List<String> notPlaceWithRscList = null;
-        String storPoolNameStr = null;
+        List<String> storPoolNameList = null;
         List<DeviceLayerKind> layerStack = null;
         List<DeviceProviderKind> providerList = null;
         Boolean disklessOnRemaining = null;
@@ -78,9 +79,9 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             {
                 notPlaceWithRscRegex = cfgApi.getDoNotPlaceWithRscRegex();
             }
-            if (storPoolNameStr == null)
+            if (storPoolNameList == null)
             {
-                storPoolNameStr = cfgApi.getStorPoolNameStr();
+                storPoolNameList = cfgApi.getStorPoolNameList();
             }
             if (layerStack == null)
             {
@@ -98,7 +99,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
 
         return new AutoSelectFilterPojo(
             placeCount,
-            storPoolNameStr,
+            storPoolNameList,
             notPlaceWithRscList,
             notPlaceWithRscRegex,
             replicasOnSameList,
@@ -116,9 +117,9 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     }
 
     @Override
-    public @Nullable String getStorPoolNameStr()
+    public @Nullable List<String> getStorPoolNameList()
     {
-        return storPoolNameStr;
+        return storPoolNameList;
     }
 
     @Override

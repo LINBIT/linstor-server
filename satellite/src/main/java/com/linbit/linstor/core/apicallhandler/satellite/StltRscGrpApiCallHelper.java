@@ -80,7 +80,7 @@ class StltRscGrpApiCallHelper
                 rscGrpApiRef.getDescription(),
                 autoPlaceConfigPojo.getLayerStackList(),
                 autoPlaceConfigPojo.getReplicaCount(),
-                autoPlaceConfigPojo.getStorPoolNameStr(),
+                autoPlaceConfigPojo.getStorPoolNameList(),
                 autoPlaceConfigPojo.getDoNotPlaceWithRscList(),
                 autoPlaceConfigPojo.getDoNotPlaceWithRscRegex(),
                 autoPlaceConfigPojo.getReplicasOnSameList(),

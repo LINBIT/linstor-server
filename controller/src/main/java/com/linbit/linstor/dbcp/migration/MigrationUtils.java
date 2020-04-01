@@ -632,6 +632,108 @@ public class MigrationUtils
         return sql;
     }
 
+    public static String alterColumnType(DbProduct dbProductRef, String table, String col, String newType)
+    {
+        String sql;
+        String type = replaceTypesByDialect(dbProductRef, newType);
+        switch (dbProductRef)
+        {
+            case ASE:
+            case INFORMIX:
+            case ORACLE_RDBMS:
+                sql = String.format("ALTER TABLE %s MODIFY %s %s", table, col, type);
+                break;
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+                sql = String.format("ALTER TABLE %s ALTER %s SET DATA TYPE %s", table, col, type);
+                break;
+            case H2:
+                sql = String.format("ALTER TABLE %s ALTER %s %s", table, col, type);
+                break;
+            case MARIADB:
+            case MYSQL:
+                sql = String.format("ALTER TABLE %s CHANGE COLUMN %s %s %s", table, col, col, type);
+                break;
+            case MSFT_SQLSERVER:
+                sql = String.format("ALTER TABLE %s ALTER COLUMN %s %s", table, col, type);
+                break;
+            case POSTGRESQL:
+                sql = String.format("ALTER TABLE %s ALTER %s TYPE %s", table, col, type);
+                break;
+            case ETCD:
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
+
+        }
+        return sql;
+    }
+
+    /**
+     * Caution, this method does not return a full SQL statement, but only the sql-dialect version of a concat.
+     * Also make sure to quote ALL constant strings, otherwise this method could not reference columns!
+     * example: concat("\"prefix\"", "NODE_NAME", "\"suffix\"");
+     *
+     * @param dbProductRef
+     * @param concatParams
+     *
+     * @return
+     */
+    public static String concat(DbProduct dbProductRef, String... concatParams)
+    {
+        String prefix = null;
+        String glue = ", ";
+        String suffix = null;
+        switch (dbProductRef)
+        {
+            case ASE:
+            case H2:
+            case POSTGRESQL:
+            case DB2:
+            case DB2_I:
+            case DB2_Z:
+            case DERBY:
+            case INFORMIX:
+            case ORACLE_RDBMS:
+                prefix = "(";
+                suffix = ")";
+                glue = " || ";
+                break;
+            case MSFT_SQLSERVER:
+                prefix = "(";
+                suffix = ")";
+                glue = " + ";
+                break;
+            case MARIADB:
+            case MYSQL:
+                prefix = "concat(";
+                suffix = ")";
+                glue = ", ";
+                break;
+            case ETCD:
+            case UNKNOWN:
+            default:
+                throw new ImplementationError("Unexpected database type: " + dbProductRef);
+        }
+        StringBuilder sb = new StringBuilder();
+        if (prefix != null)
+        {
+            sb.append(prefix);
+        }
+        for (String concatParam : concatParams)
+        {
+            sb.append(concatParam).append(glue);
+        }
+        sb.setLength(sb.length() - glue.length());
+        if (suffix != null)
+        {
+            sb.append(suffix);
+        }
+        return sb.toString();
+    }
+
     private static int[] getVersion (String str) {
         int[] ret;
         Matcher matcher = VERSION_PATTERN.matcher(str);

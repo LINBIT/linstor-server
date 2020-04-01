@@ -1,8 +1,5 @@
 package com.linbit.linstor.security;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.GuiceConfigModule;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.ControllerDatabase;
@@ -105,6 +102,9 @@ import org.junit.rules.Timeout;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public abstract class GenericDbBase implements GenericDbTestConstants
 {
@@ -360,7 +360,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         }
         finally
         {
-            if (inScope)
+            if (inScope && testScope != null)
             {
                 testScope.exit();
             }

@@ -13,10 +13,10 @@ import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.AutoStorPoolSelectorConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlAutoStorPoolSelector.Candidate;
-import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -26,6 +26,7 @@ import com.linbit.utils.ComparatorUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -95,7 +96,7 @@ public class CtrlQueryMaxVlmSizeApiCallHandler
                 selectFilter.getReplicasOnSameList(),
                 selectFilter.getDoNotPlaceWithRscRegex(),
                 selectFilter.getDoNotPlaceWithRscList(),
-                selectFilter.getStorPoolNameStr(),
+                selectFilter.getStorPoolNameList(),
                 selectFilter.getLayerStackList(),
                 selectFilter.getProviderList()
             );

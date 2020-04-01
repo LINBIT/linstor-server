@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -167,19 +168,27 @@ public class CtrlAutoStorPoolSelector
     )
     {
         Map<StorPoolName, List<Node>> ret = new HashMap<>();
-        String forcedStorPoolName = selectFilter.getStorPoolNameStr();
-        if (forcedStorPoolName != null)
+        List<String> forcedStorPoolNameList = selectFilter.getStorPoolNameList();
+        if (forcedStorPoolNameList != null && !forcedStorPoolNameList.isEmpty())
         {
-            StorPoolName storPoolName = LinstorParsingUtils.asStorPoolName(selectFilter.getStorPoolNameStr());
-            List<Node> nodes = storPools.get(storPoolName);
-            if (nodes == null)
+            for (String storPoolNameStr : forcedStorPoolNameList)
             {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
-                    "Storage pool '" + forcedStorPoolName + "' not found"
-                ));
+                StorPoolName storPoolName = LinstorParsingUtils.asStorPoolName(storPoolNameStr);
+                List<Node> nodes = storPools.get(storPoolName);
+                if (nodes != null)
+                {
+                    ret.put(storPoolName, nodes);
+                }
             }
-            ret.put(storPoolName, nodes); // skip all other entries
+            if (ret.isEmpty())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
+                        "No storage pool with names " + forcedStorPoolNameList + " found"
+                    )
+                );
+            }
         }
         else
         {
@@ -667,7 +676,8 @@ public class CtrlAutoStorPoolSelector
         @Nullable private final List<String> replicasOnSameList;
         @Nullable private final String notPlaceWithRscRegex;
         @Nullable private final List<String> notPlaceWithRscList;
-        @Nullable private final String storPoolNameStr;
+        @Nullable
+        private final List<String> storPoolNameList;
         @Nullable private final List<DeviceLayerKind> layerStackList;
         @Nullable private final List<DeviceProviderKind> providerList;
 
@@ -677,7 +687,7 @@ public class CtrlAutoStorPoolSelector
             @Nullable List<String> replicasOnSameListRef,
             @Nullable String notPlaceWithRscRegexRef,
             @Nullable List<String> notPlaceWithRscListRef,
-            @Nullable String storPoolNameStrRef,
+            @Nullable List<String> storPoolNameListRef,
             @Nullable List<DeviceLayerKind> layerStackRef,
             @Nullable List<DeviceProviderKind> providerListRef
         )
@@ -687,7 +697,7 @@ public class CtrlAutoStorPoolSelector
             replicasOnSameList = replicasOnSameListRef;
             notPlaceWithRscRegex = notPlaceWithRscRegexRef;
             notPlaceWithRscList = notPlaceWithRscListRef;
-            storPoolNameStr = storPoolNameStrRef;
+            storPoolNameList = storPoolNameListRef;
             layerStackList = layerStackRef;
             providerList = providerListRef;
         }
@@ -717,9 +727,10 @@ public class CtrlAutoStorPoolSelector
             return notPlaceWithRscList;
         }
 
-        @Nullable public String getStorPoolNameStr()
+        @Nullable
+        public List<String> getStorPoolNameList()
         {
-            return storPoolNameStr;
+            return storPoolNameList;
         }
 
         @Nullable public List<DeviceLayerKind> getLayerStackList()

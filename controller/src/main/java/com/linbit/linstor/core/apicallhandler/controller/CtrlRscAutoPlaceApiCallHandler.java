@@ -192,20 +192,25 @@ public class CtrlRscAutoPlaceApiCallHandler
             throw new ApiRcException(makePlaceCountTooLowResponse(rscNameStr, alreadyPlaced));
         }
 
-        String storPoolName;
-        if (alreadyPlaced.isEmpty() || mergedSelectFilter.getStorPoolNameStr() != null)
+        List<String> storPoolNameList;
+        if (
+            alreadyPlaced.isEmpty() ||
+                (mergedSelectFilter.getStorPoolNameList() != null &&
+                !mergedSelectFilter.getStorPoolNameList().isEmpty())
+        )
         {
-            storPoolName = mergedSelectFilter.getStorPoolNameStr();
+            storPoolNameList = mergedSelectFilter.getStorPoolNameList();
         }
         else
         {
-            storPoolName = ctrlPropsHelper.getProps(alreadyPlaced.get(0)).map()
-                .get(InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME);
+            storPoolNameList = Collections.singletonList(
+                ctrlPropsHelper.getProps(alreadyPlaced.get(0)).map().get(InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME)
+            );
         }
 
         errorReporter.logDebug(
             "Auto-placing '%s' on %d additional nodes" +
-                (storPoolName == null ? "" : " using pool '" + storPoolName + "'"),
+                (storPoolNameList == null ? "" : " using pool '" + storPoolNameList + "'"),
             rscNameStr,
             additionalPlaceCount
         );
@@ -235,7 +240,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     // Do not attempt to re-use nodes that already have this resource
                     Stream.of(rscNameStr)
                 ).collect(Collectors.toList()),
-                storPoolName,
+                storPoolNameList,
                 mergedSelectFilter.getLayerStackList(),
                 mergedSelectFilter.getProviderList()
             );
@@ -283,7 +288,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 deploymentResponses = autoPlaceThin(
                     context,
                     rscNameStr,
-                    storPoolName,
+                    storPoolNameList,
                     rscSize,
                     autoStorPoolSelectorConfig,
                     mergedSelectFilter.getDisklessOnRemaining(),
@@ -304,7 +309,7 @@ public class CtrlRscAutoPlaceApiCallHandler
     private Flux<ApiCallRc> autoPlaceThin(
         ResponseContext context,
         String rscNameStr,
-        String storPoolName,
+        List<String> storPoolNameList,
         long rscSize,
         AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
         Boolean disklessOnRemainingNodes,
@@ -321,7 +326,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     () -> autoPlaceThinInTransaction(
                         context,
                         rscNameStr,
-                        storPoolName,
+                        storPoolNameList,
                         rscSize,
                         autoStorPoolSelectorConfig,
                         disklessOnRemainingNodes,
@@ -334,7 +339,7 @@ public class CtrlRscAutoPlaceApiCallHandler
     private Flux<ApiCallRc> autoPlaceThinInTransaction(
         ResponseContext context,
         String rscNameStr,
-        String storPoolName,
+        List<String> storPoolNameList,
         long rscSize,
         AutoStorPoolSelectorConfig autoStorPoolSelectorConfig,
         Boolean disklessOnRemainingNodes,
@@ -352,7 +357,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         );
 
         Candidate candidate = bestCandidate
-            .orElseThrow(() -> failNotEnoughCandidates(storPoolName, rscSize, autoStorPoolSelectorConfig));
+            .orElseThrow(() -> failNotEnoughCandidates(storPoolNameList, rscSize, autoStorPoolSelectorConfig));
 
         Pair<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = createResources(
             context,
@@ -607,7 +612,7 @@ public class CtrlRscAutoPlaceApiCallHandler
     }
 
     private ApiRcException failNotEnoughCandidates(
-        String storPoolName,
+        List<String> storPoolNameList,
         final long rscSize,
         AutoStorPoolSelectorConfig config
     )
@@ -630,9 +635,9 @@ public class CtrlRscAutoPlaceApiCallHandler
         {
             sb.append("  Don't place with resource (List): " + config.getNotPlaceWithRscList() + "\n");
         }
-        if (config.getStorPoolNameStr() != null && !config.getStorPoolNameStr().isEmpty())
+        if (config.getStorPoolNameList() != null && !config.getStorPoolNameList().isEmpty())
         {
-            sb.append("  Storage pool name: " + config.getStorPoolNameStr() + "\n");
+            sb.append("  Storage pool name: " + config.getStorPoolNameList() + "\n");
         }
         if (!config.getLayerStackList().isEmpty())
         {
@@ -650,11 +655,12 @@ public class CtrlRscAutoPlaceApiCallHandler
             .setDetails(
                 "Not enough nodes fulfilling the following auto-place criteria:\n" +
                     (
-                        storPoolName == null ?
+                    storPoolNameList == null ||
+                        storPoolNameList.isEmpty() ?
                             "" :
-                            " * has a deployed storage pool named '" + storPoolName + "'\n" +
-                                " * the storage pool '" + storPoolName + "' has to have at least '" +
-                                rscSize + "' free space\n"
+                            " * has a deployed storage pool named " + storPoolNameList + "\n" +
+                                " * the storage pools have to have at least '" + rscSize +
+                                "' free space\n"
                     ) +
                     " * the current access context has enough privileges to use the node and the storage pool\n" +
                         " * the node is online\n\n" +
