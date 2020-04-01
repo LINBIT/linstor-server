@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
+import com.linbit.linstor.core.objects.CacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.DrbdLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
@@ -26,6 +27,7 @@ import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.WritecacheLayerSQLDbDriver;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
@@ -118,5 +120,6 @@ public class TestDbModule extends AbstractModule
         bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerSQLDbDriver.class);
         bind(OpenflexLayerDatabaseDriver.class).to(OpenflexLayerSQLDbDriver.class);
         bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerSQLDbDriver.class);
+        bind(CacheLayerDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
     }
 }
