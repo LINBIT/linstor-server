@@ -622,6 +622,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     errLog.logTrace(
                         "Execution of device handlers skipped, because DRBD state tracking is currently inoperative."
                     );
+                    Thread.sleep(500);
                 }
             }
             catch (SvcCondException scExc)
