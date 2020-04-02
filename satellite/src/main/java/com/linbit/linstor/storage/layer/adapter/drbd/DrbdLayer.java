@@ -630,7 +630,34 @@ public class DrbdLayer implements DeviceLayer
                                 }
                                 catch (ExtCmdFailedException forgetPeerExc)
                                 {
-                                    throw delPeerExc != null ? delPeerExc : forgetPeerExc;
+                                    /*
+                                     * let us check our current version of the events2 stream.
+                                     * if the peer we just tried to delete does not exist, we should be fine
+                                     */
+                                    try
+                                    {
+                                        DrbdResource drbdRscState = drbdState.getDrbdResource(
+                                            drbdRscData.getSuffixedResourceName()
+                                        );
+                                        DrbdConnection peerConnection = drbdRscState.getConnection(
+                                            otherRsc.getAbsResource().getNode().getName().displayValue
+                                        );
+                                        if (peerConnection != null)
+                                        {
+                                            throw delPeerExc != null ? delPeerExc : forgetPeerExc;
+                                        }
+                                        else
+                                        {
+                                            // ignore the exceptions, the peer does not seem to exist any more
+                                            errorReporter.logDebug(
+                                                "del-peer and forget-peer failed, but we also failed to find the specific peer. noop"
+                                            );
+                                        }
+                                    }
+                                    catch (NoInitialStateException exc)
+                                    {
+                                        throw new ImplementationError(exc);
+                                    }
                                 }
                             }
                         }
