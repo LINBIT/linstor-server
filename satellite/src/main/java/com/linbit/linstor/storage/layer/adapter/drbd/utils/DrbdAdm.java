@@ -376,7 +376,21 @@ public class DrbdAdm
     public void resumeIo(DrbdRscData<Resource> drbdRscData)
         throws ExtCmdFailedException
     {
-        execute(DRBDADM_UTIL, "resume-io", drbdRscData.getSuffixedResourceName());
+        if (drbdRscData.resFileExists())
+        {
+            execute(DRBDADM_UTIL, "resume-io", drbdRscData.getSuffixedResourceName());
+        }
+        else
+        {
+            for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+            {
+                execute(
+                    DRBDSETUP_UTIL,
+                    "resume-io",
+                    Integer.toString(drbdVlmData.getVlmDfnLayerObject().getMinorNr().value)
+                );
+            }
+        }
     }
 
     public void waitConnectResource(DrbdRscData<Resource> drbdRscData, int timeout) throws ExtCmdFailedException

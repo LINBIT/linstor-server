@@ -483,6 +483,7 @@ public class DrbdLayer implements DeviceLayer
             Path resFile = asResourceFile(drbdRscData, false);
             errorReporter.logTrace("Deleting res file: %s ", resFile);
             Files.deleteIfExists(resFile);
+            drbdRscData.setResFileExists(false);
 
             drbdRscData.setExists(false);
             for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
@@ -1265,6 +1266,7 @@ public class DrbdLayer implements DeviceLayer
                 resFile,
                 StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
             );
+            drbdRscData.setResFileExists(true);
         }
         catch (IOException ioExc)
         {

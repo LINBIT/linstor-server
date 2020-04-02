@@ -51,6 +51,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     private boolean failed = false;
     private boolean isPrimary;
     private boolean isSuspended = false;
+    private boolean resFileExists = false;
 
     public DrbdRscData(
         int rscLayerIdRef,
@@ -252,6 +253,16 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     public void setSuspended(boolean isSuspendedRef)
     {
         isSuspended = isSuspendedRef;
+    }
+
+    public void setResFileExists(boolean resFileExistsRef)
+    {
+        resFileExists = resFileExistsRef;
+    }
+
+    public boolean resFileExists()
+    {
+        return resFileExists;
     }
 
     @Override
