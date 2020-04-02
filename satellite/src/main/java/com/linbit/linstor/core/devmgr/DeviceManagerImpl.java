@@ -945,6 +945,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     {
         synchronized (sched)
         {
+            for (NodeName nodeName : dispatchNodes.keySet())
+            {
+                synchronized (sched)
+                {
+                    dispatchNodeResponses.put(
+                        nodeName,
+                        ApiCallRcImpl.singleApiCallRc(MODIFIED, "Node changes applied.")
+                    );
+                }
+            }
             for (Entry<NodeName, ApiCallRc> dispatchNodeResponseEntry : dispatchNodeResponses.entrySet())
             {
                 NodeName nodeName = dispatchNodeResponseEntry.getKey();
@@ -977,16 +987,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             }
             dispatchRscResponses.clear();
 
-            for (NodeName nodeName : dispatchNodes.keySet())
-            {
-                synchronized (sched)
-                {
-                    dispatchNodeResponses.put(
-                        nodeName,
-                        ApiCallRcImpl.singleApiCallRc(MODIFIED, "Node changes applied.")
-                    );
-                }
-            }
 
             for (FluxSink<ApiCallRc> responseSink : responseSinks)
             {
