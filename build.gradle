@@ -266,11 +266,11 @@ project(':controller') {
 
             compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.6.0'
             compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.6.2'
-            compile group: 'org.flywaydb', name: 'flyway-core', version: '5.2.4'
+            compile group: 'org.flywaydb', name: 'flyway-core', version: '6.3.2'
             runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 
-//            runtime 'org.mariadb.jdbc:mariadb-java-client:2.2.6'
-//            runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
+            runtime 'org.mariadb.jdbc:mariadb-java-client:2.6.0'
+            runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.12'
         }
     }
 
