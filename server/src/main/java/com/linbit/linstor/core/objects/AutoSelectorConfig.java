@@ -19,7 +19,6 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -284,7 +283,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
                 disklessOnRemaining.set(disklessOnRemainingRef);
             }
             List<String> doNotPlaceWithRscListRef = autoPlaceConfigRef.getDoNotPlaceWithRscList();
-            if (doNotPlaceWithRscListRef != null && !doNotPlaceWithRscListRef.isEmpty())
+            if (doNotPlaceWithRscListRef != null)
             {
                 doNotPlaceWithRscList.clear();
                 doNotPlaceWithRscList.addAll(doNotPlaceWithRscListRef);
@@ -299,14 +298,19 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
                 layerStack.clear();
                 layerStack.addAll(autoPlaceConfigRef.getLayerStackList());
             }
+            if (autoPlaceConfigRef.getProviderList() != null)
+            {
+                allowedProviderList.clear();
+                allowedProviderList.addAll(autoPlaceConfigRef.getProviderList());
+            }
             List<String> replicasOnSameListRef = autoPlaceConfigRef.getReplicasOnSameList();
-            if (replicasOnSameListRef != null && !replicasOnSameListRef.isEmpty())
+            if (replicasOnSameListRef != null)
             {
                 replicasOnSameList.clear();
                 replicasOnSameList.addAll(replicasOnSameListRef);
             }
             List<String> replicasOnDifferentListRef = autoPlaceConfigRef.getReplicasOnDifferentList();
-            if (replicasOnDifferentListRef != null && !replicasOnDifferentListRef.isEmpty())
+            if (replicasOnDifferentListRef != null)
             {
                 replicasOnDifferentList.clear();
                 replicasOnDifferentList.addAll(replicasOnDifferentListRef);
