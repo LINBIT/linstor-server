@@ -15,12 +15,8 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 class SQLListToJsonArrayDriver<DATA, LIST_TYPE> implements CollectionDatabaseDriver<DATA, LIST_TYPE>
 {
-    private static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
-
     private final ErrorReporter errorReporter;
     private final SQLEngine sqlEngine;
     private final Column columnToUpdate;
