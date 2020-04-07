@@ -1,15 +1,26 @@
 image: linbit/linstor-build
 
 before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
   - gradle -PoverrideVersion= getProtoc
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
+cache:
+  paths:
+    - .gradle/wrapper
+    - .gradle/caches
+
+build:
+  stage: build
+  script:
+    - gradle -PoverrideVersion= assemble
+
 test:
   stage: test
   script:
-    - gradle -PoverrideVersion= test
+    - gradle -PoverrideVersion= check
   artifacts:
     reports:
       junit: build/test-results/test/TEST-*.xml
