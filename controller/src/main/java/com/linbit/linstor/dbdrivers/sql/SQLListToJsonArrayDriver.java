@@ -9,14 +9,12 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.ExceptionThrowingFunction;
-import com.linbit.utils.StringUtils;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 class SQLListToJsonArrayDriver<DATA, LIST_TYPE> implements CollectionDatabaseDriver<DATA, LIST_TYPE>
@@ -31,6 +29,7 @@ class SQLListToJsonArrayDriver<DATA, LIST_TYPE> implements CollectionDatabaseDri
     private final DataToString<DATA> dataToString;
 
     private final DatabaseTable table;
+    private final ExceptionThrowingFunction<DATA, Object, AccessDeniedException> columnSetter;
 
     SQLListToJsonArrayDriver(
         SQLEngine sqlEngineRef,
@@ -48,6 +47,7 @@ class SQLListToJsonArrayDriver<DATA, LIST_TYPE> implements CollectionDatabaseDri
         updateStatement = sqlEngineRef.generateUpdateStatement(columnToUpdateRef);
 
         table = columnToUpdateRef.getTable();
+        columnSetter = setters.get(columnToUpdate);
     }
 
     @Override
@@ -77,7 +77,8 @@ class SQLListToJsonArrayDriver<DATA, LIST_TYPE> implements CollectionDatabaseDri
                 backingCollection.toString(),
                 inlineId
             );
-            stmt.setObject(1, OBJ_MAPPER.writeValueAsString(StringUtils.asStrList(backingCollection)));
+
+            stmt.setObject(1, columnSetter.accept(data));
             sqlEngine.setPrimaryValues(setters, stmt, 2, table, data);
 
             stmt.executeUpdate();
@@ -89,7 +90,7 @@ class SQLListToJsonArrayDriver<DATA, LIST_TYPE> implements CollectionDatabaseDri
                 inlineId
             );
         }
-        catch (SQLException | JsonProcessingException sqlExc)
+        catch (SQLException sqlExc)
         {
             throw new DatabaseException(sqlExc);
         }
