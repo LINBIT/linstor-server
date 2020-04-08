@@ -128,9 +128,11 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
             out += gen_description_javadoc(field, indent, 2)
             t = resolve_type_str(schema_lookup, field)
             if t.startswith("Map"):
-                out += indent * 2 + "public {t} {n} = Collections.emptyMap();\n".format(t=t, n=fieldname)
+                dval = 'null' if "default" in field and field['default'] is None else 'Collections.emptyMap()'
+                out += indent * 2 + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=dval)
             elif t.startswith("List"):
-                out += indent * 2 + "public {t} {n} = Collections.emptyList();\n".format(t=t, n=fieldname)
+                dval = 'null' if "default" in field and field['default'] is None else 'Collections.emptyList()'
+                out += indent * 2 + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=dval)
             else:
                 if "default" in field:
                     dval = field['default']

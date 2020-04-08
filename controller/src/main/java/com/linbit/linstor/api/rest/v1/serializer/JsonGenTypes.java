@@ -701,12 +701,12 @@ public class JsonGenTypes
     {
         public Integer place_count;
         public String storage_pool;
-        public List<String> not_place_with_rsc = Collections.emptyList();
+        public List<String> not_place_with_rsc = null;
         public String not_place_with_rsc_regex;
-        public List<String> replicas_on_same = Collections.emptyList();
-        public List<String> replicas_on_different = Collections.emptyList();
-        public List<String> layer_stack = Collections.emptyList();
-        public List<String> provider_list = Collections.emptyList();
+        public List<String> replicas_on_same = null;
+        public List<String> replicas_on_different = null;
+        public List<String> layer_stack = null;
+        public List<String> provider_list = null;
         public Boolean diskless_on_remaining;
     }
 

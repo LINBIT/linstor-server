@@ -32,7 +32,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,9 +39,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
@@ -146,8 +143,10 @@ public class ResourceGroups
                     rscGrp.select_filter.not_place_with_rsc_regex,
                     rscGrp.select_filter.replicas_on_same,
                     rscGrp.select_filter.replicas_on_different,
-                    LinstorParsingUtils.asDeviceLayerKind(rscGrp.select_filter.layer_stack),
-                    LinstorParsingUtils.asProviderKind(rscGrp.select_filter.provider_list),
+                    rscGrp.select_filter.layer_stack != null ?
+                        LinstorParsingUtils.asDeviceLayerKind(rscGrp.select_filter.layer_stack) : null,
+                    rscGrp.select_filter.provider_list != null ?
+                        LinstorParsingUtils.asProviderKind(rscGrp.select_filter.provider_list) : null,
                     rscGrp.select_filter.diskless_on_remaining
                 );
             }
@@ -175,7 +174,7 @@ public class ResourceGroups
         @PathParam("rscGrpName") String rscGrpName,
         String jsonData
     )
-        throws JsonParseException, JsonMappingException, IOException
+        throws IOException
     {
         JsonGenTypes.ResourceGroupModify modifyData = objectMapper.readValue(
             jsonData,
@@ -191,8 +190,10 @@ public class ResourceGroups
                 modifyData.select_filter.not_place_with_rsc_regex,
                 modifyData.select_filter.replicas_on_same,
                 modifyData.select_filter.replicas_on_different,
-                LinstorParsingUtils.asDeviceLayerKind(modifyData.select_filter.layer_stack),
-                LinstorParsingUtils.asProviderKind(modifyData.select_filter.provider_list),
+                modifyData.select_filter.layer_stack != null ?
+                    LinstorParsingUtils.asDeviceLayerKind(modifyData.select_filter.layer_stack) : null,
+                modifyData.select_filter.provider_list != null ?
+                    LinstorParsingUtils.asProviderKind(modifyData.select_filter.provider_list) : null,
                 modifyData.select_filter.diskless_on_remaining
             );
         }

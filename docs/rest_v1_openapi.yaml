@@ -23,6 +23,7 @@ info:
 
     * 1.0.16
        - Added CacheResource and CacheVolume schemas
+       - AutSelectFilter arrays are now null per default
     * 1.0.15
       - Added connections map to the DRBD resource layer data
       - Added support for Openflex
@@ -76,7 +77,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.0.15
+  version: 1.0.16
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -4492,24 +4493,29 @@ components:
           type: string
         not_place_with_rsc:
           type: array
+          default: null
           items:
             type: string
         not_place_with_rsc_regex:
           type: string
         replicas_on_same:
           type: array
+          default: null
           items:
             type: string
         replicas_on_different:
           type: array
+          default: null
           items:
             type: string
         layer_stack:
           type: array
+          default: null
           items:
             type: string
         provider_list:
           type: array
+          default: null
           items:
             type: string
         diskless_on_remaining:

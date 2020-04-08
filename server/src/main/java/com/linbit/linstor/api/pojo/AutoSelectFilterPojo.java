@@ -5,31 +5,29 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.annotation.Nullable;
-
-import java.util.Collections;
 import java.util.List;
 
 public class AutoSelectFilterPojo implements AutoSelectFilterApi
 {
     private final @Nullable Integer placeCount; // null only allowed for resource groupss
     private final @Nullable String storPoolNameStr;
-    private final List<String> doNotPlaceWithRscList;
+    private final @Nullable List<String> doNotPlaceWithRscList;
     private final @Nullable String doNotPlaceWithRegex;
-    private final List<String> replicasOnSameList;
-    private final List<String> replicasOnDifferentList;
-    private final List<DeviceLayerKind> layerStackList;
-    private final List<DeviceProviderKind> providerList;
+    private final @Nullable List<String> replicasOnSameList;
+    private final @Nullable List<String> replicasOnDifferentList;
+    private final @Nullable List<DeviceLayerKind> layerStackList;
+    private final @Nullable List<DeviceProviderKind> providerList;
     private final @Nullable Boolean disklessOnRemaining;
 
     public AutoSelectFilterPojo(
         @Nullable Integer placeCountRef,
         @Nullable String storPoolNameStrRef,
-        List<String> doNotPlaceWithRscListRef,
+        @Nullable List<String> doNotPlaceWithRscListRef,
         @Nullable String doNotPlaceWithRegexRef,
-        List<String> replicasOnSameListRef,
-        List<String> replicasOnDifferentListRef,
-        List<DeviceLayerKind> layerStackListRef,
-        List<DeviceProviderKind> deviceProviderKindsRef,
+        @Nullable List<String> replicasOnSameListRef,
+        @Nullable List<String> replicasOnDifferentListRef,
+        @Nullable List<DeviceLayerKind> layerStackListRef,
+        @Nullable List<DeviceProviderKind> deviceProviderKindsRef,
         @Nullable Boolean disklessOnRemainingRef
     )
     {
@@ -40,8 +38,8 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         replicasOnSameList = replicasOnSameListRef;
         replicasOnDifferentList = replicasOnDifferentListRef;
         disklessOnRemaining = disklessOnRemainingRef;
-        layerStackList = layerStackListRef == null ? Collections.emptyList() : layerStackListRef;
-        providerList = deviceProviderKindsRef == null ? Collections.emptyList() : deviceProviderKindsRef;
+        layerStackList = layerStackListRef;
+        providerList = deviceProviderKindsRef;
     }
 
     public static AutoSelectFilterPojo merge(
@@ -112,7 +110,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     }
 
     @Override
-    public Integer getReplicaCount()
+    public @Nullable Integer getReplicaCount()
     {
         return placeCount;
     }
@@ -124,7 +122,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     }
 
     @Override
-    public List<String> getDoNotPlaceWithRscList()
+    public @Nullable List<String> getDoNotPlaceWithRscList()
     {
         return doNotPlaceWithRscList;
     }
@@ -136,31 +134,31 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     }
 
     @Override
-    public List<String> getReplicasOnSameList()
+    public @Nullable List<String> getReplicasOnSameList()
     {
         return replicasOnSameList;
     }
 
     @Override
-    public List<String> getReplicasOnDifferentList()
+    public @Nullable List<String> getReplicasOnDifferentList()
     {
         return replicasOnDifferentList;
     }
 
     @Override
-    public List<DeviceLayerKind> getLayerStackList()
+    public @Nullable List<DeviceLayerKind> getLayerStackList()
     {
         return layerStackList;
     }
 
     @Override
-    public List<DeviceProviderKind> getProviderList()
+    public @Nullable List<DeviceProviderKind> getProviderList()
     {
         return providerList;
     }
 
     @Override
-    public Boolean getDisklessOnRemaining()
+    public @Nullable Boolean getDisklessOnRemaining()
     {
         return disklessOnRemaining;
     }

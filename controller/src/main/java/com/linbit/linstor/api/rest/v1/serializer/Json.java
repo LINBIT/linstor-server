@@ -756,13 +756,15 @@ public class Json
         @Override
         public List<DeviceLayerKind> getLayerStackList()
         {
-            return LinstorParsingUtils.asDeviceLayerKind(autoSelectFilter.layer_stack);
+            return autoSelectFilter.layer_stack != null ?
+                LinstorParsingUtils.asDeviceLayerKind(autoSelectFilter.layer_stack) : null;
         }
 
         @Override
         public List<DeviceProviderKind> getProviderList()
         {
-            return LinstorParsingUtils.asProviderKind(autoSelectFilter.provider_list);
+            return autoSelectFilter.provider_list != null ?
+                LinstorParsingUtils.asProviderKind(autoSelectFilter.provider_list) : null;
         }
 
         @Override
