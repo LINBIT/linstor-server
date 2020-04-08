@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp;
 
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -40,13 +41,22 @@ public class DbConnectionPoolInitializer implements DbInitializer
     {
         errorLog.logInfo("Initializing the database connection pool");
 
-        String connectionUrl = getConnectionUrl();
-        String dbType = getDbType(connectionUrl);
+        try
+        {
+            String connectionUrl = getConnectionUrl();
+            String dbType = getDbType(connectionUrl);
 
-        dbConnPool.initializeDataSource(connectionUrl);
-        dbConnPool.migrate(dbType, !ctrlCfg.isDbVersionCheckDisabled());
+            dbConnPool.initializeDataSource(connectionUrl);
+            dbConnPool.migrate(dbType, !ctrlCfg.isDbVersionCheckDisabled());
 
-        testDbConnection();
+            testDbConnection();
+        }
+        catch (Exception exc)
+        {
+            errorLog.logError("Database initialization error: " + exc.getMessage());
+            errorLog.reportError(exc);
+            System.exit(InternalApiConsts.EXIT_CODE_IMPL_ERROR);
+        }
     }
 
     private String getConnectionUrl()

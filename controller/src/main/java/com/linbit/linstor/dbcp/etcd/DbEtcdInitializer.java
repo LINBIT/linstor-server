@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.etcd;
 
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -33,8 +34,17 @@ public class DbEtcdInitializer implements DbInitializer
     {
         errorLog.logInfo("Initializing the etcd database");
 
-        dbEtcd.initializeDataSource(ctrlCfg.getDbConnectionUrl());
+        try
+        {
+            dbEtcd.initializeDataSource(ctrlCfg.getDbConnectionUrl());
 
-        dbEtcd.migrate("etcd");
+            dbEtcd.migrate("etcd");
+        }
+        catch (Exception exc)
+        {
+            errorLog.logError("Database initialization error: " + exc.getMessage());
+            errorLog.reportError(exc);
+            System.exit(InternalApiConsts.EXIT_CODE_IMPL_ERROR);
+        }
     }
 }
