@@ -32,7 +32,9 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -243,9 +245,14 @@ public class ResourceGroups
                 jsonData,
                 JsonGenTypes.ResourceGroupSpawn.class
             );
+            byte[] rscDfnExtName = rscGrpSpwn.resource_definition_external_name != null ?
+                rscGrpSpwn.resource_definition_external_name.getBytes(StandardCharsets.UTF_8) :
+                null;
+
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.spawn(
                 rscGrpName,
                 rscGrpSpwn.resource_definition_name,
+                rscDfnExtName,
                 rscGrpSpwn.volume_sizes,
                 rscGrpSpwn.partial,
                 rscGrpSpwn.definitions_only

@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.KvsApi;
@@ -193,7 +194,7 @@ public class CtrlApiCallHandler
         String rscGrpNameRef
     )
     {
-        ApiCallRc apiCallRc;
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         String secret = secretRef;
         Map<String, String> props = propsRef;
         if (props == null)
@@ -207,7 +208,7 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
         {
-            apiCallRc = rscDfnApiCallHandler.createResourceDefinition(
+            rscDfnApiCallHandler.createResourceDefinition(
                 resourceName,
                 extName,
                 port,
@@ -218,7 +219,8 @@ public class CtrlApiCallHandler
                 layerStackRef,
                 peerSlotsRef,
                 rscGrpNameRef,
-                false
+                false,
+                apiCallRc
             );
         }
         return apiCallRc;

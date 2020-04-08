@@ -633,6 +633,7 @@ public class CtrlRscGrpApiCallHandler
     public Flux<ApiCallRc> spawn(
         String rscGrpNameRef,
         String rscDfnNameRef,
+        byte[] rscDfnExtNameRef,
         List<Long> vlmSizesRef,
         boolean partialRef,
         boolean definitionsOnlyRef
@@ -660,6 +661,7 @@ public class CtrlRscGrpApiCallHandler
                 () -> spawnInTransaction(
                     rscGrpNameRef,
                     rscDfnNameRef,
+                    rscDfnExtNameRef,
                     vlmSizesRef,
                     partialRef,
                     definitionsOnlyRef,
@@ -672,6 +674,7 @@ public class CtrlRscGrpApiCallHandler
     private Flux<ApiCallRc> spawnInTransaction(
         String rscGrpNameRef,
         String rscDfnNameRef,
+        byte[] rscDfnExtNameRef,
         List<Long> vlmSizesRef,
         boolean partialRef,
         boolean definitionsOnlyRef,
@@ -714,7 +717,7 @@ public class CtrlRscGrpApiCallHandler
                 {
                     VolumeGroup vlmGrp = vlmGrps.get(idx);
 
-                    long vlmSize = vlmSizesRef.get(idx).longValue();
+                    long vlmSize = vlmSizesRef.get(idx);
                     Integer vlmNr = null;
                     if (idx < vlmGrpLen)
                     {
@@ -742,20 +745,19 @@ public class CtrlRscGrpApiCallHandler
                 );
             }
 
-            apiCallRc.addEntries(
-                ctrlRscDfnApiCallHandler.createResourceDefinition(
-                    rscDfnNameRef,
-                    null,
-                    null,
-                    null,
-                    null,
-                    rscGrp.getProps(peerCtx).map(),
-                    vlmDfnCrtList,
-                    layerStackStr,
-                    null,
-                    rscGrpNameRef,
-                    true
-                )
+            ResourceDefinition rscDfn = ctrlRscDfnApiCallHandler.createResourceDefinition(
+                rscDfnNameRef,
+                rscDfnExtNameRef,
+                null,
+                null,
+                null,
+                rscGrp.getProps(peerCtx).map(),
+                vlmDfnCrtList,
+                layerStackStr,
+                null,
+                rscGrpNameRef,
+                true,
+                apiCallRc
             );
 
             if (autoPlaceConfig != null && autoPlaceConfig.getReplicaCount(peerCtx) != null && !definitionsOnlyRef)
@@ -772,7 +774,11 @@ public class CtrlRscGrpApiCallHandler
                     autoPlaceConfig.getDisklessOnRemaining(peerCtx)
                 );
                 deployedResources = ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
-                    rscDfnNameRef,
+                    /*
+                     * do not use rscDfnNameRef here as the actual name of the rscDfn might have been
+                     * generated based on the rscDfnExtNameRef
+                     */
+                    rscDfn.getName().displayValue,
                     autoSelectFilterPojo,
                     contextRef
                 );
@@ -792,11 +798,19 @@ public class CtrlRscGrpApiCallHandler
                     }
                     reason += "--definitions-only was set";
                 }
+
+                String actualRscDfnName = rscDfn.getName().displayValue;
+                if (rscDfnExtNameRef != null)
+                {
+                    actualRscDfnName += "(" + new String(rscDfnExtNameRef) + ")";
+                }
+
                 deployedResources = Flux.<ApiCallRc>just(
                     new ApiCallRcImpl(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.INFO_NO_RSC_SPAWNED,
-                            "Resource definition " + rscDfnNameRef + " and " + vlmDfnCrtList.size() +
+                            "Resource definition " + actualRscDfnName + " and " +
+                                vlmDfnCrtList.size() +
                                 " created but no resources deployed",
                                 reason
                         )
@@ -991,7 +1005,7 @@ public class CtrlRscGrpApiCallHandler
         }
         else
         {
-            vlmNr = new VolumeNumber(vlmNrRaw.intValue());
+            vlmNr = new VolumeNumber(vlmNrRaw);
         }
         return vlmNr;
     }

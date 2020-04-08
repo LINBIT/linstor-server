@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.0.15";
+    public static final String REST_API_VERSION = "1.0.16";
 
     /**
      * Common api reply structure
@@ -637,6 +637,12 @@ public class JsonGenTypes
          * name of the resulting resource-definition
          */
         public String resource_definition_name;
+        /**
+         * External name can be used to have native resource names.
+         * If you need to store a non Linstor compatible resource name use this field
+         * and Linstor will generate a compatible name.
+         */
+        public String resource_definition_external_name;
         /**
          * sizes (in kib) of the resulting volume-definitions
          */

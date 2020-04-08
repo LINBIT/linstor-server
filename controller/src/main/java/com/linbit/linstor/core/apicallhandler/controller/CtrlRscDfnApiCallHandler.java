@@ -151,7 +151,7 @@ public class CtrlRscDfnApiCallHandler
         encHelper = encHelperRef;
     }
 
-    public ApiCallRc createResourceDefinition(
+    public ResourceDefinition createResourceDefinition(
         String rscNameStr,
         byte[] extName,
         Integer portInt,
@@ -162,7 +162,8 @@ public class CtrlRscDfnApiCallHandler
         List<String> layerStackStrList,
         Short peerSlotsRef,
         String rscGrpNameStr,
-        boolean throwOnError
+        boolean throwOnError,
+        ApiCallRcImpl apiCallRc
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -170,6 +171,7 @@ public class CtrlRscDfnApiCallHandler
             ApiOperation.makeCreateOperation(),
             rscNameStr
         );
+        ResourceDefinition rscDfn = null;
 
         try
         {
@@ -189,7 +191,7 @@ public class CtrlRscDfnApiCallHandler
                 }
             }
 
-            ResourceDefinition rscDfn = createRscDfn(
+            rscDfn = createRscDfn(
                 rscNameStr,
                 extName,
                 transportTypeStr,
@@ -257,7 +259,8 @@ public class CtrlRscDfnApiCallHandler
             }
         }
 
-        return responses;
+        apiCallRc.addEntries(responses);
+        return rscDfn;
     }
 
     private void warnIfMasterKeyIsNotSet(ApiCallRcImpl responsesRef) throws AccessDeniedException
