@@ -1,3 +1,34 @@
+linstor-server (1.6.0-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * DevMgr: minor cleanup
+  * Cache: Added new layer
+  * Cache, Writecache: Fixed bug finding existing dm device
+  * RscLayerSuffixes: Introducing new consts class
+  * Tests,CacheLayer: Fixed unit tests
+  * DevMgr: Node answer is created before sending it
+  * DevMgr: Added 500ms sleep when DRBD tracking is not yet available
+  * DRBD: added drbdsetup resume-io if resfile does not exist
+  * DRBD: check if peer exists when forget-peer fails
+  * DB: Fixed ListToJsonArray converted
+  * DB,cleanup: remove unused variable
+  * RscGrp.spawn: Added external names for rscDfn
+
+  [ Rene Peinthor ]
+  * allow blkid to return exitcode 2
+  * add gitlab ci yaml
+  * update to latest flyway, add postgresql and maria db driver
+  * fix unset of autoselect filters from API
+  * gitlab-ci: use caching
+  * select_filter: correctly handle modifying select_filters
+  * db-init: exit controller if sql or etcd failed to initialize
+
+  [ Robert Altnoeder ]
+  * Added comments to com.linbit.utils.Align
+  * Added com.linbit.utils.SignedAlign
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 08 Apr 2020 13:46:16 +0000
+
 linstor-server (1.5.2-1) experimental; urgency=medium
 
   * Lvm: fixed bug where a VG has no PV

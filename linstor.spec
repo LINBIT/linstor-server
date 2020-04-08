@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.5.2
+Version: 1.6.0
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -134,7 +134,10 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
-* Tue Mar 24 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.5.1-1
+* Wed Apr 08 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.6.0-1
+- New upstream release. Cache layer, resource group modify fixes, bug fixes.
+
+* Tue Mar 24 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.5.2-1
 - New upstream release. Fix LVM-filters on physical-storage.
 
 * Mon Mar 23 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.5.1-1
