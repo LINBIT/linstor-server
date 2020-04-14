@@ -408,7 +408,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     null,
                     // Details
                     null,
-                    ioExc
+                    ioExc,
+                    false
                 );
             }
             selectorLoopThread = new Thread(this);

@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.SatelliteLinstorModule;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
@@ -43,7 +44,6 @@ import com.linbit.linstor.security.SatelliteSecurityModule;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.security.StltCoreObjProtInitializer;
 import com.linbit.linstor.systemstarter.NetComInitializer;
-import com.linbit.linstor.systemstarter.NetComServiceException;
 import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.timer.CoreTimer;
@@ -242,10 +242,14 @@ public final class Satellite
                 accessExc
             );
         }
-        catch (NetComServiceException exc)
+        catch (SystemServiceStartException exc)
         {
-            reconfigurationLock.writeLock().unlock();
-            System.exit(InternalApiConsts.EXIT_CODE_NETCOM_ERROR);
+            errorReporter.reportProblem(Level.ERROR, exc, null, null, null);
+            if (exc.criticalError)
+            {
+                reconfigurationLock.writeLock().unlock();
+                System.exit(InternalApiConsts.EXIT_CODE_NETCOM_ERROR);
+            }
         }
         finally
         {

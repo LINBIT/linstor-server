@@ -9,25 +9,20 @@ import com.linbit.linstor.LinStorException;
  */
 public class SystemServiceStartException extends LinStorException
 {
-    public SystemServiceStartException(String message)
+    private static final long serialVersionUID = -4577443321214547238L;
+
+    public final boolean criticalError;
+
+    public SystemServiceStartException(String message, boolean criticalErrorRef)
     {
         super(message);
+        criticalError = criticalErrorRef;
     }
 
-    public SystemServiceStartException(String message, Throwable cause)
+    public SystemServiceStartException(String message, Throwable cause, boolean criticalErrorRef)
     {
         super(message, cause);
-    }
-
-    public SystemServiceStartException(
-        String message,
-        String descriptionText,
-        String causeText,
-        String correctionText,
-        String detailsText
-    )
-    {
-        super(message, descriptionText, causeText, correctionText, detailsText, null);
+        criticalError = criticalErrorRef;
     }
 
     public SystemServiceStartException(
@@ -36,9 +31,24 @@ public class SystemServiceStartException extends LinStorException
         String causeText,
         String correctionText,
         String detailsText,
-        Throwable cause
+        boolean criticalErrorRef
+    )
+    {
+        super(message, descriptionText, causeText, correctionText, detailsText, null);
+        criticalError = criticalErrorRef;
+    }
+
+    public SystemServiceStartException(
+        String message,
+        String descriptionText,
+        String causeText,
+        String correctionText,
+        String detailsText,
+        Throwable cause,
+        boolean criticalErrorRef
     )
     {
         super(message, descriptionText, causeText, correctionText, detailsText, cause);
+        criticalError = criticalErrorRef;
     }
 }

@@ -401,13 +401,17 @@ public class GrizzlyHttpService implements SystemService
                 }
                 catch (IOException exc)
                 {
-                    throw new SystemServiceStartException("Unable to start grizzly http server on fallback ipv4", exc);
+                    throw new SystemServiceStartException(
+                        "Unable to start grizzly http server on fallback ipv4",
+                        exc,
+                        true
+                    );
                 }
             }
         }
         catch (IOException exc)
         {
-            throw new SystemServiceStartException("Unable to start grizzly http server", exc);
+            throw new SystemServiceStartException("Unable to start grizzly http server", exc, true);
         }
     }
 

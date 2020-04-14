@@ -209,7 +209,8 @@ public final class ControllerNetComInitializer implements StartupInitializer
                 null,
                 null,
                 "Define at least one network communication service",
-                null
+                null,
+                false
             );
         }
 
@@ -495,7 +496,8 @@ public final class ControllerNetComInitializer implements StartupInitializer
                     null,
                     null,
                     null,
-                    exc
+                    exc,
+                    false
                 );
             }
         }
@@ -566,7 +568,8 @@ public final class ControllerNetComInitializer implements StartupInitializer
                 null,
                 "Change the name of the network communication service instance",
                 null,
-                invalidNameExc
+                invalidNameExc,
+                false
             );
         }
         Props configProp = netComProps.getNamespace(serviceNameStr).orElse(null);
@@ -608,7 +611,8 @@ public final class ControllerNetComInitializer implements StartupInitializer
                     errorMsg,
                     null,
                     "Add the missing configuration entry to the configuration",
-                    null
+                    null,
+                    false
                 );
             }
 

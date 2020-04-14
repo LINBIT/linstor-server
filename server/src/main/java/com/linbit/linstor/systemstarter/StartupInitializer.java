@@ -12,7 +12,6 @@ public interface StartupInitializer
         throws InitializationException,
         AccessDeniedException,
         DatabaseException,
-        NetComServiceException,
         SystemServiceStartException;
 
     default void shutdown()

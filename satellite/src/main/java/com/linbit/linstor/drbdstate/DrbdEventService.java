@@ -1,11 +1,5 @@
 package com.linbit.linstor.drbdstate;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
@@ -24,6 +18,12 @@ import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Singleton
 public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
@@ -270,7 +270,8 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
                 exc.getMessage(),
                 "Ensure that '" + DRBDSETUP_COMMAND + "' is installed",
                 null,
-                exc
+                exc,
+                false
             ));
         }
         synchronized (this)

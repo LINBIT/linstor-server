@@ -1,5 +1,6 @@
 package com.linbit.linstor.systemstarter;
 
+import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.core.SatelliteNetComInitializer;
 import com.linbit.linstor.security.AccessContext;
 
@@ -18,11 +19,11 @@ public class NetComInitializer implements StartupInitializer
     }
 
     @Override
-    public void initialize() throws NetComServiceException
+    public void initialize() throws SystemServiceStartException
     {
         if (!sncInitializer.initMainNetComService(initCtx))
         {
-            throw new NetComServiceException("Initialisation of SatelliteNetComServices failed.");
+            throw new SystemServiceStartException("Initialisation of SatelliteNetComServices failed.", true);
         }
     }
 

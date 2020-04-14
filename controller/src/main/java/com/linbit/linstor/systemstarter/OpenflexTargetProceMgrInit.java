@@ -20,7 +20,7 @@ public class OpenflexTargetProceMgrInit implements StartupInitializer
 
     @Override
     public void initialize() throws InitializationException, AccessDeniedException, DatabaseException,
-        NetComServiceException, SystemServiceStartException
+        SystemServiceStartException
     {
         openFlexTargetProcessManager.initialize();
     }

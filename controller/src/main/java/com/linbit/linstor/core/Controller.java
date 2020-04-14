@@ -31,7 +31,6 @@ import com.linbit.linstor.debug.DebugConsoleCreator;
 import com.linbit.linstor.debug.DebugConsoleImpl;
 import com.linbit.linstor.debug.DebugModule;
 import com.linbit.linstor.event.EventModule;
-import com.linbit.linstor.event.common.ConnectionStateEvent;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.ConnectionStateEventHandler;
 import com.linbit.linstor.event.handler.protobuf.controller.ResourceStateEventHandler;
@@ -56,7 +55,6 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.systemstarter.ConnectNodesInitializer;
 import com.linbit.linstor.systemstarter.GrizzlyInitializer;
-import com.linbit.linstor.systemstarter.NetComServiceException;
 import com.linbit.linstor.systemstarter.OpenflexTargetProceMgrInit;
 import com.linbit.linstor.systemstarter.PassphraseInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
@@ -309,9 +307,12 @@ public final class Controller
                 accessExc
             );
         }
-        catch (NetComServiceException exc)
+        catch (SystemServiceStartException exc)
         {
             errorReporter.reportProblem(Level.ERROR, exc, null, null, null);
+            reconfigurationLock.writeLock().unlock();
+            System.exit(InternalApiConsts.EXIT_CODE_NETCOM_ERROR);
+
         }
         finally
         {

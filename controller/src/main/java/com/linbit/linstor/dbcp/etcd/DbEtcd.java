@@ -240,7 +240,7 @@ public class DbEtcd implements ControllerETCDDatabase
             }
             catch (IOException exc)
             {
-                throw new SystemServiceStartException("Error configuring secure etcd connection", exc);
+                throw new SystemServiceStartException("Error configuring secure etcd connection", exc, true);
             }
         }
         else

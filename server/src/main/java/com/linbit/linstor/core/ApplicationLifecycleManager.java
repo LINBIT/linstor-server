@@ -11,8 +11,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.ShutdownProtHolder;
-import com.linbit.linstor.systemstarter.NetComServiceException;
-import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 
 import javax.inject.Inject;
@@ -67,7 +65,8 @@ public class ApplicationLifecycleManager
         Runtime.getRuntime().addShutdownHook(new ModuleShutdownHook(shutdownCtx, this));
     }
 
-    public void startSystemServices(ArrayList<StartupInitializer> services) throws NetComServiceException
+    public void startSystemServices(ArrayList<StartupInitializer> services)
+        throws SystemServiceStartException
     {
         this.services = services;
         // Start services
@@ -89,11 +88,14 @@ public class ApplicationLifecycleManager
             }
             catch (SystemServiceStartException startExc)
             {
-                errorReporter.reportProblem(Level.ERROR, startExc, null, null, null);
-            }
-            catch (NetComServiceException exc)
-            {
-                throw exc;
+                if (startExc.criticalError)
+                {
+                    throw startExc;
+                }
+                else
+                {
+                    errorReporter.reportProblem(Level.ERROR, startExc, null, null, null);
+                }
             }
             catch (Exception unhandledExc)
             {

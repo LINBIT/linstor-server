@@ -63,7 +63,7 @@ public class PassphraseInitializer implements StartupInitializer
         }
         catch (Throwable exc)
         {
-            throw new SystemServiceStartException("Automatic injection of passphrase failed", exc);
+            throw new SystemServiceStartException("Automatic injection of passphrase failed", exc, true);
         }
         finally
         {
