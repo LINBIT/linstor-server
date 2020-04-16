@@ -219,31 +219,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    public void chooseThickPoolTest() throws Exception
-    {
-        evaluateTest(
-            new RscAutoPlaceApiCall(
-                TEST_RSC_NAME,
-                1,
-                true,
-                ApiConsts.CREATED, // property set
-                ApiConsts.CREATED // rsc autoplace
-            )
-            .stltBuilder("stlt")
-                .addStorPool("pool1", 30 * MB, LVM_THIN)
-                .addStorPool("pool2", 10 * MB)
-                .addStorPool("pool3", 20 * MB)
-                .build()
-            .addVlmDfn(TEST_RSC_NAME, 0, 5 * MB)
-        );
-        expectDeployed(
-            "pool3",
-            TEST_RSC_NAME,
-            "stlt"
-        );
-    }
-
-    @Test
     public void preferredStorPoolNotEnoughSpaceTest() throws Exception
     {
         evaluateTest(
@@ -318,6 +293,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 .addStorPool("slow1", 10 * TB)
                 .addStorPool("fast1", 100 * GB)
                 .build()
+            .stltBuilder("stlt3")
+                .addStorPool("slow1", 80*GB)
+                .build()
+            .stltBuilder("stlt4")
+                .addStorPool("slow1", 80*GB)
+                .build()
             .addVlmDfn(TEST_RSC_NAME, 0, 50 * GB)
 
             .doNotPlaceWith("avoid1")
@@ -327,10 +308,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .addRsc("avoid1", "slow1", "stlt1", "stlt2")
         );
 
+        // do not place with is a node-level check, not a storpool-level
         expectDeployed(
-            "fast1",
+            "slow1",
             TEST_RSC_NAME,
-            "stlt1", "stlt2"
+            "stlt3", "stlt4"
         );
     }
 
@@ -409,6 +391,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 .addStorPool("slow2", 20 * TB)
                 .addStorPool("fast1", 100 * GB)
                 .build()
+            .stltBuilder("stlt3")
+                .addStorPool("fast1", 80 * GB)
+                .build()
+            .stltBuilder("stlt4")
+                .addStorPool("fast1", 80 * GB)
+                .build()
             .addVlmDfn(TEST_RSC_NAME, 0, 50 * GB)
 
             .setDoNotPlaceWithRegex("avoid.*")
@@ -424,7 +412,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         expectDeployed(
             "fast1",
             TEST_RSC_NAME,
-            "stlt1", "stlt2"
+            "stlt3", "stlt4"
         );
     }
 
@@ -450,6 +438,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 .addStorPool("slow2", 20 * TB)
                 .addStorPool("fast1", 100 * GB)
                 .build()
+            .stltBuilder("stlt3")
+                .addStorPool("fast1", 80 * GB)
+                .build()
+            .stltBuilder("stlt4")
+                .addStorPool("fast1", 80 * GB)
+                .build()
             .addVlmDfn(TEST_RSC_NAME, 0, 50 * GB)
 
             .setDoNotPlaceWithRegex("avoid") // no trailing ".*"
@@ -462,10 +456,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 .addRsc("avoid2", "slow2", "stlt1", "stlt2")
         );
 
+        // do not place with is a node-level check, not a storpool-level
         expectDeployed(
             "fast1",
             TEST_RSC_NAME,
-            "stlt1", "stlt2"
+            "stlt3", "stlt4"
         );
     }
 
@@ -632,7 +627,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     .build()
                 .stltBuilder("node3")
                     .setNodeProp("Aux/key", "val3")
-                    .addStorPool("stor", 9 * GB)
+                    .addStorPool("stor", 10 * GB)
                     .build()
                 .stltBuilder("node4")
                     .setNodeProp("Aux/key", "val1") // same as "node1"
@@ -640,7 +635,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     .build()
                 .stltBuilder("node5")
                     .setNodeProp("Aux/key", "val2") // same as "node2"
-                    .addStorPool("stor", 10 * GB)
+                    .addStorPool("stor", 9 * GB) // make node2 a bit better
                     .build()
 
                 .addReplicasOnDifferentNodeProp("Aux/key=val1")

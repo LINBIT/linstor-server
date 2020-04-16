@@ -103,6 +103,47 @@ public class Autoplacer
             // highest to lowest
             return Double.compare(sp2.score, score);
         }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            long temp;
+            temp = Double.doubleToLongBits(score);
+            result = prime * result + (int) (temp ^ (temp >>> 32));
+            result = prime * result + ((storPool == null) ? 0 : storPool.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            StorPoolWithScore other = (StorPoolWithScore) obj;
+            if (Double.doubleToLongBits(score) != Double.doubleToLongBits(other.score))
+                return false;
+            if (storPool == null)
+            {
+                if (other.storPool != null)
+                    return false;
+            }
+            else
+                if (!storPool.equals(other.storPool))
+                    return false;
+            return true;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "StorPoolWithScore [storPool=" + storPool + ", score=" + score + "]";
+        }
     }
 }
 

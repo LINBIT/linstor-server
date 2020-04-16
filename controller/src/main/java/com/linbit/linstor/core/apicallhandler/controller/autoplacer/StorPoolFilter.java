@@ -188,9 +188,9 @@ class StorPoolFilter
                     }
                     nodeMatches = !anyMatch;
                 }
-                ExtToolsManager extToolsManager = node.getPeer(apiAccCtx).getExtToolsManager();
                 if (nodeMatches && filterLayerList != null && !filterLayerList.isEmpty())
                 {
+                    ExtToolsManager extToolsManager = node.getPeer(apiAccCtx).getExtToolsManager();
                     Set<DeviceLayerKind> supportedLayers = extToolsManager.getSupportedLayers();
                     for (DeviceLayerKind layer : filterLayerList)
                     {
@@ -235,7 +235,7 @@ class StorPoolFilter
                     if (filterDoNotPlaceWithRscRegex != null)
                     {
                         Pattern regex = Pattern.compile(filterDoNotPlaceWithRscRegex, Pattern.CASE_INSENSITIVE);
-                        matchesRegex = str -> regex.matcher(str).matches();
+                        matchesRegex = str -> regex.matcher(str).find();
                     }
                     else
                     {
@@ -300,8 +300,8 @@ class StorPoolFilter
             int idx = elem.indexOf("=");
             if (idx != -1)
             {
-                String key = elem.substring(idx);
-                String value = elem.substring(idx + 1, elem.length());
+                String key = elem.substring(0, idx);
+                String value = elem.substring(idx + 1);
                 ret.put(key, value);
             }
         }

@@ -204,7 +204,7 @@ class Selector
         private void select(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
         {
             StorPool currentStorPool = currentSpWithScoreRef.storPool;
-            Props spProps = currentStorPool.getProps(apiCtx);
+            Props nodeProps = currentStorPool.getNode().getProps(apiCtx);
 
             // update same props
             Map<String, String> updateEntriesForSameProps = new HashMap<>(); // prevent concurrentModificationException
@@ -213,7 +213,7 @@ class Selector
                 if (sameProp.getValue() == null)
                 {
                     String key = sameProp.getKey();
-                    String propValue = spProps.getProp(key);
+                    String propValue = nodeProps.getProp(key);
                     if (propValue != null)
                     {
                         updateEntriesForSameProps.put(key, propValue);
@@ -226,7 +226,7 @@ class Selector
             for (Entry<String, List<String>> diffProp : diffProps.entrySet())
             {
                 String key = diffProp.getKey();
-                String propValue = spProps.getProp(key);
+                String propValue = nodeProps.getProp(key);
                 if (propValue != null)
                 {
                     diffProp.getValue().add(propValue);
@@ -287,26 +287,27 @@ class Selector
             for (String replOnDiff : selectFilter.getReplicasOnDifferentList())
             {
                 String key;
-                /*
-                 * Keys with values fixed by the user are already considered in the Filter step.
-                 * That means we can rely here that all given storage pools already meet the
-                 * fixed-value filters.
-                 */
-                if (!replOnDiff.contains("="))
+                int assignIdx = replOnDiff.indexOf("=");
+                List<String> list = new ArrayList<>();
+
+                if (assignIdx == -1)
                 {
                     key = replOnDiff;
-                    List<String> list = new ArrayList<>();
-                    for (Node selectedNode : selectedNodes)
-                    {
-                        String selectedNodeValue = selectedNode.getProps(apiCtx).getProp(key);
-                        if (selectedNodeValue != null)
-                        {
-                            list.add(selectedNodeValue);
-                        }
-                    }
-                    diffProps.put(key, list);
                 }
-
+                else
+                {
+                    key = replOnDiff.substring(0, assignIdx);
+                    list.add(replOnDiff.substring(assignIdx + 1));
+                }
+                for (Node selectedNode : selectedNodes)
+                {
+                    String selectedNodeValue = selectedNode.getProps(apiCtx).getProp(key);
+                    if (selectedNodeValue != null)
+                    {
+                        list.add(selectedNodeValue);
+                    }
+                }
+                diffProps.put(key, list);
             }
         }
     }
