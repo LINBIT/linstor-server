@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.propscon.Props;
@@ -13,6 +14,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -22,7 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 @Singleton
-public class Selector
+class Selector
 {
     private final AccessContext apiCtx;
 
@@ -33,20 +35,18 @@ public class Selector
 
     }
 
-    public Set<StorPool> select(
+    public Set<StorPoolWithScore> select(
         AutoSelectFilterApi selectFilterRef,
-        Map<StorPool, Double> scoreMap
+        Collection<StorPoolWithScore> storPoolWithScores
     )
         throws AccessDeniedException
     {
-        StorPool[] sortedStorPoolArr = scoreMap.keySet().toArray(new StorPool[0]);
+        StorPoolWithScore[] sortedStorPoolByScoreArr = storPoolWithScores.toArray(new StorPoolWithScore[0]);
+        Arrays.sort(sortedStorPoolByScoreArr);
 
-        // compare sp2 with sp1 so that we get a decreasing order (best to worst)
-        Arrays.sort(sortedStorPoolArr, (sp1, sp2) -> Double.compare(scoreMap.get(sp2), scoreMap.get(sp1)));
+        Set<StorPoolWithScore> selectionResult = null;
 
-        Set<StorPool> selectionResult = null;
-
-        Set<StorPool> currentSelection;
+        Set<StorPoolWithScore> currentSelection;
         int startIdx = 0;
         double nextHighestPossibleScore = Double.MIN_VALUE;
         double selectionScore = Double.MIN_VALUE;
@@ -55,15 +55,15 @@ public class Selector
         {
             currentSelection = findSelection(
                 startIdx,
-                sortedStorPoolArr,
+                sortedStorPoolByScoreArr,
                 new SelectionManger(selectFilterRef)
             );
             if (currentSelection.size() == replicaCount)
             {
                 double currentScore = 0;
-                for (StorPool sp : currentSelection)
+                for (StorPoolWithScore spWithScore : currentSelection)
                 {
-                    currentScore += scoreMap.get(sp);
+                    currentScore += spWithScore.score;
                 }
 
                 if (currentScore > selectionScore)
@@ -79,33 +79,34 @@ public class Selector
                      * we ignore here all filters and node-assignments, etc... we just want to
                      * verify if we should be keep searching for better candidates or not
                      */
-                    nextHighestPossibleScore += scoreMap.get(sortedStorPoolArr[idx + startIdx]);
+                    nextHighestPossibleScore += sortedStorPoolByScoreArr[idx + startIdx].score;
                 }
             }
         } while (
             currentSelection.size() == replicaCount &&
-            startIdx <= sortedStorPoolArr.length - replicaCount &&
+                startIdx <= sortedStorPoolByScoreArr.length -
+                    replicaCount &&
             nextHighestPossibleScore > selectionScore
         );
 
         return selectionResult;
     }
 
-    private Set<StorPool> findSelection(
+    private Set<StorPoolWithScore> findSelection(
         int startIdxRef,
-        StorPool[] sortedStorPoolArrRef,
+        StorPoolWithScore[] sortedStorPoolByScoreArrRef,
         SelectionManger currentSelection
     )
         throws AccessDeniedException
     {
-        for (int idx = startIdxRef; idx < sortedStorPoolArrRef.length && !currentSelection.isComplete(); idx++)
+        for (int idx = startIdxRef; idx < sortedStorPoolByScoreArrRef.length && !currentSelection.isComplete(); idx++)
         {
-            StorPool currentSp = sortedStorPoolArrRef[idx];
-            if (currentSelection.chooseIfAllowed(currentSp))
+            StorPoolWithScore currentSpWithScore = sortedStorPoolByScoreArrRef[idx];
+            if (currentSelection.chooseIfAllowed(currentSpWithScore))
             {
-                Set<StorPool> childStorPoolSelection = findSelection(
+                Set<StorPoolWithScore> childStorPoolSelection = findSelection(
                     idx + 1,
-                    sortedStorPoolArrRef,
+                    sortedStorPoolByScoreArrRef,
                     currentSelection
                 );
                 if (childStorPoolSelection == null)
@@ -114,11 +115,11 @@ public class Selector
                      * recursion could not finish, i.e. the current selection does not allow enough storage pools
                      * remove our selection and retry with the next storage pool
                      */
-                    currentSelection.unselect(currentSp);
+                    currentSelection.unselect(currentSpWithScore);
                 }
             }
         }
-        return currentSelection.selectedStorPools;
+        return currentSelection.selectedStorPoolWithScoreSet;
     }
 
     /**
@@ -132,7 +133,7 @@ public class Selector
     {
         private final AutoSelectFilterApi selectFilter;
         private final Set<Node> selectedNodes;
-        private final Set<StorPool> selectedStorPools;
+        private final Set<StorPoolWithScore> selectedStorPoolWithScoreSet;
 
         /*
          * temporary maps, extended when a storage pool is added and
@@ -146,19 +147,19 @@ public class Selector
             selectFilter = selectFilterRef;
 
             selectedNodes = new HashSet<>();
-            selectedStorPools = new HashSet<>();
+            selectedStorPoolWithScoreSet = new HashSet<>();
 
             rebuildTemporaryMaps();
         }
 
         public boolean isComplete()
         {
-            return selectedStorPools.size() == selectFilter.getReplicaCount();
+            return selectedStorPoolWithScoreSet.size() == selectFilter.getReplicaCount();
         }
 
-        public boolean chooseIfAllowed(StorPool currentSpRef) throws AccessDeniedException
+        public boolean chooseIfAllowed(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
         {
-            Node node = currentSpRef.getNode();
+            Node node = currentSpWithScoreRef.storPool.getNode();
             Props nodeProps = node.getProps(apiCtx);
 
             boolean isAllowed = !selectedNodes.contains(node);
@@ -191,15 +192,16 @@ public class Selector
 
             if (isAllowed)
             {
-                select(currentSpRef);
+                select(currentSpWithScoreRef);
             }
 
             return isAllowed;
         }
 
-        private void select(StorPool currentSpRef) throws AccessDeniedException
+        private void select(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
         {
-            Props spProps = currentSpRef.getProps(apiCtx);
+            StorPool currentStorPool = currentSpWithScoreRef.storPool;
+            Props spProps = currentStorPool.getProps(apiCtx);
 
             // update same props
             Map<String, String> updateEntriesForSameProps = new HashMap<>(); // prevent concurrentModificationException
@@ -228,14 +230,14 @@ public class Selector
                 }
             }
 
-            selectedStorPools.add(currentSpRef);
-            selectedNodes.add(currentSpRef.getNode());
+            selectedStorPoolWithScoreSet.add(currentSpWithScoreRef);
+            selectedNodes.add(currentStorPool.getNode());
         }
 
-        private void unselect(StorPool currentSpRef) throws AccessDeniedException
+        private void unselect(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
         {
-            selectedStorPools.remove(currentSpRef);
-            selectedNodes.remove(currentSpRef.getNode());
+            selectedStorPoolWithScoreSet.remove(currentSpWithScoreRef);
+            selectedNodes.remove(currentSpWithScoreRef.storPool.getNode());
 
             rebuildTemporaryMaps();
         }

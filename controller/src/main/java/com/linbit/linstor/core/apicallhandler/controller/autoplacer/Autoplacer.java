@@ -9,11 +9,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 @Singleton
 public class Autoplacer
@@ -44,23 +46,31 @@ public class Autoplacer
         boolean includeThinRef
     )
     {
-        Set<StorPool> selection;
+        Set<StorPool> selection = null;
         try
         {
-            List<StorPool> availableStorPools = filter.listAvailableStorPools();
+            ArrayList<StorPool> availableStorPools = filter.listAvailableStorPools();
 
             // 1: filter storage pools
-            List<StorPool> filteredStorPools = filter.filter(selectFilter, availableStorPools, rscSize);
+            ArrayList<StorPool> filteredStorPools = filter.filter(selectFilter, availableStorPools, rscSize);
 
             // 2: rate each storage pool with different weighted strategies
             Map<String, Double> weights = getWeights(selectFilter);
-            Map<StorPool, Double> ratings = strategyHandler.rate(filteredStorPools, weights);
+            Collection<StorPoolWithScore> storPoolsWithScoreList = strategyHandler.rate(filteredStorPools, weights);
 
             // 3: allow the user to re-sort / filter storage pools as they see fit
-            Map<StorPool, Double> preselection = preSelector.preselect(null, ratings);
+            Collection<StorPoolWithScore> preselection = preSelector.preselect(null, storPoolsWithScoreList);
 
             // 4: actual selection of storage pools
-            selection = selector.select(selectFilter, preselection);
+            Set<StorPoolWithScore> selectionWithScores = selector.select(selectFilter, preselection);
+            if (selectionWithScores != null)
+            {
+                selection = new TreeSet<>();
+                for (StorPoolWithScore spWithScore : selectionWithScores)
+                {
+                    selection.add(spWithScore.storPool);
+                }
+            }
         }
         catch (AccessDeniedException exc)
         {
@@ -73,6 +83,26 @@ public class Autoplacer
     {
         // TODO: implement
         return Collections.emptyMap();
+    }
+
+    static class StorPoolWithScore implements Comparable<StorPoolWithScore>
+    {
+        StorPool storPool;
+        double score;
+
+        public StorPoolWithScore(StorPool storPoolRef, double scoreRef)
+        {
+            super();
+            storPool = storPoolRef;
+            score = scoreRef;
+        }
+
+        @Override
+        public int compareTo(StorPoolWithScore sp2)
+        {
+            // highest to lowest
+            return Double.compare(sp2.score, score);
+        }
     }
 }
 

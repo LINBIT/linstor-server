@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 @Singleton
-public class StorPoolFilter
+class StorPoolFilter
 {
     private final AccessContext apiAccCtx;
     private final Provider<AccessContext> peerAccCtx;
@@ -61,9 +61,9 @@ public class StorPoolFilter
      *
      * @return
      */
-    public List<StorPool> listAvailableStorPools()
+    public ArrayList<StorPool> listAvailableStorPools()
     {
-        List<StorPool> ret = new ArrayList<>();
+        ArrayList<StorPool> ret = new ArrayList<>();
         try
         {
             AccessContext peerCtx = peerAccCtx.get();
@@ -118,14 +118,14 @@ public class StorPoolFilter
      *
      * @throws AccessDeniedException
      */
-    List<StorPool> filter(
+    ArrayList<StorPool> filter(
         AutoSelectFilterApi selectFilter,
         List<StorPool> availableStorPoolsRef,
         long sizeInKib
     )
         throws AccessDeniedException
     {
-        List<StorPool> filteredList = new ArrayList<>();
+        ArrayList<StorPool> filteredList = new ArrayList<>();
 
         Map<Node, Boolean> nodeMatchesMap = new HashMap<>();
 

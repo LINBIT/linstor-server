@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
@@ -25,10 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
@@ -50,9 +50,10 @@ class PreSelector
         errorReporter = errorReporterRef;
     }
 
-    Map<StorPool, Double> preselect(String scriptPathStr, Map<StorPool, Double> ratingsRef) throws AccessDeniedException
+    Collection<StorPoolWithScore> preselect(String scriptPathStr, Collection<StorPoolWithScore> ratingsRef)
+        throws AccessDeniedException
     {
-        Map<StorPool, Double> ret = ratingsRef;
+        Collection<StorPoolWithScore> ret = ratingsRef;
         if (scriptPathStr != null)
         {
             Path scriptPath = Paths.get(scriptPathStr);
@@ -111,10 +112,10 @@ class PreSelector
                     }
                     scriptThread = null;
 
-                    ret = new HashMap<>();
+                    ret = new ArrayList<>();
                     for (StorPoolScriptPojo spPojo : scriptPojoList)
                     {
-                        ret.put(spPojo.storPool, spPojo.score);
+                        ret.add(new StorPoolWithScore(spPojo.storPool, spPojo.score));
                     }
                 }
             }
@@ -164,17 +165,14 @@ class PreSelector
      * @throws AccessDeniedException
      */
     private List<StorPoolScriptPojo> convertStorPoolList(
-        Map<StorPool, Double> ratingsRef
+        Collection<StorPoolWithScore> ratingsRef
     )
         throws AccessDeniedException
     {
         List<StorPoolScriptPojo> spPojoList = new ArrayList<>();
-        for (Entry<StorPool, Double> entry : ratingsRef.entrySet())
+        for (StorPoolWithScore spWithScore : ratingsRef)
         {
-            StorPool sp = entry.getKey();
-            double score = entry.getValue();
-
-            StorPoolScriptPojo spPojo = new StorPoolScriptPojo(score, sp);
+            StorPoolScriptPojo spPojo = new StorPoolScriptPojo(spWithScore);
             spPojoList.add(spPojo);
         }
 
@@ -184,22 +182,18 @@ class PreSelector
 
     class StorPoolScriptPojo
     {
-        public double score; /* intentionally not final */
-
         private final StorPool storPool;
+        public double score; /* intentionally not final */
 
         /**
          * Lazily initialized variables
          */
         private NodeScriptPojo node;
 
-        public StorPoolScriptPojo(
-            double scoreRef,
-            StorPool storPoolRef
-        )
+        public StorPoolScriptPojo(StorPoolWithScore spWithScore)
         {
-            score = scoreRef;
-            storPool = storPoolRef;
+            storPool = spWithScore.storPool;
+            score = spWithScore.score;
         }
 
         public NodeScriptPojo getNode()
