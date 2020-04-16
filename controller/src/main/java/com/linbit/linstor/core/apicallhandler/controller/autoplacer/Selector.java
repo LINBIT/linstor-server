@@ -48,9 +48,9 @@ class Selector
 
         Set<StorPoolWithScore> currentSelection;
         int startIdx = 0;
-        double nextHighestPossibleScore = Double.MIN_VALUE;
         double selectionScore = Double.MIN_VALUE;
         final Integer replicaCount = selectFilterRef.getReplicaCount();
+        boolean keepSearchingForCandidates = true;
         do
         {
             currentSelection = findSelection(
@@ -72,22 +72,25 @@ class Selector
                     selectionScore = currentScore;
                 }
                 startIdx++;
-                nextHighestPossibleScore = 0;
-                for (int idx = 0; idx < replicaCount; idx++)
+                if (startIdx <= sortedStorPoolByScoreArr.length - replicaCount)
                 {
-                    /*
-                     * we ignore here all filters and node-assignments, etc... we just want to
-                     * verify if we should be keep searching for better candidates or not
-                     */
-                    nextHighestPossibleScore += sortedStorPoolByScoreArr[idx + startIdx].score;
+                    double nextHighestPossibleScore = 0;
+                    for (int idx = 0; idx < replicaCount; idx++)
+                    {
+                        /*
+                         * we ignore here all filters and node-assignments, etc... we just want to
+                         * verify if we should be keep searching for better candidates or not
+                         */
+                        nextHighestPossibleScore += sortedStorPoolByScoreArr[idx + startIdx].score;
+                    }
+                    keepSearchingForCandidates = nextHighestPossibleScore > selectionScore;
+                }
+                else
+                {
+                    keepSearchingForCandidates = false;
                 }
             }
-        } while (
-            currentSelection.size() == replicaCount &&
-                startIdx <= sortedStorPoolByScoreArr.length -
-                    replicaCount &&
-            nextHighestPossibleScore > selectionScore
-        );
+        } while (currentSelection.size() == replicaCount && keepSearchingForCandidates);
 
         return selectionResult;
     }
