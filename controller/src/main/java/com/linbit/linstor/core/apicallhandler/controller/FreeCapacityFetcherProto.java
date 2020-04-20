@@ -4,18 +4,19 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPool.Key;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -25,21 +26,20 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntFreeSpaceOuterClass.MsgIn
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,26 +51,29 @@ import reactor.util.function.Tuples;
 @Singleton
 public class FreeCapacityFetcherProto implements FreeCapacityFetcher
 {
+    private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
-    private final ReadWriteLock nodesMapLock;
-    private final ReadWriteLock storPoolDfnMapLock;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final LockGuardFactory lockGuardFactory;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeRepository nodeRepository;
     private final Provider<AccessContext> peerAccCtx;
 
     @Inject
     public FreeCapacityFetcherProto(
+        @SystemContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
-        @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        LockGuardFactory lockGuardFactoryRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeRepository nodeRepositoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef
     )
     {
+        apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
-        nodesMapLock = nodesMapLockRef;
-        storPoolDfnMapLock = storPoolDfnMapLockRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        lockGuardFactory = lockGuardFactoryRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodeRepository = nodeRepositoryRef;
         peerAccCtx = peerAccCtxRef;
@@ -90,14 +93,15 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     @Override
     public Mono<Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>>> fetchThinFreeSpaceInfo(Set<NodeName> nodesFilter)
     {
-        return scopeRunner
-            .fluxInTransactionlessScope(
-                "Fetch thin capacity info",
-                LockGuard.createDeferred(nodesMapLock.readLock(), storPoolDfnMapLock.readLock()),
-                () -> assembleRequests(nodesFilter)
-            )
-            .collect(Collectors.toList())
-            .map(this::parseFreeSpaces);
+        return scopeRunner.fluxInTransactionalScope(
+            "Fetch thin capacity info",
+            lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
+            () -> assembleRequests(nodesFilter).flatMap(this::parseFreeSpaces)
+        )
+            .collectMap(
+            t -> t.getT1(),
+            t -> t.getT2()
+        );
     }
 
     private Flux<Tuple2<NodeName, ByteArrayInputStream>> assembleRequests(Set<NodeName> nodesFilter)
@@ -176,48 +180,70 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         return peer;
     }
 
-    private Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>> parseFreeSpaces(
-        List<Tuple2<NodeName, ByteArrayInputStream>> freeSpaceAnswers)
+    private Flux<Tuple2<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>>> parseFreeSpaces(
+        Tuple2<NodeName, ByteArrayInputStream> freeSpaceAnswer
+    )
     {
-        Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>> thinFreeSpaceMap = new HashMap<>();
+        return scopeRunner.fluxInTransactionalScope(
+            "Parse thin free space response",
+            lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
+            () -> parseFreeSpacesInTransaction(freeSpaceAnswer)
+        );
+    }
 
+    private Flux<Tuple2<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>>> parseFreeSpacesInTransaction(
+        Tuple2<NodeName, ByteArrayInputStream> freeSpaceAnswer
+    )
+    {
+        Tuple2<Key, Tuple2<SpaceInfo, List<ApiCallRc>>> ret = null;
         try
         {
+            NodeName nodeName = freeSpaceAnswer.getT1();
+            ByteArrayInputStream freeSpaceMsgDataIn = freeSpaceAnswer.getT2();
 
-            for (Tuple2<NodeName, ByteArrayInputStream> freeSpaceAnswer : freeSpaceAnswers)
+            MsgIntFreeSpace freeSpaces = MsgIntFreeSpace.parseDelimitedFrom(freeSpaceMsgDataIn);
+            for (StorPoolFreeSpace freeSpaceInfo : freeSpaces.getFreeSpacesList())
             {
-                NodeName nodeName = freeSpaceAnswer.getT1();
-                ByteArrayInputStream freeSpaceMsgDataIn = freeSpaceAnswer.getT2();
-
-                MsgIntFreeSpace freeSpaces = MsgIntFreeSpace.parseDelimitedFrom(freeSpaceMsgDataIn);
-                for (StorPoolFreeSpace freeSpace : freeSpaces.getFreeSpacesList())
+                List<ApiCallRc> apiCallRcs = new ArrayList<>();
+                if (freeSpaceInfo.getErrorsCount() > 0)
                 {
-                    List<ApiCallRc> apiCallRcs = new ArrayList<>();
-                    if (freeSpace.getErrorsCount() > 0)
+                    ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                    for (ApiCallResponse msgApiCallResponse : freeSpaceInfo.getErrorsList())
                     {
-                        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                        for (ApiCallResponse msgApiCallResponse : freeSpace.getErrorsList())
-                        {
-                            apiCallRc.addEntry(ProtoDeserializationUtils.parseApiCallRc(
+                        apiCallRc.addEntry(
+                            ProtoDeserializationUtils.parseApiCallRc(
                                 msgApiCallResponse,
-                                "Node: '" + nodeName + "', storage pool: '" + freeSpace.getStorPoolName() + "' - "
-                            ));
-                        }
-                        apiCallRcs.add(apiCallRc);
+                                "Node: '" + nodeName + "', storage pool: '" + freeSpaceInfo.getStorPoolName() +
+                                    "' - "
+                            )
+                        );
                     }
-
-                    thinFreeSpaceMap.put(
-                        new StorPool.Key(nodeName, new StorPoolName(freeSpace.getStorPoolName())),
-                        Tuples.of(new SpaceInfo(freeSpace.getTotalCapacity(), freeSpace.getFreeCapacity()), apiCallRcs)
-                    );
+                    apiCallRcs.add(apiCallRc);
                 }
+
+                StorPoolName storPoolName = new StorPoolName(freeSpaceInfo.getStorPoolName());
+                long freeCapacity = freeSpaceInfo.getFreeCapacity();
+                long totalCapacity = freeSpaceInfo.getTotalCapacity();
+
+                ret = Tuples.of(
+                    new StorPool.Key(nodeName, storPoolName),
+                    Tuples.of(
+                        new SpaceInfo(totalCapacity, freeCapacity),
+                        apiCallRcs
+                    )
+                );
+
+                // also update storage pool's freespacemanager
+                StorPool storPool = nodeRepository.get(apiCtx, nodeName).getStorPool(apiCtx, storPoolName);
+                storPool.getFreeSpaceTracker().setCapacityInfo(apiCtx, freeCapacity, totalCapacity);
+
+                ctrlTransactionHelper.commit();
             }
         }
-        catch (IOException | InvalidNameException exc)
+        catch (IOException | InvalidNameException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
-
-        return thinFreeSpaceMap;
+        return Flux.just(ret);
     }
 }

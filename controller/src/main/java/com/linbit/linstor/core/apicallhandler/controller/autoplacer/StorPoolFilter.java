@@ -112,6 +112,7 @@ class StorPoolFilter
      *
      * @param selectFilter
      * @param availableStorPoolsRef
+     * @param freeCapacitiesRef
      * @param rscDfn
      *
      * @return
@@ -253,30 +254,33 @@ class StorPoolFilter
                 nodeMatchesMap.put(node, nodeMatches);
             }
 
-            storPoolMatches = nodeMatches &&
-                sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(apiAccCtx).orElse(0L) >= sizeInKib;
-
-            if (storPoolMatches && filterStorPoolNameList != null && !filterStorPoolNameList.isEmpty())
+            if (nodeMatches)
             {
-                boolean storPoolNameFound = false;
-                for (String storPoolNameStr : filterStorPoolNameList)
+                storPoolMatches = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(apiAccCtx)
+                    .orElse(0L) >= sizeInKib;
+
+                if (storPoolMatches && filterStorPoolNameList != null && !filterStorPoolNameList.isEmpty())
                 {
-                    if (storPoolNameStr.equalsIgnoreCase(sp.getName().displayValue))
+                    boolean storPoolNameFound = false;
+                    for (String storPoolNameStr : filterStorPoolNameList)
                     {
-                        storPoolNameFound = true;
-                        break;
+                        if (storPoolNameStr.equalsIgnoreCase(sp.getName().displayValue))
+                        {
+                            storPoolNameFound = true;
+                            break;
+                        }
                     }
+                    storPoolMatches = storPoolNameFound;
                 }
-                storPoolMatches = storPoolNameFound;
-            }
-            if (storPoolMatches && filterProviderList != null && !filterProviderList.isEmpty())
-            {
-                storPoolMatches = filterProviderList.contains(sp.getDeviceProviderKind());
-            }
+                if (storPoolMatches && filterProviderList != null && !filterProviderList.isEmpty())
+                {
+                    storPoolMatches = filterProviderList.contains(sp.getDeviceProviderKind());
+                }
 
-            if (storPoolMatches)
-            {
-                filteredList.add(sp);
+                if (storPoolMatches)
+                {
+                    filteredList.add(sp);
+                }
             }
         }
         return filteredList;

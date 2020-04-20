@@ -124,17 +124,22 @@ public class CtrlRscAutoPlaceApiCallHandler
             objRefs
         );
 
-        return scopeRunner
-            .fluxInTransactionalScope(
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet()).flatMapMany(
+            // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
+            // the freeCapacities parameter here
+            ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
                 "Auto-place resource",
                 lockGuardFactory.buildDeferred(
                     LockType.WRITE,
-                    LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP
+                    LockObj.NODES_MAP,
+                    LockObj.RSC_DFN_MAP,
+                    LockObj.STOR_POOL_DFN_MAP
                 ),
                 () -> autoPlaceInTransaction(
                     rscNameStr,
                     selectFilter,
                     context
+                )
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -251,11 +256,7 @@ public class CtrlRscAutoPlaceApiCallHandler
 
             Optional<Set<StorPool>> bestCandidate = findBestCandidate(
                 autoStorConfig,
-                rscSize,
-                // Try thick placement - do not override any free capacities
-                Collections.emptyMap(),
-                // Exclude thin storage pools
-                false
+                rscSize
             );
 
             if (bestCandidate.isPresent())
@@ -284,18 +285,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             }
             else
             {
-                // Thick placement failed; ensure we haven't changed anything
-                ctrlTransactionHelper.rollback();
-
-                deploymentResponses = autoPlaceThin(
-                    context,
-                    rscNameStr,
-                    storPoolNameList,
-                    rscSize,
-                    autoStorConfig,
-                    mergedSelectFilter.getDisklessOnRemaining(),
-                    mergedSelectFilter.getLayerStackList()
-                );
+                throw failNotEnoughCandidates(storPoolNameList, rscSize, autoStorConfig);
             }
         }
         return Flux
@@ -308,94 +298,12 @@ public class CtrlRscAutoPlaceApiCallHandler
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
     }
 
-    private Flux<ApiCallRc> autoPlaceThin(
-        ResponseContext context,
-        String rscNameStr,
-        List<String> storPoolNameList,
-        long rscSize,
-        AutoSelectFilterApi autoStorPoolSelectorConfig,
-        Boolean disklessOnRemainingNodes,
-        List<DeviceLayerKind> layerStackStrList
-    )
-    {
-        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
-            .flatMapMany(freeCapacities -> scopeRunner
-                .fluxInTransactionalScope(
-                    "Auto-place resource including thin pools",
-                    lockGuardFactory.buildDeferred(
-                        LockType.WRITE,
-                        LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP),
-                    () -> autoPlaceThinInTransaction(
-                        context,
-                        rscNameStr,
-                        storPoolNameList,
-                        rscSize,
-                        autoStorPoolSelectorConfig,
-                        disklessOnRemainingNodes,
-                        freeCapacities,
-                        layerStackStrList
-                    )
-                ));
-    }
-
-    private Flux<ApiCallRc> autoPlaceThinInTransaction(
-        ResponseContext context,
-        String rscNameStr,
-        List<String> storPoolNameList,
-        long rscSize,
-        AutoSelectFilterApi autoStorPoolSelectorConfig,
-        Boolean disklessOnRemainingNodes,
-        Map<StorPool.Key, Long> thinFreeCapacities,
-        List<DeviceLayerKind> layerStackList
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        Optional<Set<StorPool>> bestCandidate = findBestCandidate(
-            autoStorPoolSelectorConfig,
-            rscSize,
-            thinFreeCapacities,
-            true
-        );
-
-        if (!bestCandidate.isPresent())
-        {
-            throw failNotEnoughCandidates(storPoolNameList, rscSize, autoStorPoolSelectorConfig);
-        }
-
-        Pair<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = createResources(
-            context,
-            responses,
-            rscNameStr,
-            disklessOnRemainingNodes,
-            bestCandidate.get(),
-            thinFreeCapacities,
-            layerStackList
-        );
-
-        Flux<ApiCallRc> autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr).getFlux();
-
-        ctrlTransactionHelper.commit();
-
-        Flux<ApiCallRc> deploymentResponses = deployedResources.objB.isEmpty() ?
-            autoFlux :
-            ctrlRscCrtApiHelper.deployResources(context, deployedResources.objB)
-                .concatWith(autoFlux);
-
-        return Flux
-            .<ApiCallRc>just(responses)
-            .concatWith(Flux.concat(deployedResources.objA))
-            .concatWith(deploymentResponses);
-    }
-
     private Optional<Set<StorPool>> findBestCandidate(
         AutoSelectFilterApi autoStorConfigRef,
-        long rscSize,
-        Map<StorPool.Key, Long> freeCapacities,
-        boolean includeThin
+        long rscSize
     )
     {
-        return autoplacer.autoPlace(autoStorConfigRef, rscSize, freeCapacities, includeThin);
+        return autoplacer.autoPlace(autoStorConfigRef, rscSize);
     }
 
     private Pair<List<Flux<ApiCallRc>>, Set<Resource>> createResources(

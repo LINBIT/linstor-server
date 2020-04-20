@@ -33,7 +33,8 @@ public class FreeSpaceStrategy implements AutoplaceStrategy
     }
 
     @Override
-    public Map<StorPool, Double> rate(List<StorPool> storPoolsRef) throws AccessDeniedException
+    public Map<StorPool, Double> rate(List<StorPool> storPoolsRef, RatingAdditionalInfo additionalInfoRef)
+        throws AccessDeniedException
     {
         Map<StorPool, Double> ret = new HashMap<>();
         for (StorPool sp : storPoolsRef)

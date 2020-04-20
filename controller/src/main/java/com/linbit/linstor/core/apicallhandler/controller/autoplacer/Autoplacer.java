@@ -3,7 +3,6 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPool.Key;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
@@ -41,9 +40,7 @@ public class Autoplacer
 
     public Optional<Set<StorPool>> autoPlace(
         AutoSelectFilterApi selectFilter,
-        long rscSize,
-        Map<Key, Long> freeCapacitiesRef,
-        boolean includeThinRef
+        long rscSize
     )
     {
         Set<StorPool> selection = null;
@@ -52,11 +49,18 @@ public class Autoplacer
             ArrayList<StorPool> availableStorPools = filter.listAvailableStorPools();
 
             // 1: filter storage pools
-            ArrayList<StorPool> filteredStorPools = filter.filter(selectFilter, availableStorPools, rscSize);
+            ArrayList<StorPool> filteredStorPools = filter.filter(
+                selectFilter,
+                availableStorPools,
+                rscSize
+            );
 
             // 2: rate each storage pool with different weighted strategies
             Map<String, Double> weights = getWeights(selectFilter);
-            Collection<StorPoolWithScore> storPoolsWithScoreList = strategyHandler.rate(filteredStorPools, weights);
+            Collection<StorPoolWithScore> storPoolsWithScoreList = strategyHandler.rate(
+                filteredStorPools,
+                weights
+            );
 
             // 3: allow the user to re-sort / filter storage pools as they see fit
             Collection<StorPoolWithScore> preselection = preSelector.preselect(null, storPoolsWithScoreList);

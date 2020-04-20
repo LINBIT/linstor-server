@@ -8,7 +8,15 @@ import java.util.Map;
 
 public interface AutoplaceStrategy
 {
-    Map<StorPool, Double> rate(List<StorPool> storPools) throws AccessDeniedException;
+    Map<StorPool, Double> rate(List<StorPool> storPools, RatingAdditionalInfo additionalInfoRef)
+        throws AccessDeniedException;
 
     String getName();
+
+    public static class RatingAdditionalInfo
+    {
+        public RatingAdditionalInfo()
+        {
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStrategy.RatingAdditionalInfo;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.FreeSpaceStrategy;
 import com.linbit.linstor.core.objects.StorPool;
@@ -32,6 +33,8 @@ class StrategyHandler
     )
         throws AccessDeniedException
     {
+        RatingAdditionalInfo additionalInfo = new RatingAdditionalInfo();
+
         Map<StorPool, StorPoolWithScore> lut = new HashMap<>();
         for (AutoplaceStrategy strat : strategies)
         {
@@ -44,7 +47,7 @@ class StrategyHandler
                     break;
                 }
             }
-            Map<StorPool, Double> stratRate = strat.rate(storPoolListRef);
+            Map<StorPool, Double> stratRate = strat.rate(storPoolListRef, additionalInfo);
             Double highestValue = null;
             for (Double stratValues : stratRate.values())
             {
@@ -71,5 +74,4 @@ class StrategyHandler
 
         return lut.values();
     }
-
 }
