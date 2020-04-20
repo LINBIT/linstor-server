@@ -3,10 +3,12 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.ResourceApi;
+import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 
 import javax.inject.Inject;
@@ -36,6 +38,7 @@ import reactor.core.publisher.Mono;
 public class View
 {
     private final RequestHelper requestHelper;
+    private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlVlmListApiCallHandler ctrlVlmListApiCallHandler;
     private final CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandler;
     private final ObjectMapper objectMapper;
@@ -43,11 +46,13 @@ public class View
     @Inject
     View(
         RequestHelper requestHelperRef,
+        CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef,
         CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
+        ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlVlmListApiCallHandler = ctrlVlmListApiCallHandlerRef;
         ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
         objectMapper = new ObjectMapper();
@@ -179,5 +184,44 @@ public class View
 
             return Mono.just(resp);
         }).next();
+    }
+
+    @GET
+    @Path("snapshots")
+    public Response listSnapshots(
+        @Context Request request,
+        @QueryParam("nodes") List<String> nodes,
+        @QueryParam("resources") List<String> resources,
+        @DefaultValue("0") @QueryParam("limit") int limit,
+        @DefaultValue("0") @QueryParam("offset") int offset
+    )
+    {
+        return requestHelper.doInScope(ApiConsts.API_LST_SNAPSHOT_DFN, request, () ->
+        {
+            List<String> nodesFilter = nodes != null ? nodes : Collections.emptyList();
+            List<String> resourcesFilter = resources != null ?
+                resources.parallelStream().map(String::toLowerCase).collect(Collectors.toList()) :
+                Collections.emptyList();
+
+            Response response;
+
+            Stream<SnapshotDefinitionListItemApi> snapsStream =
+                ctrlApiCallHandler.listSnapshotDefinition(nodesFilter, resourcesFilter).stream();
+
+            if (limit > 0)
+            {
+                snapsStream = snapsStream.skip(offset).limit(limit);
+            }
+
+            List<JsonGenTypes.Snapshot> snapshot = snapsStream
+                .map(Json::apiToSnapshot)
+                .collect(Collectors.toList());
+
+            response = RequestHelper.queryRequestResponse(
+                objectMapper, ApiConsts.FAIL_NOT_FOUND_SNAPSHOT, "Snapshot", null, snapshot
+            );
+
+            return response;
+        }, false);
     }
 }

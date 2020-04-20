@@ -1078,12 +1078,14 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ArrayList<SnapshotDefinitionListItemApi> listSnapshotDefinition()
+    public ArrayList<SnapshotDefinitionListItemApi> listSnapshotDefinition(
+        List<String> nodeNames, List<String> resourceNames)
     {
         ArrayList<SnapshotDefinitionListItemApi> listSnapshotDefinitions;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_DFN_MAP))
         {
-            listSnapshotDefinitions = snapshotApiCallHandler.listSnapshotDefinitions();
+            listSnapshotDefinitions = snapshotApiCallHandler.listSnapshotDefinitions(
+                nodeNames, resourceNames);
         }
         return listSnapshotDefinitions;
     }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -24,7 +25,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Singleton
 public class CtrlSnapshotApiCallHandler
@@ -42,22 +45,53 @@ public class CtrlSnapshotApiCallHandler
         peerAccCtx = peerAccCtxRef;
     }
 
-    ArrayList<SnapshotDefinitionListItemApi> listSnapshotDefinitions()
+    private boolean shouldIncludeSnapshot(
+        final SnapshotDefinitionListItemApi snapItem, final List<String> nodeNameFilter)
+    {
+        if (!nodeNameFilter.isEmpty())
+        {
+            for(final String node : nodeNameFilter)
+            {
+                for(final String snapNode : snapItem.getNodeNames())
+                {
+                    if (node.equalsIgnoreCase(snapNode))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
+    ArrayList<SnapshotDefinitionListItemApi> listSnapshotDefinitions(List<String> nodeNames, List<String> resourceNames)
     {
         ArrayList<SnapshotDefinitionListItemApi> snapshotDfns = new ArrayList<>();
+        final Set<ResourceName> rscDfnsFilter =
+            resourceNames.stream().map(LinstorParsingUtils::asRscName).collect(Collectors.toSet());
+
         try
         {
             for (ResourceDefinition rscDfn : resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values())
             {
-                for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
+                if (rscDfnsFilter.isEmpty() || rscDfnsFilter.contains(rscDfn.getName()))
                 {
-                    try
+                    for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
                     {
-                        snapshotDfns.add(snapshotDfn.getListItemApiData(peerAccCtx.get()));
-                    }
-                    catch (AccessDeniedException accDeniedExc)
-                    {
-                        // don't add snapshot definition without access
+                        try
+                        {
+                            final SnapshotDefinitionListItemApi snapItem =
+                                snapshotDfn.getListItemApiData(peerAccCtx.get());
+                            if (shouldIncludeSnapshot(snapItem, nodeNames))
+                            {
+                                snapshotDfns.add(snapItem);
+                            }
+                        }
+                        catch (AccessDeniedException accDeniedExc)
+                        {
+                            // don't add snapshot definition without access
+                        }
                     }
                 }
             }
