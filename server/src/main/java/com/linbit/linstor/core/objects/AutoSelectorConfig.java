@@ -269,7 +269,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
                 nodeNameList.addAll(pojoNodeName);
             }
             List<String> pojoStorPool = autoPlaceConfigRef.getStorPoolNameList();
-            if (pojoStorPool != null && !pojoStorPool.isEmpty())
+            if (pojoStorPool != null)
             {
                 storPoolNameList.clear();
                 storPoolNameList.addAll(pojoStorPool);

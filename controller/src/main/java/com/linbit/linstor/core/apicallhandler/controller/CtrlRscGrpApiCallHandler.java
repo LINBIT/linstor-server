@@ -368,8 +368,7 @@ public class CtrlRscGrpApiCallHandler
 
             if (autoApiRef != null)
             {
-                AutoSelectorConfig autoPlaceConfig =
-                    rscGrpData.getAutoPlaceConfig();
+                AutoSelectorConfig autoPlaceConfig = rscGrpData.getAutoPlaceConfig();
                 Integer newReplicaCount = autoApiRef.getReplicaCount();
                 autoPlaceConfig.applyChanges(autoApiRef);
 

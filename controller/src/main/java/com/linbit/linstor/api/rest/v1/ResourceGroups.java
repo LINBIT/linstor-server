@@ -159,8 +159,7 @@ public class ResourceGroups
             List<String> storPoolList = select_filter.storage_pool_list;
             if (
                 (storPoolList == null || storPoolList.isEmpty()) &&
-                    select_filter.storage_pool != null &&
-                    !select_filter.storage_pool.isEmpty()
+                select_filter.storage_pool != null
             )
             {
                 storPoolList = Collections.singletonList(select_filter.storage_pool);

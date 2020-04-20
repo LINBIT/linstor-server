@@ -708,7 +708,7 @@ public class JsonGenTypes
         public Integer place_count;
         public List<String> node_name_list = Collections.emptyList();
         public String storage_pool;
-        public List<String> storage_pool_list = Collections.emptyList();
+        public List<String> storage_pool_list = null;
         public List<String> not_place_with_rsc = null;
         public String not_place_with_rsc_regex;
         public List<String> replicas_on_same = null;

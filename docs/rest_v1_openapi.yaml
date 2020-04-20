@@ -4542,6 +4542,7 @@ components:
           type: string
         storage_pool_list:
           type: array
+          default: null
           items:
             type: string
         not_place_with_rsc:
