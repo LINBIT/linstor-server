@@ -173,8 +173,10 @@ public class ResourceGroups
                 select_filter.not_place_with_rsc_regex,
                 select_filter.replicas_on_same,
                 select_filter.replicas_on_different,
-                LinstorParsingUtils.asDeviceLayerKind(select_filter.layer_stack),
-                LinstorParsingUtils.asProviderKind(select_filter.provider_list),
+                select_filter.layer_stack == null ? null :
+                    LinstorParsingUtils.asDeviceLayerKind(select_filter.layer_stack),
+                select_filter.provider_list == null ? null :
+                    LinstorParsingUtils.asProviderKind(select_filter.provider_list),
                 select_filter.diskless_on_remaining
             );
         }
