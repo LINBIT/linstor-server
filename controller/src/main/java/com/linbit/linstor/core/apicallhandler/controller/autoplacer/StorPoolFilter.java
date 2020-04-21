@@ -9,6 +9,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -38,17 +39,20 @@ class StorPoolFilter
     private final AccessContext apiAccCtx;
     private final Provider<AccessContext> peerAccCtx;
     private final StorPoolDefinitionMap storPoolDfnMap;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public StorPoolFilter(
         @SystemContext AccessContext apiAccCtxRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        StorPoolDefinitionMap storPoolDfnMapRef
+        StorPoolDefinitionMap storPoolDfnMapRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiAccCtx = apiAccCtxRef;
         peerAccCtx = peerAccCtxRef;
         storPoolDfnMap = storPoolDfnMapRef;
+        errorReporter = errorReporterRef;
     }
 
     /**
@@ -144,6 +148,7 @@ class StorPoolFilter
             boolean storPoolMatches = true;
 
             Node node = sp.getNode();
+            String nodeDisplayValue = node.getName().displayValue;
 
             Boolean nodeMatches = nodeMatchesMap.get(node);
             if (nodeMatches == null)
@@ -155,13 +160,21 @@ class StorPoolFilter
                     boolean nodeNameFound = false;
                     for (String nodeNameStr : filterNodeNameList)
                     {
-                        if (nodeNameStr.equalsIgnoreCase(node.getName().displayValue))
+                        if (nodeNameStr.equalsIgnoreCase(nodeDisplayValue))
                         {
                             nodeNameFound = true;
                             break;
                         }
                     }
                     nodeMatches = nodeNameFound;
+                    if (!nodeNameFound)
+                    {
+                        errorReporter.logTrace(
+                            "Autoplacer.Filter: Disqualifying node '%s' as it does not match node name filter %s",
+                            nodeDisplayValue,
+                            filterNodeNameList
+                        );
+                    }
                 }
                 if (nodeMatches && filterNodePropsMatch != null && !filterNodePropsMatch.isEmpty())
                 {
@@ -171,6 +184,13 @@ class StorPoolFilter
                         if (!matchEntry.getValue().equals(val))
                         {
                             nodeMatches = false;
+                            errorReporter.logTrace(
+                                "Autoplacer.Filter: Disqualifying node '%s' as it does not match fixed same property '%s'. Value required: '%s', but was: '%s'",
+                                nodeDisplayValue,
+                                matchEntry.getKey(),
+                                matchEntry.getValue(),
+                                val
+                            );
                             break;
                         }
                     }
@@ -184,6 +204,13 @@ class StorPoolFilter
                         if (mismatchEntry.getValue().equals(val))
                         {
                             anyMatch = true;
+                            errorReporter.logTrace(
+                                "Autoplacer.Filter: Disqualifying node '%s' as it does not match fixed different property '%s'. Value prohibited: %s, but node has: '%s'",
+                                nodeDisplayValue,
+                                mismatchEntry.getKey(),
+                                mismatchEntry.getValue(),
+                                val
+                            );
                             break;
                         }
                     }
@@ -198,6 +225,11 @@ class StorPoolFilter
                         if (!supportedLayers.contains(layer))
                         {
                             nodeMatches = false;
+                            errorReporter.logTrace(
+                                "Autoplacer.Filter: Disqualifying node '%s' as it does not support required layer '%s'",
+                                nodeDisplayValue,
+                                layer.name()
+                            );
                             break;
                         }
                     }
@@ -247,7 +279,17 @@ class StorPoolFilter
                     while (nodeMatches && iterateResources.hasNext())
                     {
                         String rscName = iterateResources.next().getDefinition().getName().value;
-                        nodeMatches = !matchesRegex.test(rscName) && !containedInList.test(rscName);
+
+                        boolean hasRscDeployed = matchesRegex.test(rscName) || containedInList.test(rscName);
+                        nodeMatches = !hasRscDeployed;
+                        if (hasRscDeployed)
+                        {
+                            errorReporter.logTrace(
+                                "Autoplacer.Filter: Disqualifying node '%s' as it has resource '%s' deployed",
+                                nodeDisplayValue,
+                                rscName
+                            );
+                        }
                     }
                 }
 
@@ -271,16 +313,41 @@ class StorPoolFilter
                         }
                     }
                     storPoolMatches = storPoolNameFound;
+
+                    if (!storPoolNameFound)
+                    {
+                        errorReporter.logTrace(
+                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool does not match the given name filter",
+                            sp.getName().displayValue,
+                            sp.getNode().getName().displayValue
+                        );
+                    }
                 }
                 if (storPoolMatches && filterProviderList != null && !filterProviderList.isEmpty())
                 {
                     storPoolMatches = filterProviderList.contains(sp.getDeviceProviderKind());
+                    if (!storPoolMatches)
+                    {
+                        errorReporter.logTrace(
+                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool does not match the given device provider filter",
+                            sp.getName().displayValue,
+                            sp.getNode().getName().displayValue
+                        );
+                    }
                 }
 
                 if (storPoolMatches)
                 {
                     filteredList.add(sp);
                 }
+            }
+            else
+            {
+                errorReporter.logTrace(
+                    "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as node is already disqualified",
+                    sp.getName().displayValue,
+                    sp.getNode().getName().displayValue
+                );
             }
         }
         return filteredList;

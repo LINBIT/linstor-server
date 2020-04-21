@@ -115,7 +115,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     public boolean hasAtLeastLogLevel(Level levelRef)
     {
         boolean hasRequiredLevel = true;
-        org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        org.slf4j.Logger crtLogger = mainLogger;
         switch (levelRef)
         {
             case DEBUG:
@@ -143,7 +143,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     public Level getCurrentLogLevel()
     {
         Level level = null; // no logging, aka OFF
-        org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        org.slf4j.Logger crtLogger = mainLogger;
         if (crtLogger.isTraceEnabled())
         {
             level = Level.TRACE;

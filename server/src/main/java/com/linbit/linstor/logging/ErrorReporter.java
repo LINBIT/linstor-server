@@ -21,7 +21,7 @@ public interface ErrorReporter
      * Indicates if at least the given LogLevel is enabled.
      * ERROR < WARN < INFO < DEBUG < TRACE
      */
-    boolean hasAtLeastLogLevel(Level leve);
+    boolean hasAtLeastLogLevel(Level level);
 
     /**
      * Returns the current log level;
@@ -62,10 +62,10 @@ public interface ErrorReporter
 
     /**
      * Reports any kind of error, especially ones that are not expected during normal operation
-     * 
+     *
      * E.g., internal errors that may require debugging, detected implementation errors,
      * inability to load parts of the program (missing class files), etc.
-     * 
+     *
      * Implementations of the methods specified in this interface are not supposed to throw any
      * exceptions, not even RuntimeExceptions, because if the ErrorReporter is not working,
      * there is no way to report such exceptions anyway.
@@ -86,10 +86,10 @@ public interface ErrorReporter
 
     /**
      * Reports any kind of error, especially ones that are not expected during normal operation
-     * 
+     *
      * E.g., internal errors that may require debugging, detected implementation errors,
      * inability to load parts of the program (missing class files), etc.
-     * 
+     *
      * Implementations of the methods specified in this interface are not supposed to throw any
      * exceptions, not even RuntimeExceptions, because if the ErrorReporter is not working,
      * there is no way to report such exceptions anyway.
@@ -149,7 +149,7 @@ public interface ErrorReporter
 
     /**
      * Reports less severe problems, such as the ones expected during normal operation of linstor
-     * 
+     *
      * E.g., a StorageException caused by running out of space, an exhausted numbers pool, a user-specified
      * value being out of range, etc.
      *

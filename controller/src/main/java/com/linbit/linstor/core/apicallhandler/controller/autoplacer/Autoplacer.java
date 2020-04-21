@@ -105,7 +105,12 @@ public class Autoplacer
         public int compareTo(StorPoolWithScore sp2)
         {
             // highest to lowest
-            return Double.compare(sp2.score, score);
+            int cmp = Double.compare(sp2.score, score);
+            if (cmp == 0)
+            {
+                cmp = storPool.compareTo(sp2.storPool); // by name (nodename first)
+            }
+            return cmp;
         }
 
         @Override

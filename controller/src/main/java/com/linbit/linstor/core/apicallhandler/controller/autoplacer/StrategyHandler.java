@@ -4,6 +4,7 @@ import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStr
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.FreeSpaceStrategy;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
@@ -20,11 +21,17 @@ import java.util.Map.Entry;
 class StrategyHandler
 {
     private final List<AutoplaceStrategy> strategies;
+    private final ErrorReporter errorReporter;
+
 
     @Inject
-    StrategyHandler(FreeSpaceStrategy freeSpaceStratRef)
+    StrategyHandler(
+        FreeSpaceStrategy freeSpaceStratRef,
+        ErrorReporter errorReporterRef
+    )
     {
         strategies = Arrays.asList(freeSpaceStratRef);
+        errorReporter = errorReporterRef;
     }
 
     public Collection<StorPoolWithScore> rate(
@@ -38,6 +45,7 @@ class StrategyHandler
         Map<StorPool, StorPoolWithScore> lut = new HashMap<>();
         for (AutoplaceStrategy strat : strategies)
         {
+            String stratName = strat.getName();
             Double weight = 1.0;
             for (Entry<String, Double> stratWeight : strategyWeights.entrySet())
             {
@@ -61,6 +69,7 @@ class StrategyHandler
             {
                 StorPool sp = rate.getKey();
                 StorPoolWithScore prevRating = lut.get(sp);
+                double stratValue = rate.getValue();
 
                 if (prevRating == null)
                 {
@@ -68,7 +77,19 @@ class StrategyHandler
                     lut.put(sp, prevRating);
                 }
                 // normalize and weight the value
-                prevRating.score += rate.getValue() / highestValue * weight;
+                double normalizedVal = stratValue / highestValue;
+                double normalizdWeightedVal = normalizedVal * weight;
+                prevRating.score += normalizdWeightedVal;
+                errorReporter.logTrace(
+                    "Autoplacer.Strategy: Updated score of StorPool '%s' on Node '%s' to %f (%s: %f, %f, %f)",
+                    sp.getName().displayValue,
+                    sp.getNode().getName().displayValue,
+                    prevRating.score,
+                    stratName,
+                    stratValue,
+                    normalizedVal,
+                    normalizdWeightedVal
+                );
             }
         }
 

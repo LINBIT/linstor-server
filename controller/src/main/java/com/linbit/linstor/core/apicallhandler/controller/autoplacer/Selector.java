@@ -5,6 +5,7 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -27,11 +28,13 @@ import java.util.Set;
 class Selector
 {
     private final AccessContext apiCtx;
+    private final ErrorReporter errorReporter;
 
     @Inject
-    Selector(@SystemContext AccessContext apiCtxRef)
+    Selector(@SystemContext AccessContext apiCtxRef, ErrorReporter errorReporterRef)
     {
         apiCtx = apiCtxRef;
+        errorReporter = errorReporterRef;
 
     }
 
@@ -43,6 +46,19 @@ class Selector
     {
         StorPoolWithScore[] sortedStorPoolByScoreArr = storPoolWithScores.toArray(new StorPoolWithScore[0]);
         Arrays.sort(sortedStorPoolByScoreArr);
+
+        // if (errorReporter.hasAtLeastLogLevel(Level.TRACE))
+        // {
+            for (StorPoolWithScore storPoolWithScore : sortedStorPoolByScoreArr)
+            {
+                errorReporter.logTrace(
+                    "Autoplacer.Selector: Score: %f, Storage pool '%s' on node '%s'",
+                    storPoolWithScore.score,
+                    storPoolWithScore.storPool.getName().displayValue,
+                    storPoolWithScore.storPool.getNode().getName().displayValue
+                );
+            }
+            // }
 
         Set<StorPoolWithScore> selectionResult = null;
 
@@ -61,15 +77,39 @@ class Selector
             if (currentSelection.size() == replicaCount)
             {
                 double currentScore = 0;
+
+                StringBuilder storPoolDescrForLog = new StringBuilder();
                 for (StorPoolWithScore spWithScore : currentSelection)
                 {
                     currentScore += spWithScore.score;
+                    storPoolDescrForLog.append("StorPool '")
+                        .append(spWithScore.storPool.getName().displayValue)
+                        .append("' on node '")
+                        .append(spWithScore.storPool.getNode().getName().displayValue)
+                        .append("' with score: ")
+                        .append(spWithScore.score)
+                        .append(", ");
                 }
+                storPoolDescrForLog.setLength(storPoolDescrForLog.length()-2);
 
                 if (currentScore > selectionScore)
                 {
                     selectionResult = currentSelection;
                     selectionScore = currentScore;
+                    errorReporter.logTrace(
+                        "Autoplacer.Selector: Found candidate %s with accumulated score %f",
+                        storPoolDescrForLog.toString(),
+                        selectionScore
+                    );
+                }
+                else
+                {
+                    errorReporter.logTrace(
+                        "Autoplacer.Selector: Skipping candidate %s as its accumulated score %f is lower than currently best candidate's %f",
+                        storPoolDescrForLog.toString(),
+                        currentScore,
+                        selectFilterRef
+                    );
                 }
                 startIdx++;
                 if (startIdx <= sortedStorPoolByScoreArr.length - replicaCount)
@@ -84,11 +124,25 @@ class Selector
                         nextHighestPossibleScore += sortedStorPoolByScoreArr[idx + startIdx].score;
                     }
                     keepSearchingForCandidates = nextHighestPossibleScore > selectionScore;
+                    if (!keepSearchingForCandidates)
+                    {
+                        errorReporter.logTrace(
+                            "Autoplacer.Selector: Remaining candidates-combinations cannot have higher score then the currently chosen one. Search finished."
+                        );
+                    }
                 }
                 else
                 {
                     keepSearchingForCandidates = false;
+                    errorReporter.logTrace(
+                        "Autoplacer.Selector: Not enough remaining storage pools left. Search finished."
+                    );
                 }
+
+            }
+            else
+            {
+                errorReporter.logTrace("Autoplacer.Selector: no more candidates found");
             }
         } while (currentSelection.size() == replicaCount && keepSearchingForCandidates);
 
@@ -167,6 +221,16 @@ class Selector
 
             boolean isAllowed = !selectedNodes.contains(node);
 
+            if (!isAllowed)
+            {
+                errorReporter.logTrace(
+                    "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
+                    "canditate-selection as another StorPool was already selected from this node ",
+                    currentSpWithScoreRef.storPool.getName().displayValue,
+                    currentSpWithScoreRef.storPool.getNode().getName().displayValue
+                );
+            }
+
             // checking same props
             Iterator<Entry<String, String>> samePropEntrySetIterator = sameProps.entrySet().iterator();
             while (isAllowed && samePropEntrySetIterator.hasNext())
@@ -176,7 +240,20 @@ class Selector
                 if (samePropValue != null)
                 {
                     String nodePropValue = nodeProps.getProp(sameProp.getKey());
-                    isAllowed = nodePropValue == null || nodePropValue.equals(samePropValue);
+                    // if the node does not have the property, do not allow selecting this storage pool
+                    isAllowed = nodePropValue != null && nodePropValue.equals(samePropValue);
+                    if (!isAllowed) {
+                        errorReporter.logTrace(
+                            "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
+                            "canditate-selection as the node has property '%s' set to '%s' while the already selected "+
+                            "nodes require the value to be '%s'",
+                            currentSpWithScoreRef.storPool.getName().displayValue,
+                            currentSpWithScoreRef.storPool.getNode().getName().displayValue,
+                            sameProp.getKey(),
+                            nodePropValue,
+                            samePropValue
+                        );
+                    }
                 }
             }
             // checking diff props
@@ -190,6 +267,18 @@ class Selector
                 {
                     List<String> diffPropValue = diffProp.getValue();
                     isAllowed = !diffPropValue.contains(nodePropValue);
+                    if (!isAllowed)
+                    {
+                        errorReporter.logTrace(
+                            "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
+                            "canditate-selection as the node has property '%s' set to '%s', but that value is already " +
+                            "taken by another node from the current selection",
+                            currentSpWithScoreRef.storPool.getName().displayValue,
+                            currentSpWithScoreRef.storPool.getNode().getName().displayValue,
+                            diffProp.getKey(),
+                            nodePropValue
+                        );
+                    }
                 }
             }
 
@@ -205,6 +294,12 @@ class Selector
         {
             StorPool currentStorPool = currentSpWithScoreRef.storPool;
             Props nodeProps = currentStorPool.getNode().getProps(apiCtx);
+
+            errorReporter.logTrace(
+                "Autoplacer.Selector: Adding StorPool '%s' on Node '%s' to current selection",
+                currentSpWithScoreRef.storPool.getName().displayValue,
+                currentSpWithScoreRef.storPool.getNode().getName().displayValue
+            );
 
             // update same props
             Map<String, String> updateEntriesForSameProps = new HashMap<>(); // prevent concurrentModificationException
@@ -241,6 +336,12 @@ class Selector
         {
             selectedStorPoolWithScoreSet.remove(currentSpWithScoreRef);
             selectedNodes.remove(currentSpWithScoreRef.storPool.getNode());
+
+            errorReporter.logTrace(
+                "Autoplacer.Selector: Removing StorPool '%s' on Node '%s' to current selection",
+                currentSpWithScoreRef.storPool.getName().displayValue,
+                currentSpWithScoreRef.storPool.getNode().getName().displayValue
+            );
 
             rebuildTemporaryMaps();
         }
