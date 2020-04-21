@@ -1,0 +1,18 @@
+FROM ubuntu:bionic
+
+RUN apt-get update && apt-get install -y default-jre && apt-get clean
+
+COPY scripts/postinstall.sh /tmp
+COPY build/distributions/linstor-server.tar /tmp
+COPY scripts/linstor-controller.service /etc/systemd/system/
+
+RUN tar -xf /tmp/linstor-server.tar -C /usr/share
+RUN /tmp/postinstall.sh
+# cleanup
+RUN rm /tmp/linstor-server.tar /tmp/postinstall.sh
+
+RUN mkdir -p /var/log/linstor-controller
+
+EXPOSE 3370/tcp
+
+ENTRYPOINT ["/usr/share/linstor-server/bin/Controller", "--logs=/var/log/linstor-controller", "--config-directory=/etc/linstor"]
