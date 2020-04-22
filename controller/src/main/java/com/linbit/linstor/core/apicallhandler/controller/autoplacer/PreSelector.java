@@ -8,6 +8,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -22,6 +23,7 @@ import javax.script.ScriptException;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
@@ -36,39 +39,69 @@ import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 @Singleton
 class PreSelector
 {
+    private final static Path SCRIPT_BASE_PATH = Paths.get("/etc/linstor/selector/");
+
     private final AccessContext apiCtx;
     private final ErrorReporter errorReporter;
+    private final SystemConfRepository sysCfgRep;
     private Thread scriptThread;
 
     @Inject
     PreSelector(
         @SystemContext AccessContext apiCtxRef,
+        SystemConfRepository sysCfgRepRef,
         ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
+        sysCfgRep = sysCfgRepRef;
         errorReporter = errorReporterRef;
     }
 
-    Collection<StorPoolWithScore> preselect(String scriptPathStr, Collection<StorPoolWithScore> ratingsRef)
+    Collection<StorPoolWithScore> preselect(
+        Collection<StorPoolWithScore> ratingsRef
+    )
         throws AccessDeniedException
     {
         Collection<StorPoolWithScore> ret = ratingsRef;
-        if (scriptPathStr != null)
+
+        String preselectorFileName = sysCfgRep.getCtrlConfForView(apiCtx).getProp(
+            ApiConsts.KEY_AUTOPLACE_PRE_SELECT_FILE_NAME,
+            ApiConsts.NAMESPC_AUTOPLACER
+        );
+        if (Files.exists(SCRIPT_BASE_PATH) && preselectorFileName != null)
         {
-            Path scriptPath = Paths.get(scriptPathStr);
-            if (Files.exists(scriptPath))
+            Path preselectorFile;
+            try (Stream<Path> fileList = Files.list(SCRIPT_BASE_PATH))
+            {
+                preselectorFile = fileList.filter(
+                    path -> path.getFileName().toString().equals(preselectorFileName)
+                ).findFirst().orElse(null);
+            }
+            catch (IOException exc)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        String.format(
+                            "An IO exception occured when looking for the preselection file"
+                        )
+                    )
+                );
+            }
+
+            if (preselectorFile != null)
             {
                 long scriptAllowedRunTime = 5_000; // TODO make configurable
 
                 ScriptEngine jsEngine = initializeJSEngine();
                 try
                 {
-                    jsEngine.eval(new FileReader(scriptPathStr));
+                    jsEngine.eval(new FileReader(preselectorFile.toFile()));
                 }
                 catch (ScriptException | FileNotFoundException exc)
                 {
-                    throw new ApiException("Failed to evaluate script '" + scriptPathStr + "'", exc);
+                    throw new ApiException("Failed to evaluate script '" + preselectorFile.toString() + "'", exc);
                 }
                 Invocable invocable = (Invocable) jsEngine;
                 Runnable scriptRunner = invocable.getInterface(Runnable.class);
@@ -81,12 +114,12 @@ class PreSelector
                 if (scriptThread != null && scriptThread.isAlive())
                 {
                     errorReporter.logWarning(
-                        "Previously executed script still not terminated. Skipping pre-selection."
+                        "Autoplacer.Preselector: Previously executed script still not terminated. Skipping pre-selection."
                     );
                 }
                 else
                 {
-                    scriptThread = new Thread(scriptRunner, "Autoplacer-ScriptThread");
+                    scriptThread = new Thread(scriptRunner, "Autoplacer-Preselector-ScriptThread");
                     scriptThread.start();
                     try
                     {
@@ -104,7 +137,7 @@ class PreSelector
                                 ApiConsts.FAIL_PRE_SELECT_SCRIPT_DID_NOT_TERMINATE,
                                 String.format(
                                     "Given script file '%s' executed but did not stop after %d ms. Skipping future pre-selection step.",
-                                    scriptPathStr,
+                                    preselectorFile.toString(),
                                     scriptAllowedRunTime
                                 )
                             )
@@ -115,18 +148,31 @@ class PreSelector
                     ret = new ArrayList<>();
                     for (StorPoolScriptPojo spPojo : scriptPojoList)
                     {
-                        ret.add(new StorPoolWithScore(spPojo.storPool, spPojo.score));
+                        if (spPojo != null && spPojo.storPool != null)
+                        {
+                            errorReporter.logTrace(
+                                "Autoplacer.Preselector: StorPool '%s' on node '%s' with score %f",
+                                spPojo.storPool.getName().displayValue,
+                                spPojo.storPool.getNode().getName().displayValue,
+                                spPojo.score
+                            );
+                            // just make sure this entry was not created somehow by the script...
+                            ret.add(new StorPoolWithScore(spPojo.storPool, spPojo.score));
+                        }
                     }
                 }
             }
             else
             {
-                errorReporter.logTrace("Given script file '%s' not found. Skipping pre-selection step", scriptPathStr);
+                errorReporter.logTrace(
+                    "Autoplacer.Preselector: Given script file '%s' not found. Skipping pre-selection step",
+                    SCRIPT_BASE_PATH + preselectorFileName
+                );
             }
         }
         else
         {
-            errorReporter.logTrace("No script file given. Skipping pre-selection step");
+            errorReporter.logTrace("Autoplacer.Preselector: No script file given. Skipping pre-selection step");
         }
         return ret;
     }
@@ -180,7 +226,7 @@ class PreSelector
         return spPojoList;
     }
 
-    class StorPoolScriptPojo
+    public class StorPoolScriptPojo
     {
         private final StorPool storPool;
         public double score; /* intentionally not final */
@@ -231,7 +277,7 @@ class PreSelector
         }
     }
 
-    class NodeScriptPojo
+    public class NodeScriptPojo
     {
         private final Node node;
 

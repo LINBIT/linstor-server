@@ -57,7 +57,7 @@ public class Autoplacer
             Collection<StorPoolWithScore> storPoolsWithScoreList = strategyHandler.rate(filteredStorPools);
 
             // 3: allow the user to re-sort / filter storage pools as they see fit
-            Collection<StorPoolWithScore> preselection = preSelector.preselect(null, storPoolsWithScoreList);
+            Collection<StorPoolWithScore> preselection = preSelector.preselect(storPoolsWithScoreList);
 
             // 4: actual selection of storage pools
             Set<StorPoolWithScore> selectionWithScores = selector.select(selectFilter, preselection);
