@@ -13,6 +13,13 @@ public interface AutoplaceStrategy
 
     String getName();
 
+    MinMax getMinMax();
+
+    public enum MinMax
+    {
+        MINIMIZE, MAXIMIZE;
+    }
+
     public static class RatingAdditionalInfo
     {
         public RatingAdditionalInfo()

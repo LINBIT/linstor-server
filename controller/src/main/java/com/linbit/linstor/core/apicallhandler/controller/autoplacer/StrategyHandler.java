@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStrategy.MinMax;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStrategy.RatingAdditionalInfo;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.FreeSpaceStrategy;
@@ -70,6 +71,14 @@ class StrategyHandler
             double weight = strategyWeights.get(strat);
 
             Map<StorPool, Double> stratRate = strat.rate(storPoolListRef, additionalInfo);
+
+            if (strat.getMinMax() == MinMax.MINIMIZE)
+            {
+                for (Entry<StorPool, Double> entry : stratRate.entrySet())
+                {
+                    entry.setValue(1 / entry.getValue());
+                }
+            }
 
             double highestValue = Double.MIN_VALUE;
             for (Double stratValue : stratRate.values())

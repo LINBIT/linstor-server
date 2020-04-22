@@ -33,6 +33,12 @@ public class FreeSpaceStrategy implements AutoplaceStrategy
     }
 
     @Override
+    public MinMax getMinMax()
+    {
+        return MinMax.MAXIMIZE;
+    }
+
+    @Override
     public Map<StorPool, Double> rate(List<StorPool> storPoolsRef, RatingAdditionalInfo additionalInfoRef)
         throws AccessDeniedException
     {
