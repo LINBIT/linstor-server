@@ -205,7 +205,7 @@ public class CtrlConfApiCallHandler
             if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
             {
                 String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
-                if (fullKey.startsWith(ApiConsts.NAMESPC_REST + '/'))
+                if (fullKey.startsWith(ApiConsts.NAMESPC_REST + '/') || fullKey.startsWith(ApiConsts.NAMESPC_AUTOPLACER + "/"))
                 {
                     systemConfRepository.setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                 }
