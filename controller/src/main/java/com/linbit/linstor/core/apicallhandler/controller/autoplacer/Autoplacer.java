@@ -10,8 +10,6 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -56,11 +54,7 @@ public class Autoplacer
             );
 
             // 2: rate each storage pool with different weighted strategies
-            Map<String, Double> weights = getWeights(selectFilter);
-            Collection<StorPoolWithScore> storPoolsWithScoreList = strategyHandler.rate(
-                filteredStorPools,
-                weights
-            );
+            Collection<StorPoolWithScore> storPoolsWithScoreList = strategyHandler.rate(filteredStorPools);
 
             // 3: allow the user to re-sort / filter storage pools as they see fit
             Collection<StorPoolWithScore> preselection = preSelector.preselect(null, storPoolsWithScoreList);
@@ -81,12 +75,6 @@ public class Autoplacer
             throw new ImplementationError(exc);
         }
         return Optional.ofNullable(selection);
-    }
-
-    private Map<String, Double> getWeights(AutoSelectFilterApi selectFilterRef)
-    {
-        // TODO: implement
-        return Collections.emptyMap();
     }
 
     static class StorPoolWithScore implements Comparable<StorPoolWithScore>

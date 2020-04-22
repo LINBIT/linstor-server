@@ -1,10 +1,15 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
+import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStrategy.RatingAdditionalInfo;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.FreeSpaceStrategy;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
@@ -16,52 +21,62 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 @Singleton
 class StrategyHandler
 {
     private final List<AutoplaceStrategy> strategies;
+    private final SystemConfRepository sysCfgRep;
+    private final AccessContext apiCtx;
     private final ErrorReporter errorReporter;
 
+    private final Map<AutoplaceStrategy, Double> dfltWeights;
 
     @Inject
     StrategyHandler(
         FreeSpaceStrategy freeSpaceStratRef,
+        SystemConfRepository sysCfgRepRef,
+        @SystemContext AccessContext apiCtxRef,
         ErrorReporter errorReporterRef
     )
     {
         strategies = Arrays.asList(freeSpaceStratRef);
+        sysCfgRep = sysCfgRepRef;
+        apiCtx = apiCtxRef;
         errorReporter = errorReporterRef;
+
+        dfltWeights = new HashMap<>();
+        for (AutoplaceStrategy strat : strategies)
+        {
+            dfltWeights.put(strat, 0.0);
+        }
+        dfltWeights.put(freeSpaceStratRef, 1.0);
     }
 
     public Collection<StorPoolWithScore> rate(
-        List<StorPool> storPoolListRef,
-        Map<String, Double> strategyWeights
+        List<StorPool> storPoolListRef
     )
         throws AccessDeniedException
     {
         RatingAdditionalInfo additionalInfo = new RatingAdditionalInfo();
 
+        Map<AutoplaceStrategy, Double> strategyWeights = getWeights();
+
         Map<StorPool, StorPoolWithScore> lut = new HashMap<>();
         for (AutoplaceStrategy strat : strategies)
         {
             String stratName = strat.getName();
-            Double weight = 1.0;
-            for (Entry<String, Double> stratWeight : strategyWeights.entrySet())
-            {
-                if (strat.getName().equalsIgnoreCase(stratWeight.getKey()))
-                {
-                    weight = stratWeight.getValue();
-                    break;
-                }
-            }
+            double weight = strategyWeights.get(strat);
+
             Map<StorPool, Double> stratRate = strat.rate(storPoolListRef, additionalInfo);
-            Double highestValue = null;
-            for (Double stratValues : stratRate.values())
+
+            double highestValue = Double.MIN_VALUE;
+            for (Double stratValue : stratRate.values())
             {
-                if (highestValue == null || highestValue < stratValues)
+                if (highestValue < stratValue)
                 {
-                    highestValue = stratValues;
+                    highestValue = stratValue;
                 }
             }
 
@@ -94,5 +109,56 @@ class StrategyHandler
         }
 
         return lut.values();
+    }
+
+    private Map<AutoplaceStrategy, Double> getWeights() throws AccessDeniedException
+    {
+        Map<AutoplaceStrategy, Double> weights = new HashMap<>(dfltWeights);
+
+        Props ctrlProps = sysCfgRep.getCtrlConfForView(apiCtx);
+        Optional<Props> weightsNsOpt = ctrlProps.getNamespace(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS);
+        if (weightsNsOpt.isPresent())
+        {
+            Props weightsNs = weightsNsOpt.get();
+            for (AutoplaceStrategy strat : strategies)
+            {
+                String stratName = strat.getName();
+                String valStr = weightsNs.getProp(stratName);
+                double valDouble;
+                if (valStr != null)
+                {
+                    try
+                    {
+                        valDouble = Double.parseDouble(valStr);
+                        errorReporter.logTrace(
+                            "Autoplacer.Strategy: Strategy '%s' with weight: %f",
+                            stratName,
+                            valDouble
+                        );
+                    }
+                    catch (NumberFormatException nfExc)
+                    {
+                        errorReporter.reportError(
+                            nfExc,
+                            null,
+                            null,
+                            "Could not parse '" + valStr + "' for strategy '" + stratName +
+                                "'. Defaulting to 1.0"
+                        );
+                        valDouble = 1.0;
+                    }
+                }
+                else
+                {
+                    errorReporter.logTrace(
+                        "Autoplacer.Strategy: No weight configured for strategy '%s'. Defaulting to 1.0",
+                        stratName
+                    );
+                    valDouble = 1.0;
+                }
+                weights.put(strat, valDouble);
+            }
+        }
+        return weights;
     }
 }
