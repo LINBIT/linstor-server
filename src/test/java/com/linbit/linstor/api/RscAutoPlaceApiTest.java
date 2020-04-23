@@ -60,6 +60,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -1179,6 +1180,163 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         assertEquals(2, deployedNodes.size());
         assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
         assertEquals("stlt2", deployedNodes.get(1).getName().displayValue);
+    }
+
+    @Test
+    public void repsectNodePropertiesFixedByAlreadyDepoyedResource() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("stor", 100 * GB, LVM)
+                .setNodeProp("Aux/a", "a")
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("stor", 90 * GB, LVM)
+                .setNodeProp("Aux/a", "a")
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("stor", 70 * GB, LVM)
+                .setNodeProp("Aux/a", "a")
+                .build()
+            .stltBuilder("stlt4")
+                .addStorPool("stor", 80 * GB, LVM)
+                .setNodeProp("Aux/a", "b")
+                .build()
+            .disklessOnRemaining(false)
+        );
+        // will prioritize stlt1 and stlt2 based on free space
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getNode())
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+        assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
+        assertEquals("stlt2", deployedNodes.get(1).getName().displayValue);
+
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                3,
+                true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addReplicasOnSameNodeProp("Aux/a")
+        );
+
+        // although stlt 4 has more free space, the replicasOnSame forces the selection to stlt3
+        deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getNode())
+            .collect(Collectors.toList());
+        assertEquals(3, deployedNodes.size());
+        deployedNodes.stream().map(node -> node.getName().displayValue).forEach(System.out::println);
+        assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
+        assertEquals("stlt2", deployedNodes.get(1).getName().displayValue);
+        assertEquals("stlt3", deployedNodes.get(2).getName().displayValue);
+    }
+
+    @Test
+    public void scalingTest() throws Exception
+    {
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            2,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        ).addVlmDfn(TEST_RSC_NAME, 0, 1 * GB);
+
+        for (int nodeIdx = 0; nodeIdx < 512; nodeIdx++)
+        {
+            int a = (nodeIdx >> 8) % 2;
+            int b = (nodeIdx >> 7) % 2;
+            int c = (nodeIdx >> 6) % 2;
+            int d = (nodeIdx >> 5) % 2;
+            int e = (nodeIdx >> 4) % 2;
+            int f = (nodeIdx >> 3) % 2;
+            int g = (nodeIdx >> 2) % 2;
+            int h = (nodeIdx >> 1) % 2;
+            int i = nodeIdx % 2;
+
+            call = call.stltBuilder(String.format("stlt.%03d", nodeIdx)) // fill with leading zeroes
+                .addStorPool("sp" + nodeIdx + "_1", 20 * GB, LVM)
+                .setNodeProp("Aux/a", ""+a)
+                .setNodeProp("Aux/b", ""+b)
+                .setNodeProp("Aux/c", ""+c)
+                .setNodeProp("Aux/d", ""+d)
+                .setNodeProp("Aux/e", ""+e)
+                .setNodeProp("Aux/f", ""+f)
+                .setNodeProp("Aux/g", ""+g)
+                .setNodeProp("Aux/h", ""+h)
+                .setNodeProp("Aux/i", ""+i)
+                .build();
+        }
+
+        /*
+         * we just created 512 nodes with one SP each. half of the nodes have Aux/a set to 0
+         * the other half set to 1.
+         * You can imagine these 512 nodes in a truth-table, where the properties
+         * a,b,c,d,e,f,g,h and i are boolean variables in all possible combinations.
+         */
+        /*
+         * now we have to configure the autoplacer to choose storage pools which we can
+         * deterministically expect :)
+         *
+         * However, as this is a scaling test, forcing properties to a certain value does not
+         * test scaling properly. We have 9 properties. If we set all but one property to a
+         * certain value, the very first step (i.e. "Filter") of the new autoplacer will
+         * actually remove all non-matching combination, making this test way too easy for
+         * the autoplacer.
+         *
+         * For stressing the autoplacer we use 8 non-fixed replicas-on-same properties, allowing
+         * the last property to be different of the two selected nodes
+         */
+
+        call = call
+            // not adding Aux/a
+            .addReplicasOnSameNodeProp("Aux/b")
+            .addReplicasOnSameNodeProp("Aux/c")
+            .addReplicasOnSameNodeProp("Aux/d")
+            .addReplicasOnSameNodeProp("Aux/e")
+            .addReplicasOnSameNodeProp("Aux/f")
+            .addReplicasOnSameNodeProp("Aux/g")
+            .addReplicasOnSameNodeProp("Aux/h")
+            .addReplicasOnSameNodeProp("Aux/i");
+
+        /*
+         * we know that 8 of the 9 properties have to be the same, that means either 1 or 0.
+         * we also know that a (the "most significant bit") will differ.
+         * that means, the difference in the index of the two satellites will be 256
+         */
+
+        Level logLevel = errorReporter.getCurrentLogLevel();
+        errorReporter.setLogLevel(SYS_CTX, Level.TRACE, Level.TRACE);
+        long start = System.currentTimeMillis();
+        evaluateTest(call);
+        System.out.println((System.currentTimeMillis() - start));
+        errorReporter.setLogLevel(SYS_CTX, logLevel, logLevel);
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(rsc -> rsc.getNode())
+            .sorted()
+            .collect(Collectors.toList());
+
+        assertEquals(2, deployedNodes.size());
+        int lowerId = Integer.parseInt(deployedNodes.get(0).getName().displayValue.substring("stlt.".length()));
+        assertEquals(String.format("stlt.%03d", lowerId + 256), deployedNodes.get(1).getName().displayValue);
     }
 
     private void expectDeployed(

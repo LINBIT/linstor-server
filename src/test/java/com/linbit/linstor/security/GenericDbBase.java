@@ -113,7 +113,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @Rule
     // 10 seconds max per method tested
-    public TestRule globalTimeout = new DisableOnDebug(Timeout.seconds(10));
+    public TestRule globalTimeout = new DisableOnDebug(Timeout.seconds(60));
 
     private static final String SELECT_PROPS_BY_INSTANCE =
         " SELECT " + PROPS_INSTANCE + ", " + PROP_KEY + ", " + PROP_VALUE +
