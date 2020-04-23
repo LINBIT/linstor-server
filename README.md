@@ -1,5 +1,5 @@
 
-[![Open Source](https://github.com/linbit/linstor-server/blob/master/docs/Linstor-Logo-Colour.png?raw=true)](https://www.linbit.com/linstor)
+[![Open Source](./docs/Linstor-Logo-Colour.png?raw=true)](https://www.linbit.com/linstor)
 
 [![Open Source](https://img.shields.io/badge/Open-Source-brightgreen)](https://opensource.org/) [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-brightgreen.svg)](https://opensource.org/licenses/) [![Slack Channel](https://img.shields.io/badge/Slack-Channel-brightgreen)](https://join.slack.com/t/linbit-community/shared_invite/enQtOTg0MTEzOTA4ODY0LTFkZGY3ZjgzYjEzZmM2OGVmODJlMWI2MjlhMTg3M2UyOGFiOWMxMmI1MWM4Yjc0YzQzYWU0MjAzNGRmM2M5Y2Q) [![Support](https://img.shields.io/badge/$-support-12a0df.svg?style=flat)](https://www.linbit.com/support/) [![Active](http://img.shields.io/badge/Status-Active-green.svg)](https://linbit.com/linstor) [![GitHub Release](https://img.shields.io/github/release/linbit/linstor-server.svg?style=flat)](https://github.com/LINBIT/linstor-server) [![GitHub Commit](https://img.shields.io/github/commit-activity/y/linbit/linstor-server)](https://github.com/LINBIT/linstor-server) 
 
@@ -105,4 +105,4 @@ Please check the development documentation for details.
 
 **Free Software, Hell Yeah!**
 
-[![LINSTOR Powered by LINBIT](https://github.com/linbit/linstor-server/blob/master/docs/poweredby_linbit_small.png?raw=true)](https://www.linbit.com/linstor/) 
+[![LINSTOR Powered by LINBIT](./docs/poweredby_linbit_small.png?raw=true)](https://www.linbit.com/linstor/) 
