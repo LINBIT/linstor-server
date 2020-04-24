@@ -7,7 +7,7 @@ GRADLE_FLAGS = --offline --gradle-user-home debian/.gradlehome --no-daemon --exc
 LS_PREFIX=/usr/share/linstor-server
 
 %:
-	dh $@ --with javahelper,systemd
+	dh $@ --with systemd
 
 override_dh_auto_build:
 	rm -rf $(CURDIR)/build/install

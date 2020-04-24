@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import shutil
@@ -36,4 +36,3 @@ if not args.dry_run and os.path.isdir(args.TARGET):
 else:
     for f in distinct:
         print(os.path.join(args.TARGET, f))
-
