@@ -3386,7 +3386,7 @@ paths:
     get:
       tags:
         - developers
-      operationId: viewResources
+      operationId: viewSnapshots
       summary: query all snapshots known to linstor
       description: This REST-resource should be used if you want to get an overview
         of all snapshots.
