@@ -15,7 +15,6 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -25,10 +24,10 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -125,9 +124,10 @@ public class CtrlAutoStorPoolSelector
 
     private List<String> toUpperList(List<String> list)
     {
-        return list.stream()
-            .map(String::toUpperCase)
-            .collect(Collectors.toList());
+        return list != null ?
+            list.stream()
+                .map(String::toUpperCase)
+                .collect(Collectors.toList()) : Collections.emptyList();
     }
 
     private List<String> getRscNameUpperStrFromRegex(String rscRegexStr)
@@ -223,8 +223,10 @@ public class CtrlAutoStorPoolSelector
     {
         try
         {
-            List<DeviceLayerKind> layerStackList = selectFilter.getLayerStackList();
-            List<DeviceProviderKind> providerList = selectFilter.getProviderList();
+            List<DeviceLayerKind> layerStackList = selectFilter.getLayerStackList() != null ?
+                selectFilter.getLayerStackList() : Collections.emptyList();
+            List<DeviceProviderKind> providerList = selectFilter.getProviderList() != null ?
+                selectFilter.getProviderList() : Collections.emptyList();
             if (providerList.isEmpty())
             {
                 providerList = Arrays.asList(DeviceProviderKind.values());
@@ -280,7 +282,7 @@ public class CtrlAutoStorPoolSelector
             notPlaceWithRscList.addAll(getRscNameUpperStrFromRegex(notPlaceWithRscRegexStr));
         }
 
-        Map<StorPoolName, List<Node>> candidates = null;
+        Map<StorPoolName, List<Node>> candidates;
         try
         {
             // try to consider the "do not place with resource" argument on node level.
@@ -364,8 +366,10 @@ public class CtrlAutoStorPoolSelector
         List<Node> nodesRepOnSame = new ArrayList<>();
         List<Node> nodesRepOnDiff = new ArrayList<>();
 
-        List<String> repOnSameFilter = selectFilterRef.getReplicasOnSameList();
-        List<String> repOnDiffFilter = selectFilterRef.getReplicasOnDifferentList();
+        List<String> repOnSameFilter = selectFilterRef.getReplicasOnSameList() != null ?
+            selectFilterRef.getReplicasOnSameList() : Collections.emptyList();
+        List<String> repOnDiffFilter = selectFilterRef.getReplicasOnDifferentList() != null ?
+            selectFilterRef.getReplicasOnDifferentList() : Collections.emptyList();
 
         try
         {
@@ -603,7 +607,7 @@ public class CtrlAutoStorPoolSelector
 
     private boolean hasNoResourceOf(Node node, List<String> notPlaceWithRscList)
     {
-        boolean hasNoResourceOf = false;
+        boolean hasNoResourceOf;
         try
         {
             hasNoResourceOf = node.streamResources(peerAccCtx.get())
@@ -659,23 +663,23 @@ public class CtrlAutoStorPoolSelector
     public static class AutoStorPoolSelectorConfig
     {
         private final int placeCount;
-        private final List<String> replicasOnDifferentList;
-        private final List<String> replicasOnSameList;
-        private final String notPlaceWithRscRegex;
-        private final List<String> notPlaceWithRscList;
-        private final String storPoolNameStr;
-        private final List<DeviceLayerKind> layerStackList;
-        private final List<DeviceProviderKind> providerList;
+        @Nullable private final List<String> replicasOnDifferentList;
+        @Nullable private final List<String> replicasOnSameList;
+        @Nullable private final String notPlaceWithRscRegex;
+        @Nullable private final List<String> notPlaceWithRscList;
+        @Nullable private final String storPoolNameStr;
+        @Nullable private final List<DeviceLayerKind> layerStackList;
+        @Nullable private final List<DeviceProviderKind> providerList;
 
         public AutoStorPoolSelectorConfig(
             int placeCountRef,
-            List<String> replicasOnDifferentListRef,
-            List<String> replicasOnSameListRef,
-            String notPlaceWithRscRegexRef,
-            List<String> notPlaceWithRscListRef,
-            String storPoolNameStrRef,
-            List<DeviceLayerKind> layerStackRef,
-            List<DeviceProviderKind> providerListRef
+            @Nullable List<String> replicasOnDifferentListRef,
+            @Nullable List<String> replicasOnSameListRef,
+            @Nullable String notPlaceWithRscRegexRef,
+            @Nullable List<String> notPlaceWithRscListRef,
+            @Nullable String storPoolNameStrRef,
+            @Nullable List<DeviceLayerKind> layerStackRef,
+            @Nullable List<DeviceProviderKind> providerListRef
         )
         {
             placeCount = placeCountRef;
@@ -693,37 +697,37 @@ public class CtrlAutoStorPoolSelector
             return placeCount;
         }
 
-        public List<String> getReplicasOnDifferentList()
+        @Nullable public List<String> getReplicasOnDifferentList()
         {
             return replicasOnDifferentList;
         }
 
-        public List<String> getReplicasOnSameList()
+        @Nullable public List<String> getReplicasOnSameList()
         {
             return replicasOnSameList;
         }
 
-        public String getNotPlaceWithRscRegex()
+        @Nullable public String getNotPlaceWithRscRegex()
         {
             return notPlaceWithRscRegex;
         }
 
-        public List<String> getNotPlaceWithRscList()
+        @Nullable public List<String> getNotPlaceWithRscList()
         {
             return notPlaceWithRscList;
         }
 
-        public String getStorPoolNameStr()
+        @Nullable public String getStorPoolNameStr()
         {
             return storPoolNameStr;
         }
 
-        public List<DeviceLayerKind> getLayerStackList()
+        @Nullable public List<DeviceLayerKind> getLayerStackList()
         {
             return layerStackList;
         }
 
-        public List<DeviceProviderKind> getProviderList()
+        @Nullable public List<DeviceProviderKind> getProviderList()
         {
             return providerList;
         }
