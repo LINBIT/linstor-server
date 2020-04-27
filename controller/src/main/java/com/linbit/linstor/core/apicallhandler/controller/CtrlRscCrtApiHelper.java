@@ -345,8 +345,6 @@ public class CtrlRscCrtApiHelper
                 );
             }
 
-            resourceCreateCheck.getAndSetDeployedResourceRoles(rscDfn);
-
             rsc = createResource(rscDfn, node, payload, flags, layerStack);
             Props rscProps = ctrlPropsHelper.getProps(rsc);
 
@@ -400,7 +398,7 @@ public class CtrlRscCrtApiHelper
                 }
             }
 
-            resourceCreateCheck.checkCreatedResource(createdVolumes);
+            resourceCreateCheck.checkCreatedResource(rsc);
         }
 
         return new Pair<>(autoFlux, new ApiCallRcWith<>(responses, rsc));
