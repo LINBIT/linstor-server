@@ -8,11 +8,11 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.CACHE;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.NVME;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.OPENFLEX;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.CACHE;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.WRITECACHE;
 
@@ -32,7 +32,7 @@ public class LayerUtils
 
     static
     {
-        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE, OPENFLEX);
+        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE, CACHE, OPENFLEX);
 
         NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE, OPENFLEX, CACHE);
         NODES.get(LUKS).addChildren(STORAGE, OPENFLEX);
