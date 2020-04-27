@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.6.1
+Version: 1.6.2
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -134,6 +134,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Mon Apr 27 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.6.2-1
+- New upstream release. Fix query-max-volume-size, cache-layer fixes.
+
 * Tue Apr 14 2020 Gabor Hernadi <gabor.hernadi@linbit.com> 1.6.1-1
 - New upstream release. Fix startup bug.
 

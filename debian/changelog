@@ -1,3 +1,18 @@
+linstor-server (1.6.2-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * ubuntu-focal support
+  * query-max-volume-size: fix NPE on null list access
+
+  [ Gabor Hernadi ]
+  * Layer: Allow CACHE to be topmost layer
+  * Writecache: add vlmNr to error message
+  * RscCrt: Reworked ResourceCreateCheck
+  * linstor-common: Fixed whitelisting typo/issue
+  * Write-/Cache: Added ctrl-props to prioProps list
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 27 Apr 2020 06:51:30 +0000
+
 linstor-server (1.6.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
