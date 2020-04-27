@@ -9,6 +9,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
@@ -18,6 +19,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
@@ -52,13 +54,16 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     CacheRscData<Resource>, CacheVlmData<Resource>,
     RscDfnLayerObject, VlmDfnLayerObject>
 {
+    private final SystemConfRepository systemConfRepository;
+
     @Inject
     RscCacheLayerHelper(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
-        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory
+        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
+        SystemConfRepository systemConfRepositoryRef
     )
     {
         super(
@@ -73,6 +78,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
             DeviceLayerKind.CACHE,
             rscLayerDataFactory
         );
+        systemConfRepository = systemConfRepositoryRef;
     }
 
     @Override
@@ -213,7 +219,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
         boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
             .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-        boolean needsCacheDevice = !(isNvmeBelow || isOpenflexBelow) || isNvmeInitiator;
+        boolean needsCacheDevice = (!isNvmeBelow && !isOpenflexBelow) || isNvmeInitiator;
         return needsCacheDevice;
     }
 
@@ -276,6 +282,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
                     "You have to set the property " +
                         ApiConsts.NAMESPC_CACHE + "/" +
                         propKey +
+                        " for " + CtrlVlmApiCallHandler.getVlmDescriptionInline(vlm) +
                         " in order to use the cache layer."
                 )
             );
@@ -350,7 +357,8 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
             rsc.getProps(apiCtx),
             rscDfn.getProps(apiCtx),
             rscGrp.getProps(apiCtx),
-            rsc.getNode().getProps(apiCtx)
+            rsc.getNode().getProps(apiCtx),
+            systemConfRepository.getStltConfForView(apiCtx)
         );
         return prioProps;
     }

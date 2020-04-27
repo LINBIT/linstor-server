@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
@@ -54,13 +55,16 @@ class RscWritecacheLayerHelper
         WritecacheRscData<Resource>, WritecacheVlmData<Resource>,
         RscDfnLayerObject, VlmDfnLayerObject>
 {
+    private final SystemConfRepository systemConfRepository;
+
     @Inject
     RscWritecacheLayerHelper(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
-        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory
+        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
+        SystemConfRepository systemConfRepositoryRef
     )
     {
         super(
@@ -75,6 +79,7 @@ class RscWritecacheLayerHelper
             DeviceLayerKind.WRITECACHE,
             rscLayerDataFactory
         );
+        systemConfRepository = systemConfRepositoryRef;
     }
 
     @Override
@@ -308,7 +313,8 @@ class RscWritecacheLayerHelper
             rsc.getProps(apiCtx),
             rscDfn.getProps(apiCtx),
             rscGrp.getProps(apiCtx),
-            rsc.getNode().getProps(apiCtx)
+            rsc.getNode().getProps(apiCtx),
+            systemConfRepository.getStltConfForView(apiCtx)
         );
         return prioProps;
     }
