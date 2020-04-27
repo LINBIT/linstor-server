@@ -143,6 +143,22 @@ class StorPoolFilter
         List<DeviceLayerKind> filterLayerList = selectFilter.getLayerStackList();
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
 
+        /*
+         * Special case for nvme layer:
+         * The autoplacer can safely ignore all layers "above" nvme, as the autoplacer will only place nvme-targets.
+         * A satellite acting as an nvme-target does not need to support any layers above nvme.
+         */
+
+        if (filterLayerList != null && filterLayerList.contains(DeviceLayerKind.NVME))
+        {
+            filterLayerList = new ArrayList<>(
+                filterLayerList.subList(
+                    filterLayerList.indexOf(DeviceLayerKind.NVME), // list will include NVMe
+                    filterLayerList.size() // and everything after NVMe
+                )
+            );
+        }
+
         for (StorPool sp : availableStorPoolsRef)
         {
             boolean storPoolMatches = true;
