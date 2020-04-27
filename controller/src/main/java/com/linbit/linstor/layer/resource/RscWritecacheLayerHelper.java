@@ -9,6 +9,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
@@ -198,7 +199,7 @@ class RscWritecacheLayerHelper
         boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
         boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
             .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-        boolean needsCacheDevice = !(isNvmeBelow || isOpenflexBelow) || isNvmeInitiator;
+        boolean needsCacheDevice = (!isNvmeBelow && !isOpenflexBelow) || isNvmeInitiator;
         return needsCacheDevice;
     }
 
@@ -247,6 +248,7 @@ class RscWritecacheLayerHelper
                     ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
                     "You have to set the property " +
                     ApiConsts.NAMESPC_WRITECACHE + "/" + ApiConsts.KEY_WRITECACHE_POOL_NAME +
+                    " for " + CtrlVlmApiCallHandler.getVlmDescriptionInline(vlm) +
                     " in order to use the writecache layer."
                 )
             );
