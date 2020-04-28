@@ -3449,7 +3449,7 @@ paths:
       summary: creates an LVM, LVM-thin or ZFS pool, optional VDO under it
       description: |
         Creates a LVM/LVM-thin, ZFS pool on the given device and if supported VDO(optional) under it.
-        logcal_size_kib parameter is only needed if LVM-thin or vdo is used is used.
+        logcal_size_kib parameter is only needed if LVM-thin or vdo is used.
         Also note VDO can only used with LVM-fat.
       parameters:
         - $ref: '#/components/parameters/Node'
