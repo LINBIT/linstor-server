@@ -6,6 +6,8 @@ import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStr
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStrategy.RatingAdditionalInfo;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.FreeSpaceStrategy;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.MinimumReservedSpaceStrategy;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.MinimumResourceCountStrategy;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -36,13 +38,15 @@ class StrategyHandler
 
     @Inject
     StrategyHandler(
-        FreeSpaceStrategy freeSpaceStratRef,
         SystemConfRepository sysCfgRepRef,
         @SystemContext AccessContext apiCtxRef,
+        FreeSpaceStrategy freeSpaceStratRef,
+        MinimumReservedSpaceStrategy minReservedSpaceStratRef,
+        MinimumResourceCountStrategy minRscCountStratRef,
         ErrorReporter errorReporterRef
     )
     {
-        strategies = Arrays.asList(freeSpaceStratRef);
+        strategies = Arrays.asList(freeSpaceStratRef, minReservedSpaceStratRef, minRscCountStratRef);
         sysCfgRep = sysCfgRepRef;
         apiCtx = apiCtxRef;
         errorReporter = errorReporterRef;
@@ -72,18 +76,10 @@ class StrategyHandler
 
             Map<StorPool, Double> stratRate = strat.rate(storPoolListRef, additionalInfo);
 
-            if (strat.getMinMax() == MinMax.MINIMIZE)
-            {
-                for (Entry<StorPool, Double> entry : stratRate.entrySet())
-                {
-                    entry.setValue(1 / entry.getValue());
-                }
-            }
-
-            double highestValue = Double.MIN_VALUE;
+            double highestValue = Double.NEGATIVE_INFINITY;
             for (Double stratValue : stratRate.values())
             {
-                if (highestValue < stratValue)
+                if (highestValue < stratValue && stratValue != 0.0)
                 {
                     highestValue = stratValue;
                 }
@@ -101,7 +97,15 @@ class StrategyHandler
                     lut.put(sp, prevRating);
                 }
                 // normalize and weight the value
-                double normalizedVal = stratValue / highestValue;
+                double normalizedVal;
+                if (highestValue != Double.NEGATIVE_INFINITY)
+                {
+                    normalizedVal = stratValue / highestValue;
+                }
+                else
+                {
+                    normalizedVal = stratValue;
+                }
                 double normalizdWeightedVal = normalizedVal * weight;
                 prevRating.score += normalizdWeightedVal;
                 errorReporter.logTrace(
@@ -165,6 +169,12 @@ class StrategyHandler
                     );
                     valDouble = 1.0;
                 }
+
+                if (strat.getMinMax() == MinMax.MINIMIZE)
+                {
+                    valDouble *= -1;
+                }
+
                 weights.put(strat, valDouble);
             }
         }

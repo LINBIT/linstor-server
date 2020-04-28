@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -120,6 +121,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
 
         Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
+
+        Optional<Props> optAutoplacerNamespace = ctrlConf.getNamespace(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS);
+        if (optAutoplacerNamespace.isPresent())
+        {
+            optAutoplacerNamespace.get().clear();
+        }
 
         commitAndCleanUp(true);
 
@@ -1337,6 +1344,96 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         assertEquals(2, deployedNodes.size());
         int lowerId = Integer.parseInt(deployedNodes.get(0).getName().displayValue.substring("stlt.".length()));
         assertEquals(String.format("stlt.%03d", lowerId + 256), deployedNodes.get(1).getName().displayValue);
+    }
+
+    @Test
+    public void minRscCountStrategyTest() throws Exception
+    {
+        enterScope();
+        ctrlConf.setProp(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS + "/FreeSpace", "0");
+        ctrlConf.setProp(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS + "/MinRscCount", "1");
+        commitAndCleanUp(true);
+
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            1,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100*GB)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("sp1", 90*GB)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 50*GB)
+                .build()
+            .addRscDfn("dummyRsc1", 9000)
+                .addVlmDfn("dummyRsc1", 0, 12*MB)
+            .addRscDfn("dummyRsc2", 9001)
+                .addVlmDfn("dummyRsc2", 0, 12*MB)
+            .addRscDfn("dummyRsc3", 9002)
+                .addVlmDfn("dummyRsc3", 0, 12*MB)
+            .addRsc("dummyRsc1", "sp1", "stlt1")
+            .addRsc("dummyRsc2", "sp1", "stlt1")
+            .addRsc("dummyRsc3", "sp1", "stlt2");
+
+        evaluateTest(call);
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .map(rsc -> rsc.getNode())
+            .sorted()
+            .collect(Collectors.toList());
+
+        assertEquals(1, deployedNodes.size());
+        assertEquals("stlt3", deployedNodes.get(0).getName().displayValue);
+    }
+
+    @Test
+    public void freeSpaceReversedTest() throws Exception
+    {
+        enterScope();
+        ctrlConf.setProp(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS + "/FreeSpace", "-1");
+        commitAndCleanUp(true);
+
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            1,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100*GB)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("sp1", 90*GB)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 50*GB)
+                .build();
+
+        evaluateTest(call);
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .map(rsc -> rsc.getNode())
+            .sorted()
+            .collect(Collectors.toList());
+
+        assertEquals(1, deployedNodes.size());
+        assertEquals("stlt3", deployedNodes.get(0).getName().displayValue);
     }
 
     private void expectDeployed(

@@ -39,11 +39,19 @@ public class MinimumReservedSpaceStrategy implements AutoplaceStrategy
             double allocatedSum = 0;
             for (VlmProviderObject<Resource> vlmObj : sp.getVolumes(apiCtx))
             {
-                allocatedSum += vlmObj.getAllocatedSize();
+                long allocSize = vlmObj.getAllocatedSize();
+                if (allocSize != -1)
+                {
+                    allocatedSum += allocSize;
+                }
             }
             for (VlmProviderObject<Snapshot> snapObj : sp.getSnapVolumes(apiCtx))
             {
-                allocatedSum += snapObj.getAllocatedSize();
+                long allocSize = snapObj.getAllocatedSize();
+                if (allocSize != -1)
+                {
+                    allocatedSum += allocSize;
+                }
             }
 
             ret.put(sp, allocatedSum);

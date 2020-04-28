@@ -93,7 +93,7 @@ class Selector
 
         Set<StorPoolWithScore> currentSelection;
         int startIdx = 0;
-        double selectionScore = Double.MIN_VALUE;
+        double selectionScore = Double.NEGATIVE_INFINITY;
         final Integer replicaCount = selectFilterRef.getReplicaCount();
         boolean keepSearchingForCandidates = true;
         SelectionManger selectionManger = new SelectionManger(selectFilterRef, alreadyDeployedOnNodes);
@@ -138,7 +138,7 @@ class Selector
                         "Autoplacer.Selector: Skipping candidate %s as its accumulated score %f is lower than currently best candidate's %f",
                         storPoolDescrForLog.toString(),
                         currentScore,
-                        selectFilterRef
+                        selectionScore
                     );
                 }
                 startIdx++;
