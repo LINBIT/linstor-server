@@ -38,6 +38,7 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -256,6 +257,7 @@ public class CtrlRscAutoPlaceApiCallHandler
 
             Optional<Set<StorPool>> bestCandidate = findBestCandidate(
                 autoStorConfig,
+                rscDfn,
                 rscSize
             );
 
@@ -299,11 +301,12 @@ public class CtrlRscAutoPlaceApiCallHandler
     }
 
     private Optional<Set<StorPool>> findBestCandidate(
-        AutoSelectFilterApi autoStorConfigRef,
+        AutoSelectFilterPojo autoStorConfigRef,
+        @Nullable ResourceDefinition rscDfnRef,
         long rscSize
     )
     {
-        return autoplacer.autoPlace(autoStorConfigRef, rscSize);
+        return autoplacer.autoPlace(autoStorConfigRef, rscDfnRef, rscSize);
     }
 
     private Pair<List<Flux<ApiCallRc>>, Set<Resource>> createResources(

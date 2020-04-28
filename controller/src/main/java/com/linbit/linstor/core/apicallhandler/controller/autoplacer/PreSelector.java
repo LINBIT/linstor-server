@@ -7,6 +7,7 @@ import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.S
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -66,6 +67,7 @@ class PreSelector
     }
 
     Collection<StorPoolWithScore> preselect(
+        ResourceDefinition rscDfnRef,
         Collection<StorPoolWithScore> ratingsRef
     )
         throws AccessDeniedException
@@ -118,6 +120,7 @@ class PreSelector
                     Bindings bindings = cachedScriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
                     bindings.clear(); // clear everything the previous run might have left over
                     bindings.put("storage_pools", scriptPojoList);
+                    bindings.put("resource_name", rscDfnRef.getName().displayValue);
 
                     scriptThread = new Thread(scriptRunner, "Autoplacer-Preselector-ScriptThread");
                     scriptThread.start();

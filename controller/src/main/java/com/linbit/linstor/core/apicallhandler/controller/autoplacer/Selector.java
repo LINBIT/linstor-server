@@ -4,6 +4,8 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -40,6 +42,7 @@ class Selector
 
     public Set<StorPoolWithScore> select(
         AutoSelectFilterApi selectFilterRef,
+        ResourceDefinition rscDfnRef,
         Collection<StorPoolWithScore> storPoolWithScores
     )
         throws AccessDeniedException
@@ -47,18 +50,44 @@ class Selector
         StorPoolWithScore[] sortedStorPoolByScoreArr = storPoolWithScores.toArray(new StorPoolWithScore[0]);
         Arrays.sort(sortedStorPoolByScoreArr);
 
-        // if (errorReporter.hasAtLeastLogLevel(Level.TRACE))
-        // {
-            for (StorPoolWithScore storPoolWithScore : sortedStorPoolByScoreArr)
+        for (StorPoolWithScore storPoolWithScore : sortedStorPoolByScoreArr)
+        {
+            errorReporter.logTrace(
+                "Autoplacer.Selector: Score: %f, Storage pool '%s' on node '%s'",
+                storPoolWithScore.score,
+                storPoolWithScore.storPool.getName().displayValue,
+                storPoolWithScore.storPool.getNode().getName().displayValue
+            );
+        }
+
+        List<Node> alreadyDeployedOnNodes = new ArrayList<>();
+        if (rscDfnRef != null)
+        {
+            Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiCtx);
+            List<String> nodeStrList = new ArrayList<>();
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                Node node = rsc.getNode();
+                alreadyDeployedOnNodes.add(node);
+                nodeStrList.add(node.getName().displayValue);
+            }
+            if (alreadyDeployedOnNodes.isEmpty())
             {
                 errorReporter.logTrace(
-                    "Autoplacer.Selector: Score: %f, Storage pool '%s' on node '%s'",
-                    storPoolWithScore.score,
-                    storPoolWithScore.storPool.getName().displayValue,
-                    storPoolWithScore.storPool.getNode().getName().displayValue
+                    "Auoplacer.Selector: Resource '%s' not deployed yet.",
+                    rscDfnRef.getName().displayValue
                 );
             }
-            // }
+            else
+            {
+                errorReporter.logTrace(
+                    "Autoplacer.Selector: Resource '%s' already deployed on nodes: %s",
+                    rscDfnRef.getName().displayValue,
+                    nodeStrList.toString()
+                );
+            }
+        }
 
         Set<StorPoolWithScore> selectionResult = null;
 
@@ -67,12 +96,13 @@ class Selector
         double selectionScore = Double.MIN_VALUE;
         final Integer replicaCount = selectFilterRef.getReplicaCount();
         boolean keepSearchingForCandidates = true;
+        SelectionManger selectionManger = new SelectionManger(selectFilterRef, alreadyDeployedOnNodes);
         do
         {
             currentSelection = findSelection(
                 startIdx,
                 sortedStorPoolByScoreArr,
-                new SelectionManger(selectFilterRef)
+                selectionManger
             );
             if (currentSelection.size() == replicaCount)
             {
@@ -129,6 +159,11 @@ class Selector
                         errorReporter.logTrace(
                             "Autoplacer.Selector: Remaining candidates-combinations cannot have higher score then the currently chosen one. Search finished."
                         );
+                    }
+                    else
+                    {
+                        // continue the search, reset temporary maps
+                        selectionManger.clear();
                     }
                 }
                 else
@@ -188,6 +223,8 @@ class Selector
      */
     private class SelectionManger
     {
+        private final List<Node> alreadyDeployedOnNodes;
+
         private final AutoSelectFilterApi selectFilter;
         private final Set<Node> selectedNodes;
         private final Set<StorPoolWithScore> selectedStorPoolWithScoreSet;
@@ -199,14 +236,16 @@ class Selector
         private HashMap<String, String> sameProps = new HashMap<>();
         private HashMap<String, List<String>> diffProps = new HashMap<>();
 
-        public SelectionManger(AutoSelectFilterApi selectFilterRef) throws AccessDeniedException
+        public SelectionManger(AutoSelectFilterApi selectFilterRef, List<Node> alreadyDeployedOnNodesRef)
+            throws AccessDeniedException
         {
             selectFilter = selectFilterRef;
+            alreadyDeployedOnNodes = alreadyDeployedOnNodesRef;
 
             selectedNodes = new HashSet<>();
             selectedStorPoolWithScoreSet = new HashSet<>();
 
-            rebuildTemporaryMaps();
+            clear();
         }
 
         public boolean isComplete()
@@ -410,6 +449,15 @@ class Selector
                 }
                 diffProps.put(key, list);
             }
+        }
+
+        private void clear() throws AccessDeniedException
+        {
+            selectedNodes.clear();
+            selectedNodes.addAll(alreadyDeployedOnNodes);
+
+            selectedStorPoolWithScoreSet.clear();
+            rebuildTemporaryMaps();
         }
     }
 }

@@ -3,10 +3,14 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -24,6 +28,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -116,6 +121,7 @@ class StorPoolFilter
      *
      * @param selectFilter
      * @param availableStorPoolsRef
+     * @param rscDfnRef
      * @param freeCapacitiesRef
      * @param rscDfn
      *
@@ -126,6 +132,7 @@ class StorPoolFilter
     ArrayList<StorPool> filter(
         AutoSelectFilterApi selectFilter,
         List<StorPool> availableStorPoolsRef,
+        ResourceDefinition rscDfnRef,
         long sizeInKib
     )
         throws AccessDeniedException
@@ -134,12 +141,28 @@ class StorPoolFilter
 
         Map<Node, Boolean> nodeMatchesMap = new HashMap<>();
 
+        ArrayList<Props> alreadyDeployedNodesProps = new ArrayList<>();
+        if (rscDfnRef != null)
+        {
+            Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiAccCtx);
+            while (rscIt.hasNext())
+            {
+                alreadyDeployedNodesProps.add(rscIt.next().getNode().getProps(apiAccCtx));
+            }
+        }
+
         List<String> filterNodeNameList = selectFilter.getNodeNameList();
         List<String> filterStorPoolNameList = selectFilter.getStorPoolNameList();
         List<String> filterDoNotPlaceWithRscList = selectFilter.getDoNotPlaceWithRscList();
         String filterDoNotPlaceWithRscRegex = selectFilter.getDoNotPlaceWithRscRegex();
-        Map<String, String> filterNodePropsMatch = extractFixedProperties(selectFilter.getReplicasOnSameList());
-        Map<String, String> filterNodePropsMismatch = extractFixedProperties(selectFilter.getReplicasOnDifferentList());
+        Map<String, String> filterNodePropsMatch = extractFixedMatchingProperties(
+            selectFilter.getReplicasOnSameList(),
+            alreadyDeployedNodesProps
+        );
+        Map<String, ArrayList<String>> filterNodePropsMismatch = extractFixedMismatchingProperties(
+            selectFilter.getReplicasOnDifferentList(),
+            alreadyDeployedNodesProps
+        );
         List<DeviceLayerKind> filterLayerList = selectFilter.getLayerStackList();
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
 
@@ -214,10 +237,10 @@ class StorPoolFilter
                 if (nodeMatches && filterNodePropsMismatch != null && !filterNodePropsMismatch.isEmpty())
                 {
                     boolean anyMatch = false;
-                    for (Entry<String, String> mismatchEntry : filterNodePropsMismatch.entrySet())
+                    for (Entry<String, ArrayList<String>> mismatchEntry : filterNodePropsMismatch.entrySet())
                     {
                         String val = nodeProps.getProp(mismatchEntry.getKey());
-                        if (mismatchEntry.getValue().equals(val))
+                        if (mismatchEntry.getValue().contains(val))
                         {
                             anyMatch = true;
                             errorReporter.logTrace(
@@ -375,14 +398,18 @@ class StorPoolFilter
      * This method extracts only the key-value pairs and returns them as a map. All other simple keys will
      * be ignored.
      *
-     * @param list
+     * @param propsList
+     * @param rscDfnRef
      *
      * @return
      */
-    private Map<String, String> extractFixedProperties(List<String> list)
+    private Map<String, String> extractFixedMatchingProperties(
+        List<String> propsList,
+        List<Props> alreadyDeployedNodeProps
+    )
     {
         Map<String, String> ret = new TreeMap<>();
-        for (String elem : list)
+        for (String elem : propsList)
         {
             int idx = elem.indexOf("=");
             if (idx != -1)
@@ -391,6 +418,88 @@ class StorPoolFilter
                 String value = elem.substring(idx + 1);
                 ret.put(key, value);
             }
+            else
+            {
+                HashSet<String> nodeValues = new HashSet<>();
+                for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
+                {
+                    String currentValue = alreadyDeployedNodeProp.getProp(elem);
+                    if (currentValue != null)
+                    {
+                        nodeValues.add(currentValue);
+                    }
+                }
+
+                if (nodeValues.size() > 1)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_UNDECIDABLE_AUTOPLACMENT,
+                            "The propert property in --replicas-on-same '" + elem + "' is already set " +
+                                "on already deployed nodes with different values. Autoplacer cannot decide " +
+                                "which value to continue with. Linstor found the following conflicting values: " +
+                                nodeValues
+                        )
+                    );
+                }
+                if (nodeValues.size() == 1)
+                {
+                    ret.put(elem, nodeValues.iterator().next());
+                }
+            }
+        }
+
+
+        return ret;
+    }
+
+    /**
+     * Basically the same as the {@link #extractFixedMatchingProperties(List)}, but this time we return a list of values
+     *
+     * @param propsList
+     *
+     * @return
+     */
+    private Map<String, ArrayList<String>> extractFixedMismatchingProperties(
+        List<String> propsList,
+        List<Props> alreadyDeployedNodeProps
+    )
+    {
+        Map<String, ArrayList<String>> ret = new TreeMap<>();
+        for (String elem : propsList)
+        {
+            String key;
+            String fixedValueToAvoid = null;
+            int idx = elem.indexOf("=");
+            if (idx != -1)
+            {
+                key = elem.substring(0, idx);
+                fixedValueToAvoid = elem.substring(idx + 1);
+            }
+            else
+            {
+                key = elem;
+            }
+
+            ArrayList<String> fixedValuesList = ret.get(key);
+            if (fixedValuesList == null)
+            {
+                fixedValuesList = new ArrayList<>();
+                ret.put(key, fixedValuesList);
+            }
+            if (fixedValueToAvoid != null)
+            {
+                fixedValuesList.add(fixedValueToAvoid);
+            }
+            for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
+            {
+                String currentValue = alreadyDeployedNodeProp.getProp(elem);
+                if (currentValue != null)
+                {
+                    fixedValuesList.add(currentValue);
+                }
+            }
+
         }
         return ret;
     }

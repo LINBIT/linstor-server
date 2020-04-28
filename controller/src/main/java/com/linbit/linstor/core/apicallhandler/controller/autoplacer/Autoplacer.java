@@ -2,10 +2,12 @@ package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -42,6 +44,7 @@ public class Autoplacer
 
     public Optional<Set<StorPool>> autoPlace(
         AutoSelectFilterApi selectFilter,
+        @Nullable ResourceDefinition rscDfnRef,
         long rscSize
     )
     {
@@ -56,6 +59,7 @@ public class Autoplacer
             ArrayList<StorPool> filteredStorPools = filter.filter(
                 selectFilter,
                 availableStorPools,
+                rscDfnRef,
                 rscSize
             );
             errorReporter.logTrace(
@@ -74,7 +78,10 @@ public class Autoplacer
 
             // 3: allow the user to re-sort / filter storage pools as they see fit
             long startPreselect = System.currentTimeMillis();
-            Collection<StorPoolWithScore> preselection = preSelector.preselect(storPoolsWithScoreList);
+            Collection<StorPoolWithScore> preselection = preSelector.preselect(
+                rscDfnRef,
+                storPoolsWithScoreList
+            );
             errorReporter.logTrace(
                 "Autoplacer.Preselector: Finished in %dms.",
                 System.currentTimeMillis() - startPreselect
@@ -82,7 +89,11 @@ public class Autoplacer
 
             // 4: actual selection of storage pools
             long startSelection = System.currentTimeMillis();
-            Set<StorPoolWithScore> selectionWithScores = selector.select(selectFilter, preselection);
+            Set<StorPoolWithScore> selectionWithScores = selector.select(
+                selectFilter,
+                rscDfnRef,
+                preselection
+            );
             errorReporter.logTrace(
                 "Autoplacer.Selection: Finished in %dms.",
                 System.currentTimeMillis() - startSelection
