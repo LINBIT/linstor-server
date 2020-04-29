@@ -1436,6 +1436,44 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         assertEquals("stlt3", deployedNodes.get(0).getName().displayValue);
     }
 
+    @Test
+    public void preventMixedProviderTest() throws Exception
+    {
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            2,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100*GB, LVM)
+                .build()
+            .stltBuilder("stlt2") // DO NOT select this
+                .addStorPool("sp1", 1*TB, LVM_THIN)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 900 * GB, LVM)
+                .build();
+
+        evaluateTest(call);
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .map(rsc -> rsc.getNode())
+            .sorted()
+            .collect(Collectors.toList());
+
+        assertEquals(2, deployedNodes.size());
+        assertEquals("stlt1", deployedNodes.get(0).getName().displayValue);
+        assertEquals("stlt3", deployedNodes.get(1).getName().displayValue);
+    }
+
     private void expectDeployed(
         String storPoolNameStr,
         String rscNameStr,

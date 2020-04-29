@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
@@ -11,6 +12,12 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -61,6 +68,7 @@ class Selector
         }
 
         List<Node> alreadyDeployedOnNodes = new ArrayList<>();
+        DeviceProviderKind alreadySelectedProviderKind = null;
         if (rscDfnRef != null)
         {
             Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiCtx);
@@ -71,6 +79,33 @@ class Selector
                 Node node = rsc.getNode();
                 alreadyDeployedOnNodes.add(node);
                 nodeStrList.add(node.getName().displayValue);
+
+                // determine already selected provider kind
+                List<AbsRscLayerObject<Resource>> storageRscDataList = LayerUtils.getChildLayerDataByKind(
+                    rsc.getLayerData(apiCtx),
+                    DeviceLayerKind.STORAGE
+                );
+                for (AbsRscLayerObject<Resource> storageRscData : storageRscDataList)
+                {
+                    if (storageRscData.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
+                    {
+                        for (VlmProviderObject<Resource> storageVlmData : storageRscData.getVlmLayerObjects().values())
+                        {
+                            DeviceProviderKind storageVlmProviderKind = storageVlmData.getStorPool().getDeviceProviderKind();
+                            if (alreadySelectedProviderKind == null)
+                            {
+                                alreadySelectedProviderKind = storageVlmProviderKind;
+                            }
+                            else
+                            {
+                                if (!alreadySelectedProviderKind.equals(storageVlmProviderKind))
+                                {
+                                    throw new ImplementationError("Multiple deployed provider kinds found for: " + rsc);
+                                }
+                            }
+                        }
+                    }
+                }
             }
             if (alreadyDeployedOnNodes.isEmpty())
             {
@@ -96,7 +131,11 @@ class Selector
         double selectionScore = Double.NEGATIVE_INFINITY;
         final Integer replicaCount = selectFilterRef.getReplicaCount();
         boolean keepSearchingForCandidates = true;
-        SelectionManger selectionManger = new SelectionManger(selectFilterRef, alreadyDeployedOnNodes);
+        SelectionManger selectionManger = new SelectionManger(
+            selectFilterRef,
+            alreadyDeployedOnNodes,
+            alreadySelectedProviderKind
+        );
         do
         {
             currentSelection = findSelection(
@@ -201,7 +240,7 @@ class Selector
                     sortedStorPoolByScoreArrRef,
                     currentSelection
                 );
-                if (childStorPoolSelection == null)
+                if (childStorPoolSelection == null || !currentSelection.isComplete())
                 {
                     /*
                      * recursion could not finish, i.e. the current selection does not allow enough storage pools
@@ -228,6 +267,7 @@ class Selector
         private final AutoSelectFilterApi selectFilter;
         private final Set<Node> selectedNodes;
         private final Set<StorPoolWithScore> selectedStorPoolWithScoreSet;
+        private DeviceProviderKind selectedProviderKind;
 
         /*
          * temporary maps, extended when a storage pool is added and
@@ -236,11 +276,16 @@ class Selector
         private HashMap<String, String> sameProps = new HashMap<>();
         private HashMap<String, List<String>> diffProps = new HashMap<>();
 
-        public SelectionManger(AutoSelectFilterApi selectFilterRef, List<Node> alreadyDeployedOnNodesRef)
+        public SelectionManger(
+            AutoSelectFilterApi selectFilterRef,
+            List<Node> alreadyDeployedOnNodesRef,
+            DeviceProviderKind alreadySelectedProviderKindRef
+        )
             throws AccessDeniedException
         {
             selectFilter = selectFilterRef;
             alreadyDeployedOnNodes = alreadyDeployedOnNodesRef;
+            selectedProviderKind = alreadySelectedProviderKindRef;
 
             selectedNodes = new HashSet<>();
             selectedStorPoolWithScoreSet = new HashSet<>();
@@ -269,6 +314,23 @@ class Selector
                     currentSpWithScoreRef.storPool.getNode().getName().displayValue
                 );
             }
+
+            if (
+                selectedProviderKind != null &&
+                    !currentSpWithScoreRef.storPool.getDeviceProviderKind().equals(selectedProviderKind)
+            )
+            {
+                errorReporter.logTrace(
+                    "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
+                        "canditate-selection as its provider kind (%s) does not match already selected (%s)",
+                    currentSpWithScoreRef.storPool.getName().displayValue,
+                    currentSpWithScoreRef.storPool.getNode().getName().displayValue,
+                    currentSpWithScoreRef.storPool.getDeviceProviderKind().name(),
+                    selectedProviderKind.name()
+                );
+                isAllowed = false;
+            }
+
 
             // checking same props
             Iterator<Entry<String, String>> samePropEntrySetIterator = sameProps.entrySet().iterator();
@@ -340,6 +402,11 @@ class Selector
                 currentSpWithScoreRef.storPool.getNode().getName().displayValue
             );
 
+            if (selectedProviderKind == null)
+            {
+                selectedProviderKind = currentSpWithScoreRef.storPool.getDeviceProviderKind();
+            }
+
             // update same props
             Map<String, String> updateEntriesForSameProps = new HashMap<>(); // prevent concurrentModificationException
             for (Entry<String, String> sameProp : sameProps.entrySet())
@@ -375,6 +442,15 @@ class Selector
         {
             selectedStorPoolWithScoreSet.remove(currentSpWithScoreRef);
             selectedNodes.remove(currentSpWithScoreRef.storPool.getNode());
+
+            if (selectedStorPoolWithScoreSet.isEmpty())
+            {
+                selectedProviderKind = null;
+            }
+            else
+            {
+                selectedProviderKind = selectedStorPoolWithScoreSet.iterator().next().storPool.getDeviceProviderKind();
+            }
 
             errorReporter.logTrace(
                 "Autoplacer.Selector: Removing StorPool '%s' on Node '%s' to current selection",
@@ -461,6 +537,8 @@ class Selector
         {
             selectedNodes.clear();
             selectedNodes.addAll(alreadyDeployedOnNodes);
+
+            selectedProviderKind = null;
 
             selectedStorPoolWithScoreSet.clear();
             rebuildTemporaryMaps();
