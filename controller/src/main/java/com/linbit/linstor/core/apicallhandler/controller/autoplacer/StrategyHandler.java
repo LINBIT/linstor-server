@@ -85,6 +85,14 @@ class StrategyHandler
                 }
             }
 
+            if (!stratRate.isEmpty())
+            {
+                errorReporter.logTrace(
+                    "Autoplacer.Strategy: Scores of strategy '%s', weight: %f: (raw score, normalized score, weighted final score)",
+                    stratName,
+                    weight
+                );
+            }
             for (Entry<StorPool, Double> rate : stratRate.entrySet())
             {
                 StorPool sp = rate.getKey();
@@ -109,11 +117,10 @@ class StrategyHandler
                 double normalizdWeightedVal = normalizedVal * weight;
                 prevRating.score += normalizdWeightedVal;
                 errorReporter.logTrace(
-                    "Autoplacer.Strategy: Updated score of StorPool '%s' on Node '%s' to %f (%s: %f, %f, %f)",
+                    "Autoplacer.Strategy: Updated score of StorPool '%s' on Node '%s' to %f (%f, %f, %f)",
                     sp.getName().displayValue,
                     sp.getNode().getName().displayValue,
                     prevRating.score,
-                    stratName,
                     stratValue,
                     normalizedVal,
                     normalizdWeightedVal
