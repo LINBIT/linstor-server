@@ -126,7 +126,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     private static final int PROPS_COL_ID_VAL = 3;
 
     protected static StdErrorReporter errorReporter =
-        new StdErrorReporter("TESTS", Paths.get("build/test-logs"), false, "", null, null, () -> null);
+        new StdErrorReporter("TESTS", Paths.get("build/test-logs"), true, "", "INFO", "TRACE", () -> null);
 
     protected static final AccessContext SYS_CTX = DummySecurityInitializer.getSystemAccessContext();
     protected static final AccessContext PUBLIC_CTX = DummySecurityInitializer.getPublicAccessContext();
