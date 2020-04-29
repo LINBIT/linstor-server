@@ -392,62 +392,68 @@ class Selector
         private void rebuildTemporaryMaps() throws AccessDeniedException
         {
             sameProps.clear();
-            for (String replOnSame : selectFilter.getReplicasOnSameList())
+            if (selectFilter.getReplicasOnSameList() != null)
             {
-                String key;
-                String selectedValue;
-
-                /*
-                 * Keys with values fixed by the user are already considered in the Filter step.
-                 * That means we can rely here that all given storage pools already meet the
-                 * fixed-value filters.
-                 */
-                if (!replOnSame.contains("="))
+                for (String replOnSame : selectFilter.getReplicasOnSameList())
                 {
-                    key = replOnSame;
-                    selectedValue = null;
+                    String key;
+                    String selectedValue;
+
+                    /*
+                     * Keys with values fixed by the user are already considered in the Filter step.
+                     * That means we can rely here that all given storage pools already meet the
+                     * fixed-value filters.
+                     */
+                    if (!replOnSame.contains("="))
+                    {
+                        key = replOnSame;
+                        selectedValue = null;
+                        for (Node selectedNode : selectedNodes)
+                        {
+                            String selectedNodeValue = selectedNode.getProps(apiCtx).getProp(key);
+                            if (selectedNodeValue != null)
+                            {
+                                selectedValue = selectedNodeValue;
+                                /*
+                                 * all other nodes of the selectedNodes set have to have the same value
+                                 * otherwise they should not be in the list.
+                                 */
+                                break;
+                            }
+                        }
+                        sameProps.put(key, selectedValue);
+                    }
+                }
+            }
+
+            diffProps.clear();
+            if (selectFilter.getReplicasOnDifferentList() != null)
+            {
+                for (String replOnDiff : selectFilter.getReplicasOnDifferentList())
+                {
+                    String key;
+                    int assignIdx = replOnDiff.indexOf("=");
+                    List<String> list = new ArrayList<>();
+
+                    if (assignIdx == -1)
+                    {
+                        key = replOnDiff;
+                    }
+                    else
+                    {
+                        key = replOnDiff.substring(0, assignIdx);
+                        list.add(replOnDiff.substring(assignIdx + 1));
+                    }
                     for (Node selectedNode : selectedNodes)
                     {
                         String selectedNodeValue = selectedNode.getProps(apiCtx).getProp(key);
                         if (selectedNodeValue != null)
                         {
-                            selectedValue = selectedNodeValue;
-                            /*
-                             * all other nodes of the selectedNodes set have to have the same value
-                             * otherwise they should not be in the list.
-                             */
-                            break;
+                            list.add(selectedNodeValue);
                         }
                     }
-                    sameProps.put(key, selectedValue);
+                    diffProps.put(key, list);
                 }
-            }
-
-            diffProps.clear();
-            for (String replOnDiff : selectFilter.getReplicasOnDifferentList())
-            {
-                String key;
-                int assignIdx = replOnDiff.indexOf("=");
-                List<String> list = new ArrayList<>();
-
-                if (assignIdx == -1)
-                {
-                    key = replOnDiff;
-                }
-                else
-                {
-                    key = replOnDiff.substring(0, assignIdx);
-                    list.add(replOnDiff.substring(assignIdx + 1));
-                }
-                for (Node selectedNode : selectedNodes)
-                {
-                    String selectedNodeValue = selectedNode.getProps(apiCtx).getProp(key);
-                    if (selectedNodeValue != null)
-                    {
-                        list.add(selectedNodeValue);
-                    }
-                }
-                diffProps.put(key, list);
             }
         }
 

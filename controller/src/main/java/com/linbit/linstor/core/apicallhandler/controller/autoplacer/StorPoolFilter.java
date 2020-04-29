@@ -409,47 +409,48 @@ class StorPoolFilter
     )
     {
         Map<String, String> ret = new TreeMap<>();
-        for (String elem : propsList)
+        if (propsList != null)
         {
-            int idx = elem.indexOf("=");
-            if (idx != -1)
+            for (String elem : propsList)
             {
-                String key = elem.substring(0, idx);
-                String value = elem.substring(idx + 1);
-                ret.put(key, value);
-            }
-            else
-            {
-                HashSet<String> nodeValues = new HashSet<>();
-                for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
+                int idx = elem.indexOf("=");
+                if (idx != -1)
                 {
-                    String currentValue = alreadyDeployedNodeProp.getProp(elem);
-                    if (currentValue != null)
+                    String key = elem.substring(0, idx);
+                    String value = elem.substring(idx + 1);
+                    ret.put(key, value);
+                }
+                else
+                {
+                    HashSet<String> nodeValues = new HashSet<>();
+                    for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
                     {
-                        nodeValues.add(currentValue);
+                        String currentValue = alreadyDeployedNodeProp.getProp(elem);
+                        if (currentValue != null)
+                        {
+                            nodeValues.add(currentValue);
+                        }
                     }
-                }
 
-                if (nodeValues.size() > 1)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_UNDECIDABLE_AUTOPLACMENT,
-                            "The propert property in --replicas-on-same '" + elem + "' is already set " +
-                                "on already deployed nodes with different values. Autoplacer cannot decide " +
-                                "which value to continue with. Linstor found the following conflicting values: " +
-                                nodeValues
-                        )
-                    );
-                }
-                if (nodeValues.size() == 1)
-                {
-                    ret.put(elem, nodeValues.iterator().next());
+                    if (nodeValues.size() > 1)
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_UNDECIDABLE_AUTOPLACMENT,
+                                "The propert property in --replicas-on-same '" + elem + "' is already set " +
+                                    "on already deployed nodes with different values. Autoplacer cannot decide " +
+                                    "which value to continue with. Linstor found the following conflicting values: " +
+                                    nodeValues
+                            )
+                        );
+                    }
+                    if (nodeValues.size() == 1)
+                    {
+                        ret.put(elem, nodeValues.iterator().next());
+                    }
                 }
             }
         }
-
-
         return ret;
     }
 
@@ -466,40 +467,43 @@ class StorPoolFilter
     )
     {
         Map<String, ArrayList<String>> ret = new TreeMap<>();
-        for (String elem : propsList)
+        if (propsList != null)
         {
-            String key;
-            String fixedValueToAvoid = null;
-            int idx = elem.indexOf("=");
-            if (idx != -1)
+            for (String elem : propsList)
             {
-                key = elem.substring(0, idx);
-                fixedValueToAvoid = elem.substring(idx + 1);
-            }
-            else
-            {
-                key = elem;
-            }
-
-            ArrayList<String> fixedValuesList = ret.get(key);
-            if (fixedValuesList == null)
-            {
-                fixedValuesList = new ArrayList<>();
-                ret.put(key, fixedValuesList);
-            }
-            if (fixedValueToAvoid != null)
-            {
-                fixedValuesList.add(fixedValueToAvoid);
-            }
-            for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
-            {
-                String currentValue = alreadyDeployedNodeProp.getProp(elem);
-                if (currentValue != null)
+                String key;
+                String fixedValueToAvoid = null;
+                int idx = elem.indexOf("=");
+                if (idx != -1)
                 {
-                    fixedValuesList.add(currentValue);
+                    key = elem.substring(0, idx);
+                    fixedValueToAvoid = elem.substring(idx + 1);
                 }
-            }
+                else
+                {
+                    key = elem;
+                }
 
+                ArrayList<String> fixedValuesList = ret.get(key);
+                if (fixedValuesList == null)
+                {
+                    fixedValuesList = new ArrayList<>();
+                    ret.put(key, fixedValuesList);
+                }
+                if (fixedValueToAvoid != null)
+                {
+                    fixedValuesList.add(fixedValueToAvoid);
+                }
+                for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
+                {
+                    String currentValue = alreadyDeployedNodeProp.getProp(elem);
+                    if (currentValue != null)
+                    {
+                        fixedValuesList.add(currentValue);
+                    }
+                }
+
+            }
         }
         return ret;
     }
