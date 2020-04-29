@@ -171,7 +171,7 @@ public class CryptSetupCommands implements Luks
 
             OutputData outputData = extCommand.exec(
                 "shred",
-                "-s", "2M",
+                "-s", "16M",
                 "-z",
                 backingDeviceRef
             );
