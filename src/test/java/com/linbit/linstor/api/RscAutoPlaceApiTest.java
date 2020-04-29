@@ -1444,7 +1444,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     public void freeSpaceReversedTest() throws Exception
     {
         enterScope();
-        ctrlConf.setProp(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS + "/FreeSpace", "-1");
+        ctrlConf.setProp(
+            ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS + "/" + ApiConsts.KEY_AUTOPLACE_STRAT_WEIGHT_MAX_FREESPACE,
+            "-1"
+        );
         commitAndCleanUp(true);
 
         RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(

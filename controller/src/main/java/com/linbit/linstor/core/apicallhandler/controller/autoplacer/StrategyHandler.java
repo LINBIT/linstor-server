@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStrategy.MinMax;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStrategy.RatingAdditionalInfo;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
-import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.FreeSpaceStrategy;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.MaximumFreeSpaceStrategy;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.MinimumReservedSpaceStrategy;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.MinimumResourceCountStrategy;
 import com.linbit.linstor.core.objects.StorPool;
@@ -40,7 +40,7 @@ class StrategyHandler
     StrategyHandler(
         SystemConfRepository sysCfgRepRef,
         @SystemContext AccessContext apiCtxRef,
-        FreeSpaceStrategy freeSpaceStratRef,
+        MaximumFreeSpaceStrategy freeSpaceStratRef,
         MinimumReservedSpaceStrategy minReservedSpaceStratRef,
         MinimumResourceCountStrategy minRscCountStratRef,
         ErrorReporter errorReporterRef

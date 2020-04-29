@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies;
 
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStrategy;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.security.AccessContext;
@@ -14,12 +15,12 @@ import java.util.List;
 import java.util.Map;
 
 @Singleton
-public class FreeSpaceStrategy implements AutoplaceStrategy
+public class MaximumFreeSpaceStrategy implements AutoplaceStrategy
 {
     private final AccessContext apiCtx;
 
     @Inject
-    public FreeSpaceStrategy(
+    public MaximumFreeSpaceStrategy(
         @SystemContext AccessContext apiCtxRef
     )
     {
@@ -29,7 +30,7 @@ public class FreeSpaceStrategy implements AutoplaceStrategy
     @Override
     public String getName()
     {
-        return "FreeSpace";
+        return ApiConsts.KEY_AUTOPLACE_STRAT_WEIGHT_MAX_FREESPACE;
     }
 
     @Override
