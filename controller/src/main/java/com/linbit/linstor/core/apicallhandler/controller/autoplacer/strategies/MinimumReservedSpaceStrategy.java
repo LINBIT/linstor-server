@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies;
 
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.AutoplaceStrategy;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -63,7 +64,7 @@ public class MinimumReservedSpaceStrategy implements AutoplaceStrategy
     @Override
     public String getName()
     {
-        return "MinReservedSpace";
+        return ApiConsts.KEY_AUTOPLACE_STRAT_WEIGHT_MIN_RESERVED_SPACE;
     }
 
     @Override
