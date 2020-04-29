@@ -836,6 +836,50 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
+    public void avoidNodeWithoutPropWhenUsingReplOnSameTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100*GB)
+                // prefered from free space, but missing "rack" property
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("sp1", 90*GB)
+                // second prefered from free space, but has no second node with same "rack" property
+                .setNodeProp("Aux/rack", "1")
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 10*GB)
+                .setNodeProp("Aux/rack", "2")
+                .build()
+            .stltBuilder("stlt4")
+                .addStorPool("sp1", 10*GB)
+                .setNodeProp("Aux/rack", "2")
+                .build()
+
+            .addReplicasOnSameNodeProp("Aux/rack")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode)
+            .collect(Collectors.toList());
+
+        assertEquals(2, deployedNodes.size());
+        assertEquals("stlt3", deployedNodes.get(0).getName().displayValue);
+        assertEquals("stlt4", deployedNodes.get(1).getName().displayValue);
+    }
+
+    @Test
     public void disklessRemainingTest() throws Exception
     {
         evaluateTest(

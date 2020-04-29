@@ -219,16 +219,30 @@ class StorPoolFilter
                 {
                     for (Entry<String, String> matchEntry : filterNodePropsMatch.entrySet())
                     {
-                        String val = nodeProps.getProp(matchEntry.getKey());
-                        if (!matchEntry.getValue().equals(val))
+                        String nodeVal = nodeProps.getProp(matchEntry.getKey());
+                        String valueToMatch = matchEntry.getValue();
+                        if (nodeVal == null)
+                        {
+                            nodeMatches = false;
+                            errorReporter.logTrace(
+                                "Autoplacer.Filter: Disqualifying node '%s' as it does not have the property '%s' set (required by replicas-on-same)",
+                                nodeDisplayValue,
+                                matchEntry.getKey(),
+                                valueToMatch,
+                                nodeVal
+                            );
+                            break;
+                        }
+                        else
+                        if (valueToMatch != null && !nodeVal.equals(valueToMatch))
                         {
                             nodeMatches = false;
                             errorReporter.logTrace(
                                 "Autoplacer.Filter: Disqualifying node '%s' as it does not match fixed same property '%s'. Value required: '%s', but was: '%s'",
                                 nodeDisplayValue,
                                 matchEntry.getKey(),
-                                matchEntry.getValue(),
-                                val
+                                valueToMatch,
+                                nodeVal
                             );
                             break;
                         }
@@ -447,6 +461,11 @@ class StorPoolFilter
                     if (nodeValues.size() == 1)
                     {
                         ret.put(elem, nodeValues.iterator().next());
+                    }
+                    else
+                    {
+                        ret.put(elem, null); // not fixed value, but we still need to make sure all nodes have SOME
+                                             // value set here
                     }
                 }
             }
