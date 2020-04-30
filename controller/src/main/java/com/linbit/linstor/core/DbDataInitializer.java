@@ -76,11 +76,15 @@ public class DbDataInitializer implements StartupInitializer
         transactionMgrGenerator = transactionMgrGeneratorRef;
     }
 
+    @Override
     public void initialize()
         throws AccessDeniedException, InitializationException
     {
         TransactionMgr transMgr = null;
         Lock recfgWriteLock = reconfigurationLock.writeLock();
+
+        InitializationException initExc = null;
+
         try
         {
             transMgr = transactionMgrGenerator.startTransaction();
@@ -109,7 +113,12 @@ public class DbDataInitializer implements StartupInitializer
         }
         catch (DatabaseException exc)
         {
-            throw new InitializationException(
+            /*
+             * we cannot just throw here, as the finally block might also throw an exception.
+             * The exception thrown in the finally block would simply override the exception
+             * thrown here, in the catch block.
+             */
+            initExc = new InitializationException(
                 "Initial load from the database failed",
                 exc
             );
@@ -125,13 +134,26 @@ public class DbDataInitializer implements StartupInitializer
                 }
                 catch (TransactionException exc)
                 {
-                    throw new InitializationException(
+                    InitializationException finallyInitExc = new InitializationException(
                         "Rollback after initial load from the database failed",
                         exc
                     );
+                    if (initExc != null)
+                    {
+                        finallyInitExc.addSuppressed(initExc);
+                    }
+                    initExc = finallyInitExc;
                 }
                 transMgr.returnConnection();
             }
+        }
+        if (initExc != null)
+        {
+            /*
+             * If an exception occurred in the try block, but the finally did not try to suppress that exception
+             * we still want to throw it.
+             */
+            throw initExc;
         }
     }
 

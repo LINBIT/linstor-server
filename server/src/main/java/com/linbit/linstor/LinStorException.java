@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import javax.annotation.Nullable;
+
 /**
  * Provides an Exception base class that allows for detailed reporting of the
  * cause, possible correction and additional details of a problem.
@@ -50,6 +52,31 @@ public class LinStorException extends Exception
         excCause = causeText;
         excCorrection = correctionText;
         excDetails = detailsText;
+    }
+
+    /**
+     * Adds the given array of throwables to the Exception's list of suppressed throwable.
+     * This method includes all necessary null-checks
+     *
+     * @param suppressedExceptions
+     *
+     * @return itself
+     */
+    public LinStorException addSuppressedThrowables(
+        @Nullable Throwable... suppressedExceptions
+    )
+    {
+        if (suppressedExceptions != null)
+        {
+            for (Throwable exc : suppressedExceptions)
+            {
+                if (exc != null)
+                {
+                    addSuppressed(exc);
+                }
+            }
+        }
+        return this;
     }
 
     /**

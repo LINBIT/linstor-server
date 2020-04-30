@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import javax.annotation.Nullable;
+
 public class LinStorRuntimeException extends RuntimeException
 {
     private static final long serialVersionUID = 1475777378033472411L;
@@ -46,6 +48,31 @@ public class LinStorRuntimeException extends RuntimeException
         excCause = causeText;
         excCorrection = correctionText;
         excDetails = detailsText;
+    }
+
+    /**
+     * Adds the given array of throwables to the Exception's list of suppressed throwable.
+     * This method includes all necessary null-checks
+     *
+     * @param suppressedExceptions
+     *
+     * @return itself
+     */
+    public LinStorRuntimeException addSuppressedThrowables(
+        @Nullable Throwable... suppressedExceptions
+    )
+    {
+        if (suppressedExceptions != null)
+        {
+            for (Throwable exc : suppressedExceptions)
+            {
+                if (exc != null)
+                {
+                    addSuppressed(exc);
+                }
+            }
+        }
+        return this;
     }
 
     /**

@@ -18,6 +18,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -290,6 +291,7 @@ public class OpenFlexTargetProcessManager
     {
         ServerSocketChannel ssc = null;
         Selector selector = null;
+        PortAlreadyInUseException portAlreadyInUseExc = null;
         try
         {
             SocketAddress bindAddress = new InetSocketAddress(LOCALHOST, port);
@@ -301,31 +303,37 @@ public class OpenFlexTargetProcessManager
         }
         catch (IOException | RuntimeException exc)
         {
-            throw new PortAlreadyInUseException(port);
+            /*
+             * Do not simply throw the exception as otherwise an additional thrown exception
+             * in the finally block would mask this original exception
+             */
+            portAlreadyInUseExc = new PortAlreadyInUseException(port);
         }
         finally
         {
-            if (selector != null)
+            closeOrThrow(selector, "selector", portAlreadyInUseExc);
+            closeOrThrow(ssc, "server socket", portAlreadyInUseExc);
+        }
+        if (portAlreadyInUseExc != null)
+        {
+            throw portAlreadyInUseExc;
+        }
+    }
+
+    private void closeOrThrow(Closeable closeable, String description, PortAlreadyInUseException portAlreadyInUseExc)
+    {
+        if (closeable != null)
+        {
+            try
             {
-                try
-                {
-                    selector.close();
-                }
-                catch (IOException exc)
-                {
-                    throw new LinStorRuntimeException("Failed to close testing selector", exc);
-                }
+                closeable.close();
             }
-            if (ssc != null)
+            catch (IOException exc)
             {
-                try
-                {
-                    ssc.close();
-                }
-                catch (IOException exc)
-                {
-                    throw new LinStorRuntimeException("Failed to close testing server socket", exc);
-                }
+                throw new LinStorRuntimeException(
+                    "Failed to close testing " + description,
+                    exc
+                ).addSuppressedThrowables(portAlreadyInUseExc);
             }
         }
     }
