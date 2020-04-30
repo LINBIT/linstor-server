@@ -133,88 +133,95 @@ public class ReconnectorTask implements Task
                 );
                 try
                 {
-                    synchronized (syncObj)
+                    Node node = peer.getNode();
+                    if (node != null && !node.isDeleted())
                     {
-                        Node node = peer.getNode();
-                        if (node != null && !node.isDeleted())
+                        boolean hasEnteredScope = false;
+                        TransactionMgr transMgr = null;
+                        try (LockGuard lockGuard = lockGuardFactory
+                            .create()
+                            .read(CTRL_CONFIG)
+                            .write(NODES_MAP)
+                            .build()
+                        )
                         {
-                            boolean hasEnteredScope = false;
-                            TransactionMgr transMgr = null;
-                            try (LockGuard lockGuard = lockGuardFactory
-                                .create()
-                                .read(CTRL_CONFIG)
-                                .write(NODES_MAP)
-                                .build()
-                            )
+                            reconnScope.enter();
+                            hasEnteredScope = true;
+                            transMgr = transactionMgrGenerator.startTransaction();
+                            TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
+
+                            // look for another netIf configured as satellite connection and set it as active
+                            NetInterface currentActiveStltConn = node.getActiveStltConn(peer.getAccessContext());
+                            Iterator<NetInterface> netIfIt = node.iterateNetInterfaces(peer.getAccessContext());
+                            while (netIfIt.hasNext())
                             {
-                                reconnScope.enter();
-                                hasEnteredScope = true;
-                                transMgr = transactionMgrGenerator.startTransaction();
-                                TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
-
-                                // look for another netIf configured as satellite connection and set it as active
-                                NetInterface currentActiveStltConn = node.getActiveStltConn(peer.getAccessContext());
-                                Iterator<NetInterface> netIfIt = node.iterateNetInterfaces(peer.getAccessContext());
-                                while (netIfIt.hasNext())
+                                NetInterface netInterface = netIfIt.next();
+                                if (!netInterface.equals(currentActiveStltConn) &&
+                                    netInterface.isUsableAsStltConn(peer.getAccessContext()))
                                 {
-                                    NetInterface netInterface = netIfIt.next();
-                                    if (!netInterface.equals(currentActiveStltConn) &&
-                                        netInterface.isUsableAsStltConn(peer.getAccessContext()))
-                                    {
-                                        errorReporter.logDebug("Setting new active satellite connection: '" +
-                                            netInterface.getName() + "'"
-                                        );
-                                        node.setActiveStltConn(peer.getAccessContext(), netInterface);
-                                        break;
-                                    }
+                                    errorReporter.logDebug("Setting new active satellite connection: '" +
+                                        netInterface.getName() + "'"
+                                    );
+                                    node.setActiveStltConn(peer.getAccessContext(), netInterface);
+                                    break;
                                 }
+                            }
 
-                                transMgr.commit();
+                            transMgr.commit();
+                            synchronized (syncObj)
+                            {
+                                // add the new peer and remove the old peer to the node
                                 peerSet.add(peer.getConnector().reconnect(peer));
+                                peerSet.remove(peer);
                             }
-                            catch (AccessDeniedException | DatabaseException exc)
+                        }
+                        catch (AccessDeniedException | DatabaseException exc)
+                        {
+                            errorReporter.logError(exc.getMessage());
+                        }
+                        finally
+                        {
+                            if (hasEnteredScope)
                             {
-                                errorReporter.logError(exc.getMessage());
+                                reconnScope.exit();
                             }
-                            finally
+                            if (transMgr != null)
                             {
-                                if (hasEnteredScope)
-                                {
-                                    reconnScope.exit();
-                                }
-                                if (transMgr != null)
-                                {
 
-                                    try
-                                    {
-                                        transMgr.rollback();
-                                    }
-                                    catch (TransactionException exc)
-                                    {
-                                        errorReporter.reportError(exc);
-                                    }
-                                    transMgr.returnConnection();
+                                try
+                                {
+                                    transMgr.rollback();
                                 }
+                                catch (TransactionException exc)
+                                {
+                                    errorReporter.reportError(exc);
+                                }
+                                transMgr.returnConnection();
                             }
+                        }
+                    }
+                    else
+                    {
+                        if (node == null)
+                        {
+                            errorReporter.logTrace(
+                                "Peer %s's node is null (possibly rollbacked), removing from reconnect list",
+                                peer.getId()
+                            );
                         }
                         else
                         {
-                            if (node == null)
-                            {
-                                errorReporter.logTrace(
-                                    "Peer %s's node is null (possibly rollbacked), removing from reconnect list",
-                                    peer.getId()
-                                );
-                            }
-                            else
-                            {
-                                errorReporter.logTrace(
-                                    "Peer %s's node got deleted, removing from reconnect list",
-                                    peer.getId()
-                                );
-                            }
+                            errorReporter.logTrace(
+                                "Peer %s's node got deleted, removing from reconnect list",
+                                peer.getId()
+                            );
                         }
-                        peerSet.remove(peer);
+
+                        synchronized (syncObj)
+                        {
+                            // no new peer, node is gone. remove the old peer
+                            peerSet.remove(peer);
+                        }
                     }
                 }
                 catch (IOException ioExc)
