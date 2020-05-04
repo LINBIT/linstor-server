@@ -5,6 +5,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.objects.Node;
@@ -34,7 +35,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 @Singleton
-public class CtrlRscAutoQuorumHelper
+public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
 {
     private static final String PROP_KEY_QUORUM = "quorum";
     private static final String PROP_VAL_QUORUM_MAJORITY = "majority";
@@ -58,27 +59,32 @@ public class CtrlRscAutoQuorumHelper
         peerCtx = peerCtxRef;
     }
 
-    public void manage(ApiCallRcImpl apiCallRcImpl, ResourceDefinition rscDfn)
+    @Override
+    public void manage(
+        ApiCallRcImpl apiCallRcImplRef,
+        ResourceDefinition rscDfnRef,
+        AutoHelperInternalState autoHelperInternalStateRef
+    )
     {
-        String autoQuorum = getAutoQuorum(rscDfn);
+        String autoQuorum = getAutoQuorum(rscDfnRef);
         if (autoQuorum != null && !autoQuorum.equals(ApiConsts.VAL_DRBD_AUTO_QUORUM_DISABLED))
         {
             try
             {
-                Set<Node> involvedNodesWithoutQuorumSupport = getNodesNotSupportingQuroum(peerCtx.get(), rscDfn);
-                Props props = rscDfn.getProps(peerCtx.get());
+                Set<Node> involvedNodesWithoutQuorumSupport = getNodesNotSupportingQuroum(peerCtx.get(), rscDfnRef);
+                Props props = rscDfnRef.getProps(peerCtx.get());
 
-                if (isQuorumFeasible(rscDfn))
+                if (isQuorumFeasible(rscDfnRef))
                 {
                     if (involvedNodesWithoutQuorumSupport.isEmpty())
                     {
-                        activateQuorum(apiCallRcImpl, autoQuorum, props);
+                        activateQuorum(apiCallRcImplRef, autoQuorum, props);
                     }
                     else
                     {
                         boolean singular = involvedNodesWithoutQuorumSupport.size() == 1;
                         deactivateQuorum(
-                            apiCallRcImpl,
+                            apiCallRcImplRef,
                             props,
                             String.format(
                                 " as the node%s %s do%s not support DRBD quorum",
@@ -91,14 +97,14 @@ public class CtrlRscAutoQuorumHelper
                 }
                 else
                 {
-                    deactivateQuorum(apiCallRcImpl, props, " as there are not enough resources for quorum");
+                    deactivateQuorum(apiCallRcImplRef, props, " as there are not enough resources for quorum");
                 }
             }
             catch (AccessDeniedException accDeniedExc)
             {
                 throw new ApiAccessDeniedException(
                     accDeniedExc,
-                    "checking auto-quorum feature " + getRscDfnDescriptionInline(rscDfn),
+                    "checking auto-quorum feature " + getRscDfnDescriptionInline(rscDfnRef),
                     ApiConsts.FAIL_ACC_DENIED_RSC_DFN
                 );
             }
@@ -296,5 +302,4 @@ public class CtrlRscAutoQuorumHelper
             .getExtToolInfo(ExtTools.DRBD9)
             .hasVersionOrHigher(9, 0, 18);
     }
-
 }

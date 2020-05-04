@@ -23,6 +23,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -32,12 +33,12 @@ import reactor.core.publisher.Flux;
 public class CtrlRscAutoHelper
 {
     private final CtrlApiDataLoader dataLoader;
-    private final CtrlRscAutoQuorumHelper autoQuorumHelper;
-    private final CtrlRscAutoTieBreakerHelper autoTieBreakerHelper;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlRscCrtApiHelper rscCrtHelper;
     private final CtrlRscDeleteApiHelper rscDelHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
+
+    private final List<AutoHelper> autohelperList;
 
     public static class AutoHelperResult
     {
@@ -70,8 +71,7 @@ public class CtrlRscAutoHelper
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
     )
     {
-        autoQuorumHelper = autoQuorumHelperRef;
-        autoTieBreakerHelper = autoTieBreakerRef;
+        autohelperList = Arrays.asList(autoTieBreakerRef, autoQuorumHelperRef);
 
         dataLoader = dataLoaderRef;
         peerAccCtx = peerAccCtxRef;
@@ -94,12 +94,10 @@ public class CtrlRscAutoHelper
         AutoHelperResult result = new AutoHelperResult();
         AutoHelperInternalState autoHelperInternalState = new AutoHelperInternalState();
 
-        autoTieBreakerHelper.manage(
-            apiCallRcImpl,
-            rscDfn,
-            autoHelperInternalState
-        );
-        autoQuorumHelper.manage(apiCallRcImpl, rscDfn);
+        for (AutoHelper autohelper : autohelperList)
+        {
+            autohelper.manage(apiCallRcImpl, rscDfn, autoHelperInternalState);
+        }
 
         if (!autoHelperInternalState.resourcesToCreate.isEmpty())
         {
@@ -202,5 +200,14 @@ public class CtrlRscAutoHelper
         {
 
         }
+    }
+
+    interface AutoHelper
+    {
+        void manage(
+            ApiCallRcImpl apiCallRcImpl,
+            ResourceDefinition rscDfn,
+            AutoHelperInternalState autoHelperInternalState
+        );
     }
 }

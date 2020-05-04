@@ -58,7 +58,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import reactor.core.publisher.Flux;
 
 @Singleton
-public class CtrlRscAutoTieBreakerHelper
+public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 {
     private final SystemConfRepository systemConfRepository;
     private final CtrlRscLayerDataFactory layerDataHelper;
@@ -126,6 +126,7 @@ public class CtrlRscAutoTieBreakerHelper
         rscToggleDiskHelper = rscToggleDiskHelperRef;
     }
 
+    @Override
     public void manage(
         ApiCallRcImpl apiCallRcImpl,
         ResourceDefinition rscDfn,
