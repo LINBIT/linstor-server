@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -69,6 +70,7 @@ public class CtrlRscAutoTieBreakerHelper
     private final ReadWriteLock rscDfnMapLock;
     private final ResponseConverter responseConverter;
     private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlRscToggleDiskApiCallHandler rscToggleDiskHelper;
 
     class AutoTiebreakerResult
     {
@@ -107,7 +109,8 @@ public class CtrlRscAutoTieBreakerHelper
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         CtrlRscCrtApiHelper rscCrtApiHelperRef,
         ResponseConverter responseConverterRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlRscToggleDiskApiCallHandler rscToggleDiskHelperRef
     )
     {
         systemConfRepository = systemConfRepositoryRef;
@@ -120,15 +123,16 @@ public class CtrlRscAutoTieBreakerHelper
         rscCrtApiHelper = rscCrtApiHelperRef;
         responseConverter = responseConverterRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
+        rscToggleDiskHelper = rscToggleDiskHelperRef;
     }
 
-    public AutoTiebreakerResult manage(
+    public void manage(
         ApiCallRcImpl apiCallRcImpl,
         ResourceDefinition rscDfn,
-        Set<Resource> candidatesToTakeOver
+        Set<Resource> candidatesToTakeOver,
+        AutoHelperInternalState autoHelperState
     )
     {
-        AutoTiebreakerResult result = new AutoTiebreakerResult();
         try
         {
             if (isAutoTieBreakerEnabled(rscDfn))
@@ -158,12 +162,12 @@ public class CtrlRscAutoTieBreakerHelper
                         }
                         if (takeover != null)
                         {
-                            takeover(takeover, true, result, apiCallRcImpl);
+                            takeover(takeover, true, autoHelperState, apiCallRcImpl);
                         }
                         else
                         if (diskfulCandidate != null)
                         {
-                            takeover(diskfulCandidate, false, result, apiCallRcImpl);
+                            takeover(diskfulCandidate, false, autoHelperState, apiCallRcImpl);
                         }
                         else
                         {
@@ -205,7 +209,8 @@ public class CtrlRscAutoTieBreakerHelper
                                     )
                                 );
 
-                                result.created = tieBreaker;
+                                autoHelperState.resourcesToCreate.add(tieBreaker);
+                                autoHelperState.requiresUpdateFlux = true;
                             }
                         }
                     }
@@ -227,7 +232,6 @@ public class CtrlRscAutoTieBreakerHelper
                                         "' as tiebreaker resource was manually deleted"
                                 )
                             );
-
                         }
                     }
                 }
@@ -242,7 +246,9 @@ public class CtrlRscAutoTieBreakerHelper
                                 "Tie breaker marked for deletion"
                             )
                         );
-                        result.deleting = tieBreaker;
+
+                        autoHelperState.nodeNamesForDelete.add(tieBreaker.getNode().getName());
+                        autoHelperState.requiresUpdateFlux = true;
                     }
                 }
             }
@@ -263,10 +269,14 @@ public class CtrlRscAutoTieBreakerHelper
         {
             throw new ImplementationError(exc);
         }
-        return result;
     }
 
-    private void takeover(Resource rsc, boolean diskless, AutoTiebreakerResult result, ApiCallRcImpl apiCallRcImpl)
+    private void takeover(
+        Resource rsc,
+        boolean diskless,
+        AutoHelperInternalState autoHelperState,
+        ApiCallRcImpl apiCallRcImpl
+    )
     {
         StateFlags<Flags> flags = rsc.getStateFlags();
         try
@@ -283,11 +293,25 @@ public class CtrlRscAutoTieBreakerHelper
 
             if (diskless)
             {
-                result.takeoverDiskless = rsc;
+                autoHelperState.additionalFluxList.add(setTiebreakerFlag(rsc));
+                autoHelperState.requiresUpdateFlux = true;
+                autoHelperState.preventUpdateSatellitesForResourceDelete = true;
             }
             else
             {
-                result.takeoverDiskful = rsc;
+                autoHelperState.additionalFluxList.add(
+                    rscToggleDiskHelper.resourceToggleDisk(
+                        rsc.getNode().getName().displayValue,
+                        rsc.getDefinition().getName().displayValue,
+                        null,
+                        null,
+                        true
+                    ).concatWith(setTiebreakerFlag(rsc))
+                );
+
+                autoHelperState.preventUpdateSatellitesForResourceDelete = true;
+                autoHelperState.requiresUpdateFlux = true;
+                autoHelperState.fluxUpdateApplied = true;
             }
             apiCallRcImpl.addEntries(
                 ApiCallRcImpl.singleApiCallRc(
@@ -488,6 +512,14 @@ public class CtrlRscAutoTieBreakerHelper
         return isFlagSet;
     }
 
+    /**
+     * Sets the tiebreaker flag in a transaction and commits the transaction.
+     * Does NOT update satellites
+     *
+     * @param tiebreaker
+     *
+     * @return
+     */
     public Flux<ApiCallRc> setTiebreakerFlag(Resource tiebreaker)
     {
         ResponseContext context = CtrlRscApiCallHandler.makeRscContext(

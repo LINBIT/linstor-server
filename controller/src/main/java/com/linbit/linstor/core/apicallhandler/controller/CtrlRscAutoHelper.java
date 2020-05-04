@@ -4,7 +4,6 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoTieBreakerHelper.AutoTiebreakerResult;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -23,7 +22,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -33,13 +34,11 @@ import reactor.core.publisher.Flux;
 public class CtrlRscAutoHelper
 {
     private final CtrlApiDataLoader dataLoader;
-    private final CtrlRscAutoPlaceApiCallHandler autoPlaceHelper;
     private final CtrlRscAutoQuorumHelper autoQuorumHelper;
     private final CtrlRscAutoTieBreakerHelper autoTieBreakerHelper;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlRscCrtApiHelper rscCrtHelper;
     private final CtrlRscDeleteApiHelper rscDelHelper;
-    private final CtrlRscToggleDiskApiCallHandler rscToggleDiskHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
     public static class AutoHelperResult
@@ -64,18 +63,15 @@ public class CtrlRscAutoHelper
 
     @Inject
     public CtrlRscAutoHelper(
-        CtrlRscAutoPlaceApiCallHandler autoPlaceHelperRef,
         CtrlRscAutoQuorumHelper autoQuorumHelperRef,
         CtrlRscAutoTieBreakerHelper autoTieBreakerRef,
         CtrlApiDataLoader dataLoaderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscCrtApiHelper rscCrtHelperRef,
         CtrlRscDeleteApiHelper rscDelHelperRef,
-        CtrlRscToggleDiskApiCallHandler rscToggleDiskHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
     )
     {
-        autoPlaceHelper = autoPlaceHelperRef;
         autoQuorumHelper = autoQuorumHelperRef;
         autoTieBreakerHelper = autoTieBreakerRef;
 
@@ -83,7 +79,6 @@ public class CtrlRscAutoHelper
         peerAccCtx = peerAccCtxRef;
         rscCrtHelper = rscCrtHelperRef;
         rscDelHelper = rscDelHelperRef;
-        rscToggleDiskHelper = rscToggleDiskHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
     }
 
@@ -121,72 +116,41 @@ public class CtrlRscAutoHelper
     )
     {
         AutoHelperResult result = new AutoHelperResult();
+        AutoHelperInternalState autoHelperInternalState = new AutoHelperInternalState();
 
-        TreeSet<Resource> resourcesToCreate = new TreeSet<>();
-        TreeSet<NodeName> nodeNamesForDelete = new TreeSet<>();
-
-        boolean requiresUpdateFlux = false;
-        boolean fluxUpdateApplied = false;
-
-        Flux<ApiCallRc> flux = Flux.empty();
-
-        AutoTiebreakerResult tiebreakerResult = autoTieBreakerHelper.manage(
+        autoTieBreakerHelper.manage(
             apiCallRcImpl,
             rscDfn,
-            candidatesForTakeover
+            candidatesForTakeover,
+            autoHelperInternalState
         );
-        if (tiebreakerResult.created != null)
-        {
-            resourcesToCreate.add(tiebreakerResult.created);
-            requiresUpdateFlux = true;
-        }
-        if (tiebreakerResult.deleting != null)
-        {
-            nodeNamesForDelete.add(tiebreakerResult.deleting.getNode().getName());
-            requiresUpdateFlux = true;
-        }
-        if (tiebreakerResult.takeoverDiskless != null)
-        {
-            flux = autoTieBreakerHelper.setTiebreakerFlag(tiebreakerResult.takeoverDiskless);
-            requiresUpdateFlux = true;
-            result.preventUpdateSatellitesForResourceDelete = true;
-        }
-        if (tiebreakerResult.takeoverDiskful != null)
-        {
-            flux = rscToggleDiskHelper.resourceToggleDisk(
-                tiebreakerResult.takeoverDiskful.getNode().getName().displayValue,
-                rscDfn.getName().displayValue,
-                null,
-                null,
-                true
-            ).concatWith(autoTieBreakerHelper.setTiebreakerFlag(tiebreakerResult.takeoverDiskful));
-
-            result.preventUpdateSatellitesForResourceDelete = true;
-            requiresUpdateFlux = true;
-            fluxUpdateApplied = true;
-        }
-
         autoQuorumHelper.manage(apiCallRcImpl, rscDfn);
 
-        if (!resourcesToCreate.isEmpty())
+        if (!autoHelperInternalState.resourcesToCreate.isEmpty())
         {
-            flux = flux.concatWith(rscCrtHelper.deployResources(context, resourcesToCreate));
-            fluxUpdateApplied = true;
+            autoHelperInternalState.additionalFluxList.add(
+                rscCrtHelper.deployResources(
+                    context,
+                    autoHelperInternalState.resourcesToCreate
+                )
+            );
+            autoHelperInternalState.fluxUpdateApplied = true;
         }
-        if (!nodeNamesForDelete.isEmpty())
+
+        if (!autoHelperInternalState.nodeNamesForDelete.isEmpty())
         {
-            flux = flux.concatWith(
+            autoHelperInternalState.additionalFluxList.add(
                 rscDelHelper.updateSatellitesForResourceDelete(
-                    nodeNamesForDelete,
+                    autoHelperInternalState.nodeNamesForDelete,
                     rscDfn.getName()
                 )
             );
-            fluxUpdateApplied = true;
+            autoHelperInternalState.fluxUpdateApplied = true;
         }
 
-        if (requiresUpdateFlux && !fluxUpdateApplied)
+        if (autoHelperInternalState.requiresUpdateFlux && !autoHelperInternalState.fluxUpdateApplied)
         {
-            flux = flux.concatWith(
+            autoHelperInternalState.additionalFluxList.add(
                 ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                     .transform(
                         updateResponses -> CtrlResponseUtils.combineResponses(
@@ -198,7 +162,8 @@ public class CtrlRscAutoHelper
             );
         }
 
-        result.flux = flux;
+        result.flux = Flux.merge(autoHelperInternalState.additionalFluxList);
+        result.preventUpdateSatellitesForResourceDelete = autoHelperInternalState.preventUpdateSatellitesForResourceDelete;
         return result;
     }
 
@@ -283,5 +248,23 @@ public class CtrlRscAutoHelper
             );
         }
         return tiebreaker;
+    }
+
+    static class AutoHelperInternalState
+    {
+        TreeSet<Resource> resourcesToCreate = new TreeSet<>();
+        TreeSet<NodeName> nodeNamesForDelete = new TreeSet<>();
+
+        List<Flux<ApiCallRc>> additionalFluxList = new ArrayList<>();
+
+        boolean requiresUpdateFlux = false;
+        boolean fluxUpdateApplied = false;
+
+        boolean preventUpdateSatellitesForResourceDelete = false;
+
+        private AutoHelperInternalState()
+        {
+
+        }
     }
 }
