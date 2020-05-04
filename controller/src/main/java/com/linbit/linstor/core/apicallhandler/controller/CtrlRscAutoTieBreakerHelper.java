@@ -129,7 +129,6 @@ public class CtrlRscAutoTieBreakerHelper
     public void manage(
         ApiCallRcImpl apiCallRcImpl,
         ResourceDefinition rscDfn,
-        Set<Resource> candidatesToTakeOver,
         AutoHelperInternalState autoHelperState
     )
     {
@@ -142,10 +141,11 @@ public class CtrlRscAutoTieBreakerHelper
                 {
                     if (tieBreaker == null)
                     {
-                        Resource diskfulCandidate = null;
                         Resource takeover = null;
-                        for (Resource rsc : candidatesToTakeOver)
+                        Iterator<Resource> rscIt = rscDfn.iterateResource(peerCtx.get());
+                        while (rscIt.hasNext())
                         {
+                            Resource rsc = rscIt.next();
                             if (isFlagSet(rsc, Resource.Flags.DELETE))
                             {
                                 if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
@@ -155,19 +155,14 @@ public class CtrlRscAutoTieBreakerHelper
                                 }
                                 else
                                 {
-                                    diskfulCandidate = rsc;
+                                    takeover = rsc;
                                     // keep looking for diskless resource
                                 }
                             }
                         }
                         if (takeover != null)
                         {
-                            takeover(takeover, true, autoHelperState, apiCallRcImpl);
-                        }
-                        else
-                        if (diskfulCandidate != null)
-                        {
-                            takeover(diskfulCandidate, false, autoHelperState, apiCallRcImpl);
+                            takeover(takeover, autoHelperState, apiCallRcImpl);
                         }
                         else
                         {
@@ -273,15 +268,14 @@ public class CtrlRscAutoTieBreakerHelper
 
     private void takeover(
         Resource rsc,
-        boolean diskless,
         AutoHelperInternalState autoHelperState,
         ApiCallRcImpl apiCallRcImpl
     )
     {
         StateFlags<Flags> flags = rsc.getStateFlags();
+        AccessContext accCtx = peerCtx.get();
         try
         {
-            AccessContext accCtx = peerCtx.get();
             flags.disableFlags(accCtx, Resource.Flags.DELETE);
 
             Iterator<Volume> vlmsIt = rsc.iterateVolumes();
@@ -291,7 +285,7 @@ public class CtrlRscAutoTieBreakerHelper
                 vlm.getFlags().disableFlags(accCtx, Volume.Flags.DELETE);
             }
 
-            if (diskless)
+            if (flags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS))
             {
                 autoHelperState.additionalFluxList.add(setTiebreakerFlag(rsc));
                 autoHelperState.requiresUpdateFlux = true;

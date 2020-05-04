@@ -23,9 +23,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.TreeSet;
 
 import reactor.core.publisher.Flux;
@@ -82,18 +80,6 @@ public class CtrlRscAutoHelper
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
     }
 
-    /**
-     * Returns an empty flux if no resources were added or deleted.
-     * Returns the flux for creating and/or deleting the automatically managed resources.
-     * <ul>
-     * <li>a property on that resource has changed</li>
-     * <li>the resource was already in deleting state</li>
-     * </ul>
-     *
-     * @param apiCallRcImplRef
-     * @param rscNameStrRef
-     * @return
-     */
     public AutoHelperResult manage(ApiCallRcImpl apiCallRcImplRef, ResponseContext context, String rscNameStrRef)
     {
         return manage(apiCallRcImplRef, context, dataLoader.loadRscDfn(rscNameStrRef, true));
@@ -105,23 +91,12 @@ public class CtrlRscAutoHelper
         ResourceDefinition rscDfn
     )
     {
-        return manage(apiCallRcImpl, context, rscDfn, Collections.emptySet());
-    }
-
-    public AutoHelperResult manage(
-        ApiCallRcImpl apiCallRcImpl,
-        ResponseContext context,
-        ResourceDefinition rscDfn,
-        Set<Resource> candidatesForTakeover
-    )
-    {
         AutoHelperResult result = new AutoHelperResult();
         AutoHelperInternalState autoHelperInternalState = new AutoHelperInternalState();
 
         autoTieBreakerHelper.manage(
             apiCallRcImpl,
             rscDfn,
-            candidatesForTakeover,
             autoHelperInternalState
         );
         autoQuorumHelper.manage(apiCallRcImpl, rscDfn);
@@ -209,45 +184,6 @@ public class CtrlRscAutoHelper
         {
             throw new ApiDatabaseException(exc);
         }
-    }
-
-    private boolean isFlagSet(Resource rsc, Resource.Flags flag)
-    {
-        boolean isFlagSet;
-        try
-        {
-            isFlagSet = rsc.getStateFlags().isSet(peerAccCtx.get(), flag);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "checking flag state of " + rsc,
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        return isFlagSet;
-    }
-
-    private Resource findTiebreaker(ResourceDefinition rscDfn)
-    {
-        Resource tiebreaker;
-        try
-        {
-            tiebreaker = rscDfn.streamResource(peerAccCtx.get())
-                .filter(rsc -> isFlagSet(rsc, Resource.Flags.TIE_BREAKER))
-                .findAny()
-                .orElse(null);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "finding tiebreaker resource of " + rscDfn,
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        return tiebreaker;
     }
 
     static class AutoHelperInternalState
