@@ -132,8 +132,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             optAutoplacerNamespace.get().clear();
         }
 
-        commitAndCleanUp(true);
+        AtomicInteger atomicTcpPorts = new AtomicInteger(TEST_TCP_PORT_NR + 1);
+        Mockito.when(tcpPortPoolMock.autoAllocate()).thenReturn(atomicTcpPorts.incrementAndGet());
 
+        commitAndCleanUp(true);
     }
 
     @After
