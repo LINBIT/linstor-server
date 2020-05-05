@@ -1,0 +1,63 @@
+[[steps]]
+[steps.rsync]
+source = "$HOME/.ssh/id_rsa.pub"
+dest = "/tmp/host_id_rsa.pub"
+
+
+[[steps]]
+[steps.shell]
+script = '''
+add-apt-repository -y ppa:linbit/linbit-drbd9-stack
+
+# maria db stable
+apt-get install software-properties-common
+#sudo apt-key adv --fetch-keys 'https://mariadb.org/mariadb_release_signing_key.asc'
+#add-apt-repository 'deb [arch=amd64,arm64,ppc64el] http://mirror.biznetgio.com/mariadb/repo/10.4/ubuntu focal main'
+
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -yd
+DEBIAN_FRONTEND=noninteractive apt-get install -yq thin-provisioning-tools drbd-dkms drbd-utils zfsutils-linux \
+default-jre-headless python virtualenv postgresql mariadb-server
+
+#pvcreate /dev/vda
+#vgcreate scratch /dev/vda
+
+#zpool create -f scratch-zfs /dev/vdb
+
+cd /opt
+curl -sLO https://github.com/etcd-io/etcd/releases/download/v3.3.18/etcd-v3.3.18-linux-amd64.tar.gz
+tar xzf etcd-v3.3.18-linux-amd64.tar.gz
+ln -s /opt/etcd-v3.3.18-linux-amd64/etcdctl /usr/bin
+ln -s /opt/etcd-v3.3.18-linux-amd64/etcd /etcd.bin
+
+cat <<EOF >> /etc/systemd/system/etcd.service
+[Unit]
+Description=etcd - highly-available key value store
+Documentation=https://github.com/coreos/etcd
+Documentation=man:etcd
+After=network.target
+Wants=network-online.target
+
+[Service]
+Environment=DAEMON_ARGS=
+Environment=ETCD_NAME=%H
+Environment=ETCD_DATA_DIR=/var/lib/etcd/default
+Type=notify
+PermissionsStartOnly=true
+#ExecStart=/bin/sh -c "GOMAXPROCS=$(nproc) /usr/bin/etcd $DAEMON_ARGS"
+ExecStart=/opt/etcd-v3.3.18-linux-amd64/etcd --max-txn-ops 1024
+Restart=on-abnormal
+#RestartSec=10s
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable etcd.service
+
+mkdir -p /root/.ssh
+cat /tmp/host_id_rsa.pub >> /root/.ssh/authorized_keys
+sed -i "/#PermitRootLogin yes/s/^#//g" /etc/ssh/sshd_config
+'''
