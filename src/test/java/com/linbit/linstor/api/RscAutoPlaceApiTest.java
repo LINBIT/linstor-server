@@ -1,5 +1,14 @@
 package com.linbit.linstor.api;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -17,6 +26,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
@@ -29,6 +39,8 @@ import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
@@ -64,14 +76,6 @@ import org.mockito.Mockito;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
 public class RscAutoPlaceApiTest extends ApiTestBase
@@ -1521,6 +1525,62 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         assertEquals("stlt3", deployedNodes.get(1).getName().displayValue);
     }
 
+    @Test
+    public void createRscWithDrbdProxyTest() throws Exception
+    {
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            3,
+            true
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100*GB, LVM)
+                .setNodeProp(ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_SITE, "A")
+                .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("sp1", 100*GB, LVM)
+                .setNodeProp(ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_SITE, "A")
+                .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 100*GB, LVM)
+                .setNodeProp(ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_SITE, "B")
+                .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
+                .build();
+
+        evaluateTest(call, false);
+
+        List<Resource> deployedRscs = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .sorted()
+            .collect(Collectors.toList());
+        assertEquals(3, deployedRscs.size());
+
+        Resource rsc1 = deployedRscs.get(0);
+        Resource rsc2 = deployedRscs.get(1);
+        Resource rsc3 = deployedRscs.get(2);
+
+        // expect NO proxy between stlt1 <-> stlt2
+        assertNull(rsc1.getAbsResourceConnection(SYS_CTX, rsc2));
+
+        // expect proxy between stlt1 <-> stlt3
+        ResourceConnection rscCon13 = rsc1.getAbsResourceConnection(SYS_CTX, rsc3);
+        assertNotNull(rscCon13);
+        assertNotNull(rscCon13.getPort(SYS_CTX));
+        assertTrue(rscCon13.getStateFlags().isSet(SYS_CTX, ResourceConnection.Flags.LOCAL_DRBD_PROXY));
+
+        // expect proxy between stlt2 <-> stlt3
+        ResourceConnection rscCon23 = rsc2.getAbsResourceConnection(SYS_CTX, rsc3);
+        assertNotNull(rscCon23);
+        assertNotNull(rscCon23.getPort(SYS_CTX));
+        assertTrue(rscCon23.getStateFlags().isSet(SYS_CTX, ResourceConnection.Flags.LOCAL_DRBD_PROXY));
+    }
+
     private void expectDeployed(
         String storPoolNameStr,
         String rscNameStr,
@@ -2007,6 +2067,21 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 Mockito.when(mockedExtToolsMgr.isProviderSupported(unsupportedProviderLayer)).thenReturn(false);
             }
             Mockito.when(mockedExtToolsMgr.getSupportedProviders()).thenReturn(new TreeSet<>(Arrays.asList(providers)));
+            return this;
+        }
+
+        public SatelliteBuilder setExtToolSupported(
+            ExtTools tool,
+            boolean supported,
+            int majorVer,
+            int minorVer,
+            int patchVer,
+            String... reasonsNotSupported
+        )
+        {
+            Mockito.when(mockedExtToolsMgr.getExtToolInfo(tool)).thenReturn(
+                new ExtToolsInfo(tool, supported, majorVer, minorVer, patchVer, Arrays.asList(reasonsNotSupported))
+            );
             return this;
         }
 

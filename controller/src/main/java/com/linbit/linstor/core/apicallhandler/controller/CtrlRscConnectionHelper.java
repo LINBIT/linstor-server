@@ -83,6 +83,15 @@ class CtrlRscConnectionHelper
         Resource rsc1 = ctrlApiDataLoader.loadRsc(node1.getName(), rscName, false);
         Resource rsc2 = ctrlApiDataLoader.loadRsc(node2.getName(), rscName, false);
 
+        return createRscConn(rsc1, rsc2, initFlags);
+    }
+
+    public ResourceConnection createRscConn(
+        Resource rsc1,
+        Resource rsc2,
+        ResourceConnection.Flags[] initFlags
+    )
+    {
         ResourceConnection rscConn;
         try
         {
@@ -97,7 +106,11 @@ class CtrlRscConnectionHelper
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr),
+                "create " + getResourceConnectionDescriptionInline(
+                    rsc1.getNode().getName().displayValue,
+                    rsc2.getNode().getName().displayValue,
+                    rsc1.getResourceDefinition().getName().displayValue
+                ),
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN
             );
         }
@@ -105,8 +118,11 @@ class CtrlRscConnectionHelper
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_RSC_CONN,
-                "The " + getResourceConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr) +
-                    " already exists."
+                "The " + getResourceConnectionDescriptionInline(
+                    rsc1.getNode().getName().displayValue,
+                    rsc2.getNode().getName().displayValue,
+                    rsc1.getResourceDefinition().getName().displayValue
+                ) + " already exists."
             ), dataAlreadyExistsExc);
         }
         catch (DatabaseException sqlExc)

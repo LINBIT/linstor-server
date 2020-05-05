@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -49,6 +50,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuardFactory;
 
@@ -67,6 +70,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -320,7 +324,7 @@ public class CtrlNodeApiCallHandler
         {
             responses = responseConverter.reportException(peer.get(), context, exc);
         }
-        return new ApiCallRcWith<Node>(responses, node);
+        return new ApiCallRcWith<>(responses, node);
     }
 
     private void setActiveStltConn(Node node, NetInterface netIf)
@@ -428,13 +432,7 @@ public class CtrlNodeApiCallHandler
             ctrlPropsHelper.remove(
                 apiCallRcs, LinStorObject.NODE, props, deletePropKeys, deleteNamespaces);
 
-            // check if specified preferred network interface exists
-            ctrlPropsHelper.checkPrefNic(
-                apiCtx,
-                node,
-                overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
-                ApiConsts.MASK_NODE
-            );
+            checkProperties(apiCallRcs, node, overrideProps);
 
             ctrlTransactionHelper.commit();
 
@@ -715,6 +713,68 @@ public class CtrlNodeApiCallHandler
                 "change any nodes",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
+        }
+    }
+
+    /**
+     * Checks for sanity of the currently set properties. There are checks that throw Exceptions if they are not passed,
+     * other checks only generate a warning message for the user.
+     *
+     * @param apiCallRcsRef
+     * @param overridePropsRef
+     *
+     * @throws InvalidNameException
+     * @throws AccessDeniedException
+     */
+    private void checkProperties(ApiCallRcImpl apiCallRcsRef, Node node, Map<String, String> overrideProps)
+        throws AccessDeniedException, InvalidNameException
+    {
+        /*
+         * Checks that throw exceptions
+         */
+
+        // check if specified preferred network interface exists
+        ctrlPropsHelper.checkPrefNic(
+            apiCtx,
+            node,
+            overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+            ApiConsts.MASK_NODE
+        );
+
+        /*
+         * Checks that only generate warnings
+         */
+        ExtToolsInfo drbd9 = node.getPeer(apiCtx).getExtToolsManager().getExtToolInfo(ExtTools.DRBD9);
+        ExtToolsInfo drbdProxy = node.getPeer(apiCtx).getExtToolsManager().getExtToolInfo(ExtTools.DRBD_PROXY);
+        boolean isDrbd9Supported = drbd9 != null && drbd9.isSupported();
+        boolean isDrbdProxySupported = drbdProxy != null && drbdProxy.isSupported();
+        for (Entry<String, String> entry : overrideProps.entrySet())
+        {
+            if (entry.getKey().startsWith("Drbd"))
+            {
+                if (entry.getKey().startsWith("DrbdProxy"))
+                {
+                    if (!isDrbdProxySupported)
+                    {
+                        apiCallRcsRef.addEntry(
+                            "The property '" + entry.getKey() + "' has no effect since the node '" +
+                                node.getName().displayValue + "' does not support DRBD_PROXY",
+                            ApiConsts.WARN_UNEFFECTIVE_PROP
+                        );
+                    }
+                }
+            }
+            else
+            {
+                if (!isDrbd9Supported)
+                {
+                    apiCallRcsRef.addEntry(
+                        "The property '" + entry.getKey() + "' has no effect since the node '" +
+                            node.getName().displayValue + "' does not support DRBD 9",
+                        ApiConsts.WARN_UNEFFECTIVE_PROP
+                    );
+                }
+            }
         }
     }
 

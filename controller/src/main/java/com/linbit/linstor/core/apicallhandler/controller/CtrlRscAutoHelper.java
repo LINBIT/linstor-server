@@ -64,6 +64,7 @@ public class CtrlRscAutoHelper
     public CtrlRscAutoHelper(
         CtrlRscAutoQuorumHelper autoQuorumHelperRef,
         CtrlRscAutoTieBreakerHelper autoTieBreakerRef,
+        CtrlRscAutoDrbdProxyHelper autoDrbdProxyHelperRef,
         CtrlApiDataLoader dataLoaderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscCrtApiHelper rscCrtHelperRef,
@@ -71,7 +72,7 @@ public class CtrlRscAutoHelper
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
     )
     {
-        autohelperList = Arrays.asList(autoTieBreakerRef, autoQuorumHelperRef);
+        autohelperList = Arrays.asList(autoTieBreakerRef, autoQuorumHelperRef, autoDrbdProxyHelperRef);
 
         dataLoader = dataLoaderRef;
         peerAccCtx = peerAccCtxRef;

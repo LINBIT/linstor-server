@@ -1,7 +1,5 @@
 package com.linbit.linstor.core;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
@@ -45,6 +43,8 @@ import org.mockito.Mockito;
 import reactor.core.scheduler.Scheduler;
 import reactor.test.scheduler.VirtualTimeScheduler;
 import reactor.util.context.Context;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class ApiTestBase extends GenericDbBase
 {
@@ -217,20 +217,31 @@ public abstract class ApiTestBase extends GenericDbBase
         return rc.getEntries().get(idx);
     }
 
-    protected void evaluateTest(AbsApiCallTester currentCall)
+    protected void evaluateTest(AbsApiCallTester currentCall) throws Exception
+    {
+        evaluateTest(currentCall, true);
+    }
+
+    protected void evaluateTest(
+        AbsApiCallTester currentCall,
+        boolean checkReturnCodes
+    )
         throws Exception
     {
         Mockito.reset(satelliteConnector);
 
         ApiCallRc rc = currentCall.executeApiCall();
 
-        List<Long> expectedRetCodes = currentCall.retCodes;
-        List<RcEntry> actualRetCodes = rc.getEntries();
-
-        assertThat(actualRetCodes).hasSameSizeAs(expectedRetCodes);
-        for (int idx = 0; idx < expectedRetCodes.size(); idx++)
+        if (checkReturnCodes)
         {
-            expectRc(idx, expectedRetCodes.get(idx), actualRetCodes.get(idx));
+            List<Long> expectedRetCodes = currentCall.retCodes;
+            List<RcEntry> actualRetCodes = rc.getEntries();
+
+            assertThat(actualRetCodes).hasSameSizeAs(expectedRetCodes);
+            for (int idx = 0; idx < expectedRetCodes.size(); idx++)
+            {
+                expectRc(idx, expectedRetCodes.get(idx), actualRetCodes.get(idx));
+            }
         }
 
         Mockito.verify(satelliteConnector, Mockito.times(currentCall.expectedSyncConnectingAttempts.size()))
