@@ -1,11 +1,11 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -21,6 +21,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Iterator;
@@ -28,18 +29,18 @@ import java.util.Iterator;
 @Singleton
 public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
 {
-    private final AccessContext apiCtx;
+    private final Provider<AccessContext> peerCtxProvider;
     private final CtrlRscConnectionHelper rscConnHelper;
     private final CtrlDrbdProxyHelper drbdProxyHelper;
 
     @Inject
     public CtrlRscAutoDrbdProxyHelper(
-        @ApiContext AccessContext apiCtxRef,
+        Provider<AccessContext> peerCtxProviderRef,
         CtrlRscConnectionHelper rscConnHelperRef,
         CtrlDrbdProxyHelper drbdProxyHelperRef
     )
     {
-        apiCtx = apiCtxRef;
+        peerCtxProvider = peerCtxProviderRef;
         rscConnHelper = rscConnHelperRef;
         drbdProxyHelper = drbdProxyHelperRef;
     }
@@ -55,10 +56,14 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
         {
             Resource[] resources = getResourcesAsArray(rscDfnRef);
 
+            AccessContext peerCtx = peerCtxProvider.get();
+
             for (int firstIdx = 0; firstIdx < resources.length; firstIdx++)
             {
                 Resource firstRsc = resources[firstIdx];
-                String siteA = firstRsc.getNode().getProps(apiCtx).getProp(
+                String siteA = firstRsc.getNode().getProps(
+                    peerCtx
+                ).getProp(
                     ApiConsts.KEY_DRBD_PROXY_SITE,
                     ApiConsts.NAMESPC_DRBD_PROXY
                 );
@@ -67,7 +72,9 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
                     for (int secondIdx = firstIdx + 1; secondIdx < resources.length; secondIdx++)
                     {
                         Resource secondRsc = resources[secondIdx];
-                        String siteB = secondRsc.getNode().getProps(apiCtx).getProp(
+                        String siteB = secondRsc.getNode().getProps(
+                            peerCtx
+                        ).getProp(
                             ApiConsts.KEY_DRBD_PROXY_SITE,
                             ApiConsts.NAMESPC_DRBD_PROXY
                         );
@@ -86,7 +93,11 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
         }
         catch (AccessDeniedException accDeniedExc)
         {
-            throw new ImplementationError(accDeniedExc);
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "for automtic enabling of DRBD proxy",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
         }
 
     }
@@ -98,12 +109,13 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
     )
         throws AccessDeniedException
     {
-        ResourceConnection rscConn = firstRscRef.getAbsResourceConnection(apiCtx, secondRscRef);
+        AccessContext peerCtx = peerCtxProvider.get();
+        ResourceConnection rscConn = firstRscRef.getAbsResourceConnection(peerCtx, secondRscRef);
 
         if (
             rscConn == null ||
             !rscConn.getStateFlags().isSet(
-                apiCtx,
+                peerCtx,
                 ResourceConnection.Flags.LOCAL_DRBD_PROXY
             )
         )
@@ -125,7 +137,7 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
     private Resource[] getResourcesAsArray(ResourceDefinition rscDfnRef) throws AccessDeniedException
     {
         Resource[] rscs = new Resource[rscDfnRef.getResourceCount()];
-        Iterator<Resource> iterateResource = rscDfnRef.iterateResource(apiCtx);
+        Iterator<Resource> iterateResource = rscDfnRef.iterateResource(peerCtxProvider.get());
         int i = 0;
         while (iterateResource.hasNext())
         {
@@ -155,7 +167,8 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
         boolean isAutoProxyEnabled = false;
         if (hasFirstNodeAutoProxyEnabled && hasSecondNodeAutoProxyEnabled)
         {
-            ResourceConnection rscCon = firstRscRef.getAbsResourceConnection(apiCtx, secondRscRef);
+            AccessContext peerCtx = peerCtxProvider.get();
+            ResourceConnection rscCon = firstRscRef.getAbsResourceConnection(peerCtx, secondRscRef);
             if (rscCon == null)
             {
                 apiCallRcImplRef.addEntry(
@@ -167,7 +180,9 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
                 rscCon = rscConnHelper.createRscConn(firstRscRef, secondRscRef, new ResourceConnection.Flags[0]);
                 try
                 {
-                    rscCon.getProps(apiCtx).setProp(
+                    rscCon.getProps(
+                        peerCtx
+                    ).setProp(
                         ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE,
                         ApiConsts.VAL_TRUE,
                         ApiConsts.NAMESPC_DRBD_PROXY
@@ -186,7 +201,9 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
             }
             else
             {
-                String autoProxyVal = rscCon.getProps(apiCtx).getProp(
+                String autoProxyVal = rscCon.getProps(
+                    peerCtx
+                ).getProp(
                     ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE,
                     ApiConsts.NAMESPC_DRBD_PROXY
                 );
@@ -212,12 +229,13 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
     {
         boolean ret = false;
 
-        ExtToolsInfo drbdProxyInfo = nodeRef.getPeer(apiCtx).getExtToolsManager().getExtToolInfo(ExtTools.DRBD_PROXY);
+        AccessContext peerCtx = peerCtxProvider.get();
+        ExtToolsInfo drbdProxyInfo = nodeRef.getPeer(peerCtx).getExtToolsManager().getExtToolInfo(ExtTools.DRBD_PROXY);
         boolean isDrbdProxySupported = drbdProxyInfo != null && drbdProxyInfo.isSupported();
 
         if (isDrbdProxySupported)
         {
-            Props nodeProps = nodeRef.getProps(apiCtx);
+            Props nodeProps = nodeRef.getProps(peerCtx);
             String autoEnabledValue = nodeProps.getProp(
                 ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE,
                 ApiConsts.NAMESPC_DRBD_PROXY
