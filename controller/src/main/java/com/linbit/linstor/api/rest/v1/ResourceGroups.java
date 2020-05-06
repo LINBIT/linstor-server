@@ -74,11 +74,12 @@ public class ResourceGroups
     public Response listManyResourceGroups(
         @Context Request request,
         @QueryParam("resource_groups") List<String> rscGrpNames,
+        @QueryParam("props") List<String> propFilters,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return listResourceGroupsOneOrMany(request, null, rscGrpNames, limit, offset);
+        return listResourceGroupsOneOrMany(request, null, rscGrpNames, propFilters, limit, offset);
     }
 
     @GET
@@ -90,20 +91,23 @@ public class ResourceGroups
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return listResourceGroupsOneOrMany(request, rscGrpName, Collections.singletonList(rscGrpName), limit, offset);
+        return listResourceGroupsOneOrMany(
+                request, rscGrpName, Collections.singletonList(rscGrpName), Collections.emptyList(), limit, offset);
     }
 
     private Response listResourceGroupsOneOrMany(
         Request request,
         String singleRscGrp,
         List<String> rscGrpNames,
+        List<String> propFilters,
         int limit,
         int offset
     )
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_GRP, request), () ->
         {
-            Stream<ResourceGroupApi> rscGrpApiStream = ctrlApiCallHandler.listResourceGroups(rscGrpNames).stream();
+            Stream<ResourceGroupApi> rscGrpApiStream =
+                    ctrlApiCallHandler.listResourceGroups(rscGrpNames, propFilters).stream();
             if (limit > 0)
             {
                 rscGrpApiStream = rscGrpApiStream.skip(offset).limit(limit);

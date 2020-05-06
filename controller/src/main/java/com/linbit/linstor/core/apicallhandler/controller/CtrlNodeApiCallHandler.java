@@ -64,7 +64,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -504,7 +503,7 @@ public class CtrlNodeApiCallHandler
         return responses;
     }
 
-    ArrayList<NodeApi> listNodes(List<String> nodeNames)
+    ArrayList<NodeApi> listNodes(List<String> nodeNames, List<String> propFilters)
     {
         ArrayList<NodeApi> nodes = new ArrayList<>();
         final Set<NodeName> nodesFilter =
@@ -523,7 +522,11 @@ public class CtrlNodeApiCallHandler
                     {
                         try
                         {
-                            nodes.add(node.getApiData(peerAccCtx.get(), null, null));
+                            final Props props = node.getProps(peerAccCtx.get());
+                            if (props.contains(propFilters))
+                            {
+                                nodes.add(node.getApiData(peerAccCtx.get(), null, null));
+                            }
                         }
                         catch (AccessDeniedException accDeniedExc)
                         {

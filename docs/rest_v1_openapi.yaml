@@ -23,6 +23,12 @@ info:
 
     * 1.1.0
        - Added /v1/views/snapshots for a faster all in one snapshot list
+       - Filter lists by properties:
+          - /v1/nodes
+          - /v1/resource-definitions
+          - /v1/resource-groups
+          - /v1/views/storage-pools
+          - /v1/views/resources
     * 1.0.16
        - Added CacheResource and CacheVolume schemas
        - AutSelectFilter arrays are now null per default
@@ -207,6 +213,14 @@ paths:
       description: |
         Returns an array of all nodes registered to Linstor.
       parameters:
+        - name: nodes
+          in: query
+          description: Filter only for the specified nodes, if not specified no filtering.
+          schema:
+            type: array
+            items:
+              type: string
+        - $ref: '#/components/parameters/Props'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -705,6 +719,7 @@ paths:
             type: array
             items:
               type: string
+        - $ref: '#/components/parameters/Props'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -2099,6 +2114,7 @@ paths:
             type: array
             items:
               type: string
+        - $ref: '#/components/parameters/Props'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -3330,6 +3346,7 @@ paths:
             type: array
             items:
               type: string
+        - $ref: '#/components/parameters/Props'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -3368,6 +3385,7 @@ paths:
             type: array
             items:
               type: string
+        - $ref: '#/components/parameters/Props'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -3519,6 +3537,14 @@ components:
         format: int32
         minimum: 0
         maximum: 50
+    Props:
+      name: props
+      in: query
+      description: filter by given properties, full property path
+      schema:
+        type: array
+        items:
+          type: string
     NodeA:
       name: node_a
       in: path

@@ -67,6 +67,7 @@ public class View
         @QueryParam("nodes") List<String> nodes,
         @QueryParam("resources") List<String> resources,
         @QueryParam("storage_pools") List<String> storagePools,
+        @QueryParam("props") List<String> propFilters,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
@@ -78,7 +79,7 @@ public class View
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
             Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
-                nodesFilter, storagePoolsFilter, resourcesFilter)
+                nodesFilter, storagePoolsFilter, resourcesFilter, propFilters)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
 
             requestHelper.doFlux(
@@ -133,6 +134,7 @@ public class View
         @Suspended AsyncResponse asyncResponse,
         @QueryParam("nodes") List<String> nodes,
         @QueryParam("storage_pools") List<String> storagePools,
+        @QueryParam("props") List<String> propFilters,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
@@ -143,7 +145,7 @@ public class View
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
             Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
-                .listStorPools(nodesFilter, storagePoolsFilter)
+                .listStorPools(nodesFilter, storagePoolsFilter, propFilters)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
             requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, limit, offset));

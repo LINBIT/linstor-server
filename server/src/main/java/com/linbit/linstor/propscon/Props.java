@@ -6,6 +6,7 @@ import com.linbit.linstor.transaction.TransactionObject;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -61,4 +62,35 @@ public interface Props extends TransactionObject, Iterable<Map.Entry<String, Str
 
     Optional<Props> getNamespace(String namespace);
     Iterator<String> iterateNamespaces();
+
+    /**
+     * Checks if all propFilters (key value pairs e.g 'prop=value') are present in the given Props container.
+     * It is also possible to just check if a property is set at all.
+     *
+     * @param propFilters List of filter pairs, e.g.: ['site=a', 'zfsnode']
+     * @return True if all props match.
+     */
+    default boolean contains(List<String> propFilters)
+    {
+        if (!propFilters.isEmpty())
+        {
+            for (final String pFilter : propFilters)
+            {
+                String[] split = pFilter.split("=", 2);
+                String value = this.getProp(split[0]);
+                if (value == null)
+                {
+                    return false;
+                }
+                if (split.length > 1)
+                {
+                    if (!value.equals(split[1]))
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
 }

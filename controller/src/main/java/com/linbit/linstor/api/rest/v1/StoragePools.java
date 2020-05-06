@@ -37,6 +37,7 @@ import javax.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -134,7 +135,7 @@ public class StoragePools
             if (nodeCheck == null)
             {
                 Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
-                    .listStorPools(nodeNames, storPoolNames)
+                    .listStorPools(nodeNames, storPoolNames, Collections.emptyList())
                     .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
                 requestHelper.doFlux(

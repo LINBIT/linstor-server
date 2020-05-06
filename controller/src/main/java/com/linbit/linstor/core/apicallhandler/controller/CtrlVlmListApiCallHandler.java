@@ -22,6 +22,7 @@ import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -80,7 +81,8 @@ public class CtrlVlmListApiCallHandler
     public Flux<ResourceList> listVlms(
         List<String> nodeNames,
         List<String> storPools,
-        List<String> resources
+        List<String> resources,
+        List<String> propFilters
     )
     {
         final Set<NodeName> nodesFilter =
@@ -95,7 +97,7 @@ public class CtrlVlmListApiCallHandler
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble volume list",
                     lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
-                    () -> assembleList(nodesFilter, storPoolsFilter, resourceFilter, vlmAllocatedAnswers)
+                    () -> assembleList(nodesFilter, storPoolsFilter, resourceFilter, propFilters, vlmAllocatedAnswers)
                 )
             );
     }
@@ -104,6 +106,7 @@ public class CtrlVlmListApiCallHandler
         Set<NodeName> nodesFilter,
         Set<StorPoolName> storPoolsFilter,
         Set<ResourceName> resourceFilter,
+        List<String> propFilters,
         final Map<Volume.Key, VlmAllocatedResult> vlmAllocatedAnswers
     )
     {
@@ -121,6 +124,11 @@ public class CtrlVlmListApiCallHandler
                                 nodesFilter.contains(rsc.getNode().getName()))
                             .collect(toList()))
                         {
+                            // prop filter
+                            final Props props = rsc.getProps(peerAccCtx.get());
+                            if (!props.contains(propFilters))
+                                continue;
+
                             // create our api object ourselves to filter the volumes by storage pools
 
                             // build volume list filtered by storage pools (if provided)

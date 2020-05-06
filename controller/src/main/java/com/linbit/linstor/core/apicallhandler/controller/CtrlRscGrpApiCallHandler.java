@@ -145,7 +145,7 @@ public class CtrlRscGrpApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
     }
 
-    List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames)
+    List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames, List<String> propFilters)
     {
         List<ResourceGroupApi> ret = new ArrayList<>();
         final Set<ResourceGroupName> rscGrpsFilter =
@@ -164,7 +164,11 @@ public class CtrlRscGrpApiCallHandler
                     {
                         try
                         {
-                            ret.add(rscGrp.getApiData(peerAccCtx.get()));
+                            final Props props = rscGrp.getProps(peerAccCtx.get());
+                            if (props.contains(propFilters))
+                            {
+                                ret.add(rscGrp.getApiData(peerAccCtx.get()));
+                            }
                         }
                         catch (AccessDeniedException accDeniedExc)
                         {

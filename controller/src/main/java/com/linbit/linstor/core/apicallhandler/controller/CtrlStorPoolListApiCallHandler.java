@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -17,6 +15,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -26,7 +25,6 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +33,8 @@ import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
+
+import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlStorPoolListApiCallHandler
@@ -63,7 +63,8 @@ public class CtrlStorPoolListApiCallHandler
 
     public Flux<List<StorPoolApi>> listStorPools(
         List<String> nodeNames,
-        List<String> storPoolNames
+        List<String> storPoolNames,
+        List<String> propFilters
     )
     {
         Flux<List<StorPoolApi>> flux;
@@ -77,7 +78,7 @@ public class CtrlStorPoolListApiCallHandler
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble storage pool list",
                     lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.STOR_POOL_DFN_MAP),
-                    () -> assembleList(nodesFilter, storPoolsFilter, freeCapacityAnswers)
+                    () -> assembleList(nodesFilter, storPoolsFilter, propFilters, freeCapacityAnswers)
                 )
             );
 
@@ -87,6 +88,7 @@ public class CtrlStorPoolListApiCallHandler
     private Flux<List<StorPoolApi>> assembleList(
         Set<NodeName> nodesFilter,
         Set<StorPoolName> storPoolsFilter,
+        List<String> propFilters,
         Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>> freeCapacityAnswers
     )
     {
@@ -107,6 +109,10 @@ public class CtrlStorPoolListApiCallHandler
                                     nodesFilter.contains(storPool.getNode().getName()))
                                 .collect(toList()))
                             {
+                                Props props = storPool.getProps(peerAccCtx.get());
+                                if (!props.contains(propFilters))
+                                    continue;
+
                                 Long freeCapacity;
                                 Long totalCapacity;
 

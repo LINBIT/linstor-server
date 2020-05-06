@@ -33,6 +33,7 @@ import javax.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -92,14 +93,13 @@ public class Volumes
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        ArrayList<String> nodes = new ArrayList<>();
-        ArrayList<String> rscNames = new ArrayList<>();
-        nodes.add(nodeName);
-        rscNames.add(rscName);
+        List<String> nodes = Collections.singletonList(nodeName);
+        List<String> rscNames = Collections.singletonList(rscName);
 
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
-            Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(nodes, new ArrayList<>(), rscNames)
+            Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
+                    nodes, Collections.emptyList(), rscNames, Collections.emptyList())
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
 
             requestHelper.doFlux(

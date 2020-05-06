@@ -68,11 +68,12 @@ public class ResourceDefinitions
         @QueryParam("resource_definitions") List<String> rscDfnNames,
         @QueryParam("with_volume_definitions") boolean withVlmDfns,
         @QueryParam("vlmNr") Integer vlmNr,
+        @QueryParam("props") List<String> propFilters,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return listResourceDefinitionsOneOrMany(request, null, rscDfnNames, withVlmDfns, limit, offset);
+        return listResourceDefinitionsOneOrMany(request, null, rscDfnNames, withVlmDfns, propFilters, limit, offset);
     }
 
     @GET
@@ -85,8 +86,7 @@ public class ResourceDefinitions
     )
     {
         return listResourceDefinitionsOneOrMany(
-            request, rscDfnName, Collections.singletonList(rscDfnName), false, limit, offset
-        );
+            request, rscDfnName, Collections.singletonList(rscDfnName), false, Collections.emptyList(), limit, offset);
     }
 
     private Response listResourceDefinitionsOneOrMany(
@@ -94,6 +94,7 @@ public class ResourceDefinitions
         String singleRscDfn,
         List<String> rscDfnNames,
         boolean withVlmDfn,
+        List<String> propFilters,
         int limit,
         int offset
     )
@@ -101,7 +102,7 @@ public class ResourceDefinitions
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_RSC_DFN, request), () ->
         {
             Stream<ResourceDefinitionApi> rscDfnApiStream =
-                ctrlApiCallHandler.listResourceDefinitions(rscDfnNames).stream();
+                ctrlApiCallHandler.listResourceDefinitions(rscDfnNames, propFilters).stream();
             if (limit > 0)
             {
                 rscDfnApiStream = rscDfnApiStream.skip(offset).limit(limit);

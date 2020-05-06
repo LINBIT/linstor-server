@@ -68,7 +68,6 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -443,7 +442,7 @@ public class CtrlRscDfnApiCallHandler
         return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
     }
 
-    ArrayList<ResourceDefinitionApi> listResourceDefinitions(List<String> rscDfnNames)
+    ArrayList<ResourceDefinitionApi> listResourceDefinitions(List<String> rscDfnNames, List<String> propFilters)
     {
         ArrayList<ResourceDefinitionApi> rscdfns = new ArrayList<>();
         final Set<ResourceName> rscDfnsFilter =
@@ -462,7 +461,11 @@ public class CtrlRscDfnApiCallHandler
                     {
                         try
                         {
-                            rscdfns.add(rscDfn.getApiData(peerAccCtx.get()));
+                            final Props props = rscDfn.getProps(peerAccCtx.get());
+                            if (props.contains(propFilters))
+                            {
+                                rscdfns.add(rscDfn.getApiData(peerAccCtx.get()));
+                            }
                         }
                         catch (AccessDeniedException accDeniedExc)
                         {

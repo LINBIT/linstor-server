@@ -166,12 +166,12 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ArrayList<NodeApi> listNodes(List<String> nodeNames)
+    public ArrayList<NodeApi> listNodes(List<String> nodeNames, List<String> propFilters)
     {
         ArrayList<NodeApi> nodeList;
         try (LockGuard lg = lockGuardFactory.build(READ, NODES_MAP))
         {
-            nodeList = nodeApiCallHandler.listNodes(nodeNames);
+            nodeList = nodeApiCallHandler.listNodes(nodeNames, propFilters);
         }
         return nodeList;
     }
@@ -273,15 +273,16 @@ public class CtrlApiCallHandler
 
     public ArrayList<ResourceDefinitionApi> listResourceDefinitions()
     {
-        return listResourceDefinitions(Collections.emptyList());
+        return listResourceDefinitions(Collections.emptyList(), Collections.emptyList());
     }
 
-    public ArrayList<ResourceDefinitionApi> listResourceDefinitions(List<String> filterRscDfnNames)
+    public ArrayList<ResourceDefinitionApi> listResourceDefinitions(
+            List<String> filterRscDfnNames, List<String> propFilters)
     {
         ArrayList<ResourceDefinitionApi> resourceDefinitionList;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_DFN_MAP))
         {
-            resourceDefinitionList = rscDfnApiCallHandler.listResourceDefinitions(filterRscDfnNames);
+            resourceDefinitionList = rscDfnApiCallHandler.listResourceDefinitions(filterRscDfnNames, propFilters);
         }
         return resourceDefinitionList;
     }
@@ -1215,12 +1216,12 @@ public class CtrlApiCallHandler
         return flux;
     }
 
-    public List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames)
+    public List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames, List<String> propFilters)
     {
         List<ResourceGroupApi> ret;
         try (LockGuard lg = lockGuardFactory.build(READ, RSC_GRP_MAP))
         {
-            ret = rscGrpApiCallHandler.listResourceGroups(rscGrpNames);
+            ret = rscGrpApiCallHandler.listResourceGroups(rscGrpNames, propFilters);
         }
         return ret;
     }

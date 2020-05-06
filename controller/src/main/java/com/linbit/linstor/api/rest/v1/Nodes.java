@@ -77,11 +77,12 @@ public class Nodes
     public Response listNodes(
         @Context Request request,
         @QueryParam("nodes") List<String> nodeNames,
+        @QueryParam("props") List<String> propFilters,
         @DefaultValue("0") @QueryParam("limit") int limit,
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return listNodesOneOrMany(request, null, nodeNames, limit, offset);
+        return listNodesOneOrMany(request, null, nodeNames, propFilters, limit, offset);
     }
 
     @GET
@@ -93,20 +94,22 @@ public class Nodes
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        return listNodesOneOrMany(request, nodeName, Collections.singletonList(nodeName), limit, offset);
+        return listNodesOneOrMany(
+                request, nodeName, Collections.singletonList(nodeName), Collections.emptyList(), limit, offset);
     }
 
     private Response listNodesOneOrMany(
         Request request,
         String searchNodeName,
         List<String> nodeNames,
+        List<String> propFilters,
         int limit,
         int offset
     )
     {
         return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_NODE, request), () ->
         {
-            Stream<NodeApi> nodeApiStream = ctrlApiCallHandler.listNodes(nodeNames).stream();
+            Stream<NodeApi> nodeApiStream = ctrlApiCallHandler.listNodes(nodeNames, propFilters).stream();
             if (limit > 0)
             {
                 nodeApiStream = nodeApiStream.skip(offset).limit(limit);
@@ -257,7 +260,7 @@ public class Nodes
             {
                 nodeNameList.add(nodeName);
             }
-            List<NodeApi> nodes = ctrlApiCallHandler.listNodes(nodeNameList);
+            List<NodeApi> nodes = ctrlApiCallHandler.listNodes(nodeNameList, Collections.emptyList());
             Optional<NodeApi> optNode = nodes.stream()
                 .filter(nodeApi -> nodeApi.getName().equalsIgnoreCase(nodeName))
                 .findFirst();
