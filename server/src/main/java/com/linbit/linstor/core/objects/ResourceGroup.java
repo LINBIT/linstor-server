@@ -93,6 +93,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
+        throws DatabaseException
     {
         super(transMgrProvider);
         objId = uuidRef;
@@ -107,7 +108,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
             dbDriverRef.getDescriptionDriver()
         );
 
-        rscDfnGrpProps = propsContainerFactoryRef.create(
+        rscDfnGrpProps = propsContainerFactoryRef.getInstance(
             PropsContainer.buildPath(rscGrpNameRef)
         );
         vlmMap = transObjFactory.createTransactionMap(vlmGrpMapRef, null);
