@@ -1447,6 +1447,65 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
+    public void maxThroughputStrategyTest() throws Exception
+    {
+        enterScope();
+        ctrlConf.setProp(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS + "/FreeSpace", "0");
+        ctrlConf.setProp(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS + "/MaxThroughput", "1");
+        commitAndCleanUp(true);
+
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            1,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .setVlmDfnProp(TEST_RSC_NAME, 0, ApiConsts.NAMESPC_SYS_FS + "/"  + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ, "100")
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100*GB)
+                // sp with highest max throughput - but having already some rscs / vlms deployed
+                .setStorPoolProp("sp1", ApiConsts.NAMESPC_AUTOPLACER + "/"  + ApiConsts.KEY_AUTOPLACE_MAX_THROUGHPUT, "1000")
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("sp1", 100*GB)
+                .setStorPoolProp("sp1", ApiConsts.NAMESPC_AUTOPLACER + "/"  + ApiConsts.KEY_AUTOPLACE_MAX_THROUGHPUT, "800")
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 100*GB)
+                .setStorPoolProp("sp1", ApiConsts.NAMESPC_AUTOPLACER + "/"  + ApiConsts.KEY_AUTOPLACE_MAX_THROUGHPUT, "500")
+                .build()
+
+            .addRscDfn("dummyRsc1", 9000)
+                .addVlmDfn("dummyRsc1", 0, 12*MB)
+                .setVlmDfnProp("dummyRsc1", 0,  ApiConsts.NAMESPC_SYS_FS + "/"  + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ, "100")
+            .addRscDfn("dummyRsc2", 9001)
+                .addVlmDfn("dummyRsc2", 0, 12*MB)
+                .setVlmDfnProp("dummyRsc2", 0,  ApiConsts.NAMESPC_SYS_FS + "/"  + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ, "100")
+            .addRscDfn("dummyRsc3", 9002)
+                .addVlmDfn("dummyRsc3", 0, 12*MB)
+                .setVlmDfnProp("dummyRsc3", 0,  ApiConsts.NAMESPC_SYS_FS + "/"  + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ, "100")
+            .addRsc("dummyRsc1", "sp1", "stlt1")
+            .addRsc("dummyRsc2", "sp1", "stlt1")
+            .addRsc("dummyRsc3", "sp1", "stlt1");
+
+        evaluateTest(call);
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+                )
+            .map(rsc -> rsc.getNode())
+            .sorted()
+            .collect(Collectors.toList());
+
+        assertEquals(1, deployedNodes.size());
+        assertEquals("stlt2", deployedNodes.get(0).getName().displayValue);
+    }
+
+    @Test
     public void freeSpaceReversedTest() throws Exception
     {
         enterScope();
@@ -1895,6 +1954,20 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
+        RscAutoPlaceApiCall setVlmDfnProp(String rscNameRef, int vlmNrRef, String propKeyRef, String propValRef)
+            throws Exception
+        {
+            enterScope();
+            rscDfnMap.get(new ResourceName(rscNameRef))
+                .getVolumeDfn(SYS_CTX, new VolumeNumber(vlmNrRef))
+                .getProps(SYS_CTX)
+                .setProp(propKeyRef, propValRef);
+            commitAndCleanUp(true);
+            return this;
+        }
+
+
+
         RscAutoPlaceApiCall addRscDfn(String rscNameStrRef, int tcpPortRef) throws Exception
         {
             enterScope();
@@ -2037,6 +2110,21 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
             commitAndCleanUp(true);
 
+            return this;
+        }
+
+        public SatelliteBuilder setStorPoolProp(
+            String storPoolNameRef,
+            String propKeyRef,
+            String propKeyVal
+        )
+            throws Exception
+        {
+            enterScope();
+            stlt.getStorPool(SYS_CTX, new StorPoolName(storPoolNameRef))
+                .getProps(SYS_CTX)
+                .setProp(propKeyRef,propKeyVal);
+            commitAndCleanUp(true);
             return this;
         }
 
