@@ -1,3 +1,66 @@
+linstor-server (1.7.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rest-api: add /view/snapshots path with filtering
+  * gradle: lock grizzly-jersey to latest versions
+  * provide a controller docker image
+  * rest-api-docu: fix snapshot operationid copy paste error
+  * virter: add linstor provision template for ubuntu-focal
+  * rest-api: Add props filter for useful paths
+  * rest-api-doc: update generated property doc
+  * gitlab-ci: add tools to cache
+
+  [ Yusuf Yıldız ]
+  * Update of Readme.md
+
+  [ Gabor Hernadi ]
+  * Reconnector: Fixing deadlock
+  * Autoplacer,API: Added stor_pool_name_list
+  * Autoplacer: Introducing new Autoplacer
+  * Autoplacer: added StorPoolWithScore class
+  * Autoplacer: Fixed loop condition for searching new candidates
+  * Autoplacer: fixed unit tests
+  * RscGrpApi: added null-check
+  * RscGrp: StorPool-filter can now be cleared
+  * Autoplacer: update freeThinSpace before autoplacing
+  * Autoplacer: Added trace-logging
+  * Autoplacer: Considers now user-defined weights
+  * Autoplacer: added minMax option for strategies
+  * Autoplacer: put all autoplacer-props into ctrlProp
+  * Autoplacer: Enable preselection
+  * Autoplacer: Caching ScriptEngine
+  * Autoplacer: Added additional tests
+  * Autoplacer: ignore layers above nvme
+  * Autoplacer: Respect already deployed resources
+  * Autoplacer: Added MinReservedSpace strategy
+  * Autoplacer: Added MinRscCount strategy
+  * Autoplacer: Fixed normalizing and weight bugs
+  * rest: Fixed typo in description
+  * Autoplacer: Redirected qmvs to new autoplacer
+  * Autoplace: Prevent mixed provider selection
+  * Tests: Adjusted logging for tests
+  * CryptCmd: increase shred size from 2M to 16M
+  * Autoplacer: Prevent nodes missing repl-on-same property
+  * Autoplacer: Renamed strategy FreeSpace to MaxFreeSpace
+  * Autoplacer: Whitelisted MinReservedSpace and MinRscCount strategy
+  * Autoplacer: small logging cleanup
+  * Fix: thrown exc in finally block may suppress original exception
+  * CtrlDrbdProxy: extracted enable methods
+  * Autohelper: Refactored and introduced internal state
+  * Autohelper: Cleanup
+  * Autohelper: Introduced Autohelper interface
+  * AutoDrbdProxy: Added first version
+  * RscAutoplaceTests: Fixed by configuring mocked tcpPool
+  * RscGrp: load props on start
+  * AutoDrbdProxy: Changed apiCtx to peerCtx
+  * AutoDrbdProxy: uses prioProps now
+  * Autoplacer: Added MaxThroughput strategy
+
+  [ Roland Kammerer ]
+  * containers,satellite: add nvme-cli
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 07 May 2020 07:00:44 +0000
+
 linstor-server (1.6.2-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
