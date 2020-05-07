@@ -279,7 +279,7 @@ paths:
         - developers
       summary: modify a node
       operationId: nodeModify
-      description: |+
+      description: |
         Sets or modifies properties
 
         Possible properties are:
@@ -298,10 +298,6 @@ paths:
         - `DrbdMetaType` - enum
             * external
             * internal
-
-        - `StorDriver/Openflex/UserName` - regex[`.*`]
-        - `StorDriver/Openflex/UserPw` - regex[`.*`]
-        - `StorDriver/Openflex/Url` - regex[`.*`]
 
         - `sys/fs/blkio_throttle_read` - long
 
@@ -358,34 +354,53 @@ paths:
 
             Additional arguments passed through
 
-        - `Cache/OpMode` - String
+        - `Cache/OpMode` - enum
 
-            The operation mode / "feature". Default is "smq"
+            Operation mode
 
-        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
-
-            The storage pool for the cache devices
-
-        - `Cache/CacheSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
-
-            Size of the cache device in % (0-100) or KiB otherwise. Default is 5%
+            * writeback
+            * writethrough
+            * passthrough
 
         - `Cache/MetaPool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
-            The storage pool for the meta devices. If not specified the Cache/CachePool is used.
+            Name of the storage pool used for the cache metadata. If not specified, this will default to the CachePool property
 
-        - `Cache/MetaSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
-            Size of the meta device in % (0-100) or KiB otherwise. Default is 12M
+            Size of the cache in % (0-100) or KiB otherwise.
+
+        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Name of the storage pool used for the cache cache device
+
+        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the cache in % (0-100) or KiB otherwise.
+
+        - `Cache/Blocksize` - long
+
+            Block size
 
         - `Cache/Policy` - enum
 
-            The policy of the dm-cache
+            Replacemant policy
 
             * mq
             * smq
             * cleaner
 
+        - `StorDriver/Openflex/ApiHost` - regex[`.+`]
+        - `StorDriver/Openflex/ApiPort` - regex[`[0-9]+`]
+        - `StorDriver/Openflex/UserName` - regex[`.+`]
+        - `StorDriver/Openflex/UserPassword` - regex[`.+`]
+        - `StorDriver/Openflex/StorDev` - regex[`.+`]
+        - `StorDriver/Openflex/StorDevHost` - regex[`.+`]
+        - `StorDriver/Openflex/JobWaitDelay` - regex[`[0-9]+`]
+
+            Delay in milliseconds linstor waits between fetching the job status
+
+        - `StorDriver/Openflex/JobWaitMaxCount` - regex[`[0-9]+`]
       responses:
         '200':
           description: node modified
@@ -628,7 +643,7 @@ paths:
         - developers
       summary: modify a storage pool
       operationId: nodeStoragePoolModify
-      description: |+
+      description: |
         Sets or modifies properties
 
         Possible properties are:
@@ -667,6 +682,13 @@ paths:
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
 
+        - `StorDriver/Openflex/ApiHost` - regex[`.+`]
+        - `StorDriver/Openflex/ApiPort` - regex[`[0-9]+`]
+        - `StorDriver/Openflex/UserName` - regex[`.+`]
+        - `StorDriver/Openflex/UserPassword` - regex[`.+`]
+        - `StorDriver/Openflex/StorDev` - regex[`.+`]
+        - `StorDriver/Openflex/StorDevHost` - regex[`.+`]
+        - `StorDriver/Openflex/StorPool` - regex[`[0-9]+`]
       responses:
         '200':
           description: storage pool modified
@@ -890,34 +912,57 @@ paths:
 
             Additional arguments passed through
 
-        - `Cache/OpMode` - String
+        - `Cache/OpMode` - enum
 
-            The operation mode / "feature". Default is "smq"
+            Operation mode
 
-        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
-
-            The storage pool for the cache devices
-
-        - `Cache/CacheSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
-
-            Size of the cache device in % (0-100) or KiB otherwise. Default is 5%
+            * writeback
+            * writethrough
+            * passthrough
 
         - `Cache/MetaPool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
-            The storage pool for the meta devices. If not specified the Cache/CachePool is used.
+            Name of the storage pool used for the cache metadata. If not specified, this will default to the CachePool property
 
-        - `Cache/MetaSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
-            Size of the meta device in % (0-100) or KiB otherwise. Default is 12M
+            Size of the cache in % (0-100) or KiB otherwise.
+
+        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Name of the storage pool used for the cache cache device
+
+        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the cache in % (0-100) or KiB otherwise.
+
+        - `Cache/Blocksize` - long
+
+            Block size
 
         - `Cache/Policy` - enum
 
-            The policy of the dm-cache
+            Replacemant policy
 
             * mq
             * smq
             * cleaner
 
+        - `DrbdOptions/Disk/on-io-error` - enum
+            * pass_on
+            * call-local-io-error
+            * detach
+
+        - `DrbdOptions/Disk/disk-barrier` - boolean
+        - `DrbdOptions/Disk/disk-flushes` - boolean
+        - `DrbdOptions/Disk/disk-drain` - boolean
+        - `DrbdOptions/Disk/md-flushes` - boolean
+        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
+        - `DrbdOptions/Disk/al-updates` - boolean
+        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+        - `DrbdOptions/Disk/disable-write-same` - boolean
+        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -931,62 +976,56 @@ paths:
             * 512K-striping
             * 1M-striping
 
-        - `DrbdOptions/Disk/on-io-error` - enum
-            * pass_on
-            * call-local-io-error
-            * detach
-
-        - `DrbdOptions/Disk/disk-drain` - boolean
-        - `DrbdOptions/Disk/resync-after` - string
-        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
-        - `DrbdOptions/Disk/disable-write-same` - boolean
         - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
-        - `DrbdOptions/Disk/disk-flushes` - boolean
-        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
-        - `DrbdOptions/Disk/al-updates` - boolean
-        - `DrbdOptions/Disk/md-flushes` - boolean
-        - `DrbdOptions/Disk/disk-barrier` - boolean
-        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
+        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
+        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
         - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
         - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
-        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
-        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
         - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
         - `DrbdOptions/PeerDevice/bitmap` - boolean
-        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
-        - `DrbdOptions/Resource/peer-ack-delay` - range[`1-10000`]
-        - `DrbdOptions/Resource/quorum-minimum-redundancy` - enum [`1-32`]
-            * off
-            * majority
-            * all
-
-        - `DrbdOptions/Resource/max-io-depth` - range[`4-4294967295`]
-        - `DrbdOptions/Resource/auto-promote-timeout` - range[`0-600`]
-        - `DrbdOptions/Resource/quorum` - enum [`1-32`]
-            * off
-            * majority
-            * all
-
+        - `DrbdOptions/Resource/cpu-mask` - string
         - `DrbdOptions/Resource/on-no-data-accessible` - enum
             * io-error
             * suspend-io
 
         - `DrbdOptions/Resource/auto-promote` - boolean
-        - `DrbdOptions/Resource/cpu-mask` - string
+        - `DrbdOptions/Resource/peer-ack-window` - range[`2048-204800`]
+        - `DrbdOptions/Resource/peer-ack-delay` - range[`1-10000`]
         - `DrbdOptions/Resource/twopc-timeout` - range[`50-600`]
         - `DrbdOptions/Resource/twopc-retry-timeout` - range[`1-50`]
-        - `DrbdOptions/Resource/peer-ack-window` - range[`2048-204800`]
+        - `DrbdOptions/Resource/auto-promote-timeout` - range[`0-600`]
+        - `DrbdOptions/Resource/max-io-depth` - range[`4-4294967295`]
+        - `DrbdOptions/Resource/quorum` - enum [`1-32`]
+            * off
+            * majority
+            * all
+
         - `DrbdOptions/Resource/on-no-quorum` - enum
             * io-error
             * suspend-io
 
-        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Resource/quorum-minimum-redundancy` - enum [`1-32`]
+            * off
+            * majority
+            * all
+
+        - `DrbdOptions/Net/transport` - string
         - `DrbdOptions/Net/protocol` - enum
             * A
             * B
             * C
 
+        - `DrbdOptions/Net/timeout` - range[`1-600`]
+        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Net/connect-int` - range[`1-120`]
+        - `DrbdOptions/Net/ping-int` - range[`1-120`]
+        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/ko-count` - range[`0-200`]
         - `DrbdOptions/Net/allow-two-primaries` - boolean
+        - `DrbdOptions/Net/cram-hmac-alg` - string
+        - `DrbdOptions/Net/shared-secret` - string
         - `DrbdOptions/Net/after-sb-0pri` - enum
             * disconnect
             * discard-younger-primary
@@ -996,47 +1035,6 @@ paths:
             * discard-local
             * discard-remote
 
-        - `DrbdOptions/Net/ko-count` - range[`0-200`]
-        - `DrbdOptions/Net/data-integrity-alg` - string
-        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
-        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
-        - `DrbdOptions/Net/transport` - string
-        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
-        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
-        - `DrbdOptions/Net/fencing` - enum
-            * dont-care
-            * resource-only
-            * resource-and-stonith
-
-        - `DrbdOptions/Net/csums-alg` - string
-        - `DrbdOptions/Net/always-asbp` - boolean
-        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
-        - `DrbdOptions/Net/on-congestion` - enum
-            * block
-            * pull-ahead
-            * disconnect
-
-        - `DrbdOptions/Net/ping-int` - range[`1-120`]
-        - `DrbdOptions/Net/rr-conflict` - enum
-            * disconnect
-            * call-pri-lost
-            * violently
-
-        - `DrbdOptions/Net/tcp-cork` - boolean
-        - `DrbdOptions/Net/use-rle` - boolean
-        - `DrbdOptions/Net/csums-after-crash-only` - boolean
-        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
-        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
-        - `DrbdOptions/Net/cram-hmac-alg` - string
-        - `DrbdOptions/Net/verify-alg` - string
-        - `DrbdOptions/Net/shared-secret` - string
-        - `DrbdOptions/Net/connect-int` - range[`1-120`]
-        - `DrbdOptions/Net/timeout` - range[`1-600`]
-        - `DrbdOptions/Net/after-sb-2pri` - enum
-            * disconnect
-            * call-pri-lost-after-sb
-            * violently-as0p
-
         - `DrbdOptions/Net/after-sb-1pri` - enum
             * disconnect
             * consensus
@@ -1044,6 +1042,40 @@ paths:
             * call-pri-lost-after-sb
             * violently-as0p
 
+        - `DrbdOptions/Net/after-sb-2pri` - enum
+            * disconnect
+            * call-pri-lost-after-sb
+            * violently-as0p
+
+        - `DrbdOptions/Net/always-asbp` - boolean
+        - `DrbdOptions/Net/rr-conflict` - enum
+            * disconnect
+            * call-pri-lost
+            * violently
+            * retry-connect
+
+        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
+        - `DrbdOptions/Net/data-integrity-alg` - string
+        - `DrbdOptions/Net/tcp-cork` - boolean
+        - `DrbdOptions/Net/on-congestion` - enum
+            * block
+            * pull-ahead
+            * disconnect
+
+        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
+        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
+        - `DrbdOptions/Net/csums-alg` - string
+        - `DrbdOptions/Net/csums-after-crash-only` - boolean
+        - `DrbdOptions/Net/verify-alg` - string
+        - `DrbdOptions/Net/use-rle` - boolean
+        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
+        - `DrbdOptions/Net/fencing` - enum
+            * dont-care
+            * resource-only
+            * resource-and-stonith
+
+        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
+        - `DrbdOptions/Net/allow-remote-read` - boolean
         - `DrbdOptions/Handlers/after-resync-target` - string
         - `DrbdOptions/Handlers/before-resync-target` - string
         - `DrbdOptions/Handlers/before-resync-source` - string
@@ -1255,34 +1287,57 @@ paths:
 
             Additional arguments passed through
 
-        - `Cache/OpMode` - String
+        - `Cache/OpMode` - enum
 
-            The operation mode / "feature". Default is "smq"
+            Operation mode
 
-        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
-
-            The storage pool for the cache devices
-
-        - `Cache/CacheSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
-
-            Size of the cache device in % (0-100) or KiB otherwise. Default is 5%
+            * writeback
+            * writethrough
+            * passthrough
 
         - `Cache/MetaPool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
-            The storage pool for the meta devices. If not specified the Cache/CachePool is used.
+            Name of the storage pool used for the cache metadata. If not specified, this will default to the CachePool property
 
-        - `Cache/MetaSize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
-            Size of the meta device in % (0-100) or KiB otherwise. Default is 12M
+            Size of the cache in % (0-100) or KiB otherwise.
+
+        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Name of the storage pool used for the cache cache device
+
+        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the cache in % (0-100) or KiB otherwise.
+
+        - `Cache/Blocksize` - long
+
+            Block size
 
         - `Cache/Policy` - enum
 
-            The policy of the dm-cache
+            Replacemant policy
 
             * mq
             * smq
             * cleaner
 
+        - `DrbdOptions/Disk/on-io-error` - enum
+            * pass_on
+            * call-local-io-error
+            * detach
+
+        - `DrbdOptions/Disk/disk-barrier` - boolean
+        - `DrbdOptions/Disk/disk-flushes` - boolean
+        - `DrbdOptions/Disk/disk-drain` - boolean
+        - `DrbdOptions/Disk/md-flushes` - boolean
+        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
+        - `DrbdOptions/Disk/al-updates` - boolean
+        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+        - `DrbdOptions/Disk/disable-write-same` - boolean
+        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -1296,22 +1351,7 @@ paths:
             * 512K-striping
             * 1M-striping
 
-        - `DrbdOptions/Disk/on-io-error` - enum
-            * pass_on
-            * call-local-io-error
-            * detach
-
-        - `DrbdOptions/Disk/disk-drain` - boolean
-        - `DrbdOptions/Disk/resync-after` - string
-        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
-        - `DrbdOptions/Disk/disable-write-same` - boolean
         - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
-        - `DrbdOptions/Disk/disk-flushes` - boolean
-        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
-        - `DrbdOptions/Disk/al-updates` - boolean
-        - `DrbdOptions/Disk/md-flushes` - boolean
-        - `DrbdOptions/Disk/disk-barrier` - boolean
-        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
       responses:
         '200':
           description: volume-definition modified
@@ -1833,24 +1873,33 @@ paths:
         - developers
       operationId: resourceConnectionModify
       summary: modify a resource connection
-      description: |+
+      description: |
         Sets or modifies properties
 
         Possible properties are:
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
+        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
+        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
         - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
         - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
-        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
-        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
         - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
         - `DrbdOptions/PeerDevice/bitmap` - boolean
-        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
-        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Net/transport` - string
         - `DrbdOptions/Net/protocol` - enum
             * A
             * B
             * C
 
+        - `DrbdOptions/Net/timeout` - range[`1-600`]
+        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Net/connect-int` - range[`1-120`]
+        - `DrbdOptions/Net/ping-int` - range[`1-120`]
+        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/ko-count` - range[`0-200`]
         - `DrbdOptions/Net/allow-two-primaries` - boolean
+        - `DrbdOptions/Net/cram-hmac-alg` - string
+        - `DrbdOptions/Net/shared-secret` - string
         - `DrbdOptions/Net/after-sb-0pri` - enum
             * disconnect
             * discard-younger-primary
@@ -1860,47 +1909,6 @@ paths:
             * discard-local
             * discard-remote
 
-        - `DrbdOptions/Net/ko-count` - range[`0-200`]
-        - `DrbdOptions/Net/data-integrity-alg` - string
-        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
-        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
-        - `DrbdOptions/Net/transport` - string
-        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
-        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
-        - `DrbdOptions/Net/fencing` - enum
-            * dont-care
-            * resource-only
-            * resource-and-stonith
-
-        - `DrbdOptions/Net/csums-alg` - string
-        - `DrbdOptions/Net/always-asbp` - boolean
-        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
-        - `DrbdOptions/Net/on-congestion` - enum
-            * block
-            * pull-ahead
-            * disconnect
-
-        - `DrbdOptions/Net/ping-int` - range[`1-120`]
-        - `DrbdOptions/Net/rr-conflict` - enum
-            * disconnect
-            * call-pri-lost
-            * violently
-
-        - `DrbdOptions/Net/tcp-cork` - boolean
-        - `DrbdOptions/Net/use-rle` - boolean
-        - `DrbdOptions/Net/csums-after-crash-only` - boolean
-        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
-        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
-        - `DrbdOptions/Net/cram-hmac-alg` - string
-        - `DrbdOptions/Net/verify-alg` - string
-        - `DrbdOptions/Net/shared-secret` - string
-        - `DrbdOptions/Net/connect-int` - range[`1-120`]
-        - `DrbdOptions/Net/timeout` - range[`1-600`]
-        - `DrbdOptions/Net/after-sb-2pri` - enum
-            * disconnect
-            * call-pri-lost-after-sb
-            * violently-as0p
-
         - `DrbdOptions/Net/after-sb-1pri` - enum
             * disconnect
             * consensus
@@ -1908,6 +1916,40 @@ paths:
             * call-pri-lost-after-sb
             * violently-as0p
 
+        - `DrbdOptions/Net/after-sb-2pri` - enum
+            * disconnect
+            * call-pri-lost-after-sb
+            * violently-as0p
+
+        - `DrbdOptions/Net/always-asbp` - boolean
+        - `DrbdOptions/Net/rr-conflict` - enum
+            * disconnect
+            * call-pri-lost
+            * violently
+            * retry-connect
+
+        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
+        - `DrbdOptions/Net/data-integrity-alg` - string
+        - `DrbdOptions/Net/tcp-cork` - boolean
+        - `DrbdOptions/Net/on-congestion` - enum
+            * block
+            * pull-ahead
+            * disconnect
+
+        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
+        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
+        - `DrbdOptions/Net/csums-alg` - string
+        - `DrbdOptions/Net/csums-after-crash-only` - boolean
+        - `DrbdOptions/Net/verify-alg` - string
+        - `DrbdOptions/Net/use-rle` - boolean
+        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
+        - `DrbdOptions/Net/fencing` - enum
+            * dont-care
+            * resource-only
+            * resource-and-stonith
+
+        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
+        - `DrbdOptions/Net/allow-remote-read` - boolean
       responses:
         '200':
           description: resource connection modified
@@ -2716,6 +2758,66 @@ paths:
 
             Additional arguments passed through
 
+        - `Cache/OpMode` - enum
+
+            Operation mode
+
+            * writeback
+            * writethrough
+            * passthrough
+
+        - `Cache/MetaPool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Name of the storage pool used for the cache metadata. If not specified, this will default to the CachePool property
+
+        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the cache in % (0-100) or KiB otherwise.
+
+        - `Cache/CachePool` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
+
+            Name of the storage pool used for the cache cache device
+
+        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+
+            Size of the cache in % (0-100) or KiB otherwise.
+
+        - `Cache/Blocksize` - long
+
+            Block size
+
+        - `Cache/Policy` - enum
+
+            Replacemant policy
+
+            * mq
+            * smq
+            * cleaner
+
+        - `StorDriver/Openflex/ApiHost` - regex[`.+`]
+        - `StorDriver/Openflex/ApiPort` - regex[`[0-9]+`]
+        - `StorDriver/Openflex/UserName` - regex[`.+`]
+        - `StorDriver/Openflex/UserPassword` - regex[`.+`]
+        - `StorDriver/Openflex/JobWaitDelay` - regex[`[0-9]+`]
+
+            Delay in milliseconds linstor waits between fetching the job status
+
+        - `StorDriver/Openflex/JobWaitMaxCount` - regex[`[0-9]+`]
+        - `DrbdOptions/Disk/on-io-error` - enum
+            * pass_on
+            * call-local-io-error
+            * detach
+
+        - `DrbdOptions/Disk/disk-barrier` - boolean
+        - `DrbdOptions/Disk/disk-flushes` - boolean
+        - `DrbdOptions/Disk/disk-drain` - boolean
+        - `DrbdOptions/Disk/md-flushes` - boolean
+        - `DrbdOptions/Disk/resync-after` - string
+        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
+        - `DrbdOptions/Disk/al-updates` - boolean
+        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+        - `DrbdOptions/Disk/disable-write-same` - boolean
+        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
         - `DrbdOptions/Disk/read-balancing` - enum
             * prefer-local
             * prefer-remote
@@ -2729,62 +2831,56 @@ paths:
             * 512K-striping
             * 1M-striping
 
-        - `DrbdOptions/Disk/on-io-error` - enum
-            * pass_on
-            * call-local-io-error
-            * detach
-
-        - `DrbdOptions/Disk/disk-drain` - boolean
-        - `DrbdOptions/Disk/resync-after` - string
-        - `DrbdOptions/Disk/disk-timeout` - range[`0-6000`]
-        - `DrbdOptions/Disk/disable-write-same` - boolean
         - `DrbdOptions/Disk/rs-discard-granularity` - range[`0-1048576`]
-        - `DrbdOptions/Disk/disk-flushes` - boolean
-        - `DrbdOptions/Disk/al-extents` - range[`67-65534`]
-        - `DrbdOptions/Disk/al-updates` - boolean
-        - `DrbdOptions/Disk/md-flushes` - boolean
-        - `DrbdOptions/Disk/disk-barrier` - boolean
-        - `DrbdOptions/Disk/discard-zeroes-if-aligned` - boolean
+        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
+        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
+        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
         - `DrbdOptions/PeerDevice/c-fill-target` - range[`0-1048576`]
         - `DrbdOptions/PeerDevice/c-max-rate` - range[`250-4194304`]
-        - `DrbdOptions/PeerDevice/resync-rate` - range[`1-8388608`]
-        - `DrbdOptions/PeerDevice/c-delay-target` - range[`1-100`]
         - `DrbdOptions/PeerDevice/c-min-rate` - range[`0-4194304`]
         - `DrbdOptions/PeerDevice/bitmap` - boolean
-        - `DrbdOptions/PeerDevice/c-plan-ahead` - range[`0-300`]
-        - `DrbdOptions/Resource/peer-ack-delay` - range[`1-10000`]
-        - `DrbdOptions/Resource/quorum-minimum-redundancy` - enum [`1-32`]
-            * off
-            * majority
-            * all
-
-        - `DrbdOptions/Resource/max-io-depth` - range[`4-4294967295`]
-        - `DrbdOptions/Resource/auto-promote-timeout` - range[`0-600`]
-        - `DrbdOptions/Resource/quorum` - enum [`1-32`]
-            * off
-            * majority
-            * all
-
+        - `DrbdOptions/Resource/cpu-mask` - string
         - `DrbdOptions/Resource/on-no-data-accessible` - enum
             * io-error
             * suspend-io
 
         - `DrbdOptions/Resource/auto-promote` - boolean
-        - `DrbdOptions/Resource/cpu-mask` - string
+        - `DrbdOptions/Resource/peer-ack-window` - range[`2048-204800`]
+        - `DrbdOptions/Resource/peer-ack-delay` - range[`1-10000`]
         - `DrbdOptions/Resource/twopc-timeout` - range[`50-600`]
         - `DrbdOptions/Resource/twopc-retry-timeout` - range[`1-50`]
-        - `DrbdOptions/Resource/peer-ack-window` - range[`2048-204800`]
+        - `DrbdOptions/Resource/auto-promote-timeout` - range[`0-600`]
+        - `DrbdOptions/Resource/max-io-depth` - range[`4-4294967295`]
+        - `DrbdOptions/Resource/quorum` - enum [`1-32`]
+            * off
+            * majority
+            * all
+
         - `DrbdOptions/Resource/on-no-quorum` - enum
             * io-error
             * suspend-io
 
-        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Resource/quorum-minimum-redundancy` - enum [`1-32`]
+            * off
+            * majority
+            * all
+
+        - `DrbdOptions/Net/transport` - string
         - `DrbdOptions/Net/protocol` - enum
             * A
             * B
             * C
 
+        - `DrbdOptions/Net/timeout` - range[`1-600`]
+        - `DrbdOptions/Net/max-epoch-size` - range[`1-20000`]
+        - `DrbdOptions/Net/connect-int` - range[`1-120`]
+        - `DrbdOptions/Net/ping-int` - range[`1-120`]
+        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
+        - `DrbdOptions/Net/ko-count` - range[`0-200`]
         - `DrbdOptions/Net/allow-two-primaries` - boolean
+        - `DrbdOptions/Net/cram-hmac-alg` - string
+        - `DrbdOptions/Net/shared-secret` - string
         - `DrbdOptions/Net/after-sb-0pri` - enum
             * disconnect
             * discard-younger-primary
@@ -2794,47 +2890,6 @@ paths:
             * discard-local
             * discard-remote
 
-        - `DrbdOptions/Net/ko-count` - range[`0-200`]
-        - `DrbdOptions/Net/data-integrity-alg` - string
-        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
-        - `DrbdOptions/Net/sndbuf-size` - range[`0-10485760`]
-        - `DrbdOptions/Net/transport` - string
-        - `DrbdOptions/Net/rcvbuf-size` - range[`0-10485760`]
-        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
-        - `DrbdOptions/Net/fencing` - enum
-            * dont-care
-            * resource-only
-            * resource-and-stonith
-
-        - `DrbdOptions/Net/csums-alg` - string
-        - `DrbdOptions/Net/always-asbp` - boolean
-        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
-        - `DrbdOptions/Net/on-congestion` - enum
-            * block
-            * pull-ahead
-            * disconnect
-
-        - `DrbdOptions/Net/ping-int` - range[`1-120`]
-        - `DrbdOptions/Net/rr-conflict` - enum
-            * disconnect
-            * call-pri-lost
-            * violently
-
-        - `DrbdOptions/Net/tcp-cork` - boolean
-        - `DrbdOptions/Net/use-rle` - boolean
-        - `DrbdOptions/Net/csums-after-crash-only` - boolean
-        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
-        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
-        - `DrbdOptions/Net/cram-hmac-alg` - string
-        - `DrbdOptions/Net/verify-alg` - string
-        - `DrbdOptions/Net/shared-secret` - string
-        - `DrbdOptions/Net/connect-int` - range[`1-120`]
-        - `DrbdOptions/Net/timeout` - range[`1-600`]
-        - `DrbdOptions/Net/after-sb-2pri` - enum
-            * disconnect
-            * call-pri-lost-after-sb
-            * violently-as0p
-
         - `DrbdOptions/Net/after-sb-1pri` - enum
             * disconnect
             * consensus
@@ -2842,6 +2897,40 @@ paths:
             * call-pri-lost-after-sb
             * violently-as0p
 
+        - `DrbdOptions/Net/after-sb-2pri` - enum
+            * disconnect
+            * call-pri-lost-after-sb
+            * violently-as0p
+
+        - `DrbdOptions/Net/always-asbp` - boolean
+        - `DrbdOptions/Net/rr-conflict` - enum
+            * disconnect
+            * call-pri-lost
+            * violently
+            * retry-connect
+
+        - `DrbdOptions/Net/ping-timeout` - range[`1-300`]
+        - `DrbdOptions/Net/data-integrity-alg` - string
+        - `DrbdOptions/Net/tcp-cork` - boolean
+        - `DrbdOptions/Net/on-congestion` - enum
+            * block
+            * pull-ahead
+            * disconnect
+
+        - `DrbdOptions/Net/congestion-fill` - range[`0-20971520`]
+        - `DrbdOptions/Net/congestion-extents` - range[`67-65534`]
+        - `DrbdOptions/Net/csums-alg` - string
+        - `DrbdOptions/Net/csums-after-crash-only` - boolean
+        - `DrbdOptions/Net/verify-alg` - string
+        - `DrbdOptions/Net/use-rle` - boolean
+        - `DrbdOptions/Net/socket-check-timeout` - range[`0-300`]
+        - `DrbdOptions/Net/fencing` - enum
+            * dont-care
+            * resource-only
+            * resource-and-stonith
+
+        - `DrbdOptions/Net/max-buffers` - range[`32-131072`]
+        - `DrbdOptions/Net/allow-remote-read` - boolean
         - `DrbdOptions/Handlers/after-resync-target` - string
         - `DrbdOptions/Handlers/before-resync-target` - string
         - `DrbdOptions/Handlers/before-resync-source` - string
@@ -3418,7 +3507,8 @@ paths:
               type: string
         - name: resources
           in: query
-          description: Filter only for the specified resources, if not specified, no filtering.
+          description: Filter only for the specified resources, if not specified,
+            no filtering.
           schema:
             type: array
             items:
@@ -4975,10 +5065,11 @@ components:
           type: string
           description: Name of the linstor storage pool
         props:
-            $ref: '#/components/schemas/Properties'
+          $ref: '#/components/schemas/Properties'
     PhysicalStorageCreate:
       type: object
-      description: If `with_storage_pool` is set a linstor storage pool will also be created using this device pool
+      description: If `with_storage_pool` is set a linstor storage pool will also
+        be created using this device pool
       required:
         - provider_kind
         - device_paths
