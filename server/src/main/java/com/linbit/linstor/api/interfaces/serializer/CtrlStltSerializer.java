@@ -2,6 +2,7 @@ package com.linbit.linstor.api.interfaces.serializer;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -10,6 +11,7 @@ import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,8 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder changedResource(UUID rscUuid, String rscName);
         CtrlStltSerializerBuilder changedStorPool(UUID storPoolUuid, String storPoolName);
         CtrlStltSerializerBuilder changedSnapshot(String rscName, UUID snapshotUuid, String snapshotName);
+
+        CtrlStltSerializerBuilder changedConfig(StltConfig stltConfig) throws IOException;
 
         CtrlStltSerializerBuilder controllerData(long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder node(
@@ -106,6 +110,8 @@ public interface CtrlStltSerializer extends CommonSerializer
             SpaceInfo spaceInfoRef,
             boolean supportsSnapshotsRef
         );
+
+        CtrlStltSerializerBuilder stltConfigApplied(boolean success) throws IOException;
 
         CtrlStltSerializerBuilder requestPhysicalDevices(boolean filter);
         CtrlStltSerializerBuilder physicalDevices(

@@ -15,6 +15,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Identity;
@@ -33,6 +34,7 @@ import javax.inject.Singleton;
 import java.util.List;
 
 import org.slf4j.event.Level;
+
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -86,6 +88,7 @@ public class CtrlAuthResponseApiCallHandler
         Integer linstorVersionMinor,
         Integer linstorVersionPatch,
         List<ExtToolsInfo> externalToolsInfoList,
+        StltConfig stltConfig,
         boolean waitForFullSyncAnswerRef
     )
     {
@@ -102,6 +105,7 @@ public class CtrlAuthResponseApiCallHandler
                 linstorVersionMinor,
                 linstorVersionPatch,
                 externalToolsInfoList,
+                stltConfig,
                 waitForFullSyncAnswerRef
             )
         );
@@ -117,6 +121,7 @@ public class CtrlAuthResponseApiCallHandler
         Integer linstorVersionMinor,
         Integer linstorVersionPatch,
         List<ExtToolsInfo> externalToolsInfoList,
+        StltConfig stltConfig,
         boolean waitForFullSyncAnswerRef
     )
     {
@@ -134,6 +139,21 @@ public class CtrlAuthResponseApiCallHandler
                 peer.setAuthenticated(true);
                 peer.setConnectionStatus(ApiConsts.ConnectionStatus.CONNECTED);
                 peer.getExtToolsManager().updateExternalToolsInfo(externalToolsInfoList);
+
+                com.linbit.linstor.core.cfg.StltConfig stltCfg = new com.linbit.linstor.core.cfg.StltConfig();
+                stltCfg.setConfigDir(stltConfig.getConfigDir());
+                stltCfg.setDebugConsoleEnable(stltConfig.getDebugConsoleEnabled());
+                stltCfg.setLogPrintStackTrace(stltConfig.getLogPrintStackTrace());
+                stltCfg.setLogDirectory(stltConfig.getLogDirectory());
+                stltCfg.setLogLevel(stltConfig.getLogLevel());
+                stltCfg.setLogLevelLinstor(stltConfig.getLogLevelLinstor());
+                stltCfg.setStltOverrideNodeName(stltConfig.getStltOverrideNodeName());
+                stltCfg.setOpenflex(stltConfig.getOpenflex());
+                stltCfg.setDrbdKeepResPattern(stltConfig.getDrbdKeepResPattern());
+                stltCfg.setNetBindAddress(stltConfig.getNetBindAddress());
+                stltCfg.setNetPort(stltConfig.getNetPort());
+                stltCfg.setNetType(stltConfig.getNetType());
+                peer.setStltConfig(stltCfg);
 
                 logExternaltools(peer, nodeUname);
 

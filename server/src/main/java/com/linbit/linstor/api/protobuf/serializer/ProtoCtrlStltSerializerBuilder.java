@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -22,6 +23,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
@@ -51,6 +53,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgReqPhysicalDevicesOuterClass.MsgReqPhysicalDevices;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyConfigResponseOuterClass.MsgIntApplyConfigResponse;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyNodeSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
@@ -128,6 +131,35 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         {
             handleIOException(exc);
         }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder changedConfig(com.linbit.linstor.core.cfg.StltConfig stltConfig)
+        throws IOException
+    {
+        StltConfig.Builder bld = stltConfig(
+            stltConfig.getConfigDir(),
+            stltConfig.isDebugConsoleEnabled(),
+            stltConfig.isLogPrintStackTrace(),
+            stltConfig.getLogDirectory(),
+            stltConfig.getLogLevel(),
+            stltConfig.getLogLevelLinstor(),
+            stltConfig.getStltOverrideNodeName(),
+            stltConfig.isOpenflex(),
+            stltConfig.getDrbdKeepResPattern(),
+            stltConfig.getNetBindAddress(),
+            stltConfig.getNetPort(),
+            stltConfig.getNetType()
+        );
+        bld.build().writeDelimitedTo(baos);
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder stltConfigApplied(boolean success) throws IOException
+    {
+        MsgIntApplyConfigResponse.newBuilder().setSuccess(success).build().writeDelimitedTo(baos);
         return this;
     }
 

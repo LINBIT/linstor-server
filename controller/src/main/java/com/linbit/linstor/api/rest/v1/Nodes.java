@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -8,12 +9,17 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.Node;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
+import com.linbit.linstor.core.apis.SatelliteConfigApi;
+import com.linbit.linstor.core.cfg.StltConfig;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -41,6 +47,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
@@ -51,25 +58,31 @@ public class Nodes
 {
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
+    private final CtrlNodeApiCallHandler ctrlNodeApiCallHandler;
     private final CtrlNodeCrtApiCallHandler ctrlNodeCrtApiCallHandler;
     private final CtrlNodeDeleteApiCallHandler ctrlNodeDeleteApiCallHandler;
     private final CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandler;
     private final ObjectMapper objectMapper;
+    private final ErrorReporter errorReporter;
 
     @Inject
     Nodes(
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
+        CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef,
         CtrlNodeCrtApiCallHandler ctrlNodeCrtApiCallHandlerRef,
         CtrlNodeDeleteApiCallHandler ctrlNodeDeleteApiCallHandlerRef,
-        CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandlerRef
+        CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandlerRef,
+        ErrorReporter errorReporterRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
+        ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
         ctrlNodeCrtApiCallHandler = ctrlNodeCrtApiCallHandlerRef;
         ctrlNodeDeleteApiCallHandler = ctrlNodeDeleteApiCallHandlerRef;
         ctrlNodeLostApiCallHandler = ctrlNodeLostApiCallHandlerRef;
+        errorReporter = errorReporterRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -378,5 +391,127 @@ public class Nodes
 
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
+    }
+
+    @GET
+    @Path("{nodeName}/config")
+    public Response getStltConfig(
+        @Context
+        Request request,
+        @PathParam("nodeName")
+        String nodeName
+    )
+    {
+        return requestHelper.doInScope(InternalApiConsts.API_LST_STLT_CONFIG, request, () ->
+        {
+            JsonGenTypes.SatelliteConfig stltConfig = new JsonGenTypes.SatelliteConfig();
+
+            Response resp;
+            try
+            {
+                StltConfig stltConf = ctrlNodeApiCallHandler.getConfig(nodeName);
+                if (stltConf == null)
+                {
+                    ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.WARN_NOT_CONNECTED | ApiConsts.MASK_NODE,
+                        "Node is offline"
+                    );
+                    resp = Response
+                        .status(Response.Status.SERVICE_UNAVAILABLE)
+                        .entity(ApiCallRcRestUtils.toJSON(rc))
+                        .build();
+                }
+                else
+                {
+                    stltConfig.config = new JsonGenTypes.ControllerConfigConfig();
+                    stltConfig.config.dir = stltConf.getConfigDir();
+                    stltConfig.debug = new JsonGenTypes.ControllerConfigDebug();
+                    stltConfig.debug.console_enabled = stltConf.isDebugConsoleEnabled();
+                    stltConfig.log = new JsonGenTypes.SatelliteConfigLog();
+                    stltConfig.log.print_stack_trace = stltConf.isLogPrintStackTrace();
+                    stltConfig.log.directory = stltConf.getLogDirectory();
+                    stltConfig.log.level = stltConf.getLogLevel();
+                    stltConfig.log.level_linstor = stltConf.getLogLevelLinstor();
+                    stltConfig.stlt_override_node_name = stltConf.getStltOverrideNodeName();
+                    stltConfig.openflex = stltConf.isOpenflex();
+                    stltConfig.drbd_keep_res_pattern = stltConf.getDrbdKeepResPattern().toString();
+                    stltConfig.net = new JsonGenTypes.SatelliteConfigNet();
+                    stltConfig.net.bind_address = stltConf.getNetBindAddress();
+                    stltConfig.net.port = stltConf.getNetPort();
+                    stltConfig.net.com_type = stltConf.getNetType();
+
+                    resp = Response
+                        .status(Response.Status.OK)
+                        .entity(objectMapper.writeValueAsString(stltConfig))
+                        .build();
+                }
+            }
+            catch (JsonProcessingException exc)
+            {
+                errorReporter.reportError(exc);
+                resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+            }
+            catch (AccessDeniedException exc)
+            {
+                errorReporter.reportError(exc);
+                resp = Response.status(Response.Status.UNAUTHORIZED).build();
+            }
+            return resp;
+        }, false);
+    }
+
+    private class SatelliteConfigPojo implements SatelliteConfigApi
+    {
+        private final JsonGenTypes.SatelliteConfig config;
+
+        SatelliteConfigPojo(JsonGenTypes.SatelliteConfig configRef)
+        {
+            config = configRef;
+        }
+
+        @Override
+        public String getLogLevel()
+        {
+            return config.log.level;
+        }
+
+        @Override
+        public String getLogLevelLinstor()
+        {
+            return config.log.level_linstor;
+        }
+    }
+
+    @PUT
+    @Path("{nodeName}/config")
+    public void setConfig(
+        @Context
+        Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName")
+        String nodeName,
+        String jsonData
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        try
+        {
+            JsonGenTypes.SatelliteConfig config = objectMapper
+                .readValue(jsonData, JsonGenTypes.SatelliteConfig.class);
+            SatelliteConfigPojo conf = new SatelliteConfigPojo(config);
+            flux = ctrlNodeApiCallHandler.setConfig(nodeName, conf)
+                .subscriberContext(requestHelper.createContext(InternalApiConsts.API_MOD_STLT_CONFIG, request));
+
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+        catch (AccessDeniedException e)
+        {
+            requestHelper
+                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.UNAUTHORIZED));
+        }
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 }

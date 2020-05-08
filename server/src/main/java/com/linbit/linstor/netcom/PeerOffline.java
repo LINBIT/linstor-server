@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
@@ -18,6 +19,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.reactivestreams.Publisher;
+
 import reactor.core.publisher.Flux;
 
 public class PeerOffline implements Peer
@@ -358,5 +360,16 @@ public class PeerOffline implements Peer
     public ExtToolsManager getExtToolsManager()
     {
         return extToolMgr;
+    }
+
+    @Override
+    public StltConfig getStltConfig()
+    {
+        return null;
+    }
+
+    @Override
+    public void setStltConfig(StltConfig stltConfig)
+    {
     }
 }

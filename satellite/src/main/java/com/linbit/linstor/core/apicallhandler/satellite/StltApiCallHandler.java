@@ -24,6 +24,7 @@ import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.satellite.StltStorPoolApiCallHandler.ChangedData;
 import com.linbit.linstor.core.apicallhandler.satellite.authentication.AuthenticationResult;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -44,6 +45,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.proto.common.StltConfigOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.DeviceProviderMapper;
@@ -82,6 +84,7 @@ public class StltApiCallHandler
 {
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
+    private final StltConfig stltCfg;
 
     private final ControllerPeerConnector controllerPeerConnector;
     private final UpdateMonitor updateMonitor;
@@ -126,6 +129,7 @@ public class StltApiCallHandler
     public StltApiCallHandler(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
+        StltConfig stltCfgRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         UpdateMonitor updateMonitorRef,
         DeviceManager deviceManagerRef,
@@ -160,6 +164,7 @@ public class StltApiCallHandler
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
+        stltCfg = stltCfgRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         updateMonitor = updateMonitorRef;
         deviceManager = deviceManagerRef;
@@ -803,6 +808,25 @@ public class StltApiCallHandler
 
         return interComSerializer.answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, apiCallId.get())
             .errorReports(errorReports).build();
+    }
+
+    public boolean modifyStltConfig(StltConfigOuterClass.StltConfig stltConfRef)
+    {
+        String logLevel = stltConfRef.getLogLevel();
+        String logLevelLinstor = stltConfRef.getLogLevelLinstor();
+        stltCfg.setLogLevel(logLevel);
+        stltCfg.setLogLevelLinstor(logLevelLinstor);
+        try
+        {
+            errorReporter.setLogLevel(
+                apiCtx, Level.valueOf(logLevel.toUpperCase()), Level.valueOf(logLevelLinstor.toUpperCase())
+            );
+        }
+        catch (AccessDeniedException e)
+        {
+            return false;
+        }
+        return true;
     }
 
     private interface ApplyData

@@ -33,6 +33,11 @@ public class StltConfig extends LinstorConfig
         super(argsRef);
     }
 
+    public StltConfig()
+    {
+        super();
+    }
+
     @SuppressWarnings("boxing")
     @Override
     protected void applyDefaultValues()

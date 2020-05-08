@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public interface CommonSerializer
 {
@@ -37,7 +38,19 @@ public interface CommonSerializer
             int[] stltVersion,
             String nodeUname,
             List<ExtToolsInfo> layerInfoListRef,
-            ApiCallRc responses
+            ApiCallRc responses,
+            String configDir,
+            boolean debugConsoleEnabled,
+            boolean logPrintStackTrace,
+            String logDirectory,
+            String logLevel,
+            String logLevelLinstor,
+            String stltOverrideNodeName,
+            boolean openflex,
+            Pattern drbdKeepResPattern,
+            String netBindAddress,
+            Integer netPort,
+            String netType
         );
 
         CommonSerializerBuilder bytes(byte[] bytes);

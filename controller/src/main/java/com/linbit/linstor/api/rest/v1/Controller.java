@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
@@ -26,14 +28,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.io.IOException;
 import java.util.HashSet;
 
-import org.glassfish.grizzly.http.server.Request;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
 @Path("v1/controller")
@@ -244,7 +244,7 @@ public class Controller
         }
         return resp;
     }
-    
+
     private class ControllerConfigPojo implements ControllerConfigApi
     {
         private final JsonGenTypes.ControllerConfig config;
@@ -254,14 +254,28 @@ public class Controller
             config = configRef;
         }
 
+        @Override
         public String getLogLevel()
         {
             return config.log.level;
         }
 
+        @Override
         public String getLogLevelLinstor()
         {
             return config.log.level_linstor;
+        }
+
+        @Override
+        public String getLogLevelGlobal()
+        {
+            return config.log.level_global;
+        }
+
+        @Override
+        public String getLogLevelLinstorGlobal()
+        {
+            return config.log.level_linstor_global;
         }
     }
 
@@ -281,23 +295,21 @@ public class Controller
                 .readValue(jsonData, JsonGenTypes.ControllerConfig.class);
             ControllerConfigPojo conf = new ControllerConfigPojo(config);
             flux = ctrlApiCallHandler.setConfig(conf)
-                .subscriberContext(requestHelper.createContext("SetCtrlConfig", request));
-            
+                .subscriberContext(requestHelper.createContext(InternalApiConsts.API_MOD_CONFIG, request));
+
         }
-        catch (JsonMappingException exc)
+        catch (IOException ioExc)
         {
-            requestHelper
-                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.NOT_ACCEPTABLE));
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
-        catch (JsonProcessingException exc)
+        catch (AccessDeniedException exc)
         {
+            ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                ApiConsts.MODIFIED | ApiConsts.MASK_CTRL_CONF,
+                exc.toString()
+            );
             requestHelper
-                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.NOT_ACCEPTABLE));
-        }
-        catch (AccessDeniedException e)
-        {
-            requestHelper
-                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.UNAUTHORIZED));
+                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(Flux.just(rc), Response.Status.UNAUTHORIZED));
         }
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }

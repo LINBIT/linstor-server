@@ -776,7 +776,9 @@ public class JsonGenTypes
         public Boolean print_stack_trace;
         public String directory;
         public String level;
+        public String level_global;
         public String level_linstor;
+        public String level_linstor_global;
         public String rest_access_log_path;
         public String rest_access_mode;
     }
@@ -837,6 +839,35 @@ public class JsonGenTypes
         public String git_hash;
         public String build_time;
         public String rest_api_version;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SatelliteConfig
+    {
+        public ControllerConfigConfig config;
+        public ControllerConfigDebug debug;
+        public SatelliteConfigLog log;
+        public String stlt_override_node_name;
+        public Boolean openflex;
+        public String drbd_keep_res_pattern;
+        public SatelliteConfigNet net;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SatelliteConfigLog
+    {
+        public Boolean print_stack_trace;
+        public String directory;
+        public String level;
+        public String level_linstor;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SatelliteConfigNet
+    {
+        public String bind_address;
+        public Integer port;
+        public String com_type;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

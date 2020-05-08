@@ -26,6 +26,8 @@ import com.linbit.linstor.storage.kinds.RaidLevel;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.event.Level;
+
 public class LinstorParsingUtils
 {
     private LinstorParsingUtils()
@@ -466,5 +468,46 @@ public class LinstorParsingUtils
             );
         }
         return rscGrpName;
+    }
+
+    public static Level asLogLevel(String logLevelRef)
+    {
+        Level logLevel;
+        if (logLevelRef == null || logLevelRef.isEmpty())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_CONF,
+                    "Given loglevel is null."
+                )
+            );
+        }
+
+        switch (logLevelRef.toUpperCase())
+        {
+            case "ERROR":
+                logLevel = Level.ERROR;
+                break;
+            case "WARN":
+                logLevel = Level.WARN;
+                break;
+            case "INFO":
+                logLevel = Level.INFO;
+                break;
+            case "DEBUG":
+                logLevel = Level.DEBUG;
+                break;
+            case "TRACE":
+                logLevel = Level.TRACE;
+                break;
+            default:
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_CONF,
+                        "Given loglevel '" + logLevelRef + "' is invalid"
+                    )
+                );
+        }
+        return logLevel;
     }
 }

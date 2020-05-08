@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+// Internal response to a config modification, telling whether it was successful
+message MsgIntApplyConfigResponse
+{
+    bool success = 1;
+}

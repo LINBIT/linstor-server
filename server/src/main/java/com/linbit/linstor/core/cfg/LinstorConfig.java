@@ -62,6 +62,10 @@ public abstract class LinstorConfig
         }
     }
 
+    public LinstorConfig()
+    {
+    }
+
     protected void applyDefaultValues()
     {
         setConfigDir("./");

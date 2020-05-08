@@ -5,6 +5,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -13,6 +14,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.SatelliteConfig;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -25,6 +28,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.apis.ControllerConfigApi;
+import com.linbit.linstor.core.apis.SatelliteConfigApi;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.SystemConfRepository;
@@ -49,6 +53,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,10 +66,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 
-import org.slf4j.event.Level;
-
 import com.google.inject.Provider;
-
+import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -86,6 +89,7 @@ public class CtrlConfApiCallHandler
     private final CtrlConfig ctrlCfg;
     private final ScopeRunner scopeRunner;
     private final ResponseConverter responseConverter;
+    private final CtrlNodeApiCallHandler ctrlNodeApiCallHandler;
 
     private final LockGuardFactory lockGuardFactory;
 
@@ -106,7 +110,8 @@ public class CtrlConfApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         ScopeRunner scopeRunnerRef,
         CtrlConfig ctrlCfgRef,
-        ResponseConverter responseConverterRef
+        ResponseConverter responseConverterRef,
+        CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -125,6 +130,7 @@ public class CtrlConfApiCallHandler
         scopeRunner = scopeRunnerRef;
         ctrlCfg = ctrlCfgRef;
         responseConverter = responseConverterRef;
+        ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
     }
 
     private void updateSatelliteConf() throws AccessDeniedException
@@ -168,45 +174,158 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
-    public Flux<ApiCallRc> setCtrlConfig(ControllerConfigApi config) throws AccessDeniedException
+    public Flux<ApiCallRc> setCtrlConfig(
+        ControllerConfigApi config
+    )
+        throws AccessDeniedException
+    {
+        return scopeRunner
+            .fluxInTransactionlessScope(
+                "set controller config",
+                lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.CTRL_CONFIG),
+                () -> setCtrlConfigInScope(config)
+            );
+    }
+
+    private Flux<ApiCallRc> setCtrlConfigInScope(ControllerConfigApi config)
+        throws AccessDeniedException, IOException
     {
         ResponseContext context = makeCtrlConfContext(ApiOperation.makeModifyOperation());
-        return scopeRunner.fluxInTransactionlessScope(
-            "set controller config", lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.CTRL_CONFIG), () ->
+        String logLevel = config.getLogLevel();
+        String logLevelLinstor = config.getLogLevelLinstor();
+        String logLevelGlobal = config.getLogLevelGlobal();
+        String logLevelLinstorGlobal = config.getLogLevelLinstorGlobal();
+        if (!(logLevel == null || logLevel.isEmpty()))
+        {
+            if (!(logLevelLinstor == null || logLevelLinstor.isEmpty()))
             {
-                String logLevel = config.getLogLevel();
-                String logLevelLinstor = config.getLogLevelLinstor();
-                if (logLevel == null || logLevel.isEmpty())
+                LinstorParsingUtils.asLogLevel(logLevel);
+                LinstorParsingUtils.asLogLevel(logLevelLinstor);
+                ctrlCfg.setLogLevel(logLevel);
+                ctrlCfg.setLogLevelLinstor(logLevelLinstor);
+                errorReporter.setLogLevel(
+                    peerAccCtx.get(), Level.valueOf(logLevel.toUpperCase()), Level.valueOf(logLevelLinstor.toUpperCase())
+                );
+            }
+            else
+            {
+                if (!(logLevelLinstorGlobal == null || logLevelLinstorGlobal.isEmpty()))
                 {
-                    if (logLevelLinstor == null || logLevelLinstor.isEmpty())
-                    {
-                        // do nothing
-                    }
-                    else
-                    {
-                        ctrlCfg.setLogLevelLinstor(logLevelLinstor);
-                        errorReporter.setLogLevel(peerAccCtx.get(), null, Level.valueOf(logLevelLinstor.toUpperCase()));
-                    }
+                    LinstorParsingUtils.asLogLevel(logLevel);
+                    LinstorParsingUtils.asLogLevel(logLevelLinstorGlobal);
+                    ctrlCfg.setLogLevel(logLevel);
+                    ctrlCfg.setLogLevelLinstor(logLevelLinstorGlobal);
+                    errorReporter.setLogLevel(
+                        peerAccCtx.get(), Level.valueOf(logLevel.toUpperCase()), Level.valueOf(logLevelLinstorGlobal.toUpperCase())
+                    );
                 }
                 else
                 {
+                    LinstorParsingUtils.asLogLevel(logLevel);
                     ctrlCfg.setLogLevel(logLevel);
-                    if (logLevelLinstor == null || logLevelLinstor.isEmpty())
+                    errorReporter
+                        .setLogLevel(peerAccCtx.get(), Level.valueOf(logLevel.toUpperCase()), null);
+                }
+            }
+        }
+        else
+        {
+            if (!(logLevelGlobal == null || logLevelGlobal.isEmpty()))
+            {
+                if (!(logLevelLinstor == null || logLevelLinstor.isEmpty()))
+                {
+                    LinstorParsingUtils.asLogLevel(logLevelGlobal);
+                    LinstorParsingUtils.asLogLevel(logLevelLinstor);
+                    ctrlCfg.setLogLevel(logLevelGlobal);
+                    ctrlCfg.setLogLevelLinstor(logLevelLinstor);
+                    errorReporter
+                        .setLogLevel(peerAccCtx.get(), Level.valueOf(logLevelGlobal.toUpperCase()), Level.valueOf(logLevelLinstor.toUpperCase()));
+                }
+                else
+                {
+                    if (!(logLevelLinstorGlobal == null || logLevelLinstorGlobal.isEmpty()))
                     {
-                        errorReporter.setLogLevel(peerAccCtx.get(), Level.valueOf(logLevel.toUpperCase()), null);
+                        LinstorParsingUtils.asLogLevel(logLevelGlobal);
+                        LinstorParsingUtils.asLogLevel(logLevelLinstorGlobal);
+                        ctrlCfg.setLogLevel(logLevelGlobal);
+                        ctrlCfg.setLogLevelLinstor(logLevelLinstorGlobal);
+                        errorReporter
+                            .setLogLevel(peerAccCtx.get(), Level.valueOf(logLevelGlobal.toUpperCase()), Level.valueOf(logLevelLinstorGlobal.toUpperCase()));
                     }
                     else
                     {
-                        ctrlCfg.setLogLevelLinstor(logLevelLinstor);
+                        LinstorParsingUtils.asLogLevel(logLevelGlobal);
+                        ctrlCfg.setLogLevel(logLevelGlobal);
                         errorReporter.setLogLevel(
-                            peerAccCtx.get(), Level.valueOf(logLevel.toUpperCase()), Level.valueOf(logLevelLinstor.toUpperCase())
+                            peerAccCtx.get(), Level.valueOf(logLevelGlobal.toUpperCase()), null
                         );
                     }
                 }
-                Flux<ApiCallRc> flux = Flux.empty();
-                return flux;
             }
-        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+            else
+            {
+                if (!(logLevelLinstor == null || logLevelLinstor.isEmpty()))
+                {
+                    LinstorParsingUtils.asLogLevel(logLevelLinstor);
+                    ctrlCfg.setLogLevelLinstor(logLevelLinstor);
+                    errorReporter
+                        .setLogLevel(peerAccCtx.get(), null, Level.valueOf(logLevelLinstor.toUpperCase()));
+                }
+                else
+                {
+                    if (!(logLevelLinstorGlobal == null || logLevelLinstorGlobal.isEmpty()))
+                    {
+                        LinstorParsingUtils.asLogLevel(logLevelLinstorGlobal);
+                        ctrlCfg.setLogLevelLinstor(logLevelLinstorGlobal);
+                        errorReporter.setLogLevel(
+                            peerAccCtx.get(), null, Level.valueOf(logLevelLinstorGlobal.toUpperCase())
+                        );
+                    }
+                }
+            }
+        }
+
+        Flux<ApiCallRc> flux;
+        if ((logLevelGlobal == null || logLevelGlobal.isEmpty()) &&
+            (logLevelLinstorGlobal == null || logLevelLinstorGlobal.isEmpty()))
+        {
+            ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                ApiConsts.MODIFIED | ApiConsts.MASK_CTRL_CONF,
+                "Successfully updated controller config"
+            );
+            flux = Flux.just(rc);
+        }
+        else
+        {
+            SatelliteConfig stltConf = new SatelliteConfig();
+            stltConf.log = new JsonGenTypes.SatelliteConfigLog();
+            stltConf.log.level = logLevelGlobal;
+            stltConf.log.level_linstor = logLevelLinstorGlobal;
+            flux = ctrlNodeApiCallHandler.setGlobalConfig(new SatelliteConfigPojo(stltConf));
+        }
+        return flux.transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private class SatelliteConfigPojo implements SatelliteConfigApi
+    {
+        private final SatelliteConfig config;
+
+        SatelliteConfigPojo(SatelliteConfig configRef)
+        {
+            config = configRef;
+        }
+
+        @Override
+        public String getLogLevel()
+        {
+            return config.log.level;
+        }
+
+        @Override
+        public String getLogLevelLinstor()
+        {
+            return config.log.level_linstor;
+        }
     }
 
     public static ResponseContext makeCtrlConfContext(

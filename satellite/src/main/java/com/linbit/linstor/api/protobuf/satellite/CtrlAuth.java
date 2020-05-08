@@ -12,6 +12,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.satellite.authentication.AuthenticationResult;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass.MsgIntAuth;
@@ -39,6 +40,7 @@ public class CtrlAuth implements ApiCall
     private final UpdateMonitor updateMonitor;
     private final Provider<Peer> controllerPeerProvider;
     private final ExtCmdFactory extCmdFactory;
+    private final StltConfig stltConfig;
 
     @Inject
     public CtrlAuth(
@@ -48,7 +50,8 @@ public class CtrlAuth implements ApiCall
         CommonSerializer commonSerializerRef,
         UpdateMonitor updateMonitorRef,
         Provider<Peer> controllerPeerProviderRef,
-        ExtCmdFactory extCmdFactoryRef
+        ExtCmdFactory extCmdFactoryRef,
+        StltConfig stltConfigRef
     )
     {
         errorReporter = errorReporterRef;
@@ -58,6 +61,7 @@ public class CtrlAuth implements ApiCall
         updateMonitor = updateMonitorRef;
         controllerPeerProvider = controllerPeerProviderRef;
         extCmdFactory = extCmdFactoryRef;
+        stltConfig = stltConfigRef;
     }
 
     @Override
@@ -97,7 +101,19 @@ public class CtrlAuth implements ApiCall
                     LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
                     nodeUname,
                     authResult.getExternalToolsInfoList(),
-                    authResult.getApiCallRc()
+                    authResult.getApiCallRc(),
+                    stltConfig.getConfigDir(),
+                    stltConfig.isDebugConsoleEnabled(),
+                    stltConfig.isLogPrintStackTrace(),
+                    stltConfig.getLogDirectory(),
+                    stltConfig.getLogLevel(),
+                    stltConfig.getLogLevelLinstor(),
+                    stltConfig.getStltOverrideNodeName(),
+                    stltConfig.isOpenflex(),
+                    stltConfig.getDrbdKeepResPattern(),
+                    stltConfig.getNetBindAddress(),
+                    stltConfig.getNetPort(),
+                    stltConfig.getNetType()
                 )
                 .build();
         }

@@ -59,6 +59,11 @@ public class InternalApiConsts
     public static final String API_CREATE_DEVICE_POOL = "CreateDevicePool";
     public static final String API_DELETE_DEVICE_POOL = "DeleteDevicePool";
 
+    public static final String API_LST_STLT_CONFIG = "LstStltConfig";
+    public static final String API_MOD_CONFIG = "ModifyConfig";
+    public static final String API_MOD_STLT_CONFIG = "ModifyStltConfig";
+    public static final String API_MOD_STLT_CONFIG_RESP = "ModifyStltConfigResp";
+
     /*
      * Event stream actions
      */

@@ -23,6 +23,7 @@ info:
 
     * 1.2.0
        - Added optional AutoSelectFilter to resource-group/spawn
+       - Added /v1/nodes/{node}/config, that allows you to get and set the satellite config
     * 1.1.0
        - Added /v1/view/snapshots for a faster all in one snapshot list
        - Filter lists by properties:
@@ -721,6 +722,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+  /v1/nodes/{node}/config:
+    parameters:
+      - $ref: '#/components/parameters/Node'
+    get:
+      tags:
+        - developers
+      summary: show satellite config
+      operationId: SatelliteConfig
+      description: |
+        Show Satellite config
+
+      responses:
+        '200':
+          description: Satellite config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SatelliteConfig'
+        '401':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+        '503':
+          description: Node offline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+    put:
+      tags:
+        - developers
+      summary: modify satellite config
+      operationId: StltSetConfig
+      responses:
+        '200':
+          description: Response on whether the operation was successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '401':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SatelliteConfig'
   /v1/resource-definitions:
     get:
       tags:
@@ -3004,6 +3062,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ControllerConfig'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+    put:
+      tags:
+        - developers
+      summary: modify controller config
+      operationId: CtrlSetConfig
+      responses:
+        '200':
+          description: Response on whether the operation was successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '401':
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ControllerConfig'
   /v1/controller/version:
     get:
       tags:
@@ -4770,7 +4855,11 @@ components:
           type: string
         level:
           $ref: '#/components/schemas/LogLevel'
+        level_global:
+          $ref: '#/components/schemas/LogLevel'
         level_linstor:
+          $ref: '#/components/schemas/LogLevel'
+        level_linstor_global:
           $ref: '#/components/schemas/LogLevel'
         rest_access_log_path:
           type: string
@@ -4855,6 +4944,44 @@ components:
         build_time:
           type: string
         rest_api_version:
+          type: string
+    SatelliteConfig:
+      type: object
+      properties:
+        config:
+          $ref: '#/components/schemas/ControllerConfigConfig'
+        debug:
+          $ref: '#/components/schemas/ControllerConfigDebug'
+        log:
+          $ref: '#/components/schemas/SatelliteConfigLog'
+        stlt_override_node_name:
+          type: string
+        openflex:
+          type: boolean
+        drbd_keep_res_pattern:
+          type: string
+        net:
+          $ref: '#/components/schemas/SatelliteConfigNet'
+    SatelliteConfigLog:
+      type: object
+      properties:
+        print_stack_trace:
+          type: boolean
+        directory:
+          type: string
+        level:
+          $ref: '#/components/schemas/LogLevel'
+        level_linstor:
+          $ref: '#/components/schemas/LogLevel'
+    SatelliteConfigNet:
+      type: object
+      properties:
+        bind_address:
+          type: string
+        port:
+          type: integer
+          format: int32
+        com_type:
           type: string
     ErrorReport:
       type: object

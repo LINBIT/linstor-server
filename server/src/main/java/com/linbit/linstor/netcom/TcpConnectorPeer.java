@@ -7,6 +7,7 @@ import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -145,6 +146,7 @@ public class TcpConnectorPeer implements Peer
     private Map<Long, FluxSink<ByteArrayInputStream>> openRpcs = Collections.synchronizedMap(new TreeMap<>());
 
     private ExtToolsManager externalToolsManager = new ExtToolsManager();
+    private StltConfig stltConfig = new StltConfig();
 
     protected TcpConnectorPeer(
         ErrorReporter errorReporterRef,
@@ -1025,5 +1027,17 @@ public class TcpConnectorPeer implements Peer
     public ExtToolsManager getExtToolsManager()
     {
         return externalToolsManager;
+    }
+
+    @Override
+    public StltConfig getStltConfig()
+    {
+        return stltConfig;
+    }
+
+    @Override
+    public void setStltConfig(StltConfig stltConfigRef)
+    {
+        stltConfig = stltConfigRef;
     }
 }

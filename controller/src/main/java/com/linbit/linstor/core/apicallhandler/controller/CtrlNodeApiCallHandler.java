@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -12,6 +13,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
@@ -30,6 +32,8 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
+import com.linbit.linstor.core.apis.SatelliteConfigApi;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
@@ -43,9 +47,11 @@ import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyConfigResponseOuterClass.MsgIntApplyConfigResponse;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -54,6 +60,8 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater.findNodesToContact;
@@ -64,6 +72,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -100,6 +109,7 @@ public class CtrlNodeApiCallHandler
     private final Scheduler scheduler;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
+    private final CtrlStltSerializer stltComSerializer;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -121,7 +131,8 @@ public class CtrlNodeApiCallHandler
         ReconnectorTask reconnectorTaskRef,
         Scheduler schedulerRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlStltSerializer stltComSerializerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -143,6 +154,7 @@ public class CtrlNodeApiCallHandler
         scheduler = schedulerRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
+        stltComSerializer = stltComSerializerRef;
     }
 
     Node createNodeImpl(
@@ -811,5 +823,106 @@ public class CtrlNodeApiCallHandler
             ApiConsts.MASK_NODE,
             objRefs
         );
+    }
+
+    public StltConfig getConfig(String nodeName) throws AccessDeniedException
+    {
+        StltConfig stltConf = ctrlApiDataLoader.loadNode(nodeName, true).getPeer(peerAccCtx.get()).getStltConfig();
+        return stltConf;
+    }
+
+    public Flux<ApiCallRc> setGlobalConfig(SatelliteConfigApi config) throws AccessDeniedException, IOException
+    {
+        ArrayList<Flux<ApiCallRc>> answers = new ArrayList<Flux<ApiCallRc>>();
+
+        for (NodeName nodeName : nodeRepository.getMapForView(peerAccCtx.get()).keySet())
+        {
+            answers.add(setConfig(nodeName.getName(), config));
+        }
+        ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+            ApiConsts.MODIFIED | ApiConsts.MASK_CTRL_CONF,
+            "Successfully updated controller config"
+        );
+        answers.add(Flux.just(rc));
+        return Flux.merge(answers);
+    }
+
+    public Flux<ApiCallRc> setConfig(String nodeName, SatelliteConfigApi config)
+        throws AccessDeniedException, IOException
+    {
+        return scopeRunner.fluxInTransactionlessScope(
+            "set satellite config",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP),
+            () -> setStltConfig(nodeName, config)
+        );
+    }
+
+    private Flux<ApiCallRc> setStltConfig(String nodeName, SatelliteConfigApi config)
+        throws IOException, AccessDeniedException
+    {
+        Peer peer = ctrlApiDataLoader.loadNode(nodeName, true).getPeer(peerAccCtx.get());
+        if (!peer.isConnected())
+        {
+            return Flux.empty();
+        }
+        StltConfig stltConf = peer.getStltConfig();
+        String logLevel = config.getLogLevel();
+        String logLevelLinstor = config.getLogLevelLinstor();
+        if (logLevel == null || logLevel.isEmpty())
+        {
+            if (!(logLevelLinstor == null || logLevelLinstor.isEmpty()))
+            {
+                LinstorParsingUtils.asLogLevel(logLevelLinstor);
+                stltConf.setLogLevelLinstor(logLevelLinstor);
+            }
+        }
+        else
+        {
+            LinstorParsingUtils.asLogLevel(logLevel);
+            stltConf.setLogLevel(logLevel);
+            if (!(logLevelLinstor == null || logLevelLinstor.isEmpty()))
+            {
+                LinstorParsingUtils.asLogLevel(logLevelLinstor);
+                stltConf.setLogLevelLinstor(logLevelLinstor);
+            }
+        }
+        ResponseContext context = makeNodeContext(ApiOperation.makeModifyOperation(), nodeName);
+        byte[] msg = stltComSerializer.headerlessBuilder().changedConfig(stltConf).build();
+        Flux<ApiCallRc> fluxReturn = peer
+            .apiCall(InternalApiConsts.API_MOD_STLT_CONFIG, msg)
+            .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
+            .map(responseMsg ->
+            {
+                MsgIntApplyConfigResponse resp;
+                ApiCallRc rc;
+                try
+                {
+                    resp = MsgIntApplyConfigResponse.parseDelimitedFrom(responseMsg);
+                    if (resp.getSuccess())
+                    {
+                        rc = ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.MODIFIED | ApiConsts.MASK_NODE,
+                            "Successfully updated satellite config"
+                        );
+                    }
+                    else
+                    {
+                        rc = ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_NODE,
+                            "Failure while updating satellite config"
+                        );
+                    }
+                }
+                catch (IOException e)
+                {
+                    rc = ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_NODE,
+                        "Failure while updating satellite config"
+                    );
+                }
+                return rc;
+            })
+            .transform(response -> responseConverter.reportingExceptions(context, response));
+        return fluxReturn;
     }
 }

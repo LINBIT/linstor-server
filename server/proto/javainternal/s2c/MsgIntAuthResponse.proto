@@ -6,6 +6,7 @@ import "common/ApiCallResponse.proto";
 import "common/LayerType.proto";
 import "common/ProviderType.proto";
 import "common/ExternalTools.proto";
+import "common/StltConfig.proto";
 
 // Internal response for an attempt of authentication from the controller
 message MsgIntAuthResponse
@@ -31,4 +32,5 @@ message MsgIntAuthResponse
     string node_uname = 9;
 
     repeated common.ExternalToolsInfo ext_tools_info = 10;
+    common.StltConfig stltConfig = 11;
 }

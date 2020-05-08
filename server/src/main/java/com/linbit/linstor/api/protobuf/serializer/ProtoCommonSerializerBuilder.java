@@ -84,6 +84,7 @@ import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.RscOuterClass;
+import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
@@ -132,6 +133,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
@@ -277,11 +279,35 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         int[] stltVersionRef,
         String uname,
         List<ExtToolsInfo> extToolsList,
-        ApiCallRc responses
+        ApiCallRc responses,
+        String configDir,
+        boolean debugConsoleEnabled,
+        boolean logPrintStackTrace,
+        String logDirectory,
+        String logLevel,
+        String logLevelLinstor,
+        String stltOverrideNodeName,
+        boolean openflex,
+        Pattern drbdKeepResPattern,
+        String netBindAddress,
+        Integer netPort,
+        String netType
     )
     {
         try
         {
+            if (logLevelLinstor == null || logLevelLinstor.isEmpty())
+            {
+                logLevelLinstor = logLevel;
+            }
+            if (stltOverrideNodeName == null)
+            {
+                stltOverrideNodeName = "";
+            }
+            if (drbdKeepResPattern == null)
+            {
+                drbdKeepResPattern = Pattern.compile("");
+            }
             MsgIntAuthResponse.newBuilder()
                 .setSuccess(true)
                 .setExpectedFullSyncId(expectedFullSyncIdRef)
@@ -290,6 +316,22 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setLinstorVersionPatch(stltVersionRef[2])
                 .addAllResponses(serializeApiCallRc(responses))
                 .addAllExtToolsInfo(asExternalToolsList(extToolsList))
+                .setStltConfig(
+                    stltConfig(
+                        configDir,
+                        debugConsoleEnabled,
+                        logPrintStackTrace,
+                        logDirectory,
+                        logLevel,
+                        logLevelLinstor,
+                        stltOverrideNodeName,
+                        openflex,
+                        drbdKeepResPattern,
+                        netBindAddress,
+                        netPort,
+                        netType
+                    )
+                )
                 .setNodeUname(uname)
                 .build()
                 .writeDelimitedTo(baos);
@@ -530,6 +572,37 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             handleIOException(exc);
         }
         return this;
+    }
+
+    public StltConfig.Builder stltConfig(
+        String configDir,
+        boolean debugConsoleEnabled,
+        boolean logPrintStackTrace,
+        String logDirectory,
+        String logLevel,
+        String logLevelLinstor,
+        String stltOverrideNodeName,
+        boolean openflex,
+        Pattern drbdKeepResPattern,
+        String netBindAddress,
+        Integer netPort,
+        String netType
+    )
+    {
+        StltConfig.Builder bld = StltConfig.newBuilder();
+        bld.setConfigDir(configDir)
+            .setDebugConsoleEnabled(debugConsoleEnabled)
+            .setLogPrintStackTrace(logPrintStackTrace)
+            .setLogDirectory(logDirectory)
+            .setLogLevel(logLevel)
+            .setLogLevelLinstor(logLevelLinstor)
+            .setStltOverrideNodeName(stltOverrideNodeName)
+            .setOpenflex(openflex)
+            .setDrbdKeepResPattern(drbdKeepResPattern.toString())
+            .setNetBindAddress(netBindAddress)
+            .setNetPort(netPort)
+            .setNetType(netType);
+        return bld;
     }
 
     @Override

@@ -986,7 +986,10 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public Flux<ApiCallRc> setConfig(ControllerConfigApi config) throws AccessDeniedException
+    public Flux<ApiCallRc> setConfig(
+        ControllerConfigApi config
+    )
+        throws AccessDeniedException
     {
         return ctrlConfApiCallHandler.setCtrlConfig(config);
     }

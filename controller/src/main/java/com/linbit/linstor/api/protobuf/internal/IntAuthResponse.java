@@ -9,6 +9,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlAuthResponseApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
+import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
@@ -77,6 +78,7 @@ public class IntAuthResponse implements ApiCallReactive
         final Integer linstorVersionPatch;
         final List<ExtToolsInfo> externalToolsInfoList;
         final String nodeUname;
+        final StltConfig stltConfig;
         if (success)
         {
             expectedFullSyncId = msgAuthResponse.getExpectedFullSyncId();
@@ -88,6 +90,7 @@ public class IntAuthResponse implements ApiCallReactive
                 msgAuthResponse.getExtToolsInfoList(),
                 false
             );
+            stltConfig = msgAuthResponse.getStltConfig();
         }
         else
         {
@@ -97,6 +100,7 @@ public class IntAuthResponse implements ApiCallReactive
             linstorVersionMinor = null;
             linstorVersionPatch = null;
             externalToolsInfoList = null;
+            stltConfig = null;
         }
         return ctrlAuthResponseApiCallHandler.authResponse(
             peer,
@@ -108,6 +112,7 @@ public class IntAuthResponse implements ApiCallReactive
             linstorVersionMinor,
             linstorVersionPatch,
             externalToolsInfoList,
+            stltConfig,
             waitForFullSyncAnswer
         );
     }

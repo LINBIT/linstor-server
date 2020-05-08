@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.common;
+
+//contains the satellite config
+//blacklisted props: netSecureServerCertificate, netSecureTrustedCertificates, netSecureKeyPassword,
+//                   netSecureKeystorePassword, netSecureTruststorePassword, netSecureSslProtocol
+message StltConfig
+{
+	string config_dir = 1;
+	bool debug_console_enabled = 2;
+	bool log_print_stack_trace = 3;
+	string log_directory = 4;
+	string log_level = 5;
+	string log_level_linstor = 6;
+	string stlt_override_node_name = 7;
+	bool openflex = 8;
+	string drbd_keep_res_pattern = 9;
+	string net_bind_address = 10;
+	uint32 net_port = 11;
+	string net_type = 12;
+}

@@ -4,4 +4,7 @@ public interface ControllerConfigApi
 {
     String getLogLevel();
     String getLogLevelLinstor();
+
+    String getLogLevelGlobal();
+    String getLogLevelLinstorGlobal();
 }

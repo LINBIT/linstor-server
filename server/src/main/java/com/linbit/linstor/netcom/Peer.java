@@ -4,20 +4,22 @@ import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.common.Ping;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-
 import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.locks.ReadWriteLock;
+
+import org.reactivestreams.Publisher;
+
+import reactor.core.publisher.Flux;
 
 /**
  * Represents the peer of a connection
@@ -373,4 +375,8 @@ public interface Peer
     Message nextCurrentMsgIn();
 
     ExtToolsManager getExtToolsManager();
+
+    StltConfig getStltConfig();
+
+    void setStltConfig(StltConfig stltConfig);
 }
