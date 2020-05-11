@@ -38,7 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
-@Path("resource-groups/{rscName}/volume-groups")
+@Path("v1/resource-groups/{rscName}/volume-groups")
 @Produces(MediaType.APPLICATION_JSON)
 public class VolumeGroups
 {

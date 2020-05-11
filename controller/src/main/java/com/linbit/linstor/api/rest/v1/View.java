@@ -33,7 +33,7 @@ import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@Path("view")
+@Path("v1/view")
 @Produces(MediaType.APPLICATION_JSON)
 public class View
 {

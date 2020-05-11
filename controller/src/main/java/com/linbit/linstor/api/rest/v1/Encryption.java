@@ -17,7 +17,7 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 
-@Path("encryption")
+@Path("v1/encryption")
 public class Encryption
 {
     private ObjectMapper objectMapper;

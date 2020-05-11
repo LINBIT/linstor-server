@@ -27,7 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 
-@Path("controller")
+@Path("v1/controller")
 @Produces(MediaType.APPLICATION_JSON)
 public class Controller
 {

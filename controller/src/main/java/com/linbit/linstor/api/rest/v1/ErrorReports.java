@@ -31,7 +31,7 @@ import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@Path("error-reports")
+@Path("v1/error-reports")
 @Produces(MediaType.APPLICATION_JSON)
 public class ErrorReports
 {

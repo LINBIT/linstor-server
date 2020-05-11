@@ -38,7 +38,7 @@ import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@Path("physical-storage")
+@Path("v1/physical-storage")
 @Produces(MediaType.APPLICATION_JSON)
 public class PhysicalStorage
 {

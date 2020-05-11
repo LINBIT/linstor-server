@@ -45,7 +45,7 @@ import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@Path("resource-definitions/{rscName}/resources/{nodeName}/volumes")
+@Path("v1/resource-definitions/{rscName}/resources/{nodeName}/volumes")
 @Produces(MediaType.APPLICATION_JSON)
 public class Volumes
 {

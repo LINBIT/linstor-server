@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 
-@Path("key-value-store")
+@Path("v1/key-value-store")
 @Produces(MediaType.APPLICATION_JSON)
 public class KeyValueStore
 {

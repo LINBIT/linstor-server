@@ -4,16 +4,13 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
-import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig.RestAccessLogMode;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.ws.rs.NotFoundException;
@@ -22,22 +19,17 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Injector;
 import org.glassfish.grizzly.http.CompressionConfig;
-import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
@@ -56,28 +48,21 @@ public class GrizzlyHttpService implements SystemService
     private HttpServer httpServer;
     private HttpServer httpsServer;
     private ServiceName instanceName;
-    private String listenAddress;
-    private String listenAddressSecure;
-    private Path keyStoreFile;
-    private String keyStorePassword;
-    private Path trustStoreFile;
-    private String trustStorePassword;
-    private ResourceConfig v1ResourceConfig;
-    private Path restAccessLogPath;
+    private final String listenAddress;
+    private final String listenAddressSecure;
+    private final Path keyStoreFile;
+    private final String keyStorePassword;
+    private final Path trustStoreFile;
+    private final String trustStorePassword;
+    private final ResourceConfig restResourceConfig;
+    private final Path restAccessLogPath;
     private RestAccessLogMode restAccessLogMode;
-    private final ControllerDatabase ctrlDb;
-    private final Map<ServiceName, SystemService> systemServiceMap;
-
-    private static final String INDEX_CONTENT = "<html><title>Linstor REST server</title>" +
-        "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/" + JsonGenTypes.REST_API_VERSION +
-        "\">Documentation</a></body></html>";
 
     private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
 
     public GrizzlyHttpService(
         Injector injector,
         ErrorReporter errorReporterRef,
-        Map<ServiceName, SystemService> systemServiceMapRef,
         String listenAddressRef,
         String listenAddressSecureRef,
         Path keyStoreFileRef,
@@ -89,7 +74,6 @@ public class GrizzlyHttpService implements SystemService
     )
     {
         errorReporter = errorReporterRef;
-        ctrlDb = injector.getInstance(ControllerDatabase.class);
         listenAddress = listenAddressRef;
         listenAddressSecure = listenAddressSecureRef;
         keyStoreFile = keyStoreFileRef;
@@ -98,10 +82,9 @@ public class GrizzlyHttpService implements SystemService
         trustStorePassword = trustStorePasswordRef;
         restAccessLogPath = Paths.get(restAccessLogPathRef);
         restAccessLogMode = restAccessLogModeRef;
-        v1ResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest.v1");
-        v1ResourceConfig.register(new CORSFilter());
-        registerExceptionMappers(v1ResourceConfig);
-        systemServiceMap = systemServiceMapRef;
+        restResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest");
+        restResourceConfig.register(new CORSFilter());
+        registerExceptionMappers(restResourceConfig);
 
         try
         {
@@ -112,67 +95,6 @@ public class GrizzlyHttpService implements SystemService
         }
     }
 
-    private void addRootHandler(HttpServer httpServerRef)
-    {
-        httpServerRef.getServerConfiguration().addHttpHandler(
-            new HttpHandler()
-            {
-                @Override
-                public void service(Request request, Response response) throws Exception
-                {
-                    if (request.getMethod() == Method.GET)
-                    {
-                        if (request.getHttpHandlerPath().equals("/"))
-                        {
-                            response.setContentType("text/html");
-                            response.setContentLength(INDEX_CONTENT.length());
-                            response.getWriter().write(INDEX_CONTENT);
-                        }
-                        else
-                        if (request.getHttpHandlerPath().equals("/health"))
-                        {
-                            try
-                            {
-                                ctrlDb.checkHealth();
-                                List<String> notRunning = systemServiceMap.values().stream()
-                                    .filter(service -> !service.isStarted())
-                                    .map(service -> service.getServiceName().getDisplayName())
-                                    .collect(Collectors.toList());
-                                if (notRunning.isEmpty())
-                                {
-                                    response.setStatus(HttpStatus.OK_200);
-                                }
-                                else
-                                {
-                                    final String errorMsg = "Services not running: " +
-                                        String.join(",", notRunning);
-                                    response.setContentLength(errorMsg.length());
-                                    response.getWriter().write(errorMsg);
-                                    response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-                                }
-                            }
-                            catch (DatabaseException exc)
-                            {
-                                final String errorMsg = "Failed to connect to database: " + exc.getMessage();
-                                response.setContentLength(errorMsg.length());
-                                response.getWriter().write(errorMsg);
-                                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-                            }
-                        }
-                        else
-                        {
-                            response.setStatus(HttpStatus.NOT_FOUND_404);
-                        }
-                    }
-                    else
-                    {
-                        response.setStatus(HttpStatus.NOT_FOUND_404);
-                    }
-                }
-            }
-        );
-    }
-
     private void addHTTPSRedirectHandler(HttpServer httpServerRef, int httpsPort)
     {
         httpServerRef.getServerConfiguration().addHttpHandler(
@@ -181,62 +103,11 @@ public class GrizzlyHttpService implements SystemService
                 @Override
                 public void service(Request request, Response response) throws Exception
                 {
-                    if (request.getMethod() == Method.GET)
-                    {
-                        if (request.getHttpHandlerPath().equals("/"))
-                        {
-                            response.setContentType("text/html");
-                            response.setContentLength(INDEX_CONTENT.length());
-                            response.getWriter().write(INDEX_CONTENT);
-                        }
-                        else
-                        if (request.getHttpHandlerPath().equals("/health"))
-                        {
-                            try
-                            {
-                                ctrlDb.checkHealth();
-
-                                List<String> notRunning = systemServiceMap.values().stream()
-                                    .filter(service -> !service.isStarted())
-                                    .map(service -> service.getServiceName().getDisplayName())
-                                    .collect(Collectors.toList());
-                                if (notRunning.isEmpty())
-                                {
-                                    response.setStatus(HttpStatus.OK_200);
-                                }
-                                else
-                                {
-                                    final String errorMsg = "Services not running: " +
-                                        String.join(",", notRunning);
-                                    response.setContentLength(errorMsg.length());
-                                    response.getWriter().write(errorMsg);
-                                    response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-                                }
-                            }
-                            catch (DatabaseException exc)
-                            {
-                                final String errorMsg = "Failed to connect to database: " + exc.getMessage();
-                                response.setContentLength(errorMsg.length());
-                                response.getWriter().write(errorMsg);
-                                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-                            }
-                        }
-                        else
-                        {
-                            response.setStatus(HttpStatus.NOT_FOUND_404);
-                            response.sendRedirect(
-                                String.format("https://%s:%d", request.getServerName(), httpsPort) +
-                                    request.getHttpHandlerPath()
-                            );
-                        }
-                    }
-                    else
-                    {
-                        response.setStatus(HttpStatus.NOT_FOUND_404);
-                        response.sendRedirect(
-                            String.format("https://%s:%d", request.getServerName(), httpsPort) +
-                            request.getHttpHandlerPath());
-                    }
+                    response.setStatus(HttpStatus.NOT_FOUND_404);
+                    response.sendRedirect(
+                        String.format("https://%s:%d", request.getServerName(), httpsPort) +
+                            request.getHttpHandlerPath()
+                    );
                 }
             }
         );
@@ -254,7 +125,7 @@ public class GrizzlyHttpService implements SystemService
     {
         if (keyStoreFile != null)
         {
-            final URI httpsUri = URI.create(String.format("https://%s/v1/", httpsBindAddress));
+            final URI httpsUri = URI.create(String.format("https://%s", httpsBindAddress));
 
             // only install a redirect handler for http
             httpServer = GrizzlyHttpServerFactory.createHttpServer(
@@ -266,7 +137,7 @@ public class GrizzlyHttpService implements SystemService
 
             httpsServer = GrizzlyHttpServerFactory.createHttpServer(
                 httpsUri,
-                v1ResourceConfig,
+                restResourceConfig,
                 false
             );
 
@@ -293,19 +164,15 @@ public class GrizzlyHttpService implements SystemService
             }
 
             enableCompression(httpsServer);
-
-            addRootHandler(httpsServer);
         }
         else
         {
             httpsServer = null;
             httpServer = GrizzlyHttpServerFactory.createHttpServer(
-                URI.create(String.format("http://%s/v1/", bindAddress)),
-                v1ResourceConfig,
+                URI.create(String.format("http://%s", bindAddress)),
+                restResourceConfig,
                 false
             );
-
-            addRootHandler(httpServer);
         }
 
         // configure access logging
@@ -386,8 +253,8 @@ public class GrizzlyHttpService implements SystemService
             // ipv6 failed, if it is localhost ipv6, retry ipv4
             if (listenAddress.startsWith("[::]"))
             {
-                URI uri = URI.create(String.format("http://%s/v1/", listenAddress));
-                URI uriSecure = URI.create(String.format("https://%s/v1/", listenAddressSecure));
+                URI uri = URI.create(String.format("http://%s", listenAddress));
+                URI uriSecure = URI.create(String.format("https://%s", listenAddressSecure));
                 errorReporter.logInfo("Trying to start grizzly http server on fallback ipv4: 0.0.0.0");
                 try
                 {
@@ -516,11 +383,8 @@ class LinstorMapper implements ExceptionMapper<Exception>
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.FAIL_UNKNOWN_ERROR,
-                    String.format("Path '/v1/%s' not found on server.", uriInfo.getPath())
-                )
-                    .setDetails(exc.getMessage())
-                    .build()
-            );
+                    String.format("Path '%s' not found on server.", uriInfo.getPath())
+                ).setDetails(exc.getMessage()).build());
             respStatus = javax.ws.rs.core.Response.Status.NOT_FOUND;
         }
         else

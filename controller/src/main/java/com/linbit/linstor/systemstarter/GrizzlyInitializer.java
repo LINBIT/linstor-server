@@ -74,7 +74,6 @@ public class GrizzlyInitializer implements StartupInitializer
                 grizzlyHttpService = new GrizzlyHttpService(
                     injector,
                     errorReporter,
-                    systemServicesMap,
                     ctrlCfg.getRestBindAddressWithPort(),
                     ctrlCfg.getRestSecureBindAddressWithPort(),
                     keyStorePath,

@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
-@Path("resource-definitions/{rscName}/autoplace")
+@Path("v1/resource-definitions/{rscName}/autoplace")
 public class AutoPlace
 {
     private final RequestHelper requestHelper;

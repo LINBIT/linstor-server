@@ -40,7 +40,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
-@Path("resource-definitions")
+@Path("v1/resource-definitions")
 @Produces(MediaType.APPLICATION_JSON)
 public class ResourceDefinitions
 {

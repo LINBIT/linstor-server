@@ -34,7 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
-@Path("resource-definitions/{rscName}/snapshots")
+@Path("v1/resource-definitions/{rscName}/snapshots")
 @Produces(MediaType.APPLICATION_JSON)
 public class Snapshots
 {

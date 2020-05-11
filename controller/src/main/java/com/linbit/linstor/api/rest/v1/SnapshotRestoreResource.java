@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
-@Path("resource-definitions/{rscName}/snapshot-restore-resource")
+@Path("v1/resource-definitions/{rscName}/snapshot-restore-resource")
 public class SnapshotRestoreResource
 {
     private final ObjectMapper objectMapper;

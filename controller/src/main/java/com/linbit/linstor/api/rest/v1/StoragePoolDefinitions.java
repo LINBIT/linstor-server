@@ -34,7 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
-@Path("storage-pool-definitions")
+@Path("v1/storage-pool-definitions")
 @Produces(MediaType.APPLICATION_JSON)
 public class StoragePoolDefinitions
 {

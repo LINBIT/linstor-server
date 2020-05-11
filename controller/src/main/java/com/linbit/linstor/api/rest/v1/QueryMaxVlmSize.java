@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Mono;
 
-@Path("query-max-volume-size")
+@Path("v1/query-max-volume-size")
 @Produces(MediaType.APPLICATION_JSON)
 public class QueryMaxVlmSize
 {

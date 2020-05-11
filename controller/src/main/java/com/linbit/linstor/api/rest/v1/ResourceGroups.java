@@ -17,12 +17,6 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandle
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.glassfish.grizzly.http.server.Request;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -39,7 +33,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -48,7 +41,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Path("resource-groups")
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.glassfish.grizzly.http.server.Request;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@Path("v1/resource-groups")
 @Produces(MediaType.APPLICATION_JSON)
 public class ResourceGroups
 {

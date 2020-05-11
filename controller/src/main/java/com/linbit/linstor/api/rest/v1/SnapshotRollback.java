@@ -16,7 +16,7 @@ import javax.ws.rs.core.Context;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
-@Path("resource-definitions/{rscName}/snapshot-rollback")
+@Path("v1/resource-definitions/{rscName}/snapshot-rollback")
 public class SnapshotRollback
 {
     private final RequestHelper requestHelper;

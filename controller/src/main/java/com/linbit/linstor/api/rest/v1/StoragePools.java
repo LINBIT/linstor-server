@@ -49,7 +49,7 @@ import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@Path("nodes/{nodeName}/storage-pools")
+@Path("v1/nodes/{nodeName}/storage-pools")
 @Produces(MediaType.APPLICATION_JSON)
 public class StoragePools
 {

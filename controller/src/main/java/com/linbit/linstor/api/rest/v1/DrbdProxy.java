@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
-@Path("resource-definitions/{rscName}/drbd-proxy")
+@Path("v1/resource-definitions/{rscName}/drbd-proxy")
 public class DrbdProxy
 {
     private final RequestHelper requestHelper;
