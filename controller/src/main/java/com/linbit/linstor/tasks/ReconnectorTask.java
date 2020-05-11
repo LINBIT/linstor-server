@@ -24,6 +24,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,12 +71,13 @@ public class ReconnectorTask implements Task
 
     public void add(Peer peer, boolean authenticateImmediately)
     {
+        boolean sendAuthentication = false;
         synchronized (syncObj)
         {
             if (authenticateImmediately && peer.isConnected(false))
             {
                 // no locks needed
-                authenticatorProvider.get().sendAuthentication(peer);
+                sendAuthentication = true;
                 pingTask.add(peer);
             }
             else
@@ -83,20 +85,41 @@ public class ReconnectorTask implements Task
                 peerSet.add(peer);
             }
         }
+        if (sendAuthentication)
+        {
+            /*
+             * DO NOT call this method while locking syncObj!
+             */
+
+            // no locks needed
+            authenticatorProvider.get().sendAuthentication(peer);
+
+            // do not add peer to ping task, as that is done when the satellite
+            // authenticated successfully.
+        }
     }
 
     public void peerConnected(Peer peer)
     {
+        boolean sendAuthentication = false;
         synchronized (syncObj)
         {
             if (peerSet.remove(peer) && pingTask != null)
             {
-                // no locks needed
-                authenticatorProvider.get().sendAuthentication(peer);
-
-                // do not add peer to ping task, as that is done when the satellite
-                // authenticated successfully.
+                sendAuthentication = true;
             }
+        }
+        if (sendAuthentication)
+        {
+            /*
+             * DO NOT call this method while locking syncObj!
+             */
+
+            // no locks needed
+            authenticatorProvider.get().sendAuthentication(peer);
+
+            // do not add peer to ping task, as that is done when the satellite
+            // authenticated successfully.
         }
     }
 
