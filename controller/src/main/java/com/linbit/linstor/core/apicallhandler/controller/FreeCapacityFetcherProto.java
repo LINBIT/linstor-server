@@ -30,6 +30,11 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -42,11 +47,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 @Singleton
 public class FreeCapacityFetcherProto implements FreeCapacityFetcher
@@ -195,7 +195,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         Tuple2<NodeName, ByteArrayInputStream> freeSpaceAnswer
     )
     {
-        Tuple2<Key, Tuple2<SpaceInfo, List<ApiCallRc>>> ret = null;
+        List<Tuple2<Key, Tuple2<SpaceInfo, List<ApiCallRc>>>> ret = new ArrayList<>();
         try
         {
             NodeName nodeName = freeSpaceAnswer.getT1();
@@ -225,11 +225,13 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
                 long freeCapacity = freeSpaceInfo.getFreeCapacity();
                 long totalCapacity = freeSpaceInfo.getTotalCapacity();
 
-                ret = Tuples.of(
-                    new StorPool.Key(nodeName, storPoolName),
+                ret.add(
                     Tuples.of(
-                        new SpaceInfo(totalCapacity, freeCapacity),
-                        apiCallRcs
+                        new StorPool.Key(nodeName, storPoolName),
+                        Tuples.of(
+                            new SpaceInfo(totalCapacity, freeCapacity),
+                            apiCallRcs
+                        )
                     )
                 );
 
@@ -244,6 +246,6 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
         {
             throw new ImplementationError(exc);
         }
-        return Flux.just(ret);
+        return Flux.just(ret.toArray(new Tuple2[0]));
     }
 }
