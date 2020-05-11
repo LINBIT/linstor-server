@@ -106,6 +106,7 @@ public class TcpConnectorPeer implements Peer
     protected volatile boolean connected = false;
     protected ApiConsts.ConnectionStatus connectionStatus = ApiConsts.ConnectionStatus.OFFLINE;
     protected boolean authenticated = false;
+    protected boolean fullSyncApplied = false;
     protected boolean fullSyncFailed = false;
 
     // Volatile guarantees atomic read and write
@@ -373,10 +374,15 @@ public class TcpConnectorPeer implements Peer
     @Override
     public Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data)
     {
-        return apiCall(apiCallName, data, true);
+        return apiCall(apiCallName, data, true, true);
     }
 
-    public Flux<ByteArrayInputStream> apiCall(String apiCallName, byte[] data, boolean authenticationRequired)
+    public Flux<ByteArrayInputStream> apiCall(
+        String apiCallName,
+        byte[] data,
+        boolean authenticationRequired,
+        boolean fullSyncAppliedRequired
+    )
     {
         return Flux
             .<ByteArrayInputStream>create(fluxSink ->
@@ -388,7 +394,7 @@ public class TcpConnectorPeer implements Peer
 
                     openRpcs.put(apiCallId, fluxSink);
 
-                    if (authenticationRequired && !authenticated)
+                    if (authenticationRequired && !authenticated || fullSyncAppliedRequired && !fullSyncApplied)
                     {
                         fluxSink.error(new PeerNotConnectedException());
                     }
@@ -798,6 +804,18 @@ public class TcpConnectorPeer implements Peer
     public boolean hasFullSyncFailed()
     {
         return fullSyncFailed;
+    }
+
+    @Override
+    public void fullSyncApplied()
+    {
+        fullSyncApplied = true;
+    }
+
+    @Override
+    public boolean isFullSyncApplied()
+    {
+        return fullSyncApplied;
     }
 
     @Override

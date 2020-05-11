@@ -16,6 +16,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 
+import reactor.core.publisher.Flux;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -25,8 +27,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
-
-import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlFullSyncResponseApiCallHandler
@@ -88,6 +88,7 @@ public class CtrlFullSyncResponseApiCallHandler
     private Flux<?> fullSyncSuccessInScope(Peer satellitePeerRef, ResponseContext context)
     {
         satellitePeerRef.setConnectionStatus(ApiConsts.ConnectionStatus.ONLINE);
+        satellitePeerRef.fullSyncApplied();
 
         Node localNode = satellitePeerRef.getNode();
 

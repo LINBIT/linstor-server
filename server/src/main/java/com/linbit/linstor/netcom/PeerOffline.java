@@ -1,5 +1,6 @@
 package com.linbit.linstor.netcom;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiConsts;
@@ -325,6 +326,18 @@ public class PeerOffline implements Peer
 
     @Override
     public boolean hasFullSyncFailed()
+    {
+        return false;
+    }
+
+    @Override
+    public void fullSyncApplied()
+    {
+        throw new ImplementationError("FullSync cannot have been applied to an Offline Peer");
+    }
+
+    @Override
+    public boolean isFullSyncApplied()
     {
         return false;
     }

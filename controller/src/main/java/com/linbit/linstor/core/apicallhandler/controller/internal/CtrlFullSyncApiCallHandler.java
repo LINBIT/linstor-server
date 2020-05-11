@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.TcpConnectorPeer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -177,9 +178,11 @@ public class CtrlFullSyncApiCallHandler
                 renderUnsupportedDetails(details, unsupportedProvidersWithResons, "storage providers");
                 renderUnsupportedDetails(details, unsupportedLayersWithResons, "resource layers");
 
-                flux = satellitePeer.apiCall(
+                flux = ((TcpConnectorPeer) satellitePeer).apiCall(
                         InternalApiConsts.API_FULL_SYNC_DATA,
-                        data
+                        data,
+                        true,
+                        false
                     )
                     .concatMap(inputStream -> handleFullSyncResponse(satellitePeer, inputStream))
                     .thenMany(

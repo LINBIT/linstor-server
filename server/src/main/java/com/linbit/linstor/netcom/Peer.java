@@ -9,10 +9,12 @@ import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import javax.net.ssl.SSLException;
+
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -344,7 +346,21 @@ public interface Peer
     boolean hasFullSyncFailed();
 
     /**
+     * The satellite successfully applied our fullSync. This method should set internal flags
+     * to allow sending messages that require an applied fullSync.
+     */
+    void fullSyncApplied();
+
+    /**
+     * Returns true if the method {@link #fullSyncApplied()} was already called, false otherwise.
+     *
+     * @return
+     */
+    boolean isFullSyncApplied();
+
+    /**
      * Returns true if the peer has a complete Message object ready to be processed.
+     *
      * @return
      */
     boolean hasNextMsgIn();

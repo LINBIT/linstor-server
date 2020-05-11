@@ -85,7 +85,7 @@ public class CtrlAuthenticator
             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP),
             () -> completeAuthenticationInTransaction(node)
         )
-            .concatMap(inputStream -> this.processAuthResponse((Node) node, inputStream))
+            .concatMap(inputStream -> this.processAuthResponse(node, inputStream))
             .onErrorResume(
                 PeerNotConnectedException.class,
                 ignored -> Flux.empty()
@@ -122,6 +122,7 @@ public class CtrlAuthenticator
                                 "Hello, LinStor!".getBytes()
                             )
                             .build(),
+                        false,
                         false
                     );
 

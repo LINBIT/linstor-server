@@ -1,5 +1,6 @@
 package com.linbit.linstor.netcom;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiConsts;
@@ -11,6 +12,7 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import javax.net.ssl.SSLException;
+
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -323,6 +325,18 @@ public class PeerREST implements Peer
     public boolean hasFullSyncFailed()
     {
         return true;
+    }
+
+    @Override
+    public void fullSyncApplied()
+    {
+        throw new ImplementationError("Fullsync cannot have been applied to a rest client");
+    }
+
+    @Override
+    public boolean isFullSyncApplied()
+    {
+        return false;
     }
 
     @Override
