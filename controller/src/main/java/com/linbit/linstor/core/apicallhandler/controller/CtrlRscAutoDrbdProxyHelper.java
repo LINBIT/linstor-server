@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -8,14 +7,11 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiException;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
-import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -61,20 +57,14 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
             {
                 Resource firstRsc = resources[firstIdx];
                 PriorityProps prioPropFirstRsc = getPrioProps(firstRsc);
-                String siteA = prioPropFirstRsc.getProp(
-                    ApiConsts.KEY_DRBD_PROXY_SITE,
-                    ApiConsts.NAMESPC_DRBD_PROXY
-                );
+                String siteA = prioPropFirstRsc.getProp(ApiConsts.KEY_SITE);
                 if (siteA != null)
                 {
                     for (int secondIdx = firstIdx + 1; secondIdx < resources.length; secondIdx++)
                     {
                         Resource secondRsc = resources[secondIdx];
                         PriorityProps prioPropSecondRsc = getPrioProps(secondRsc);
-                        String siteB = prioPropSecondRsc.getProp(
-                            ApiConsts.KEY_DRBD_PROXY_SITE,
-                            ApiConsts.NAMESPC_DRBD_PROXY
-                        );
+                        String siteB = prioPropSecondRsc.getProp(ApiConsts.KEY_SITE);
 
                         if (siteB != null && !siteA.equals(siteB))
                         {
@@ -157,102 +147,50 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
         throws AccessDeniedException
     {
 
-        boolean hasFirstNodeAutoProxyEnabled = isAutoProxyEnabled(
-            firstRscRef,
-            apiCallRcImplRef
-        );
-        boolean hasSecondNodeAutoProxyEnabled = isAutoProxyEnabled(
-            secondRscRef,
-            apiCallRcImplRef
-        );
+        boolean hasFirstNodeAutoProxyEnabled = isProxySupported(firstRscRef.getNode());
+        boolean hasSecondNodeAutoProxyEnabled = isProxySupported(secondRscRef.getNode());
 
         boolean isAutoProxyEnabled = false;
         if (hasFirstNodeAutoProxyEnabled && hasSecondNodeAutoProxyEnabled)
         {
             AccessContext peerCtx = peerCtxProvider.get();
+            PriorityProps prioProps;
+
             ResourceConnection rscCon = firstRscRef.getAbsResourceConnection(peerCtx, secondRscRef);
-            if (rscCon == null)
+            if (rscCon != null)
             {
-                isAutoProxyEnabled = true;
+                prioProps = getPrioProps(rscCon);
             }
             else
             {
-                PriorityProps prioProps = getPrioProps(rscCon);
-                String autoProxyVal = prioProps.getProp(
-                    ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE,
-                    ApiConsts.NAMESPC_DRBD_PROXY
-                );
-                isAutoProxyEnabled = ApiConsts.VAL_TRUE.equalsIgnoreCase(autoProxyVal);
+                prioProps = getPrioProps(firstRscRef, secondRscRef);
             }
+            String autoProxyVal = prioProps.getProp(
+                ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE,
+                ApiConsts.NAMESPC_DRBD_PROXY
+            );
+            isAutoProxyEnabled = autoProxyVal != null &&
+                (autoProxyVal.equalsIgnoreCase(ApiConsts.VAL_TRUE) || autoProxyVal.equals(ApiConsts.VAL_YES));
         }
         return isAutoProxyEnabled;
     }
 
     /**
-     * This method only returns true if the given node has support for drbd proyx AND
-     * the node has either NOT set the property DrbdProxy/AutoEnable or the vlaue of that property
-     * is enabled.
+     * This method only returns true if the given node has support for drbd proyx
      *
      * @param nodeRef
-     * @param apiCallRcImplRef
      *
      * @return
      *
      * @throws AccessDeniedException
      */
-    private boolean isAutoProxyEnabled(Resource rsc, ApiCallRcImpl apiCallRcImplRef) throws AccessDeniedException
+    private boolean isProxySupported(Node node) throws AccessDeniedException
     {
-        boolean ret = false;
-
         AccessContext peerCtx = peerCtxProvider.get();
-        ExtToolsInfo drbdProxyInfo = rsc.getNode().getPeer(peerCtx).getExtToolsManager().getExtToolInfo(
+        ExtToolsInfo drbdProxyInfo = node.getPeer(peerCtx).getExtToolsManager().getExtToolInfo(
             ExtTools.DRBD_PROXY
         );
-        boolean isDrbdProxySupported = drbdProxyInfo != null && drbdProxyInfo.isSupported();
-
-        if (isDrbdProxySupported)
-        {
-            PriorityProps prioProps = getPrioProps(rsc);
-            String autoEnabledValue = prioProps.getProp(
-                ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE,
-                ApiConsts.NAMESPC_DRBD_PROXY
-            );
-            if (autoEnabledValue == null)
-            {
-                try
-                {
-                    rsc.getNode().getProps(
-                        peerCtx
-                    ).setProp(
-                        ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE,
-                        ApiConsts.VAL_TRUE,
-                        ApiConsts.NAMESPC_DRBD_PROXY
-                    );
-                    apiCallRcImplRef.addEntry(
-                        "Enabled auto-drbd-proxy for " + rsc.getNode().toString() +
-                            " by setting key " +
-                            ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE + " to " +
-                            ApiConsts.VAL_TRUE,
-                        ApiConsts.INFO_PROP_SET
-                    );
-                    ret = true;
-                }
-                catch (InvalidKeyException | InvalidValueException exc)
-                {
-                    throw new ImplementationError(exc);
-                }
-                catch (DatabaseException exc)
-                {
-                    throw new ApiException(exc);
-                }
-            }
-            else
-            {
-                ret = autoEnabledValue.equalsIgnoreCase(ApiConsts.VAL_TRUE) &&
-                    prioProps.getProp(ApiConsts.KEY_DRBD_PROXY_SITE, ApiConsts.NAMESPC_DRBD_PROXY) != null;
-            }
-        }
-        return ret;
+        return drbdProxyInfo != null && drbdProxyInfo.isSupported();
     }
 
     private PriorityProps getPrioProps(Resource rsc) throws AccessDeniedException
@@ -262,6 +200,19 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
             rsc.getProps(peerCtx),
             rsc.getResourceDefinition().getProps(peerCtx),
             rsc.getNode().getProps(peerCtx),
+            systemConfRepository.getCtrlConfForView(peerCtx)
+        );
+    }
+
+    private PriorityProps getPrioProps(Resource firstRsc, Resource secondRsc) throws AccessDeniedException
+    {
+        AccessContext peerCtx = peerCtxProvider.get();
+        return new PriorityProps(
+            firstRsc.getProps(peerCtx),
+            secondRsc.getProps(peerCtx),
+            firstRsc.getResourceDefinition().getProps(peerCtx),
+            firstRsc.getNode().getProps(peerCtx),
+            secondRsc.getNode().getProps(peerCtx),
             systemConfRepository.getCtrlConfForView(peerCtx)
         );
     }

@@ -1589,6 +1589,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     @Test
     public void createRscWithDrbdProxyTest() throws Exception
     {
+        enterScope();
+        ctrlConf.setProp(ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE, "true");
+        commitAndCleanUp(true);
+
         RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
             TEST_RSC_NAME,
             3,
@@ -1597,17 +1601,17 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
             .stltBuilder("stlt1")
                 .addStorPool("sp1", 100*GB, LVM)
-                .setNodeProp(ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_SITE, "A")
+            .setNodeProp(ApiConsts.KEY_SITE, "A")
                 .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
                 .build()
             .stltBuilder("stlt2")
                 .addStorPool("sp1", 100*GB, LVM)
-                .setNodeProp(ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_SITE, "A")
+            .setNodeProp(ApiConsts.KEY_SITE, "A")
                 .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
                 .build()
             .stltBuilder("stlt3")
                 .addStorPool("sp1", 100*GB, LVM)
-                .setNodeProp(ApiConsts.NAMESPC_DRBD_PROXY + "/" + ApiConsts.KEY_DRBD_PROXY_SITE, "B")
+            .setNodeProp(ApiConsts.KEY_SITE, "B")
                 .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
                 .build();
 
