@@ -134,15 +134,12 @@ class Selector
         SelectionManger selectionManger = new SelectionManger(
             selectFilterRef,
             alreadyDeployedOnNodes,
-            alreadySelectedProviderKind
+            alreadySelectedProviderKind,
+            sortedStorPoolByScoreArr
         );
         do
         {
-            currentSelection = findSelection(
-                startIdx,
-                sortedStorPoolByScoreArr,
-                selectionManger
-            );
+            currentSelection = selectionManger.findSelection(startIdx);
             if (currentSelection.size() == replicaCount)
             {
                 double currentScore = 0;
@@ -202,7 +199,9 @@ class Selector
                     else
                     {
                         // continue the search, reset temporary maps
-                        selectionManger.clear();
+                        errorReporter.logTrace(
+                            "Autoplacer.Selector: Continuing search for better candidates."
+                        );
                     }
                 }
                 else
@@ -223,35 +222,6 @@ class Selector
         return selectionResult;
     }
 
-    private Set<StorPoolWithScore> findSelection(
-        int startIdxRef,
-        StorPoolWithScore[] sortedStorPoolByScoreArrRef,
-        SelectionManger currentSelection
-    )
-        throws AccessDeniedException
-    {
-        for (int idx = startIdxRef; idx < sortedStorPoolByScoreArrRef.length && !currentSelection.isComplete(); idx++)
-        {
-            StorPoolWithScore currentSpWithScore = sortedStorPoolByScoreArrRef[idx];
-            if (currentSelection.chooseIfAllowed(currentSpWithScore))
-            {
-                Set<StorPoolWithScore> childStorPoolSelection = findSelection(
-                    idx + 1,
-                    sortedStorPoolByScoreArrRef,
-                    currentSelection
-                );
-                if (childStorPoolSelection == null || !currentSelection.isComplete())
-                {
-                    /*
-                     * recursion could not finish, i.e. the current selection does not allow enough storage pools
-                     * remove our selection and retry with the next storage pool
-                     */
-                    currentSelection.unselect(currentSpWithScore);
-                }
-            }
-        }
-        return currentSelection.selectedStorPoolWithScoreSet;
-    }
 
     /**
      * This class has two purposes:
@@ -267,6 +237,7 @@ class Selector
         private final AutoSelectFilterApi selectFilter;
         private final Set<Node> selectedNodes;
         private final Set<StorPoolWithScore> selectedStorPoolWithScoreSet;
+        private final StorPoolWithScore[] sortedStorPoolByScoreArr;
         private DeviceProviderKind selectedProviderKind;
 
         /*
@@ -276,16 +247,19 @@ class Selector
         private HashMap<String, String> sameProps = new HashMap<>();
         private HashMap<String, List<String>> diffProps = new HashMap<>();
 
+
         public SelectionManger(
             AutoSelectFilterApi selectFilterRef,
             List<Node> alreadyDeployedOnNodesRef,
-            DeviceProviderKind alreadySelectedProviderKindRef
+            DeviceProviderKind alreadySelectedProviderKindRef,
+            StorPoolWithScore[] sortedStorPoolByScoreArrRef
         )
             throws AccessDeniedException
         {
             selectFilter = selectFilterRef;
             alreadyDeployedOnNodes = alreadyDeployedOnNodesRef;
             selectedProviderKind = alreadySelectedProviderKindRef;
+            sortedStorPoolByScoreArr = sortedStorPoolByScoreArrRef;
 
             selectedNodes = new HashSet<>();
             selectedStorPoolWithScoreSet = new HashSet<>();
@@ -293,12 +267,41 @@ class Selector
             clear();
         }
 
-        public boolean isComplete()
+        public HashSet<StorPoolWithScore> findSelection(int startIdxRef)
+            throws AccessDeniedException
+        {
+            clear();
+            findSelectionImpl(startIdxRef);
+            return new HashSet<>(selectedStorPoolWithScoreSet);
+        }
+
+        private void findSelectionImpl(int startIdxRef)
+            throws AccessDeniedException
+        {
+            for (int idx = startIdxRef; idx < sortedStorPoolByScoreArr.length && !isComplete(); idx++)
+            {
+                StorPoolWithScore currentSpWithScore = sortedStorPoolByScoreArr[idx];
+                if (chooseIfAllowed(currentSpWithScore))
+                {
+                    findSelectionImpl(idx + 1);
+                    if (!isComplete())
+                    {
+                        /*
+                         * recursion could not finish, i.e. the current selection does not allow enough storage pools
+                         * remove our selection and retry with the next storage pool
+                         */
+                        unselect(currentSpWithScore);
+                    }
+                }
+            }
+        }
+
+        private boolean isComplete()
         {
             return selectedStorPoolWithScoreSet.size() == selectFilter.getReplicaCount();
         }
 
-        public boolean chooseIfAllowed(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
+        private boolean chooseIfAllowed(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
         {
             Node node = currentSpWithScoreRef.storPool.getNode();
             Props nodeProps = node.getProps(apiCtx);

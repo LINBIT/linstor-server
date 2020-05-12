@@ -50,6 +50,17 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 
+import com.google.inject.testing.fieldbinder.Bind;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.slf4j.event.Level;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import javax.inject.Inject;
 
 import java.util.ArrayList;
@@ -65,17 +76,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-
-import com.google.inject.testing.fieldbinder.Bind;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.slf4j.event.Level;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
 public class RscAutoPlaceApiTest extends ApiTestBase
@@ -1600,18 +1600,18 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         )
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
             .stltBuilder("stlt1")
+                .setNodeProp(ApiConsts.KEY_SITE, "A")
                 .addStorPool("sp1", 100*GB, LVM)
-            .setNodeProp(ApiConsts.KEY_SITE, "A")
                 .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
                 .build()
             .stltBuilder("stlt2")
+                .setNodeProp(ApiConsts.KEY_SITE, "A")
                 .addStorPool("sp1", 100*GB, LVM)
-            .setNodeProp(ApiConsts.KEY_SITE, "A")
                 .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
                 .build()
             .stltBuilder("stlt3")
+                .setNodeProp(ApiConsts.KEY_SITE, "B")
                 .addStorPool("sp1", 100*GB, LVM)
-            .setNodeProp(ApiConsts.KEY_SITE, "B")
                 .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
                 .build();
 
@@ -1644,6 +1644,71 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         assertNotNull(rscCon23);
         assertNotNull(rscCon23.getPort(SYS_CTX));
         assertTrue(rscCon23.getStateFlags().isSet(SYS_CTX, ResourceConnection.Flags.LOCAL_DRBD_PROXY));
+    }
+
+    @Test
+    public void keepFirstCandidateAfterContinuedSearch_Github139Test() throws Exception
+    {
+        /*
+         * Scenario: The Autoplacer.Selector happily finds the first candidate but is unsure
+         * if that is the best candidate or not, so it continues searching for a while.
+         * When the selector is confident enough that there cannot be any better candidates
+         * it simply returns the stored candidate.
+         *
+         * 139's bug is that the returned "stored" set of candidates was actually the same
+         * reference as the Selector's internal "currentCandidateSet", which gets cleared
+         * if a new search starts (i.e. "the search continues" after a candidate was found)
+         */
+
+        final String testKey = "Aux/test";
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            2,
+            true,
+            ApiConsts.CREATED,
+            ApiConsts.CREATED,
+            ApiConsts.CREATED
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .setNodeProp(testKey, "a")
+                .addStorPool("sp1", 100*GB, LVM_THIN) // best stor-pool, best candidate
+                .build()
+            .stltBuilder("stlt2")
+                .setNodeProp(testKey, "a")
+                // worst stor-pool but the only that can be combined with best candidate
+                .addStorPool("sp1", 10*GB, LVM_THIN)
+                .build()
+            .stltBuilder("stlt3")
+                .setNodeProp(testKey, "b")
+                // better than the worst, but not as good as best, also not best candidate
+                .addStorPool("sp1", 30*GB, LVM_THIN)
+                .build()
+            .stltBuilder("stlt4")
+                .setNodeProp(testKey, "b")
+                // better than the worst, but not as good as best, also not best candidate
+                .addStorPool("sp1", 30*GB, LVM_THIN)
+                .build()
+            .stltBuilder("stlt5")
+                .setNodeProp(testKey, "c")
+                // theoretically combinable to get a score higher than currently best, but
+                // practically not combinable to a candidate due to the property-constraint
+                .addStorPool("sp1", 90*GB, LVM_THIN)
+                .build()
+            .addReplicasOnSameNodeProp(testKey)
+            .addStorPool("sp1");
+
+        evaluateTest(call);
+
+        List<Resource> deployedRscs = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .sorted()
+            .collect(Collectors.toList());
+
+        assertEquals(2, deployedRscs.size());
     }
 
     private void expectDeployed(
