@@ -109,6 +109,39 @@ public class Volumes
         });
     }
 
+    public static JsonGenTypes.VolumeState getVolumeState(
+        final ResourceList resourceList, final String nodeName, final String rscName, int vlmNr)
+    {
+        JsonGenTypes.VolumeState vlmState = null;
+        try
+        {
+            final ResourceName rscNameRes = new ResourceName(rscName);
+            final NodeName linNodeName = new NodeName(nodeName);
+            if (resourceList.getSatelliteStates().containsKey(linNodeName) &&
+                resourceList.getSatelliteStates().get(linNodeName)
+                    .getResourceStates().containsKey(rscNameRes))
+            {
+                SatelliteResourceState satResState = resourceList
+                    .getSatelliteStates()
+                    .get(linNodeName)
+                    .getResourceStates()
+                    .get(rscNameRes);
+
+                VolumeNumber vlmNumber = new VolumeNumber(vlmNr);
+                if (satResState.getVolumeStates().containsKey(vlmNumber))
+                {
+                    vlmState = new JsonGenTypes.VolumeState();
+                    SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
+                    vlmState.disk_state = satVlmState.getDiskState();
+                }
+            }
+        }
+        catch (InvalidNameException | ValueOutOfRangeException ignored)
+        {
+        }
+        return vlmState;
+    }
+
     private Mono<Response> listVolumesApiCallRcWithToResponse(
         Flux<ResourceList> resourceListFlux,
         final String rscName,
@@ -143,35 +176,7 @@ public class Volumes
                 final List<JsonGenTypes.Volume> vlms = vlmApiStream.map(vlmApi ->
                 {
                     JsonGenTypes.Volume vlmData = Json.apiToVolume(vlmApi);
-
-                    JsonGenTypes.VolumeState vlmState = null;
-                    try
-                    {
-                        final ResourceName rscNameRes = new ResourceName(rscName);
-                        final NodeName linNodeName = new NodeName(nodeName);
-                        if (resourceList.getSatelliteStates().containsKey(linNodeName) &&
-                            resourceList.getSatelliteStates().get(linNodeName)
-                                .getResourceStates().containsKey(rscNameRes))
-                        {
-                            SatelliteResourceState satResState = resourceList
-                                .getSatelliteStates()
-                                .get(linNodeName)
-                                .getResourceStates()
-                                .get(rscNameRes);
-
-                            VolumeNumber vlmNumber = new VolumeNumber(vlmApi.getVlmNr());
-                            if (satResState.getVolumeStates().containsKey(vlmNumber))
-                            {
-                                vlmState = new JsonGenTypes.VolumeState();
-                                SatelliteVolumeState satVlmState = satResState.getVolumeStates().get(vlmNumber);
-                                vlmState.disk_state = satVlmState.getDiskState();
-                            }
-                        }
-                    }
-                    catch (InvalidNameException | ValueOutOfRangeException ignored)
-                    {
-                    }
-                    vlmData.state = vlmState;
+                    vlmData.state = getVolumeState(resourceList, nodeName, rscName, vlmApi.getVlmNr());
                     return vlmData;
                 })
                     .collect(Collectors.toList());

@@ -178,7 +178,7 @@ public class RequestHelper
         }
     }
 
-    Context createContext(String apiCall, org.glassfish.grizzly.http.server.Request request)
+    public Context createContext(String apiCall, org.glassfish.grizzly.http.server.Request request)
     {
         final String userAgent = request.getHeader("User-Agent");
         Peer peer = new PeerREST(request.getRemoteAddr(), userAgent, publicContext);
@@ -203,7 +203,7 @@ public class RequestHelper
         return doInScope(createContext(apiCall, request), callable, transactional);
     }
 
-    Response doInScope(
+    public Response doInScope(
         Context subscriberContext,
         Callable<Response> callable,
         boolean transactional

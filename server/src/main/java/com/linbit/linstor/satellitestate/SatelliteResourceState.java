@@ -3,6 +3,7 @@ package com.linbit.linstor.satellitestate;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -32,7 +33,7 @@ public class SatelliteResourceState
         }
     }
 
-    public Boolean isInUse()
+    public @Nullable Boolean isInUse()
     {
         return inUse;
     }
