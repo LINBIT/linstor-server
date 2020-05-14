@@ -1,3 +1,24 @@
+linstor-server (1.7.1-1) experimental; urgency=medium
+
+  [ Rainer Laschober ]
+  * VolumeDefinition: Make create synchronous
+
+  [ Gabor Hernadi ]
+  * Autoplacer: Fixed decimal regex for weights
+  * Renamed DrbdProxy/Site to Site
+  * ParseThinSpace: Fixed NPE due to a race condition
+  * ParseThinSpaces: return now all requested entries
+  * AutoPlaceApi: added null-pointer check
+  * Autoplacer: Fixed "autoplaced on 0 nodes" bug
+  * ReconnectorTask: Attempt to fix possible deadlock
+  * DrbdProxy: Disable autoproxy when disabling proxy
+  * AutoProxy: Added migration to rename Site property
+
+  [ Rene Peinthor ]
+  * virter/Makefile: fix hardcoded path
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 14 May 2020 12:41:32 +0000
+
 linstor-server (1.7.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
