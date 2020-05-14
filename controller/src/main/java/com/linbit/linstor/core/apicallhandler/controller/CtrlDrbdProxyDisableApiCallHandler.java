@@ -20,12 +20,16 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyEnableApiCallHandler.makeDrbdProxyContext;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscConnectionApiCallHandler.getResourceConnectionDescriptionInline;
+
+import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -34,8 +38,6 @@ import javax.inject.Singleton;
 
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
-
-import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlDrbdProxyDisableApiCallHandler
@@ -125,6 +127,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
 
         unsetPort(rscConn);
         disableLocalProxyFlag(rscConn);
+        disableAutoProxy(rscConn);
 
         ctrlTransactionHelper.commit();
 
@@ -144,6 +147,35 @@ public class CtrlDrbdProxyDisableApiCallHandler
             .<ApiCallRc>just(responses)
             .concatWith(satelliteUpdateResponses)
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
+    }
+
+    private void disableAutoProxy(ResourceConnection rscConn)
+    {
+        try
+        {
+            rscConn.getProps(peerAccCtx.get()).setProp(
+                ApiConsts.KEY_DRBD_PROXY_AUTO_ENABLE,
+                ApiConsts.NAMESPC_DRBD_PROXY,
+                ApiConsts.VAL_FALSE
+            );
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "setting property to disable auto drbd-proxy of " +
+                    getResourceConnectionDescriptionInline(apiCtx, rscConn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
     }
 
     private void disableLocalProxyFlag(ResourceConnection rscConn)
