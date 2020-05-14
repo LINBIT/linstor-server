@@ -1,16 +1,18 @@
 # you need /etc/hosts entries for linstor{1,2,3,4} and your virter ips
 
+LIBVIRT_POOL=default
+
 all: provision
 
 provision: provision.toml
-	virter image build ubuntu-focal ubuntu-linstor --id 100 -p provision.toml --vcpus 2
+	virter image build ubuntu-focal ubuntu-linstor -p provision.toml --vcpus 2
 
 define create_disks
 	sudo virsh vol-create-as default $(1)_zfs.qcow2 1073741824 --format qcow2
 endef
 
 define attach_disks
-	sudo virsh attach-disk $(1) /mnt/data/vms/$(1)_zfs.qcow2 vdb --subdriver qcow2 --persistent
+	sudo virsh attach-disk $(1) `sudo virsh vol-list $(LIBVIRT_POOL) | grep $(1)_zfs.qcow2 | xargs | cut -d' ' -f2` vdb --subdriver qcow2 --persistent
 	ssh root@$(1) pvcreate /dev/sda
 	ssh root@$(1) vgcreate scratch /dev/sda
 	ssh root@$(1) zpool create -f scratch-zfs /dev/vdb
@@ -36,9 +38,9 @@ clean:
 	virter vm rm linstor1
 	virter vm rm linstor2
 	virter vm rm linstor3
-	$(call delete_disks, linstor1)
-	$(call delete_disks, linstor2)
-	$(call delete_disks, linstor3)
+	$(call delete_disks,linstor1)
+	$(call delete_disks,linstor2)
+	$(call delete_disks,linstor3)
 	ssh-keygen -R linstor1
 	#ssh-keygen -R 192.168.125.21
 	ssh-keygen -R linstor2
