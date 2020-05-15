@@ -26,13 +26,12 @@ public class SQLUtils
         int ret = 0;
         if (statement != null)
         {
-            try (PreparedStatement stmt = con.prepareStatement(statement))
+            try (PreparedStatement stmt = con.prepareStatement(statement.trim()))
             {
                 ret = stmt.executeUpdate();
             }
             catch (SQLException throwable)
             {
-                System.err.println("Error: " + statement);
                 throw throwable;
             }
         }
