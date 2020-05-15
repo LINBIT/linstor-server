@@ -43,5 +43,5 @@ deploy:
     - docker push $CI_REGISTRY/linstor/linstor-server/controller:latest
   tags:
     - shell
-  only:
-    - master
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
