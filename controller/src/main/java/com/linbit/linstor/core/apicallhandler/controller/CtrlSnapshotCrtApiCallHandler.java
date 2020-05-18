@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.TimeoutException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
@@ -62,19 +63,20 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCa
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 import static com.linbit.linstor.utils.layer.LayerVlmUtils.getStorPoolMap;
 
+import reactor.core.publisher.Flux;
+import reactor.util.function.Tuple2;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import reactor.core.publisher.Flux;
-import reactor.util.function.Tuple2;
 
 @Singleton
 public class CtrlSnapshotCrtApiCallHandler
@@ -309,6 +311,8 @@ public class CtrlSnapshotCrtApiCallHandler
 
         enableFlagPrivileged(snapshotDfn, flag);
         unsetInCreationPrivileged(snapshotDfn);
+        ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
+        resumeIoPrivileged(rscDfn);
 
         ctrlTransactionHelper.commit();
 
@@ -319,6 +323,16 @@ public class CtrlSnapshotCrtApiCallHandler
                     rscName,
                     "Aborted snapshot of {1} on {0}"
                 ))
+                .concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+                        .transform(
+                            responses -> CtrlResponseUtils.combineResponses(
+                                responses,
+                                rscName,
+                                "Resumed IO of {1} on {0} after failed snapshot"
+                            )
+                        )
+                )
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
 
         return satelliteUpdateResponses
@@ -358,6 +372,10 @@ public class CtrlSnapshotCrtApiCallHandler
                 ));
 
         return satelliteUpdateResponses
+            .timeout(
+                Duration.ofMinutes(2),
+                abortSnapshot(rscName, snapshotName, new TimeoutException())
+            )
             .concatWith(resumeResource(rscName, snapshotName));
     }
 
