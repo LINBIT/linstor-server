@@ -647,6 +647,7 @@ public class JsonGenTypes
          * sizes (in kib) of the resulting volume-definitions
          */
         public List<Long> volume_sizes = Collections.emptyList();
+        public AutoSelectFilter select_filter;
         /**
          * If false, the length of the vlm_sizes has to match the number of volume-groups or an
          * error is returned.

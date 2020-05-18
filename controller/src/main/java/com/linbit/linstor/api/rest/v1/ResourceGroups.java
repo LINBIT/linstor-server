@@ -17,6 +17,12 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandle
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.glassfish.grizzly.http.server.Request;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -41,12 +47,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.glassfish.grizzly.http.server.Request;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 @Path("resource-groups")
 @Produces(MediaType.APPLICATION_JSON)
@@ -253,11 +253,13 @@ public class ResourceGroups
                 rscGrpSpwn.resource_definition_external_name.getBytes(StandardCharsets.UTF_8) :
                 null;
 
+            AutoSelectFilterApi spawnAutoSelectFilter = selectFilterToApi(rscGrpSpwn.select_filter);
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.spawn(
                 rscGrpName,
                 rscGrpSpwn.resource_definition_name,
                 rscDfnExtName,
                 rscGrpSpwn.volume_sizes,
+                spawnAutoSelectFilter,
                 rscGrpSpwn.partial,
                 rscGrpSpwn.definitions_only
             )

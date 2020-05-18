@@ -63,45 +63,48 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
 
         for (AutoSelectFilterApi cfgApi : cfgArr)
         {
-            if (placeCount == null)
+            if (cfgApi != null)
             {
-                placeCount = cfgApi.getReplicaCount();
-            }
-            if (replicasOnDifferentList == null)
-            {
-                replicasOnDifferentList = cfgApi.getReplicasOnDifferentList();
-            }
-            if (replicasOnSameList == null)
-            {
-                replicasOnSameList = cfgApi.getReplicasOnSameList();
-            }
-            if (notPlaceWithRscList == null)
-            {
-                notPlaceWithRscList = cfgApi.getDoNotPlaceWithRscList();
-            }
-            if (notPlaceWithRscRegex == null)
-            {
-                notPlaceWithRscRegex = cfgApi.getDoNotPlaceWithRscRegex();
-            }
-            if (storPoolNameList == null)
-            {
-                storPoolNameList = cfgApi.getStorPoolNameList();
-            }
-            if (nodeNameList == null)
-            {
-                nodeNameList = cfgApi.getNodeNameList();
-            }
-            if (layerStack == null)
-            {
-                layerStack = cfgApi.getLayerStackList();
-            }
-            if (providerList == null)
-            {
-                providerList = cfgApi.getProviderList();
-            }
-            if (disklessOnRemaining == null)
-            {
-                disklessOnRemaining = cfgApi.getDisklessOnRemaining();
+                if (placeCount == null)
+                {
+                    placeCount = cfgApi.getReplicaCount();
+                }
+                if (replicasOnDifferentList == null)
+                {
+                    replicasOnDifferentList = cfgApi.getReplicasOnDifferentList();
+                }
+                if (replicasOnSameList == null)
+                {
+                    replicasOnSameList = cfgApi.getReplicasOnSameList();
+                }
+                if (notPlaceWithRscList == null)
+                {
+                    notPlaceWithRscList = cfgApi.getDoNotPlaceWithRscList();
+                }
+                if (notPlaceWithRscRegex == null)
+                {
+                    notPlaceWithRscRegex = cfgApi.getDoNotPlaceWithRscRegex();
+                }
+                if (storPoolNameList == null)
+                {
+                    storPoolNameList = cfgApi.getStorPoolNameList();
+                }
+                if (nodeNameList == null)
+                {
+                    nodeNameList = cfgApi.getNodeNameList();
+                }
+                if (layerStack == null)
+                {
+                    layerStack = cfgApi.getLayerStackList();
+                }
+                if (providerList == null)
+                {
+                    providerList = cfgApi.getProviderList();
+                }
+                if (disklessOnRemaining == null)
+                {
+                    disklessOnRemaining = cfgApi.getDisklessOnRemaining();
+                }
             }
         }
 

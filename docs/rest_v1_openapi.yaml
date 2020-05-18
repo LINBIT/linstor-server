@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.2.0
+       - Added optional AutoSelectFilter to resource-group/spawn
     * 1.1.0
        - Added /v1/views/snapshots for a faster all in one snapshot list
        - Filter lists by properties:
@@ -4569,6 +4571,8 @@ components:
             type: integer
             format: int64
           description: sizes (in kib) of the resulting volume-definitions
+        select_filter:
+          $ref: '#/components/schemas/AutoSelectFilter'
         partial:
           type: boolean
           default: false

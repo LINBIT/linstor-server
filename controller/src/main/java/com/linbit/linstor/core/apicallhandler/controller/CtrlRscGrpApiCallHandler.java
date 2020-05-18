@@ -64,6 +64,9 @@ import static com.linbit.locks.LockGuardFactory.LockObj.RSC_GRP_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
+import com.google.inject.Provider;
+import reactor.core.publisher.Flux;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -76,9 +79,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import com.google.inject.Provider;
-import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlRscGrpApiCallHandler
@@ -632,6 +632,7 @@ public class CtrlRscGrpApiCallHandler
         String rscDfnNameRef,
         byte[] rscDfnExtNameRef,
         List<Long> vlmSizesRef,
+        AutoSelectFilterApi spawnAutoSelectFilterRef,
         boolean partialRef,
         boolean definitionsOnlyRef
     )
@@ -660,6 +661,7 @@ public class CtrlRscGrpApiCallHandler
                     rscDfnNameRef,
                     rscDfnExtNameRef,
                     vlmSizesRef,
+                    spawnAutoSelectFilterRef,
                     partialRef,
                     definitionsOnlyRef,
                     context
@@ -673,6 +675,7 @@ public class CtrlRscGrpApiCallHandler
         String rscDfnNameRef,
         byte[] rscDfnExtNameRef,
         List<Long> vlmSizesRef,
+        AutoSelectFilterApi spawnAutoSelectFilterRef,
         boolean partialRef,
         boolean definitionsOnlyRef,
         ResponseContext contextRef
@@ -686,15 +689,23 @@ public class CtrlRscGrpApiCallHandler
             List<String> layerStackStr;
             List<DeviceLayerKind> layerStackDevLayerKind;
 
-            AutoSelectorConfig autoPlaceConfig = rscGrp.getAutoPlaceConfig();
+            AutoSelectorConfig rgAutoPlaceConfig = rscGrp.getAutoPlaceConfig();
+            AutoSelectFilterPojo autoPlaceConfig = AutoSelectFilterPojo.merge(
+                spawnAutoSelectFilterRef,
+                rgAutoPlaceConfig == null ? null : rgAutoPlaceConfig.getApiData()
+            );
+
             AccessContext peerCtx = peerAccCtx.get();
             if (autoPlaceConfig != null)
             {
-                layerStackDevLayerKind = autoPlaceConfig.getLayerStackList(peerCtx);
+                layerStackDevLayerKind = autoPlaceConfig.getLayerStackList();
                 layerStackStr = new ArrayList<>();
-                for (DeviceLayerKind kind : layerStackDevLayerKind)
+                if (layerStackDevLayerKind != null)
                 {
-                    layerStackStr.add(kind.toString());
+                    for (DeviceLayerKind kind : layerStackDevLayerKind)
+                    {
+                        layerStackStr.add(kind.toString());
+                    }
                 }
             }
             else
@@ -757,19 +768,19 @@ public class CtrlRscGrpApiCallHandler
                 apiCallRc
             );
 
-            if (autoPlaceConfig != null && autoPlaceConfig.getReplicaCount(peerCtx) != null && !definitionsOnlyRef)
+            if (autoPlaceConfig != null && autoPlaceConfig.getReplicaCount() != null && !definitionsOnlyRef)
             {
                 AutoSelectFilterApi autoSelectFilterPojo = new AutoSelectFilterPojo(
-                    autoPlaceConfig.getReplicaCount(peerCtx),
-                    autoPlaceConfig.getNodeNameList(peerCtx),
-                    autoPlaceConfig.getStorPoolNameList(peerCtx),
-                    autoPlaceConfig.getDoNotPlaceWithRscList(peerCtx),
-                    autoPlaceConfig.getDoNotPlaceWithRscRegex(peerCtx),
-                    autoPlaceConfig.getReplicasOnSameList(peerCtx),
-                    autoPlaceConfig.getReplicasOnDifferentList(peerCtx),
+                    autoPlaceConfig.getReplicaCount(),
+                    autoPlaceConfig.getNodeNameList(),
+                    autoPlaceConfig.getStorPoolNameList(),
+                    autoPlaceConfig.getDoNotPlaceWithRscList(),
+                    autoPlaceConfig.getDoNotPlaceWithRscRegex(),
+                    autoPlaceConfig.getReplicasOnSameList(),
+                    autoPlaceConfig.getReplicasOnDifferentList(),
                     layerStackDevLayerKind,
-                    autoPlaceConfig.getProviderList(peerCtx),
-                    autoPlaceConfig.getDisklessOnRemaining(peerCtx)
+                    autoPlaceConfig.getProviderList(),
+                    autoPlaceConfig.getDisklessOnRemaining()
                 );
                 deployedResources = ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
                     /*
@@ -784,13 +795,13 @@ public class CtrlRscGrpApiCallHandler
             else
             {
                 String reason = "";
-                if (autoPlaceConfig == null || autoPlaceConfig.getReplicaCount(peerCtx) == null)
+                if (autoPlaceConfig == null || autoPlaceConfig.getReplicaCount() == null)
                 {
                     reason = "No autoplace configuration in the given resource group (at least place-count required)";
                 }
                 if (definitionsOnlyRef)
                 {
-                    if (autoPlaceConfig == null || autoPlaceConfig.getReplicaCount(peerCtx) == null)
+                    if (autoPlaceConfig == null || autoPlaceConfig.getReplicaCount() == null)
                     {
                         reason += " and ";
                     }
