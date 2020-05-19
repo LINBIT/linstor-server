@@ -18,6 +18,9 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -yd
 DEBIAN_FRONTEND=noninteractive apt-get install -yq thin-provisioning-tools drbd-dkms drbd-utils zfsutils-linux \
 default-jre-headless python virtualenv postgresql mariadb-server
+DEBIAN_FRONTEND=noninteractive apt-get purge -yq multipath-tools
+DEBIAN_FRONTEND=noninteractive apt-get autoremove -yq
+DEBIAN_FRONTEND=noninteractive apt-get clean -yq
 
 #pvcreate /dev/vda
 #vgcreate scratch /dev/vda
