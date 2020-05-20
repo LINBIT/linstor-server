@@ -17,6 +17,7 @@ message ExternalToolsInfo
         NVME = 6;
         SPDK = 7;
         WRITECACHE = 8;
+        DM_CACHE = 10;
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

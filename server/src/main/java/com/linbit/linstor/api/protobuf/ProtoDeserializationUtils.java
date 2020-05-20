@@ -346,6 +346,9 @@ public class ProtoDeserializationUtils
             case WRITECACHE:
                 tool = ExtTools.WRITECACHE;
                 break;
+            case DM_CACHE:
+                tool = ExtTools.DM_CACHE;
+                break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through
             default:
