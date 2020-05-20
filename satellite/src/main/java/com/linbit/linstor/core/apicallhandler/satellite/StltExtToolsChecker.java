@@ -52,7 +52,9 @@ public class StltExtToolsChecker
     private static final Pattern NVME_VERSION_PATTERN = Pattern
         .compile("(?:nvme version\\s*)(\\d+)\\.(\\d+)");
     private static final Pattern SPDK_VERSION_PATTERN = Pattern
-            .compile("(?:\\s*version\\s*)?(\\d+)\\.(\\d+)");
+        .compile("(?:\\s*version\\s*)?(\\d+)\\.(\\d+)");
+    private static final Pattern LOSETUP_VERSION_PATTERN = Pattern
+        .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
 
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
@@ -87,7 +89,8 @@ public class StltExtToolsChecker
             getNvmeInfo(loadedModules),
             getSpdkInfo(),
             getWritecacheInfo(loadedModules),
-            getCacheInfo(loadedModules)
+            getCacheInfo(loadedModules),
+            getLosetupInfo()
         );
     }
 
@@ -191,6 +194,11 @@ public class StltExtToolsChecker
         List<String> errorList = new ArrayList<>();
         checkModuleLoaded(loadedModulesRef, "dm-cache", errorList);
         return new ExtToolsInfo(ExtTools.DM_CACHE, errorList.isEmpty(), null, null, null, errorList);
+    }
+
+    private ExtToolsInfo getLosetupInfo()
+    {
+        return infoBy3MatchGroupPattern(LOSETUP_VERSION_PATTERN, ExtTools.LOSETUP, false, "losetup", "--version");
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)

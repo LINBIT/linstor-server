@@ -9,5 +9,6 @@ public enum ExtTools
     NVME,
     SPDK,
     WRITECACHE,
-    DM_CACHE
+    DM_CACHE,
+    LOSETUP
 }
