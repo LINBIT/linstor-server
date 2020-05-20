@@ -86,7 +86,8 @@ public class StltExtToolsChecker
             getZfsInfo(),
             getNvmeInfo(loadedModules),
             getSpdkInfo(),
-            getWritecacheInfo(loadedModules)
+            getWritecacheInfo(loadedModules),
+            getCacheInfo(loadedModules)
         );
     }
 
@@ -183,6 +184,13 @@ public class StltExtToolsChecker
         List<String> errorList = new ArrayList<>();
         checkModuleLoaded(loadedModulesRef, "dm-writecache", errorList);
         return new ExtToolsInfo(ExtTools.WRITECACHE, errorList.isEmpty(), null, null, null, errorList);
+    }
+
+    private ExtToolsInfo getCacheInfo(List<String> loadedModulesRef)
+    {
+        List<String> errorList = new ArrayList<>();
+        checkModuleLoaded(loadedModulesRef, "dm-cache", errorList);
+        return new ExtToolsInfo(ExtTools.DM_CACHE, errorList.isEmpty(), null, null, null, errorList);
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)

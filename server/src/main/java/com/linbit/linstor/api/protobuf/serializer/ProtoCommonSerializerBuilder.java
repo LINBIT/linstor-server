@@ -10,6 +10,8 @@ import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
+import com.linbit.linstor.api.pojo.CacheRscPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
@@ -21,8 +23,6 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
-import com.linbit.linstor.api.pojo.CacheRscPojo;
-import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -55,6 +55,8 @@ import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
+import com.linbit.linstor.proto.common.CacheRscOuterClass.CacheRsc;
+import com.linbit.linstor.proto.common.CacheRscOuterClass.CacheVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdVlm;
@@ -74,8 +76,6 @@ import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRsc;
 import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRscDfn;
 import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexVlm;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
-import com.linbit.linstor.proto.common.CacheRscOuterClass.CacheRsc;
-import com.linbit.linstor.proto.common.CacheRscOuterClass.CacheVlm;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
 import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
 import com.linbit.linstor.proto.common.RscDfnOuterClass;
@@ -1102,6 +1102,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 break;
             case WRITECACHE:
                 ret = ExternalTools.WRITECACHE;
+                break;
+            case DM_CACHE:
+                ret = ExternalTools.DM_CACHE;
                 break;
             default:
                 throw new RuntimeException("Not implemented.");

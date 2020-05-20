@@ -8,5 +8,6 @@ public enum ExtTools
     ZFS,
     NVME,
     SPDK,
-    WRITECACHE
+    WRITECACHE,
+    DM_CACHE
 }
