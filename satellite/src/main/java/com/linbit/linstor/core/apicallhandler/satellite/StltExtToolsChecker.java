@@ -37,6 +37,8 @@ import java.util.regex.Pattern;
 @Singleton
 public class StltExtToolsChecker
 {
+    private static final Pattern PROC_MODULES_NAME_PATTERN = Pattern.compile("^([^ ]+)");
+
     private static final Pattern DRBD_PROXY_VERSION_PATTERN = Pattern
         .compile("(?:Drbd-proxy )?(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern CRYPTSETUP_VERSION_PATTERN = Pattern
@@ -73,6 +75,8 @@ public class StltExtToolsChecker
 
     public List<ExtToolsInfo> getExternalTools()
     {
+        List<String> loadedModules = getLoadedModules();
+
         return Arrays.asList(
             getDrbd9Info(),
             getDrbdProxyInfo(),
@@ -80,9 +84,9 @@ public class StltExtToolsChecker
             getLvmInfo(),
             getLvmThinInfo(),
             getZfsInfo(),
-            getNvmeInfo(),
+            getNvmeInfo(loadedModules),
             getSpdkInfo(),
-            getWritecacheInfo()
+            getWritecacheInfo(loadedModules)
         );
     }
 
@@ -95,9 +99,9 @@ public class StltExtToolsChecker
             drbdInfo = new ExtToolsInfo(
                 ExtTools.DRBD9,
                 true,
-                Integer.valueOf(drbdVersionCheck.getMajorVsn()),
-                Integer.valueOf(drbdVersionCheck.getMinorVsn()),
-                Integer.valueOf(drbdVersionCheck.getPatchLvl()),
+                (int) drbdVersionCheck.getMajorVsn(),
+                (int) drbdVersionCheck.getMinorVsn(),
+                (int) drbdVersionCheck.getPatchLvl(),
                 Collections.emptyList()
             );
         }
@@ -144,7 +148,7 @@ public class StltExtToolsChecker
         return infoBy3MatchGroupPattern(ZFS_VERSION_PATTERN, ExtTools.ZFS, "cat", "/sys/module/zfs/version");
     }
 
-    private ExtToolsInfo getNvmeInfo()
+    private ExtToolsInfo getNvmeInfo(List<String> loadedModulesRef)
     {
         ExtToolsInfo ret;
 
@@ -155,8 +159,8 @@ public class StltExtToolsChecker
         else
         {
             List<String> modprobeFailures = new ArrayList<>();
-            check(modprobeFailures, "modprobe", "nvmet_rdma");
-            check(modprobeFailures, "modprobe", "nvme_rdma");
+            checkModuleLoaded(loadedModulesRef, "nvmet_rdma", modprobeFailures);
+            checkModuleLoaded(loadedModulesRef, "nvme_rdma", modprobeFailures);
             if (!modprobeFailures.isEmpty())
             {
                 ret = new ExtToolsInfo(ExtTools.NVME, false, null, null, null, modprobeFailures);
@@ -174,13 +178,11 @@ public class StltExtToolsChecker
         return infoBy3MatchGroupPattern(SPDK_VERSION_PATTERN, ExtTools.SPDK, false, SPDK_RPC_SCRIPT, "get_spdk_version");
     }
 
-    private ExtToolsInfo getWritecacheInfo()
+    private ExtToolsInfo getWritecacheInfo(List<String> loadedModulesRef)
     {
-        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason("modinfo", "dm-writecache");
-        return stdoutOrErrorReason.map(
-            pair -> new ExtToolsInfo(ExtTools.WRITECACHE, true, null, null, null, Collections.emptyList()),
-            errorReson -> new ExtToolsInfo(ExtTools.WRITECACHE, false, null, null, null, errorReson)
-        );
+        List<String> errorList = new ArrayList<>();
+        checkModuleLoaded(loadedModulesRef, "dm-writecache", errorList);
+        return new ExtToolsInfo(ExtTools.WRITECACHE, errorList.isEmpty(), null, null, null, errorList);
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)
@@ -232,6 +234,15 @@ public class StltExtToolsChecker
         );
     }
 
+    private void checkModuleLoaded(List<String> loadedModulesRef, String moduleName, List<String> failReasons)
+    {
+        String module_Name = moduleName.replaceAll("-", "_");
+        if (!loadedModulesRef.contains(module_Name))
+        {
+            check(failReasons, "modprobe", moduleName);
+        }
+    }
+
     private void check(List<String> resultErrors, String... commandParts)
     {
         Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(commandParts);
@@ -239,7 +250,6 @@ public class StltExtToolsChecker
             ignore -> true, // addAll also returns boolean, just to make the <T> of the map method happy
             failList -> resultErrors.addAll(failList)
         );
-
     }
 
     private Either<Pair<String, String>, List<String>> getStdoutOrErrorReason(String... cmds)
@@ -288,6 +298,38 @@ public class StltExtToolsChecker
             );
             errorReporter.reportError(timeoutExc);
         }
+        return ret;
+    }
+
+    private List<String> getLoadedModules()
+    {
+        List<String> ret = new ArrayList<>();
+        try
+        {
+            OutputData out = extCmdFactory.create().exec("cat", "/proc/modules");
+            if (out.exitCode != 0)
+            {
+                errorReporter.logError(
+                    "External command 'cat /proc/modules' exited with return code %d.\nStdOut: \n%s\n\nStdErr:\n%s\n",
+                    out.exitCode,
+                    new String(out.stdoutData),
+                    new String(out.stderrData)
+                );
+            }
+            else
+            {
+                Matcher matcher = PROC_MODULES_NAME_PATTERN.matcher(new String(out.stdoutData));
+                while (matcher.find())
+                {
+                    ret.add(matcher.group(1));
+                }
+            }
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            errorReporter.reportError(exc);
+        }
+
         return ret;
     }
 }
