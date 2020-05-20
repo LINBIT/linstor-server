@@ -150,8 +150,6 @@ public class DmSetupUtils
             extCmdFactory.create(),
             new String[]
             {
-                // * dmsetup create myIdentifier --table "0 1562758832 writecache p /dev/sdb /dev/pmem0 4096 4
-                // high_watermark 10
                 "dmsetup",
                 "create",
                 identifierRef,
