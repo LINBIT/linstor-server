@@ -1106,6 +1106,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case DM_CACHE:
                 ret = ExternalTools.DM_CACHE;
                 break;
+            case LOSETUP:
+                ret = ExternalTools.LOSETUP;
+                break;
             default:
                 throw new RuntimeException("Not implemented.");
         }

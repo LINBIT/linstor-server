@@ -18,6 +18,7 @@ message ExternalToolsInfo
         SPDK = 7;
         WRITECACHE = 8;
         DM_CACHE = 10;
+        LOSETUP = 11;
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

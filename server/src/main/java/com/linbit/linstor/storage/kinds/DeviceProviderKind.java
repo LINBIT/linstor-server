@@ -63,7 +63,8 @@ public enum DeviceProviderKind
         true,
         true,
         false,
-        new FileDriverKind()
+        new FileDriverKind(),
+        ExtTools.LOSETUP
     ),
     FILE_THIN(
         true,
@@ -71,7 +72,8 @@ public enum DeviceProviderKind
         true,
         true,
         true,
-        new FileThinDriverKind()
+        new FileThinDriverKind(),
+        ExtTools.LOSETUP
     ),
     SPDK(
         false,
