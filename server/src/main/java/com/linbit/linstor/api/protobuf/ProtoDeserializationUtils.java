@@ -343,8 +343,8 @@ public class ProtoDeserializationUtils
             case SPDK:
                 tool = ExtTools.SPDK;
                 break;
-            case WRITECACHE:
-                tool = ExtTools.WRITECACHE;
+            case DM_WRITECACHE:
+                tool = ExtTools.DM_WRITECACHE;
                 break;
             case DM_CACHE:
                 tool = ExtTools.DM_CACHE;

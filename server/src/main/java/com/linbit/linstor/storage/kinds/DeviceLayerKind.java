@@ -23,7 +23,7 @@ public enum DeviceLayerKind
     ),
     WRITECACHE(
         true,
-        ExtTools.WRITECACHE
+        ExtTools.DM_WRITECACHE
     ),
     CACHE(
         true,

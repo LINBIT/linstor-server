@@ -16,7 +16,7 @@ message ExternalToolsInfo
         ZFS = 5;
         NVME = 6;
         SPDK = 7;
-        WRITECACHE = 8;
+        DM_WRITECACHE = 8;
         DM_CACHE = 10;
         LOSETUP = 11;
     }
