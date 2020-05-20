@@ -1100,8 +1100,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case SPDK:
                 ret = ExternalTools.SPDK;
                 break;
-            case WRITECACHE:
-                ret = ExternalTools.WRITECACHE;
+            case DM_WRITECACHE:
+                ret = ExternalTools.DM_WRITECACHE;
                 break;
             case DM_CACHE:
                 ret = ExternalTools.DM_CACHE;

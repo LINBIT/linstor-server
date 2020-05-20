@@ -186,7 +186,7 @@ public class StltExtToolsChecker
     {
         List<String> errorList = new ArrayList<>();
         checkModuleLoaded(loadedModulesRef, "dm-writecache", errorList);
-        return new ExtToolsInfo(ExtTools.WRITECACHE, errorList.isEmpty(), null, null, null, errorList);
+        return new ExtToolsInfo(ExtTools.DM_WRITECACHE, errorList.isEmpty(), null, null, null, errorList);
     }
 
     private ExtToolsInfo getCacheInfo(List<String> loadedModulesRef)
