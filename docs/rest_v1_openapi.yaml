@@ -24,13 +24,13 @@ info:
     * 1.2.0
        - Added optional AutoSelectFilter to resource-group/spawn
     * 1.1.0
-       - Added /v1/views/snapshots for a faster all in one snapshot list
+       - Added /v1/view/snapshots for a faster all in one snapshot list
        - Filter lists by properties:
           - /v1/nodes
           - /v1/resource-definitions
           - /v1/resource-groups
-          - /v1/views/storage-pools
-          - /v1/views/resources
+          - /v1/view/storage-pools
+          - /v1/view/resources
     * 1.0.16
        - Added CacheResource and CacheVolume schemas
        - AutSelectFilter arrays are now null per default
