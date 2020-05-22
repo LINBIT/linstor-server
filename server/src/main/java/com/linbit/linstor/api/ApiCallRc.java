@@ -79,5 +79,7 @@ public interface ApiCallRc
          * @return True if the RcEntry is an error.
          */
         boolean isError();
+
+        boolean skipErrorReport();
     }
 }

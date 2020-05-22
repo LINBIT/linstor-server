@@ -59,12 +59,12 @@ public class ResponseConverter
 
         for (ApiCallRc.RcEntry entry : exceptionToResponse(peer, context, exc).getEntries())
         {
-            final String errorId = errorReporter.reportError(
+            final String errorId = !entry.skipErrorReport() ? errorReporter.reportError(
                 exc instanceof ApiException && exc.getCause() != null ? exc.getCause() : exc,
                 peer.getAccessContext(),
                 peer,
                 entry.getMessage()
-            );
+            ) : null;
             apiCallRc.addEntry(ApiCallRcImpl.entryBuilder(entry, null, null).addErrorId(errorId).build());
         }
 
@@ -116,6 +116,7 @@ public class ResponseConverter
                     apiCallRc.addEntry(ApiCallRcImpl
                         .entryBuilder(sourceEntry, null, null)
                         .setCause(causeJoiner.toString())
+                        .setSkipErrorReport(sourceEntry.skipErrorReport())
                         .build()
                     );
                 }

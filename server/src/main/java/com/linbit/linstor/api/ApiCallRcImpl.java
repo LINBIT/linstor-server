@@ -13,7 +13,7 @@ import java.util.TreeSet;
 
 public class ApiCallRcImpl implements ApiCallRc
 {
-    private List<RcEntry> entries = new ArrayList<>();
+    private final List<RcEntry> entries = new ArrayList<>();
 
     public ApiCallRcImpl()
     {
@@ -97,6 +97,7 @@ public class ApiCallRcImpl implements ApiCallRc
         entryBuilder.setDetails(source.getDetails());
         entryBuilder.putAllObjRefs(source.getObjRefs());
         entryBuilder.addAllErrorIds(source.getErrorIds());
+        entryBuilder.setSkipErrorReport(source.skipErrorReport());
         return entryBuilder;
     }
 
@@ -134,6 +135,7 @@ public class ApiCallRcImpl implements ApiCallRc
         private String correction;
         private String details;
         private Set<String> errorIds = new TreeSet<>();
+        private boolean skipErrorReport = false;
 
         public ApiCallRcEntry setReturnCode(long returnCodeRef)
         {
@@ -195,6 +197,12 @@ public class ApiCallRcImpl implements ApiCallRc
             return this;
         }
 
+        public ApiCallRcEntry setSkipErrorReport(boolean skip)
+        {
+            skipErrorReport = skip;
+            return this;
+        }
+
         @Override
         public long getReturnCode()
         {
@@ -244,6 +252,12 @@ public class ApiCallRcImpl implements ApiCallRc
         }
 
         @Override
+        public boolean skipErrorReport()
+        {
+            return !isError() || skipErrorReport;
+        }
+
+        @Override
         public String toString()
         {
             StringBuilder sb = new StringBuilder();
@@ -257,6 +271,7 @@ public class ApiCallRcImpl implements ApiCallRc
                 ", correction='" + correction + '\'' +
                 ", details='" + details + '\'' +
                 ", errorIds=" + errorIds +
+                ", skipErrorReport=" + skipErrorReport +
                 '}';
         }
     }
@@ -272,6 +287,7 @@ public class ApiCallRcImpl implements ApiCallRc
         private String correction;
 
         private String details;
+        private boolean skipErrorReport = false;
 
         private Map<String, String> objRefs = new TreeMap<>();
 
@@ -315,13 +331,21 @@ public class ApiCallRcImpl implements ApiCallRc
 
         public EntryBuilder addErrorId(String errorId)
         {
-            errorIds.add(errorId);
+            if (errorId != null) {
+                errorIds.add(errorId);
+            }
             return this;
         }
 
         public EntryBuilder addAllErrorIds(Collection<String> errorIdsRef)
         {
             errorIds.addAll(errorIdsRef);
+            return this;
+        }
+
+        public EntryBuilder setSkipErrorReport(boolean skip)
+        {
+            skipErrorReport = skip;
             return this;
         }
 
@@ -335,6 +359,7 @@ public class ApiCallRcImpl implements ApiCallRc
             entry.setDetails(details);
             entry.putAllObjRef(objRefs);
             entry.addAllErrorIds(errorIds);
+            entry.setSkipErrorReport(skipErrorReport);
             return entry;
         }
     }
