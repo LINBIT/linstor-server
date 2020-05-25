@@ -1,10 +1,10 @@
 package com.linbit.linstor.layer.drbd.helper;
 
-import com.linbit.linstor.drbdstate.DrbdConnection;
-import com.linbit.linstor.drbdstate.DrbdResource;
-import com.linbit.linstor.drbdstate.DrbdVolume;
-import com.linbit.linstor.drbdstate.ResourceObserver;
-import com.linbit.linstor.drbdstate.DrbdVolume.DiskState;
+import com.linbit.linstor.layer.drbd.drbdstate.DrbdConnection;
+import com.linbit.linstor.layer.drbd.drbdstate.DrbdResource;
+import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
+import com.linbit.linstor.layer.drbd.drbdstate.ResourceObserver;
+import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume.DiskState;
 
 public class ReadyForPrimaryNotifier implements ResourceObserver
 {

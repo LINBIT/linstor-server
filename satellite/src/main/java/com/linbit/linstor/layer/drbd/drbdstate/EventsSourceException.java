@@ -1,4 +1,4 @@
-package com.linbit.linstor.drbdstate;
+package com.linbit.linstor.layer.drbd.drbdstate;
 
 /**
  * Thrown to indicate that an event line supplied by DRBD could not be processed

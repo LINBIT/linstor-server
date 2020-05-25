@@ -1,4 +1,4 @@
-package com.linbit.linstor.drbdstate;
+package com.linbit.linstor.layer.drbd.drbdstate;
 
 import com.linbit.linstor.core.types.MinorNumber;
 
