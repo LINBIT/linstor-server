@@ -416,7 +416,7 @@ public final class Satellite
             long startAPIClassLoadingTime = System.currentTimeMillis();
             ApiType apiType = new ProtobufApiType();
             ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
-            List<String> packageSuffixes = Arrays.asList("common", "satellite");
+            List<String> packageSuffixes = Arrays.asList("common", "");
 
             List<Class<? extends BaseApiCall>> apiCalls = classPathLoader.loadClasses(
                 ProtobufApiType.class.getPackage().getName(),

@@ -3,7 +3,7 @@ package com.linbit.linstor.api.protobuf.satellite;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.satellite.StltApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.requests.MsgReqSosReportOuterClass.MsgReqSosReport;
 
