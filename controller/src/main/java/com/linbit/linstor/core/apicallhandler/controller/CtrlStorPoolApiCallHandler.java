@@ -19,8 +19,8 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -255,7 +255,8 @@ public class CtrlStorPoolApiCallHandler
                 );
             }
             Collection<VlmProviderObject<Resource>> volumes = getVolumes(storPool);
-            if (!volumes.isEmpty())
+            Collection<VlmProviderObject<Snapshot>> snapVlms = getSnapshotVolumes(storPool);
+            if (!volumes.isEmpty() || !snapVlms.isEmpty())
             {
                 StringBuilder volListSb = new StringBuilder();
                 for (VlmProviderObject<Resource> vlmObj : volumes)
@@ -268,22 +269,31 @@ public class CtrlStorPoolApiCallHandler
                          .append("', volume number: ")
                          .append(vlmObj.getVlmNr().value);
                 }
+                for (VlmProviderObject<Snapshot> snapVlmObj : snapVlms)
+                {
+                    Snapshot snap = snapVlmObj.getVolume().getAbsResource();
+                    volListSb.append("\n   Node name: '")
+                        .append(snap.getNode().getName().displayValue)
+                        .append("', resource name: '")
+                        .append(snap.getResourceDefinition().getName().displayValue)
+                        .append("', snapshot name: '")
+                        .append(snap.getSnapshotDefinition().getName().displayValue)
+                        .append("', volume number: ")
+                        .append(snapVlmObj.getVlmNr().value);
+                }
 
-                String correction = volumes.size() == 1 ?
-                    "Delete the listed volume first." :
-                    "Delete the listed volumes first.";
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(
                         ApiConsts.FAIL_IN_USE,
                         String.format(
                                 "The specified storage pool '%s' on node '%s' can not be deleted as " +
-                                    "volumes are still using it.",
+                                    "volumes / snapshot-volumes are still using it.",
                                 storPoolNameStr,
                                 nodeNameStr
                             )
                     )
-                    .setDetails("Volumes that are still using the storage pool: " + volListSb.toString())
-                    .setCorrection(correction)
+                    .setDetails("Volumes / snapshot-volumes that are still using the storage pool: " + volListSb.toString())
+                    .setCorrection("Delete the listed volumes and snapshot-volumes first.")
                     .build()
                 );
             }
@@ -324,6 +334,24 @@ public class CtrlStorPoolApiCallHandler
             );
         }
         return volumes;
+    }
+
+    private Collection<VlmProviderObject<Snapshot>> getSnapshotVolumes(StorPool storPool)
+    {
+        Collection<VlmProviderObject<Snapshot>> snapVlms;
+        try
+        {
+            snapVlms = storPool.getSnapVolumes(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access the snapshot-volumes of " + getStorPoolDescriptionInline(storPool),
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+            );
+        }
+        return snapVlms;
     }
 
     private void delete(StorPool storPool)
