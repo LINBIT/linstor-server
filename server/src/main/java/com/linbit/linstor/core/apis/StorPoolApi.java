@@ -25,4 +25,5 @@ public interface StorPoolApi
     ApiCallRc getReports();
     Boolean supportsSnapshots();
     Boolean isPmem();
+    Boolean isVDO();
 }

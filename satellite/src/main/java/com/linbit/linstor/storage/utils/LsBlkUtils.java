@@ -5,11 +5,13 @@ import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.layer.provider.utils.Commands;
 
+import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class LsBlkUtils
@@ -63,7 +65,10 @@ public class LsBlkUtils
         for (String line : lsblkOutput.split("\n"))
         {
             List<String> fields = splitFields(line.trim());
-            lsBlkEntries.add(new LsBlkEntry(fields));
+            if (fields.size() > 0)
+            {
+                lsBlkEntries.add(new LsBlkEntry(fields));
+            }
         }
         return lsBlkEntries;
     }
@@ -87,6 +92,36 @@ public class LsBlkUtils
         );
 
         return parseLsblkOutput(new String(outputData.stdoutData, StandardCharsets.UTF_8));
+    }
+
+    public static boolean parentIsVDO(ExtCmd extCmd, @Nonnull List<String> devicePaths)
+        throws StorageException
+    {
+        if (devicePaths.isEmpty()) {
+            return false;
+        }
+
+        List<LsBlkEntry> entries = lsblk(extCmd);
+        for (final String devicePath : devicePaths) {
+            Optional<LsBlkEntry> dev = entries.stream()
+                .filter(entry -> entry.getName() != null && entry.getName().equals(devicePath))
+                .findFirst();
+            if (dev.isPresent()) {
+                Optional<LsBlkEntry> parent = entries.stream()
+                    .filter(entry -> entry.getName() != null && entry.getName().equals(dev.get().getParentName()))
+                    .findFirst();
+                if (parent.isPresent()) {
+                    if (!parent.get().getFsType().equalsIgnoreCase("vdo")) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static String[] blkid(ExtCmd extCmd)

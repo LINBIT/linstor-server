@@ -273,7 +273,8 @@ public class ProtoDeserializationUtils
             ),
             null,
             storPoolProto.getSnapshotSupported(),
-            storPoolProto.getIsPmem()
+            storPoolProto.getIsPmem(),
+            storPoolProto.getIsVdo()
         );
     }
 

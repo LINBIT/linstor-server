@@ -656,6 +656,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                     )
                 .setSupportsSnapshots(supportsSnapshotsRef)
                 .setIsPmem(storPool.isPmem())
+                .setIsVdo(storPool.isVDO())
                 .build()
                 .writeDelimitedTo(baos);
         }
