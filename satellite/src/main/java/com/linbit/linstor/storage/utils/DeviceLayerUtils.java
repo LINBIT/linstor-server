@@ -5,10 +5,8 @@ import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.VlmStorageState;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.provider.DeviceProvider;
-import com.linbit.utils.ExceptionThrowingBiConsumer;
 import com.linbit.utils.ExceptionThrowingConsumer;
 import com.linbit.utils.ExceptionThrowingFunction;
 
@@ -29,23 +27,6 @@ public class DeviceLayerUtils
             while (vlmIt.hasNext())
             {
                 func.accept(vlmIt.next());
-            }
-        }
-    }
-
-    public static <RSC extends AbsResource<RSC>> void foreachVlm(
-        RSC[] rscs,
-        Map<AbsVolume<RSC>, VlmStorageState> states,
-        ExceptionThrowingBiConsumer<AbsVolume<RSC>, VlmStorageState, StorageException> func
-    )
-        throws StorageException
-    {
-        for (final RSC rsc : rscs)
-        {
-            final Iterator<? extends AbsVolume<RSC>> vlmIt = rsc.iterateVolumes();
-            while (vlmIt.hasNext())
-            {
-                func.accept(vlmIt.next(), states.get(vlmIt.next()));
             }
         }
     }
