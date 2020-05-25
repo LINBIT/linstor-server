@@ -12,6 +12,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -21,11 +22,10 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-import com.linbit.linstor.storage.layer.provider.utils.Commands;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
-import static com.linbit.linstor.storage.utils.SpdkCommands.SPDK_RPC_SCRIPT;
-import static com.linbit.linstor.storage.utils.SpdkUtils.SPDK_PATH_PREFIX;
+import static com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import javax.inject.Inject;
 import javax.inject.Named;

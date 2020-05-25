@@ -8,6 +8,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
 import com.linbit.extproc.utils.TestExtCmd.Command;
 import com.linbit.extproc.utils.TestExtCmd.TestOutputData;
+import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.storage.StorageException;
 
 import java.util.HashSet;

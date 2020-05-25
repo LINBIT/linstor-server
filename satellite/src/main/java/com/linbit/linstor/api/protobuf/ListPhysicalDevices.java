@@ -6,12 +6,12 @@ import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgReqPhysicalDevicesOuterClass;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.utils.LsBlkUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;

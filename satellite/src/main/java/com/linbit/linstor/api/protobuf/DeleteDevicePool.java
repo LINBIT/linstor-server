@@ -8,9 +8,9 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.layer.storage.DevicePoolHandler;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgDeleteDevicePoolOuterClass.MsgDeleteDevicePool;
-import com.linbit.linstor.storage.DevicePoolHandler;
 
 import javax.inject.Inject;
 import javax.inject.Named;
