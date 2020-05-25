@@ -82,7 +82,8 @@ public class ApplyStorPool implements ApiCall
             Optional.empty(), // total space
             null,
             protoStorPool.getSnapshotSupported(),
-            protoStorPool.getIsPmem()
+            protoStorPool.getIsPmem(),
+            protoStorPool.getIsVdo()
         );
     }
 

@@ -846,7 +846,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .putAllProps(storPool.getProps(accCtx).map())
             .putAllStorPoolDfnProps(storPool.getDefinition(accCtx).getProps(accCtx).map())
             .putAllStaticTraits(storPool.getDeviceProviderKind().getStorageDriverKind().getStaticTraits())
-            .setIsPmem(storPool.isPmem());
+            .setIsPmem(storPool.isPmem())
+            .setIsVdo(storPool.isVDO());
         FreeSpaceTracker freeSpaceTracker = storPool.getFreeSpaceTracker();
         if (freeSpaceTracker.getTotalCapacity(accCtx).isPresent())
         {

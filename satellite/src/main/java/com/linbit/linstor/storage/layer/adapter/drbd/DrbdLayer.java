@@ -935,6 +935,13 @@ public class DrbdLayer implements DeviceLayer
                     .stream()
                     .map(VlmProviderObject::getProviderKind)
                     .allMatch(kind -> kind == DeviceProviderKind.ZFS || kind == DeviceProviderKind.ZFS_THIN);
+
+                if (!skipInitSync)
+                {
+                    skipInitSync = VolumeUtils.getStorageDevices(
+                        drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)).stream()
+                            .allMatch(prov -> prov.getStorPool().isVDO());
+                }
             }
 
             if (skipInitSync)

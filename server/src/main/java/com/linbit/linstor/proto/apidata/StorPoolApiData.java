@@ -143,4 +143,9 @@ public class StorPoolApiData implements StorPoolApi
     {
         return storPool.getIsPmem();
     }
+
+    @Override
+    public Boolean isVDO() {
+        return storPool.getIsVdo();
+    }
 }

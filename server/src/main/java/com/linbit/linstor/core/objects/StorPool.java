@@ -74,6 +74,7 @@ public class StorPool extends BaseTransactionObject
     private final TransactionSimpleObject<StorPool, Boolean> supportsSnapshots;
 
     private final TransactionSimpleObject<StorPool, Boolean> isPmem;
+    private final TransactionSimpleObject<StorPool, Boolean> isVDO;
 
     private ApiCallRcImpl reports;
 
@@ -119,6 +120,7 @@ public class StorPool extends BaseTransactionObject
             null
         );
         isPmem = transObjFactory.createTransactionSimpleObject(this, false, null);
+        isVDO = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         reports = new ApiCallRcImpl();
 
@@ -211,6 +213,16 @@ public class StorPool extends BaseTransactionObject
     public void setPmem(boolean pmemRef) throws DatabaseException
     {
         isPmem.set(pmemRef);
+    }
+
+    public boolean isVDO()
+    {
+        return isVDO.get();
+    }
+
+    public void setVDO(boolean vdo) throws DatabaseException
+    {
+        isVDO.set(vdo);
     }
 
     public void putSnapshotVolume(AccessContext accCtx, VlmProviderObject<Snapshot> vlmProviderObj)
@@ -388,7 +400,8 @@ public class StorPool extends BaseTransactionObject
             Optional.ofNullable(totalSpaceRef),
             getReports(),
             supportsSnapshots.get(),
-            isPmem.get()
+            isPmem.get(),
+            isVDO.get()
         );
     }
 
