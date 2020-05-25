@@ -1,0 +1,33 @@
+[[steps]]
+[steps.rsync]
+source = "$HOME/.ssh/id_rsa.pub"
+dest = "/tmp/host_id_rsa.pub"
+
+
+[[steps]]
+[steps.shell]
+script = '''
+dnf update -y
+dnf install -y lvm2 git make gcc kernel-devel elfutils-libelf-devel patch flex java-1.8.0-openjdk
+
+KERNEL=$(rpm -qa kernel | tail -n1 | cut -c8-)
+
+cd /tmp
+curl -O https://www.linbit.com/downloads/drbd/9.0/drbd-9.0.23-0rc1.tar.gz
+tar xzf drbd-9.0.23-0rc1.tar.gz
+cd /tmp/drbd-9.0.23-0rc1
+make -j2 KDIR=/usr/src/kernels/$KERNEL
+make install
+
+cd /tmp
+curl -O https://www.linbit.com/downloads/drbd/utils/drbd-utils-9.13.1.tar.gz
+tar xzf drbd-utils-9.13.1.tar.gz
+cd /tmp/drbd-utils-9.13.1
+./configure --prefix= --without-manual
+make -j2
+make install
+
+mkdir -p /root/.ssh
+cat /tmp/host_id_rsa.pub >> /root/.ssh/authorized_keys
+sed -i "/#PermitRootLogin yes/s/^#//g" /etc/ssh/sshd_config
+'''
