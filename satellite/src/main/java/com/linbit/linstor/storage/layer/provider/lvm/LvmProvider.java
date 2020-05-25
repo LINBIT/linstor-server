@@ -254,6 +254,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         try
         {
             Volume vlm = (Volume) vlmDataRef.getVolume();
+            Resource rsc = vlm.getAbsResource();
             ResourceDefinition rscDfn = vlm.getResourceDefinition();
             ResourceGroup rscGrp = rscDfn.getResourceGroup();
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
@@ -261,9 +262,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 vlm.getProps(storDriverAccCtx),
                 vlmDfn.getProps(storDriverAccCtx),
                 rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
+                rsc.getProps(storDriverAccCtx),
                 rscDfn.getProps(storDriverAccCtx),
                 rscGrp.getProps(storDriverAccCtx),
-                vlmDataRef.getStorPool().getProps(storDriverAccCtx)
+                vlmDataRef.getStorPool().getProps(storDriverAccCtx),
+                rsc.getNode().getProps(storDriverAccCtx),
+                stltConfigAccessor.getReadonlyProps()
             );
             type = prioProps.getProp(
                 ApiConsts.KEY_STOR_POOL_LVCREATE_TYPE,
