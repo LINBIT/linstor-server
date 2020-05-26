@@ -365,7 +365,7 @@ public class CtrlPropsHelper
         return props;
     }
 
-    public void fillProperties(
+    public boolean fillProperties(
         ApiCallRcImpl apiCallRc,
         LinStorObject linstorObj,
         Map<String, String> sourceProps,
@@ -373,10 +373,20 @@ public class CtrlPropsHelper
         long failAccDeniedRc
     )
     {
-        fillProperties(apiCallRc, linstorObj, sourceProps, targetProps, failAccDeniedRc, new ArrayList<>());
+        return fillProperties(apiCallRc, linstorObj, sourceProps, targetProps, failAccDeniedRc, new ArrayList<>());
     }
 
-    public void fillProperties(
+    /**
+     *
+     * @param apiCallRc For success/error messages
+     * @param linstorObj What type of linstor obj the props should be checked(whitelist)
+     * @param sourceProps Props to set
+     * @param targetProps Current property container
+     * @param failAccDeniedRc mask code of denied rc
+     * @param ignoredKeys keys to ignore for whitelistcheck
+     * @return true if properties were changed, otherwise false (e.g. setting the same value)
+     */
+    public boolean fillProperties(
         ApiCallRcImpl apiCallRc,
         LinStorObject linstorObj,
         Map<String, String> sourceProps,
@@ -385,6 +395,7 @@ public class CtrlPropsHelper
         List<String> ignoredKeys
     )
     {
+        boolean propsModified = false;
         for (Map.Entry<String, String> entry : sourceProps.entrySet())
         {
             String key = entry.getKey();
@@ -397,7 +408,10 @@ public class CtrlPropsHelper
                 String normalized = propsWhiteList.normalize(linstorObj, key, value);
                 try
                 {
-                    targetProps.setProp(key, normalized);
+                    final String oldVal = targetProps.setProp(key, normalized);
+                    if (!normalized.equals(oldVal)) {
+                        propsModified = true;
+                    }
                 }
                 catch (AccessDeniedException exc)
                 {
@@ -473,6 +487,7 @@ public class CtrlPropsHelper
                 linstorObj.apiMask | ApiConsts.MASK_CRT | ApiConsts.CREATED
             );
         }
+        return propsModified;
     }
 
     public void addModifyDeleteUnconditional(
@@ -490,7 +505,19 @@ public class CtrlPropsHelper
         removeUnconditional(props, deletePropKeys, deleteNamespaces);
     }
 
-    public void remove(
+    /**
+     * Remove a key from the property container
+     * @param apiCallRc
+     * @param linstorObj
+     * @param props
+     * @param deletePropKeys
+     * @param deleteNamespaces
+     * @return true if a key was removed, otherwise false (e.g. key didn't exists at all)
+     * @throws AccessDeniedException
+     * @throws InvalidKeyException
+     * @throws DatabaseException
+     */
+    public boolean remove(
         ApiCallRcImpl apiCallRc,
         LinStorObject linstorObj,
         Props props,
@@ -499,6 +526,7 @@ public class CtrlPropsHelper
     )
         throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
+        boolean propsModified = false;
         List<String> ignoredKeys = Collections.singletonList(ApiConsts.NAMESPC_AUXILIARY + "/");
 
         for (String key : deletePropKeys)
@@ -506,7 +534,10 @@ public class CtrlPropsHelper
             boolean isPropWhitelisted = propsWhiteList.isAllowed(linstorObj, ignoredKeys, key, null, false);
             if (isPropWhitelisted)
             {
-                props.removeProp(key);
+                String deletedValue = props.removeProp(key);
+                if (deletedValue != null) {
+                    propsModified = true;
+                }
             }
             else
             {
@@ -537,7 +568,9 @@ public class CtrlPropsHelper
                         );
                     }
                 }
-                props.removeNamespace(deleteNamespace);
+                if (props.removeNamespace(deleteNamespace)) {
+                    propsModified = true;
+                }
             }
             // else, noop
         }
@@ -549,6 +582,7 @@ public class CtrlPropsHelper
                 linstorObj.apiMask | ApiConsts.MASK_DEL | ApiConsts.DELETED
             );
         }
+        return propsModified;
     }
 
     public void removeUnconditional(
