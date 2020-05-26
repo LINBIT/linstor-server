@@ -87,7 +87,7 @@ public class CtrlConfig extends LinstorConfig
         setDbDisableVersionCheck(false);
 
         setLogRestAccessLogPath("rest-access.log");
-        setLogRestAccessMode(RestAccessLogMode.APPEND);
+        setLogRestAccessMode(RestAccessLogMode.NO_LOG);
 
         setRestEnabled(true);
         setRestBindAddress(DEFAULT_HTTP_LISTEN_ADDRESS);
