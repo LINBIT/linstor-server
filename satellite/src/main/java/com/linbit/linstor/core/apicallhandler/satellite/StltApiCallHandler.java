@@ -620,8 +620,10 @@ public class StltApiCallHandler
                     try
                     {
                         StorPool sp = spd.getStorPool(apiCtx, controllerPeerConnector.getLocalNodeName());
-                        DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(sp);
-                        deviceProvider.checkConfig(sp);
+                        if (sp != null) { // storage pool probably not deployed on this node
+                            DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(sp);
+                            deviceProvider.checkConfig(sp);
+                        }
                     }
                     catch (StorageException exc)
                     {
