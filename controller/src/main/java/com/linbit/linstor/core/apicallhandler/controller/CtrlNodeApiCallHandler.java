@@ -419,6 +419,7 @@ public class CtrlNodeApiCallHandler
     {
         Flux<ApiCallRc> flux = Flux.empty();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        boolean notifyStlts = false;
 
         try
         {
@@ -435,13 +436,14 @@ public class CtrlNodeApiCallHandler
             if (nodeTypeStr != null)
             {
                 setNodeType(node, nodeTypeStr);
+                notifyStlts = true;
             }
 
             Props props = ctrlPropsHelper.getProps(node);
-            ctrlPropsHelper.fillProperties(
-                apiCallRcs, LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE);
-            ctrlPropsHelper.remove(
-                apiCallRcs, LinStorObject.NODE, props, deletePropKeys, deleteNamespaces);
+            notifyStlts = ctrlPropsHelper.fillProperties(
+                apiCallRcs, LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE) || notifyStlts;
+            notifyStlts = ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.NODE, props, deletePropKeys, deleteNamespaces) || notifyStlts;
 
             checkProperties(apiCallRcs, node, overrideProps);
 
@@ -450,12 +452,13 @@ public class CtrlNodeApiCallHandler
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 node.getUuid(), getNodeDescriptionInline(node)));
 
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(
-                node.getUuid(),
-                nodeName,
-                findNodesToContact(apiCtx, node)
-            )
-            .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+            if (notifyStlts) {
+                flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                        node.getUuid(),
+                        nodeName,
+                        findNodesToContact(apiCtx, node))
+                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+            }
         }
         catch (Exception | ImplementationError exc)
         {

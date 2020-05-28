@@ -121,7 +121,7 @@ public class Resources
         }, false);
     }
 
-    private class ResourceWithPayload implements ResourceWithPayloadApi
+    private static class ResourceWithPayload implements ResourceWithPayloadApi
     {
         private final JsonGenTypes.ResourceCreate rscPayload;
 

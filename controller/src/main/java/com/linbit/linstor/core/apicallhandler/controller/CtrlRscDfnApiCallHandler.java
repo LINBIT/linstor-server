@@ -356,6 +356,7 @@ public class CtrlRscDfnApiCallHandler
     {
         Flux<ApiCallRc> flux = Flux.empty();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        boolean notifyStlts = false;
 
         try
         {
@@ -377,6 +378,7 @@ public class CtrlRscDfnApiCallHandler
             }
             if (portInt != null || newRscPeerSlots != null)
             {
+                notifyStlts = true;
                 // TODO: might be a good idea to create this object earlier
                 LayerPayload payload = new LayerPayload();
                 payload.getDrbdRscDfn().tcpPort = portInt;
@@ -392,20 +394,20 @@ public class CtrlRscDfnApiCallHandler
             {
                 Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
 
-                ctrlPropsHelper.fillProperties(
+                notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     overrideProps,
                     rscDfnProps,
                     ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-                );
-                ctrlPropsHelper.remove(
+                ) || notifyStlts;
+                notifyStlts = ctrlPropsHelper.remove(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     rscDfnProps,
                     deletePropKeys,
                     deletePropNamespaces
-                );
+                ) || notifyStlts;
             }
 
             if (!layerStackStrList.isEmpty())
@@ -422,6 +424,7 @@ public class CtrlRscDfnApiCallHandler
                         .build()
                     );
                 }
+                notifyStlts = true;
                 rscDfn.setLayerStack(peerAccCtx.get(), layerStack);
             }
 
@@ -430,9 +433,11 @@ public class CtrlRscDfnApiCallHandler
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 rscDfn.getUuid(), getRscDfnDescriptionInline(rscDfn)));
 
-            flux = ctrlSatelliteUpdateCaller
-                .updateSatellites(rscDfn, Flux.empty())
-                .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+            if (notifyStlts) {
+                flux = ctrlSatelliteUpdateCaller
+                    .updateSatellites(rscDfn, Flux.empty())
+                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+            }
         }
         catch (Exception | ImplementationError exc)
         {

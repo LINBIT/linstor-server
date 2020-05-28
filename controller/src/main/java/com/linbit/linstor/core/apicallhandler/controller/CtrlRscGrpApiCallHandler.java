@@ -318,6 +318,7 @@ public class CtrlRscGrpApiCallHandler
     {
         Flux<ApiCallRc> reRunAutoPlace = Flux.empty();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        boolean notifyStlts = false;
 
         try
         {
@@ -345,20 +346,20 @@ public class CtrlRscGrpApiCallHandler
             if (!overrideProps.isEmpty() || !deletePropKeysRef.isEmpty() || !deleteNamespacesRef.isEmpty())
             {
                 Props rscDfnGrpProps = rscGrpData.getProps(peerCtx);
-                ctrlPropsHelper.fillProperties(
+                notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     overrideProps,
                     rscDfnGrpProps,
                     ApiConsts.FAIL_ACC_DENIED_RSC_GRP
-                );
-                ctrlPropsHelper.remove(
+                ) || notifyStlts;
+                notifyStlts = ctrlPropsHelper.remove(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     rscDfnGrpProps,
                     deletePropKeysRef,
                     deleteNamespacesRef
-                );
+                ) || notifyStlts;
             }
 
             if (autoApiRef != null)
@@ -369,7 +370,7 @@ public class CtrlRscGrpApiCallHandler
 
                 if (newReplicaCount != null)
                 {
-
+                    notifyStlts = true;
                     for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx))
                     {
                         long rscCount = rscDfn.streamResource(apiCtx)
@@ -423,13 +424,14 @@ public class CtrlRscGrpApiCallHandler
                 )
             );
 
-            for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx))
-            {
-                responseConverter.addWithDetail(
-                    apiCallRcs,
-                    context,
-                    ctrlSatelliteUpdater.updateSatellites(rscDfn)
-                );
+            if (notifyStlts) {
+                for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx)) {
+                    responseConverter.addWithDetail(
+                            apiCallRcs,
+                            context,
+                            ctrlSatelliteUpdater.updateSatellites(rscDfn)
+                    );
+                }
             }
         }
         catch (Exception | ImplementationError exc)

@@ -91,7 +91,7 @@ class CtrlNodeConnectionApiCallHandler
 
             NodeConnection nodeConn = createNodeConn(node1, node2);
 
-            ctrlPropsHelper.fillProperties(
+            boolean notifyStlts = ctrlPropsHelper.fillProperties(
                 responses,
                 LinStorObject.NODE_CONN,
                 nodeConnPropsMap,
@@ -103,8 +103,10 @@ class CtrlNodeConnectionApiCallHandler
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
                 nodeConn.getUuid(), getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str)));
 
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node1));
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node2));
+            if (notifyStlts) {
+                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node1));
+                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node2));
+            }
         }
         catch (Exception | ImplementationError exc)
         {

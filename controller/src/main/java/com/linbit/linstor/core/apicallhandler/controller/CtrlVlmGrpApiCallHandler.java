@@ -269,6 +269,7 @@ public class CtrlVlmGrpApiCallHandler
     {
         List<Flux<Flux<ApiCallRc>>> fluxes = new ArrayList<>();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        boolean notifyStlts;
 
         Map<String, String> objRefs = new TreeMap<>();
         objRefs.put(ApiConsts.KEY_VLM_GRP, rscGrpNameStr);
@@ -284,20 +285,20 @@ public class CtrlVlmGrpApiCallHandler
         {
             VolumeGroup vlmGrp = ctrlApiDataLoader.loadVlmGrp(rscGrpNameStr, vlmNrInt, true);
             Props props = vlmGrp.getProps(peerAccCtx.get());
-            ctrlPropsHelper.fillProperties(
+            notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
                 LinStorObject.VOLUME_DEFINITION,
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_VLM_GRP
             );
-            ctrlPropsHelper.remove(
+            notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs,
                 LinStorObject.VOLUME_DEFINITION,
                 props,
                 deletePropKeys,
                 deleteNamespaces
-            );
+            ) || notifyStlts;
 
             Pair<Set<VolumeGroup.Flags>, Set<VolumeGroup.Flags>> pair = FlagsHelper.extractFlagsToEnableOrDisable(
                 VolumeGroup.Flags.class,
@@ -307,10 +308,12 @@ public class CtrlVlmGrpApiCallHandler
             StateFlags<Flags> vlmGrpFlags = vlmGrp.getFlags();
             for (VolumeGroup.Flags flag : pair.objA)
             {
+                notifyStlts = true;
                 vlmGrpFlags.enableFlags(apiCtx, flag);
             }
             for (VolumeGroup.Flags flag : pair.objB)
             {
+                notifyStlts = true;
                 vlmGrpFlags.disableFlags(apiCtx, flag);
             }
 
@@ -326,12 +329,13 @@ public class CtrlVlmGrpApiCallHandler
                 )
             );
 
-            for (ResourceDefinition rscDfn : rscGrp.getRscDfns(peerAccCtx.get()))
-            {
-                fluxes.add(Flux.just(ctrlSatelliteUpdateCaller
-                    .updateSatellites(rscDfn, Flux.empty())
-                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
-                ));
+            if (notifyStlts) {
+                for (ResourceDefinition rscDfn : rscGrp.getRscDfns(peerAccCtx.get())) {
+                    fluxes.add(Flux.just(ctrlSatelliteUpdateCaller
+                        .updateSatellites(rscDfn, Flux.empty())
+                        .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                    ));
+                }
             }
         }
         catch (AccessDeniedException accDeniedExc)

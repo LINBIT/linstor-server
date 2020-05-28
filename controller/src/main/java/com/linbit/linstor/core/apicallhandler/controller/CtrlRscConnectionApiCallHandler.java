@@ -177,6 +177,7 @@ class CtrlRscConnectionApiCallHandler
     {
         List<Flux<Flux<ApiCallRc>>> fluxes = new ArrayList<>();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        boolean notifyStlts;
 
         try
         {
@@ -234,7 +235,7 @@ class CtrlRscConnectionApiCallHandler
             List<String> keysIgnored = new ArrayList<>();
             keysIgnored.add(ApiConsts.NAMESPC_CONNECTION_PATHS + "/");
 
-            ctrlPropsHelper.fillProperties(
+            notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
                 LinStorObject.RSC_CONN,
                 overrideProps,
@@ -242,14 +243,17 @@ class CtrlRscConnectionApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_CONN,
                 keysIgnored
             );
-            ctrlPropsHelper.remove(apiCallRcs, LinStorObject.RSC_CONN, props, deletePropKeys, deletePropNamespaces);
+            notifyStlts = ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.RSC_CONN, props, deletePropKeys, deletePropNamespaces) || notifyStlts;
 
             ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 rscConn.getUuid(), getResourceConnectionDescriptionInline(apiCtx, rscConn)));
 
-            fluxes = updateSatellites(rscConn);
+            if (notifyStlts) {
+                fluxes = updateSatellites(rscConn);
+            }
         }
         catch (Exception | ImplementationError exc)
         {

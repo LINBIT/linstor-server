@@ -123,6 +123,7 @@ public class CtrlVlmApiCallHandler
     {
         Flux<ApiCallRc> flux = Flux.empty();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        boolean notifyStlts;
 
         try
         {
@@ -138,10 +139,10 @@ public class CtrlVlmApiCallHandler
 
             Props props = ctrlPropsHelper.getProps(vlm);
 
-            ctrlPropsHelper.fillProperties(
+            notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs, LinStorObject.VOLUME, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_VLM);
-            ctrlPropsHelper.remove(
-                apiCallRcs, LinStorObject.VOLUME, props, deletePropKeys, deletePropNamespaces);
+            notifyStlts = ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.VOLUME, props, deletePropKeys, deletePropNamespaces) || notifyStlts;
 
             ctrlTransactionHelper.commit();
 
@@ -151,9 +152,11 @@ public class CtrlVlmApiCallHandler
                 ApiSuccessUtils.defaultModifiedEntry(vlm.getUuid(), getVlmDescriptionInline(vlm))
             );
 
-            flux = ctrlSatelliteUpdateCaller
-                .updateSatellites(vlm.getResourceDefinition(), Flux.empty())
-                .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+            if (notifyStlts) {
+                flux = ctrlSatelliteUpdateCaller
+                    .updateSatellites(vlm.getResourceDefinition(), Flux.empty())
+                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+            }
         }
         catch (Exception | ImplementationError exc)
         {

@@ -128,6 +128,7 @@ class CtrlVlmConnectionApiCallHandler
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
+        boolean notifyStlts;
         ResponseContext context = makeVlmConnectionContext(
             ApiOperation.makeModifyOperation(),
             nodeName1Str,
@@ -150,20 +151,22 @@ class CtrlVlmConnectionApiCallHandler
 
             Props props = getProps(vlmConn);
 
-            ctrlPropsHelper.fillProperties(
+            notifyStlts = ctrlPropsHelper.fillProperties(
                 responses,
                 LinStorObject.VOLUME_CONN,
                 overrideProps,
                 getProps(vlmConn),
                 ApiConsts.FAIL_ACC_DENIED_VLM_CONN);
-            ctrlPropsHelper.remove(
-                responses, LinStorObject.VOLUME_CONN, props, deletePropKeys, deletePropNamespaces);
+            notifyStlts = ctrlPropsHelper.remove(
+                responses, LinStorObject.VOLUME_CONN, props, deletePropKeys, deletePropNamespaces) || notifyStlts;
 
             ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
                 vlmConn.getUuid(), getVlmConnectionDescriptionInline(apiCtx, vlmConn)));
-            responseConverter.addWithDetail(responses, context, updateSatellites(vlmConn));
+            if (notifyStlts) {
+                responseConverter.addWithDetail(responses, context, updateSatellites(vlmConn));
+            }
         }
         catch (Exception | ImplementationError exc)
         {

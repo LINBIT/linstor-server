@@ -129,6 +129,7 @@ public class CtrlStorPoolApiCallHandler
     {
         Flux<ApiCallRc> flux = Flux.empty();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        boolean notifyStlts = false;
 
         try
         {
@@ -158,15 +159,15 @@ public class CtrlStorPoolApiCallHandler
                 ApiConsts.MASK_STOR_POOL
             );
 
-            ctrlPropsHelper.fillProperties(
+            notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
                 LinStorObject.STORAGEPOOL,
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL
-            );
-            ctrlPropsHelper.remove(
-                apiCallRcs, LinStorObject.STORAGEPOOL, props, deletePropKeys, deletePropNamespaces);
+            ) || notifyStlts;
+            notifyStlts = ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.STORAGEPOOL, props, deletePropKeys, deletePropNamespaces) || notifyStlts;
 
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
@@ -181,7 +182,9 @@ public class CtrlStorPoolApiCallHandler
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
 
-            flux = ctrlSatelliteUpdateCaller.updateSatellite(storPool);
+            if (notifyStlts) {
+                flux = ctrlSatelliteUpdateCaller.updateSatellite(storPool);
+            }
         }
         catch (Exception | ImplementationError exc)
         {

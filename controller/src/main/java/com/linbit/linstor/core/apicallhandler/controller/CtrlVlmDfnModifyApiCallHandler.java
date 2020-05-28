@@ -161,6 +161,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
+        boolean notifyStlts = false;
         ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
         VolumeNumber vlmNr = LinstorParsingUtils.asVlmNr(vlmNrInt);
         VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, true);
@@ -173,17 +174,17 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             ));
         }
 
-        ctrlPropsHelper.fillProperties(responses, LinStorObject.VOLUME_DEFINITION, overrideProps,
-            getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
+        notifyStlts = ctrlPropsHelper.fillProperties(responses, LinStorObject.VOLUME_DEFINITION, overrideProps,
+            getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN) || notifyStlts;
 
         try
         {
-            ctrlPropsHelper.remove(
+            notifyStlts = ctrlPropsHelper.remove(
                 responses,
                 LinStorObject.VOLUME_DEFINITION,
                 getVlmDfnProps(vlmDfn),
                 deletePropKeys,
-                Collections.emptyList());
+                Collections.emptyList()) || notifyStlts;
         }
         catch (AccessDeniedException exc)
         {
@@ -237,6 +238,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         boolean sizeChanges = size != null;
         if (sizeChanges)
         {
+            notifyStlts = true;
             long vlmDfnSize = getVlmDfnSize(vlmDfn);
             if (size >= vlmDfnSize)
             {
@@ -261,6 +263,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         if (updateForResize)
         {
+            notifyStlts = true;
             Iterator<Volume> vlmIter = iterateVolumes(vlmDfn);
 
             if (vlmIter.hasNext())
@@ -280,7 +283,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         responses.addEntry(ApiSuccessUtils.defaultModifiedEntry(vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
 
-        Flux<ApiCallRc> updateResponses = updateSatellites(rscName, vlmNr, sizeChanges);
+        Flux<ApiCallRc> updateResponses = notifyStlts ? updateSatellites(rscName, vlmNr, sizeChanges) : Flux.empty();
 
         return Flux
             .just((ApiCallRc) responses)

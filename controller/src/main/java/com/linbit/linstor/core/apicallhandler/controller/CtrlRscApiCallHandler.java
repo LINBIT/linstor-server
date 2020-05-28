@@ -155,6 +155,8 @@ public class CtrlRscApiCallHandler
     {
         Flux<ApiCallRc> flux = Flux.empty();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        boolean notifyStlts = false;
+
         try
         {
             Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, true);
@@ -183,19 +185,21 @@ public class CtrlRscApiCallHandler
                 ApiConsts.MASK_RSC
             );
 
-            ctrlPropsHelper.fillProperties(
+            notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs, LinStorObject.RESOURCE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_RSC);
-            ctrlPropsHelper.remove(
-                apiCallRcs, LinStorObject.RESOURCE, props, deletePropKeys, deletePropNamespacesRef);
+            notifyStlts = ctrlPropsHelper.remove(
+                apiCallRcs, LinStorObject.RESOURCE, props, deletePropKeys, deletePropNamespacesRef) || notifyStlts;
 
             ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 rsc.getUuid(), getRscDescriptionInline(rsc)));
 
-            flux = ctrlSatelliteUpdateCaller
-                .updateSatellites(rsc.getDefinition(), Flux.empty())
-                .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+            if (notifyStlts) {
+                flux = ctrlSatelliteUpdateCaller
+                        .updateSatellites(rsc.getDefinition(), Flux.empty())
+                        .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+            }
         }
         catch (Exception | ImplementationError exc)
         {

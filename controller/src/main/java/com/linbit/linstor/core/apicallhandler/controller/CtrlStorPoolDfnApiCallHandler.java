@@ -173,6 +173,7 @@ class CtrlStorPoolDfnApiCallHandler
     {
         List<Flux<Flux<ApiCallRc>>> fluxes = new ArrayList<>();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        boolean notifyStlts;
 
         try
         {
@@ -189,18 +190,24 @@ class CtrlStorPoolDfnApiCallHandler
 
             Props props = getProps(storPoolDfn);
 
-            ctrlPropsHelper.fillProperties(
+            notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs, LinStorObject.STORAGEPOOL_DEFINITION, overrideProps,
                 getProps(storPoolDfn), ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN);
-            ctrlPropsHelper.remove(
-                apiCallRcs, LinStorObject.STORAGEPOOL_DEFINITION, props, deletePropKeys, deletePropNamespaces);
+            notifyStlts = ctrlPropsHelper.remove(
+                apiCallRcs,
+                LinStorObject.STORAGEPOOL_DEFINITION,
+                props,
+                deletePropKeys,
+                deletePropNamespaces) || notifyStlts;
 
             ctrlTransactionHelper.commit();
 
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 storPoolDfn.getUuid(), getStorPoolDfnDescriptionInline(storPoolDfn)));
 
-            fluxes = updateSatellites(storPoolDfn);
+            if (notifyStlts) {
+                fluxes = updateSatellites(storPoolDfn);
+            }
         }
         catch (Exception | ImplementationError exc)
         {

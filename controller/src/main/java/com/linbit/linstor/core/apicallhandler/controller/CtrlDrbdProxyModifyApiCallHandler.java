@@ -73,6 +73,7 @@ public class CtrlDrbdProxyModifyApiCallHandler
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
+        boolean notifyStlts = false;
         ResponseContext context = makeResourceDefinitionContext(
             ApiOperation.makeModifyOperation(),
             rscNameStr
@@ -100,7 +101,7 @@ public class CtrlDrbdProxyModifyApiCallHandler
             {
                 Map<String, String> map = props.map();
 
-                ctrlPropsHelper.fillProperties(responses, LinStorObject.DRBD_PROXY, overrideProps,
+                notifyStlts = ctrlPropsHelper.fillProperties(responses, LinStorObject.DRBD_PROXY, overrideProps,
                     props, ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
 
                 for (String delKey : deletePropKeys)
@@ -113,12 +114,15 @@ public class CtrlDrbdProxyModifyApiCallHandler
                             "Could not delete property '" + delKey + "' as it did not exist. " +
                                                 "This operation had no effect."
                         ));
+                    } else {
+                        notifyStlts = true;
                     }
                 }
             }
 
             if (compressionType != null)
             {
+                notifyStlts = true;
                 props.getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_COMPRESSION_OPTIONS).ifPresent(this::clearProps);
 
                 if (ApiConsts.VAL_DRBD_PROXY_COMPRESSION_NONE.equals(compressionType))
@@ -158,7 +162,9 @@ public class CtrlDrbdProxyModifyApiCallHandler
                     "proxy options for " + getRscDfnDescriptionInline(rscDfn)
                 )
             );
-            responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
+            if (notifyStlts) {
+                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
+            }
         }
         catch (Exception | ImplementationError exc)
         {
