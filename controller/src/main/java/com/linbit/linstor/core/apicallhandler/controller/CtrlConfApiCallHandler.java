@@ -74,7 +74,7 @@ import reactor.core.publisher.Flux;
 public class CtrlConfApiCallHandler
 {
 
-    private ErrorReporter errorReporter;
+    private final ErrorReporter errorReporter;
     private final SystemConfRepository systemConfRepository;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorNrPool;
@@ -386,6 +386,26 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
+    private boolean setCtrlProp(AccessContext accCtx, String key, String value, String namespace)
+            throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
+    {
+        String oldVal = systemConfRepository.setCtrlProp(accCtx, key, value, namespace);
+        if (oldVal != null) {
+            return !oldVal.equals(value);
+        }
+        return true;
+    }
+
+    private boolean setStltProp(AccessContext accCtx, String key, String value)
+        throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
+    {
+        String oldVal = systemConfRepository.setStltProp(accCtx, key, value);
+        if (oldVal != null) {
+            return !oldVal.equals(value);
+        }
+        return true;
+    }
+
     public ApiCallRc setProp(String key, String namespace, String value)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -404,10 +424,11 @@ public class CtrlConfApiCallHandler
             ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
             if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
             {
+                boolean notifyStlts = false;
                 String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
                 if (fullKey.startsWith(ApiConsts.NAMESPC_REST + '/') || fullKey.startsWith(ApiConsts.NAMESPC_AUTOPLACER + "/"))
                 {
-                    systemConfRepository.setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                    notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                 }
                 else
                 {
@@ -422,7 +443,7 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.KEY_SEARCH_DOMAIN: // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER: // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM:
-                            systemConfRepository.setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                            notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                             break;
                         case ApiConsts.KEY_EXT_CMD_WAIT_TO:
                             try
@@ -451,13 +472,15 @@ public class CtrlConfApiCallHandler
                                 );
                             }
                         default:
-                            systemConfRepository.setStltProp(peerAccCtx.get(), fullKey, normalized);
+                            notifyStlts = setStltProp(peerAccCtx.get(), fullKey, normalized);
                             break;
                     }
                 }
                 transMgrProvider.get().commit();
 
-                updateSatelliteConf();
+                if (notifyStlts) {
+                    updateSatelliteConf();
+                }
 
                 apiCallRc.addEntry(
                     "Successfully set property '" + fullKey + "' to value '" + normalized + "'",
@@ -571,11 +594,13 @@ public class CtrlConfApiCallHandler
             );
             if (isPropWhitelisted)
             {
+                boolean notifyStlts = false;
                 String oldValue = systemConfRepository.removeCtrlProp(peerAccCtx.get(), key, namespace);
                 systemConfRepository.removeStltProp(peerAccCtx.get(), key, namespace);
 
                 if (oldValue != null)
                 {
+                    notifyStlts = true;
                     switch (fullKey)
                     {
                         case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
@@ -592,7 +617,9 @@ public class CtrlConfApiCallHandler
 
                 transMgrProvider.get().commit();
 
-                updateSatelliteConf();
+                if (notifyStlts) {
+                    updateSatelliteConf();
+                }
 
                 apiCallRc.addEntry(
                     "Successfully deleted property '" + fullKey + "'",
