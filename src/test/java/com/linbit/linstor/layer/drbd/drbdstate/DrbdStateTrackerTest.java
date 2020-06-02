@@ -2,11 +2,6 @@ package com.linbit.linstor.layer.drbd.drbdstate;
 
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.types.MinorNumber;
-import com.linbit.linstor.layer.drbd.drbdstate.DrbdConnection;
-import com.linbit.linstor.layer.drbd.drbdstate.DrbdResource;
-import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
-import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
-import com.linbit.linstor.layer.drbd.drbdstate.ResourceObserver;
 
 import org.junit.After;
 import org.junit.Before;

@@ -6,7 +6,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
@@ -16,6 +15,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyNodeOuterClass.MsgIn
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;

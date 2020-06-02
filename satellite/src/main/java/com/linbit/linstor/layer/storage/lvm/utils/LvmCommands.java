@@ -3,11 +3,10 @@ package com.linbit.linstor.layer.storage.lvm.utils;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.layer.storage.utils.Commands;
-import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
 import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
+import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.RaidLevel;
-import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.layer.storage.utils.Commands.genericExecutor;
 

@@ -2,11 +2,11 @@ package com.linbit.linstor.api.protobuf;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 

@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apis;
 
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.netcom.Peer;
 
 import java.util.List;
 import java.util.Map;

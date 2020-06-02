@@ -5,7 +5,6 @@ import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializerBuilder;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
@@ -14,16 +13,18 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Either;
-import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+
+import reactor.core.publisher.Flux;
 
 
 @ProtobufApiCall(

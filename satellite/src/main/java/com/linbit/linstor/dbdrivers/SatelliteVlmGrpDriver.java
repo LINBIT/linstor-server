@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.core.objects.VolumeGroup;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 

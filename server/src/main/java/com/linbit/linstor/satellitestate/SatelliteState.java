@@ -1,6 +1,5 @@
 package com.linbit.linstor.satellitestate;
 
-import com.linbit.linstor.api.pojo.ResourceState;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;

@@ -1,6 +1,5 @@
 package com.linbit.linstor.layer.storage.utils;
 
-import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.storage.LsBlkEntry;
 
 import java.util.List;

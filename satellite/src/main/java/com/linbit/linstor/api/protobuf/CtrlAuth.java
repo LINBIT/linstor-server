@@ -6,8 +6,6 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
-import com.linbit.linstor.api.protobuf.ApiCallAnswerer;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;

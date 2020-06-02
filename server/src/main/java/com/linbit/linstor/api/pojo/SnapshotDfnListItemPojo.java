@@ -1,6 +1,5 @@
 package com.linbit.linstor.api.pojo;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;

@@ -11,7 +11,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import java.util.Collections;
 import java.util.TreeMap;
 import java.util.UUID;
 

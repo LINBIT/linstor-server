@@ -5,7 +5,6 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
-import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
