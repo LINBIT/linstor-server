@@ -254,7 +254,7 @@ project(':controller') {
             testRuntime fileTree(dir: "libs/testRuntime")
         } else {
             // rest libs (grizzly http(s), jersey(rest))
-            compile 'org.glassfish.grizzly:grizzly-http-server:2.4.+'
+            compile 'org.glassfish.grizzly:grizzly-http-server:2.4.4'
             compile 'org.glassfish.hk2:guice-bridge:2.6.1'
             compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
             compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: jerseyVersion
