@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 
 public class SnapshotDefinition extends BaseTransactionObject implements DbgInstanceUuid, Comparable<SnapshotDefinition>
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<NodeName, Snapshot> getSnapshotMap();
         Map<VolumeNumber, SnapshotVolumeDefinition> getSnapshotVolumeDefinitionMap();
@@ -323,7 +323,8 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         checkDeleted();
 
         return inCreation.get() ||
-            flags.isSet(accCtx, Flags.DELETE);
+            flags.isSet(accCtx, Flags.DELETE) ||
+            flags.isSet(accCtx, Flags.SHIPPING_IN_PROGRESS);
     }
 
     public void setInCreation(AccessContext accCtx, boolean inCreationRef)
@@ -585,7 +586,15 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
 
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
-        SUCCESSFUL(1L), FAILED_DEPLOYMENT(2L), FAILED_DISCONNECT(4L), DELETE(8L);
+        SUCCESSFUL(1L << 0),
+        FAILED_DEPLOYMENT(1L << 1),
+        FAILED_DISCONNECT(1L << 2),
+        DELETE(1L << 3),
+        SHIPPING(1L << 4),
+        SHIPPING_IN_PROGRESS(SHIPPING.flagValue | 1L << 5),
+        SHIPPING_FAILED(SHIPPING.flagValue | 1L << 6),
+        SHIPPING_DONE(SHIPPING.flagValue | 1L << 7)
+        ;
 
         public final long flagValue;
 

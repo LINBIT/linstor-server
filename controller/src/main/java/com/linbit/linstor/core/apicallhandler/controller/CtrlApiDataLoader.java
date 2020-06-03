@@ -17,6 +17,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -276,6 +277,36 @@ public class CtrlApiDataLoader
             );
         }
         return rsc;
+    }
+
+    public ResourceConnection loadRscConn(String rscNameRef, String nodeANameRef, String nodeBNameRef)
+    {
+        ResourceName rscName = LinstorParsingUtils.asRscName(rscNameRef);
+        NodeName nodeAName = LinstorParsingUtils.asNodeName(nodeANameRef);
+        NodeName nodeBName = LinstorParsingUtils.asNodeName(nodeBNameRef);
+
+        return loadRscConn(rscName, nodeAName, nodeBName);
+    }
+
+    public ResourceConnection loadRscConn(ResourceName rscNameRef, NodeName nodeANameRef, NodeName nodeBNameRef)
+    {
+        Resource rscA = loadRsc(nodeANameRef, rscNameRef, true);
+        Resource rscB = loadRsc(nodeBNameRef, rscNameRef, true);
+        ResourceConnection rscCon;
+        try
+        {
+            rscCon = rscA.getAbsResourceConnection(systemCtx, rscB);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "loading resource connection '" + rscNameRef + "' between nodes '" + nodeANameRef + "' and '" +
+                    nodeBNameRef + "'",
+                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
+            );
+        }
+        return rscCon;
     }
 
     public final SnapshotDefinition loadSnapshotDfn(

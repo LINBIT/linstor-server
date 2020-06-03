@@ -86,6 +86,18 @@ public class InternalApiConsts
     public static final String PROP_PRIMARY_SET     = "DrbdPrimarySetOn";
     public static final String PROP_NVME_TARGET_NODE_NAME = "NvmeTargetNodeName";
 
+    /*
+     * Snapshot shipping
+     */
+    public static final String API_NOTIFY_SNAPSHOT_SHIPPING_RECEIVED = "SnapshotShippingReceived";
+    public static final String KEY_SNAPSHOT_SHIPPING_NAME_IN_PROGRESS = "SnapshotShippingNameInProgress";
+    public static final String KEY_SNAPSHOT_SHIPPING_NAME_PREV = "SnapshotShippingNamePrev";
+    public static final String KEY_SNAPSHOT_SHIPPING_TARGET_NODE = "Shipping/Target";
+    public static final String KEY_SNAPSHOT_SHIPPING_SOURCE_NODE = "Shipping/Source";
+    public static final String KEY_SNAPSHOT_SHIPPING_PORT = "Shipping/Port";
+    public static final String KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC = "Shipping/PrefTargetNic";
+    public static final String KEY_SNAPSHOT_SHIPPING_NEXT_ID = "SnapshotShippingNextId";
+
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;
 

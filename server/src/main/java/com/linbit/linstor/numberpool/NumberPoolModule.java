@@ -24,6 +24,7 @@ public class NumberPoolModule extends AbstractModule
     public static final String TCP_PORT_POOL = "TcpPortPool";
     public static final String OPENFLEX_TARGET_PORT_POOL = "OpenflexTargetPortPool";
     public static final String LAYER_RSC_ID_POOL = "LayerRscIdPool";
+    public static final String SNAPSHOPT_SHIPPING_PORT_POOL = "SnapshotShippingPortPool";
 
     private static final String MINOR_NR_ELEMENT_NAME = "Minor number";
 
@@ -47,6 +48,10 @@ public class NumberPoolModule extends AbstractModule
     private static final int LAYER_RSC_ID_MIN = 0;
     private static final int LAYER_RSC_ID_MAX = BitmapPool.MAX_CAPACITY - 1;
     private static final String LAYER_RSC_ID_ELEMENT_NAME = "Layer Resource Id";
+
+    private static final int DEFAULT_SNAP_SHIP_PORT_MIN = 12_000;
+    private static final int DEFAULT_SNAP_SHIP_PORT_MAX = 12_999;
+    private static final String SNAP_SHIP_PORT_ELEMENT_NAME = "Snapshot Shipping Port";
 
     @Override
     protected void configure()
@@ -135,6 +140,26 @@ public class NumberPoolModule extends AbstractModule
             LAYER_RSC_ID_MAX,
             LAYER_RSC_ID_MIN,
             LAYER_RSC_ID_MAX
+        );
+    }
+
+    @Provides
+    @Singleton
+    @Named(SNAPSHOPT_SHIPPING_PORT_POOL)
+    public DynamicNumberPool snapshotShippingPortPool(
+        ErrorReporter errorReporter,
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
+    )
+    {
+        return new DynamicNumberPoolImpl(
+            errorReporter,
+            ctrlConfRef,
+            DEFAULT_SNAP_SHIP_PORT_MIN + "-" + DEFAULT_SNAP_SHIP_PORT_MAX,
+            SNAP_SHIP_PORT_ELEMENT_NAME,
+            TcpPortNumber::tcpPortNrCheck,
+            TcpPortNumber.PORT_NR_MAX,
+            DEFAULT_SNAP_SHIP_PORT_MIN,
+            DEFAULT_SNAP_SHIP_PORT_MAX
         );
     }
 }

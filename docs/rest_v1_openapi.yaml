@@ -26,6 +26,7 @@ info:
        - Added /v1/nodes/{node}/config, that allows you to get and set the satellite config
        - Added /v1/sos-report to create bug reports you can send to linbit
        - Added new fields to the ErrorReport object
+       - Added /v1/resource-definitions/{resource}/snapshot-shipping
        - Allow to modify the resource group in Resource definitions
     * 1.1.0
        - Added /v1/view/snapshots for a faster all in one snapshot list
@@ -2197,6 +2198,29 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/resource-definitions/{resource}/snapshot-shipping:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+    post:
+      tags:
+        - developers
+      summary: ship a snapshot
+      description: Transfers the resource from one node to another based on snapshot-shipping
+      operationId: snapshotShipping
+      responses:
+        '200':
+          description: Snapshot shipping in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnapshotShipping'
   /v1/resource-groups:
     get:
       tags:
@@ -5172,6 +5196,24 @@ components:
           items:
             type: string
           description: List of nodes where to place the restored snapshot
+    SnapshotShipping:
+      type: object
+      required:
+        - from_node
+        - to_node
+      properties:
+        from_node:
+          type: string
+          description: Node where to ship the snapshot from
+        from_nic:
+          type: string
+          description: NetInterface of the source node
+        to_node:
+          type: string
+          description: Node where to ship the snapshot
+        to_nic:
+          type: string
+          description: NetInterface of the destination node
     PassPhraseCreate:
       type: object
       properties:

@@ -21,6 +21,8 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -67,6 +69,8 @@ public class RscInternalCallHandler
     private final ReadWriteLock storPoolDfnMapLock;
     private final CtrlRscLayerDataMerger layerRscDataMerger;
     private final RetryResourcesTask retryResourceTask;
+    private final CtrlSatelliteUpdater stltUpdater;
+    private final SnapshotShippingInternalApiCallHandler snapShipIntHandler;
 
     @Inject
     public RscInternalCallHandler(
@@ -82,7 +86,9 @@ public class RscInternalCallHandler
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         CtrlRscLayerDataMerger layerRscDataMergerRef,
         RetryResourcesTask retryResourceTaskRef,
-        CtrlApiDataLoader ctrlApiDataLoader
+        CtrlApiDataLoader ctrlApiDataLoader,
+        CtrlSatelliteUpdater stltUpdaterRef,
+        SnapshotShippingInternalApiCallHandler snapShipIntHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -99,6 +105,8 @@ public class RscInternalCallHandler
         layerRscDataMerger = layerRscDataMergerRef;
         retryResourceTask = retryResourceTaskRef;
         apiDataLoader = ctrlApiDataLoader;
+        stltUpdater = stltUpdaterRef;
+        snapShipIntHandler = snapShipIntHandlerRef;
     }
 
     public void handleResourceRequest(
@@ -187,6 +195,16 @@ public class RscInternalCallHandler
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.writeLock()))
         {
+            /*
+             * be careful setting this to true - otherwise we could run into infinite loop between
+             * ctrl -> rsc changed -> stlt
+             * ...
+             * ctrl <- rsc applied <- stlt
+             * ctrl -> rsc changed -> stlt
+             *
+             */
+            boolean updateSatellite = false;
+
             NodeName nodeName = peer.get().getNode().getName();
             Map<StorPoolName, CapacityInfoPojo> storPoolToCapacityInfoMap = capacityInfos.stream().collect(
                 Collectors.toMap(
@@ -261,8 +279,31 @@ public class RscInternalCallHandler
                     );
                 }
             }
+
+            /*
+             * TODO: instead of this loop, we should introduce a "notifySnapshotApplied"
+             * and put the logic of this loop there
+             */
+            for (SnapshotDefinition snapDfn : rsc.getDefinition().getSnapshotDfns(apiCtx))
+            {
+                Snapshot snap = snapDfn.getSnapshot(apiCtx, nodeName);
+                if (snap.getFlags().isSet(apiCtx, Snapshot.Flags.SHIPPING_TARGET))
+                {
+                    if (snapShipIntHandler.startShipping(snap))
+                    {
+                        updateSatellite = true;
+                    }
+                }
+            }
+
             retryResourceTask.remove(rsc);
             ctrlTransactionHelper.commit();
+
+            // only update satellite after transaction was successfully committed
+            if (updateSatellite)
+            {
+                stltUpdater.updateSatellites(rsc);
+            }
         }
         catch (InvalidNameException | AccessDeniedException exc)
         {

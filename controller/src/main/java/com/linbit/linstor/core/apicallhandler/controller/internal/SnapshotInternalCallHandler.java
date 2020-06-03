@@ -22,6 +22,7 @@ import com.linbit.locks.LockGuard;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -71,7 +72,6 @@ public class SnapshotInternalCallHandler
             Peer currentPeer = peer.get();
 
             Snapshot snapshot = null;
-
             ResourceDefinition rscDefinition = resourceDefinitionRepository.get(apiCtx, resourceName);
             if (rscDefinition != null)
             {

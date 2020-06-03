@@ -284,6 +284,9 @@ public class LvmCommands
                 lvmConfig,
                 (Collection<String>) null,
                 "--snapshot",
+                "--setactivationskip", "y", // snapshot needs to be active from
+                "--ignoreactivationskip", // the beginning for
+                "--activate", "y", // snapshot-shipping to work
                 "--name", snapshotIdentifier,
                 volumeGroup + File.separator + identifier
             ),

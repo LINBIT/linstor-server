@@ -23,6 +23,7 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -48,15 +49,18 @@ public class CtrlPropsHelper
 {
     private final WhitelistProps propsWhiteList;
     private final Provider<AccessContext> peerAccCtx;
+    private final SystemConfRepository systemConfRepository;
 
     @Inject
     public CtrlPropsHelper(
         WhitelistProps propsWhiteListRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
-        )
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        SystemConfRepository systemConfRepositoryRef
+    )
     {
         propsWhiteList = propsWhiteListRef;
         peerAccCtx = peerAccCtxRef;
+        systemConfRepository = systemConfRepositoryRef;
     }
 
     public void checkPrefNic(AccessContext accessContext, Node node, String prefNic, long maskObj)
@@ -71,6 +75,48 @@ public class CtrlPropsHelper
                         "The network interface '" + prefNic + "' of node '" + node.getName() + "' does not exist!"
                 ));
             }
+        }
+    }
+
+    public Props getCtrlPropsForView()
+    {
+        return getCtrlPropsForView(peerAccCtx.get());
+    }
+
+    public Props getCtrlPropsForView(AccessContext accessContextRef)
+    {
+        try
+        {
+            return systemConfRepository.getCtrlConfForView(accessContextRef);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access controller properties",
+                ApiConsts.FAIL_ACC_DENIED_CTRL_CFG
+            );
+        }
+    }
+
+    public Props getCtrlPropsForChange()
+    {
+        return getCtrlPropsForChange(peerAccCtx.get());
+    }
+
+    public Props getCtrlPropsForChange(AccessContext accessContextRef)
+    {
+        try
+        {
+            return systemConfRepository.getCtrlConfForChange(accessContextRef);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access controller properties",
+                ApiConsts.FAIL_ACC_DENIED_CTRL_CFG
+            );
         }
     }
 

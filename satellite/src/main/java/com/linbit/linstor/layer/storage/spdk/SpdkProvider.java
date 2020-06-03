@@ -18,8 +18,8 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands;
@@ -31,6 +31,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
@@ -74,7 +75,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
         String subTypeDescr,
-        DeviceProviderKind subTypeKind
+        DeviceProviderKind subTypeKind,
+        SnapshotShippingManager snapShipMrgRef
     )
     {
         super(
@@ -86,7 +88,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             notificationListenerProvider,
             transMgrProvider,
             subTypeDescr,
-            subTypeKind
+            subTypeKind,
+            snapShipMrgRef
         );
     }
 
@@ -98,7 +101,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<TransactionMgr> transMgrProvider,
+        SnapshotShippingManager snapShipMrgRef
     )
     {
         super(
@@ -110,7 +114,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             notificationListenerProvider,
             transMgrProvider,
             "SPDK",
-            DeviceProviderKind.SPDK
+            DeviceProviderKind.SPDK,
+            snapShipMrgRef
         );
     }
 

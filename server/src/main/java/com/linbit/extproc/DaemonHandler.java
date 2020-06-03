@@ -1,10 +1,10 @@
 package com.linbit.extproc;
 
+import com.linbit.extproc.OutputProxy.Event;
+
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.concurrent.BlockingDeque;
-
-import com.linbit.extproc.OutputProxy.Event;
 
 public class DaemonHandler
 {

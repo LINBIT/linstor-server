@@ -8,8 +8,8 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
@@ -18,6 +18,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
@@ -42,7 +43,8 @@ public class ZfsThinProvider extends ZfsProvider
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<TransactionMgr> transMgrProvider,
+        SnapshotShippingManager snapShipMrgRef
     )
     {
         super(
@@ -54,7 +56,8 @@ public class ZfsThinProvider extends ZfsProvider
             notificationListenerProvider,
             transMgrProvider,
             "ZFS-Thin",
-            DeviceProviderKind.ZFS_THIN
+            DeviceProviderKind.ZFS_THIN,
+            snapShipMrgRef
         );
     }
 

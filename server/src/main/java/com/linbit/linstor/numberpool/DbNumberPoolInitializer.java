@@ -17,6 +17,7 @@ import com.linbit.linstor.systemstarter.StartupInitializer;
 import static com.linbit.linstor.numberpool.NumberPoolModule.LAYER_RSC_ID_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.MINOR_NUMBER_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.OPENFLEX_TARGET_PORT_POOL;
+import static com.linbit.linstor.numberpool.NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.TCP_PORT_POOL;
 
 import javax.inject.Inject;
@@ -34,6 +35,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
     private final DynamicNumberPool layerRscIdPool;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.NodesMap nodesMap;
+    private final DynamicNumberPool snapShipPortPool;
 
     @Inject
     public DbNumberPoolInitializer(
@@ -43,6 +45,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
         @Named(TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(OPENFLEX_TARGET_PORT_POOL) DynamicNumberPool ofTargetPortPoolRef,
         @Named(LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
+        @Named(SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapShipPortPoolRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.NodesMap nodesMapRef
     )
@@ -53,6 +56,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
         tcpPortPool = tcpPortPoolRef;
         ofTargetPortPool = ofTargetPortPoolRef;
         layerRscIdPool = layerRscIdPoolRef;
+        snapShipPortPool = snapShipPortPoolRef;
         rscDfnMap = rscDfnMapRef;
         nodesMap = nodesMapRef;
     }
@@ -64,6 +68,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
         initializeTcpPortPool();
         initializeOpenflexTargetPortPool();
         initializeLayerRscIdPool();
+        initializeSnapShipPortPool();
     }
 
     private void initializeMinorNrPool()
@@ -170,5 +175,10 @@ public class DbNumberPoolInitializer implements StartupInitializer
         {
             allocate(childRscLayerData);
         }
+    }
+
+    private void initializeSnapShipPortPool()
+    {
+        snapShipPortPool.reloadRange();
     }
 }

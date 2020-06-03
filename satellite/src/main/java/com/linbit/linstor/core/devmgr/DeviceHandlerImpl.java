@@ -30,9 +30,9 @@ import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.layer.DeviceLayer;
-import com.linbit.linstor.layer.LayerFactory;
 import com.linbit.linstor.layer.DeviceLayer.LayerProcessResult;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.layer.LayerFactory;
 import com.linbit.linstor.layer.openflex.OpenflexLayer;
 import com.linbit.linstor.layer.storage.StorageLayer;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
@@ -41,6 +41,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -82,6 +83,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final OpenflexLayer openflexLayer;
     private final StorageLayer storageLayer;
     private final ExtCmdFactory extCmdFactory;
+    private final SnapshotShippingManager snapshotShippingManager;
 
     private final SysFsHandler sysFsHandler;
 
@@ -97,7 +99,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         StorageLayer storageLayerRef,
         ResourceStateEvent resourceStateEventRef,
         ExtCmdFactory extCmdFactoryRef,
-        SysFsHandler sysFsHandlerRef
+        SysFsHandler sysFsHandlerRef,
+        SnapshotShippingManager snapshotShippingManagerRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -112,6 +115,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         resourceStateEvent = resourceStateEventRef;
         extCmdFactory = extCmdFactoryRef;
         sysFsHandler = sysFsHandlerRef;
+        snapshotShippingManager = snapshotShippingManagerRef;
 
         fullSyncApplied = new AtomicBoolean(false);
     }
@@ -318,6 +322,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                         snapListNotifyDelete.add(snapshot);
                         // snapshot.delete is done by the deviceManager
                     }
+                    // start the snapshot-shipping-daemons if necessary
+                    snapshotShippingManager.allSnapshotPartsRegistered(snapshot);
                 }
 
                 /*

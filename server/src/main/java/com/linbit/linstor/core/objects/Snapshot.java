@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 
 public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnection
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<VolumeNumber, SnapshotVolume> getSnapshotVlmMap();
     }
@@ -323,7 +323,13 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
 
     public enum Flags implements  com.linbit.linstor.stateflags.Flags
     {
-        DELETE(1L);
+        DELETE(1L << 0),
+        SHIPPING_SOURCE(1L << 1),
+        SHIPPING_SOURCE_START(SHIPPING_SOURCE.flagValue | 1L << 2),
+        SHIPPING_SOURCE_DONE(SHIPPING_SOURCE.flagValue | 1L << 3),
+        SHIPPING_TARGET(1L << 4),
+        SHIPPING_TARGET_CLEANING_UP(SHIPPING_TARGET.flagValue | 1L << 5),
+        SHIPPING_TARGET_DONE(SHIPPING_TARGET.flagValue | 1L << 6);
 
         public final long flagValue;
 

@@ -93,15 +93,13 @@ public class CtrlSnapshotCrtHelper
         ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
-    public List<Snapshot> createSnapshots(
+    public SnapshotDefinition createSnapshots(
         List<String> nodeNameStrs,
         String rscNameStr,
         String snapshotNameStr,
         ApiCallRcImpl responses
     )
     {
-        List<Snapshot> snapshotList = new ArrayList<>();
-
         final ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
         SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
@@ -144,9 +142,7 @@ public class CtrlSnapshotCrtHelper
 
                 if (!isDisklessPrivileged(rsc))
                 {
-                    snapshotList.add(
-                        createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc)
-                    );
+                    createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
                     resourceFound = true;
                 }
             }
@@ -166,9 +162,7 @@ public class CtrlSnapshotCrtHelper
                         )
                     );
                 }
-                snapshotList.add(
-                    createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc)
-                );
+                createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
                 resourceFound = true;
             }
         }
@@ -190,9 +184,7 @@ public class CtrlSnapshotCrtHelper
             setSuspend(rsc, true);
         }
 
-        ctrlTransactionHelper.commit();
-
-        return snapshotList;
+        return snapshotDfn;
     }
 
     private Snapshot createSnapshotOnNode(

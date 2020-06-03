@@ -7,18 +7,24 @@ import com.linbit.fsevent.FileObserver;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.fsevent.FileSystemWatch.Event;
 import com.linbit.fsevent.FileSystemWatch.FileEntry;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsVolume;
+import com.linbit.linstor.core.objects.NetInterface;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
@@ -34,18 +40,23 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.io.IOException;
@@ -76,6 +87,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected final WipeHandler wipeHandler;
     protected final StltConfigAccessor stltConfigAccessor;
     protected Props localNodeProps;
+    private final SnapshotShippingManager snapShipMgr;
 
     protected final HashMap<String, INFO> infoListCache;
     protected final List<Consumer<Map<String, Long>>> postRunVolumeNotifications = new ArrayList<>();
@@ -96,7 +108,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         Provider<NotificationListener> notificationListenerProviderRef,
         Provider<TransactionMgr> transMgrProviderRef,
         String typeDescrRef,
-        DeviceProviderKind kindRef
+        DeviceProviderKind kindRef,
+        SnapshotShippingManager snapShipMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -108,6 +121,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         transMgrProvider = transMgrProviderRef;
         typeDescr = typeDescrRef;
         kind = kindRef;
+        snapShipMgr = snapShipMgrRef;
 
         infoListCache = new HashMap<>();
         try
@@ -195,6 +209,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     )
                 )
             );
+
         Map<Pair<String, VolumeNumber>, LAYER_DATA> volumesLut = new HashMap<>();
 
         List<LAYER_DATA> vlmsToCreate = new ArrayList<>();
@@ -273,7 +288,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
         // intentional type erasure
         Object typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(true);
-        deleteSnapshots((List<LAYER_SNAP_DATA>) typeErasedList, apiCallRc);
+        deleteSnapshots(
+            volumesLut,
+            (List<LAYER_SNAP_DATA>) typeErasedList,
+            apiCallRc
+        );
 
         createVolumes(vlmsToCreate, apiCallRc);
         resizeVolumes(vlmsToResize, apiCallRc);
@@ -465,22 +484,52 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
     }
 
-    private void deleteSnapshots(List<LAYER_SNAP_DATA> snapVlmsDataList, ApiCallRcImpl apiCallRc)
+    private void deleteSnapshots(
+        Map<Pair<String, VolumeNumber>, LAYER_DATA> vlmDataLut,
+        List<LAYER_SNAP_DATA> snapVlmsDataList,
+        ApiCallRcImpl apiCallRc
+    )
         throws StorageException, AccessDeniedException, DatabaseException
     {
         for (LAYER_SNAP_DATA snapVlm : snapVlmsDataList)
         {
-            errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
-            if (snapshotExists(snapVlm))
+            Snapshot snap = snapVlm.getRscLayerObject().getAbsResource();
+            if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET))
             {
-                deleteSnapshot(snapVlm);
+                LAYER_DATA vlmData = vlmDataLut.get(
+                    new Pair<>(
+                        snapVlm.getRscLayerObject().getSuffixedResourceName(),
+                        snapVlm.getVlmNr()
+                    )
+                );
+                if (vlmData == null)
+                {
+                    throw new StorageException(
+                        String.format(
+                            "Could not merge snapshot '%s' into its volume as the volume was not found.",
+                            snapVlm.toString()
+                        )
+                    );
+                }
+                errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
+                finishShipReceiving(vlmData, snapVlm);
+
             }
-            else
+            else // deleting the source should be the same as deleting an ordinary snapshot
             {
-                errorReporter.logTrace("Snapshot '%s' already deleted", snapVlm.toString());
+                errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
+                if (snapshotExists(snapVlm))
+                {
+                    deleteSnapshot(snapVlm);
+                }
+                else
+                {
+                    errorReporter.logTrace("Snapshot '%s' already deleted", snapVlm.toString());
+                }
+
+                addSnapDeletedMsg(snapVlm, apiCallRc);
             }
 
-            addSnapDeletedMsg(snapVlm, apiCallRc);
         }
     }
 
@@ -516,9 +565,165 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     createSnapshot(vlmData, snapVlm);
 
                     addSnapCreatedMsg(snapVlm, apiCallRc);
+
+                    Snapshot snap = snapVlm.getVolume().getAbsResource();
+                    if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET))
+                    {
+                        StorPool storPool = vlmData.getStorPool();
+                        long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
+
+                        String snapId = asSnapLvIdentifier(snapVlm);
+                        String storageName = getStorageName(vlmData);
+                        String devicePath = getDevicePath(storageName, snapId);
+
+                        waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
+
+                        startReceiving(vlmData, snapVlm);
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        Snapshot snap = snapVlm.getVolume().getAbsResource();
+                        if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_SOURCE_START))
+                        {
+                            LAYER_SNAP_DATA prevSnapVlmData = getPreviousSnapvlmData(snapVlm);
+                            startSending(prevSnapVlmData, snapVlm);
+                        }
+                    }
+                    catch (InvalidNameException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
                 }
             }
         }
+    }
+
+    private LAYER_SNAP_DATA getPreviousSnapvlmData(LAYER_SNAP_DATA snapVlm)
+        throws AccessDeniedException, InvalidNameException
+    {
+        LAYER_SNAP_DATA prevSnapVlmData = null;
+
+        Snapshot snap = snapVlm.getVolume().getAbsResource();
+        String prevSnapName = snap.getSnapshotDefinition().getProps(storDriverAccCtx)
+            .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_PREV);
+        if (prevSnapName != null)
+        {
+            SnapshotDefinition prevSnapDfn = snap.getResourceDefinition()
+                .getSnapshotDfn(storDriverAccCtx, new SnapshotName(prevSnapName));
+            if (prevSnapDfn != null)
+            {
+                AbsRscLayerObject<Snapshot> prevSnapLayerData = prevSnapDfn
+                    .getSnapshot(storDriverAccCtx, snap.getNodeName())
+                    .getLayerData(storDriverAccCtx);
+
+                Set<AbsRscLayerObject<Snapshot>> prevSnapStorageDataSet = LayerRscUtils
+                    .getRscDataByProvider(prevSnapLayerData, DeviceLayerKind.STORAGE);
+
+                AbsRscLayerObject<Snapshot> currentSnapLayerData = snapVlm.getRscLayerObject();
+                String curSnapNameSuffix = currentSnapLayerData.getResourceNameSuffix();
+
+                for (AbsRscLayerObject<Snapshot> prevSnapStorageData : prevSnapStorageDataSet)
+                {
+                    String prevSnapNameSuffix = prevSnapStorageData.getResourceNameSuffix();
+                    if (prevSnapNameSuffix.equals(curSnapNameSuffix))
+                    {
+                        prevSnapVlmData = prevSnapLayerData.getVlmProviderObject(snapVlm.getVlmNr());
+                        break;
+                    }
+                }
+            }
+        }
+        return prevSnapVlmData;
+    }
+
+    protected void startReceiving(
+        LAYER_DATA vlmDataRef,
+        LAYER_SNAP_DATA snapVlmData
+    )
+        throws AccessDeniedException, StorageException, DatabaseException
+    {
+        Props snapDfnProps = snapVlmData.getRscLayerObject().getAbsResource().getSnapshotDefinition().getProps(
+            storDriverAccCtx
+        );
+        String socatPort = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
+
+        snapShipMgr.startReceiving(
+            asSnapLvIdentifier(snapVlmData),
+            getSnapshotShippingReceivingCommandImpl(snapVlmData),
+            socatPort,
+            snapVlmData
+        );
+    }
+
+    protected void startSending(
+        @Nullable LAYER_SNAP_DATA lastSnapVlmData,
+        LAYER_SNAP_DATA curSnapVlmData
+    )
+        throws AccessDeniedException, StorageException
+    {
+        Snapshot snapSource = curSnapVlmData.getRscLayerObject().getAbsResource();
+
+        SnapshotDefinition snapDfn = snapSource.getSnapshotDefinition();
+        Props snapDfnProps = snapDfn.getProps(storDriverAccCtx);
+
+        String socatPort = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
+        String snapTargetName = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_TARGET_NODE);
+
+        NetInterface targetNetIf = getTargetNetIf(snapDfn, snapTargetName);
+
+        snapShipMgr.startSending(
+            asSnapLvIdentifier(curSnapVlmData),
+            getSnapshotShippingSendingCommandImpl(lastSnapVlmData, curSnapVlmData),
+            targetNetIf,
+            socatPort,
+            curSnapVlmData
+        );
+    }
+
+    private NetInterface getTargetNetIf(SnapshotDefinition snapDfn, String snapTargetName)
+        throws AccessDeniedException, ImplementationError
+    {
+        NetInterface targetNic;
+        try
+        {
+            Node targetNode = snapDfn.getResourceDefinition()
+                .getResource(storDriverAccCtx, new NodeName(snapTargetName)).getNode();
+
+            PriorityProps targetNodePropProps = new PriorityProps(
+                targetNode.getProps(storDriverAccCtx),
+                stltConfigAccessor.getReadonlyProps()
+            );
+            String targetPrefNicStr = targetNodePropProps.getProp(
+                InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC,
+                "",
+                ApiConsts.DEFAULT_NETIF
+            );
+            targetNic = targetNode.getNetInterface(storDriverAccCtx, new NetInterfaceName(targetPrefNicStr));
+            if (targetNic == null)
+            {
+                if (!targetPrefNicStr.equalsIgnoreCase(ApiConsts.DEFAULT_NETIF))
+                {
+                    targetNic = targetNode.getNetInterface(
+                        storDriverAccCtx,
+                        new NetInterfaceName(ApiConsts.DEFAULT_NETIF)
+                    );
+                }
+                if (targetNic == null)
+                {
+                    targetNic = targetNode.streamNetInterfaces(storDriverAccCtx).findAny().orElseThrow(
+                        () -> new ImplementationError("No NetIfs available")
+                    );
+                }
+            }
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ImplementationError(invalidNameExc);
+        }
+        return targetNic;
     }
 
     private void handleRollbacks(List<LAYER_DATA> vlmsToCheckForRollback, ApiCallRcImpl apiCallRc)
@@ -862,6 +1067,27 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
+    protected String getSnapshotShippingReceivingCommandImpl(LAYER_SNAP_DATA snapVlmDataRef)
+        throws StorageException
+    {
+        throw new StorageException("Snapshot shipping is not supported by " + getClass().getSimpleName());
+    }
+
+    protected String getSnapshotShippingSendingCommandImpl(
+        LAYER_SNAP_DATA lastSnapVlmDataRef,
+        LAYER_SNAP_DATA curSnapVlmDataRef
+    )
+        throws StorageException
+    {
+        throw new StorageException("Snapshot shipping is not supported by " + getClass().getSimpleName());
+    }
+
+    protected void finishShipReceiving(LAYER_DATA vlmDataRef, LAYER_SNAP_DATA snapVlmRef)
+        throws StorageException, DatabaseException
+    {
+        throw new StorageException("Snapshot shipping is not supported by " + getClass().getSimpleName());
+    }
+
     protected abstract boolean updateDmStats();
 
     protected abstract Map<String, Long> getFreeSpacesImpl() throws StorageException;
@@ -883,6 +1109,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     protected abstract void deleteLvImpl(LAYER_DATA vlmData, String lvId)
         throws StorageException, AccessDeniedException, DatabaseException;
+
 
     protected String asLvIdentifier(LAYER_DATA vlmData)
     {

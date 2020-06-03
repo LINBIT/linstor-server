@@ -14,14 +14,14 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.file.utils.FileCommands;
 import com.linbit.linstor.layer.storage.file.utils.FileUtils;
-import com.linbit.linstor.layer.storage.file.utils.LosetupCommands;
 import com.linbit.linstor.layer.storage.file.utils.FileUtils.FileInfo;
+import com.linbit.linstor.layer.storage.file.utils.LosetupCommands;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.utils.StltProviderUtils;
 import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
@@ -30,6 +30,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.file.FileData;
@@ -82,7 +83,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
         String subTypeDescr,
-        DeviceProviderKind subTypeKind
+        DeviceProviderKind subTypeKind,
+        SnapshotShippingManager snapShipMrgRef
     )
     {
         super(
@@ -94,7 +96,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             notificationListenerProvider,
             transMgrProvider,
             subTypeDescr,
-            subTypeKind
+            subTypeKind,
+            snapShipMrgRef
         );
     }
 
@@ -106,7 +109,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<TransactionMgr> transMgrProvider,
+        SnapshotShippingManager snapShipMrgRef
     )
     {
         super(
@@ -118,7 +122,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             notificationListenerProvider,
             transMgrProvider,
             "FILE",
-            DeviceProviderKind.FILE
+            DeviceProviderKind.FILE,
+            snapShipMrgRef
         );
     }
 

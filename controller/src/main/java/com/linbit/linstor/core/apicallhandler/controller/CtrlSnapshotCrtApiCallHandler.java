@@ -121,25 +121,40 @@ public class CtrlSnapshotCrtApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        List<Snapshot> snapshotList = ctrlSnapshotCrtHelper.createSnapshots(
+        SnapshotDefinition snapshotDfn = ctrlSnapshotCrtHelper.createSnapshots(
             nodeNameStrs,
             rscNameStr,
             snapshotNameStr,
             responses
         );
-        if (snapshotList.size() == 0)
-        {
-            throw new ImplementationError("No snapshots created");
-        }
-        SnapshotDefinition snapshotDfn = snapshotList.get(0).getSnapshotDefinition();
+
+        ctrlTransactionHelper.commit();
+
+        responses.addEntry(
+            ApiSuccessUtils.defaultRegisteredEntry(
+                snapshotDfn.getUuid(),
+                getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr)
+            )
+        );
+        return Flux.<ApiCallRc>just(responses)
+            .concatWith(postCreateSnapshot(snapshotDfn));
+    }
+
+    /**
+     * After Snapshots with their SnapshotDefinition were created, this method now sends the update
+     * to the corresponding satellites and also takes care of resuming-io in the end.
+     *
+     * @param snapshotDfn
+     *
+     * @return
+     */
+    Flux<ApiCallRc> postCreateSnapshot(SnapshotDefinition snapshotDfn)
+    {
         ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
         ResourceName rscName = rscDfn.getName();
         SnapshotName snapshotName = snapshotDfn.getName();
 
-        responses.addEntry(ApiSuccessUtils.defaultRegisteredEntry(
-            snapshotDfn.getUuid(), getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr)
-        ));
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
@@ -150,9 +165,7 @@ public class CtrlSnapshotCrtApiCallHandler
                     "Suspended IO of {1} on {0} for snapshot"
                 ));
 
-        return Flux
-            .<ApiCallRc>just(responses)
-            .concatWith(satelliteUpdateResponses)
+        return satelliteUpdateResponses
             .concatWith(takeSnapshot(rscName, snapshotName))
             .onErrorResume(exception -> abortSnapshot(rscName, snapshotName, exception))
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());

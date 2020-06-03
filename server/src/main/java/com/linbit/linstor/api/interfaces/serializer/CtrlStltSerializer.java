@@ -91,6 +91,8 @@ public interface CtrlStltSerializer extends CommonSerializer
             ApiCallRc apiCallRc
         );
 
+        CtrlStltSerializerBuilder notifySnapshotShipped(Snapshot snap, boolean successRef);
+
         CtrlStltSerializerBuilder requestControllerUpdate();
         CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);

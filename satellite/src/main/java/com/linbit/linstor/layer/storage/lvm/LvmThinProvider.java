@@ -19,6 +19,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -45,7 +46,8 @@ public class LvmThinProvider extends LvmProvider
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider
+        Provider<TransactionMgr> transMgrProvider,
+        SnapshotShippingManager snapShipMrgRef
     )
     {
         super(
@@ -57,7 +59,8 @@ public class LvmThinProvider extends LvmProvider
             notificationListenerProvider,
             transMgrProvider,
             "LVM-Thin",
-            DeviceProviderKind.LVM_THIN
+            DeviceProviderKind.LVM_THIN,
+            snapShipMrgRef
         );
     }
 
@@ -326,6 +329,45 @@ public class LvmThinProvider extends LvmProvider
         LvmThinData<Resource> lvmThinData = (LvmThinData<Resource>) vlmDataRef;
         long allocatedSize = super.getAllocatedSize(vlmDataRef);
         return (long) (allocatedSize * lvmThinData.getDataPercent());
+    }
+
+    @Override
+    protected String getSnapshotShippingReceivingCommandImpl(LvmData<Snapshot> snapVlmDataRef) throws StorageException
+    {
+        return "thin_recv " + snapVlmDataRef.getVolumeGroup() + "/" + asSnapLvIdentifier(snapVlmDataRef);
+    }
+
+    @Override
+    protected String getSnapshotShippingSendingCommandImpl(
+        LvmData<Snapshot> lastSnapVlmDataRef,
+        LvmData<Snapshot> curSnapVlmDataRef
+    )
+        throws StorageException
+    {
+        StringBuilder sb = new StringBuilder("thin_send ");
+        if (lastSnapVlmDataRef != null)
+        {
+            sb.append(lastSnapVlmDataRef.getVolumeGroup()).append("/").append(lastSnapVlmDataRef.getIdentifier())
+                .append(" ");
+        }
+        sb.append(curSnapVlmDataRef.getVolumeGroup()).append("/").append(curSnapVlmDataRef.getIdentifier());
+        return sb.toString();
+    }
+
+    @Override
+    protected void finishShipReceiving(LvmData<Resource> vlmDataRef, LvmData<Snapshot> snapVlmRef)
+        throws StorageException, DatabaseException
+    {
+        String vlmDataId = asLvIdentifier(vlmDataRef);
+        deleteLvImpl(vlmDataRef, vlmDataId); // delete calls "lvmVlmData.setExists(false);" - we have to undo this
+        LvmCommands.rename(
+            extCmdFactory.create(),
+            vlmDataRef.getVolumeGroup(),
+            asSnapLvIdentifier(snapVlmRef),
+            vlmDataId,
+            null
+        );
+        vlmDataRef.setExists(true);
     }
 
     private String getVolumeGroupForLvs(StorPool storPool) throws StorageException

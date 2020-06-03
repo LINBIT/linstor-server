@@ -1005,6 +1005,27 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SnapshotShipping
+    {
+        /**
+         * Node where to ship the snapshot from
+         */
+        public String from_node;
+        /**
+         * NetInterface of the source node
+         */
+        public String from_nic;
+        /**
+         * Node where to ship the snapshot
+         */
+        public String to_node;
+        /**
+         * NetInterface of the destination node
+         */
+        public String to_nic;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PassPhraseCreate
     {
         public String new_passphrase;
