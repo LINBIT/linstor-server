@@ -567,11 +567,13 @@ public class CtrlSnapshotCrtApiCallHandler
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN, String.format(
-                "A snapshot definition with the name '%s' already exists in resource definition '%s'.",
-                snapshotName,
-                rscDfn.getName().displayValue
-            )), dataAlreadyExistsExc);
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN,
+                String.format(
+                    "A snapshot definition with the name '%s' already exists in resource definition '%s'.",
+                    snapshotName,
+                    rscDfn.getName().displayValue),
+                true), dataAlreadyExistsExc);
         }
         catch (DatabaseException sqlExc)
         {
@@ -610,12 +612,14 @@ public class CtrlSnapshotCrtApiCallHandler
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN, String.format(
-                "Volume %d of snapshot definition with the name '%s' already exists in resource definition '%s'.",
-                vlmDfn.getVolumeNumber().value,
-                snapshotDfn.getName().displayValue,
-                snapshotDfn.getResourceName().displayValue
-            )), dataAlreadyExistsExc);
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN,
+                String.format(
+                    "Volume %d of snapshot definition with the name '%s' already exists in resource definition '%s'.",
+                    vlmDfn.getVolumeNumber().value,
+                    snapshotDfn.getName().displayValue,
+                    snapshotDfn.getResourceName().displayValue),
+                true), dataAlreadyExistsExc);
         }
         catch (DatabaseException sqlExc)
         {
@@ -664,12 +668,14 @@ public class CtrlSnapshotCrtApiCallHandler
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT, String.format(
-                "A snapshot with the name '%s' of the resource '%s' on '%s' already exists.",
-                snapshotNameStr,
-                rscNameStr,
-                nodeNameStr
-            )), dataAlreadyExistsExc);
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                String.format(
+                    "A snapshot with the name '%s' of the resource '%s' on '%s' already exists.",
+                    snapshotNameStr,
+                    rscNameStr,
+                    nodeNameStr),
+                true), dataAlreadyExistsExc);
         }
         catch (DatabaseException sqlExc)
         {
@@ -709,13 +715,15 @@ public class CtrlSnapshotCrtApiCallHandler
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_SNAPSHOT, String.format(
-                "Volume %d of snapshot '%s' of the resource '%s' on '%s' already exists.",
-                snapshotVolumeDefinition.getVolumeNumber().value,
-                snapshot.getSnapshotName(),
-                snapshot.getResourceName(),
-                snapshot.getNodeName()
-            )), dataAlreadyExistsExc);
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                String.format(
+                    "Volume %d of snapshot '%s' of the resource '%s' on '%s' already exists.",
+                    snapshotVolumeDefinition.getVolumeNumber().value,
+                    snapshot.getSnapshotName(),
+                    snapshot.getResourceName(),
+                    snapshot.getNodeName()),
+                true), dataAlreadyExistsExc);
         }
         catch (DatabaseException sqlExc)
         {

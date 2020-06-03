@@ -72,11 +72,13 @@ class CtrlVlmDfnCrtApiHelper
         }
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_EXISTS_VLM_DFN, String.format(
-                "A volume definition with the number %d already exists in resource definition '%s'.",
-                volNr.value,
-                rscDfn.getName().getDisplayName()
-            )), dataAlreadyExistsExc);
+            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                ApiConsts.FAIL_EXISTS_VLM_DFN,
+                String.format(
+                    "A volume definition with the number %d already exists in resource definition '%s'.",
+                    volNr.value,
+                    rscDfn.getName().getDisplayName()),
+                true), dataAlreadyExistsExc);
         }
         catch (DatabaseException sqlExc)
         {

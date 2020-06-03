@@ -114,7 +114,8 @@ public class CtrlVlmCrtApiHelper
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_VLM,
-                "The " + getVlmDescriptionInline(rsc, vlmDfn) + " already exists"
+                "The " + getVlmDescriptionInline(rsc, vlmDfn) + " already exists",
+                true
             ), dataAlreadyExistsExc);
         }
         catch (DatabaseException sqlExc)

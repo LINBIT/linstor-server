@@ -110,6 +110,7 @@ public class StorPoolHelper
                     ApiConsts.FAIL_EXISTS_STOR_POOL,
                     getStorPoolDescription(nodeNameStr, storPoolNameStr) + " already exists."
                 )
+                .setSkipErrorReport(true)
                 .build(),
                 alreadyExistsExc
             );

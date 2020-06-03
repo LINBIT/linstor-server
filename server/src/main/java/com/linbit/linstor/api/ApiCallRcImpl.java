@@ -121,6 +121,11 @@ public class ApiCallRcImpl implements ApiCallRc
         return entryBuilder(returnCodeRef, messageRef).build();
     }
 
+    public static ApiCallRcEntry simpleEntry(long returnCodeRef, String messageRef, boolean skipErrorReport)
+    {
+        return entryBuilder(returnCodeRef, messageRef).setSkipErrorReport(skipErrorReport).build();
+    }
+
     public static ApiCallRcEntry simpleEntry(long returnCode, String message, String cause)
     {
         return entryBuilder(returnCode, message).setCause(cause).build();

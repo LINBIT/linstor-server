@@ -259,7 +259,8 @@ class CtrlVlmConnectionApiCallHandler
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_VLM_CONN,
-                getVlmConnectionDescription(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt) + " already exists"
+                getVlmConnectionDescription(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt) + " already exists",
+                true
             ), alreadyExistsExc);
         }
         catch (DatabaseException sqlExc)

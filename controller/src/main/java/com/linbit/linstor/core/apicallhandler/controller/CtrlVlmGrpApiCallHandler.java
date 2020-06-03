@@ -484,7 +484,8 @@ public class CtrlVlmGrpApiCallHandler
                         "A volume group with the number %d already exists in resource group '%s'.",
                         vlmNr.value,
                         rscGrp.getName().getDisplayName()
-                    )
+                    ),
+                    true
                 ),
                 dataAlreadyExistsExc
             );

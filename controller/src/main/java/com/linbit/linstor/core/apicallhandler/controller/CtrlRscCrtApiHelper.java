@@ -672,7 +672,8 @@ public class CtrlRscCrtApiHelper
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_RSC,
-                "A " + getRscDescriptionInline(node, rscDfn) + " already exists."
+                "A " + getRscDescriptionInline(node, rscDfn) + " already exists.",
+                true
             ), dataAlreadyExistsExc);
         }
         return rsc;
@@ -713,7 +714,8 @@ public class CtrlRscCrtApiHelper
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_EXISTS_RSC,
-                    "A " + getRscDescriptionInline(toNode, toRscDfn) + " already exists."
+                    "A " + getRscDescriptionInline(toNode, toRscDfn) + " already exists.",
+                    true
                 ),
                 dataAlreadyExistsExc
             );

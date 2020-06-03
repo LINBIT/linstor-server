@@ -104,6 +104,7 @@ public class CtrlKvsApiCallHandler
                     )
                     .setCause("A KeyValueStore with the specified name '" + kvsName.displayValue + "' already exists.")
                     .setCorrection("Specify another name for the KeyValueStore\n")
+                    .setSkipErrorReport(true)
                     .build(),
                 dataAlreadyExistsExc
             );

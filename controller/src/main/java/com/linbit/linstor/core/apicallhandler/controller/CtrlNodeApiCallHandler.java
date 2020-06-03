@@ -599,6 +599,7 @@ public class CtrlNodeApiCallHandler
                 .setCorrection("- Specify another name for the new node\n" +
                     "or\n" +
                     "- Delete the existing node before creating a new node with the same name")
+                .setSkipErrorReport(true)
                 .build(),
                 dataAlreadyExistsExc
             );
@@ -657,6 +658,7 @@ public class CtrlNodeApiCallHandler
                 .setDetails("The network interface name '" + netName +
                     "' was specified for more than one network interface.")
                 .setCorrection("A name that is unique per node must be specified for each network interface.")
+                .setSkipErrorReport(true)
                 .build(),
                 dataAlreadyExistsExc
             );

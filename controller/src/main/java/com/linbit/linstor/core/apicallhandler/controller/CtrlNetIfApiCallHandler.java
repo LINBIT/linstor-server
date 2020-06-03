@@ -410,7 +410,8 @@ class CtrlNetIfApiCallHandler
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_NET_IF,
-                firstLetterCaps(getNetIfDescriptionInline(nodeNameStr, netIfNameStr)) + " already exists."
+                firstLetterCaps(getNetIfDescriptionInline(nodeNameStr, netIfNameStr)) + " already exists.",
+                true
             ), exc);
         }
         catch (DatabaseException exc)

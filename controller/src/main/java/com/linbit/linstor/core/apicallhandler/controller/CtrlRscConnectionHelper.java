@@ -122,7 +122,8 @@ class CtrlRscConnectionHelper
                     rsc1.getNode().getName().displayValue,
                     rsc2.getNode().getName().displayValue,
                     rsc1.getResourceDefinition().getName().displayValue
-                ) + " already exists."
+                ) + " already exists.",
+                true
             ), dataAlreadyExistsExc);
         }
         catch (DatabaseException sqlExc)

@@ -724,6 +724,7 @@ public class CtrlRscDfnApiCallHandler
                 "The creation of a new resource definition failed due to a name collision"
             );
             rcEntry.setCause("A resource definition with the name '" + rscNameStr + "' already exists");
+            rcEntry.setSkipErrorReport(true);
             throw new ApiRcException(rcEntry.build(), exc);
         }
         return rscDfn;

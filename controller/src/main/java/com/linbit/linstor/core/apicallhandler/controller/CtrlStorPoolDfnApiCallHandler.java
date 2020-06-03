@@ -360,7 +360,8 @@ class CtrlStorPoolDfnApiCallHandler
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_STOR_POOL_DFN,
-                firstLetterCaps(getStorPoolDfnDescriptionInline(storPoolNameStrRef)) + " already exists."
+                firstLetterCaps(getStorPoolDfnDescriptionInline(storPoolNameStrRef)) + " already exists.",
+                true
             ), alreadyExistsExc);
         }
         catch (DatabaseException sqlExc)

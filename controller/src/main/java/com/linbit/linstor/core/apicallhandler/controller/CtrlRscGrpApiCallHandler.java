@@ -603,7 +603,8 @@ public class CtrlRscGrpApiCallHandler
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_RSC_GRP,
-                "A " + getRscGrpDescription(rscGrpPojoRef) + " already exists."
+                "A " + getRscGrpDescription(rscGrpPojoRef) + " already exists.",
+                true
             ), dataAlreadyExistsExc);
         }
         return rscGrp;
