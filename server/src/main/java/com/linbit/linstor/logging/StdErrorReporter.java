@@ -305,22 +305,22 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             switch (logLevel)
             {
                 case ERROR:
-                    logError(logMsg);
+                    logError("%s", logMsg);
                     break;
                 case WARN:
-                    logWarning(logMsg);
+                    logWarning("%s", logMsg);
                     break;
                 case INFO:
-                    logInfo(logMsg);
+                    logInfo("%s", logMsg);
                     break;
                 case DEBUG:
-                    logDebug(logMsg);
+                    logDebug("%s", logMsg);
                     break;
                 case TRACE:
-                    logTrace(logMsg);
+                    logTrace("%s", logMsg);
                     break;
                 default:
-                    logError(logMsg);
+                    logError("%s", logMsg);
                     reportError(
                         new IllegalArgumentException(
                             String.format(
@@ -503,22 +503,22 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 switch (logLevel)
                 {
                     case ERROR:
-                        logError(logMsg);
+                        logError("%s", logMsg);
                         break;
                     case WARN:
-                        logWarning(logMsg);
+                        logWarning("%s", logMsg);
                         break;
                     case INFO:
-                        logInfo(logMsg);
+                        logInfo("%s", logMsg);
                         break;
                     case DEBUG:
-                        logDebug(logMsg);
+                        logDebug("%s", logMsg);
                         break;
                     case TRACE:
-                        logTrace(logMsg);
+                        logTrace("%s", logMsg);
                         break;
                     default:
-                        logError(logMsg);
+                        logError("%s", logMsg);
                         reportError(
                             new IllegalArgumentException(
                                 String.format(
