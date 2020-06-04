@@ -99,10 +99,9 @@ public class SslTcpConnectorHandshaker
 
                 if (handshakeStatus == HandshakeStatus.NOT_HANDSHAKING)
                 {
-                    throw new ImplementationError(
+                    throw new IllegalStateException(
                         SslTcpConnectorService.class.getName() + " indicates requiring a handshake, " +
-                        "but the " + engine.getClass().getName() + " instance is not in handshake mode",
-                        new IllegalStateException()
+                        "but the " + engine.getClass().getName() + " instance is not in handshake mode"
                     );
                 }
                 do
