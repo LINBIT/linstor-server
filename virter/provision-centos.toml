@@ -1,10 +1,4 @@
 [[steps]]
-[steps.rsync]
-source = "$HOME/.ssh/id_rsa.pub"
-dest = "/tmp/host_id_rsa.pub"
-
-
-[[steps]]
 [steps.shell]
 script = '''
 dnf update -y
