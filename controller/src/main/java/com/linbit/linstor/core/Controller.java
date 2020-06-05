@@ -70,6 +70,7 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -381,6 +382,9 @@ public final class Controller
 
         System.setProperty("log.module", LinStor.CONTROLLER_MODULE);
         System.setProperty("log.directory", cfg.getLogDirectory());
+
+        Path sentryFilePath = Paths.get(cfg.getConfigDir(), "sentry.properties");
+        System.setProperty("sentry.properties.file", sentryFilePath.toString());
 
         System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.CONTROLLER_MODULE);
         LinStor.printStartupInfo();
