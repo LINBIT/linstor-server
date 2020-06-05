@@ -36,6 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
@@ -103,6 +104,12 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         }
 
         logInfo("Log directory set to: '" + logDir + "'");
+
+        System.setProperty("sentry.release", LinStor.VERSION_INFO_PROVIDER.getVersion());
+        System.setProperty("sentry.servername", nodeName);
+        System.setProperty("sentry.tags", "module:" + moduleName);
+        System.setProperty("sentry.stacktrace.app.packages", "com.linbit");
+        Sentry.init();
     }
 
     @Override
@@ -351,6 +358,8 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                     );
                     break;
             }
+
+            Sentry.capture(errorInfo);
         }
         finally
         {
@@ -499,6 +508,8 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 }
 
                 output.println("\nEND OF ERROR REPORT.\n");
+
+                Sentry.capture(errorInfo);
             }
         }
         finally

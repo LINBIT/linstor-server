@@ -391,6 +391,9 @@ public final class Satellite
         System.setProperty("log.module", LinStor.SATELLITE_MODULE);
         System.setProperty("log.directory", cfg.getLogDirectory());
 
+        Path sentryFilePath = Paths.get(cfg.getConfigDir(), "sentry.properties");
+        System.setProperty("sentry.properties.file", sentryFilePath.toString());
+
         System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.SATELLITE_MODULE);
         LinStor.printStartupInfo();
 
