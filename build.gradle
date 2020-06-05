@@ -58,8 +58,8 @@ subprojects {
             compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
             compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
             compile 'org.apache.httpcomponents:httpclient:4.5.7'
-            compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.10.0'
-            compile 'com.fasterxml.jackson.core:jackson-databind:2.10.0'
+            compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
+            compile 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
 
             // toml parsing library
             compile group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
