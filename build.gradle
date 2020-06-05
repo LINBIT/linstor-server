@@ -57,7 +57,7 @@ subprojects {
             compile group: 'io.projectreactor', name: 'reactor-core', version: '3.2.9.RELEASE'
             compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
             compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-            compile 'org.apache.httpcomponents:httpclient:4.5.7'
+            compile 'org.apache.httpcomponents:httpclient:4.5.12'
             compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
             compile 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
 
