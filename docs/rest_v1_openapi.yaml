@@ -88,7 +88,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.1.0
+  version: 1.2.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
