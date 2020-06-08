@@ -8,7 +8,6 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.drbd.md.MetaDataModule;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerLinstorModule;
-import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorModule;
 import com.linbit.linstor.annotation.SystemContext;
@@ -45,7 +44,6 @@ import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.NetComModule;
 import com.linbit.linstor.numberpool.DbNumberPoolInitializer;
 import com.linbit.linstor.numberpool.NumberPoolModule;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ControllerSecurityModule;
@@ -70,7 +68,6 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,11 +86,6 @@ import org.slf4j.event.Level;
  */
 public final class Controller
 {
-    private static final String PROPSCON_KEY_NETCOM = "netcom";
-
-    public static final int API_VERSION = 4;
-    public static final int API_MIN_VERSION = API_VERSION;
-
     // Error & exception logging facility
     private final ErrorReporter errorReporter;
 
@@ -119,9 +111,6 @@ public final class Controller
 
     private final ApplicationLifecycleManager applicationLifecycleManager;
 
-    // Controller configuration properties
-    private final Props ctrlConf;
-
     // Map of all managed nodes
     private final CoreModule.NodesMap nodesMap;
 
@@ -136,7 +125,7 @@ public final class Controller
     private final OpenFlexTargetProcessManager openflexTargetProcessManager;
     private final WhitelistProps whitelistProps;
 
-    private RetryResourcesTask retryResourcesTask;
+    private final RetryResourcesTask retryResourcesTask;
 
     private final CtrlConfig ctrlCfg;
 
@@ -158,8 +147,6 @@ public final class Controller
         DbDataInitializer dbDataInitializerRef,
         DbNumberPoolInitializer dbNumberPoolInitializerRef,
         ApplicationLifecycleManager applicationLifecycleManagerRef,
-        @Named(LinStor.CONTROLLER_PROPS)
-        Props ctrlConfRef,
         CoreModule.NodesMap nodesMapRef,
         TaskScheduleService taskScheduleServiceRef,
         PingTask pingTaskRef,
@@ -186,7 +173,7 @@ public final class Controller
         dbDataInitializer = dbDataInitializerRef;
         dbNumberPoolInitializer = dbNumberPoolInitializerRef;
         applicationLifecycleManager = applicationLifecycleManagerRef;
-        ctrlConf = ctrlConfRef;
+        // Controller configuration properties
         nodesMap = nodesMapRef;
         taskScheduleService = taskScheduleServiceRef;
         pingTask = pingTaskRef;
@@ -202,7 +189,6 @@ public final class Controller
     }
 
     public void start(Injector injector, CtrlConfig linstorCfgRef)
-        throws SystemServiceStartException, InitializationException
     {
         applicationLifecycleManager.installShutdownHook();
 
