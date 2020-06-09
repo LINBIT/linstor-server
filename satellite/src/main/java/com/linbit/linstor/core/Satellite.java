@@ -244,7 +244,7 @@ public final class Satellite
         }
         catch (SystemServiceStartException exc)
         {
-            errorReporter.reportProblem(Level.ERROR, exc, null, null, null);
+            errorReporter.reportError(Level.ERROR, exc);
             if (exc.criticalError)
             {
                 reconfigurationLock.writeLock().unlock();

@@ -94,7 +94,7 @@ public class ApplicationLifecycleManager
                 }
                 else
                 {
-                    errorReporter.reportProblem(Level.ERROR, startExc, null, null, null);
+                    errorReporter.reportError(startExc);
                 }
             }
             catch (Exception unhandledExc)

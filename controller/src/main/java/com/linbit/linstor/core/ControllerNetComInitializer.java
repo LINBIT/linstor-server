@@ -229,7 +229,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
             }
             catch (SystemServiceStartException sysSvcStartExc)
             {
-                errorReporter.reportProblem(Level.ERROR, sysSvcStartExc, null, null, null);
+                errorReporter.reportError(Level.ERROR, sysSvcStartExc);
             }
         }
     }
@@ -503,7 +503,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
         }
         else
         {
-            errorLogRef.reportProblem(
+            errorLogRef.reportError(
                 Level.ERROR,
                 new LinStorException(
                     String.format(

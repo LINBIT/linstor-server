@@ -114,7 +114,7 @@ public class DrbdVersion
         }
         catch (NumberFormatException nfExc)
         {
-            errorLogRef.reportProblem(
+            errorLogRef.reportError(
                 Level.ERROR,
                 new LinStorException(
                     LOG_TXT_CHECK_FAILED,
@@ -123,10 +123,7 @@ public class DrbdVersion
                             "utility is unparsable",
                     ERR_CORR_TXT,
                     "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
-                    nfExc
-                ),
-                null, null, null
-            );
+                    nfExc));
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {

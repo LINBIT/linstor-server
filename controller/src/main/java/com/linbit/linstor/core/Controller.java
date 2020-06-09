@@ -295,7 +295,7 @@ public final class Controller
         }
         catch (SystemServiceStartException exc)
         {
-            errorReporter.reportProblem(Level.ERROR, exc, null, null, null);
+            errorReporter.reportError(Level.ERROR, exc);
             reconfigurationLock.writeLock().unlock();
             System.exit(InternalApiConsts.EXIT_CODE_NETCOM_ERROR);
 

@@ -573,7 +573,7 @@ public class StltApiCallHandler
                             "description of the I/O error";
                     }
 
-                    errorReporter.reportProblem(
+                    errorReporter.reportError(
                         Level.ERROR,
                         new LinStorException(
                             "Creation of the common Linstor DRBD configuration file " +
@@ -603,7 +603,7 @@ public class StltApiCallHandler
                 catch (IOException ioExc)
                 {
                     String ioErrorMsg = ioExc.getMessage();
-                    errorReporter.reportProblem(
+                    errorReporter.reportError(
                         Level.ERROR,
                         new LinStorException(
                             "Unable to move temporary common Linstor DRBD configuration file " +
