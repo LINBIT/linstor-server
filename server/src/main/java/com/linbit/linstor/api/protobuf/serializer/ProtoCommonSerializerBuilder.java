@@ -128,6 +128,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -526,21 +527,21 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     public CommonSerializer.CommonSerializerBuilder requestErrorReports(
         Set<String> nodes,
         boolean withContent,
-        Optional<Date> since,
-        Optional<Date> to,
+        @Nullable Date since,
+        @Nullable Date to,
         Set<String> ids
     )
     {
         try
         {
             MsgReqErrorReport.Builder bld = MsgReqErrorReport.newBuilder();
-            if (since.isPresent())
+            if (since != null)
             {
-                bld.setSince(since.get().getTime());
+                bld.setSince(since.getTime());
             }
-            if (to.isPresent())
+            if (to != null)
             {
-                bld.setTo(to.get().getTime());
+                bld.setTo(to.getTime());
             }
             bld.addAllNodeNames(nodes).setWithContent(withContent).addAllIds(ids).build().writeDelimitedTo(baos);
         }
@@ -552,7 +553,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder errorReports(Set<ErrorReport> errorReports)
+    public CommonSerializer.CommonSerializerBuilder errorReports(List<ErrorReport> errorReports)
     {
         try
         {
@@ -564,10 +565,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 msgErrorReport.setErrorTime(errReport.getDateTime().getTime());
                 msgErrorReport.setNodeNames(errReport.getNodeName());
                 msgErrorReport.setFilename(errReport.getFileName());
-                if (!errReport.getText().isEmpty())
-                {
-                    msgErrorReport.setText(errReport.getText());
-                }
+                errReport.getVersion().ifPresent(msgErrorReport::setVersion);
+                errReport.getPeer().ifPresent(msgErrorReport::setPeer);
+                errReport.getException().ifPresent(msgErrorReport::setException);
+                errReport.getExceptionMessage().ifPresent(msgErrorReport::setExceptionMessage);
+                errReport.getOriginFile().ifPresent(msgErrorReport::setOriginFile);
+                errReport.getOriginMethod().ifPresent(msgErrorReport::setOriginMethod);
+                errReport.getOriginLine().ifPresent(msgErrorReport::setOriginLine);
+                errReport.getText().ifPresent(msgErrorReport::setText);
                 msgErrorReport.build().writeDelimitedTo(baos);
             }
         }
@@ -634,7 +639,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             for (LinstorFile errReport : errorReports)
             {
                 fileBld.setTitle(errReport.getFileName()).setTime(errReport.getDateTime().getTime())
-                    .setText(errReport.getText());
+                    .setText(errReport.getText().orElse(""));
                 bld.setFile(fileBld).setNodeName(nodeName).build().writeDelimitedTo(baos);
             }
         }

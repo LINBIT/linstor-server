@@ -61,6 +61,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.FileCollector;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -75,6 +76,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -804,14 +806,12 @@ public class StltApiCallHandler
     public byte[] listErrorReports(
         final Set<String> nodes,
         boolean withContent,
-        final Optional<Date> since,
-        final Optional<Date> to,
+        @Nullable final Date since,
+        @Nullable final Date to,
         final Set<String> ids
     )
     {
-        Set<ErrorReport> errorReports = StdErrorReporter.listReports(
-            controllerPeerConnector.getLocalNode().getName().getDisplayName(),
-            errorReporter.getLogDirectory(),
+        List<ErrorReport> errorReports = errorReporter.listReports(
             withContent,
             since,
             to,

@@ -5,7 +5,14 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.annotation.Nullable;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.slf4j.event.Level;
 
@@ -170,6 +177,16 @@ public interface ErrorReporter
     );
 
     Path getLogDirectory();
+
+    default List<ErrorReport> listReports(
+        boolean withText,
+        @Nullable final Date since,
+        @Nullable final Date to,
+        final Set<String> ids
+    )
+    {
+        return Collections.emptyList();
+    }
 
     default void archiveLogDirectory()
     {

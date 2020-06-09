@@ -879,13 +879,45 @@ public class JsonGenTypes
          * Filename of the error report on the server.
          *
          * Format is:
-         * ```ErrorReport-{instanceid}-{nodeid}-{squencenumber}.log```
+         * ```ErrorReport-{instanceid}-{nodeid}-{sequencenumber}.log```
          */
         public String filename;
         /**
          * Contains the full text of the error report file.
          */
         public String text;
+        /**
+         * Which module this error occurred.
+         */
+        public String module;
+        /**
+         * Linstor version this error report was created.
+         */
+        public String version;
+        /**
+         * Peer client that was involved.
+         */
+        public String peer;
+        /**
+         * Exception that occurred
+         */
+        public String exception;
+        /**
+         * Exception message
+         */
+        public String exception_message;
+        /**
+         * Origin file of the exception
+         */
+        public String origin_file;
+        /**
+         * Origin method where the exception occurred
+         */
+        public String origin_method;
+        /**
+         * Origin line number
+         */
+        public Integer origin_line;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

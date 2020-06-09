@@ -8,6 +8,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.event.Level;
@@ -145,7 +146,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
             }
 
             // Error report header
-            reportHeader(output, reportNr, client);
+            reportHeader(output, reportNr, client, new Date());
 
             // Report the error and any nested errors
             int loopCtr = 0;
@@ -205,7 +206,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
         if (descriptionMsg != null)
         {
             // Error report header
-            reportHeader(output, reportNr, client);
+            reportHeader(output, reportNr, client, new Date());
 
             // Error description/cause/correction/details report
             String causeMsg = errorInfo.getCauseText();

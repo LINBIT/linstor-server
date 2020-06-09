@@ -1,5 +1,11 @@
 package com.linbit.linstor.logging;
 
+import com.linbit.AutoIndent;
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessContext;
+
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -13,11 +19,6 @@ import java.util.regex.Pattern;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.linbit.AutoIndent;
-import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.security.AccessContext;
 
 public abstract class BaseErrorReporter
 {
@@ -40,6 +41,7 @@ public abstract class BaseErrorReporter
     // create error reports with the same instance ID.
     // When the linstor server is restarted, the instance ID will change.
     final String instanceId;
+    final long instanceEpoch;
 
     static
     {
@@ -62,7 +64,8 @@ public abstract class BaseErrorReporter
         // this of course has a fairly chance to colide using only 20bit of the 64bit hash
         // but combined with the timestamp, it still should be very unlikely that a collision will happen
         final int nodeHash = !dmModule.equals(LinStor.CONTROLLER_MODULE) ? fingerprint & 0xFFFFF : 0;
-        instanceId = String.format("%08X-%05X", (System.currentTimeMillis() / 1000), nodeHash);
+        instanceEpoch = System.currentTimeMillis() / 1000;
+        instanceId = String.format("%08X-%05X", instanceEpoch, nodeHash);
         cal = Calendar.getInstance();
         printStackTraces = printStackTracesRef;
     }
@@ -139,7 +142,7 @@ public abstract class BaseErrorReporter
         }
     }
 
-    void reportHeader(PrintStream output, long reportNr, Peer client)
+    void reportHeader(PrintStream output, long reportNr, Peer client, Date errorTime)
     {
         output.print(String.format("ERROR REPORT %s-%06d\n\n", instanceId, reportNr));
         output.println(SECTION_SEPARATOR);
@@ -149,7 +152,7 @@ public abstract class BaseErrorReporter
         output.printf(ERROR_FIELD_FORMAT, "Version:", LinStor.VERSION_INFO_PROVIDER.getVersion());
         output.printf(ERROR_FIELD_FORMAT, "Build ID:", LinStor.VERSION_INFO_PROVIDER.getGitCommitId());
         output.printf(ERROR_FIELD_FORMAT, "Build time:", LinStor.VERSION_INFO_PROVIDER.getBuildTime());
-        output.printf(ERROR_FIELD_FORMAT, "Error time:", TIMESTAMP_FORMAT.format(new Date()));
+        output.printf(ERROR_FIELD_FORMAT, "Error time:", TIMESTAMP_FORMAT.format(errorTime));
         output.printf(ERROR_FIELD_FORMAT, "Node:", nodeName);
         if (client != null)
         {
@@ -245,11 +248,7 @@ public abstract class BaseErrorReporter
         try
         {
             Class<? extends Throwable> tClass = errorInfo.getClass();
-            String simpleName = tClass.getSimpleName();
-            if (simpleName != null)
-            {
-                tClassName = simpleName;
-            }
+            tClassName = tClass.getSimpleName();
         }
         catch (Exception ignored)
         {
@@ -287,12 +286,10 @@ public abstract class BaseErrorReporter
                         int lineNumber = topItem.getLineNumber();
 
                         StringBuilder result = new StringBuilder();
-                        if (methodName != null)
-                        {
-                            result.append("Method '");
-                            result.append(methodName);
-                            result.append("'");
-                        }
+                        result.append("Method '");
+                        result.append(methodName);
+                        result.append("'");
+
                         if (fileName != null)
                         {
                             if (result.length() > 0)
@@ -304,7 +301,7 @@ public abstract class BaseErrorReporter
                             if (lineNumber >= 0)
                             {
                                 result.append("', Line #");
-                                result.append(Integer.toString(lineNumber));
+                                result.append(lineNumber);
                             }
                             else
                             {
@@ -313,11 +310,7 @@ public abstract class BaseErrorReporter
                         }
                         if (result.length() > 0)
                         {
-                            String resultStr = result.toString();
-                            if (resultStr != null)
-                            {
-                                tGeneratedAt = resultStr;
-                            }
+                            tGeneratedAt = result.toString();
                         }
                     }
                 }
@@ -405,7 +398,6 @@ public abstract class BaseErrorReporter
                 boolean nativeCode  = traceItem.isNativeMethod();
                 String methodName   = traceItem.getMethodName();
                 int numericLineNr      = traceItem.getLineNumber();
-                String fileName     = traceItem.getFileName();
                 String className    = traceItem.getClassName();
 
                 String lineNr;
@@ -418,25 +410,10 @@ public abstract class BaseErrorReporter
                     lineNr = "unknown";
                 }
 
-                if (methodName == null)
-                {
-                    methodName = "<Unknown method>";
-                }
-                if (className == null)
-                {
-                    output.printf("    %-40s %-6s\n", methodName, nativeCode ? "Y" : "N");
-                    if (fileName != null)
-                    {
-                        output.printf("        - File: %-40s   Line nr.: %s\n", fileName, lineNr);
-                    }
-                }
-                else
-                {
-                    output.printf(
-                        "    %-40s %-6s %s:%s\n",
-                        methodName, nativeCode ? "Y" : "N", className, lineNr
-                    );
-                }
+                output.printf(
+                    "    %-40s %-6s %s:%s\n",
+                    methodName, nativeCode ? "Y" : "N", className, lineNr
+                );
             }
             output.println();
         }

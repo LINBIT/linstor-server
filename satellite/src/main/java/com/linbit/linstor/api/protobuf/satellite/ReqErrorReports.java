@@ -43,9 +43,8 @@ public class ReqErrorReports implements ApiCall
         throws IOException
     {
         MsgReqErrorReport reqErrorReport = MsgReqErrorReport.parseDelimitedFrom(msgDataIn);
-        Optional<Date> since = Optional.ofNullable(
-            reqErrorReport.hasSince() ? new Date(reqErrorReport.getSince()) : null);
-        Optional<Date> to = Optional.ofNullable(reqErrorReport.hasTo() ? new Date(reqErrorReport.getTo()) : null);
+        Date since = reqErrorReport.hasSince() ? new Date(reqErrorReport.getSince()) : null;
+        Date to = reqErrorReport.hasTo() ? new Date(reqErrorReport.getTo()) : null;
 
         peerProvider.get().sendMessage(
             apiCallHandler

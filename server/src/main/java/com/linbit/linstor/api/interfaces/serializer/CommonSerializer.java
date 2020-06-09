@@ -13,7 +13,6 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -73,14 +72,14 @@ public interface CommonSerializer
         CommonSerializerBuilder requestErrorReports(
             Set<String> nodes,
             boolean withContent,
-            Optional<Date> since,
-            Optional<Date> to,
+            Date since,
+            Date to,
             Set<String> ids
         );
 
         CommonSerializerBuilder requestSosReport(Date since);
 
-        CommonSerializerBuilder errorReports(Set<ErrorReport> errorReports);
+        CommonSerializerBuilder errorReports(List<ErrorReport> errorReports);
 
         CommonSerializerBuilder sosReport(String text, Set<LinstorFile> errorReports);
 

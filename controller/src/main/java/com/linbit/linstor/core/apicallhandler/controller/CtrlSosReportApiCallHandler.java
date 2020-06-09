@@ -353,7 +353,7 @@ public class CtrlSosReportApiCallHandler
         Set<LinstorFile> errorReports = collector.getFiles();
         for (LinstorFile err : errorReports)
         {
-            makeFile(sosDir.resolve(err.getFileName()), err.getText(), err.getDateTime().getTime());
+            makeFile(sosDir.resolve(err.getFileName()), err.getText().orElse(""), err.getDateTime().getTime());
         }
     }
 

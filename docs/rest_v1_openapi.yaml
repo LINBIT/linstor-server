@@ -25,6 +25,7 @@ info:
        - Added optional AutoSelectFilter to resource-group/spawn
        - Added /v1/nodes/{node}/config, that allows you to get and set the satellite config
        - Added /v1/sos-report to create bug reports you can send to linbit
+       - Added new fields to the ErrorReport object
     * 1.1.0
        - Added /v1/view/snapshots for a faster all in one snapshot list
        - Filter lists by properties:
@@ -5038,10 +5039,35 @@ components:
             Filename of the error report on the server.
 
             Format is:
-            ```ErrorReport-{instanceid}-{nodeid}-{squencenumber}.log```
+            ```ErrorReport-{instanceid}-{nodeid}-{sequencenumber}.log```
         text:
           type: string
           description: Contains the full text of the error report file.
+        module:
+          type: string
+          description: Which module this error occurred.
+        version:
+          type: string
+          description: Linstor version this error report was created.
+        peer:
+          type: string
+          description: Peer client that was involved.
+        exception:
+          type: string
+          description: Exception that occurred
+        exception_message:
+          type: string
+          description: Exception message
+        origin_file:
+          type: string
+          description: Origin file of the exception
+        origin_method:
+          type: string
+          description: Origin method where the exception occurred
+        origin_line:
+          type: integer
+          format: int32
+          description: Origin line number
     KeyValueStore:
       type: object
       properties:

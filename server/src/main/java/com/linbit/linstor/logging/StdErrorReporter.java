@@ -10,29 +10,27 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
-
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,9 +49,10 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     public static final String RPT_SUFFIX = ".log";
 
     private final Logger mainLogger;
-    private final AtomicLong errorNr;
+    private final AtomicLong errorNr = new AtomicLong();
     private final Path baseLogDirectory;
-    private Provider<AccessContext> peerCtxProvider;
+    private final Provider<AccessContext> peerCtxProvider;
+    private final H2ErrorReporter h2ErrorReporter;
 
     public StdErrorReporter(
         String moduleName,
@@ -70,10 +69,6 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         peerCtxProvider = peerCtxProviderRef;
         mainLogger = org.slf4j.LoggerFactory.getLogger(LinStor.PROGRAM + "/" + moduleName);
 
-        errorNr = new AtomicLong();
-
-        // Generate a unique instance ID based on the creation time of this instance
-
         // check if the log directory exists, generate if not
         File logDir = baseLogDirectory.toFile();
         if (!logDir.exists())
@@ -88,7 +83,6 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         {
             try
             {
-
                 String linstorLogLevel = linstorLogLevelRef;
                 if (linstorLogLevel == null)
                 {
@@ -105,6 +99,8 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             }
         }
 
+        h2ErrorReporter = new H2ErrorReporter(this);
+
         logInfo("Log directory set to: '" + logDir + "'");
     }
 
@@ -117,7 +113,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     @Override
     public boolean hasAtLeastLogLevel(Level levelRef)
     {
-        boolean hasRequiredLevel = true;
+        boolean hasRequiredLevel;
         org.slf4j.Logger crtLogger = mainLogger;
         switch (levelRef)
         {
@@ -273,58 +269,36 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     )
     {
         PrintStream output = null;
-        String logName = null;
+        long reportNr = errorNr.getAndIncrement();
+        final String logName = getLogName(reportNr);
+        final Date errorTime = new Date();
         try
         {
-            long reportNr = errorNr.getAndIncrement();
-            String logMsg = formatLogMsg(reportNr, errorInfo);
-
-            // Generate and report a null pointer exception if this
-            // method is called with a null argument
-            final Throwable checkedErrorInfo = errorInfo == null ? new NullPointerException() : errorInfo;
-
-            logName = getLogName(reportNr);
             output = openReportFile(logName);
 
-            // Error report header
-            reportHeader(output, reportNr, client);
+            writeErrorReport(output, reportNr, client, errorInfo, errorTime, contextInfo);
 
-            // Report the error and any nested errors
-            int loopCtr = 0;
-            for (
-                Throwable curErrorInfo = checkedErrorInfo;
-                curErrorInfo != null;
-                curErrorInfo = curErrorInfo.getCause()
-            )
+            // write to h2 error database
             {
-                if (loopCtr <= 0)
-                {
-                    output.println("Reported error:\n===============\n");
+                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                final String utf8 = StandardCharsets.UTF_8.name();
+                try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+                    writeErrorReport(ps, reportNr, client, errorInfo, errorTime, contextInfo);
+                } catch (UnsupportedEncodingException e) {
+                    logError(e.getMessage());
                 }
-                else
-                {
-                    output.println("Caused by:\n==========\n");
-                }
-
-                reportExceptionDetails(output, curErrorInfo, loopCtr == 0 ? contextInfo : null);
-
-                Throwable[] suppressedExceptions = curErrorInfo.getSuppressed();
-                for (int supIdx = 0; supIdx < suppressedExceptions.length; ++supIdx)
-                {
-                    output.printf(
-                        "Suppressed exception %d of %d:\n===============\n",
-                        supIdx + 1,
-                        suppressedExceptions.length
-                    );
-
-                    reportExceptionDetails(output, suppressedExceptions[supIdx], loopCtr == 0 ? contextInfo : null);
-                }
-
-                ++loopCtr;
+                h2ErrorReporter.writeErrorReportToDB(
+                    reportNr,
+                    client,
+                    errorInfo,
+                    instanceEpoch,
+                    errorTime,
+                    nodeName,
+                    dmModule,
+                    baos.toByteArray());
             }
 
-            output.println("\nEND OF ERROR REPORT.");
-
+            final String logMsg = formatLogMsg(reportNr, errorInfo);
             switch (logLevel)
             {
                 case ERROR:
@@ -360,6 +334,58 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             closeReportFile(output);
         }
         return logName;
+    }
+
+    private void writeErrorReport(
+            PrintStream output,
+            long reportNr,
+            Peer client,
+            Throwable errorInfo,
+            Date errorTime,
+            String contextInfo)
+    {
+        // Error report header
+        reportHeader(output, reportNr, client, errorTime);
+
+        // Generate and report a null pointer exception if this
+        // method is called with a null argument
+        final Throwable checkedErrorInfo = errorInfo == null ? new NullPointerException() : errorInfo;
+
+        // Report the error and any nested errors
+        int loopCtr = 0;
+        for (
+                Throwable curErrorInfo = checkedErrorInfo;
+                curErrorInfo != null;
+                curErrorInfo = curErrorInfo.getCause()
+        )
+        {
+            if (loopCtr <= 0)
+            {
+                output.println("Reported error:\n===============\n");
+            }
+            else
+            {
+                output.println("Caused by:\n==========\n");
+            }
+
+            reportExceptionDetails(output, curErrorInfo, loopCtr == 0 ? contextInfo : null);
+
+            Throwable[] suppressedExceptions = curErrorInfo.getSuppressed();
+            for (int supIdx = 0; supIdx < suppressedExceptions.length; ++supIdx)
+            {
+                output.printf(
+                        "Suppressed exception %d of %d:\n===============\n",
+                        supIdx + 1,
+                        suppressedExceptions.length
+                );
+
+                reportExceptionDetails(output, suppressedExceptions[supIdx], loopCtr == 0 ? contextInfo : null);
+            }
+
+            ++loopCtr;
+        }
+
+        output.println("\nEND OF ERROR REPORT.");
     }
 
     @Override
@@ -410,7 +436,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 output = openReportFile(logName);
 
                 // Error report header
-                reportHeader(output, reportNr, client);
+                reportHeader(output, reportNr, client, new Date());
 
                 reportLinStorException(output, errorInfo);
 
@@ -560,108 +586,14 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         }
     }
 
-    public static Set<ErrorReport> listReports(
-        final String nodeName,
-        final Path logDirectory,
+    public List<ErrorReport> listReports(
         boolean withText,
-        final Optional<Date> since,
-        final Optional<Date> to,
+        @Nullable final Date since,
+        @Nullable final Date to,
         final Set<String> ids
     )
     {
-        TreeSet<ErrorReport> errors = new TreeSet<>();
-        final List<String> fileIds = ids.stream().map(s -> "ErrorReport-" + s).collect(Collectors.toList());
-
-        Function<FileTime, Boolean> sinceFct;
-        if (since.isPresent())
-        {
-            long sinceTimestamp = since.get().getTime();
-            sinceFct = (fileTime) -> sinceTimestamp < fileTime.toMillis();
-        }
-        else
-        {
-            sinceFct = (fileTime) -> true;
-        }
-
-        Function<FileTime, Boolean> toFct;
-        if (to.isPresent())
-        {
-            long toTimestamp = to.get().getTime();
-            toFct = (fileTime) -> toTimestamp > fileTime.toMillis();
-        }
-        else
-        {
-            toFct = (fileTime) -> true;
-        }
-
-        if (fileIds.isEmpty())
-        {
-            // if id filter is disabled, add a match all filter.
-            fileIds.add("ErrorReport-");
-        }
-
-        try (Stream<Path> files = Files.list(logDirectory))
-        {
-            files.filter(file -> file.getFileName().toString().startsWith("ErrorReport"))
-                .filter(
-                    file ->
-                    {
-                        boolean ret = false;
-                        for (String fileId : fileIds)
-                        {
-                            if (file.getFileName().toString().startsWith(fileId))
-                            {
-                                ret = true;
-                                break;
-                            }
-                        }
-                        return ret;
-                    }
-                )
-                .forEach(
-                    file ->
-                    {
-                        String fileName = file.getFileName().toString();
-
-                        try
-                        {
-                            BasicFileAttributes attr = Files.readAttributes(file, BasicFileAttributes.class);
-
-                            if (sinceFct.apply(attr.creationTime()) && toFct.apply(attr.creationTime()))
-                            {
-                                StringBuilder sb = new StringBuilder();
-                                if (withText)
-                                {
-                                    try (BufferedReader br = Files.newBufferedReader(file))
-                                    {
-                                        String line = br.readLine();
-                                        while (line != null)
-                                        {
-                                            sb.append(line).append('\n');
-
-                                            line = br.readLine();
-                                        }
-                                    }
-                                }
-                                errors.add(new ErrorReport(
-                                    nodeName,
-                                    fileName,
-                                    new Date(attr.creationTime().toMillis()),
-                                    sb.toString())
-                                );
-                            }
-                        }
-                        catch (IOException /* | ParseException */ ignored)
-                        {
-                        }
-                    }
-                );
-        }
-        catch (IOException ignored)
-        {
-        }
-
-        return errors;
+        return h2ErrorReporter.listReports(withText, since, to, ids);
     }
 
     private BasicFileAttributes getAttributes(final Path file)

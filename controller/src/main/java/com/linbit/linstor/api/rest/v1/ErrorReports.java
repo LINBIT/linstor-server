@@ -21,7 +21,6 @@ import javax.ws.rs.core.Response;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -90,8 +89,8 @@ public class ErrorReports
         @DefaultValue("0") @QueryParam("offset") int offset
     )
     {
-        Optional<Date> optSince = Optional.ofNullable(since != null ? new Date(since) : null);
-        Optional<Date> optTo = Optional.ofNullable(to != null ? new Date(to) : null);
+        Date optSince = since != null ? new Date(since) : null;
+        Date optTo = to != null ? new Date(to) : null;
         Set<String> filterNodes = new HashSet<>();
         Set<String> filterIds = new HashSet<>();
 
@@ -126,7 +125,15 @@ public class ErrorReports
                     jsonErrorReport.node_name = errorReport.getNodeName();
                     jsonErrorReport.error_time = errorReport.getDateTime().getTime();
                     jsonErrorReport.filename = errorReport.getFileName();
-                    jsonErrorReport.text = errorReport.getText();
+                    jsonErrorReport.module = errorReport.getModuleString();
+                    jsonErrorReport.version = errorReport.getVersion().orElse(null);
+                    jsonErrorReport.peer = errorReport.getPeer().orElse(null);
+                    jsonErrorReport.exception = errorReport.getException().orElse(null);
+                    jsonErrorReport.exception_message = errorReport.getExceptionMessage().orElse(null);
+                    jsonErrorReport.origin_file = errorReport.getOriginFile().orElse(null);
+                    jsonErrorReport.origin_method = errorReport.getOriginMethod().orElse(null);
+                    jsonErrorReport.origin_line = errorReport.getOriginLine().orElse(null);
+                    jsonErrorReport.text = errorReport.getText().orElse(null);
 
                     return jsonErrorReport;
                 })

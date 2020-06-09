@@ -1,12 +1,14 @@
 package com.linbit.linstor.logging;
 
+import javax.annotation.Nullable;
 import java.util.Date;
+import java.util.Optional;
 
 public class LinstorFile implements Comparable<LinstorFile>
 {
     protected Date dateTime;
     protected String fileName;
-    protected String text;
+    @Nullable protected String text;
     protected String nodeName;
 
     public LinstorFile(final String nodeNameRef, final String fileNameRef, Date dateRef)
@@ -16,7 +18,7 @@ public class LinstorFile implements Comparable<LinstorFile>
         dateTime = dateRef;
     }
 
-    public LinstorFile(final String nodeNameRef, final String fileNameRef, Date dateRef, final String textRef)
+    public LinstorFile(final String nodeNameRef, final String fileNameRef, Date dateRef, @Nullable final String textRef)
     {
         nodeName = nodeNameRef;
         fileName = fileNameRef;
@@ -34,12 +36,12 @@ public class LinstorFile implements Comparable<LinstorFile>
         return fileName;
     }
 
-    public String getText()
+    public Optional<String> getText()
     {
-        return text;
+        return Optional.ofNullable(text);
     }
 
-    public void setText(String newText)
+    public void setText(@Nullable String newText)
     {
         text = newText;
     }

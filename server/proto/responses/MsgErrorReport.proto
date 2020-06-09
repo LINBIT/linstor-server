@@ -13,4 +13,12 @@ message MsgErrorReport
     required string filename = 3;
     // Text
     optional string text = 4;
+    optional uint32 module = 5;
+    optional string version = 6;
+    optional string peer = 7;
+    optional string exception = 8;
+    optional string exception_message = 9;
+    optional string origin_file = 10;
+    optional string origin_method = 11;
+    optional int32 origin_line = 12;
 }

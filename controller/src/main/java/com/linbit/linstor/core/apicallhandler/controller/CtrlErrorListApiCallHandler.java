@@ -21,6 +21,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -71,8 +72,8 @@ public class CtrlErrorListApiCallHandler
     public Flux<Set<ErrorReport>> listErrorReports(
         final Set<String> nodes,
         boolean withContent,
-        final Optional<Date> since,
-        final Optional<Date> to,
+        @Nullable final Date since,
+        @Nullable final Date to,
         final Set<String> ids
     )
     {
@@ -95,8 +96,8 @@ public class CtrlErrorListApiCallHandler
     private Flux<Tuple2<NodeName, ByteArrayInputStream>> assembleRequests(
         Set<String> nodesToRequest,
         boolean withContent,
-        final Optional<Date> since,
-        final Optional<Date> to,
+        @Nullable final Date since,
+        @Nullable final Date to,
         final Set<String> ids)
         throws AccessDeniedException
     {
@@ -117,8 +118,8 @@ public class CtrlErrorListApiCallHandler
     private Flux<ByteArrayInputStream> prepareErrRequestApi(
         final Node node,
         boolean withContent,
-        final Optional<Date> since,
-        final Optional<Date> to,
+        @Nullable final Date since,
+        @Nullable final Date to,
         final Set<String> ids)
     {
         Peer peer = getPeer(node);
@@ -154,8 +155,8 @@ public class CtrlErrorListApiCallHandler
     private Set<ErrorReport> assembleList(
         Set<String> nodesToRequest,
         boolean withContent,
-        final Optional<Date> since,
-        final Optional<Date> to,
+        @Nullable final Date since,
+        @Nullable final Date to,
         final Set<String> ids,
         List<Tuple2<NodeName, ByteArrayInputStream>> errorReportsAnswers)
         throws IOException
@@ -165,9 +166,7 @@ public class CtrlErrorListApiCallHandler
         // Controller error reports
         if (nodesToRequest.isEmpty() || nodesToRequest.stream().anyMatch(LinStor.CONTROLLER_MODULE::equalsIgnoreCase))
         {
-            errorReports.addAll(StdErrorReporter.listReports(
-                LinStor.CONTROLLER_MODULE,
-                errorReporter.getLogDirectory(),
+            errorReports.addAll(errorReporter.listReports(
                 withContent,
                 since,
                 to,
@@ -197,7 +196,15 @@ public class CtrlErrorListApiCallHandler
         {
             errorReports.add(new ErrorReport(
                 msgErrorReport.getNodeNames(),
+                Node.Type.getByValue(msgErrorReport.getModule()),
                 msgErrorReport.getFilename(),
+                msgErrorReport.getVersion(),
+                msgErrorReport.getPeer(),
+                msgErrorReport.getException(),
+                msgErrorReport.getExceptionMessage(),
+                msgErrorReport.getOriginFile(),
+                msgErrorReport.getOriginMethod(),
+                msgErrorReport.getOriginLine(),
                 new Date(msgErrorReport.getErrorTime()),
                 msgErrorReport.getText())
             );
