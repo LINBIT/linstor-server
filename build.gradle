@@ -61,6 +61,10 @@ subprojects {
             compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
             compile 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
 
+            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.7.0'
+            compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
+            runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
+
             // toml parsing library
             compile group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
 
@@ -266,10 +270,7 @@ project(':controller') {
             compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
             compile group: 'javax.activation', name: 'activation', version: '1.1.1'
 
-            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.6.0'
-            compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.6.2'
             compile group: 'org.flywaydb', name: 'flyway-core', version: '6.3.2'
-            runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
 
             runtime 'org.mariadb.jdbc:mariadb-java-client:2.6.0'
             runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.12'

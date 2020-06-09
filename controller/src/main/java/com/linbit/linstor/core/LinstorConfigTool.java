@@ -140,12 +140,6 @@ public class LinstorConfigTool
                 con.commit();
                 System.out.println("Controller plain port set to " + controllerPort);
             }
-            catch (IOException ioExc)
-            {
-                System.err.println(String.format("Unable to parse config file '%s':", linstorTomlFile.toString()));
-                System.err.println(ioExc.getMessage());
-                System.exit(EXIT_CODE_CMDLINE_ERROR);
-            }
             return null;
         }
     }
@@ -173,12 +167,6 @@ public class LinstorConfigTool
                 con.commit();
 
                 System.out.println("Controller plain listen address set to " + listenAddress);
-            }
-            catch (IOException ioExc)
-            {
-                System.err.println(String.format("Unable to parse config file '%s':", linstorTomlFile.toString()));
-                System.err.println(ioExc.getMessage());
-                System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
 
             return null;
@@ -219,12 +207,6 @@ public class LinstorConfigTool
                     System.err.println(sqlExc.getMessage());
                     System.exit(EXIT_CODE_CMDLINE_ERROR);
                 }
-            }
-            catch (IOException ioExc)
-            {
-                System.err.println(String.format("Unable to parse config file '%s':", linstorTomlFile.toString()));
-                System.err.println(ioExc.getMessage());
-                System.exit(EXIT_CODE_CMDLINE_ERROR);
             }
 
             return null;
