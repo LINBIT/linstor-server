@@ -535,7 +535,8 @@ public class CtrlRscDfnApiCallHandler
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_TRANSPORT_TYPE,
-                    "The given transport type '" + transportTypeStr + "' is invalid."
+                    "The given transport type '" + transportTypeStr + "' is invalid.",
+                    true
                 ), unknownValueExc);
             }
         }
