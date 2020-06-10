@@ -92,14 +92,14 @@ class CtrlVlmDfnCrtApiHelper
                 size,
                 MetaData.DRBD_MIN_NET_kiB,
                 MetaData.DRBD_MAX_kiB
-            )), mdExc);
+            ), true), mdExc);
         }
         catch (ValueOutOfRangeException | ValueInUseException exc)
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_MINOR_NR, String.format(
                 "The specified minor number '%d' is invalid.",
                 minorNr
-            )), exc);
+            ), true), exc);
         }
         catch (ExhaustedPoolException exhaustedPoolExc)
         {
