@@ -212,7 +212,8 @@ public class LvmCommands
                 lvmConfig,
                 (Collection<String>) null,
                 "--size", size + "k",
-                volumeGroup + File.separator + vlmId
+                volumeGroup + File.separator + vlmId,
+                "-f"
             ),
             "Failed to resize lvm volume",
             "Failed to resize lvm volume '" + vlmId + "' in volume group '" + volumeGroup + "' to size " + size
