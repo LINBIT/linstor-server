@@ -305,9 +305,11 @@ public class RequestHelper
                 asyncResponse::resume,
                 exc ->
                 {
-                    errorReporter.reportError(exc);
+                    String errId = errorReporter.reportError(exc);
                     ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-                    apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage()));
+                    apiCallRc.addEntry(
+                        ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage())
+                            .addErrorId(errId));
                     asyncResponse.resume(
                         ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.INTERNAL_SERVER_ERROR)
                     );
