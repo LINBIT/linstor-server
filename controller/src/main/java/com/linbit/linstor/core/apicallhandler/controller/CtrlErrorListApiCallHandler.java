@@ -28,6 +28,7 @@ import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -69,7 +70,7 @@ public class CtrlErrorListApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
     }
 
-    public Flux<Set<ErrorReport>> listErrorReports(
+    public Flux<List<ErrorReport>> listErrorReports(
         final Set<String> nodes,
         boolean withContent,
         @Nullable final Date since,
@@ -152,7 +153,7 @@ public class CtrlErrorListApiCallHandler
         return peer;
     }
 
-    private Set<ErrorReport> assembleList(
+    private List<ErrorReport> assembleList(
         Set<String> nodesToRequest,
         boolean withContent,
         @Nullable final Date since,
@@ -161,7 +162,7 @@ public class CtrlErrorListApiCallHandler
         List<Tuple2<NodeName, ByteArrayInputStream>> errorReportsAnswers)
         throws IOException
     {
-        Set<ErrorReport> errorReports = new TreeSet<>();
+        List<ErrorReport> errorReports = new ArrayList<>();
 
         // Controller error reports
         if (nodesToRequest.isEmpty() || nodesToRequest.stream().anyMatch(LinStor.CONTROLLER_MODULE::equalsIgnoreCase))
