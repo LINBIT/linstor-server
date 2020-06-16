@@ -78,7 +78,10 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         File logDir = baseLogDirectory.toFile();
         if (!logDir.exists())
         {
-            logDir.mkdirs();
+            if(!logDir.mkdirs())
+            {
+                logError("Unable to create log directory: " + logDir);
+            }
         }
 
         if (logLevelRef != null)
