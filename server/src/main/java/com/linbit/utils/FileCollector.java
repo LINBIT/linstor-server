@@ -20,7 +20,7 @@ import java.util.Set;
 public class FileCollector extends SimpleFileVisitor<Path>
 {
     private static final Path LOG_DIR = Paths.get("./logs");
-    private static final PathMatcher LOG_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.log");
+    private static final PathMatcher LOG_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.{mv.db,log}");
     private final Path parentDir;
     private final Set<LinstorFile> files = new HashSet<>();
     private final String nodeName;
