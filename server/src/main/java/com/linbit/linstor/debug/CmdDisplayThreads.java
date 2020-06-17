@@ -44,7 +44,7 @@ public class CmdDisplayThreads extends BaseDebugCmd
 
         debugOut.printf(
             "\u001b[1;37mA\u001b[0m Alive / \u001b[1;37mD\u001b[0m Daemon / \u001b[1;37mI\u001b[0m Interrupted\n" +
-            "%-32s %18s %4s %-15s A D I\n",
+            "%-72s %18s %4s %-15s A D I\n",
             "Thread name", "Id", "Prio", "State"
         );
         printSectionSeparator(debugOut);
@@ -70,7 +70,7 @@ public class CmdDisplayThreads extends BaseDebugCmd
             }
 
             debugOut.printf(
-                "%-32s %18d %4d %-15s %-1s %-1s %-1s\n",
+                "%-72s %18d %4d %-15s %-1s %-1s %-1s\n",
                 thr.getName(),
                 thr.getId(),
                 thr.getPriority(),
