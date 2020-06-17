@@ -465,16 +465,26 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         synchronized (syncObj)
                         {
                             // wait for the syncObj to get released
+
+                            // Ensure making some progress in the case that
+                            // the blocking select() call is repeatedly interrupted
+                            // (e.g., using wakeup()) before having selected any
+                            // channels
+                            if (selectCount <= 0)
+                            {
+                                /*
+                                 * this selectNow has to be inside the synchronized block as otherwise
+                                 * it would be possible that the TcpConnector thread is already past
+                                 * the previous .select(), THEN another thread (i.e. reconnector)
+                                 * calls .wakeup() which is immediately consumed by the .selectNow()
+                                 * BEFORE the thread calling .wakeup() could register some new
+                                 * listeners. We suspect that we ended up in a deadlock occasionally
+                                 * because of this.
+                                 */
+                                serverSelector.selectNow();
+                            }
                         }
 
-                        // Ensure making some progress in the case that
-                        // the blocking select() call is repeatedly interrupted
-                        // (e.g., using wakeup()) before having selected any
-                        // channels
-                        if (selectCount <= 0)
-                        {
-                            serverSelector.selectNow();
-                        }
                     }
                     else
                     {
