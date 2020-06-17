@@ -4,6 +4,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.objects.Node;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +26,8 @@ public class DBLoggingTest
             }
         }
         directoryToBeDeleted.delete();
+
+        Assert.assertFalse("Directory still exists", Files.exists(directoryToBeDeleted.toPath()));
     }
 
     @Before
@@ -39,7 +42,7 @@ public class DBLoggingTest
     }
 
     @Test
-    public void testDBLogging()
+    public void testDBLogging() throws Exception
     {
         StdErrorReporter errReporter = new StdErrorReporter(
             LinStor.CONTROLLER_MODULE,
@@ -64,5 +67,7 @@ public class DBLoggingTest
         Assert.assertEquals("testDBLogging", reports.get(1).getOriginMethod().orElse(""));
         Assert.assertTrue(reports.get(1).getOriginLine().isPresent());
         Assert.assertEquals(Node.Type.CONTROLLER.name(), reports.get(1).getModuleString());
+
+        errReporter.shutdown();
     }
 }

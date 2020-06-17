@@ -61,6 +61,8 @@ public class ResourceDefinitionSatelliteTest
     @Inject
     private Provider<TransactionMgr> transMgrProvider;
 
+    private StdErrorReporter errorReporter;
+
     @SuppressWarnings("checkstyle:magicnumber")
     public ResourceDefinitionSatelliteTest() throws InvalidNameException, ValueOutOfRangeException
     {
@@ -72,9 +74,10 @@ public class ResourceDefinitionSatelliteTest
     @Before
     public void setUp() throws Exception
     {
+        errorReporter = new StdErrorReporter("TESTS", Paths.get("build/test-logs"), true, "", null, null, () -> null);
         Injector injector = Guice.createInjector(
             new GuiceConfigModule(),
-            new LoggingModule(new StdErrorReporter("TESTS", Paths.get("build/test-logs"), true, "", null, null, () -> null)),
+            new LoggingModule(errorReporter),
             new TestSecurityModule(SYS_CTX),
             new CoreModule(),
             new SatelliteDbModule(),
@@ -93,6 +96,7 @@ public class ResourceDefinitionSatelliteTest
     public void tearDown() throws Exception
     {
         testScope.exit();
+        errorReporter.shutdown();
     }
 
     @SuppressWarnings("checkstyle:magicnumber")

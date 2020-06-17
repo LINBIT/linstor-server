@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -12,6 +13,7 @@ import com.linbit.linstor.security.Privilege;
 
 import javax.annotation.Nullable;
 import javax.inject.Provider;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -23,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -586,6 +589,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         }
     }
 
+    @Override
     public List<ErrorReport> listReports(
         boolean withText,
         @Nullable final Date since,
@@ -737,6 +741,18 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     public void logError(String format, Object... args)
     {
         mainLogger.error(appendUserNameAndFormat(format, args));
+    }
+
+    public void shutdown() throws DatabaseException
+    {
+        try
+        {
+            h2ErrorReporter.shutdown();
+        }
+        catch (SQLException exc)
+        {
+            throw new DatabaseException(exc);
+        }
     }
 
     private String appendUserNameAndFormat(String formatRef, Object... args)

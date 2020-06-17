@@ -333,6 +333,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         // every test class must explicitly enable security if they want to test.
         // we should change this default to MAC once the security mechanism works as intended.
         SecurityLevel.set(SYS_CTX, SecurityLevel.NO_SECURITY, dbConnPool, null);
+        errorReporter.shutdown();
     }
 
     public void commitAndCleanUp(boolean inScope) throws Exception

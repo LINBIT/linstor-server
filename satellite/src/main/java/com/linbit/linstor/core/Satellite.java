@@ -19,6 +19,7 @@ import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.devmgr.DevMgrModule;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -483,6 +484,15 @@ public final class Satellite
             if (cfg.isDebugConsoleEnabled())
             {
                 instance.enterDebugConsole();
+            }
+
+            try
+            {
+                errorLog.shutdown();
+            }
+            catch (DatabaseException exc)
+            {
+                errorLog.logError("Failed to shutdown ErrorReporter: %s", exc.getMessage());
             }
         }
         catch (Throwable error)

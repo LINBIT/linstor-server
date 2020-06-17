@@ -24,6 +24,7 @@ import com.linbit.linstor.core.cfg.CtrlConfigModule;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -68,6 +69,7 @@ import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -493,6 +495,15 @@ public final class Controller
             if (dbgCnsEnabled)
             {
                 instance.enterDebugConsole();
+            }
+
+            try
+            {
+                errorLog.shutdown();
+            }
+            catch (DatabaseException exc)
+            {
+                errorLog.logError("Failed to shutdown ErrorReporter: %s", exc.getMessage());
             }
         }
         catch (Throwable error)
