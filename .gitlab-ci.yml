@@ -25,7 +25,7 @@ build:
 test:
   stage: test
   script:
-    - gradle -PversionOverride= check
+    - JAVA_OPTS="-ea" gradle -PversionOverride= test
   artifacts:
     reports:
       junit: build/test-results/test/TEST-*.xml
