@@ -74,19 +74,6 @@ public class LvmThinProvider extends LvmProvider
         {
             lvmThinData.setThinPool(infoRef.thinPool);
             lvmThinData.setAllocatedPercent(infoRef.dataPercent / 100.0f);
-            if (!infoRef.attributes.contains("a"))
-            {
-                LvmUtils.execWithRetry(
-                    extCmdFactory,
-                    Collections.singleton(vlmDataRef.getVolumeGroup()),
-                    config -> LvmCommands.activateVolume(
-                        extCmdFactory.create(),
-                        lvmThinData.getVolumeGroup(),
-                        lvmThinData.getIdentifier(),
-                        config
-                    )
-                );
-            }
         }
     }
 

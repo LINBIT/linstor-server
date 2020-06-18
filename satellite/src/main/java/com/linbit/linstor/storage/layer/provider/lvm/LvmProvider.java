@@ -223,6 +223,20 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             vlmDataRef.setAllocatedSize(info.size);
             vlmDataRef.setUsableSize(info.size);
             vlmDataRef.setAttributes(info.attributes);
+
+            if (!info.attributes.contains("a"))
+            {
+                LvmUtils.execWithRetry(
+                    extCmdFactory,
+                    Collections.singleton(vlmDataRef.getVolumeGroup()),
+                    config -> LvmCommands.activateVolume(
+                        extCmdFactory.create(),
+                        vlmDataRef.getVolumeGroup(),
+                        vlmDataRef.getIdentifier(),
+                        config
+                    )
+                );
+            }
         }
     }
 
