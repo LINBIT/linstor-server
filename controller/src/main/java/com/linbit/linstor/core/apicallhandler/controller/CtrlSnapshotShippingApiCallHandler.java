@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
@@ -18,6 +19,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -306,19 +308,28 @@ public class CtrlSnapshotShippingApiCallHandler
 
     private Snapshot getPrevious(Snapshot snapCurrentSourceRef)
     {
-        // TODO Auto-generated method stub
-
+        Snapshot prevSourceSnapshot = null;
         try
         {
             Props snapDfnProps = snapCurrentSourceRef.getSnapshotDefinition().getProps(peerAccCtx.get());
+            String prevShippingName = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_PREV);
+            if (prevShippingName != null)
+            {
+                SnapshotDefinition prevSnapDfn = ctrlApiDataLoader.loadSnapshotDfn(
+                    snapCurrentSourceRef.getResourceDefinition(),
+                    new SnapshotName(prevShippingName),
+                    true
+                );
 
+                prevSourceSnapshot = prevSnapDfn.getSnapshot(apiCtx, snapCurrentSourceRef.getNodeName());
+            }
         }
-        catch (AccessDeniedException exc)
+        catch (AccessDeniedException | InvalidNameException exc)
         {
             // accessDenied of snapshots we _just_ created? sounds like a bug
             throw new ImplementationError(exc);
         }
-        return null;
+        return prevSourceSnapshot;
     }
 
     private void setShippingPropsAndFlags(@Nullable Snapshot prevSnapSource, Snapshot snapSource, Snapshot snapTarget)

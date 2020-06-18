@@ -23,6 +23,7 @@ import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -56,7 +57,6 @@ import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.io.IOException;
@@ -588,8 +588,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         Snapshot snap = snapVlm.getVolume().getAbsResource();
                         if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_SOURCE_START))
                         {
-                            LAYER_SNAP_DATA prevSnapVlmData = getPreviousSnapvlmData(snapVlm);
-                            startSending(prevSnapVlmData, snapVlm);
+                            startSending(snapVlm);
                         }
                     }
                     catch (InvalidNameException exc)
@@ -601,16 +600,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
     }
 
-    private LAYER_SNAP_DATA getPreviousSnapvlmData(LAYER_SNAP_DATA snapVlm)
+    private LAYER_SNAP_DATA getPreviousSnapvlmData(
+        LAYER_SNAP_DATA snapVlm,
+        ResourceConnection rscCon
+    )
         throws AccessDeniedException, InvalidNameException
     {
         LAYER_SNAP_DATA prevSnapVlmData = null;
 
-        Snapshot snap = snapVlm.getVolume().getAbsResource();
-        String prevSnapName = snap.getSnapshotDefinition().getProps(storDriverAccCtx)
+        String prevSnapName = rscCon.getProps(storDriverAccCtx)
             .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_PREV);
         if (prevSnapName != null)
         {
+            Snapshot snap = snapVlm.getVolume().getAbsResource();
             SnapshotDefinition prevSnapDfn = snap.getResourceDefinition()
                 .getSnapshotDfn(storDriverAccCtx, new SnapshotName(prevSnapName));
             if (prevSnapDfn != null)
@@ -636,6 +638,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 }
             }
         }
+
         return prevSnapVlmData;
     }
 
@@ -659,10 +662,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     protected void startSending(
-        @Nullable LAYER_SNAP_DATA lastSnapVlmData,
         LAYER_SNAP_DATA curSnapVlmData
     )
-        throws AccessDeniedException, StorageException
+        throws AccessDeniedException, StorageException, InvalidNameException
     {
         Snapshot snapSource = curSnapVlmData.getRscLayerObject().getAbsResource();
 
@@ -674,9 +676,16 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
         NetInterface targetNetIf = getTargetNetIf(snapDfn, snapTargetName);
 
+        Resource sourceRsc = snapSource.getResourceDefinition().getResource(storDriverAccCtx, snapSource.getNodeName());
+        Resource targetRsc = targetNetIf.getNode().getResource(storDriverAccCtx, snapSource.getResourceName());
+
+        ResourceConnection rscCon = sourceRsc.getAbsResourceConnection(storDriverAccCtx, targetRsc);
+
+        LAYER_SNAP_DATA prevSnapVlmData = getPreviousSnapvlmData(curSnapVlmData, rscCon);
+
         snapShipMgr.startSending(
             asSnapLvIdentifier(curSnapVlmData),
-            getSnapshotShippingSendingCommandImpl(lastSnapVlmData, curSnapVlmData),
+            getSnapshotShippingSendingCommandImpl(prevSnapVlmData, curSnapVlmData),
             targetNetIf,
             socatPort,
             curSnapVlmData

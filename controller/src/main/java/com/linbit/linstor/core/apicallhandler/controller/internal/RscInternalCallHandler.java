@@ -287,7 +287,7 @@ public class RscInternalCallHandler
             for (SnapshotDefinition snapDfn : rsc.getDefinition().getSnapshotDfns(apiCtx))
             {
                 Snapshot snap = snapDfn.getSnapshot(apiCtx, nodeName);
-                if (snap.getFlags().isSet(apiCtx, Snapshot.Flags.SHIPPING_TARGET))
+                if (snap != null && snap.getFlags().isSet(apiCtx, Snapshot.Flags.SHIPPING_TARGET))
                 {
                     if (snapShipIntHandler.startShipping(snap))
                     {

@@ -19,6 +19,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -33,7 +34,7 @@ public class SnapshotShippingManager
     private final ControllerPeerConnector controllerPeerConnector;
     private final CtrlStltSerializer interComSerializer;
 
-    private final TreeMap<Snapshot, ShippingInfo> shippingInfoMap;
+    private final Map<Snapshot, ShippingInfo> shippingInfoMap;
 
     @Inject
     public SnapshotShippingManager(
@@ -50,7 +51,7 @@ public class SnapshotShippingManager
         controllerPeerConnector = controllerPeerConnectorRef;
         interComSerializer = interComSerializerRef;
 
-        shippingInfoMap = new TreeMap<>();
+        shippingInfoMap = Collections.synchronizedMap(new TreeMap<>());
     }
 
     public void startReceiving(
@@ -150,24 +151,29 @@ public class SnapshotShippingManager
     )
     {
         Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
-        ShippingInfo shippingInfo = shippingInfoMap.get(snap);
-
         synchronized (snap)
         {
-            shippingInfo.snapVlmDataFinishedShipping++;
-            if (successRef)
+            ShippingInfo shippingInfo = shippingInfoMap.get(snap);
+            /*
+             * shippingInfo might be already null as we delete it at the end of this method.
+             * this postShipping will be called twice, from stdErr and from stdOut proxy
+             * thread.
+             */
+            if (shippingInfo != null)
             {
-                shippingInfo.snapVlmDataFinishedSuccessfully++;
-            }
-            if (shippingInfo.snapVlmDataFinishedShipping == shippingInfo.snapVlmDataInfoMap.size())
-            {
-                boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
-                controllerPeerConnector.getControllerPeer().sendMessage(
-                    interComSerializer
-                        .onewayBuilder(internalApiName)
-                        .notifySnapshotShipped(snap, success)
-                        .build()
-                );
+                shippingInfo.snapVlmDataFinishedShipping++;
+                if (successRef)
+                {
+                    shippingInfo.snapVlmDataFinishedSuccessfully++;
+                }
+                if (shippingInfo.snapVlmDataFinishedShipping == shippingInfo.snapVlmDataInfoMap.size())
+                {
+                    boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
+                    controllerPeerConnector.getControllerPeer().sendMessage(
+                        interComSerializer.onewayBuilder(internalApiName).notifySnapshotShipped(snap, success).build()
+                    );
+                    shippingInfoMap.remove(snap);
+                }
             }
         }
     }
