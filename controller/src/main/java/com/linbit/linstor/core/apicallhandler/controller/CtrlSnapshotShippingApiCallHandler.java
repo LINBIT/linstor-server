@@ -159,9 +159,9 @@ public class CtrlSnapshotShippingApiCallHandler
             );
         }
 
-        String snapShipName = getSnapshotNameForNextShipping(rscConn);
-
         ApiCallRcImpl responses = new ApiCallRcImpl();
+        String snapShipName = getSnapshotNameForNextShipping(rscConn, responses);
+
         snapDfn = snapCrtHelper.createSnapshots(
             Arrays.asList(fromNodeNameRef, toNodeNameRef),
             rscNameRef,
@@ -234,17 +234,52 @@ public class CtrlSnapshotShippingApiCallHandler
         return snapDfn;
     }
 
-    private String getSnapshotNameForNextShipping(ResourceConnection rscConnRef)
+    private String getSnapshotNameForNextShipping(ResourceConnection rscConnRef, ApiCallRcImpl responsesRef)
     {
-        String snapShipPrefix;
+        String snapShipName;
         ResourceDefinition rscDfn;
         try
         {
             rscDfn = rscConnRef.getSourceResource(peerAccCtx.get()).getResourceDefinition();
-            snapShipPrefix = new PriorityProps(
+
+
+            String snapShipNamePrefix = new PriorityProps(
                 propsHelper.getProps(rscDfn),
                 propsHelper.getCtrlPropsForView()
             ).getProp(ApiConsts.KEY_SNAPSHOT_SHIPPING_PREFIX, null, ApiConsts.DFLT_SNAPSHOT_SHIPPING_PREFIX);
+
+            try
+            {
+                new SnapshotName(snapShipNamePrefix);
+            }
+            catch (InvalidNameException exc) {
+                responsesRef.addEntries(
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.WARN_INVLD_SNAPSHOT_SHIPPING_PREFIX,
+                        String.format(
+                            "'%s' is not a valid prefix for snapshot shipping. Defaulting to '%s'",
+                            snapShipNamePrefix,
+                            ApiConsts.DFLT_SNAPSHOT_SHIPPING_PREFIX
+                        )
+                    )
+                );
+                snapShipNamePrefix = ApiConsts.DFLT_SNAPSHOT_SHIPPING_PREFIX;
+            }
+
+            try
+            {
+                do
+                {
+                    int snapId = getNextSnapshotShippingId(rscDfn);
+                    snapShipName = snapShipNamePrefix + Integer.toString(snapId);
+                }
+                while (rscDfn.getSnapshotDfn(peerAccCtx.get(), new SnapshotName(snapShipName)) != null);
+            }
+            catch (InvalidNameException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -255,8 +290,7 @@ public class CtrlSnapshotShippingApiCallHandler
             );
         }
 
-        int snapId = getNextSnapshotShippingId(rscDfn);
-        return snapShipPrefix + Integer.toString(snapId);
+        return snapShipName;
     }
 
     private int getNextSnapshotShippingId(ResourceDefinition rscDfnRef)
