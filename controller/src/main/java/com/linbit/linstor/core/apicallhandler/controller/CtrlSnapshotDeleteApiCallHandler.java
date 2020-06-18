@@ -133,6 +133,16 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         ResourceName rscName = snapshotDfn.getResourceName();
         SnapshotName snapshotName = snapshotDfn.getName();
 
+        if (isSnapshotShippingInProgress(snapshotDfn))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SNAPSHOT_SHIPPING_IN_PROGRESS,
+                    "Cannot delete a snapshot while it is being shipped"
+                )
+            );
+        }
+
         markSnapshotDfnDeleted(snapshotDfn);
 
         for (Snapshot snapshot : getAllSnapshots(snapshotDfn))
@@ -150,6 +160,24 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         return Flux
             .just(responses)
             .concatWith(deleteSnapshotsOnNodes(rscName, snapshotName));
+    }
+
+    private boolean isSnapshotShippingInProgress(SnapshotDefinition snapshotDfnRef)
+    {
+        boolean shipping = false;
+        try
+        {
+            shipping = snapshotDfnRef.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "checking if SnapshotDefinition is in progress",
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
+        return shipping;
     }
 
     // Restart from here when connection established and DELETE flag set

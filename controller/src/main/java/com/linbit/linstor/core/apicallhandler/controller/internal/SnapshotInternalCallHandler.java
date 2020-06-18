@@ -76,7 +76,7 @@ public class SnapshotInternalCallHandler
             if (rscDefinition != null)
             {
                 SnapshotDefinition snapshotDfn = rscDefinition.getSnapshotDfn(apiCtx, snapshotName);
-                if (snapshotDfn != null && snapshotDfn.getInProgress(apiCtx))
+                if (snapshotDfn != null /* && snapshotDfn.getInProgress(apiCtx) */)
                 {
                     snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), currentPeer.getNode().getName());
                 }

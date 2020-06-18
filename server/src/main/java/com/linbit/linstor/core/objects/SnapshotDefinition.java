@@ -324,7 +324,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
 
         return inCreation.get() ||
             flags.isSet(accCtx, Flags.DELETE) ||
-            flags.isSet(accCtx, Flags.SHIPPING_IN_PROGRESS);
+            flags.isSet(accCtx, Flags.SHIPPING);
     }
 
     public void setInCreation(AccessContext accCtx, boolean inCreationRef)
@@ -591,9 +591,6 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         FAILED_DISCONNECT(1L << 2),
         DELETE(1L << 3),
         SHIPPING(1L << 4),
-        SHIPPING_IN_PROGRESS(SHIPPING.flagValue | 1L << 5),
-        SHIPPING_FAILED(SHIPPING.flagValue | 1L << 6),
-        SHIPPING_DONE(SHIPPING.flagValue | 1L << 7)
         ;
 
         public final long flagValue;

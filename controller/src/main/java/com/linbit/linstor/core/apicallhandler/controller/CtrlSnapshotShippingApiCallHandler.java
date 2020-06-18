@@ -176,7 +176,7 @@ public class CtrlSnapshotShippingApiCallHandler
         Snapshot snapTarget = getSnapshot(snapDfn, toNodeNameRef);
         setShippingPropsAndFlags(snapPreviousSource, snapCurrentSource, snapTarget);
 
-        enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING_IN_PROGRESS);
+        enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
 
         ctrlTransactionHelper.commit();
 

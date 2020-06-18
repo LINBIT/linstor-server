@@ -209,7 +209,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     )
                 )
             );
-
         Map<Pair<String, VolumeNumber>, LAYER_DATA> volumesLut = new HashMap<>();
 
         List<LAYER_DATA> vlmsToCreate = new ArrayList<>();

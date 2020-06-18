@@ -138,6 +138,7 @@ public class SnapshotShippingInternalApiCallHandler
         updateRscConPropsAfterReceived(snapSource, snapTarget);
 
         snapshotShippingPortPool.deallocate(getPort(snapDfn));
+        disableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
 
         Flux<ApiCallRc> flux;
         if (!successRef)
@@ -273,6 +274,33 @@ public class SnapshotShippingInternalApiCallHandler
                     "resource: %s, snapshot: %s",
                 snap.getResourceName().displayValue,
                 snap.getSnapshotName().displayValue
+            );
+            errorReporter.reportError(
+                exc,
+                apiCtx,
+                peerProvider.get(),
+                errorMessage
+            );
+        }
+    }
+
+    private void disableFlags(SnapshotDefinition snapDfnRef, SnapshotDefinition.Flags... flags)
+    {
+        try
+        {
+            snapDfnRef.getFlags().disableFlags(apiCtx, flags);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (DatabaseException exc)
+        {
+            String errorMessage = String.format(
+                "A database error occurred while updating snapshot flags of " +
+                    "resource: %s, snapshot: %s",
+                snapDfnRef.getResourceName().displayValue,
+                snapDfnRef.getName().displayValue
             );
             errorReporter.reportError(
                 exc,
