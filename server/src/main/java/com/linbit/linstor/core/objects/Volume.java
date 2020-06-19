@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 
 public class Volume extends AbsVolume<Resource>
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<Key, VolumeConnection> getVolumeConnections();
     }
@@ -433,9 +433,11 @@ public class Volume extends AbsVolume<Resource>
         return vlmKey;
     }
 
-    public static enum Flags implements com.linbit.linstor.stateflags.Flags
+    public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
-        DELETE(2L), RESIZE(4L), DRBD_RESIZE(8L);
+        DELETE(1L << 1),
+        RESIZE(1L << 2),
+        DRBD_RESIZE(1L << 3);
 
         public final long flagValue;
 

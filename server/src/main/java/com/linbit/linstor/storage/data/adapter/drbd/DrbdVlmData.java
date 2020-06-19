@@ -36,9 +36,9 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     private final TransactionSimpleObject<DrbdVlmData<?>, StorPool> externalMetaDataStorPool;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize = -1;
+    private long allocatedSize = UNINITIALIZED_SIZE;
     private String devicePath;
-    private long usableSize = -1;
+    private long usableSize = UNINITIALIZED_SIZE;
 
     // not persisted, not serialized, stlt only
     private boolean exists;
@@ -50,6 +50,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     private final TransactionList<DrbdVlmData<RSC>, State> states;
     private Size sizeState;
     private String diskState;
+    private long originalSize = UNINITIALIZED_SIZE;
 
     public DrbdVlmData(
         AbsVolume<RSC> vlmRef,
@@ -112,6 +113,18 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
+    public long getOriginalSize()
+    {
+        return originalSize;
+    }
+
+    @Override
+    public void setOriginalSize(long originalSizeRef)
+    {
+        originalSize = originalSizeRef;
+    }
+
+    @Override
     public long getAllocatedSize()
     {
         return allocatedSize;
@@ -132,6 +145,21 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     @Override
     public void setUsableSize(long usableSizeRef)
     {
+        if (usableSizeRef != usableSize)
+        {
+            if (usableSize < usableSizeRef)
+            {
+                sizeState = Size.TOO_SMALL;
+            }
+            else
+            {
+                sizeState = Size.TOO_LARGE;
+            }
+        }
+        else
+        {
+            sizeState = Size.AS_EXPECTED;
+        }
         usableSize = usableSizeRef;
     }
 

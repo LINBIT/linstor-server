@@ -28,7 +28,7 @@ import java.util.List;
  */
 public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerObject
 {
-    public static final int UNINITIALIZED_SIZE = -1;
+    long UNINITIALIZED_SIZE = -1;
     enum Size
     {
         TOO_SMALL,
@@ -42,6 +42,15 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
     boolean exists();
 
     boolean hasFailed();
+
+    /**
+     * Only the VlmProviderObject of the topmost layer needs to store this data.
+     * This size should usually be the same as the vlmDfn's size, expect
+     * when a resize happens.
+     */
+    long getOriginalSize();
+
+    void setOriginalSize(long originalSizeRef);
 
     long getAllocatedSize();
 
@@ -103,4 +112,5 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
         VolumeNumber volNr = getVlmNr();
         return "vlm: " + nodeName.value + "/" + rscName.value + rscNameSuffix + "/" + volNr.value;
     }
+
 }

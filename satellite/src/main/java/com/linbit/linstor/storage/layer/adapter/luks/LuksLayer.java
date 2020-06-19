@@ -19,6 +19,7 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.layer.DeviceLayer;
 import com.linbit.linstor.storage.layer.exceptions.ResourceException;
 import com.linbit.linstor.storage.layer.exceptions.VolumeException;
@@ -197,6 +198,32 @@ public class LuksLayer implements DeviceLayer
                 }
             }
 
+            // shrink if necessary
+            for (LuksVlmData<Resource> vlmData : groupedByDeleteFlag.get(false))
+            {
+                if (
+                    ((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.RESIZE) &&
+                        vlmData.getSizeState().equals(Size.TOO_LARGE)
+                )
+                {
+                    String identifier = getIdentifier(vlmData);
+
+                    boolean isOpen = cryptSetup.isOpen(identifier);
+
+                    vlmData.setBackingDevice(vlmData.getSingleChild().getDevicePath());
+
+                    boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
+
+                    if (isOpen && alreadyLuks)
+                    {
+                        cryptSetup.shrink(vlmData);
+                        // do not set Size.AS_EXPECTED as we will need to grow as much as we can
+                        // once the layers below us are done shrinking
+                        // vlmData.setSizeState(Size.AS_EXPECTED);
+                    }
+                }
+            }
+
             LayerProcessResult processResult = resourceProcessorProvider.get().process(
                 rscData.getSingleChild(),
                 snapshotList,
@@ -223,6 +250,9 @@ public class LuksLayer implements DeviceLayer
                             identifier
                         );
                         vlmData.setDevicePath(providedDev);
+
+                        // prevent unnecessary resize when we just created the device
+                        vlmData.setSizeState(Size.AS_EXPECTED);
                     }
                     else
                     {
@@ -241,6 +271,14 @@ public class LuksLayer implements DeviceLayer
                             .openLuksDevice(vlmData.getBackingDevice(), identifier, vlmData.getDecryptedPassword());
                     }
 
+                    if (
+                        ((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.RESIZE) &&
+                            !vlmData.getSizeState().equals(Size.AS_EXPECTED)
+                    )
+                    {
+                        cryptSetup.grow(vlmData);
+                    }
+
                     vlmData.setAllocatedSize(
                         Commands.getBlockSizeInKib(
                             extCmdFactory.create(),
@@ -253,6 +291,7 @@ public class LuksLayer implements DeviceLayer
                             vlmData.getDevicePath()
                         )
                     );
+                    vlmData.setSizeState(Size.AS_EXPECTED);
 
                     vlmData.setOpened(true);
                     vlmData.setFailed(false);

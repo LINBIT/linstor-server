@@ -34,8 +34,8 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
     private final StorPool cacheStorPool;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize = -1;
-    private long usableSize = -1;
+    private long allocatedSize = UNINITIALIZED_SIZE;
+    private long usableSize = UNINITIALIZED_SIZE;
     private @Nullable String devicePathData;
     private @Nullable String devicePathCache;
     private String backingDevice;
@@ -48,6 +48,7 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
     private String identifier;
     private List<? extends State> unmodStates;
     private Size sizeState;
+    private long originalSize = UNINITIALIZED_SIZE;
 
     public WritecacheVlmData(
         AbsVolume<RSC> vlmRef,
@@ -92,6 +93,18 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
+    public long getOriginalSize()
+    {
+        return originalSize;
+    }
+
+    @Override
+    public void setOriginalSize(long originalSizeRef)
+    {
+        originalSize = originalSizeRef;
+    }
+
+    @Override
     public long getAllocatedSize()
     {
         return allocatedSize;
@@ -122,9 +135,24 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void setUsableSize(long netSizeRef) throws DatabaseException
+    public void setUsableSize(long usableSizeRef) throws DatabaseException
     {
-        usableSize = netSizeRef;
+        if (usableSizeRef != usableSize)
+        {
+            if (usableSize < usableSizeRef)
+            {
+                sizeState = Size.TOO_SMALL;
+            }
+            else
+            {
+                sizeState = Size.TOO_LARGE;
+            }
+        }
+        else
+        {
+            sizeState = Size.AS_EXPECTED;
+        }
+        usableSize = usableSizeRef;
     }
 
     @Override

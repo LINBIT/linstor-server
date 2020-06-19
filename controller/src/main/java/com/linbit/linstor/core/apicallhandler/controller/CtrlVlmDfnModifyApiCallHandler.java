@@ -211,7 +211,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             flagPair.objB.contains(VolumeDefinition.Flags.GROSS_SIZE);
 
         boolean updateForResize = false;
-        boolean hasDeployedVolumes = hasDeployedVolumes(vlmDfn);
 
         if (shouldGrossFlagBeDisabled)
         {
@@ -221,16 +220,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         else
         if (shouldGrossFlagBeEnabled)
         {
-            if (hasDeployedVolumes)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_VLM_SIZE,
-                        "Deployed volumes can only grow in size, not shrink. Changing volume's size from " +
-                            "usable (net) to allocated (gross) could require the volume to shrink"
-                    )
-                );
-            }
             setFlag(vlmDfn, VolumeDefinition.Flags.GROSS_SIZE);
             updateForResize = true;
         }
@@ -238,27 +227,9 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         boolean sizeChanges = size != null;
         if (sizeChanges)
         {
+            updateForResize = true;
             notifyStlts = true;
-            long vlmDfnSize = getVlmDfnSize(vlmDfn);
-            if (size >= vlmDfnSize)
-            {
-                setVlmDfnSize(vlmDfn, size);
-                updateForResize = true;
-            }
-            else
-            {
-                if (!hasDeployedVolumes)
-                {
-                    setVlmDfnSize(vlmDfn, size);
-                }
-                else
-                {
-                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_VLM_SIZE,
-                        "Deployed volumes can only grow in size, not shrink."
-                    ));
-                }
-            }
+            setVlmDfnSize(vlmDfn, size);
         }
 
         if (updateForResize)

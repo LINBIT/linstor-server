@@ -48,6 +48,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     private byte[] decryptedPassword = null;
     private List<? extends State> unmodStates;
     private Size sizeState;
+    private long originalSize = UNINITIALIZED_SIZE;
 
     // TODO maybe introduce States like "OPEN", "CLOSED", "UNINITIALIZED" or something...
 
@@ -131,8 +132,35 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
+    public long getOriginalSize()
+    {
+        return originalSize;
+    }
+
+    @Override
+    public void setOriginalSize(long originalSizeRef)
+    {
+        originalSize = originalSizeRef;
+    }
+
+    @Override
     public void setUsableSize(long usableSizeRef)
     {
+        if (usableSizeRef != usableSize)
+        {
+            if (usableSize < usableSizeRef)
+            {
+                sizeState = Size.TOO_SMALL;
+            }
+            else
+            {
+                sizeState = Size.TOO_LARGE;
+            }
+        }
+        else
+        {
+            sizeState = Size.AS_EXPECTED;
+        }
         usableSize = usableSizeRef;
     }
 

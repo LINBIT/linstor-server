@@ -55,6 +55,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     // not persisted, not serialized, stlt only
     protected transient String identifier;
     protected transient long expectedSize;
+    protected transient long originalSize;
 
     public AbsStorageVlmData(
         AbsVolume<RSC> vlmRef,
@@ -73,8 +74,8 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
 
         exists = transObjFactory.createTransactionSimpleObject(this, false, null);
         failed = transObjFactory.createTransactionSimpleObject(this, false, null);
-        allocatedSize = transObjFactory.createTransactionSimpleObject(this, -1L, null);
-        usableSize = transObjFactory.createTransactionSimpleObject(this, -1L, null);
+        allocatedSize = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
+        usableSize = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
         devicePath = transObjFactory.createTransactionSimpleObject(this, null, null);
         sizeState = transObjFactory.createTransactionSimpleObject(this, null, null);
 
@@ -144,6 +145,18 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     public void setFailed(boolean failedRef) throws DatabaseException
     {
         failed.set(failedRef);
+    }
+
+    @Override
+    public long getOriginalSize()
+    {
+        return originalSize;
+    }
+
+    @Override
+    public void setOriginalSize(long originalSizeRef)
+    {
+        originalSize = originalSizeRef;
     }
 
     @Override

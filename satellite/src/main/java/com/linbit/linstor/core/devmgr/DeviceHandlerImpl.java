@@ -218,11 +218,13 @@ public class DeviceHandlerImpl implements DeviceHandler
                     {
                         vlmData.setAllocatedSize(vlmDfnSize);
                         updateUsableSizeFromAllocatedSize(vlmData);
+                        vlmData.setOriginalSize(vlmDfnSize);
                     }
                     else
                     {
                         vlmData.setUsableSize(vlmDfnSize);
                         updateAllocatedSizeFromUsableSize(vlmData);
+                        vlmData.setOriginalSize(vlmDfnSize);
                     }
                 }
             }

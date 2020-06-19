@@ -16,6 +16,8 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -267,6 +269,51 @@ public class CryptSetupCommands implements Luks
             );
         }
         return open;
+    }
+
+    public void grow(LuksVlmData<Resource> vlmDataRef) throws StorageException
+    {
+        resize(vlmDataRef, null);
+    }
+
+    public void shrink(LuksVlmData<Resource> vlmDataRef) throws StorageException
+    {
+        resize(
+            vlmDataRef,
+            vlmDataRef.getUsableSize() * 2 // usableSize is in KiB, cryptsetup needs size in 512 byte-sectors
+        );
+    }
+
+    private void resize(LuksVlmData<Resource> vlmDataRef, Long sizeRef) throws StorageException
+    {
+        ExtCmd extCmd = extCmdFactory.create();
+        try
+        {
+            List<String> cmd = new ArrayList<>();
+            cmd.add(CRYPTSETUP);
+            cmd.add("resize");
+            if (sizeRef != null)
+            {
+                cmd.add("--size");
+                cmd.add(Long.toString(sizeRef));
+            }
+            cmd.add(CRYPT_PREFIX + vlmDataRef.getIdentifier());
+            extCmd.exec(cmd.toArray(new String[0]));
+        }
+        catch (ChildProcessTimeoutException exc)
+        {
+            throw new StorageException(
+                "Resizing crypt-device timed out",
+                exc
+            );
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException(
+                "Failed to resize crypt devices",
+                exc
+            );
+        }
     }
 
     @Override

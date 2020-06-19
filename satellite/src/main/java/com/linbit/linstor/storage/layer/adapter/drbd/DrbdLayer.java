@@ -44,6 +44,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.layer.DeviceLayer;
@@ -544,6 +545,8 @@ public class DrbdLayer implements DeviceLayer
 
             List<DrbdVlmData<Resource>> checkMetaData = detachVolumesIfNecessary(drbdRscData);
 
+            shrinkVolumesIfNecessary(drbdRscData);
+
             adjustSuspendIo(drbdRscData, snapshotList);
 
             if (!childAlreadyProcessed)
@@ -585,7 +588,8 @@ public class DrbdLayer implements DeviceLayer
                                 drbdVlmData,
                                 // TODO: not sure if we should "--assume-clean" if data device is only partially
                                 // thinly backed
-                                VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false)
+                                VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false),
+                                null
                             );
                         }
                     }
@@ -675,6 +679,7 @@ public class DrbdLayer implements DeviceLayer
                     for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                     {
                         drbdVlmData.setDevicePath(generateDevicePath(drbdVlmData));
+                        drbdVlmData.setSizeState(Size.AS_EXPECTED);
                     }
                     condInitialOrSkipSync(drbdRscData);
                 }
@@ -778,6 +783,40 @@ public class DrbdLayer implements DeviceLayer
                     drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
                     drbdVlmData.getVlmNr().value
                 ),
+                exc
+            );
+        }
+    }
+
+    private void shrinkVolumesIfNecessary(DrbdRscData<Resource> drbdRscData)
+        throws AccessDeniedException, StorageException, ResourceException
+    {
+        try
+        {
+            if (
+                !drbdRscData.getAbsResource().getStateFlags()
+                    .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS)
+            )
+            {
+                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                {
+                    if (needsResize(drbdVlmData) && drbdVlmData.getSizeState().equals(Size.TOO_LARGE))
+                    {
+                        drbdUtils.resize(
+                            drbdVlmData,
+                            false, // we dont need to --assume-clean when shrinking...
+                            drbdVlmData.getUsableSize()
+                        );
+                        // DO NOT set size.AS_EXPECTED as we most likely want to grow a little
+                        // bit again once the layers below finished shrinking
+                    }
+                }
+            }
+        }
+        catch (ExtCmdFailedException exc)
+        {
+            throw new ResourceException(
+                String.format("Failed to shrink DRBD resource %s", drbdRscData.getSuffixedResourceName()),
                 exc
             );
         }

@@ -96,7 +96,8 @@ public class DrbdAdm
      */
     public void resize(
         DrbdVlmData<Resource> drbdVlmData,
-        boolean assumeClean
+        boolean assumeClean,
+        Long shrinkToSize
     )
         throws ExtCmdFailedException
     {
@@ -108,6 +109,10 @@ public class DrbdAdm
         {
             command.add("--");
             command.add("--assume-clean");
+        }
+        if (shrinkToSize != null)
+        {
+            command.add("--size=" + Long.toString(shrinkToSize) + "K");
         }
         String resName = drbdRscData.getSuffixedResourceName();
         // Using -c disables /etc/drbd.d/global_common.conf

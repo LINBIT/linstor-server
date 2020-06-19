@@ -235,8 +235,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     Size sizeState = vlmData.getSizeState();
                     if (
                         ((Volume) vlmData.getVolume()).getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
-                        (sizeState.equals(VlmProviderObject.Size.TOO_LARGE) ||
-                        sizeState.equals(VlmProviderObject.Size.TOO_SMALL))
+                            (sizeState.equals(VlmProviderObject.Size.TOO_LARGE) || sizeState.equals(VlmProviderObject.Size.TOO_SMALL))
                     )
                     {
                         errorReporter.logTrace("Lv %s will be resized", lvId);

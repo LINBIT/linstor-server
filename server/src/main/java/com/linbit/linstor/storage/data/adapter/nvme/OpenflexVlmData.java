@@ -31,9 +31,9 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     private final StorPool storPool;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize = -1;
+    private long allocatedSize = UNINITIALIZED_SIZE;
     private String devicePath;
-    private long usableSize = -1;
+    private long usableSize = UNINITIALIZED_SIZE;
 
     // not persisted, not serialized, stlt only
     private boolean exists;
@@ -43,6 +43,7 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     private String diskState;
     private String ofId;
     protected transient long expectedSize;
+    private long originalSize = UNINITIALIZED_SIZE;
 
     public OpenflexVlmData(
         AbsVolume<RSC> vlmRef,
@@ -90,6 +91,18 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
+    public long getOriginalSize()
+    {
+        return originalSize;
+    }
+
+    @Override
+    public void setOriginalSize(long originalSizeRef)
+    {
+        originalSize = originalSizeRef;
+    }
+
+    @Override
     public long getAllocatedSize()
     {
         return allocatedSize;
@@ -120,9 +133,24 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void setUsableSize(long netSizeRef)
+    public void setUsableSize(long usableSizeRef)
     {
-        usableSize = netSizeRef;
+        if (usableSizeRef != usableSize)
+        {
+            if (usableSize < usableSizeRef)
+            {
+                sizeState = Size.TOO_SMALL;
+            }
+            else
+            {
+                sizeState = Size.TOO_LARGE;
+            }
+        }
+        else
+        {
+            sizeState = Size.AS_EXPECTED;
+        }
+        usableSize = usableSizeRef;
     }
 
     @Override
