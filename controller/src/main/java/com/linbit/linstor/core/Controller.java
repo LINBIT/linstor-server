@@ -496,15 +496,6 @@ public final class Controller
             {
                 instance.enterDebugConsole();
             }
-
-            try
-            {
-                errorLog.shutdown();
-            }
-            catch (DatabaseException exc)
-            {
-                errorLog.logError("Failed to shutdown ErrorReporter: %s", exc.getMessage());
-            }
         }
         catch (Throwable error)
         {
