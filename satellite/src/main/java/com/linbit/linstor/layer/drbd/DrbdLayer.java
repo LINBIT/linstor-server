@@ -23,6 +23,7 @@ import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
@@ -34,8 +35,8 @@ import com.linbit.linstor.layer.drbd.drbdstate.DrbdResource;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateStore;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
-import com.linbit.linstor.layer.drbd.drbdstate.NoInitialStateException;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume.DiskState;
+import com.linbit.linstor.layer.drbd.drbdstate.NoInitialStateException;
 import com.linbit.linstor.layer.drbd.helper.ReadyForPrimaryNotifier;
 import com.linbit.linstor.layer.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.layer.drbd.utils.DrbdAdm;
@@ -47,6 +48,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -356,31 +358,35 @@ public class DrbdLayer implements DeviceLayer
             }
         }
         else
-        if (
-            drbdRscData.getRscDfnLayerObject().isDown() ||
-                rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DELETE)
-        )
         {
-            deleteDrbd(drbdRscData);
-            addDeletedMsg(drbdRscData, apiCallRc);
-
-            processChild(drbdRscData, snapshotList, apiCallRc);
-
-            // this should not be executed if deleting the drbd resource fails
-            deleteBackupResFile(drbdRscData);
-        }
-        else
-        {
-            if (adjustDrbd(drbdRscData, snapshotList, apiCallRc, false))
+            StateFlags<Flags> rscFlags = rsc.getStateFlags();
+            if (
+                drbdRscData.getRscDfnLayerObject().isDown() ||
+                    rscFlags.isSet(workerCtx, Resource.Flags.DELETE) ||
+                    rscFlags.isSet(workerCtx, Resource.Flags.INACTIVE)
+            )
             {
-                addAdjustedMsg(drbdRscData, apiCallRc);
+                deleteDrbd(drbdRscData);
+                addDeletedMsg(drbdRscData, apiCallRc);
 
-                // this should not be executed if adjusting the drbd resource fails
-                copyResFileToBackup(drbdRscData);
+                processChild(drbdRscData, snapshotList, apiCallRc);
+
+                // this should not be executed if deleting the drbd resource fails
+                deleteBackupResFile(drbdRscData);
             }
             else
             {
-                addAbortedMsg(drbdRscData, apiCallRc);
+                if (adjustDrbd(drbdRscData, snapshotList, apiCallRc, false))
+                {
+                    addAdjustedMsg(drbdRscData, apiCallRc);
+
+                    // this should not be executed if adjusting the drbd resource fails
+                    copyResFileToBackup(drbdRscData);
+                }
+                else
+                {
+                    addAbortedMsg(drbdRscData, apiCallRc);
+                }
             }
         }
         return LayerProcessResult.NO_DEVICES_PROVIDED; // TODO: make this depend on whether the local
@@ -490,6 +496,7 @@ public class DrbdLayer implements DeviceLayer
             for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
             {
                 drbdVlmData.setExists(false);
+                drbdVlmData.setDevicePath(null);
             }
         }
         catch (ExtCmdFailedException cmdExc)

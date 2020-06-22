@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -80,7 +81,7 @@ public interface DeviceLayer
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,
-            DatabaseException;
+        DatabaseException, AbortLayerProcessingException;
 
     void clearCache() throws StorageException;
 
@@ -140,4 +141,28 @@ public interface DeviceLayer
         SUCCESS, NO_DEVICES_PROVIDED
     }
 
+    public class AbortLayerProcessingException extends LinStorRuntimeException
+    {
+        private static final long serialVersionUID = -3885415188860635819L;
+        public final AbsRscLayerObject<?> rscLayerObject;
+
+        public AbortLayerProcessingException(AbsRscLayerObject<?> rscLayerObjectRef)
+        {
+            super(
+                "Layer '" + rscLayerObjectRef.getLayerKind().name() + "' aborted by failed " +
+                    (rscLayerObjectRef.getAbsResource() instanceof Resource ?
+                        "resource '" + rscLayerObjectRef.getSuffixedResourceName() :
+                        "snapshot '" + ((Snapshot) rscLayerObjectRef.getAbsResource()).getSnapshotName().displayValue +
+                            "' of resource '" + rscLayerObjectRef.getSuffixedResourceName())
+            );
+            rscLayerObject = rscLayerObjectRef;
+
+        }
+
+        public AbortLayerProcessingException(AbsRscLayerObject<?> rscLayerObjectRef, String stringRef)
+        {
+            super(stringRef);
+            rscLayerObject = rscLayerObjectRef;
+        }
+    }
 }

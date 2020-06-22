@@ -167,7 +167,11 @@ public class CtrlSnapshotShippingApiCallHandler
             );
         }
 
-        checkIfSnapshotShippingIsSupported(rscConn);
+        Resource fromRsc = ctrlApiDataLoader.loadRsc(fromNodeNameRef, rscNameRef, true);
+        Resource toRsc = ctrlApiDataLoader.loadRsc(toNodeNameRef, rscNameRef, true);
+
+        checkIfSnapshotShippingIsSupported(fromRsc, true);
+        checkIfSnapshotShippingIsSupported(toRsc, false);
 
         ApiCallRcImpl responses = new ApiCallRcImpl();
         String snapShipName = getSnapshotNameForNextShipping(rscConn, responses);
@@ -193,28 +197,35 @@ public class CtrlSnapshotShippingApiCallHandler
         return snapCrtHandler.postCreateSnapshot(snapDfn);
     }
 
-    private void checkIfSnapshotShippingIsSupported(ResourceConnection rscConnRef)
+    private void checkIfSnapshotShippingIsSupported(Resource rsc, boolean fromRsc)
     {
         try
         {
-            checkIfSnapshotShippingIsSupported(rscConnRef.getSourceResource(peerAccCtx.get()));
-            checkIfSnapshotShippingIsSupported(rscConnRef.getTargetResource(peerAccCtx.get()));
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "checking if snapshot-shipping is supported by storage providers for resource-connection: " +
-                    CtrlRscConnectionApiCallHandler.getResourceConnectionDescriptionInline(apiCtx, rscConnRef),
-                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
-            );
-        }
-    }
+            boolean isInactiveFlagSet = rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.INACTIVE);
+            if (isInactiveFlagSet == fromRsc)
+            {
+                // fromRsc must be active
+                // toRsc must be inactive
+                if (fromRsc)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_SNAPSHOT_SHIPPING_SOURCE,
+                            "Snapshot shipping source must be active"
+                        )
+                    );
+                }
+                else
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_SNAPSHOT_SHIPPING_TARGET,
+                            "Snapshot shipping target must be inactive"
+                        )
+                    );
+                }
+            }
 
-    private void checkIfSnapshotShippingIsSupported(Resource rsc)
-    {
-        try
-        {
             Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, peerAccCtx.get());
             for (StorPool sp : storPools)
             {

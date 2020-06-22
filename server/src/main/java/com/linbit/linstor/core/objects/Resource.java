@@ -43,7 +43,7 @@ import java.util.stream.Stream;
  */
 public class Resource extends AbsResource<Resource>
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<ResourceKey, ResourceConnection> getRscConnMap();
         Map<VolumeNumber, Volume> getVlmMap();
@@ -486,7 +486,10 @@ public class Resource extends AbsResource<Resource>
         // DO NOT rename TIE_BREAKER to DRBD_TIE_BREAKER for compatibility reasons
         TIE_BREAKER(DRBD_DISKLESS.flagValue | 1L << 7),
 
-        NVME_INITIATOR(DISKLESS.flagValue | 1L << 9);
+        NVME_INITIATOR(DISKLESS.flagValue | 1L << 9),
+
+        INACTIVE(1L << 10),
+        ;
 
         public final long flagValue;
 

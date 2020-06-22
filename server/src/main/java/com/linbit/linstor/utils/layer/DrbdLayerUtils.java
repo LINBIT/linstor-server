@@ -50,9 +50,10 @@ public class DrbdLayerUtils
             boolean hasNvmeBelow = !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.NVME).isEmpty();
             boolean hasOpenflexBelow = !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.OPENFLEX).isEmpty();
             boolean isNvmeTarget = !rscFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR);
-            if ((hasNvmeBelow || hasOpenflexBelow) && isNvmeTarget)
+            boolean isInactive = rscFlags.isSet(accCtx, Resource.Flags.INACTIVE);
+            if ((hasNvmeBelow || hasOpenflexBelow) && isNvmeTarget || isInactive)
             {
-                // target NVME will never return a device, so drbd will never exist
+                // target NVME or inactive resource will never return a device, so drbd will not exist
                 isDevExpected = false;
             }
         }

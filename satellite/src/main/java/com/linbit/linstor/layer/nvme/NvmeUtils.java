@@ -687,6 +687,7 @@ public class NvmeUtils
                     {
                         success = false;
                         setExistsVlmFunc.accept(vlmData, false);
+                        setDevPathVlmFunc.accept(vlmData, null);
                     }
                     else
                     {

@@ -6,6 +6,7 @@ import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscActivateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
@@ -51,6 +52,7 @@ public class Resources
     private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
     private final CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandler;
     private final CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandler;
+    private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
     private final ObjectMapper objectMapper;
 
     @Inject
@@ -59,7 +61,8 @@ public class Resources
         CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandlerRef,
-        CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandlerRef
+        CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandlerRef,
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
@@ -67,6 +70,7 @@ public class Resources
         ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
         ctrlRscDeleteApiCallHandler = ctrlRscDeleteApiCallHandlerRef;
         ctrlRscToggleDiskApiCallHandler = ctrlRscToggleDiskApiCallHandlerRef;
+        ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
     }
@@ -361,6 +365,42 @@ public class Resources
             fromNode,
             false)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+    }
+
+    @POST
+    @Path("{nodeName}/activate")
+    public void activate(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("rscName") String rscName
+    )
+    {
+        Flux<ApiCallRc> flux = ctrlRscActivateApiCallHandler
+            .activateRsc(nodeName,rscName)
+            .subscriberContext(
+                requestHelper.createContext(ApiConsts.API_ACTIVATE_RSC, request)
+            );
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+    }
+
+    @POST
+    @Path("{nodeName}/deactivate")
+    public void deactivate(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("rscName") String rscName
+        )
+    {
+        Flux<ApiCallRc> flux = ctrlRscActivateApiCallHandler
+            .deactivateRsc(nodeName,rscName)
+            .subscriberContext(
+                requestHelper.createContext(ApiConsts.API_DEACTIVATE_RSC, request)
+            );
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }

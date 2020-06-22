@@ -306,6 +306,20 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
 
         handleRollbacks(vlmsToCheckForRollback, apiCallRc);
+
+        // after we are done, and the resource has the INACTIVE flag, clear the devicepath again
+        for (LAYER_DATA vlmData : vlmDataList)
+        {
+            if (
+                vlmData.getRscLayerObject().getAbsResource().getStateFlags().isSet(
+                    storDriverAccCtx,
+                    Resource.Flags.INACTIVE
+                )
+            )
+            {
+                setDevicePath(vlmData, null);
+            }
+        }
     }
 
     @Override

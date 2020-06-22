@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.EntryBuilder;
@@ -21,6 +20,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -30,6 +30,7 @@ import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.DeviceLayer.AbortLayerProcessingException;
 import com.linbit.linstor.layer.DeviceLayer.LayerProcessResult;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.LayerFactory;
@@ -42,6 +43,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -309,8 +311,11 @@ public class DeviceHandlerImpl implements DeviceHandler
                     apiCallRc
                 );
 
-                if (rscLayerObject.getLayerKind().isLocalOnly() &&
-                    rsc.getStateFlags().isUnset(wrkCtx, Resource.Flags.DELETE)
+                StateFlags<Flags> rscFlags = rsc.getStateFlags();
+                if (
+                    rscLayerObject.getLayerKind().isLocalOnly() &&
+                        rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) &&
+                        rscFlags.isUnset(wrkCtx, Resource.Flags.INACTIVE)
                 )
                 {
                     MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, wrkCtx, rsc);
@@ -334,7 +339,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                  * This also means that we only send the resourceApplied messages
                  * at the very end
                  */
-                if (rsc.getStateFlags().isSet(wrkCtx, Resource.Flags.DELETE))
+                boolean rscInactive = rscFlags.isSet(wrkCtx, Resource.Flags.INACTIVE);
+                if (rscFlags.isSet(wrkCtx, Resource.Flags.DELETE) && !rscInactive)
                 {
                     rscListNotifyDelete.add(rsc);
                     notificationListener.get().notifyResourceDeleted(rsc);
@@ -359,7 +365,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
 
-                if (rsc.getStateFlags().isUnset(wrkCtx, Resource.Flags.DELETE))
+                if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) || rscInactive)
                 {
                     sysFsUpdateList.add(rsc);
                 }
@@ -371,24 +377,6 @@ public class DeviceHandlerImpl implements DeviceHandler
             catch (AccessDeniedException | DatabaseException exc)
             {
                 throw new ImplementationError(exc);
-            }
-            catch (AbortLayerProcessingException exc)
-            {
-                AbsRscLayerObject<?> rscLayerData = exc.rscLayerObject;
-                List<String> devLayersAbove = new ArrayList<>();
-                AbsRscLayerObject<?> parent = rscLayerData.getParent();
-                while (parent != null)
-                {
-                    devLayersAbove.add(layerFactory.getDeviceLayer(parent.getLayerKind()).getName());
-                    parent = parent.getParent();
-                }
-
-                errorReporter.logError(
-                    "Layer '%s' failed to process resource '%s'. Skipping layers above %s",
-                    rscLayerData.getLayerKind().name(),
-                    rscLayerData.getSuffixedResourceName(),
-                    devLayersAbove
-                );
             }
             catch (Exception | ImplementationError exc)
             {
@@ -419,6 +407,34 @@ public class DeviceHandlerImpl implements DeviceHandler
                     cause = linExc.getCauseText();
                     correction = linExc.getCorrectionText();
                     details = linExc.getDetailsText();
+                }
+                else
+                if (exc instanceof AbortLayerProcessingException)
+                {
+                    AbsRscLayerObject<?> rscLayerData = ((AbortLayerProcessingException) exc).rscLayerObject;
+                    rc = ApiConsts.FAIL_UNKNOWN_ERROR;
+                    errMsg = exc.getMessage();
+
+                    if (errMsg == null)
+                    {
+                        errMsg = String.format(
+                            "Layer '%s' failed to process resource '%s'. ",
+                            rscLayerData.getLayerKind().name(),
+                            rscLayerData.getSuffixedResourceName()
+                        );
+                    }
+
+                    cause = null;
+                    correction = null;
+
+                    List<String> devLayersAbove = new ArrayList<>();
+                    AbsRscLayerObject<?> parent = rscLayerData.getParent();
+                    while (parent != null)
+                    {
+                        devLayersAbove.add(layerFactory.getDeviceLayer(parent.getLayerKind()).getName());
+                        parent = parent.getParent();
+                    }
+                    details = String.format("Skipping layers above %s", devLayersAbove);
                 }
                 else
                 {
@@ -890,23 +906,5 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
         }
         notificationListener.get().notifyFreeSpacesChanged(freeSpaces);
-    }
-
-    private final class AbortLayerProcessingException extends LinStorRuntimeException
-    {
-        private static final long serialVersionUID = -3885415188860635819L;
-        private AbsRscLayerObject<?> rscLayerObject;
-
-        private AbortLayerProcessingException(AbsRscLayerObject<?> rscLayerObjectRef)
-        {
-            super(
-                "Layer '" + rscLayerObjectRef.getLayerKind().name() + "' aborted by failed " +
-                    (rscLayerObjectRef.getAbsResource() instanceof Resource
-                        ? "resource '" + rscLayerObjectRef.getSuffixedResourceName()
-                        : "snapshot '" + ((Snapshot) rscLayerObjectRef.getAbsResource()).getSnapshotName().displayValue +
-                            "' of resource '" + rscLayerObjectRef.getSuffixedResourceName())
-            );
-            rscLayerObject = rscLayerObjectRef;
-        }
     }
 }

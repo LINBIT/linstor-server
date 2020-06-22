@@ -11,6 +11,7 @@ import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -26,6 +27,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
@@ -235,7 +237,9 @@ public class CacheLayer implements DeviceLayer
     {
         LayerProcessResult ret;
         CacheRscData<Resource> rscData = (CacheRscData<Resource>) rscLayerDataRef;
-        boolean deleteFlagSet = rscData.getAbsResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE);
+        StateFlags<Flags> rscFlags = rscData.getAbsResource().getStateFlags();
+        boolean deleteFlagSet = rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE) ||
+            rscFlags.isSet(storDriverAccCtx, Resource.Flags.INACTIVE);
         if (deleteFlagSet)
         {
             for (CacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
@@ -249,6 +253,7 @@ public class CacheLayer implements DeviceLayer
                     );
                     DmSetupUtils.remove(extCmdFactory.create(), vlmData.getIdentifier());
                     vlmData.setExists(false);
+                    vlmData.setDevicePath(null);
                 }
                 else
                 {
@@ -377,18 +382,20 @@ public class CacheLayer implements DeviceLayer
     @Override
     public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
     {
-        if (layerDataRef.getAbsResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.DELETE))
+        StateFlags<Flags> rscFlags = layerDataRef.getAbsResource().getStateFlags();
+        if (rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE))
         {
             resourceProcessorProvider.get().sendResourceDeletedEvent(layerDataRef);
         }
         else
         {
+            boolean isActive = rscFlags.isUnset(storDriverAccCtx, Resource.Flags.INACTIVE);
             resourceProcessorProvider.get().sendResourceCreatedEvent(
                 layerDataRef,
                 new UsageState(
-                    true,
+                    isActive,
                     null, // will be mapped to unknown
-                    true
+                    isActive
                 )
             );
         }

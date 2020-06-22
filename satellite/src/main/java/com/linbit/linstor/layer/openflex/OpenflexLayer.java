@@ -8,6 +8,7 @@ import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -23,6 +24,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
@@ -229,14 +231,20 @@ public class OpenflexLayer implements DeviceLayer
 
         nvmeUtils.setDevicePaths(ofRscDataRef, ofRscDataRef.exists());
 
-        if (ofRscDataRef.exists() && ofRscDataRef.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+        StateFlags<Flags> rscFlags = ofRscDataRef.getAbsResource().getStateFlags();
+        if (
+            ofRscDataRef.exists() &&
+                (rscFlags.isSet(sysCtx, Resource.Flags.DELETE) || rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE))
+        )
         {
             nvmeUtils.disconnect(ofRscDataRef);
             ofRscDataRef.setInUse(false);
         }
         else
         if (!ofRscDataRef.exists() &&
-            !ofRscDataRef.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+            !rscFlags.isSet(sysCtx, Resource.Flags.DELETE) &&
+            !rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE)
+        )
         {
             nvmeUtils.connect(ofRscDataRef, sysCtx);
             if (!nvmeUtils.setDevicePaths(ofRscDataRef, true))

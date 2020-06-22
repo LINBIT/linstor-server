@@ -8,6 +8,7 @@ import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -17,6 +18,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
@@ -112,7 +114,11 @@ public class NvmeLayer implements DeviceLayer
             nvmeUtils.setDevicePaths(nvmeRscData, nvmeRscData.exists());
 
             // disconnect
-            if (nvmeRscData.exists() && nvmeRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+            StateFlags<Flags> rscFlags = nvmeRscData.getAbsResource().getStateFlags();
+            if (
+                nvmeRscData.exists() &&
+                    (rscFlags.isSet(sysCtx, Resource.Flags.DELETE) || rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE))
+            )
             {
                 // disconnect
                 nvmeUtils.disconnect(nvmeRscData);
@@ -120,7 +126,8 @@ public class NvmeLayer implements DeviceLayer
             // connect
             else
             if (!nvmeRscData.exists() &&
-                !nvmeRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE)
+                !rscFlags.isSet(sysCtx, Resource.Flags.DELETE) &&
+                !rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE)
             )
             {
                 // connect

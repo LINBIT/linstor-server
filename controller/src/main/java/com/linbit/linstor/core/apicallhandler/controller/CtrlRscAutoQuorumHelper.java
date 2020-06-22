@@ -245,7 +245,8 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
             StateFlags<Resource.Flags> rscFlags = rsc.getStateFlags();
             if (
                 layerDataHelper.getLayerStack(rsc).contains(DeviceLayerKind.DRBD) &&
-                rscFlags.isUnset(peerCtx.get(), Resource.Flags.DELETE)
+                    rscFlags.isUnset(peerCtx.get(), Resource.Flags.DELETE) &&
+                    rscFlags.isUnset(peerCtx.get(), Resource.Flags.INACTIVE)
             )
             {
                 if (rscFlags.isSet(peerCtx.get(), Resource.Flags.DRBD_DISKLESS))
