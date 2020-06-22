@@ -63,9 +63,6 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCa
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 import static com.linbit.linstor.utils.layer.LayerVlmUtils.getStorPoolMap;
 
-import reactor.core.publisher.Flux;
-import reactor.util.function.Tuple2;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -77,6 +74,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import reactor.core.publisher.Flux;
+import reactor.util.function.Tuple2;
 
 @Singleton
 public class CtrlSnapshotCrtApiCallHandler
@@ -270,7 +270,10 @@ public class CtrlSnapshotCrtApiCallHandler
                     updateResponses,
                     rscName,
                     "Suspended IO of {1} on {0} for snapshot"
-                ));
+                )).timeout(
+                    Duration.ofSeconds(20),
+                    abortSnapshot(rscName, snapshotName, new TimeoutException())
+                );
 
         return Flux
             .<ApiCallRc>just(responses)
