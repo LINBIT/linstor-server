@@ -335,6 +335,9 @@ public class ProtoDeserializationUtils
             case LVM_THIN:
                 tool = ExtTools.LVM_THIN;
                 break;
+            case THIN_SEND_RECV:
+                tool = ExtTools.THIN_SEND_RECV;
+                break;
             case NVME:
                 tool = ExtTools.NVME;
                 break;
@@ -352,6 +355,12 @@ public class ProtoDeserializationUtils
                 break;
             case LOSETUP:
                 tool = ExtTools.LOSETUP;
+                break;
+            case ZSTD:
+                tool = ExtTools.ZSTD;
+                break;
+            case SOCAT:
+                tool = ExtTools.SOCAT;
                 break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through

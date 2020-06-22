@@ -129,6 +129,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.Pair;
 
 import javax.annotation.Nullable;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -136,7 +137,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1211,6 +1211,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case LVM_THIN:
                 ret = ExternalTools.LVM_THIN;
                 break;
+            case THIN_SEND_RECV:
+                ret = ExternalTools.THIN_SEND_RECV;
+                break;
             case NVME:
                 ret = ExternalTools.NVME;
                 break;
@@ -1228,6 +1231,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 break;
             case LOSETUP:
                 ret = ExternalTools.LOSETUP;
+                break;
+            case ZSTD:
+                ret = ExternalTools.ZSTD;
+                break;
+            case SOCAT:
+                ret = ExternalTools.SOCAT;
                 break;
             default:
                 throw new RuntimeException("Not implemented.");

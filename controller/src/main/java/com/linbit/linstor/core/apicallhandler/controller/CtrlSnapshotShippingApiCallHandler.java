@@ -20,10 +20,12 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -32,6 +34,11 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
@@ -45,6 +52,7 @@ import javax.inject.Singleton;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Set;
 
 import reactor.core.publisher.Flux;
 
@@ -159,6 +167,8 @@ public class CtrlSnapshotShippingApiCallHandler
             );
         }
 
+        checkIfSnapshotShippingIsSupported(rscConn);
+
         ApiCallRcImpl responses = new ApiCallRcImpl();
         String snapShipName = getSnapshotNameForNextShipping(rscConn, responses);
 
@@ -181,6 +191,102 @@ public class CtrlSnapshotShippingApiCallHandler
         ctrlTransactionHelper.commit();
 
         return snapCrtHandler.postCreateSnapshot(snapDfn);
+    }
+
+    private void checkIfSnapshotShippingIsSupported(ResourceConnection rscConnRef)
+    {
+        try
+        {
+            checkIfSnapshotShippingIsSupported(rscConnRef.getSourceResource(peerAccCtx.get()));
+            checkIfSnapshotShippingIsSupported(rscConnRef.getTargetResource(peerAccCtx.get()));
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "checking if snapshot-shipping is supported by storage providers for resource-connection: " +
+                    CtrlRscConnectionApiCallHandler.getResourceConnectionDescriptionInline(apiCtx, rscConnRef),
+                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
+            );
+        }
+    }
+
+    private void checkIfSnapshotShippingIsSupported(Resource rsc)
+    {
+        try
+        {
+            Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, peerAccCtx.get());
+            for (StorPool sp : storPools)
+            {
+                DeviceProviderKind deviceProviderKind = sp.getDeviceProviderKind();
+                if (!deviceProviderKind.isSnapshotShippingSupported())
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
+                            String.format(
+                                "The storage pool kind %s does not support snapshot shipping",
+                                deviceProviderKind.name()
+                            )
+                        )
+                    );
+                }
+                ExtToolsManager extToolsManager = rsc.getNode().getPeer(peerAccCtx.get()).getExtToolsManager();
+                ExtToolsInfo zstdInfo = extToolsManager.getExtToolInfo(ExtTools.ZSTD);
+                if (zstdInfo == null || !zstdInfo.isSupported())
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
+                            String.format(
+                                "Snapshot shipping requires 'zstd' to be installed",
+                                deviceProviderKind.name()
+                            )
+                        )
+                    );
+                }
+                ExtToolsInfo soCatInfo = extToolsManager.getExtToolInfo(ExtTools.SOCAT);
+                if (soCatInfo == null || !soCatInfo.isSupported())
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
+                            String.format(
+                                "Snapshot shipping requires 'socat' to be installed",
+                                deviceProviderKind.name()
+                            )
+                        )
+                    );
+                }
+
+                if (deviceProviderKind.equals(DeviceProviderKind.LVM_THIN))
+                {
+                    ExtToolsInfo thinSendRecvInfo = extToolsManager.getExtToolInfo(ExtTools.THIN_SEND_RECV);
+                    if (thinSendRecvInfo == null || !thinSendRecvInfo.isSupported())
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
+                                String.format(
+                                    "The storage pool kind %s requires support for thin_recv",
+                                    deviceProviderKind.name()
+                                )
+                            )
+                        );
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "checking if snapshot-shipping is supported by storage providers for resource: " +
+                    CtrlRscApiCallHandler.getRscDescription(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+
     }
 
     private void enableFlags(SnapshotDefinition snapDfnRef, SnapshotDefinition.Flags... flags)

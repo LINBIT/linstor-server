@@ -47,6 +47,7 @@ public class StltExtToolsChecker
         .compile("(?:\\s*LVM version:\\s*)(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern LVM_THIN_VERSION_PATTERN = Pattern
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
+    private static final Pattern THIN_SEND_RECV_VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)");
     private static final Pattern ZFS_VERSION_PATTERN = Pattern
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern NVME_VERSION_PATTERN = Pattern
@@ -55,6 +56,8 @@ public class StltExtToolsChecker
         .compile("(?:\\s*version\\s*)?(\\d+)\\.(\\d+)");
     private static final Pattern LOSETUP_VERSION_PATTERN = Pattern
         .compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
+    private static final Pattern ZSTD_VERSION_PATTERN = Pattern.compile("v(\\d+)\\.(\\d+)\\.(\\d+)");
+    private static final Pattern SOCAT_VERSION_PATTERN = Pattern.compile("version (\\d+)\\.(\\d+)\\.(\\d+)");
 
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
@@ -85,12 +88,15 @@ public class StltExtToolsChecker
             getCryptSetupInfo(),
             getLvmInfo(),
             getLvmThinInfo(),
+            getThinSendRecvInfo(),
             getZfsInfo(),
             getNvmeInfo(loadedModules),
             getSpdkInfo(),
             getWritecacheInfo(loadedModules),
             getCacheInfo(loadedModules),
-            getLosetupInfo()
+            getLosetupInfo(),
+            getZstdInfo(),
+            getSocatInfo()
         );
     }
 
@@ -147,6 +153,16 @@ public class StltExtToolsChecker
         return infoBy3MatchGroupPattern(LVM_THIN_VERSION_PATTERN, ExtTools.LVM_THIN, "thin_check", "-V");
     }
 
+    private ExtToolsInfo getThinSendRecvInfo()
+    {
+        return infoBy3MatchGroupPattern(
+            THIN_SEND_RECV_VERSION_PATTERN,
+            ExtTools.THIN_SEND_RECV,
+            false,
+            "thin_send", "-v"
+        );
+    }
+
     private ExtToolsInfo getZfsInfo()
     {
         return infoBy3MatchGroupPattern(ZFS_VERSION_PATTERN, ExtTools.ZFS, "cat", "/sys/module/zfs/version");
@@ -199,6 +215,16 @@ public class StltExtToolsChecker
     private ExtToolsInfo getLosetupInfo()
     {
         return infoBy3MatchGroupPattern(LOSETUP_VERSION_PATTERN, ExtTools.LOSETUP, false, "losetup", "--version");
+    }
+
+    private ExtToolsInfo getZstdInfo()
+    {
+        return infoBy3MatchGroupPattern(ZSTD_VERSION_PATTERN, ExtTools.ZSTD, false, "zstd", "-V");
+    }
+
+    private ExtToolsInfo getSocatInfo()
+    {
+        return infoBy3MatchGroupPattern(SOCAT_VERSION_PATTERN, ExtTools.SOCAT, false, "socat", "-V");
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)

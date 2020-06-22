@@ -18,12 +18,14 @@ public enum DeviceProviderKind
     DISKLESS(
         false,
         false,
+        false,
         true,
         false,
         true, // very thin :)
         new DisklessDriverKind() // compatibility - will be removed
     ),
     LVM(
+        false,
         false,
         false,
         true,
@@ -38,12 +40,14 @@ public enum DeviceProviderKind
         true,
         true,
         true,
+        true,
         new LvmThinDriverKind(),
         ExtTools.LVM_THIN
     ),
     ZFS(
         true,
         true,
+        false,
         true,
         true,
         false,
@@ -53,6 +57,7 @@ public enum DeviceProviderKind
     ZFS_THIN(
         true,
         true,
+        false,
         true,
         true,
         true,
@@ -61,6 +66,7 @@ public enum DeviceProviderKind
     ),
     FILE(
         true,
+        false,
         false,
         true,
         true,
@@ -71,6 +77,7 @@ public enum DeviceProviderKind
     FILE_THIN(
         true,
         false,
+        false,
         true,
         true,
         true,
@@ -80,6 +87,7 @@ public enum DeviceProviderKind
     SPDK(
         false,
         false,
+        false,
         true,
         true,
         false,
@@ -87,6 +95,7 @@ public enum DeviceProviderKind
         ExtTools.SPDK
     ),
     OPENFLEX_TARGET(
+        false,
         false,
         false,
         false,
@@ -100,12 +109,14 @@ public enum DeviceProviderKind
         false,
         false,
         false,
+        false,
         null
     // no startup verifications, should always trigger an error anyways :)
     );
 
     private final boolean isSnapshotSupported;
     private final boolean isSnapshotDependent;
+    private final boolean isSnapshotShippingSupported;
     private final boolean isResizeSupported;
     private final boolean hasBackingDevice;
     private final boolean usesThinProvisioning;
@@ -116,6 +127,7 @@ public enum DeviceProviderKind
     DeviceProviderKind(
         boolean isSnapshotSupportedRef,
         boolean isSnapshotDependentRef,
+        boolean isSnapshotShippingSupportedRef,
         boolean isResizeSupportedRef,
         boolean hasBackingDeviceRef,
         boolean usesThinProvisioningRef,
@@ -125,6 +137,7 @@ public enum DeviceProviderKind
     {
         isSnapshotSupported = isSnapshotSupportedRef;
         isSnapshotDependent = isSnapshotDependentRef;
+        isSnapshotShippingSupported = isSnapshotShippingSupportedRef;
         isResizeSupported = isResizeSupportedRef;
         hasBackingDevice = hasBackingDeviceRef;
         usesThinProvisioning = usesThinProvisioningRef;
@@ -145,6 +158,11 @@ public enum DeviceProviderKind
     public boolean isSnapshotDependent()
     {
         return isSnapshotDependent;
+    }
+
+    public boolean isSnapshotShippingSupported()
+    {
+        return isSnapshotShippingSupported;
     }
 
     public boolean hasBackingDevice()
