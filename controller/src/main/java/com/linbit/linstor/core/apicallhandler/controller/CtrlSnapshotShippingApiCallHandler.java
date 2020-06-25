@@ -274,28 +274,15 @@ public class CtrlSnapshotShippingApiCallHandler
         try
         {
             boolean isInactiveFlagSet = rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.INACTIVE);
-            if (isInactiveFlagSet == fromRsc)
+            if (isInactiveFlagSet && !fromRsc)
             {
-                // fromRsc must be active
                 // toRsc must be inactive
-                if (fromRsc)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_SNAPSHOT_SHIPPING_SOURCE,
-                            "Snapshot shipping source must be active"
-                        )
-                    );
-                }
-                else
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_SNAPSHOT_SHIPPING_TARGET,
-                            "Snapshot shipping target must be inactive"
-                        )
-                    );
-                }
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_SNAPSHOT_SHIPPING_TARGET,
+                        "Snapshot shipping target must be inactive"
+                    )
+                );
             }
 
             Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, peerAccCtx.get());
