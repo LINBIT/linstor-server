@@ -131,23 +131,34 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
     private Flux<ApiCallRc> synchronizedAdd(String rscNameRef, long runEveryInMinRef, boolean shippingRef)
     {
         Flux<ApiCallRc> ret = Flux.empty();
-        synchronized (configSet)
+        if (runEveryInMinRef <= 0)
         {
-            boolean found = false;
-            for (AutoSnapshotConfig cfg : configSet)
+            synchronizedRemove(rscNameRef, shippingRef);
+        }
+        else
+        {
+            synchronized (configSet)
             {
-                if (cfg.rscName.equalsIgnoreCase(rscNameRef) && cfg.shipping == shippingRef)
+                boolean found = false;
+                for (AutoSnapshotConfig cfg : configSet)
                 {
-                    cfg.setRunEvery(runEveryInMinRef * MIN_TO_MS);
-                    found = true;
-                    break;
+                    if (cfg.rscName.equalsIgnoreCase(rscNameRef) && cfg.shipping == shippingRef)
+                    {
+                        cfg.setRunEvery(runEveryInMinRef * MIN_TO_MS);
+                        found = true;
+                        break;
+                    }
                 }
-            }
-            if (!found)
-            {
-                AutoSnapshotConfig cfg = new AutoSnapshotConfig(rscNameRef, runEveryInMinRef * MIN_TO_MS, shippingRef);
-                ret = getFlux(cfg);
-                configSet.add(cfg);
+                if (!found)
+                {
+                    AutoSnapshotConfig cfg = new AutoSnapshotConfig(
+                        rscNameRef,
+                        runEveryInMinRef * MIN_TO_MS,
+                        shippingRef
+                    );
+                    ret = getFlux(cfg);
+                    configSet.add(cfg);
+                }
             }
         }
         return ret;
