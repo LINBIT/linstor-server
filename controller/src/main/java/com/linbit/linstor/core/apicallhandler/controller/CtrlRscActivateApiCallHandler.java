@@ -17,6 +17,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -252,9 +253,18 @@ public class CtrlRscActivateApiCallHandler
         try
         {
             // this is much more complicated than it should be ....
-            ret = rscRef.getNode().getPeer(peerAccCtx.get()).getSatelliteState().getResourceStates().get(
-                rscRef.getDefinition().getName()
-            ).isInUse();
+            SatelliteResourceState stltRscState = rscRef.getNode().getPeer(peerAccCtx.get())
+                .getSatelliteState()
+                .getResourceStates()
+                .get(rscRef.getDefinition().getName());
+            if (stltRscState.isInUse() == null)
+            {
+                ret = false; // we dont know better...
+            }
+            else
+            {
+                ret = stltRscState.isInUse();
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
