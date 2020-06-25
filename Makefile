@@ -1,6 +1,10 @@
 GIT = git
 MAKE = make
-DOCKERREGISTRY = drbd.io
+DOCKERREGISTRY := drbd.io
+ARCH ?= amd64
+ifneq ($(strip $(ARCH)),)
+DOCKERREGISTRY := $(DOCKERREGISTRY)/$(ARCH)
+endif
 DOCKERREGPATH_CONTROLLER = $(DOCKERREGISTRY)/linstor-controller
 DOCKERREGPATH_SATELLITE = $(DOCKERREGISTRY)/linstor-satellite
 DOCKERFILE_CONTROLLER = Dockerfile.controller
