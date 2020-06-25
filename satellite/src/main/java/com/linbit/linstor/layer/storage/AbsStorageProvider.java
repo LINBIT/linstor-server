@@ -524,9 +524,30 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         )
                     );
                 }
-                errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
-                finishShipReceiving(vlmData, snapVlm);
-
+                if (!snapVlm.exists())
+                {
+                    /*
+                     * this might happened when we already merged the previous shipping, but before the
+                     * SHIPPING_TARGET flag is removed from the snapshot, this satellite receives a new
+                     * update.
+                     * The snapshot is gone, the merge was successful (hopefully :) ) but the SHIPPING_TARGET
+                     * is still present.
+                     *
+                     * In this case, we should skip the finishShipReceive step, as that might delete
+                     * the original volume (which would be very bad in this case as we also no longer have the
+                     * snapshot which should usually replace the original volume, so we would end up with
+                     * no data at all for this linstor-volume)
+                     */
+                    errorReporter.logTrace(
+                        "Snapshot '%s' not found (already finished / merged?) . Skipping merging.",
+                        snapVlm.toString()
+                    );
+                }
+                else
+                {
+                    errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
+                    finishShipReceiving(vlmData, snapVlm);
+                }
             }
             else // deleting the source should be the same as deleting an ordinary snapshot
             {
