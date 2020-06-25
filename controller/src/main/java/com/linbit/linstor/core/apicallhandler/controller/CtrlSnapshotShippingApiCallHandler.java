@@ -134,6 +134,7 @@ public class CtrlSnapshotShippingApiCallHandler
 
     private Flux<ApiCallRc> autoShipSnapshotInTransaction(String rscNameRef)
     {
+        Flux<ApiCallRc> flux;
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
         Props rscDfnProps = propsHelper.getProps(rscDfn);
         String targetNodeName = rscDfnProps.getProp(ApiConsts.KEY_TARGET_NODE, ApiConsts.NAMESPC_SNAPSHOT_SHIPPING);
@@ -141,12 +142,27 @@ public class CtrlSnapshotShippingApiCallHandler
 
         // TODO: add configurable prefNics
 
-        if (sourceNodeName == null)
+        if (targetNodeName == null)
         {
-            sourceNodeName = getActiveResourceNodeName(rscDfn);
+            flux = Flux.<ApiCallRc>just(
+                new ApiCallRcImpl(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_SNAPSHOT_SHIPPING_TARGET,
+                        "Property " + ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_TARGET_NODE +
+                            " must be set"
+                    )
+                )
+            );
         }
-
-        return shipSnapshotInTransaction(rscNameRef, sourceNodeName, null, targetNodeName, null);
+        else
+        {
+            if (sourceNodeName == null)
+            {
+                sourceNodeName = getActiveResourceNodeName(rscDfn);
+            }
+            flux = shipSnapshotInTransaction(rscNameRef, sourceNodeName, null, targetNodeName, null);
+        }
+        return flux;
     }
 
     private String getActiveResourceNodeName(ResourceDefinition rscDfnRef)
@@ -274,7 +290,7 @@ public class CtrlSnapshotShippingApiCallHandler
         try
         {
             boolean isInactiveFlagSet = rsc.getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.INACTIVE);
-            if (isInactiveFlagSet && !fromRsc)
+            if (!isInactiveFlagSet && !fromRsc)
             {
                 // toRsc must be inactive
                 throw new ApiRcException(

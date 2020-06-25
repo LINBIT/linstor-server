@@ -118,6 +118,16 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         return synchronizedAdd(rscName, runEveryInMinRef, true);
     }
 
+    public void removeAutoSnapshotting(String rscName)
+    {
+        synchronizedRemove(rscName, false);
+    }
+
+    public void removeAutoSnapshotShipping(String rscName)
+    {
+        synchronizedRemove(rscName, true);
+    }
+
     private Flux<ApiCallRc> synchronizedAdd(String rscNameRef, long runEveryInMinRef, boolean shippingRef)
     {
         Flux<ApiCallRc> ret = Flux.empty();
@@ -141,6 +151,26 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
             }
         }
         return ret;
+    }
+
+    private void synchronizedRemove(String rscNameRef, boolean shippingRef)
+    {
+        synchronized (configSet)
+        {
+            AutoSnapshotConfig found = null;
+            for (AutoSnapshotConfig cfg : configSet)
+            {
+                if (cfg.rscName.equalsIgnoreCase(rscNameRef) && cfg.shipping == shippingRef)
+                {
+                    found = cfg;
+                    break;
+                }
+            }
+            if (found != null)
+            {
+                configSet.remove(found);
+            }
+        }
     }
 
     public void shippingFinished(String rscNameRef)
