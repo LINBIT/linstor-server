@@ -10,8 +10,10 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -26,13 +28,23 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import reactor.core.publisher.Flux;
 
@@ -151,6 +163,8 @@ public class SnapshotShippingInternalApiCallHandler
         else
         {
             enableFlags(snapTarget, Snapshot.Flags.DELETE); // just this snapshot, not the whole snapshotDefinition
+
+            copyLuksKeysIfNeeded(snapSource, snapTarget);
 
             ctrlTransactionHelper.commit();
 
@@ -312,6 +326,59 @@ public class SnapshotShippingInternalApiCallHandler
         catch (NumberFormatException | InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
+        }
+    }
+
+    private void copyLuksKeysIfNeeded(Snapshot snapSourceRef, Snapshot snapTargetRef)
+    {
+        try
+        {
+            Map<Pair<String, Integer>, byte[]> sourceKeys = new HashMap<>();
+
+            Set<AbsRscLayerObject<Snapshot>> luksLayerObjSourceSet = LayerRscUtils
+                .getRscDataByProvider(snapSourceRef.getLayerData(apiCtx), DeviceLayerKind.LUKS);
+            if (!luksLayerObjSourceSet.isEmpty())
+            {
+                for (AbsRscLayerObject<Snapshot> luksLayerObj : luksLayerObjSourceSet)
+                {
+                    for (VlmProviderObject<Snapshot> luksLayerVlm : luksLayerObj.getVlmLayerObjects().values())
+                    {
+                        sourceKeys.put(
+                            new Pair<>(
+                                luksLayerVlm.getRscLayerObject().getSuffixedResourceName(),
+                                luksLayerVlm.getVlmNr().value
+                            ),
+                            ((LuksVlmData<Snapshot>) luksLayerVlm).getEncryptedKey()
+                        );
+                    }
+                }
+                Set<AbsRscLayerObject<Resource>> luksLayerObjTargetSet = LayerRscUtils
+                    .getRscDataByProvider(
+                        snapTargetRef.getResourceDefinition().getResource(apiCtx, snapTargetRef.getNodeName()).getLayerData(apiCtx),
+                        DeviceLayerKind.LUKS
+                    );
+                for (AbsRscLayerObject<Resource> luksLayerObj : luksLayerObjTargetSet)
+                {
+                    for (VlmProviderObject<Resource> luksLayerVlm : luksLayerObj.getVlmLayerObjects().values())
+                    {
+                        byte[] encryptedKey = sourceKeys.get(
+                            new Pair<>(
+                                luksLayerVlm.getRscLayerObject().getSuffixedResourceName(),
+                                luksLayerVlm.getVlmNr().value
+                            )
+                        );
+                        ((LuksVlmData<Resource>) luksLayerVlm).setEncryptedKey(encryptedKey);
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
         }
     }
 

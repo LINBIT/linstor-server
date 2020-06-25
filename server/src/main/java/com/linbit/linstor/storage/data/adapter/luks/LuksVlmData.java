@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.data.adapter.luks;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -223,6 +224,11 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     public byte[] getEncryptedKey()
     {
         return encryptedPassword.get();
+    }
+
+    public void setEncryptedKey(byte[] encryptedKeyRef) throws DatabaseException
+    {
+        encryptedPassword.set(encryptedKeyRef);
     }
 
     @Override

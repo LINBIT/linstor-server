@@ -79,12 +79,13 @@ public class StltCryptApiCallHelper
                             DeviceLayerKind.LUKS
                         );
 
+                        boolean reactivate = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.REACTIVATE);
                         for (AbsRscLayerObject<Resource> rscData : rscDataList)
                         {
                             for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
                             {
                                 LuksVlmData<Resource> cryptVlmData = (LuksVlmData<Resource>) vlmData;
-                                if (cryptVlmData.getDecryptedPassword() == null)
+                                if (reactivate || cryptVlmData.getDecryptedPassword() == null)
                                 {
                                     byte[] encryptedKey = cryptVlmData.getEncryptedKey();
                                     SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
