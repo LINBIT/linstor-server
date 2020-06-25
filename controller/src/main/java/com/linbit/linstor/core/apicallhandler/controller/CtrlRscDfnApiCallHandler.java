@@ -107,6 +107,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlRscLayerDataFactory ctrlLayerStackHelper;
     private final EncryptionHelper encHelper;
     private final AutoSnapshotTask autoSnapshotTask;
+    private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -130,7 +131,8 @@ public class CtrlRscDfnApiCallHandler
         CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
         CtrlRscLayerDataFactory ctrlLayerStackHelperRef,
         EncryptionHelper encHelperRef,
-        AutoSnapshotTask autoSnapshotTaskRef
+        AutoSnapshotTask autoSnapshotTaskRef,
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -154,6 +156,7 @@ public class CtrlRscDfnApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         encHelper = encHelperRef;
         autoSnapshotTask = autoSnapshotTaskRef;
+        ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
     }
 
     public ResourceDefinition createResourceDefinition(
@@ -426,6 +429,7 @@ public class CtrlRscDfnApiCallHandler
                 {
                     autoFlux = autoSnapshotTask.addAutoSnapshotShipping(rscNameStr, Long.parseLong(autoSnapShipVal));
                 }
+
                 String autoSnapVal = overrideProps.get(ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_RUN_EVERY);
                 if (autoSnapVal != null)
                 {
@@ -433,6 +437,13 @@ public class CtrlRscDfnApiCallHandler
                         autoSnapshotTask.addAutoSnapshotting(rscNameStr, Long.parseLong(autoSnapVal))
                     );
                 }
+
+                String autoKeepKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP;
+                if (overrideProps.containsKey(autoKeepKey) || deletePropKeys.contains(autoKeepKey))
+                {
+                    autoFlux = autoFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldAutoSnapshots(rscDfn));
+                }
+
             }
 
             if (!layerStackStrList.isEmpty())

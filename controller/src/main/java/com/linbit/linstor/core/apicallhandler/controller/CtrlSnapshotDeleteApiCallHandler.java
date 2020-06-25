@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -22,6 +23,8 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -42,7 +45,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import reactor.core.publisher.Flux;
 
@@ -57,6 +62,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
+    private final CtrlPropsHelper propsHelper;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public CtrlSnapshotDeleteApiCallHandler(
@@ -67,7 +74,9 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockguardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        CtrlPropsHelper propsHelperRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -78,6 +87,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         responseConverter = responseConverterRef;
         lockGuardFactory = lockguardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        propsHelper = propsHelperRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -259,6 +270,106 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
             flux = Flux.just(responses);
         }
+        return flux;
+    }
+
+    Flux<ApiCallRc> cleanupOldAutoSnapshots(ResourceDefinition rscDfnRef)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Clean up old auto-snapshots",
+            lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            () -> cleanupOldAutoSnapshotsInTransaction(rscDfnRef)
+        );
+    }
+
+    private Flux<ApiCallRc> cleanupOldAutoSnapshotsInTransaction(ResourceDefinition rscDfnRef)
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        try
+        {
+            Props rscDfnProps = propsHelper.getProps(rscDfnRef);
+            String keepStr = rscDfnProps.getPropWithDefault(
+                ApiConsts.KEY_KEEP,
+                ApiConsts.NAMESPC_AUTO_SNAPSHOT,
+                ApiConsts.DFLT_AUTO_SNAPSHOT_KEEP
+            );
+            long keep;
+            try
+            {
+                keep = Long.parseLong(keepStr);
+
+                if (keep > 0)
+                {
+                    String snapPrefix = rscDfnProps.getPropWithDefault(
+                        ApiConsts.KEY_AUTO_SNAPSHOT_PREFIX,
+                        ApiConsts.NAMESPC_AUTO_SNAPSHOT,
+                        InternalApiConsts.DEFAULT_AUTO_SNAPSHOT_PREFIX
+                    );
+
+                    Pattern autoSnapPattern = Pattern.compile("^" + snapPrefix + "[0-9]{5,}$");
+                    /*
+                     * automatically sorts snapDfns by name, which should make the snapshot with the lowest
+                     * ID first
+                     */
+                    TreeSet<SnapshotDefinition> sortedSnapDfnSet = new TreeSet<>();
+                    for (SnapshotDefinition snapDfn : rscDfnRef.getSnapshotDfns(apiCtx))
+                    {
+                        if (
+                            snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.AUTO_SNAPSHOT) &&
+                                autoSnapPattern.matcher(snapDfn.getName().displayValue).matches()
+                        )
+                        {
+                            sortedSnapDfnSet.add(snapDfn);
+                        }
+                    }
+
+                    ApiCallRcImpl responses = new ApiCallRcImpl();
+                    while (keep < sortedSnapDfnSet.size())
+                    {
+                        SnapshotDefinition autoSnapToDelete = sortedSnapDfnSet.first();
+                        sortedSnapDfnSet.remove(autoSnapToDelete);
+
+                        flux = flux.concatWith(
+                            deleteSnapshot(
+                                autoSnapToDelete.getResourceName().displayValue,
+                                autoSnapToDelete.getName().displayValue
+                            )
+                        );
+                        responses.addEntries(
+                            ApiCallRcImpl.singleApiCallRc(
+                                ApiConsts.DELETED,
+                                "AutoSnapshot cleanup: deleting snapshot " + autoSnapToDelete.getName().displayValue
+                            )
+                        );
+                        errorReporter.logDebug(
+                            "AutoSnapshot.cleanup: deleting %s",
+                            autoSnapToDelete.getName().displayValue
+                        );
+                    }
+                    flux = Flux.<ApiCallRc>just(responses)
+                        .concatWith(flux);
+                }
+                else
+                {
+                    errorReporter.logDebug("AutoSnapshot/Keep is configured to %d. Keeping all snapshots", keep);
+                }
+            }
+            catch (NumberFormatException nfe)
+            {
+                errorReporter.reportError(
+                    nfe,
+                    apiCtx,
+                    null,
+                    "Invalid value for property " + ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP
+                );
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        ctrlTransactionHelper.commit();
+
         return flux;
     }
 

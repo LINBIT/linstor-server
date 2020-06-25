@@ -98,11 +98,6 @@ public class InternalApiConsts
     public static final String KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC = "Shipping/PrefTargetNic";
     public static final String KEY_SNAPSHOT_SHIPPING_NEXT_ID = "SnapshotShippingNextId";
 
-    /*
-     * Auto snapshots
-     */
-    public static final String KEY_AUTO_SNAPSHOT_ID = "autoIncrId";
-
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;
 

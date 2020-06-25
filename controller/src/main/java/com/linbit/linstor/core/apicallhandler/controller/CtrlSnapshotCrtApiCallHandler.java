@@ -47,8 +47,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TreeSet;
-import java.util.regex.Pattern;
 
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
@@ -248,7 +246,7 @@ public class CtrlSnapshotCrtApiCallHandler
             );
             flux = Flux.<ApiCallRc>just(responses)
                 .concatWith(postCreateSnapshot(snapDfn))
-                .concatWith(cleanupOldAutoSnapshots(rscDfn));
+                .concatWith(ctrlSnapshotDeleteApiCallHandler.cleanupOldAutoSnapshots(rscDfn));
         }
         return flux;
     }
@@ -287,7 +285,7 @@ public class CtrlSnapshotCrtApiCallHandler
         );
         int id = Integer.parseInt(
             rscDfnProps.getPropWithDefault(
-                InternalApiConsts.KEY_AUTO_SNAPSHOT_ID,
+                ApiConsts.KEY_AUTO_SNAPSHOT_NEXT_ID,
                 ApiConsts.NAMESPC_AUTO_SNAPSHOT,
                 "0"
             )
@@ -296,7 +294,7 @@ public class CtrlSnapshotCrtApiCallHandler
         try
         {
             rscDfnProps.setProp(
-                InternalApiConsts.KEY_AUTO_SNAPSHOT_ID,
+                ApiConsts.KEY_AUTO_SNAPSHOT_NEXT_ID,
                 Integer.toString(id),
                 ApiConsts.NAMESPC_AUTO_SNAPSHOT
             );
@@ -530,86 +528,6 @@ public class CtrlSnapshotCrtApiCallHandler
         return ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
             // ensure that the individual node update fluxes are subscribed to, but ignore responses from cleanup
             .flatMap(Tuple2::getT2).thenMany(Flux.empty());
-    }
-
-    private Flux<ApiCallRc> cleanupOldAutoSnapshots(ResourceDefinition rscDfnRef)
-    {
-        return scopeRunner.fluxInTransactionalScope(
-            "Clean up old auto-snapshots",
-            lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
-            () -> cleanupOldAutoSnapshotsInTransaction(rscDfnRef)
-        );
-    }
-
-    private Flux<ApiCallRc> cleanupOldAutoSnapshotsInTransaction(ResourceDefinition rscDfnRef)
-    {
-        Flux<ApiCallRc> flux = Flux.empty();
-        try
-        {
-            Props rscDfnProps = propsHelper.getProps(rscDfnRef);
-            String keepStr = rscDfnProps.getPropWithDefault(
-                ApiConsts.KEY_KEEP,
-                ApiConsts.NAMESPC_AUTO_SNAPSHOT,
-                ApiConsts.DFLT_AUTO_SNAPSHOT_KEEP
-            );
-            long keep;
-            try
-            {
-                keep = Long.parseLong(keepStr);
-
-                String snapPrefix = rscDfnProps.getPropWithDefault(
-                    ApiConsts.KEY_AUTO_SNAPSHOT_PREFIX,
-                    ApiConsts.NAMESPC_AUTO_SNAPSHOT,
-                    InternalApiConsts.DEFAULT_AUTO_SNAPSHOT_PREFIX
-                );
-
-                Pattern autoSnapPattern = Pattern.compile("^" + snapPrefix + "[0-9]{5,}$");
-                /*
-                 * automatically sorts snapDfns by name, which should make the snapshot with the lowest
-                 * ID first
-                 */
-                TreeSet<SnapshotDefinition> sortedSnapDfnSet = new TreeSet<>();
-                for (SnapshotDefinition snapDfn : rscDfnRef.getSnapshotDfns(apiCtx))
-                {
-                    if (
-                        snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.AUTO_SNAPSHOT) &&
-                        autoSnapPattern.matcher(snapDfn.getName().displayValue).matches()
-                    )
-                    {
-                        sortedSnapDfnSet.add(snapDfn);
-                    }
-                }
-
-                while (keep < sortedSnapDfnSet.size())
-                {
-                    SnapshotDefinition autoSnapToDelete = sortedSnapDfnSet.first();
-                    sortedSnapDfnSet.remove(autoSnapToDelete);
-
-                    flux = flux.concatWith(
-                        ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(
-                            autoSnapToDelete.getResourceName().displayValue,
-                            autoSnapToDelete.getName().displayValue
-                        )
-                    );
-                }
-            }
-            catch (NumberFormatException nfe)
-            {
-                errorReporter.reportError(
-                    nfe,
-                    apiCtx,
-                    null,
-                    "Invalid value for property " + ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP
-                );
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        ctrlTransactionHelper.commit();
-
-        return flux;
     }
 
     private void unsetInCreationPrivileged(SnapshotDefinition snapshotDfn)
