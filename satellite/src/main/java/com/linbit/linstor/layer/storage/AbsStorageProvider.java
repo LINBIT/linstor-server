@@ -645,7 +645,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     String prevSnapNameSuffix = prevSnapStorageData.getResourceNameSuffix();
                     if (prevSnapNameSuffix.equals(curSnapNameSuffix))
                     {
-                        prevSnapVlmData = prevSnapLayerData.getVlmProviderObject(snapVlm.getVlmNr());
+                        prevSnapVlmData = prevSnapStorageData.getVlmProviderObject(snapVlm.getVlmNr());
                         break;
                     }
                 }
