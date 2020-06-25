@@ -135,6 +135,24 @@ public class CtrlRscActivateApiCallHandler
                     );
                 }
                 unsetFlag(rsc, Resource.Flags.INACTIVE);
+                setFlag(rsc, Resource.Flags.REACTIVATE);
+
+                ctrlTransactionHelper.commit();
+                ret = ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rsc.getResourceDefinition().getName(),
+                        Collections.singleton(rsc.getNode().getName()),
+                        "Reactivating resource on {0}",
+                        "Reactivating resource on {0}"
+                    ).concatWith(
+                        completeActivation(
+                            rsc.getNode().getName().displayValue,
+                            rsc.getDefinition().getName().displayValue
+                        )
+                    )
+                );
+
             }
             else
             {
@@ -148,20 +166,63 @@ public class CtrlRscActivateApiCallHandler
                     );
                 }
                 setFlag(rsc, Resource.Flags.INACTIVE);
-            }
-            ctrlTransactionHelper.commit();
 
-            ret = ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
-                updateResponses -> CtrlResponseUtils.combineResponses(
-                    updateResponses,
-                    rsc.getResourceDefinition().getName(),
-                    Collections.singleton(rsc.getNode().getName()),
-                    "Resource deactivated on {0}",
-                    "Resource marked inactivate on {0}"
-                )
-            );
+                ctrlTransactionHelper.commit();
+
+                ret = ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rsc.getResourceDefinition().getName(),
+                        Collections.singleton(rsc.getNode().getName()),
+                        "Resource deactivated on {0}",
+                        "Resource marked inactivate on {0}"
+                    )
+                );
+            }
         }
         return ret;
+    }
+
+    private Flux<ApiCallRc> completeActivation(String nodeName, String rscName)
+    {
+        ResponseContext context = makeRscContext(
+            ApiOperation.makeModifyOperation(),
+            nodeName,
+            rscName
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Completing activation of resource",
+                createLockGuard(),
+                () -> completeActivationInTransaction(
+                    nodeName,
+                    rscName,
+                    context
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> completeActivationInTransaction(
+        String nodeNameRef,
+        String rscNameRef,
+        ResponseContext contextRef
+    )
+    {
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameRef, rscNameRef, true);
+        unsetFlag(rsc, Resource.Flags.REACTIVATE);
+        ctrlTransactionHelper.commit();
+
+        return ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
+            updateResponses -> CtrlResponseUtils.combineResponses(
+                updateResponses,
+                rsc.getResourceDefinition().getName(),
+                Collections.singleton(rsc.getNode().getName()),
+                "Resource activated on {0}",
+                "Resource activated on {0}"
+            )
+        );
     }
 
     private boolean isRscActive(Resource rscRef)
