@@ -2,12 +2,14 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.TimeoutException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -22,6 +24,9 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -52,6 +57,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockGuardFactory;
+    private final CtrlPropsHelper propsHelper;
 
     private final CtrlSnapshotCrtHelper ctrlSnapshotCrtHelper;
 
@@ -64,7 +70,8 @@ public class CtrlSnapshotCrtApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlSnapshotCrtHelper ctrlSnapshotCrtHelperRef
+        CtrlSnapshotCrtHelper ctrlSnapshotCrtHelperRef,
+        CtrlPropsHelper propsHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -75,6 +82,7 @@ public class CtrlSnapshotCrtApiCallHandler
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlSnapshotCrtHelper = ctrlSnapshotCrtHelperRef;
+        propsHelper = propsHelperRef;
     }
 
     /**
@@ -138,6 +146,96 @@ public class CtrlSnapshotCrtApiCallHandler
         );
         return Flux.<ApiCallRc>just(responses)
             .concatWith(postCreateSnapshot(snapshotDfn));
+    }
+
+    /**
+     * Create a snapshot of a resource.
+     * <p>
+     * Snapshots are created in a multi-stage process:
+     * <ol>
+     * <li>Add the snapshot objects (definition and instances), marked with the suspend flag</li>
+     * <li>When all resources are suspended, send out a snapshot request</li>
+     * <li>When all snapshots have been created, mark the resource as resuming by removing the suspend flag</li>
+     * <li>When all resources have been resumed, remove the in-progress snapshots</li>
+     * </ol>
+     */
+    public Flux<ApiCallRc> createAutoSnapshot(
+        List<String> nodeNameStrs,
+        String rscNameStr
+    )
+    {
+        ResponseContext context = makeSnapshotContext(
+            ApiOperation.makeCreateOperation(),
+            nodeNameStrs,
+            rscNameStr,
+            "auto"
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Create snapshot",
+            lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            () -> createAutoSnapshotInTransaction(nodeNameStrs, rscNameStr)
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> createAutoSnapshotInTransaction(
+        List<String> nodeNameStrs,
+        String rscNameStr
+    )
+    {
+        String autoSnapshotName = getAutoSnapshotName(ctrlApiDataLoader.loadRscDfn(rscNameStr, true));
+
+        ctrlTransactionHelper.commit();
+
+        return createSnapshot(
+            nodeNameStrs,
+            rscNameStr,
+            autoSnapshotName
+        );
+    }
+
+    private String getAutoSnapshotName(ResourceDefinition rscDfnRef)
+    {
+        Props rscDfnProps = propsHelper.getProps(rscDfnRef);
+        String snapPrefix = rscDfnProps.getPropWithDefault(
+            ApiConsts.KEY_AUTO_SNAPSHOT_PREFIX,
+            ApiConsts.NAMESPC_AUTO_SNAPSHOT,
+            InternalApiConsts.DEFAULT_AUTO_SNAPSHOT_PREFIX
+        );
+        int id = Integer.parseInt(
+            rscDfnProps.getPropWithDefault(
+                InternalApiConsts.KEY_AUTO_SNAPSHOT_ID,
+                ApiConsts.NAMESPC_AUTO_SNAPSHOT,
+                "0"
+            )
+        );
+        id++;
+        try
+        {
+            rscDfnProps.setProp(
+                InternalApiConsts.KEY_AUTO_SNAPSHOT_ID,
+                Integer.toString(id),
+                ApiConsts.NAMESPC_AUTO_SNAPSHOT
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "increment auto snapshot id of " + CtrlRscDfnApiCallHandler.getRscDfnDescription(rscDfnRef),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return String.format(snapPrefix + "%05d", id);
     }
 
     /**

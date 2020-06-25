@@ -57,6 +57,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.locks.LockGuardFactory;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
@@ -69,6 +70,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -104,6 +106,7 @@ public class CtrlRscDfnApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscLayerDataFactory ctrlLayerStackHelper;
     private final EncryptionHelper encHelper;
+    private final AutoSnapshotTask autoSnapshotTask;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -126,7 +129,8 @@ public class CtrlRscDfnApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
         CtrlRscLayerDataFactory ctrlLayerStackHelperRef,
-        EncryptionHelper encHelperRef
+        EncryptionHelper encHelperRef,
+        AutoSnapshotTask autoSnapshotTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -149,6 +153,7 @@ public class CtrlRscDfnApiCallHandler
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         encHelper = encHelperRef;
+        autoSnapshotTask = autoSnapshotTaskRef;
     }
 
     public ResourceDefinition createResourceDefinition(
@@ -359,6 +364,7 @@ public class CtrlRscDfnApiCallHandler
     )
     {
         Flux<ApiCallRc> flux = Flux.empty();
+        Flux<ApiCallRc> autoFlux = Flux.empty();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         boolean notifyStlts = false;
 
@@ -412,6 +418,21 @@ public class CtrlRscDfnApiCallHandler
                     deletePropKeys,
                     deletePropNamespaces
                 ) || notifyStlts;
+
+                String autoSnapShipVal = overrideProps.get(
+                    ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_RUN_EVERY
+                );
+                if (autoSnapShipVal != null)
+                {
+                    autoFlux = autoSnapshotTask.addAutoSnapshotShipping(rscNameStr, Long.parseLong(autoSnapShipVal));
+                }
+                String autoSnapVal = overrideProps.get(ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_RUN_EVERY);
+                if (autoSnapVal != null)
+                {
+                    autoFlux = autoFlux.concatWith(
+                        autoSnapshotTask.addAutoSnapshotting(rscNameStr, Long.parseLong(autoSnapVal))
+                    );
+                }
             }
 
             if (!layerStackStrList.isEmpty())
@@ -448,7 +469,8 @@ public class CtrlRscDfnApiCallHandler
             if (notifyStlts) {
                 flux = ctrlSatelliteUpdateCaller
                     .updateSatellites(rscDfn, Flux.empty())
-                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                    .concatWith(autoFlux);
             }
         }
         catch (Exception | ImplementationError exc)

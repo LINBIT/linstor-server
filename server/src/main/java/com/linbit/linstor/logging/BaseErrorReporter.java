@@ -357,14 +357,21 @@ public abstract class BaseErrorReporter
             for (Throwable suppressed : allSuppressed)
             {
                 // Strip away reactor 'light checkpoint' details
-                Matcher matcher = LIGHT_CHECKPOINT_PATTERN.matcher(suppressed.getMessage());
-                if (matcher.find())
+                if (suppressed.getMessage() != null)
                 {
-                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, matcher.group(1));
+                    Matcher matcher = LIGHT_CHECKPOINT_PATTERN.matcher(suppressed.getMessage());
+                    if (matcher.find())
+                    {
+                        AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, matcher.group(1));
+                    }
+                    else
+                    {
+                        AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, suppressed.getMessage());
+                    }
                 }
                 else
                 {
-                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, suppressed.getMessage());
+                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, "null");
                 }
             }
             output.println();

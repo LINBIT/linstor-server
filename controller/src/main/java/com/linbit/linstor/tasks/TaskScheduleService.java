@@ -1,16 +1,18 @@
 package com.linbit.linstor.tasks;
 
-import java.util.LinkedList;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-
-import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.logging.ErrorReporter;
+
+import javax.inject.Inject;
+
+import java.util.LinkedList;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+
 import org.slf4j.event.Level;
 
 public class TaskScheduleService implements SystemService, Runnable
@@ -27,6 +29,13 @@ public class TaskScheduleService implements SystemService, Runnable
          * Any negative return value will cancel the Task.
          */
         long run();
+
+        /**
+         * Called once the TaskScheduleService has started. Can be used to populate internal data-structures with
+         * data that had first to be loaded from the Database.
+         */
+        default void initialize()
+        {}
     }
 
     private static final ServiceName SERVICE_NAME;
@@ -118,9 +127,16 @@ public class TaskScheduleService implements SystemService, Runnable
             needStart = !running;
             running = true;
             shutdown = false;
+
+            // initialize tasks..
+            for (Task task : newTasks)
+            {
+                task.initialize();
+            }
         }
         if (needStart)
         {
+
             workerThread = new Thread(this, serviceInstanceName.displayValue);
             workerThread.start();
         }

@@ -9,6 +9,7 @@ import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
@@ -63,6 +64,8 @@ public class ResourceConnection extends BaseTransactionObject
     private final ResourceConnectionDatabaseDriver dbDriver;
 
     private final TransactionSimpleObject<ResourceConnection, Boolean> deleted;
+
+    private final TransactionSimpleObject<ResourceConnection, SnapshotName> snapshotNameInProgress;
 
     ResourceConnection(
         UUID uuid,
@@ -128,6 +131,7 @@ public class ResourceConnection extends BaseTransactionObject
             portRef,
             this.dbDriver.getPortDriver()
         );
+        snapshotNameInProgress = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         transObjs = Arrays.asList(
             connectionKey.getSource(),
@@ -135,6 +139,7 @@ public class ResourceConnection extends BaseTransactionObject
             flags,
             props,
             port,
+            snapshotNameInProgress,
             deleted
         );
     }
@@ -254,6 +259,16 @@ public class ResourceConnection extends BaseTransactionObject
         }
 
         port.set(portNr);
+    }
+
+    public void setSnapshotShippingNameInProgress(SnapshotName snapshotNameInProgressRef) throws DatabaseException
+    {
+        snapshotNameInProgress.set(snapshotNameInProgressRef);
+    }
+
+    public SnapshotName getSnapshotShippingNameInProgress()
+    {
+        return snapshotNameInProgress.get();
     }
 
     private void requireAccess(AccessContext accCtxRef, AccessType accType) throws AccessDeniedException

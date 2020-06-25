@@ -195,15 +195,7 @@ public class SnapshotShippingInternalApiCallHandler
         );
         try
         {
-            Props rscConnProps = rscConn.getProps(apiCtx);
-            rscConnProps.setProp(
-                InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_IN_PROGRESS,
-                snapSource.getSnapshotName().displayValue
-            );
-        }
-        catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
-        {
-            throw new ImplementationError(exc);
+            rscConn.setSnapshotShippingNameInProgress(snapSource.getSnapshotName());
         }
         catch (DatabaseException exc)
         {
@@ -235,7 +227,7 @@ public class SnapshotShippingInternalApiCallHandler
                 InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_PREV,
                 snapSource.getSnapshotName().displayValue
             );
-            rscConnProps.removeProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_IN_PROGRESS);
+            rscConn.setSnapshotShippingNameInProgress(null);
         }
         catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
         {

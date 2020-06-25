@@ -52,6 +52,7 @@ import javax.inject.Singleton;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Set;
 
 import reactor.core.publisher.Flux;
@@ -92,9 +93,7 @@ public class CtrlSnapshotShippingApiCallHandler
         CtrlSnapshotCrtApiCallHandler snapCrtHandlerRef,
         CtrlSnapshotDeleteApiCallHandler snapDelHandlerRef,
         CtrlPropsHelper propsHelperRef,
-        @Named(
-            NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL
-        ) DynamicNumberPool snapshotShippingPortPoolRef
+        @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef
     )
     {
         apiCtx = apiCtxRef;
@@ -112,6 +111,79 @@ public class CtrlSnapshotShippingApiCallHandler
         snapDelHandler = snapDelHandlerRef;
         propsHelper = propsHelperRef;
         snapshotShippingPortPool = snapshotShippingPortPoolRef;
+    }
+
+    public Flux<ApiCallRc> autoShipSnapshot(String rscNameRef)
+    {
+        ResponseContext context = makeSnapshotContext(
+            ApiOperation.makeModifyOperation(),
+            Collections.emptyList(),
+            rscNameRef,
+            ApiConsts.VAL_SNAP_SHIP_NAME
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Ship snapshot",
+            lockGuardFactory.create() // TODO recheck required locks
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            () -> autoShipSnapshotInTransaction(rscNameRef)
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> autoShipSnapshotInTransaction(String rscNameRef)
+    {
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+        Props rscDfnProps = propsHelper.getProps(rscDfn);
+        String targetNodeName = rscDfnProps.getProp(ApiConsts.KEY_TARGET_NODE, ApiConsts.NAMESPC_SNAPSHOT_SHIPPING);
+        String sourceNodeName = rscDfnProps.getProp(ApiConsts.KEY_SOURCE_NODE, ApiConsts.NAMESPC_SNAPSHOT_SHIPPING);
+
+        // TODO: add configurable prefNics
+
+        if (sourceNodeName == null)
+        {
+            sourceNodeName = getActiveResourceNodeName(rscDfn);
+        }
+
+        return shipSnapshotInTransaction(rscNameRef, sourceNodeName, null, targetNodeName, null);
+    }
+
+    private String getActiveResourceNodeName(ResourceDefinition rscDfnRef)
+    {
+        String ret = null;
+        try
+        {
+            Iterator<Resource> rscIt = rscDfnRef.iterateResource(peerAccCtx.get());
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                if (rsc.getStateFlags().isUnset(peerAccCtx.get(), Resource.Flags.INACTIVE))
+                {
+                    ret = rsc.getNode().getName().displayValue;
+                    break;
+                }
+            }
+            if (ret == null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_NOT_FOUND_RSC,
+                        "Failed to find an active resource as snapshot-shipping source node of " +
+                            CtrlRscDfnApiCallHandler.getRscDfnDescription(rscDfnRef)
+                    )
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "iterating through resources of " + CtrlRscDfnApiCallHandler.getRscDfnDescription(rscDfnRef),
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
+        return ret;
     }
 
     public Flux<ApiCallRc> shipSnapshot(
@@ -327,25 +399,11 @@ public class CtrlSnapshotShippingApiCallHandler
         String toNodeNameRef
     )
     {
-        String snapShipName = null;
-        try
-        {
-            snapShipName = rscConn.getProps(peerAccCtx.get()).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_IN_PROGRESS);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "get in progress snapshot-shipping of resource '" + rscNameRef +
-                    "' from node '" + fromNodeNameRef + "' to node '" + toNodeNameRef +
-                    "'",
-                ApiConsts.FAIL_ACC_DENIED_RSC_CONN
-            );
-        }
+        SnapshotName snapShipName = rscConn.getSnapshotShippingNameInProgress();
         SnapshotDefinition snapDfn = null;
         if (snapShipName != null)
         {
-            snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapShipName, true);
+            snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapShipName.displayValue, true);
         }
 
         return snapDfn;
