@@ -20,11 +20,13 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -41,9 +43,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
@@ -61,6 +66,8 @@ public class CtrlSnapshotCrtApiCallHandler
     private final CtrlPropsHelper propsHelper;
 
     private final CtrlSnapshotCrtHelper ctrlSnapshotCrtHelper;
+    private final ErrorReporter errorReporter;
+    private final CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandler;
 
     @Inject
     public CtrlSnapshotCrtApiCallHandler(
@@ -72,7 +79,9 @@ public class CtrlSnapshotCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlSnapshotCrtHelper ctrlSnapshotCrtHelperRef,
-        CtrlPropsHelper propsHelperRef
+        CtrlPropsHelper propsHelperRef,
+        ErrorReporter errorReporterRef,
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -84,6 +93,8 @@ public class CtrlSnapshotCrtApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         ctrlSnapshotCrtHelper = ctrlSnapshotCrtHelperRef;
         propsHelper = propsHelperRef;
+        errorReporter = errorReporterRef;
+        ctrlSnapshotDeleteApiCallHandler = ctrlSnapshotDeleteApiCallHandlerRef;
     }
 
     /**
@@ -174,7 +185,10 @@ public class CtrlSnapshotCrtApiCallHandler
 
         return scopeRunner.fluxInTransactionalScope(
             "Create snapshot",
-            lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
             () -> createAutoSnapshotInTransaction(nodeNameStrs, rscNameStr)
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -184,41 +198,83 @@ public class CtrlSnapshotCrtApiCallHandler
         String rscNameStr
     )
     {
+        Flux<ApiCallRc> flux;
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
-        String autoSnapshotName;
-        SnapshotDefinition snapDfn;
-        do
+        List<String> offlineNodeName = getOfflineNodeNames(rscDfn);
+        if (!offlineNodeName.isEmpty())
         {
-            autoSnapshotName = getAutoSnapshotName(rscDfn);
-            try
+            errorReporter.logWarning(
+                "Skipping auto-snapshot for resource '%s', as nodes %s are offline",
+                rscDfn.getName().displayValue,
+                offlineNodeName
+            );
+            flux = Flux.empty();
+        }
+        else
+        {
+            String autoSnapshotName;
+            SnapshotDefinition snapDfn;
+            do
             {
-                snapDfn = rscDfn.getSnapshotDfn(apiCtx, new SnapshotName(autoSnapshotName));
-            }
-            catch (AccessDeniedException | InvalidNameException exc)
+                autoSnapshotName = getAutoSnapshotName(rscDfn);
+                try
+                {
+                    snapDfn = rscDfn.getSnapshotDfn(apiCtx, new SnapshotName(autoSnapshotName));
+                }
+                catch (AccessDeniedException | InvalidNameException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+            } while (snapDfn != null);
+
+            ApiCallRcImpl responses = new ApiCallRcImpl();
+
+            snapDfn = ctrlSnapshotCrtHelper.createSnapshots(
+                nodeNameStrs,
+                rscNameStr,
+                autoSnapshotName,
+                responses
+            );
+            enableFlagPrivileged(snapDfn, SnapshotDefinition.Flags.AUTO_SNAPSHOT);
+
+            ctrlTransactionHelper.commit();
+
+            responses.addEntry(
+                ApiSuccessUtils.defaultRegisteredEntry(
+                    snapDfn.getUuid(),
+                    getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, autoSnapshotName)
+                )
+            );
+            flux = Flux.<ApiCallRc>just(responses)
+                .concatWith(postCreateSnapshot(snapDfn))
+                .concatWith(cleanupOldAutoSnapshots(rscDfn));
+        }
+        return flux;
+    }
+
+    private List<String> getOfflineNodeNames(ResourceDefinition rscDfnRef)
+    {
+        List<String> offlineNodes = new ArrayList<>();
+        Iterator<Resource> rscIt;
+        try
+        {
+            rscIt = rscDfnRef.iterateResource(apiCtx);
+            while (rscIt.hasNext())
             {
-                throw new ImplementationError(exc);
+                Resource rsc = rscIt.next();
+                Node node = rsc.getNode();
+                if (!node.getPeer(apiCtx).isConnected())
+                {
+                    offlineNodes.add(node.getName().displayValue);
+                }
             }
-        } while (snapDfn != null);
-
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        snapDfn = ctrlSnapshotCrtHelper.createSnapshots(
-            nodeNameStrs,
-            rscNameStr,
-            autoSnapshotName,
-            responses
-        );
-
-        ctrlTransactionHelper.commit();
-
-        responses.addEntry(
-            ApiSuccessUtils.defaultRegisteredEntry(
-                snapDfn.getUuid(),
-                getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, autoSnapshotName)
-            )
-        );
-        return Flux.<ApiCallRc>just(responses).concatWith(postCreateSnapshot(snapDfn));
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return offlineNodes;
     }
 
     private String getAutoSnapshotName(ResourceDefinition rscDfnRef)
@@ -284,11 +340,13 @@ public class CtrlSnapshotCrtApiCallHandler
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
                 .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
-                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
-                    updateResponses,
-                    rscName,
-                    "Suspended IO of {1} on {0} for snapshot"
-                ));
+                .transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rscName,
+                        "Suspended IO of {1} on {0} for snapshot"
+            )
+        );
 
         return satelliteUpdateResponses
             .concatWith(takeSnapshot(rscName, snapshotName))
@@ -334,11 +392,13 @@ public class CtrlSnapshotCrtApiCallHandler
 
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedCannotAbort())
-                .transform(responses -> CtrlResponseUtils.combineResponses(
-                    responses,
-                    rscName,
-                    "Aborted snapshot of {1} on {0}"
-                ))
+                .transform(
+                    responses -> CtrlResponseUtils.combineResponses(
+                        responses,
+                        rscName,
+                        "Aborted snapshot of {1} on {0}"
+                    )
+                )
                 .concatWith(
                     ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                         .transform(
@@ -348,7 +408,7 @@ public class CtrlSnapshotCrtApiCallHandler
                                 "Resumed IO of {1} on {0} after failed snapshot"
                             )
                         )
-                )
+                    )
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
 
         return satelliteUpdateResponses
@@ -379,13 +439,15 @@ public class CtrlSnapshotCrtApiCallHandler
 
         ctrlTransactionHelper.commit();
 
-        Flux<ApiCallRc> satelliteUpdateResponses =
-            ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
-                .transform(responses -> CtrlResponseUtils.combineResponses(
+        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
+            .updateSatellites(snapshotDfn, notConnectedError())
+            .transform(
+                responses -> CtrlResponseUtils.combineResponses(
                     responses,
                     rscName,
                     "Took snapshot of {1} on {0}"
-                ));
+                )
+            );
 
         return satelliteUpdateResponses
             .timeout(
@@ -422,14 +484,16 @@ public class CtrlSnapshotCrtApiCallHandler
 
         ctrlTransactionHelper.commit();
 
-        Flux<ApiCallRc> satelliteUpdateResponses =
-            ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
-                .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
-                .transform(responses -> CtrlResponseUtils.combineResponses(
+        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
+            .updateSatellites(snapshotDfn, notConnectedError())
+            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
+            .transform(
+                responses -> CtrlResponseUtils.combineResponses(
                     responses,
                     rscName,
                     "Resumed IO of {1} on {0} after snapshot"
-                ));
+                )
+            );
 
         return satelliteUpdateResponses
             .concatWith(removeInProgressSnapshots(rscName, snapshotName));
@@ -466,6 +530,86 @@ public class CtrlSnapshotCrtApiCallHandler
         return ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
             // ensure that the individual node update fluxes are subscribed to, but ignore responses from cleanup
             .flatMap(Tuple2::getT2).thenMany(Flux.empty());
+    }
+
+    private Flux<ApiCallRc> cleanupOldAutoSnapshots(ResourceDefinition rscDfnRef)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Clean up old auto-snapshots",
+            lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            () -> cleanupOldAutoSnapshotsInTransaction(rscDfnRef)
+        );
+    }
+
+    private Flux<ApiCallRc> cleanupOldAutoSnapshotsInTransaction(ResourceDefinition rscDfnRef)
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        try
+        {
+            Props rscDfnProps = propsHelper.getProps(rscDfnRef);
+            String keepStr = rscDfnProps.getPropWithDefault(
+                ApiConsts.KEY_KEEP,
+                ApiConsts.NAMESPC_AUTO_SNAPSHOT,
+                ApiConsts.DFLT_AUTO_SNAPSHOT_KEEP
+            );
+            long keep;
+            try
+            {
+                keep = Long.parseLong(keepStr);
+
+                String snapPrefix = rscDfnProps.getPropWithDefault(
+                    ApiConsts.KEY_AUTO_SNAPSHOT_PREFIX,
+                    ApiConsts.NAMESPC_AUTO_SNAPSHOT,
+                    InternalApiConsts.DEFAULT_AUTO_SNAPSHOT_PREFIX
+                );
+
+                Pattern autoSnapPattern = Pattern.compile("^" + snapPrefix + "[0-9]{5,}$");
+                /*
+                 * automatically sorts snapDfns by name, which should make the snapshot with the lowest
+                 * ID first
+                 */
+                TreeSet<SnapshotDefinition> sortedSnapDfnSet = new TreeSet<>();
+                for (SnapshotDefinition snapDfn : rscDfnRef.getSnapshotDfns(apiCtx))
+                {
+                    if (
+                        snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.AUTO_SNAPSHOT) &&
+                        autoSnapPattern.matcher(snapDfn.getName().displayValue).matches()
+                    )
+                    {
+                        sortedSnapDfnSet.add(snapDfn);
+                    }
+                }
+
+                while (keep < sortedSnapDfnSet.size())
+                {
+                    SnapshotDefinition autoSnapToDelete = sortedSnapDfnSet.first();
+                    sortedSnapDfnSet.remove(autoSnapToDelete);
+
+                    flux = flux.concatWith(
+                        ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(
+                            autoSnapToDelete.getResourceName().displayValue,
+                            autoSnapToDelete.getName().displayValue
+                        )
+                    );
+                }
+            }
+            catch (NumberFormatException nfe)
+            {
+                errorReporter.reportError(
+                    nfe,
+                    apiCtx,
+                    null,
+                    "Invalid value for property " + ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP
+                );
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        ctrlTransactionHelper.commit();
+
+        return flux;
     }
 
     private void unsetInCreationPrivileged(SnapshotDefinition snapshotDfn)
@@ -574,10 +718,10 @@ public class CtrlSnapshotCrtApiCallHandler
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.WARN_NOT_CONNECTED,
                     "Unable to abort snapshot process on disconnected satellite '" + nodeName + "'"
-                ).setDetails(
-                    "IO may be suspended until the connection to the satellite is re-established"
-                ).build()
-            )
-        );
+                    ).setDetails(
+                        "IO may be suspended until the connection to the satellite is re-established"
+                        ).build()
+                )
+            );
     }
 }

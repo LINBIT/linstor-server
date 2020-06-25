@@ -9,6 +9,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallH
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingApiCallHandler;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerController;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -202,8 +204,8 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                 Context.of(
                     ApiModule.API_CALL_NAME,
                     cfgRef.shipping ? AUTO_SHIPPING_API_NAME : AUTO_SNAPSHOT_API_NAME,
-                    AccessContext.class,
-                    sysCtx
+                    AccessContext.class, sysCtx,
+                    Peer.class, new PeerController("autoSnapshot", null, true)
                 )
             )
             .subscribe();

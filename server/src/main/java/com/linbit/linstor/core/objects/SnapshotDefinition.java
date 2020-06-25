@@ -591,6 +591,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         FAILED_DISCONNECT(1L << 2),
         DELETE(1L << 3),
         SHIPPING(1L << 4),
+        AUTO_SNAPSHOT(1L << 5),
         ;
 
         public final long flagValue;
