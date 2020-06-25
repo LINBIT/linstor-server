@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.TimeoutException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
@@ -183,15 +184,41 @@ public class CtrlSnapshotCrtApiCallHandler
         String rscNameStr
     )
     {
-        String autoSnapshotName = getAutoSnapshotName(ctrlApiDataLoader.loadRscDfn(rscNameStr, true));
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+
+        String autoSnapshotName;
+        SnapshotDefinition snapDfn;
+        do
+        {
+            autoSnapshotName = getAutoSnapshotName(rscDfn);
+            try
+            {
+                snapDfn = rscDfn.getSnapshotDfn(apiCtx, new SnapshotName(autoSnapshotName));
+            }
+            catch (AccessDeniedException | InvalidNameException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        } while (snapDfn != null);
+
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
+        snapDfn = ctrlSnapshotCrtHelper.createSnapshots(
+            nodeNameStrs,
+            rscNameStr,
+            autoSnapshotName,
+            responses
+        );
 
         ctrlTransactionHelper.commit();
 
-        return createSnapshot(
-            nodeNameStrs,
-            rscNameStr,
-            autoSnapshotName
+        responses.addEntry(
+            ApiSuccessUtils.defaultRegisteredEntry(
+                snapDfn.getUuid(),
+                getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, autoSnapshotName)
+            )
         );
+        return Flux.<ApiCallRc>just(responses).concatWith(postCreateSnapshot(snapDfn));
     }
 
     private String getAutoSnapshotName(ResourceDefinition rscDfnRef)
