@@ -353,12 +353,12 @@ class LinstorMapper implements ExceptionMapper<Exception>
     @Override
     public javax.ws.rs.core.Response toResponse(Exception exc)
     {
-        String errorReport = errorReporter.reportError(exc);
         javax.ws.rs.core.Response.Status respStatus;
 
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         if (exc instanceof ApiRcException)
         {
+            errorReporter.reportError(exc);
             apiCallRc.addEntries(((ApiRcException) exc).getApiCallRc());
             respStatus = javax.ws.rs.core.Response.Status.BAD_REQUEST;
         }
@@ -366,6 +366,7 @@ class LinstorMapper implements ExceptionMapper<Exception>
         if (exc instanceof JsonMappingException ||
             exc instanceof JsonParseException)
         {
+            String errorReport = errorReporter.reportError(exc);
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.API_CALL_PARSE_ERROR,
@@ -383,12 +384,14 @@ class LinstorMapper implements ExceptionMapper<Exception>
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.FAIL_UNKNOWN_ERROR,
-                    String.format("Path '%s' not found on server.", uriInfo.getPath())
-                ).setDetails(exc.getMessage()).build());
+                    String.format("Path '%s' not found on server.", uriInfo.getPath()))
+                        .setDetails(exc.getMessage())
+                        .setSkipErrorReport(true).build());
             respStatus = javax.ws.rs.core.Response.Status.NOT_FOUND;
         }
         else
         {
+            String errorReport = errorReporter.reportError(exc);
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.FAIL_UNKNOWN_ERROR,
