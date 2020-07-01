@@ -11,6 +11,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -184,6 +185,7 @@ public class CtrlErrorListApiCallHandler
             errorReports.addAll(deserializeErrorReports(errorReportMsgDataIn));
         }
 
+        errorReports.sort(LinstorFile::compareTo);
         return errorReports;
     }
 
