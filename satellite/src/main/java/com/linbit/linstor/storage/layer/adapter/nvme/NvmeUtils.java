@@ -972,7 +972,7 @@ public class NvmeUtils
             Volume vlm = iterateVolumes.next();
             prioProps.addProps(vlm.getProps(accCtx));
 
-            storPools.addAll(LayerVlmUtils.getStorPoolSet(vlm, accCtx));
+            storPools.addAll(LayerVlmUtils.getStorPoolSet(vlm, accCtx, true));
         }
         for (StorPool storPool : storPools)
         {

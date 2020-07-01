@@ -170,7 +170,7 @@ public class CtrlStorPoolResolveHelper
                 Volume peerVlm = peerRsc.getVolume(vlmDfn.getVolumeNumber());
                 if (peerVlm != null)
                 {
-                    for (StorPool peerStorPool : LayerVlmUtils.getStorPoolSet(peerVlm, apiCtx))
+                    for (StorPool peerStorPool : LayerVlmUtils.getStorPoolSet(peerVlm, apiCtx, false))
                     {
                         DeviceProviderKind peerKind = peerStorPool.getDeviceProviderKind();
                         if (!driverKind.equals(peerKind))

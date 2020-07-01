@@ -50,6 +50,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -437,35 +438,38 @@ public class CtrlRscCrtApiHelper
                 );
                 for (AbsRscLayerObject<Resource> storageRsc : storageRscLayerObjList)
                 {
-                    for (VlmProviderObject<Resource> storageVlm : storageRsc.getVlmLayerObjects().values())
+                    if (RscLayerSuffixes.isNonMetaDataLayerSuffix(storageRsc.getResourceNameSuffix()))
                     {
-                        DeviceProviderKind devProviderKind = storageVlm.getStorPool().getDeviceProviderKind();
-                        switch (devProviderKind)
+                        for (VlmProviderObject<Resource> storageVlm : storageRsc.getVlmLayerObjects().values())
                         {
-                            case OPENFLEX_TARGET: // fall-through
-                            case DISKLESS:
-                                // ignored
-                                break;
-                            case LVM: // fall-through
-                            case SPDK: // fall-through
-                            case ZFS:
-                                hasFatStorPool = true;
-                                break;
-                            case FILE:
-                                // TODO: introduce storage pool specific distinction about this
-                                hasFatStorPool = true;
-                                break;
-                            case LVM_THIN:
-                                granularity = "65536";
-                                // fall-through
-                            case ZFS_THIN: // fall-through
-                            case FILE_THIN:
-                                hasThinStorPool = true;
-                                break;
-                            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
-                            default:
-                                throw new ImplementationError("Unknown deviceProviderKind: " + devProviderKind);
+                            DeviceProviderKind devProviderKind = storageVlm.getStorPool().getDeviceProviderKind();
+                            switch (devProviderKind)
+                            {
+                                case OPENFLEX_TARGET: // fall-through
+                                case DISKLESS:
+                                    // ignored
+                                    break;
+                                case LVM: // fall-through
+                                case SPDK: // fall-through
+                                case ZFS:
+                                    hasFatStorPool = true;
+                                    break;
+                                case FILE:
+                                    // TODO: introduce storage pool specific distinction about this
+                                    hasFatStorPool = true;
+                                    break;
+                                case LVM_THIN:
+                                    granularity = "65536";
+                                    // fall-through
+                                case ZFS_THIN: // fall-through
+                                case FILE_THIN:
+                                    hasThinStorPool = true;
+                                    break;
+                                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                                default:
+                                    throw new ImplementationError("Unknown deviceProviderKind: " + devProviderKind);
 
+                            }
                         }
                     }
                 }

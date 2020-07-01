@@ -21,4 +21,10 @@ public final class RscLayerSuffixes
     private RscLayerSuffixes()
     {
     }
+
+    public static boolean isNonMetaDataLayerSuffix(String layerSuffix)
+    {
+        return SUFFIX_DATA.equalsIgnoreCase(layerSuffix);
+    }
+
 }

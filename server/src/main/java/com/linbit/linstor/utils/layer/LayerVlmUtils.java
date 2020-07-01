@@ -8,6 +8,7 @@ import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -23,7 +24,8 @@ public class LayerVlmUtils
 {
     public static <RSC extends AbsResource<RSC>> Set<StorPool> getStorPoolSet(
         AbsVolume<RSC> vlm,
-        AccessContext accCtx
+        AccessContext accCtx,
+        boolean withMetaData
     )
         throws AccessDeniedException
     {
@@ -31,7 +33,10 @@ public class LayerVlmUtils
 
         Set<AbsRscLayerObject<RSC>> storageRscDataSet = LayerRscUtils.getRscDataByProvider(
             vlm.getAbsResource().getLayerData(accCtx),
-            DeviceLayerKind.STORAGE
+            DeviceLayerKind.STORAGE,
+            withMetaData ?
+                layerSuffix -> true :
+                RscLayerSuffixes::isNonMetaDataLayerSuffix
         );
         return getStoragePools(vlmNr, storageRscDataSet);
     }

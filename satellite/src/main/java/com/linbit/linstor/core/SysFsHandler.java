@@ -196,7 +196,7 @@ public class SysFsHandler
         priorityProps.addProps(rscDfn.getProps(apiCtx));
         priorityProps.addProps(rscGrp.getProps(apiCtx));
 
-        for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlm, apiCtx))
+        for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlm, apiCtx, true))
         {
             priorityProps.addProps(storPool.getProps(apiCtx));
             priorityProps.addProps(storPool.getDefinition(apiCtx).getProps(apiCtx));
