@@ -91,6 +91,10 @@ public class ErrorReport extends LinstorFile
         return Optional.ofNullable(originLine);
     }
 
+    public Node.Type getModule() {
+        return module;
+    }
+
     public String getModuleString() {
         return module.name();
     }

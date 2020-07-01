@@ -565,6 +565,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 msgErrorReport.setErrorTime(errReport.getDateTime().getTime());
                 msgErrorReport.setNodeNames(errReport.getNodeName());
                 msgErrorReport.setFilename(errReport.getFileName());
+                msgErrorReport.setModule((int)errReport.getModule().getFlagValue());
                 errReport.getVersion().ifPresent(msgErrorReport::setVersion);
                 errReport.getPeer().ifPresent(msgErrorReport::setPeer);
                 errReport.getException().ifPresent(msgErrorReport::setException);
