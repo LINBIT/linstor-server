@@ -256,7 +256,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                     while (snapVlmIt.hasNext())
                     {
                         SnapshotVolume snapshotVlm = snapVlmIt.next();
-                        Set<StorPool> storPoolSet = LayerVlmUtils.getStorPoolSet(snapshotVlm, apiCtx);
+                        Set<StorPool> storPoolSet = LayerVlmUtils.getStorPoolSet(snapshotVlm, apiCtx, true);
                         for (StorPool storPool : storPoolSet)
                         {
                             if (storPool.getDeviceProviderKind().isSnapshotDependent())

@@ -12,12 +12,22 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 public class LayerRscUtils
 {
     public static <RSC extends AbsResource<RSC>> Set<AbsRscLayerObject<RSC>> getRscDataByProvider(
         AbsRscLayerObject<RSC> rscLayerDataRef,
         DeviceLayerKind kind
+    )
+    {
+        return getRscDataByProvider(rscLayerDataRef, kind, ignored -> true);
+    }
+
+    public static <RSC extends AbsResource<RSC>> Set<AbsRscLayerObject<RSC>> getRscDataByProvider(
+        AbsRscLayerObject<RSC> rscLayerDataRef,
+        DeviceLayerKind kind,
+        Predicate<String> includeLayerSufix
     )
     {
         Set<AbsRscLayerObject<RSC>> rscLayerObjects = new HashSet<>();
@@ -31,7 +41,10 @@ public class LayerRscUtils
             {
                 if (rscLayerObj.getLayerKind().equals(kind))
                 {
-                    rscLayerObjects.add(rscLayerObj);
+                    if (includeLayerSufix.test(rscLayerObj.getResourceNameSuffix()))
+                    {
+                        rscLayerObjects.add(rscLayerObj);
+                    }
                 }
                 else
                 {

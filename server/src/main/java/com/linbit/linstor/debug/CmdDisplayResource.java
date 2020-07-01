@@ -198,7 +198,7 @@ public class CmdDisplayResource extends BaseDebugCmd
                             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
                             List<String> storPoolNames = new ArrayList<>();
                             {
-                                Set<StorPool> vlmStorPools = LayerVlmUtils.getStorPoolSet(vlm, accCtx);
+                                Set<StorPool> vlmStorPools = LayerVlmUtils.getStorPoolSet(vlm, accCtx, true);
                                 for (StorPool storPool : vlmStorPools)
                                 {
                                     storPoolNames.add(storPool.getName().displayValue);
