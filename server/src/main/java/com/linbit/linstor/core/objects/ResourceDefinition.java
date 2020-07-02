@@ -60,7 +60,7 @@ import java.util.stream.Stream;
 public class ResourceDefinition extends BaseTransactionObject
     implements DbgInstanceUuid, Comparable<ResourceDefinition>, ProtectedObject
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<NodeName, Resource> getRscMap();
         Map<VolumeNumber, VolumeDefinition> getVlmDfnMap();
@@ -105,7 +105,7 @@ public class ResourceDefinition extends BaseTransactionObject
 
     private final TransactionList<ResourceDefinition, DeviceLayerKind> layerStack;
 
-    private final ResourceGroup rscGrp;
+    private final TransactionSimpleObject<ResourceDefinition, ResourceGroup> rscGrp;
 
     ResourceDefinition(
         UUID objIdRef,
@@ -146,7 +146,7 @@ public class ResourceDefinition extends BaseTransactionObject
             dbDriver.getLayerStackDriver()
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-        rscGrp = rscGrpRef;
+        rscGrp = transObjFactory.createTransactionSimpleObject(this, rscGrpRef, null);
 
         rscDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(resName)
@@ -406,7 +406,7 @@ public class ResourceDefinition extends BaseTransactionObject
 
     @SuppressWarnings("unchecked")
     public <T extends RscDfnLayerObject> T setLayerData(AccessContext accCtx, T rscDfnLayerData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
@@ -496,10 +496,20 @@ public class ResourceDefinition extends BaseTransactionObject
         return layerStack;
     }
 
+    public void setResourceGroup(AccessContext accCtx, ResourceGroup rscGrpRef)
+        throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        rscGrp.get().removeResourceDefinition(accCtx, this);
+        rscGrp.set(rscGrpRef);
+        rscGrp.get().addResourceDefinition(accCtx, this);
+    }
+
     public ResourceGroup getResourceGroup()
     {
         checkDeleted();
-        return rscGrp;
+        return rscGrp.get();
     }
 
     public void delete(AccessContext accCtx)
@@ -531,7 +541,7 @@ public class ResourceDefinition extends BaseTransactionObject
                 rscDfnLayerObject.delete();
             }
 
-            rscGrp.removeResourceDefinition(accCtx, this);
+            rscGrp.get().removeResourceDefinition(accCtx, this);
 
             objProt.delete(accCtx);
 

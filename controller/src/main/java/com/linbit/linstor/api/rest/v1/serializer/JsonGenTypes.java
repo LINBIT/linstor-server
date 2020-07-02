@@ -248,6 +248,10 @@ public class JsonGenTypes
          */
         public Integer drbd_peer_slots;
         public List<String> layer_stack = Collections.emptyList();
+        /**
+         * change resource group to the given group name
+         */
+        public String resource_group;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -26,6 +26,7 @@ info:
        - Added /v1/nodes/{node}/config, that allows you to get and set the satellite config
        - Added /v1/sos-report to create bug reports you can send to linbit
        - Added new fields to the ErrorReport object
+       - Allow to modify the resource group in Resource definitions
     * 1.1.0
        - Added /v1/view/snapshots for a faster all in one snapshot list
        - Filter lists by properties:
@@ -4148,6 +4149,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LayerType'
+        resource_group:
+          type: string
+          description: change resource group to the given group name
     DrbdVolumeDefinition:
       type: object
       properties:

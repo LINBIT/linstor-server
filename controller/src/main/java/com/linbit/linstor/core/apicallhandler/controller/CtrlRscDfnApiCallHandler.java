@@ -65,6 +65,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -312,7 +313,8 @@ public class CtrlRscDfnApiCallHandler
         Set<String> deletePropKeys,
         Set<String> deleteNamespaces,
         List<String> layerStackStrList,
-        Short newRscPeerSlots
+        Short newRscPeerSlots,
+        @Nullable String rscGroupName
     )
     {
         ResponseContext context = makeResourceDefinitionContext(
@@ -336,6 +338,7 @@ public class CtrlRscDfnApiCallHandler
                     deleteNamespaces,
                     layerStackStrList,
                     newRscPeerSlots,
+                    rscGroupName,
                     context
                 )
             )
@@ -351,6 +354,7 @@ public class CtrlRscDfnApiCallHandler
         Set<String> deletePropNamespaces,
         List<String> layerStackStrList,
         Short newRscPeerSlots,
+        @Nullable String rscGroupName,
         ResponseContext context
     )
     {
@@ -426,6 +430,14 @@ public class CtrlRscDfnApiCallHandler
                 }
                 notifyStlts = true;
                 rscDfn.setLayerStack(peerAccCtx.get(), layerStack);
+            }
+
+            if (rscGroupName != null &&
+                !rscDfn.getResourceGroup().getName().getName().equalsIgnoreCase(rscGroupName))
+            {
+                ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGroupName, true);
+                rscDfn.setResourceGroup(peerAccCtx.get(), rscGrp);
+                notifyStlts = true;
             }
 
             ctrlTransactionHelper.commit();

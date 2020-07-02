@@ -35,6 +35,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -276,7 +277,8 @@ public class CtrlApiCallHandler
         Set<String> deletePropKeys,
         Set<String> deletePropNamespaces,
         List<String> layerStackStrList,
-        Short newRscPeerSlotsRef
+        Short newRscPeerSlotsRef,
+        @Nullable String rscGroupName
     )
     {
         Flux<ApiCallRc> flux;
@@ -290,7 +292,8 @@ public class CtrlApiCallHandler
                 deletePropKeys,
                 deletePropNamespaces,
                 layerStackStrList,
-                newRscPeerSlotsRef
+                newRscPeerSlotsRef,
+                rscGroupName
             );
         }
         return flux;

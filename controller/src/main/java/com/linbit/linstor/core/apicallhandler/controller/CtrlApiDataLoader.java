@@ -590,6 +590,7 @@ public class CtrlApiDataLoader
                         "' could not be found in the database")
                     .setCorrection("Create a resource group with the name '" +
                         rscGrpNameRef.displayValue + "' first.")
+                    .setSkipErrorReport(true)
                     .build()
                 );
             }

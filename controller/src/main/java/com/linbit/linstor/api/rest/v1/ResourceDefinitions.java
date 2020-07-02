@@ -176,7 +176,8 @@ public class ResourceDefinitions
             new HashSet<>(modifyData.delete_props),
             new HashSet<>(modifyData.delete_namespaces),
             modifyData.layer_stack,
-            modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue()
+            modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue(),
+            modifyData.resource_group
         )
         .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request));
 
