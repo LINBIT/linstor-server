@@ -13,6 +13,7 @@ import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig.RestAccessLogMode;
 import com.linbit.linstor.logging.ErrorReporter;
 
+import javax.ws.rs.NotAllowedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -340,8 +341,8 @@ class LinstorMapper implements ExceptionMapper<Exception>
 {
     private final ErrorReporter errorReporter;
 
-    @Context
-    private UriInfo uriInfo;
+    @Context private UriInfo uriInfo;
+    @Context private javax.ws.rs.core.Request request;
 
     LinstorMapper(
         ErrorReporter errorReporterRef
@@ -381,13 +382,30 @@ class LinstorMapper implements ExceptionMapper<Exception>
         else
         if (exc instanceof NotFoundException)
         {
+            final String msg = String.format("Path '/%s' not found on server.", uriInfo.getPath());
+            errorReporter.logWarning(msg);
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.FAIL_UNKNOWN_ERROR,
-                    String.format("Path '%s' not found on server.", uriInfo.getPath()))
+                    msg)
                         .setDetails(exc.getMessage())
-                        .setSkipErrorReport(true).build());
+                        .setSkipErrorReport(true)
+                        .build());
             respStatus = javax.ws.rs.core.Response.Status.NOT_FOUND;
+        }
+        else if (exc instanceof NotAllowedException)
+        {
+            final String msg = String.format("Method '%s' not allowed on path '/%s'.",
+                request.getMethod(), uriInfo.getPath());
+            errorReporter.logWarning(msg);
+            apiCallRc.addEntry(
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    msg)
+                    .setDetails(exc.getMessage())
+                    .setSkipErrorReport(true)
+                    .build());
+            respStatus = javax.ws.rs.core.Response.Status.METHOD_NOT_ALLOWED;
         }
         else
         {
