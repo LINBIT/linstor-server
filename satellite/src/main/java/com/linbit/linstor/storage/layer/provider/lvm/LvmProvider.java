@@ -455,7 +455,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             volumeGroup = DeviceLayerUtils.getNamespaceStorDriver(
                     storPool.getProps(storDriverAccCtx)
                 )
-                .getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
+                .getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY).split("/")[0];
         }
         catch (InvalidKeyException | AccessDeniedException exc)
         {

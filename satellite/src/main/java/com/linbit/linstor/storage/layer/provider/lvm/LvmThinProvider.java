@@ -331,6 +331,14 @@ public class LvmThinProvider extends LvmProvider
                 StorageConstants.CONFIG_LVM_THIN_POOL_KEY,
                 StorageConstants.NAMESPACE_STOR_DRIVER
             );
+            if (!thinPool.contains("/"))
+            {
+                throw new ImplementationError(
+                    String.format("Property '%s' doesn't contain a proper thinpool specifier: %s",
+                        StorageConstants.CONFIG_LVM_THIN_POOL_KEY, thinPool));
+            }
+
+            thinPool = thinPool.split("/")[1];
         }
         catch (InvalidKeyException exc)
         {

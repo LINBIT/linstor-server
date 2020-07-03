@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -209,6 +210,39 @@ public class StoragePools
         }).next();
     }
 
+    private final static ArrayList<String> renameKeys = new ArrayList<>();
+    static {
+        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_VOLUME_GROUP);
+        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_ZPOOL);
+        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_ZPOOLTHIN);
+        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_FILE_DIRECTORY);
+        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_OPENFLEX_STOR_POOL);
+    }
+
+    /**
+     * Converts old/multiple storage pool properties into the single new one KEY_STOR_POOL_NAME
+     * @param props map with current properties
+     */
+    private void convertStorPoolProp(Map<String, String> props)
+    {
+        final String poolNameKey = ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_NAME;
+        for (final String key : renameKeys)
+        {
+            if (props.containsKey(key))
+            {
+                props.put(poolNameKey, props.get(key));
+                props.remove(key);
+            }
+        }
+
+        final String thinKey = ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_THIN_POOL;
+        if (props.containsKey(thinKey))
+        {
+            props.put(poolNameKey,props.get(poolNameKey) + '/' + props.get(thinKey));
+            props.remove(thinKey);
+        }
+    }
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public void createStorPool(
@@ -222,6 +256,8 @@ public class StoragePools
         {
             JsonGenTypes.StoragePool storPoolData = objectMapper
                 .readValue(jsonData, JsonGenTypes.StoragePool.class);
+
+            convertStorPoolProp(storPoolData.props);
 
             Flux<ApiCallRc> responses = ctrlStorPoolCrtApiCallHandler.createStorPool(
                 nodeName,

@@ -28,7 +28,7 @@ public class StorageConfigReader
         String volumeGroup;
         try
         {
-            volumeGroup = props.getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
+            volumeGroup = props.getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY).split("/")[0];
         }
         catch (InvalidKeyException exc)
         {

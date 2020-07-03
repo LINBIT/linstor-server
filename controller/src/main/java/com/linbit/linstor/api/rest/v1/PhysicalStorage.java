@@ -109,26 +109,21 @@ public class PhysicalStorage
 
         switch (kind)
         {
-            case LVM:
-                map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_VOLUME_GROUP, pool);
-                break;
             case LVM_THIN:
-                map.put(
-                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_VOLUME_GROUP,
-                    LvmThinDriverKind.VG_PREFIX + pool
-                );
-                map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_THIN_POOL, pool);
+                map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME,
+                    LvmThinDriverKind.VG_PREFIX + pool + "/" + pool);
                 break;
             case ZFS:
-                map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_ZPOOL, pool);
+            case ZFS_THIN:
+            case SPDK:
+            case LVM:
+                map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME, pool);
                 break;
 
             case OPENFLEX_TARGET: // fall-through
             case DISKLESS: // fall-through
             case FILE: // fall-through
             case FILE_THIN: // fall-through
-            case SPDK: // fall-through
-            case ZFS_THIN: // fall-through
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:
                 //ignore

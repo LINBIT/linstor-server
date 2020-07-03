@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apis;
 
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -32,17 +33,13 @@ public interface StorPoolApi
     @Nonnull
     default String getBackingPoolName() {
         switch (getDeviceProviderKind()) {
-            case LVM: return getStorPoolProps().get(StorageConstants.NAMESPACE_STOR_DRIVER +
-                    "/" + StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
-            case LVM_THIN: return getStorPoolProps().get(StorageConstants.NAMESPACE_STOR_DRIVER +
-                    "/" + StorageConstants.CONFIG_LVM_THIN_POOL_KEY);
-            case ZFS: return getStorPoolProps().get(StorageConstants.NAMESPACE_STOR_DRIVER +
-                    "/" + StorageConstants.CONFIG_ZFS_POOL_KEY);
-            case ZFS_THIN: return getStorPoolProps().get(StorageConstants.NAMESPACE_STOR_DRIVER +
-                    "/" + StorageConstants.CONFIG_ZFS_THIN_POOL_KEY);
+            case LVM_THIN:
+            case ZFS:
+            case ZFS_THIN:
             case FILE_THIN:
-            case FILE: return getStorPoolProps().get(StorageConstants.NAMESPACE_STOR_DRIVER +
-                    "/" + StorageConstants.CONFIG_FILE_DIRECTORY_KEY);
+            case FILE:
+            case LVM: return getStorPoolProps().get(StorageConstants.NAMESPACE_STOR_DRIVER +
+                    "/" + ApiConsts.KEY_STOR_POOL_NAME);
             case SPDK:
             case DISKLESS:
             case OPENFLEX_TARGET:

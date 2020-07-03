@@ -38,7 +38,6 @@ public class LvmThinDriverKind implements StorageDriverKind
         keySet.add(StorageConstants.CONFIG_LVM_CONVERT_COMMAND_KEY);
         keySet.add(StorageConstants.CONFIG_LVM_LVS_COMMAND_KEY);
         keySet.add(StorageConstants.CONFIG_LVM_VGS_COMMAND_KEY);
-        keySet.add(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
         keySet.add(StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY);
         keySet.add(StorageConstants.CONFIG_LVM_THIN_POOL_KEY);
 

@@ -29,7 +29,7 @@ public class ZfsThinDriverKind implements StorageDriverKind
     public Set<String> getConfigurationKeys()
     {
         HashSet<String> keys = new HashSet<>();
-        keys.add(ApiConsts.KEY_STOR_POOL_ZPOOLTHIN);
+        keys.add(StorageConstants.CONFIG_ZFS_POOL_KEY);
         keys.add(StorageConstants.CONFIG_ZFS_COMMAND_KEY);
         keys.add(StorageConstants.CONFIG_SIZE_ALIGN_TOLERANCE_KEY);
 

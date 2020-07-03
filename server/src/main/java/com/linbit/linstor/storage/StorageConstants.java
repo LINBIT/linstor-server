@@ -17,8 +17,8 @@ public class StorageConstants
     /*
      * LVM
      */
-    public static final String CONFIG_LVM_VOLUME_GROUP_KEY = ApiConsts.KEY_STOR_POOL_VOLUME_GROUP;
-    public static final String CONFIG_LVM_THIN_POOL_KEY = ApiConsts.KEY_STOR_POOL_THIN_POOL;
+    public static final String CONFIG_LVM_VOLUME_GROUP_KEY = ApiConsts.KEY_STOR_POOL_NAME;
+    public static final String CONFIG_LVM_THIN_POOL_KEY = ApiConsts.KEY_STOR_POOL_NAME;
 
     public static final String CONFIG_LVM_CREATE_COMMAND_KEY = "lvmCreate";
     public static final String CONFIG_LVM_RESIZE_COMMAND_KEY = "lvmResize";
@@ -33,8 +33,8 @@ public class StorageConstants
     /*
      * ZFS
      */
-    public static final String CONFIG_ZFS_POOL_KEY = ApiConsts.KEY_STOR_POOL_ZPOOL;
-    public static final String CONFIG_ZFS_THIN_POOL_KEY = ApiConsts.KEY_STOR_POOL_ZPOOLTHIN;
+    public static final String CONFIG_ZFS_POOL_KEY = ApiConsts.KEY_STOR_POOL_NAME;
+    public static final String CONFIG_ZFS_THIN_POOL_KEY = ApiConsts.KEY_STOR_POOL_NAME;
     public static final String CONFIG_ZFS_COMMAND_KEY = "zfs";
 
     public static final Map<String, String> KEY_DESCRIPTION = new HashMap<>();
@@ -77,7 +77,7 @@ public class StorageConstants
     /*
      * FILE
      */
-    public static final String CONFIG_FILE_DIRECTORY_KEY = ApiConsts.KEY_STOR_POOL_FILE_DIRECTORY;
+    public static final String CONFIG_FILE_DIRECTORY_KEY = ApiConsts.KEY_STOR_POOL_NAME;
 
     static
     {
