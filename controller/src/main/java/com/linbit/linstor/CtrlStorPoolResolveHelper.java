@@ -173,7 +173,7 @@ public class CtrlStorPoolResolveHelper
                     for (StorPool peerStorPool : LayerVlmUtils.getStorPoolSet(peerVlm, apiCtx, false))
                     {
                         DeviceProviderKind peerKind = peerStorPool.getDeviceProviderKind();
-                        if (!driverKind.equals(peerKind))
+                        if (!DeviceProviderKind.isMixingAllowed(driverKind, peerKind))
                         {
                             throw new ApiRcException(makeInvalidDriverKindError(driverKind, peerKind));
                         }
