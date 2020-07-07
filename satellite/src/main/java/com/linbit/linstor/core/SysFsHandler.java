@@ -19,6 +19,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -142,32 +143,35 @@ public class SysFsHandler
                 true,
                 vlmData ->
                 {
-                    String identifier;
-                    if (vlmData instanceof SpdkData)
+                    if (vlmData.getRscLayerObject().getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
                     {
-                        identifier = vlmData.getDevicePath();
-                    }
-                    else
-                    {
-                        identifier = getMajorMinor(vlmData);
-                    }
+                        String identifier;
+                        if (vlmData instanceof SpdkData)
+                        {
+                            identifier = vlmData.getDevicePath();
+                        }
+                        else
+                        {
+                            identifier = getMajorMinor(vlmData);
+                        }
 
-                    if (identifier != null)
-                    {
-                        setThrottle(
-                            vlmData,
-                            identifier,
-                            ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
-                            cgroupBlkioThrottleReadBpsDeviceMap,
-                            THROTTLE_READ_BPS_DEVICE
-                        );
-                        setThrottle(
-                            vlmData,
-                            identifier,
-                            ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE,
-                            cgroupBlkioThrottleWriteBpsDeviceMap,
-                            THROTTLE_WRITE_BPS_DEVICE
-                        );
+                        if (identifier != null)
+                        {
+                            setThrottle(
+                                vlmData,
+                                identifier,
+                                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
+                                cgroupBlkioThrottleReadBpsDeviceMap,
+                                THROTTLE_READ_BPS_DEVICE
+                            );
+                            setThrottle(
+                                vlmData,
+                                identifier,
+                                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE,
+                                cgroupBlkioThrottleWriteBpsDeviceMap,
+                                THROTTLE_WRITE_BPS_DEVICE
+                            );
+                        }
                     }
                 }
             );
