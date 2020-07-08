@@ -20,6 +20,8 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -34,6 +36,8 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 import reactor.core.publisher.Flux;
 
@@ -310,21 +314,37 @@ public class CtrlRscActivateApiCallHandler
 
     private boolean isResourceInUse(Resource rscRef)
     {
-        boolean ret;
+        boolean ret = false;
         try
         {
-            // this is much more complicated than it should be ....
-            SatelliteResourceState stltRscState = rscRef.getNode().getPeer(peerAccCtx.get())
-                .getSatelliteState()
-                .getResourceStates()
-                .get(rscRef.getDefinition().getName());
-            if (stltRscState.isInUse() == null)
+            // check if rscRef is an nvme-target. if so, check if there is already an initiator -> inUse = true
+            AccessContext peerCtx = peerAccCtx.get();
+            List<DeviceLayerKind> layerStack = LayerRscUtils.getLayerStack(rscRef, peerCtx);
+            if (layerStack.contains(DeviceLayerKind.NVME))
             {
-                ret = false; // we dont know better...
+                Iterator<Resource> rscIt = rscRef.getResourceDefinition().iterateResource(peerCtx);
+                while (rscIt.hasNext())
+                {
+                    Resource otherRsc = rscIt.next();
+                    if (otherRsc.getStateFlags().isSet(peerCtx, Resource.Flags.NVME_INITIATOR))
+                    {
+                        ret = true;
+                        break;
+                    }
+                }
             }
-            else
+
+            if (!ret)
             {
-                ret = stltRscState.isInUse();
+                // this is much more complicated than it should be ....
+                SatelliteResourceState stltRscState = rscRef.getNode().getPeer(peerCtx)
+                    .getSatelliteState()
+                    .getResourceStates()
+                    .get(rscRef.getDefinition().getName());
+                if (stltRscState.isInUse() != null)
+                {
+                    ret = stltRscState.isInUse();
+                }
             }
         }
         catch (AccessDeniedException accDeniedExc)
