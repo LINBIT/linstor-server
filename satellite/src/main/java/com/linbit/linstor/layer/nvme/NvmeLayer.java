@@ -105,6 +105,7 @@ public class NvmeLayer implements DeviceLayer
         LayerProcessResult ret;
         NvmeRscData<Resource> nvmeRscData = (NvmeRscData<Resource>) rscData;
 
+        StateFlags<Flags> rscFlags = nvmeRscData.getAbsResource().getStateFlags();
         if (nvmeRscData.isInitiator(sysCtx))
         {
             // reading a NVMe Target resource associated with a NVMe Initiator to determine if they belong to SPDK
@@ -114,7 +115,6 @@ public class NvmeLayer implements DeviceLayer
             nvmeUtils.setDevicePaths(nvmeRscData, nvmeRscData.exists());
 
             // disconnect
-            StateFlags<Flags> rscFlags = nvmeRscData.getAbsResource().getStateFlags();
             if (
                 nvmeRscData.exists() &&
                     (rscFlags.isSet(sysCtx, Resource.Flags.DELETE) || rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE))
@@ -155,7 +155,7 @@ public class NvmeLayer implements DeviceLayer
 
             nvmeRscData.setExists(nvmeUtils.isTargetConfigured(nvmeRscData));
 
-            if (nvmeRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
+            if (rscFlags.isSet(sysCtx, Resource.Flags.DELETE) || rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE))
             {
                 if (nvmeRscData.exists())
                 {
