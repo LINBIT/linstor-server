@@ -294,7 +294,7 @@ public class NvmeLayer implements DeviceLayer
     }
 
     @Override
-    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef)
+    public boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef)
         throws AccessDeniedException
     {
         NvmeRscData<Resource> nvmeRscData = (NvmeRscData<Resource>) layerDataRef;
@@ -313,5 +313,6 @@ public class NvmeLayer implements DeviceLayer
                 )
             );
         }
+        return true;
     }
 }

@@ -333,7 +333,7 @@ public class OpenflexLayer implements DeviceLayer
     }
 
     @Override
-    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
+    public boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
     {
         OpenflexRscData<Resource> ofRscData = (OpenflexRscData<Resource>) layerDataRef;
         if (ofRscData.getAbsResource().getStateFlags().isSet(sysCtx, Resource.Flags.DELETE))
@@ -351,6 +351,7 @@ public class OpenflexLayer implements DeviceLayer
                 )
             );
         }
+        return true;
     }
 
 }

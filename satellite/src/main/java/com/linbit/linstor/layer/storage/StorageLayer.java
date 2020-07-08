@@ -78,7 +78,7 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
+    public boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
     {
         StateFlags<Flags> rscFlags = layerDataRef.getAbsResource().getStateFlags();
         if (rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE))
@@ -97,6 +97,7 @@ public class StorageLayer implements DeviceLayer
                 )
             );
         }
+        return true;
     }
 
     @Override

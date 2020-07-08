@@ -45,6 +45,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.utils.SetUtils;
@@ -697,25 +698,33 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private void resourceFinished(AbsRscLayerObject<Resource> layerDataRef)
     {
-        DeviceLayer rootLayer = layerFactory.getDeviceLayer(layerDataRef.getLayerKind());
-        if (!layerDataRef.hasFailed())
+        AbsRscLayerObject<Resource> layerData = layerDataRef;
+
+        boolean resourceReadySent = false;
+        while (!resourceReadySent)
         {
-            try
+            DeviceLayer rootLayer = layerFactory.getDeviceLayer(layerData.getLayerKind());
+            if (!layerData.hasFailed())
             {
-                rootLayer.resourceFinished(layerDataRef);
+                try
+                {
+                    resourceReadySent = rootLayer.resourceFinished(layerData);
+                    layerData = layerData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+                }
+                catch (AccessDeniedException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
             }
-            catch (AccessDeniedException exc)
+            else
             {
-                throw new ImplementationError(exc);
+                errorReporter.logDebug(
+                    "Not calling resourceFinished for layer %s as the resource '%s' failed",
+                    rootLayer.getName(),
+                    layerDataRef.getSuffixedResourceName()
+                );
+                resourceReadySent = true; // resource failed, will not be ready
             }
-        }
-        else
-        {
-            errorReporter.logDebug(
-                "Not calling resourceFinished for layer %s as the resource '%s' failed",
-                rootLayer.getName(),
-                layerDataRef.getSuffixedResourceName()
-            );
         }
     }
 

@@ -87,7 +87,7 @@ public interface DeviceLayer
 
     void setLocalNodeProps(Props localNodeProps);
 
-    void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
+    boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
 
     /**
      * Most layers will no-op. Current exceptions are {@link StorageLayer} and {@link OpenflexLayer}

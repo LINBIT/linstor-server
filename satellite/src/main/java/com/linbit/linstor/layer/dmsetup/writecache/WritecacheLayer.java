@@ -466,8 +466,10 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
-    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
+    public boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
     {
+        boolean resourceReadySent = true;
+
         StateFlags<Flags> rscFlags = layerDataRef.getAbsResource().getStateFlags();
         if (rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE))
         {
@@ -475,16 +477,26 @@ public class WritecacheLayer implements DeviceLayer
         }
         else
         {
-            boolean isActive = rscFlags.isUnset(storDriverAccCtx, Resource.Flags.INACTIVE);
-            resourceProcessorProvider.get().sendResourceCreatedEvent(
-                layerDataRef,
-                new UsageState(
-                    isActive,
-                    null, // will be mapped to unknown
-                    isActive
-                )
-            );
+            AbsRscLayerObject<Resource> cacheRscChild = layerDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE);
+            if (cacheRscChild == null)
+            {
+                // we might be an imaginary layer above an NVMe target which does not need a cache...
+                resourceReadySent = false;
+            }
+            else
+            {
+                boolean isActive = rscFlags.isUnset(storDriverAccCtx, Resource.Flags.INACTIVE);
+                resourceProcessorProvider.get().sendResourceCreatedEvent(
+                    layerDataRef,
+                    new UsageState(
+                        isActive,
+                        null, // will be mapped to unknown
+                        isActive
+                    )
+                );
+            }
         }
+        return resourceReadySent;
     }
 
     private String getCacheSize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException

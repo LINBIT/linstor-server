@@ -149,7 +149,7 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef)
+    public boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef)
     {
         /*
          * Although the corresponding events2 event will also trigger the "resource created"
@@ -160,13 +160,16 @@ public class DrbdLayer implements DeviceLayer
          * be triggered by the events2. However, that events2 will not come, as we already received it
          * at startup of the satellite.
          */
+        boolean resourceReadySent = false;
         DrbdResource drbdResource;
         try
         {
             drbdResource = drbdState.getDrbdResource(layerDataRef.getSuffixedResourceName());
+            // drbdResource might be null if we are over an nvme-initiator
             if (drbdResource != null)
             {
                 drbdEventPublisher.resourceCreated(drbdResource);
+                resourceReadySent = true;
             }
         }
         catch (NoInitialStateException exc)
@@ -174,6 +177,7 @@ public class DrbdLayer implements DeviceLayer
             // we should not have been called
             throw new ImplementationError(exc);
         }
+        return resourceReadySent;
     }
 
     @Override

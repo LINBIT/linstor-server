@@ -380,8 +380,9 @@ public class CacheLayer implements DeviceLayer
     }
 
     @Override
-    public void resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
+    public boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException
     {
+        boolean resourceReadySent = true;
         StateFlags<Flags> rscFlags = layerDataRef.getAbsResource().getStateFlags();
         if (rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE))
         {
@@ -389,16 +390,28 @@ public class CacheLayer implements DeviceLayer
         }
         else
         {
-            boolean isActive = rscFlags.isUnset(storDriverAccCtx, Resource.Flags.INACTIVE);
-            resourceProcessorProvider.get().sendResourceCreatedEvent(
-                layerDataRef,
-                new UsageState(
-                    isActive,
-                    null, // will be mapped to unknown
-                    isActive
-                )
-            );
+            AbsRscLayerObject<Resource> cacheRscChild = layerDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
+            AbsRscLayerObject<Resource> metaRscChild = layerDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_META);
+
+            if (cacheRscChild == null && metaRscChild == null)
+            {
+                // we are above an nvme-target
+                resourceReadySent = false;
+            }
+            else
+            {
+                boolean isActive = rscFlags.isUnset(storDriverAccCtx, Resource.Flags.INACTIVE);
+                resourceProcessorProvider.get().sendResourceCreatedEvent(
+                    layerDataRef,
+                    new UsageState(
+                        isActive,
+                        null, // will be mapped to unknown
+                        isActive
+                    )
+                );
+            }
         }
+        return resourceReadySent;
     }
 
     private String getCacheSize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
