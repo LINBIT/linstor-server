@@ -435,6 +435,11 @@ public class CtrlRscDfnApiCallHandler
                         autoSnapshotTask.removeAutoSnapshotShipping(rscNameStr);
                     }
                 }
+                String autoSnapShipKeepKey = ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_KEEP;
+                if (overrideProps.containsKey(autoSnapShipKeepKey) || deletePropKeys.contains(autoSnapShipKeepKey))
+                {
+                    autoFlux = autoFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldShippedSnapshots(rscDfn));
+                }
 
                 String autoSnapKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_RUN_EVERY;
                 String autoSnapVal = overrideProps.get(autoSnapKey);
@@ -452,8 +457,8 @@ public class CtrlRscDfnApiCallHandler
                     }
                 }
 
-                String autoKeepKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP;
-                if (overrideProps.containsKey(autoKeepKey) || deletePropKeys.contains(autoKeepKey))
+                String autoSnapKeepKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP;
+                if (overrideProps.containsKey(autoSnapKeepKey) || deletePropKeys.contains(autoSnapKeepKey))
                 {
                     autoFlux = autoFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldAutoSnapshots(rscDfn));
                 }

@@ -32,7 +32,7 @@ public class LayerVlmUtils
         while (vlmIt.hasNext())
         {
             Volume vlm = vlmIt.next();
-            storPools.addAll(getStorPoolSet(vlm, accCtxRef));
+            storPools.addAll(getStorPoolSet(vlm, accCtxRef, true));
         }
         return storPools;
     }

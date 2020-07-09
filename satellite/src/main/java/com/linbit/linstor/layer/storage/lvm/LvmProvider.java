@@ -588,6 +588,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
+    protected boolean waitForSnapshotDevice()
+    {
+        return true;
+    }
+
+    @Override
     protected void setDevicePath(LvmData<Resource> vlmData, String devPath) throws DatabaseException
     {
         vlmData.setDevicePath(devPath);

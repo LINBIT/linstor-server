@@ -47,7 +47,7 @@ public enum DeviceProviderKind
     ZFS(
         true,
         true,
-        false,
+        true,
         true,
         true,
         false,
@@ -57,7 +57,7 @@ public enum DeviceProviderKind
     ZFS_THIN(
         true,
         true,
-        false,
+        true,
         true,
         true,
         true,

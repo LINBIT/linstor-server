@@ -427,6 +427,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
     }
 
+    protected abstract boolean waitForSnapshotDevice();
+
     protected long getWaitTimeoutAfterCreate(StorPool storPoolRef)
         throws AccessDeniedException
     {
@@ -603,15 +605,17 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     Snapshot snap = snapVlm.getVolume().getAbsResource();
                     if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET))
                     {
-                        StorPool storPool = vlmData.getStorPool();
-                        long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
+                        if (waitForSnapshotDevice())
+                        {
+                            StorPool storPool = vlmData.getStorPool();
+                            long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
 
-                        String snapId = asSnapLvIdentifier(snapVlm);
-                        String storageName = getStorageName(vlmData);
-                        String devicePath = getDevicePath(storageName, snapId);
+                            String snapId = asSnapLvIdentifier(snapVlm);
+                            String storageName = getStorageName(vlmData);
+                            String devicePath = getDevicePath(storageName, snapId);
 
-                        waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
-
+                            waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
+                        }
                         startReceiving(vlmData, snapVlm);
                     }
                 }
@@ -1111,7 +1115,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     protected String getSnapshotShippingReceivingCommandImpl(LAYER_SNAP_DATA snapVlmDataRef)
-        throws StorageException
+        throws StorageException, AccessDeniedException
     {
         throw new StorageException("Snapshot shipping is not supported by " + getClass().getSimpleName());
     }
@@ -1120,13 +1124,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         LAYER_SNAP_DATA lastSnapVlmDataRef,
         LAYER_SNAP_DATA curSnapVlmDataRef
     )
-        throws StorageException
+        throws StorageException, AccessDeniedException
     {
         throw new StorageException("Snapshot shipping is not supported by " + getClass().getSimpleName());
     }
 
     protected void finishShipReceiving(LAYER_DATA vlmDataRef, LAYER_SNAP_DATA snapVlmRef)
-        throws StorageException, DatabaseException
+        throws StorageException, DatabaseException, AccessDeniedException
     {
         throw new StorageException("Snapshot shipping is not supported by " + getClass().getSimpleName());
     }

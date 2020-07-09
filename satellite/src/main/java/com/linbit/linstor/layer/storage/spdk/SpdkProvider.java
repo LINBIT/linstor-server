@@ -429,6 +429,12 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     }
 
     @Override
+    protected boolean waitForSnapshotDevice()
+    {
+        return true;
+    }
+
+    @Override
     public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
         Props props = DeviceLayerUtils.getNamespaceStorDriver(

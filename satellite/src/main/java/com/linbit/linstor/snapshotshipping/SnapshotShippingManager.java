@@ -77,7 +77,8 @@ public class SnapshotShippingManager
             success -> postShipping(
                 success,
                 snapVlmData,
-                InternalApiConsts.API_NOTIFY_SNAPSHOT_SHIPPING_RECEIVED
+                InternalApiConsts.API_NOTIFY_SNAPSHOT_SHIPPING_RECEIVED,
+                true
             ), snapVlmData
         );
     }
@@ -108,8 +109,12 @@ public class SnapshotShippingManager
             // snapVlmData,
             // InternalApiConsts.API_NOTIFY_SNAPSHOT_SHIPPING_SENT
             // ),
-            success ->
-            {}, // noop - for now?
+            success -> postShipping(
+                success,
+                snapVlmData,
+                null,
+                false
+            ),
             snapVlmData
         );
     }
@@ -147,7 +152,8 @@ public class SnapshotShippingManager
     private void postShipping(
         boolean successRef,
         AbsStorageVlmData<Snapshot> snapVlmData,
-        String internalApiName
+        String internalApiName,
+        boolean updateCtrlRef
     )
     {
         Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
@@ -168,10 +174,13 @@ public class SnapshotShippingManager
                 }
                 if (shippingInfo.snapVlmDataFinishedShipping == shippingInfo.snapVlmDataInfoMap.size())
                 {
-                    boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
-                    controllerPeerConnector.getControllerPeer().sendMessage(
-                        interComSerializer.onewayBuilder(internalApiName).notifySnapshotShipped(snap, success).build()
-                    );
+                    if (updateCtrlRef)
+                    {
+                        boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
+                        controllerPeerConnector.getControllerPeer().sendMessage(
+                            interComSerializer.onewayBuilder(internalApiName).notifySnapshotShipped(snap, success).build()
+                        );
+                    }
                     shippingInfoMap.remove(snap);
                 }
             }
@@ -180,18 +189,21 @@ public class SnapshotShippingManager
 
     public void allSnapshotPartsRegistered(Snapshot snap)
     {
-        ShippingInfo info = shippingInfoMap.get(snap);
-        if (info != null)
+        synchronized (snap)
         {
-            synchronized (info)
+            ShippingInfo info = shippingInfoMap.get(snap);
+            if (info != null)
             {
-                if (!info.isStarted)
+                synchronized (info)
                 {
-                    for (SnapVlmDataInfo snapVlmDataInfo : info.snapVlmDataInfoMap.values())
+                    if (!info.isStarted)
                     {
-                        snapVlmDataInfo.daemon.start();
+                        for (SnapVlmDataInfo snapVlmDataInfo : info.snapVlmDataInfoMap.values())
+                        {
+                            snapVlmDataInfo.daemon.start();
+                        }
+                        info.isStarted = true;
                     }
-                    info.isStarted = true;
                 }
             }
         }

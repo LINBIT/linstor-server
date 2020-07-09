@@ -150,7 +150,6 @@ public class SnapshotShippingInternalApiCallHandler
         updateRscConPropsAfterReceived(snapSource, snapTarget);
 
         snapshotShippingPortPool.deallocate(getPort(snapDfn));
-        disableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
 
         Flux<ApiCallRc> flux;
         if (!successRef)
@@ -162,7 +161,8 @@ public class SnapshotShippingInternalApiCallHandler
         }
         else
         {
-            enableFlags(snapTarget, Snapshot.Flags.DELETE); // just this snapshot, not the whole snapshotDefinition
+            disableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
+            enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPED);
 
             copyLuksKeysIfNeeded(snapSource, snapTarget);
 
@@ -175,9 +175,9 @@ public class SnapshotShippingInternalApiCallHandler
                 responses -> CtrlResponseUtils.combineResponses(
                     responses,
                     LinstorParsingUtils.asRscName(rscNameRef),
-                    "Deleted snapshot ''" + snapNameRef + "'' of {1} on {0}"
+                    "Finishing shpipping of snapshot''" + snapNameRef + "'' of {1} on {0}"
                 )
-            ).concatWith(deleteSnapshot(rscNameRef, snapNameRef));
+            ).concatWith(snapshotDeleteApiCallHandler.cleanupOldShippedSnapshots(snapDfn.getResourceDefinition()));
         }
 
         return flux;
@@ -263,11 +263,11 @@ public class SnapshotShippingInternalApiCallHandler
         }
     }
 
-    private void enableFlags(Snapshot snap, Snapshot.Flags... snapshotFlags)
+    private void enableFlags(SnapshotDefinition snapDfnRef, SnapshotDefinition.Flags... flags)
     {
         try
         {
-            snap.getFlags().enableFlags(apiCtx, snapshotFlags);
+            snapDfnRef.getFlags().enableFlags(apiCtx, flags);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -278,8 +278,8 @@ public class SnapshotShippingInternalApiCallHandler
             String errorMessage = String.format(
                 "A database error occurred while updating snapshot flags of " +
                     "resource: %s, snapshot: %s",
-                snap.getResourceName().displayValue,
-                snap.getSnapshotName().displayValue
+                snapDfnRef.getResourceName().displayValue,
+                snapDfnRef.getName().displayValue
             );
             errorReporter.reportError(
                 exc,
@@ -329,6 +329,12 @@ public class SnapshotShippingInternalApiCallHandler
         }
     }
 
+    /**
+     * copies the key not just from the snapshot-props, but also from the resource's layerdata
+     *
+     * @param snapSourceRef
+     * @param snapTargetRef
+     */
     private void copyLuksKeysIfNeeded(Snapshot snapSourceRef, Snapshot snapTargetRef)
     {
         try

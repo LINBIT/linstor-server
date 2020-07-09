@@ -273,25 +273,58 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         return flux;
     }
 
-    Flux<ApiCallRc> cleanupOldAutoSnapshots(ResourceDefinition rscDfnRef)
+    public Flux<ApiCallRc> cleanupOldAutoSnapshots(ResourceDefinition rscDfnRef)
     {
         return scopeRunner.fluxInTransactionalScope(
             "Clean up old auto-snapshots",
             lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
-            () -> cleanupOldAutoSnapshotsInTransaction(rscDfnRef)
+            () -> cleanupOldSnapshotsInTransaction(
+                rscDfnRef,
+                ApiConsts.NAMESPC_AUTO_SNAPSHOT,
+                ApiConsts.KEY_KEEP,
+                ApiConsts.DFLT_AUTO_SNAPSHOT_KEEP,
+                ApiConsts.KEY_AUTO_SNAPSHOT_PREFIX,
+                InternalApiConsts.DEFAULT_AUTO_SNAPSHOT_PREFIX,
+                SnapshotDefinition.Flags.AUTO_SNAPSHOT
+            )
         );
     }
 
-    private Flux<ApiCallRc> cleanupOldAutoSnapshotsInTransaction(ResourceDefinition rscDfnRef)
+    public Flux<ApiCallRc> cleanupOldShippedSnapshots(ResourceDefinition rscDfnRef)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Clean up old shipped snapshots",
+            lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            () -> cleanupOldSnapshotsInTransaction(
+                rscDfnRef,
+                ApiConsts.NAMESPC_SNAPSHOT_SHIPPING,
+                ApiConsts.KEY_KEEP,
+                ApiConsts.DFLT_SHIPPED_SNAPSHOT_KEEP,
+                ApiConsts.KEY_SNAPSHOT_SHIPPING_PREFIX,
+                ApiConsts.DFLT_SNAPSHOT_SHIPPING_PREFIX,
+                SnapshotDefinition.Flags.SHIPPED
+            )
+        );
+    }
+
+    private Flux<ApiCallRc> cleanupOldSnapshotsInTransaction(
+        ResourceDefinition rscDfnRef,
+        String rscDfnPropNameSpc,
+        String rscDfnPropKeepKey,
+        String rscDfnPropKeepDfltValue,
+        String rscDfnPropPrefixKey,
+        String rscDfnPropPrefixDfltValue,
+        SnapshotDefinition.Flags snapDfnFilterFlag
+    )
     {
         Flux<ApiCallRc> flux = Flux.empty();
         try
         {
             Props rscDfnProps = propsHelper.getProps(rscDfnRef);
             String keepStr = rscDfnProps.getPropWithDefault(
-                ApiConsts.KEY_KEEP,
-                ApiConsts.NAMESPC_AUTO_SNAPSHOT,
-                ApiConsts.DFLT_AUTO_SNAPSHOT_KEEP
+                rscDfnPropKeepKey,
+                rscDfnPropNameSpc,
+                rscDfnPropKeepDfltValue
             );
             long keep;
             try
@@ -301,12 +334,12 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                 if (keep > 0)
                 {
                     String snapPrefix = rscDfnProps.getPropWithDefault(
-                        ApiConsts.KEY_AUTO_SNAPSHOT_PREFIX,
-                        ApiConsts.NAMESPC_AUTO_SNAPSHOT,
-                        InternalApiConsts.DEFAULT_AUTO_SNAPSHOT_PREFIX
+                        rscDfnPropPrefixKey,
+                        rscDfnPropNameSpc,
+                        rscDfnPropPrefixDfltValue
                     );
 
-                    Pattern autoSnapPattern = Pattern.compile("^" + snapPrefix + "[0-9]{5,}$");
+                    Pattern autoPattern = Pattern.compile("^" + snapPrefix + "[0-9]+$");
                     /*
                      * automatically sorts snapDfns by name, which should make the snapshot with the lowest
                      * ID first
@@ -315,8 +348,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                     for (SnapshotDefinition snapDfn : rscDfnRef.getSnapshotDfns(apiCtx))
                     {
                         if (
-                            snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.AUTO_SNAPSHOT) &&
-                                autoSnapPattern.matcher(snapDfn.getName().displayValue).matches()
+                            snapDfn.getFlags().isSet(apiCtx, snapDfnFilterFlag) &&
+                                autoPattern.matcher(snapDfn.getName().displayValue).matches()
                         )
                         {
                             sortedSnapDfnSet.add(snapDfn);
@@ -360,7 +393,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                     nfe,
                     apiCtx,
                     null,
-                    "Invalid value for property " + ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP
+                    "Invalid value for property " + rscDfnPropNameSpc + "/" + rscDfnPropKeepKey
                 );
             }
         }

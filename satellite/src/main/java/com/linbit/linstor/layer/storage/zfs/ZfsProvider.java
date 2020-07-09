@@ -181,6 +181,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return getZPool(zfsData.getStorPool()) + File.separator +
             asIdentifierRaw(zfsData);
     }
+
     private String asLvIdentifier(String rscNameSuffix, SnapshotVolume snapVlm)
     {
         return asLvIdentifier(rscNameSuffix, snapVlm.getSnapshotVolumeDefinition()) + "@" +
@@ -233,7 +234,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
 
     @Override
     protected void deleteLvImpl(ZfsData<Resource> vlmData, String lvId)
-        throws StorageException, AccessDeniedException, DatabaseException
+        throws StorageException, DatabaseException
     {
         ZfsCommands.delete(
             extCmdFactory.create(),
@@ -255,12 +256,17 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected void createSnapshot(ZfsData<Resource> vlmData, ZfsData<Snapshot> snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        ZfsCommands.createSnapshot(
-            extCmdFactory.create(),
-            vlmData.getZPool(),
-            asLvIdentifier(vlmData),
-            snapVlm.getVolume().getAbsResource().getSnapshotName().displayValue
-        );
+        Snapshot snap = snapVlm.getVolume().getAbsResource();
+        // snapshot will be created by "zfs receive" command
+        if (!snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET))
+        {
+            ZfsCommands.createSnapshot(
+                extCmdFactory.create(),
+                vlmData.getZPool(),
+                asLvIdentifier(vlmData),
+                snapVlm.getVolume().getAbsResource().getSnapshotName().displayValue
+            );
+        }
     }
 
     @Override
@@ -404,6 +410,90 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected boolean updateDmStats()
     {
         return false;
+    }
+
+    @Override
+    protected boolean waitForSnapshotDevice()
+    {
+        return false;
+    }
+
+    // @Override
+    // protected void startReceiving(ZfsData<Resource> vlmDataRef, ZfsData<Snapshot> snapVlmDataRef)
+    // throws AccessDeniedException, StorageException, DatabaseException
+    // {
+    // try
+    // {
+    // /*
+    // * if this is the initial shipment, the actual volume must not exist.
+    // */
+    // Snapshot targetSnap = snapVlmDataRef.getRscLayerObject().getAbsResource();
+    // SnapshotDefinition snapDfn = targetSnap.getSnapshotDefinition();
+    // ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
+    //
+    // String sourceNodeName = snapDfn.getProps(storDriverAccCtx)
+    // .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_SOURCE_NODE);
+    // Resource targetRsc = rscDfn.getResource(storDriverAccCtx, targetSnap.getNodeName());
+    // Resource sourceRsc = rscDfn.getResource(storDriverAccCtx, new NodeName(sourceNodeName));
+    //
+    // String prevShippingSnapName = targetRsc.getAbsResourceConnection(storDriverAccCtx, sourceRsc)
+    // .getProps(storDriverAccCtx)
+    // .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_PREV);
+    //
+    // if (prevShippingSnapName == null)
+    // {
+    // deleteLvImpl(vlmDataRef, asLvIdentifier(vlmDataRef));
+    // vlmDataRef.setInitialShipment(true);
+    // }
+    // }
+    // catch (InvalidNameException exc)
+    // {
+    // throw new ImplementationError(exc);
+    // }
+    //
+    // super.startReceiving(vlmDataRef, snapVlmDataRef);
+    // }
+
+    @Override
+    protected String getSnapshotShippingReceivingCommandImpl(ZfsData<Snapshot> snapVlmDataRef)
+        throws StorageException, AccessDeniedException
+    {
+        return "zfs receive -F " + getZPool(snapVlmDataRef.getStorPool()) + "/" + asSnapLvIdentifier(snapVlmDataRef);
+    }
+
+    @Override
+    protected String getSnapshotShippingSendingCommandImpl(
+        ZfsData<Snapshot> lastSnapVlmDataRef,
+        ZfsData<Snapshot> curSnapVlmDataRef
+    )
+        throws StorageException, AccessDeniedException
+    {
+        StringBuilder sb = new StringBuilder("zfs send ");
+        if (lastSnapVlmDataRef != null)
+        {
+            sb.append("-i ") // incremental
+                .append(getZPool(lastSnapVlmDataRef.getStorPool())).append("/")
+                .append(asSnapLvIdentifier(lastSnapVlmDataRef)).append(" ");
+        }
+        sb.append(getZPool(curSnapVlmDataRef.getStorPool())).append("/")
+            .append(asSnapLvIdentifier(curSnapVlmDataRef));
+        return sb.toString();
+    }
+
+    @Override
+    protected void finishShipReceiving(ZfsData<Resource> vlmDataRef, ZfsData<Snapshot> snapVlmRef)
+        throws StorageException, DatabaseException, AccessDeniedException
+    {
+        vlmDataRef.setInitialShipment(false);
+        // String vlmDataId = asLvIdentifier(vlmDataRef);
+        // deleteLvImpl(vlmDataRef, vlmDataId); // delete calls "vlmData.setExists(false);" - we have to undo this
+        // ZfsCommands.rename(
+        // extCmdFactory.create(),
+        // vlmDataRef.getZPool(),
+        // asSnapLvIdentifier(snapVlmRef),
+        // vlmDataId
+        // );
+        // vlmDataRef.setExists(true);
     }
 
     @Override
