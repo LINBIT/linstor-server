@@ -250,7 +250,7 @@ public class RequestHelper
         {
             ret = ApiCallRcRestUtils.toResponse(exc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR);
         }
-        catch (Exception exc)
+        catch (Throwable exc)
         {
             String errorReport = errorReporter.reportError(exc);
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
