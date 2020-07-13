@@ -1,3 +1,37 @@
+linstor-server (1.7.2-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * sqlutils: trim statement and do not print to stderr
+  * remove deprecated only: syntax
+  * rest-api-docu: fix incorrect changelog
+  * stlt: fix NPE on apply controller changes
+  * gradle: grizzly-http-server fix to version 2.4.4
+  * request-helper: add error report id to apicall answer
+  * linstor.toml-example: fix incorrect enum values
+  * gitlab: enable java assert for tests
+  * etcd: Add missing resource group-storage pool migration
+  * ext-metadata: allow ext metadata storage pool to be different driver
+  * requesthelper: catch all Throwable to report errors
+  * skip initial sync on VDO
+
+  [ Gabor Hernadi ]
+  * ExtToolsCheck: use /proc/modules instead of modprobe
+  * Cache: Added dependency to dm-cache module
+  * File/thin: Added dependency to losetup
+  * Writecache: renamed enum to DM_WRITECACHE
+  * StorPool: Prevent deletion if StorPool has snapshots
+  * LvcreateType: Added rsc, node and controller to prioprops
+  * SslTcpConnectorHandshaker: change thrown exception
+  * Snapshot: Resume-IO on error and add timeout to takeSnapshot
+  * LVM: LvmProvider also activates LVs
+  * TcpConnectorService: Attempt resolving deadlock
+  * Snapshot: also resume-io after timeout of suspend-io
+
+  [ Roland Kammerer ]
+  * containers: add support for multiarch
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 13 Jul 2020 06:37:09 +0000
+
 linstor-server (1.7.1-1) experimental; urgency=medium
 
   [ Rainer Laschober ]
