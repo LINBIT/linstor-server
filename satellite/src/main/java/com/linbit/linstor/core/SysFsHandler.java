@@ -143,8 +143,23 @@ public class SysFsHandler
                 true,
                 vlmData ->
                 {
-                    if (vlmData.getRscLayerObject().getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
+                    AbsRscLayerObject<Resource> rscLayerObject = vlmData.getRscLayerObject();
+                    if (rscLayerObject.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
                     {
+                        boolean isLowestLocalDevices = true;
+                        if (!vlmData.getRscLayerObject().getChildren().isEmpty())
+                        {
+                            VlmProviderObject<Resource> childVlmData = vlmData.getRscLayerObject()
+                                .getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA).getVlmProviderObject(vlmData.getVlmNr());
+                            if (
+                                childVlmData != null &&
+                                    childVlmData.getDevicePath() != null &&
+                                    !childVlmData.getDevicePath().trim().isEmpty()
+                            )
+                            {
+                                isLowestLocalDevices = false;
+                            }
+                        }
                         String identifier;
                         if (vlmData instanceof SpdkData)
                         {
@@ -155,7 +170,7 @@ public class SysFsHandler
                             identifier = getMajorMinor(vlmData);
                         }
 
-                        if (identifier != null)
+                        if (identifier != null && isLowestLocalDevices)
                         {
                             setThrottle(
                                 vlmData,
