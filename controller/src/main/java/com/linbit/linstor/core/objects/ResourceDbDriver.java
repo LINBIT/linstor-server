@@ -40,11 +40,11 @@ import java.util.TreeMap;
 
 @Singleton
 public class ResourceDbDriver extends
-    AbsDatabaseDriver<Resource, Resource.InitMaps, Pair<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>>>
+    AbsDatabaseDriver<AbsResource<Resource>, Resource.InitMaps, Pair<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>>>
     implements ResourceCtrlDatabaseDriver
 {
 
-    private final StateFlagsPersistence<Resource> flagsDriver;
+    private final StateFlagsPersistence<AbsResource<Resource>> flagsDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -74,25 +74,25 @@ public class ResourceDbDriver extends
 
         setColumnSetter(UUID, rsc -> rsc.getUuid().toString());
         setColumnSetter(NODE_NAME, rsc -> rsc.getNode().getName().value);
-        setColumnSetter(RESOURCE_NAME, rsc -> rsc.getDefinition().getName().value);
-        setColumnSetter(RESOURCE_FLAGS, rsc -> rsc.getStateFlags().getFlagsBits(dbCtxRef));
+        setColumnSetter(RESOURCE_NAME, rsc -> rsc.getResourceDefinition().getName().value);
+        setColumnSetter(RESOURCE_FLAGS, rsc -> ((Resource) rsc).getStateFlags().getFlagsBits(dbCtxRef));
         setColumnSetter(SNAPSHOT_NAME, ignored -> DFLT_SNAP_NAME_FOR_RSC);
     }
 
     @Override
-    public StateFlagsPersistence<Resource> getStateFlagPersistence()
+    public StateFlagsPersistence<AbsResource<Resource>> getStateFlagPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    protected Pair<Resource, Resource.InitMaps> load(
+    protected Pair<AbsResource<Resource>, Resource.InitMaps> load(
         RawParameters raw,
         Pair<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>> loadAllDataRef
     )
         throws DatabaseException, InvalidNameException, InvalidIpAddressException, ValueOutOfRangeException
     {
-        final Pair<Resource, InitMaps> ret;
+        final Pair<AbsResource<Resource>, InitMaps> ret;
         if (!raw.get(SNAPSHOT_NAME).equals(DFLT_SNAP_NAME_FOR_RSC))
         {
             // this entry is a Snapshot, not a Resource
@@ -139,10 +139,10 @@ public class ResourceDbDriver extends
     }
 
     @Override
-    protected String getId(Resource rsc)
+    protected String getId(AbsResource<Resource> rsc)
     {
         return "(NodeName=" + rsc.getNode().getName().displayValue +
-            " ResName=" + rsc.getDefinition().getName().displayValue + ")";
+            " ResName=" + rsc.getResourceDefinition().getName().displayValue + ")";
     }
 
     public static class InitMapImpl implements Resource.InitMaps

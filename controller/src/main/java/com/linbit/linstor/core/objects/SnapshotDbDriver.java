@@ -42,7 +42,7 @@ import java.util.TreeMap;
 
 @Singleton
 public class SnapshotDbDriver extends
-    AbsDatabaseDriver<Snapshot, Snapshot.InitMaps, Pair<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
+    AbsDatabaseDriver<AbsResource<Snapshot>, Snapshot.InitMaps, Pair<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
     implements SnapshotCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
@@ -50,7 +50,7 @@ public class SnapshotDbDriver extends
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
-    private final StateFlagsPersistence<Snapshot> flagsDriver;
+    private final StateFlagsPersistence<AbsResource<Snapshot>> flagsDriver;
 
     @Inject
     public SnapshotDbDriver(
@@ -70,28 +70,28 @@ public class SnapshotDbDriver extends
         transObjFactory = transObjFactoryRef;
 
         setColumnSetter(UUID, snap -> snap.getUuid().toString());
-        setColumnSetter(NODE_NAME, snap -> snap.getNodeName().value);
-        setColumnSetter(RESOURCE_NAME, snap -> snap.getResourceName().value);
-        setColumnSetter(SNAPSHOT_NAME, snap -> snap.getSnapshotName().value);
-        setColumnSetter(RESOURCE_FLAGS, snap -> snap.getFlags().getFlagsBits(dbCtxRef));
+        setColumnSetter(NODE_NAME, snap -> snap.getNode().getName().value);
+        setColumnSetter(RESOURCE_NAME, snap -> snap.getResourceDefinition().getName().value);
+        setColumnSetter(SNAPSHOT_NAME, snap -> ((Snapshot) snap).getSnapshotName().value);
+        setColumnSetter(RESOURCE_FLAGS, snap -> ((Snapshot) snap).getFlags().getFlagsBits(dbCtxRef));
 
         flagsDriver = generateFlagDriver(RESOURCE_FLAGS, Snapshot.Flags.class);
     }
 
     @Override
-    public StateFlagsPersistence<Snapshot> getStateFlagsPersistence()
+    public StateFlagsPersistence<AbsResource<Snapshot>> getStateFlagsPersistence()
     {
         return flagsDriver;
     }
 
     @Override
-    protected Pair<Snapshot, Snapshot.InitMaps> load(
+    protected Pair<AbsResource<Snapshot>, Snapshot.InitMaps> load(
         RawParameters raw,
         Pair<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>> loadMaps
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        final Pair<Snapshot, InitMaps> ret;
+        final Pair<AbsResource<Snapshot>, InitMaps> ret;
         final String snapNameStr = raw.get(SNAPSHOT_NAME);
         if (snapNameStr.equals(DFLT_SNAP_NAME_FOR_RSC))
         {
@@ -140,14 +140,15 @@ public class SnapshotDbDriver extends
     }
 
     @Override
-    protected String getId(Snapshot snap) throws AccessDeniedException
+    protected String getId(AbsResource<Snapshot> absSnap) throws AccessDeniedException
     {
+        Snapshot snap = (Snapshot) absSnap;
         return "(NodeName=" + snap.getNodeName().displayValue +
             " ResName=" + snap.getResourceName().displayValue +
             " SnapshotName=" + snap.getSnapshotName().displayValue + ")";
     }
 
-    private class InitMapsImpl implements Snapshot.InitMaps
+    private static class InitMapsImpl implements Snapshot.InitMaps
     {
         private final Map<VolumeNumber, SnapshotVolume> snapVlmMap;
 

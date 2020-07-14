@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -17,19 +18,19 @@ public class SatelliteSnapshotDriver implements SnapshotDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public StateFlagsPersistence<Snapshot> getStateFlagsPersistence()
+    public StateFlagsPersistence<AbsResource<Snapshot>> getStateFlagsPersistence()
     {
-        return (StateFlagsPersistence<Snapshot>) stateFlagsDriver;
+        return (StateFlagsPersistence<AbsResource<Snapshot>>) stateFlagsDriver;
     }
 
     @Override
-    public void create(Snapshot snapshot)
+    public void create(AbsResource<Snapshot> snapshot)
     {
         // no-op
     }
 
     @Override
-    public void delete(Snapshot snapshot)
+    public void delete(AbsResource<Snapshot> snapshot)
     {
         // no-op
     }

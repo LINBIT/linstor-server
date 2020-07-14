@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -21,19 +22,19 @@ public class SatelliteResDriver implements ResourceDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public StateFlagsPersistence<Resource> getStateFlagPersistence()
+    public StateFlagsPersistence<AbsResource<Resource>> getStateFlagPersistence()
     {
-        return (StateFlagsPersistence<Resource>) stateFlagsDriver;
+        return (StateFlagsPersistence<AbsResource<Resource>>) stateFlagsDriver;
     }
 
     @Override
-    public void create(Resource res)
+    public void create(AbsResource<Resource> res)
     {
         // no-op
     }
 
     @Override
-    public void delete(Resource resource)
+    public void delete(AbsResource<Resource> resource)
     {
         // no-op
     }

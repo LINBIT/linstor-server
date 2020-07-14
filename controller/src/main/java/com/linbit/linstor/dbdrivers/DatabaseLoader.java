@@ -35,6 +35,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
@@ -43,7 +44,6 @@ import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionCtrlDatabaseDriver;
@@ -336,14 +336,18 @@ public class DatabaseLoader implements DatabaseDriver
             );
 
             // loading resources
-            Map<Resource, Resource.InitMaps> loadedResources =
+            Map<AbsResource<Resource>, Resource.InitMaps> loadedAbsResources =
                 Collections.unmodifiableMap(rscDriver.loadAll(new Pair<>(tmpNodesMap, tmpRscDfnMap)));
-            for (Resource rsc : loadedResources.keySet())
+            Map<Resource, Resource.InitMaps> loadedResources = new TreeMap<>(); // casted version of loadedAbsResources
+            for (Entry<AbsResource<Resource>, Resource.InitMaps> absEntry : loadedAbsResources.entrySet())
             {
+                Resource rsc = (Resource) absEntry.getKey();
                 loadedNodesMap.get(rsc.getNode()).getRscMap()
                     .put(rsc.getDefinition().getName(), rsc);
                 loadedRscDfnsMap.get(rsc.getDefinition()).getRscMap()
                     .put(rsc.getNode().getName(), rsc);
+
+                loadedResources.put(rsc, absEntry.getValue());
             }
 
             // temporary resource map
@@ -454,15 +458,19 @@ public class DatabaseLoader implements DatabaseDriver
             );
 
             // loading snapshots
-            Map<Snapshot, Snapshot.InitMaps> loadedSnapshots = snapshotDriver.loadAll(
+            Map<AbsResource<Snapshot>, Snapshot.InitMaps> loadedAbsSnapshots = snapshotDriver.loadAll(
                 new Pair<>(tmpNodesMap, tmpSnapshotDfnMap)
             );
-            for (Snapshot snapshot : loadedSnapshots.keySet())
+            Map<Snapshot, Snapshot.InitMaps> loadedSnapshots = new TreeMap<>();
+            for (Entry<AbsResource<Snapshot>, Snapshot.InitMaps> absEntry : loadedAbsSnapshots.entrySet())
             {
+                Snapshot snapshot = (Snapshot) absEntry.getKey();
                 loadedNodesMap.get(snapshot.getNode()).getSnapshotMap()
                     .put(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()), snapshot);
                 loadedSnapshotDfns.get(snapshot.getSnapshotDefinition()).getSnapshotMap()
                     .put(snapshot.getNodeName(), snapshot);
+
+                loadedSnapshots.put(snapshot, absEntry.getValue());
             }
 
             Map<Triple<NodeName, ResourceName, SnapshotName>, Snapshot> tmpSnapshotMap =

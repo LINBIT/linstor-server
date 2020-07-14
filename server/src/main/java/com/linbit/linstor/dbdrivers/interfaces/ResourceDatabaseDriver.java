@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -9,7 +10,7 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public interface ResourceDatabaseDriver
+public interface ResourceDatabaseDriver extends AbsResourceDatabaseDriver<Resource>
 {
     /**
      * Persists the given {@link Resource} into the database.
@@ -23,7 +24,7 @@ public interface ResourceDatabaseDriver
      *
      * @throws DatabaseException
      */
-    void create(Resource resource) throws DatabaseException;
+    void create(AbsResource<Resource> resource) throws DatabaseException;
 
     /**
      * Removes the given {@link Resource} from the database.
@@ -33,11 +34,10 @@ public interface ResourceDatabaseDriver
      *
      * @throws DatabaseException
      */
-    void delete(Resource resource) throws DatabaseException;
+    void delete(AbsResource<Resource> resource) throws DatabaseException;
 
     /**
      * A special sub-driver to update the persisted flags.
      */
-    StateFlagsPersistence<Resource> getStateFlagPersistence();
-
+    StateFlagsPersistence<AbsResource<Resource>> getStateFlagPersistence();
 }

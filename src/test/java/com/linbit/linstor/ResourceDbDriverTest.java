@@ -1,15 +1,10 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
@@ -35,6 +30,12 @@ import java.util.TreeMap;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ResourceDbDriverTest extends GenericDbBase
 {
@@ -215,12 +216,12 @@ public class ResourceDbDriverTest extends GenericDbBase
         nodesMap.put(nodeName, node);
         rscDfnMap.put(resName, resDfn);
 
-        Map<Resource, Resource.InitMaps> resList = driver.loadAll(new Pair<>(nodesMap, rscDfnMap));
+        Map<AbsResource<Resource>, Resource.InitMaps> resList = driver.loadAll(new Pair<>(nodesMap, rscDfnMap));
 
         assertNotNull(resList);
         assertEquals(1, resList.size());
 
-        Resource resData = resList.keySet().iterator().next();
+        Resource resData = (Resource) resList.keySet().iterator().next();
 
         assertNotNull(resData);
         assertEquals(resUuid, resData.getUuid());
@@ -298,7 +299,7 @@ public class ResourceDbDriverTest extends GenericDbBase
         );
         driver.create(res);
         commit();
-        StateFlagsPersistence<Resource> stateFlagPersistence = driver.getStateFlagPersistence();
+        StateFlagsPersistence<AbsResource<Resource>> stateFlagPersistence = driver.getStateFlagPersistence();
         stateFlagPersistence.persist(res, StateFlagsBits.getMask(Resource.Flags.DELETE));
         commit();
 
