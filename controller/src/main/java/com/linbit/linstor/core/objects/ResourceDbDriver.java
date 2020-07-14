@@ -14,6 +14,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -25,6 +26,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.NODE_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.RESOURCE_FLAGS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.RESOURCE_NAME;
@@ -34,7 +36,8 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.UUI
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -48,6 +51,8 @@ public class ResourceDbDriver extends
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+
+    protected final SingleColumnDatabaseDriver<AbsResource<Resource>, Date> createTimestampDriver;
 
     @Inject
     public ResourceDbDriver(
@@ -77,6 +82,29 @@ public class ResourceDbDriver extends
         setColumnSetter(RESOURCE_NAME, rsc -> rsc.getResourceDefinition().getName().value);
         setColumnSetter(RESOURCE_FLAGS, rsc -> ((Resource) rsc).getStateFlags().getFlagsBits(dbCtxRef));
         setColumnSetter(SNAPSHOT_NAME, ignored -> DFLT_SNAP_NAME_FOR_RSC);
+        switch(getDbType())
+        {
+            case SQL:
+                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
+                    new Timestamp(rsc.getCreateTimestamp().get().getTime()) : null);
+                break;
+            case ETCD:
+                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
+                        Long.toString(rsc.getCreateTimestamp().get().getTime()) : null);
+                break;
+        }
+
+        createTimestampDriver = generateSingleColumnDriverMapped(
+            CREATE_TIMESTAMP,
+            rsc -> rsc.getCreateTimestamp().isPresent() ? rsc.getCreateTimestamp().get().toString() : "null",
+            createTime -> {
+                switch(getDbType())
+                {
+                    case SQL:  return createTime != null ? new Timestamp(createTime.getTime()) : null;
+                    case ETCD: return createTime != null ? Long.toString(createTime.getTime()) : null;
+                }
+                return null;
+            });
     }
 
     @Override
@@ -102,6 +130,7 @@ public class ResourceDbDriver extends
         {
             NodeName nodeName = new NodeName(raw.get(NODE_NAME));
             ResourceName rscName = new ResourceName(raw.get(RESOURCE_NAME));
+            Date createTimestamp = null;
             Map<Resource.ResourceKey, ResourceConnection> rscConMap = new TreeMap<>();
             Map<VolumeNumber, Volume> vlmMap = new TreeMap<>();
 
@@ -110,9 +139,15 @@ public class ResourceDbDriver extends
             {
                 case ETCD:
                     flags = Long.parseLong(raw.get(RESOURCE_FLAGS));
+                    final String strCreateTimestamp = raw.get(CREATE_TIMESTAMP);
+                    if (strCreateTimestamp != null)
+                    {
+                        createTimestamp = new Date(Long.parseLong(strCreateTimestamp));
+                    }
                     break;
                 case SQL:
                     flags = raw.get(RESOURCE_FLAGS);
+                    createTimestamp = raw.get(CREATE_TIMESTAMP);
                     break;
                 default:
                     throw new ImplementationError("Unknown database type: " + getDbType());
@@ -130,7 +165,8 @@ public class ResourceDbDriver extends
                     transObjFactory,
                     transMgrProvider,
                     rscConMap,
-                    vlmMap
+                    vlmMap,
+                    createTimestamp
                 ),
                 new InitMapImpl(rscConMap, vlmMap)
             );
@@ -170,5 +206,11 @@ public class ResourceDbDriver extends
         {
             return vlmMap;
         }
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<AbsResource<Resource>, Date> getCreateTimeDriver()
+    {
+        return createTimestampDriver;
     }
 }

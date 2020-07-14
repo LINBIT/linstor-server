@@ -59,7 +59,8 @@ public class SnapshotSatelliteFactory
                     propsConFactory,
                     transObjFactory,
                     transMgrProvider,
-                    new TreeMap<>()
+                    new TreeMap<>(),
+                    null
                 );
                 snapshotDfn.addSnapshot(accCtx, snapshot);
             }

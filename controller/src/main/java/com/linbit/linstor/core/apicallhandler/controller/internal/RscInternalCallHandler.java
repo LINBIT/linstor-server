@@ -18,6 +18,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -27,6 +28,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -43,6 +45,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -215,6 +219,12 @@ public class RscInternalCallHandler
             ResourceDefinition rscDfn = resourceDefinitionRepository.get(apiCtx, new ResourceName(resourceName));
             Resource rsc = rscDfn.getResource(apiCtx, nodeName);
 
+            if (rsc.getCreateTimestamp().isPresent() &&
+                rsc.getCreateTimestamp().get().equals(new Date(AbsResource.CREATE_DATE_INIT_VALUE)))
+            {
+                rsc.setCreateTimestamp(apiCtx, new Date(Instant.now().toEpochMilli()));
+            }
+
             layerRscDataMerger.mergeLayerData(rsc, rscLayerDataPojoRef, false);
 
             Set<AbsRscLayerObject<Resource>> storageResources = LayerRscUtils.getRscDataByProvider(
@@ -305,7 +315,7 @@ public class RscInternalCallHandler
                 stltUpdater.updateSatellites(rsc);
             }
         }
-        catch (InvalidNameException | AccessDeniedException exc)
+        catch (InvalidNameException | AccessDeniedException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }

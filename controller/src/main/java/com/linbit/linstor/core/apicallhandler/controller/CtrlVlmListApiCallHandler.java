@@ -194,7 +194,8 @@ public class CtrlVlmListApiCallHandler
                                     rscConns,
                                     null,
                                     null,
-                                    rsc.getLayerData(peerAccCtx.get()).asPojo(peerAccCtx.get())
+                                    rsc.getLayerData(peerAccCtx.get()).asPojo(peerAccCtx.get()),
+                                    rsc.getCreateTimestamp().orElse(null)
                                 );
                                 rscList.addResource(filteredRscVlms);
                             }

@@ -1,8 +1,10 @@
 package com.linbit.linstor.api.pojo;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
@@ -11,6 +13,9 @@ import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
+import com.linbit.linstor.core.objects.AbsResource;
+
+import javax.annotation.Nullable;
 
 public class RscPojo implements Comparable<RscPojo>, ResourceApi
 {
@@ -27,6 +32,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     private final Long fullSyncId;
     private final Long updateId;
     private final RscLayerDataApi rscLayerDataPojo;
+    @Nullable private final Date createTimestamp;
 
     public RscPojo(
         final String rscNameRef,
@@ -41,7 +47,8 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         final List<ResourceConnectionApi> rscConnectionsRef,
         final Long fullSyncIdRef,
         final Long updateIdRef,
-        final RscLayerDataApi rscLayerDataPojoRef
+        final RscLayerDataApi rscLayerDataPojoRef,
+        @Nullable final Date createTimestampRef
     )
     {
         rscName = rscNameRef;
@@ -57,6 +64,9 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
         rscLayerDataPojo = rscLayerDataPojoRef;
+        createTimestamp = createTimestampRef != null &&
+            createTimestampRef.getTime() != AbsResource.CREATE_DATE_INIT_VALUE ?
+                createTimestampRef : null;
     }
 
     /**
@@ -89,6 +99,7 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
         fullSyncId = null;
         updateId = null;
         rscLayerDataPojo = null;
+        createTimestamp = null;
     }
 
     @Override
@@ -170,6 +181,12 @@ public class RscPojo implements Comparable<RscPojo>, ResourceApi
     public List<VolumeApi> getLocalVlms()
     {
         return localVlms;
+    }
+
+    @Override
+    public Optional<Date> getCreateTimestamp()
+    {
+        return Optional.ofNullable(createTimestamp);
     }
 
     @Override

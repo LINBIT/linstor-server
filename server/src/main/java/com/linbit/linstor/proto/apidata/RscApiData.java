@@ -7,8 +7,11 @@ import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.proto.common.RscOuterClass;
 
+import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -83,5 +86,11 @@ public class RscApiData implements ResourceApi
     public RscLayerDataApi getLayerData()
     {
         return layerObjectApiData;
+    }
+
+    @Nullable
+    public Optional<Date> getCreateTimestamp()
+    {
+        return Optional.empty();
     }
 }

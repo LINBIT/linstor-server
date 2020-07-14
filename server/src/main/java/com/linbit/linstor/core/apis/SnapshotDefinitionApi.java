@@ -16,4 +16,5 @@ public interface SnapshotDefinitionApi
     Map<String, String> getProps();
     List<SnapshotVolumeDefinitionApi> getSnapshotVlmDfnList();
     List<Pair<String, RscDfnLayerDataApi>> getLayerData();
+    List<SnapshotApi> getSnapshots();
 }

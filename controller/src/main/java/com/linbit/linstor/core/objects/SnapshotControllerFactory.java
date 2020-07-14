@@ -71,7 +71,8 @@ public class SnapshotControllerFactory
             propsConFactory,
             transObjFactory,
             transMgrProvider,
-            new TreeMap<>()
+            new TreeMap<>(),
+            null
         );
 
         driver.create(snapshot);

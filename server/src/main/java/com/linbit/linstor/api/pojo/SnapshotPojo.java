@@ -4,8 +4,12 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apis.SnapshotApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
+import com.linbit.linstor.core.objects.AbsResource;
 
+import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
@@ -19,6 +23,9 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     private final Long updateId;
     private final List<SnapshotVolumeApi> snapshotVlms;
     private final RscLayerDataApi layerData;
+    private final String nodeName;
+    @Nullable
+    private final Date createTimestamp;
 
     public SnapshotPojo(
         SnapshotDefinitionApi snaphotDfnRef,
@@ -29,7 +36,9 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         Long fullSyncIdRef,
         Long updateIdRef,
         List<SnapshotVolumeApi> snapshotVlmsRef,
-        RscLayerDataApi layerDataRef
+        RscLayerDataApi layerDataRef,
+        String nodeNameRef,
+        @Nullable Date createTimestampRef
     )
     {
         snaphotDfn = snaphotDfnRef;
@@ -41,6 +50,10 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         updateId = updateIdRef;
         snapshotVlms = snapshotVlmsRef;
         layerData = layerDataRef;
+        nodeName = nodeNameRef;
+        createTimestamp = createTimestampRef != null &&
+            createTimestampRef.getTime() != AbsResource.CREATE_DATE_INIT_VALUE ?
+                createTimestampRef : null;
     }
 
     @Override
@@ -71,6 +84,18 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     public boolean getTakeSnapshot()
     {
         return takeSnapshot;
+    }
+
+    @Override
+    public String getNodeName()
+    {
+        return nodeName;
+    }
+
+    @Override
+    public Optional<Date> getCreateTimestamp()
+    {
+        return Optional.ofNullable(createTimestamp);
     }
 
     @Override

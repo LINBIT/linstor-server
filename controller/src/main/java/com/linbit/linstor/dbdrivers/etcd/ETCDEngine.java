@@ -305,6 +305,46 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     }
 
     @Override
+    public <DATA, INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriverMapped(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column col,
+        Function<INPUT_TYPE, DB_TYPE> typeMapper,
+        DataToString<DATA> dataToString,
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToString
+    )
+    {
+        return (data, colValue) ->
+        {
+            try
+            {
+                errorReporter.logTrace(
+                    "Updating %s's %s from [%s] to [%s] %s",
+                    col.getTable().getName(),
+                    col.getName(),
+                    dataValueToString.accept(data),
+                    typeMapper.apply(colValue),
+                    dataToString.toString(data)
+                );
+                if (colValue != null)
+                {
+                    namespace(col.getTable(), getPrimaryKeys(col.getTable(), data, setters))
+                        .put(col, Objects.toString(typeMapper.apply(colValue)));
+                }
+                else
+                {
+                    namespace(EtcdUtils.buildKey(col, getPrimaryKeys(col.getTable(), data, setters)))
+                        .delete(false);
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                DatabaseLoader.handleAccessDeniedException(exc);
+
+            }
+        };
+    }
+
+    @Override
     public String getDbDump()
     {
         EtcdTransaction tx = transMgrProvider.get().getTransaction();

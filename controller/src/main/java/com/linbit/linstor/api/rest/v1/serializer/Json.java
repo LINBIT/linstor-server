@@ -28,6 +28,7 @@ import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
+import com.linbit.linstor.core.apis.SnapshotApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
@@ -42,6 +43,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -463,6 +465,7 @@ public class Json
         rsc.props = rscApi.getProps();
         rsc.layer_object = apiToResourceLayer(rscApi.getLayerData());
         rsc.uuid = rscApi.getUuid().toString();
+        rscApi.getCreateTimestamp().ifPresent(d -> rsc.create_timestamp = d.getTime());
 
         if (withVolumes)
         {
@@ -801,6 +804,17 @@ public class Json
         return snapshotVolumeDefinition;
     }
 
+    public static JsonGenTypes.SnapshotNode apiToSnapshotNode(SnapshotApi snapshotApi)
+    {
+        JsonGenTypes.SnapshotNode nodeSnap = new JsonGenTypes.SnapshotNode();
+        nodeSnap.node_name = snapshotApi.getNodeName();
+        nodeSnap.snapshot_name = snapshotApi.getSnaphotDfn().getSnapshotName();
+        nodeSnap.flags = FlagsHelper.toStringList(Snapshot.Flags.class, snapshotApi.getFlags());
+        nodeSnap.uuid = snapshotApi.getSnapshotUuid().toString();
+        snapshotApi.getCreateTimestamp().ifPresent(d -> nodeSnap.create_timestamp = d.getTime());
+        return nodeSnap;
+    }
+
     public static JsonGenTypes.Snapshot apiToSnapshot(
         SnapshotDefinitionListItemApi snapshotDfnListItemApi
     )
@@ -815,6 +829,9 @@ public class Json
             .map(Json::apiToSnapshotVolumeDefinition)
             .collect(Collectors.toList());
         snapshot.uuid = snapshotDfnListItemApi.getUuid().toString();
+        snapshot.snapshots = snapshotDfnListItemApi.getSnapshots().stream()
+            .map(Json::apiToSnapshotNode)
+            .collect(Collectors.toList());
         return snapshot;
     }
 

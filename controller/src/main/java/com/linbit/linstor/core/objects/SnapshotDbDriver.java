@@ -16,6 +16,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -27,6 +28,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.core.objects.ResourceDefinitionDbDriver.DFLT_SNAP_NAME_FOR_RSC;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.NODE_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.RESOURCE_FLAGS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.RESOURCE_NAME;
@@ -37,6 +39,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -51,6 +55,7 @@ public class SnapshotDbDriver extends
     private final TransactionObjectFactory transObjFactory;
 
     private final StateFlagsPersistence<AbsResource<Snapshot>> flagsDriver;
+    private final SingleColumnDatabaseDriver<AbsResource<Snapshot>, Date> createTimestampDriver;
 
     @Inject
     public SnapshotDbDriver(
@@ -74,8 +79,31 @@ public class SnapshotDbDriver extends
         setColumnSetter(RESOURCE_NAME, snap -> snap.getResourceDefinition().getName().value);
         setColumnSetter(SNAPSHOT_NAME, snap -> ((Snapshot) snap).getSnapshotName().value);
         setColumnSetter(RESOURCE_FLAGS, snap -> ((Snapshot) snap).getFlags().getFlagsBits(dbCtxRef));
+        switch(getDbType())
+        {
+            case SQL:
+                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
+                    new Timestamp(rsc.getCreateTimestamp().get().getTime()) : null);
+            case ETCD:
+                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
+                    Long.toString(rsc.getCreateTimestamp().get().getTime()) : null);
+        }
 
         flagsDriver = generateFlagDriver(RESOURCE_FLAGS, Snapshot.Flags.class);
+
+        createTimestampDriver = generateSingleColumnDriverMapped(
+            CREATE_TIMESTAMP,
+            rsc -> rsc.getCreateTimestamp().isPresent() ? rsc.getCreateTimestamp().get().toString() : "null",
+            createTime -> {
+                switch(getDbType())
+                {
+                    case SQL:
+                        return createTime != null ? new Timestamp(createTime.getTime()) : null;
+                    case ETCD:
+                        return createTime != null ? Long.toString(createTime.getTime()) : null;
+                }
+                return null;
+            });
     }
 
     @Override
@@ -100,6 +128,7 @@ public class SnapshotDbDriver extends
         }
         else
         {
+            Date createTimestamp = null;
             final Map<VolumeNumber, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
             final long flags;
@@ -108,9 +137,15 @@ public class SnapshotDbDriver extends
             {
                 case ETCD:
                     flags = Long.parseLong(raw.get(RESOURCE_FLAGS));
+                    final String strCreateTimestamp = raw.get(CREATE_TIMESTAMP);
+                    if (strCreateTimestamp != null)
+                    {
+                        createTimestamp = new Date(Long.parseLong(strCreateTimestamp));
+                    }
                     break;
                 case SQL:
                     flags = raw.get(RESOURCE_FLAGS);
+                    createTimestamp = raw.get(CREATE_TIMESTAMP);
                     break;
                 default:
                     throw new ImplementationError("Unknown database type: " + getDbType());
@@ -131,7 +166,8 @@ public class SnapshotDbDriver extends
                     propsContainerFactory,
                     transObjFactory,
                     transMgrProvider,
-                    snapshotVlmMap
+                    snapshotVlmMap,
+                    createTimestamp
                 ),
                 new InitMapsImpl(snapshotVlmMap)
             );
@@ -162,5 +198,11 @@ public class SnapshotDbDriver extends
         {
             return snapVlmMap;
         }
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<AbsResource<Snapshot>, Date> getCreateTimeDriver()
+    {
+        return createTimestampDriver;
     }
 }

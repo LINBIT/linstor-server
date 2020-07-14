@@ -177,7 +177,8 @@ public class TestFactory
             transObjFactoryRef,
             transMgrProviderRef,
             rscConnMapRef,
-            vlmMapRef
+            vlmMapRef,
+            null
         );
     }
 

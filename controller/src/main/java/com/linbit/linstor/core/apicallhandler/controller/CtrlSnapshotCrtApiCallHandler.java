@@ -41,10 +41,10 @@ import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSat
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -475,6 +475,14 @@ public class CtrlSnapshotCrtApiCallHandler
         for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
         {
             unsetSuspendResourcePrivileged(snapshot);
+            try
+            {
+                snapshot.setCreateTimestamp(apiCtx, new Date());
+            }
+            catch (AccessDeniedException | DatabaseException exc)
+            {
+                errorReporter.reportError(exc);
+            }
         }
 
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);

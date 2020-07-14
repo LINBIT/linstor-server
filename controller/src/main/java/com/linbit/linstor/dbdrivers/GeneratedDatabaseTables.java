@@ -703,6 +703,7 @@ public class GeneratedDatabaseTables
 
         public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
         public static final ColumnImpl RESOURCE_FLAGS = new ColumnImpl("RESOURCE_FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl CREATE_TIMESTAMP = new ColumnImpl("CREATE_TIMESTAMP", Types.TIMESTAMP, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -710,7 +711,8 @@ public class GeneratedDatabaseTables
             NODE_NAME,
             RESOURCE_NAME,
             SNAPSHOT_NAME,
-            RESOURCE_FLAGS
+            RESOURCE_FLAGS,
+            CREATE_TIMESTAMP
         };
 
         @Override
@@ -1577,6 +1579,7 @@ public class GeneratedDatabaseTables
         Resources.RESOURCE_NAME.table = RESOURCES;
         Resources.SNAPSHOT_NAME.table = RESOURCES;
         Resources.RESOURCE_FLAGS.table = RESOURCES;
+        Resources.CREATE_TIMESTAMP.table = RESOURCES;
         ResourceConnections.UUID.table = RESOURCE_CONNECTIONS;
         ResourceConnections.NODE_NAME_SRC.table = RESOURCE_CONNECTIONS;
         ResourceConnections.NODE_NAME_DST.table = RESOURCE_CONNECTIONS;

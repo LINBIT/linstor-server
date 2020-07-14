@@ -65,7 +65,8 @@ public class ResourceSatelliteFactory
                     transObjFactory,
                     transMgrProvider,
                     new TreeMap<>(),
-                    new TreeMap<>()
+                    new TreeMap<>(),
+                    null
                 );
                 node.addResource(accCtx, rscData);
                 rscDfn.addResource(accCtx, rscData);

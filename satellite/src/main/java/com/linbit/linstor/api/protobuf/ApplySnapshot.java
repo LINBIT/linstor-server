@@ -98,6 +98,7 @@ public class ApplySnapshot implements ApiCall
                 snapshotVlmDfns,
                 snapshot.getSnapshotDfnFlags(),
                 snapshot.getSnapshotDfnPropsMap(),
+                Collections.emptyList(),
                 Collections.emptyList()
             ),
             UUID.fromString(snapshot.getSnapshotUuid()),
@@ -107,7 +108,9 @@ public class ApplySnapshot implements ApiCall
             fullSyncId,
             updateId,
             snapshotVlms,
-            snapLayerData
+            snapLayerData,
+            snapshot.getNodeName(),
+            null
         );
     }
 }

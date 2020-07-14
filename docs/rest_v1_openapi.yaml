@@ -28,6 +28,7 @@ info:
        - Added new fields to the ErrorReport object
        - Added /v1/resource-definitions/{resource}/snapshot-shipping
        - Allow to modify the resource group in Resource definitions
+       - Added createTimestamp to Resource and Snapshot
     * 1.1.0
        - Added /v1/view/snapshots for a faster all in one snapshot list
        - Filter lists by properties:
@@ -4405,6 +4406,10 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        create_timestamp:
+          type: integer
+          format: int64
+          description: milliseconds since unix epoch in UTC
     ResourceWithVolumes:
       allOf:
         - $ref: '#/components/schemas/Resource'
@@ -5168,6 +5173,32 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SnapshotVolumeDefinition'
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        snapshots:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotNode'
+    SnapshotNode:
+      type: object
+      description: Actual snapshot data from a node
+      properties:
+        snapshot_name:
+          type: string
+          description: Snapshot name this snapshots belongs to
+        node_name:
+          type: string
+          description: Node name where this snapshot was taken
+        create_timestamp:
+          type: integer
+          format: int64
+          description: milliseconds since unix epoch in UTC
+        flags:
+          type: array
+          items:
+            type: string
         uuid:
           type: string
           description: unique object id

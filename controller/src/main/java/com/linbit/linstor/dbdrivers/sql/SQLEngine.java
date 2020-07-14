@@ -228,7 +228,19 @@ public class SQLEngine implements DbEngine
         ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef
     )
     {
-        return new SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE>(
+        return generateSingleColumnDriverMapped(setters, colRef, typeMapperRef, dataToStringRef, dataValueToStringRef);
+    }
+
+    @Override
+    public <DATA, INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriverMapped(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column colRef,
+        Function<INPUT_TYPE, DB_TYPE> typeMapperRef,
+        DataToString<DATA> dataToStringRef,
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef
+    )
+    {
+        return new SQLSingleColumnDriver<>(
             this,
             errorReporter,
             setters,

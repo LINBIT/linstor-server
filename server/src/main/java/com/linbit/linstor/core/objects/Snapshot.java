@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         PropsContainerFactory propsConFactory,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef,
-        Map<VolumeNumber, SnapshotVolume> snapshotVlmMapRef
+        Map<VolumeNumber, SnapshotVolume> snapshotVlmMapRef,
+        Date createTimestampRef
     )
         throws DatabaseException
     {
@@ -82,7 +84,9 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
                 )
             ),
             transMgrProviderRef,
-            transObjFactory
+            transObjFactory,
+            createTimestampRef,
+            dbDriverRef
         );
 
         snapshotDfn = snapshotDfnRef;
@@ -288,7 +292,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         }
 
         return new SnapshotPojo(
-            snapshotDfn.getApiData(accCtx),
+            snapshotDfn.getApiData(accCtx, false),
             objId,
             flags.getFlagsBits(accCtx),
             suspendResource.get(),
@@ -296,7 +300,9 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
             fullSyncId,
             updateId,
             snapshotVlms,
-            getLayerData(accCtx).asPojo(accCtx)
+            getLayerData(accCtx).asPojo(accCtx),
+            getNodeName().displayValue,
+            getCreateTimestamp().orElse(null)
         );
     }
 

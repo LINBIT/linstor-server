@@ -7,6 +7,7 @@ import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
+import com.linbit.linstor.core.apis.SnapshotApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
@@ -41,6 +42,7 @@ import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -420,7 +422,18 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         return layerStack;
     }
 
-    public SnapshotDefinitionApi getApiData(AccessContext accCtx)
+    private List<SnapshotApi> getSnapshotApis(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        List<SnapshotApi> snapshotApis = new ArrayList<>();
+        for (Snapshot snap : snapshotMap.values())
+        {
+            snapshotApis.add(snap.getApiData(accCtx, 0L, 0L));
+        }
+        return snapshotApis;
+    }
+
+    public SnapshotDefinitionApi getApiData(AccessContext accCtx, boolean withSnapshots)
         throws AccessDeniedException
     {
         requireAccess(accCtx, AccessType.VIEW);
@@ -461,7 +474,8 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
             snapshotVlmDfns,
             flags.getFlagsBits(accCtx),
             new TreeMap<>(getProps(accCtx).map()),
-            layerData
+            layerData,
+            withSnapshots ? getSnapshotApis(accCtx) : Collections.emptyList()
         );
     }
 
@@ -469,11 +483,12 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         throws AccessDeniedException
     {
         return new SnapshotDfnListItemPojo(
-            getApiData(accCtx),
+            getApiData(accCtx, true),
             snapshotMap.values().stream()
                 .map(Snapshot::getNodeName)
                 .map(NodeName::getDisplayName)
-                .collect(Collectors.toList())
+                .collect(Collectors.toList()),
+            getSnapshotApis(accCtx)
         );
     }
 

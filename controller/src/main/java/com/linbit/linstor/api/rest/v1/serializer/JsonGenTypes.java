@@ -403,6 +403,10 @@ public class JsonGenTypes
          * unique object id
          */
         public String uuid;
+        /**
+         * milliseconds since unix epoch in UTC
+         */
+        public Long create_timestamp;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -975,6 +979,32 @@ public class JsonGenTypes
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
         public List<SnapshotVolumeDefinition> volume_definitions = Collections.emptyList();
+        /**
+         * unique object id
+         */
+        public String uuid;
+        public List<SnapshotNode> snapshots = Collections.emptyList();
+    }
+
+    /**
+     * Actual snapshot data from a node
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SnapshotNode
+    {
+        /**
+         * Snapshot name this snapshots belongs to
+         */
+        public String snapshot_name;
+        /**
+         * Node name where this snapshot was taken
+         */
+        public String node_name;
+        /**
+         * milliseconds since unix epoch in UTC
+         */
+        public Long create_timestamp;
+        public List<String> flags = Collections.emptyList();
         /**
          * unique object id
          */

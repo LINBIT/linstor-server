@@ -1082,6 +1082,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
 
             return IntSnapshot.newBuilder()
+                .setNodeName(snapshot.getNodeName().displayValue)
                 .setRscName(rscDfn.getName().displayValue)
                 .setRscDfnUuid(rscDfn.getUuid().toString())
                 .setRscDfnFlags(rscDfn.getFlags().getFlagsBits(serializerCtx))

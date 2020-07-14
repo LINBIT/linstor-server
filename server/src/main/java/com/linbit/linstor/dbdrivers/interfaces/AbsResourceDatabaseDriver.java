@@ -7,4 +7,5 @@ import java.util.Date;
 
 public interface AbsResourceDatabaseDriver<RSC extends AbsResource<RSC>>
 {
+    SingleColumnDatabaseDriver<AbsResource<RSC>, Date> getCreateTimeDriver();
 }

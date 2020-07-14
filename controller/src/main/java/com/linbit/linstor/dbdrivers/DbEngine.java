@@ -163,6 +163,43 @@ public interface DbEngine
     );
 
     /**
+     * Returns a {@link SingleColumnDatabaseDriver} for the given DATA type where the typeMapper function
+     * will also be executed for ETCD types.
+     *
+     * @param <DATA>
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinition}, ...
+     * @param <INPUT_TYPE>
+     *     The Linstor-type which is updated, i.e. {@link Type}, {@link String} for
+     *     {@link ResourceGroup}'s description-driver, <code>byte[]</code>
+     *     for the encryption column for {@link LUKSVolume}
+     * @param <DB_TYPE>
+     *     The type of the database-column. <br />
+     *     ETCD will map everything to {@link String} <br />
+     *     SQL will need types compatible with the corresponding {@link Column#getSqlType()}
+     * @param setters
+     *     This map contains accessors for all columns of the given {@link Table}.<br/>
+     *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
+     *     value of correct type for the given {@link Column}. <br />
+     *     For example, {@link Nodes#NODE_FLAGS} has to have an {@link ExceptionThrowingFunction}
+     *     that gets a {@link Node} which returns a long value from {@link StateFlags#getFlagsBits}
+     * @param colRef
+     *     The {@link Column} of the FLAG, i.e. {@link Nodes#NODE_FLAGS}
+     * @param typeMapperRef
+     *     Converts the INPUT_TYPE to DB_TYPE
+     * @param dataToStringRef
+     *     Converts the DATA to a String (only for logging)
+     * @param dataValueToStringRef
+     *     Converts the INPUT_TYPE to {@link String} (only for logging)
+     */
+    <DATA, INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriverMapped(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column colRef,
+        Function<INPUT_TYPE, DB_TYPE> typeMapperRef,
+        DataToString<DATA> dataToStringRef,
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef
+    );
+
+    /**
      * Returns a {@link CollectionDatabaseDriver} for the given DATA type.
      *
      * @param <DATA>

@@ -21,7 +21,9 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.sql.Time;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -136,7 +138,9 @@ public class ResourceControllerFactory
             transObjFactory,
             transMgrProvider,
             new TreeMap<>(),
-            new TreeMap<>()
+            new TreeMap<>(),
+            // use special epoch time to mark this as a new resource which will get set on resource apply
+            new Date(AbsResource.CREATE_DATE_INIT_VALUE)
         );
 
         dbDriver.create(rscData);

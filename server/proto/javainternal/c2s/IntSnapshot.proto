@@ -28,6 +28,7 @@ message IntSnapshot
     bool                              take_snapshot     = 16;
     common.RscGrp                     rsc_grp           = 21;
     common.RscLayerData               layer_object      = 22;
+    string                            node_name         = 17;
 }
 
 message SnapshotVlmDfn
