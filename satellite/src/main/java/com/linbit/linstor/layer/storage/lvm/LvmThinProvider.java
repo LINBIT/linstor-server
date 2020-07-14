@@ -356,7 +356,7 @@ public class LvmThinProvider extends LvmProvider
 
     @Override
     protected void finishShipReceiving(LvmData<Resource> vlmDataRef, LvmData<Snapshot> snapVlmRef)
-        throws StorageException, DatabaseException
+        throws StorageException, DatabaseException, AccessDeniedException
     {
         String vlmDataId = asLvIdentifier(vlmDataRef);
         deleteLvImpl(vlmDataRef, vlmDataId); // delete calls "lvmVlmData.setExists(false);" - we have to undo this
@@ -368,6 +368,9 @@ public class LvmThinProvider extends LvmProvider
             null
         );
         vlmDataRef.setExists(true);
+
+        // for keeping the same behavior as zfsProvider, we want to "keep" the snapshot. #
+        createSnapshot(vlmDataRef, snapVlmRef);
     }
 
     private String getVolumeGroupForLvs(StorPool storPool) throws StorageException
