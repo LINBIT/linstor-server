@@ -149,6 +149,59 @@ public class SnapshotShippingInternalApiCallHandler
 
         updateRscConPropsAfterReceived(snapSource, snapTarget);
 
+        Flux<ApiCallRc> flux;
+        if (!successRef)
+        {
+            ctrlTransactionHelper.commit();
+
+            // deletes the whole snapshotDfn
+            flux = snapshotDeleteApiCallHandler.deleteSnapshot(rscNameRef, snapNameRef);
+        }
+        else
+        {
+            disableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
+            enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING_CLEANUP);
+
+            copyLuksKeysIfNeeded(snapSource, snapTarget);
+
+            ctrlTransactionHelper.commit();
+
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                snapDfn,
+                CtrlSatelliteUpdateCaller.notConnectedWarn()
+            ).transform(
+                responses -> CtrlResponseUtils.combineResponses(
+                    responses,
+                    LinstorParsingUtils.asRscName(rscNameRef),
+                    "Finishing shpipping of snapshot''" + snapNameRef + "'' of {1} on {0}"
+                )
+            ).concatWith(shippingMerged(rscNameRef, snapNameRef, successRef));
+        }
+
+        return flux;
+    }
+
+    public Flux<ApiCallRc> shippingMerged(String rscNameRef, String snapNameRef, boolean successRef)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Finish cleanup snapshot-shipping",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP).buildDeferred(),
+                () -> shippingMergedInTransaction(rscNameRef, snapNameRef, successRef)
+            );
+    }
+
+    private Flux<ApiCallRc> shippingMergedInTransaction(String rscNameRef, String snapNameRef, boolean successRef)
+    {
+        Peer stltPeer = peerProvider.get();
+        SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true);
+        Snapshot snapTarget = ctrlApiDataLoader.loadSnapshot(stltPeer.getNode(), snapDfn);
+        Snapshot snapSource = getSnapshotShippingSource(snapDfn);
+
+        updateRscConPropsAfterReceived(snapSource, snapTarget);
+
         snapshotShippingPortPool.deallocate(getPort(snapDfn));
 
         Flux<ApiCallRc> flux;
@@ -161,7 +214,7 @@ public class SnapshotShippingInternalApiCallHandler
         }
         else
         {
-            disableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
+            disableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING_CLEANUP);
             enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPED);
 
             copyLuksKeysIfNeeded(snapSource, snapTarget);

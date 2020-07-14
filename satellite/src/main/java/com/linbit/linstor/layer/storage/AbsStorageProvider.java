@@ -545,11 +545,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         snapVlm.toString()
                     );
                 }
-                else
-                {
-                    errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
-                    finishShipReceiving(vlmData, snapVlm);
-                }
             }
             else // deleting the source should be the same as deleting an ordinary snapshot
             {
@@ -578,14 +573,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         for (LAYER_SNAP_DATA snapVlm : listRef)
         {
+            LAYER_DATA vlmData = vlmDataLut.get(
+                new Pair<>(
+                    snapVlm.getRscLayerObject().getSuffixedResourceName(),
+                    snapVlm.getVlmNr()
+                )
+            );
             if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
             {
-                LAYER_DATA vlmData = vlmDataLut.get(
-                    new Pair<>(
-                        snapVlm.getRscLayerObject().getSuffixedResourceName(),
-                        snapVlm.getVlmNr()
-                    )
-                );
                 if (vlmData == null)
                 {
                     throw new StorageException(
@@ -633,6 +628,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     {
                         throw new ImplementationError(exc);
                     }
+                }
+            }
+            else
+            {
+                Snapshot snap = snapVlm.getVolume().getAbsResource();
+                if (
+                    snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
+                        snap.getSnapshotDefinition().getFlags()
+                            .isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_CLEANUP)
+                )
+                {
+                    errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
+                    finishShipReceiving(vlmData, snapVlm);
                 }
             }
         }
