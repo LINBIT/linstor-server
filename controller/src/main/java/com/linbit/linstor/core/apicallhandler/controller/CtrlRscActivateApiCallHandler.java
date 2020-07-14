@@ -75,15 +75,15 @@ public class CtrlRscActivateApiCallHandler
 
     public Flux<ApiCallRc> activateRsc(String nodeNameRef, String rscNameRef)
     {
-        return setResourceActive(nodeNameRef, rscNameRef, true);
+        return setResourceActiveState(nodeNameRef, rscNameRef, true);
     }
 
     public Flux<ApiCallRc> deactivateRsc(String nodeNameRef, String rscNameRef)
     {
-        return setResourceActive(nodeNameRef, rscNameRef, false);
+        return setResourceActiveState(nodeNameRef, rscNameRef, false);
     }
 
-    private Flux<ApiCallRc> setResourceActive(String nodeNameStr, String rscNameStr, boolean active)
+    private Flux<ApiCallRc> setResourceActiveState(String nodeNameStr, String rscNameStr, boolean active)
     {
         ResponseContext context = makeRscContext(
             ApiOperation.makeModifyOperation(),
@@ -95,7 +95,7 @@ public class CtrlRscActivateApiCallHandler
             .fluxInTransactionalScope(
                 active ? "Activate resource" : "Deactivate resource",
                 createLockGuard(),
-                () -> setResourceActiveInTransaction(
+                () -> setResourceActiveStateInTransaction(
                     nodeNameStr,
                     rscNameStr,
                     active,
@@ -105,7 +105,7 @@ public class CtrlRscActivateApiCallHandler
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> setResourceActiveInTransaction(
+    private Flux<ApiCallRc> setResourceActiveStateInTransaction(
         String nodeNameStrRef,
         String rscNameStrRef,
         boolean active,
@@ -135,6 +135,15 @@ public class CtrlRscActivateApiCallHandler
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_SNAPSHOT_SHIPPING_IN_PROGRESS,
                             "Cannot activate a resource while being a snapshot-shipping-target!"
+                        )
+                    );
+                }
+                if (hasDrbdInStack(rsc))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_LAYER_STACK,
+                            "A DRDB-resource cannot be activated again!"
                         )
                     );
                 }
@@ -352,10 +361,28 @@ public class CtrlRscActivateApiCallHandler
             throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "check if resource is in use. " + getRscDescription(rscRef),
-                ApiConsts.FAIL_ACC_DENIED_NODE
+                ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
         return ret;
+    }
+
+    private boolean hasDrbdInStack(Resource rsc)
+    {
+        boolean hasDrbdInStack;
+        try
+        {
+            hasDrbdInStack = LayerRscUtils.getLayerStack(rsc, peerAccCtx.get()).contains(DeviceLayerKind.DRBD);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check if resource has DRBD in layer-list. " + getRscDescription(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return hasDrbdInStack;
     }
 
     private LockGuard createLockGuard()

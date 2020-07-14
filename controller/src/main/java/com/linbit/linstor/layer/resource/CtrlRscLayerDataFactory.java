@@ -87,7 +87,16 @@ public class CtrlRscLayerDataFactory
 
     public List<DeviceLayerKind> getLayerStack(Resource rscRef)
     {
-        return LayerRscUtils.getLayerStack(rscRef, apiCtx);
+        List<DeviceLayerKind> layerStack;
+        try
+        {
+            layerStack = LayerRscUtils.getLayerStack(rscRef, apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return layerStack;
     }
 
     /**
