@@ -172,6 +172,21 @@ public class CtrlSnapshotRestoreApiCallHandler
                 ));
             }
 
+            if (isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPING))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_SNAPSHOT_SHIPPING,
+                        "Snapshot is being shipped. Please wait until shipping is finished"
+                    )
+                );
+            }
+
+            if (isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPED))
+            {
+                setFlags(toRscDfn, ResourceDefinition.Flags.FROM_SHIPPED_SNAPSHOT);
+            }
+
             ctrlSnapshotHelper.ensureSnapshotSuccessful(fromSnapshotDfn);
 
             ctrlPropsHelper.copy(
@@ -256,6 +271,64 @@ public class CtrlSnapshotRestoreApiCallHandler
             );
     }
 
+    private boolean isFlagSet(SnapshotDefinition snapDfn, SnapshotDefinition.Flags... flags)
+    {
+        boolean flagsSet;
+        try
+        {
+            flagsSet = snapDfn.getFlags().isSet(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "accessing snapshot-definition's flags",
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
+        return flagsSet;
+    }
+
+    private void setFlags(ResourceDefinition rscDfn, ResourceDefinition.Flags... flags)
+    {
+        try
+        {
+            rscDfn.getFlags().enableFlags(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "setting resource-definition flags",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private void unsetFlags(ResourceDefinition rscDfn, ResourceDefinition.Flags... flags)
+    {
+        try
+        {
+            rscDfn.getFlags().disableFlags(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "setting resource-definition flags",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
     private Flux<ApiCallRc> cleanupProperties(Set<Resource> restoredResourcesRef)
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -283,6 +356,11 @@ public class CtrlSnapshotRestoreApiCallHandler
                     props.removeProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
                     props.removeProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
                 }
+            }
+            if (!restoredResourcesRef.isEmpty())
+            {
+                ResourceDefinition rscDfn = restoredResourcesRef.iterator().next().getResourceDefinition();
+                unsetFlags(rscDfn, ResourceDefinition.Flags.FROM_SHIPPED_SNAPSHOT);
             }
             ctrlTransactionHelper.commit();
         }

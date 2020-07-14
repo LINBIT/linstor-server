@@ -801,6 +801,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setRscName(rscDfnApi.getResourceName())
             .setRscDfnUuid(rscDfnApi.getUuid().toString())
             .setRscGrp(serializeResourceGroup(rscDfnApi.getResourceGroup()))
+            .addAllRscDfnFlags(FlagsHelper.toStringList(ResourceDefinition.Flags.class, rscDfnApi.getFlags()))
             .addAllVlmDfns(serializeVolumeDefinition(rscDfnApi.getVlmDfnList()))
             .putAllRscDfnProps(rscDfnApi.getProps())
             .addAllLayerData(LayerObjectSerializer.serializeRscDfnLayerData(rscDfnApi));

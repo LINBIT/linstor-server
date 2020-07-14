@@ -210,7 +210,6 @@ class StltRscApiCallHandler
 
             rscName = new ResourceName(rscRawData.getName());
             ResourceDefinition.Flags[] rscDfnFlags = ResourceDefinition.Flags.restoreFlags(rscRawData.getRscDfnFlags());
-
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
 
             ResourceGroup rscGrp = rscGrpApiCallHelper.mergeResourceGroup(

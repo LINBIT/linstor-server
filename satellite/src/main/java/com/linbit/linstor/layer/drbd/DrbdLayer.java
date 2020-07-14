@@ -883,7 +883,7 @@ public class DrbdLayer implements DeviceLayer
     }
 
     private boolean hasMetaData(DrbdVlmData<Resource> drbdVlmData)
-        throws VolumeException
+        throws VolumeException, AccessDeniedException
     {
         String metaDiskPath = drbdVlmData.getMetaDiskPath();
         if (metaDiskPath == null)
@@ -911,6 +911,13 @@ public class DrbdLayer implements DeviceLayer
 
         boolean hasMetaData;
 
+        StateFlags<ResourceDefinition.Flags> rscDfnFlags = drbdVlmData.getRscLayerObject().getAbsResource()
+            .getDefinition().getFlags();
+        if (rscDfnFlags.isSet(workerCtx, ResourceDefinition.Flags.FROM_SHIPPED_SNAPSHOT))
+        {
+            hasMetaData = false;
+        }
+        else
         if (drbdVlmData.checkMetaData() ||
             // when adding a disk, DRBD believes that it is diskless but we still need to create metadata
             !drbdVlmData.hasDisk())
@@ -1289,7 +1296,10 @@ public class DrbdLayer implements DeviceLayer
         List<DrbdRscData<Resource>> drbdPeerRscDataList = drbdRscData.getRscDfnLayerObject()
             .getDrbdRscDataList().stream()
             .filter(otherRscData -> !otherRscData.equals(drbdRscData) &&
-                AccessUtils.execPrivileged(() -> DrbdLayerUtils.isDrbdResourceExpected(workerCtx, otherRscData))
+                AccessUtils.execPrivileged(() -> DrbdLayerUtils.isDrbdResourceExpected(workerCtx, otherRscData)) &&
+                AccessUtils.execPrivileged(
+                    () -> !drbdRscData.getAbsResource().getStateFlags().isSet(workerCtx, Resource.Flags.INACTIVE)
+                )
             )
             .collect(Collectors.toList());
 
