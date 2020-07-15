@@ -4,6 +4,8 @@ script = '''
 dnf update -y
 dnf install -y lvm2 git make gcc kernel-devel elfutils-libelf-devel patch flex java-1.8.0-openjdk
 
+sed -i 's/# global_filter = \[/global_filter = \[ "r|\/dev\/drbd\.\*|", /g' /etc/lvm/lvm.conf
+
 KERNEL=$(rpm -qa kernel | tail -n1 | cut -c8-)
 
 cd /tmp
