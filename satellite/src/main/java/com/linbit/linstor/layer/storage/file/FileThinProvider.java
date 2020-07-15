@@ -14,7 +14,7 @@ import com.linbit.linstor.layer.storage.file.utils.LosetupCommands;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -38,7 +38,7 @@ public class FileThinProvider extends FileProvider
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingManager snapShipMrgRef
+        SnapshotShippingService snapShipMrgRef
     )
     {
         super(

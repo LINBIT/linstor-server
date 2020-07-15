@@ -1,5 +1,6 @@
 package com.linbit.extproc;
 
+import com.linbit.ImplementationError;
 import com.linbit.extproc.OutputProxy.Event;
 
 import java.io.IOException;
@@ -8,6 +9,7 @@ import java.util.concurrent.BlockingDeque;
 
 public class DaemonHandler
 {
+    public static final int PROCESS_STOPPED = Integer.MAX_VALUE;
     private static final byte DELIMITER = '\n';
 
     private final ProcessBuilder processBuilder;
@@ -58,5 +60,23 @@ public class DaemonHandler
             errThread.interrupt();
             process = null;
         }
+    }
+
+    public int getExitCode()
+    {
+        int exitValue;
+        if (process != null)
+        {
+            if (process.isAlive())
+            {
+                throw new ImplementationError("Process is still running");
+            }
+            exitValue = process.exitValue();
+        }
+        else
+        {
+            exitValue = PROCESS_STOPPED;
+        }
+        return exitValue;
     }
 }

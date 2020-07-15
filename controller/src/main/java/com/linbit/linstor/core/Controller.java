@@ -24,7 +24,6 @@ import com.linbit.linstor.core.cfg.CtrlConfigModule;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -56,6 +55,7 @@ import com.linbit.linstor.systemstarter.ConnectNodesInitializer;
 import com.linbit.linstor.systemstarter.GrizzlyInitializer;
 import com.linbit.linstor.systemstarter.OpenflexTargetProceMgrInit;
 import com.linbit.linstor.systemstarter.PassphraseInitializer;
+import com.linbit.linstor.systemstarter.PreConnectInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
@@ -136,6 +136,8 @@ public final class Controller
 
     private final PassphraseInitializer passphraseInitializer;
 
+    private PreConnectInitializer preConnectCleanupInitializer;
+
     @Inject
     public Controller(
         ErrorReporter errorReporterRef,
@@ -164,7 +166,8 @@ public final class Controller
         OpenFlexTargetProcessManager openFlexTargetProcessManagerRef,
         WhitelistProps whitelistPropsRef,
         CtrlConfig ctrlCfgRef,
-        PassphraseInitializer passphraseInitializerRef
+        PassphraseInitializer passphraseInitializerRef,
+        PreConnectInitializer preConnectCleanupInitializerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -193,6 +196,7 @@ public final class Controller
         whitelistProps = whitelistPropsRef;
         ctrlCfg = ctrlCfgRef;
         passphraseInitializer = passphraseInitializerRef;
+        preConnectCleanupInitializer = preConnectCleanupInitializerRef;
     }
 
     public void start(Injector injector, CtrlConfig linstorCfgRef)
@@ -279,6 +283,7 @@ public final class Controller
             startOrderlist.add(dbNumberPoolInitializer);
             startOrderlist.add(new ServiceStarter(taskScheduleService));
             startOrderlist.add(controllerNetComInitializer);
+            startOrderlist.add(preConnectCleanupInitializer);
             startOrderlist.add(connectNodesInitializer);
             startOrderlist.add(openflexTargetProcessMgrInit);
             if (ctrlCfg.getMasterPassphrase() != null)

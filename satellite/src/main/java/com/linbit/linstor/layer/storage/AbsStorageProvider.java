@@ -41,7 +41,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -87,7 +87,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected final WipeHandler wipeHandler;
     protected final StltConfigAccessor stltConfigAccessor;
     protected Props localNodeProps;
-    private final SnapshotShippingManager snapShipMgr;
+    private final SnapshotShippingService snapShipMgr;
 
     protected final HashMap<String, INFO> infoListCache;
     protected final List<Consumer<Map<String, Long>>> postRunVolumeNotifications = new ArrayList<>();
@@ -109,7 +109,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         Provider<TransactionMgr> transMgrProviderRef,
         String typeDescrRef,
         DeviceProviderKind kindRef,
-        SnapshotShippingManager snapShipMgrRef
+        SnapshotShippingService snapShipMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -209,6 +209,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     )
                 )
             );
+
         Map<Pair<String, VolumeNumber>, LAYER_DATA> volumesLut = new HashMap<>();
 
         List<LAYER_DATA> vlmsToCreate = new ArrayList<>();
@@ -508,45 +509,41 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         for (LAYER_SNAP_DATA snapVlm : snapVlmsDataList)
         {
-            Snapshot snap = snapVlm.getRscLayerObject().getAbsResource();
-            if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET))
+            LAYER_DATA vlmData = vlmDataLut.get(
+                new Pair<>(
+                    snapVlm.getRscLayerObject().getSuffixedResourceName(),
+                    snapVlm.getVlmNr()
+                )
+            );
+            if (vlmData == null)
             {
-                LAYER_DATA vlmData = vlmDataLut.get(
-                    new Pair<>(
-                        snapVlm.getRscLayerObject().getSuffixedResourceName(),
-                        snapVlm.getVlmNr()
+                throw new StorageException(
+                    String.format(
+                        "Could not merge snapshot '%s' into its volume as the volume was not found.",
+                        snapVlm.toString()
                     )
                 );
-                if (vlmData == null)
-                {
-                    throw new StorageException(
-                        String.format(
-                            "Could not merge snapshot '%s' into its volume as the volume was not found.",
-                            snapVlm.toString()
-                        )
-                    );
-                }
-                if (!snapVlm.exists())
-                {
-                    /*
-                     * this might happened when we already merged the previous shipping, but before the
-                     * SHIPPING_TARGET flag is removed from the snapshot, this satellite receives a new
-                     * update.
-                     * The snapshot is gone, the merge was successful (hopefully :) ) but the SHIPPING_TARGET
-                     * is still present.
-                     *
-                     * In this case, we should skip the finishShipReceive step, as that might delete
-                     * the original volume (which would be very bad in this case as we also no longer have the
-                     * snapshot which should usually replace the original volume, so we would end up with
-                     * no data at all for this linstor-volume)
-                     */
-                    errorReporter.logTrace(
-                        "Snapshot '%s' not found (already finished / merged?) . Skipping merging.",
-                        snapVlm.toString()
-                    );
-                }
             }
-            else // deleting the source should be the same as deleting an ordinary snapshot
+            if (!snapVlm.exists())
+            {
+                /*
+                 * this might happened when we already merged the previous shipping, but before the
+                 * SHIPPING_TARGET flag is removed from the snapshot, this satellite receives a new
+                 * update.
+                 * The snapshot is gone, the merge was successful (hopefully :) ) but the SHIPPING_TARGET
+                 * is still present.
+                 *
+                 * In this case, we should skip the finishShipReceive step, as that might delete
+                 * the original volume (which would be very bad in this case as we also no longer have the
+                 * snapshot which should usually replace the original volume, so we would end up with
+                 * no data at all for this linstor-volume)
+                 */
+                errorReporter.logTrace(
+                    "Snapshot '%s' not found (already finished / merged?) . Skipping merging.",
+                    snapVlm.toString()
+                );
+            }
+            else
             {
                 errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
                 if (snapshotExists(snapVlm))

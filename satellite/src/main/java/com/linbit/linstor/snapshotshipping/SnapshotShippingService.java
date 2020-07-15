@@ -1,6 +1,11 @@
 package com.linbit.linstor.snapshotshipping;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.ServiceName;
+import com.linbit.SystemService;
+import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
@@ -26,8 +31,20 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 
 @Singleton
-public class SnapshotShippingManager
+public class SnapshotShippingService implements SystemService
 {
+    public static final ServiceName SERVICE_NAME;
+    public static final String SERVICE_INFO = "SnapshotShippingService";
+
+    private static final String CMD_FORMAT_RECEIVING =
+        "set -o pipefail; socat TCP-LISTEN:%s STDOUT | zstd -d | " +
+        // "pv -s 100m -bnr -i 0.1 | " +
+        "%s";
+    private static final String CMD_FORMAT_SENDING =
+        "%s | " +
+        // "pv -s 100m -bnr -i 0.1 | " +
+        "zstd | socat STDIN TCP:%s:%s";
+
     private final AccessContext storDriverAccCtx;
     private final ExtCmdFactory extCmdFactory;
     private final ErrorReporter errorReporter;
@@ -35,9 +52,25 @@ public class SnapshotShippingManager
     private final CtrlStltSerializer interComSerializer;
 
     private final Map<Snapshot, ShippingInfo> shippingInfoMap;
+    private final ThreadGroup threadGroup;
+
+    private ServiceName instanceName;
+    private boolean serviceStarted = false;
+
+    static
+    {
+        try
+        {
+            SERVICE_NAME = new ServiceName(SERVICE_INFO);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ImplementationError(invalidNameExc);
+        }
+    }
 
     @Inject
-    public SnapshotShippingManager(
+    public SnapshotShippingService(
         @SystemContext AccessContext storDriverAccCtxRef,
         ExtCmdFactory extCmdFactoryRef,
         ErrorReporter errorReporterRef,
@@ -51,7 +84,27 @@ public class SnapshotShippingManager
         controllerPeerConnector = controllerPeerConnectorRef;
         interComSerializer = interComSerializerRef;
 
+        try
+        {
+            instanceName = new ServiceName(SERVICE_INFO);
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
         shippingInfoMap = Collections.synchronizedMap(new TreeMap<>());
+        threadGroup = new ThreadGroup("SnapshotShippingSerivceThreadGroup");
+    }
+
+    public void killAllShipping() throws StorageException
+    {
+        killIfRunning(
+            "^\\s*[0-9]+\\s+bash -c " + String.format(CMD_FORMAT_RECEIVING, "[0-9]+", ".+").replaceAll("[|]", "[|]") + "$"
+        );
+        killIfRunning(
+            "^\\s*[0-9]+\\s+bash -c " + String.format(CMD_FORMAT_SENDING, ".+", "[0-9.]+", "[0-9]+").replaceAll("[|]", "[|]") + "$"
+        );
     }
 
     public void startReceiving(
@@ -68,10 +121,7 @@ public class SnapshotShippingManager
             {
                 "bash",
                 "-c",
-                "socat TCP-LISTEN:" + port + " STDOUT | " +
-                    "zstd -d | " +
-                    // "pv -s 100m -bnr -i 0.1 | " +
-                    snapshotShippingReceivingCommandRef
+                String.format(CMD_FORMAT_RECEIVING, port, snapshotShippingReceivingCommandRef)
             },
             shippingDescr,
             success -> postShipping(
@@ -98,10 +148,12 @@ public class SnapshotShippingManager
             {
                 "bash",
                 "-c",
-                snapshotShippingSendingCommandRef + " | " +
-                // "pv -s 100m -bnr -i 0.1 | " +
-                "zstd | " +
-                "socat STDIN TCP:" + targetNetIfRef.getAddress(storDriverAccCtx).getAddress() + ":" + socatPortRef
+                String.format(
+                    CMD_FORMAT_SENDING,
+                    snapshotShippingSendingCommandRef,
+                    targetNetIfRef.getAddress(storDriverAccCtx).getAddress(),
+                    socatPortRef
+                )
             },
             shippingDescr,
             // success -> postShipping(
@@ -128,24 +180,32 @@ public class SnapshotShippingManager
     )
         throws StorageException
     {
-        if (!alreadyStarted(snapVlmData))
+        if (serviceStarted)
         {
-            killIfRunning(sendRecvCommand);
-
-            SnapshotShippingDaemon daemon = new SnapshotShippingDaemon(
-                errorReporter,
-                "shipping_" + shippingDescr,
-                fullCommand,
-                postAction
-            );
-            Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
-            ShippingInfo info = shippingInfoMap.get(snap);
-            if (info == null)
+            if (!alreadyStarted(snapVlmData))
             {
-                info = new ShippingInfo();
-                shippingInfoMap.put(snap, info);
+                killIfRunning(sendRecvCommand);
+
+                SnapshotShippingDaemon daemon = new SnapshotShippingDaemon(
+                    errorReporter,
+                    threadGroup,
+                    "shipping_" + shippingDescr,
+                    fullCommand,
+                    postAction
+                );
+                Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
+                ShippingInfo info = shippingInfoMap.get(snap);
+                if (info == null)
+                {
+                    info = new ShippingInfo();
+                    shippingInfoMap.put(snap, info);
+                }
+                info.snapVlmDataInfoMap.put(snapVlmData, new SnapVlmDataInfo(daemon));
             }
-            info.snapVlmDataInfoMap.put(snapVlmData, new SnapVlmDataInfo(daemon));
+        }
+        else
+        {
+            throw new StorageException("SnapshotShippingService not started");
         }
     }
 
@@ -222,7 +282,7 @@ public class SnapshotShippingManager
             OutputData outputData = extCmdFactory.create().exec(
                 "bash",
                 "-c",
-                "ps a -o pid,command | grep '" + cmdToKill + "'"
+                "ps ax -o pid,command | grep -E '" + cmdToKill + "' | grep -v grep"
             );
             if (outputData.exitCode == 0) // != 0 means grep didnt find anything
             {
@@ -232,7 +292,8 @@ public class SnapshotShippingManager
                 {
                     line = line.trim(); // ps prints a trailing space
                     String pid = line.substring(0, line.indexOf(" "));
-                    extCmdFactory.create().exec("kill", pid);
+                    extCmdFactory.create().exec("pkill", "-9", "--parent", pid);
+                    // extCmdFactory.create().exec("kill", pid);
                 }
                 Thread.sleep(500); // wait a bit so not just the process is killed but also the socket is closed
             }
@@ -240,6 +301,73 @@ public class SnapshotShippingManager
         catch (ChildProcessTimeoutException | IOException | InterruptedException exc)
         {
             throw new StorageException("Failed to determine if command is still running: " + cmdToKill, exc);
+        }
+    }
+
+    @Override
+    public ServiceName getServiceName()
+    {
+        return SERVICE_NAME;
+    }
+
+    @Override
+    public String getServiceInfo()
+    {
+        return SERVICE_INFO;
+    }
+
+    @Override
+    public ServiceName getInstanceName()
+    {
+        return instanceName;
+    }
+
+    @Override
+    public void setServiceInstanceName(ServiceName instanceNameRef)
+    {
+        instanceName = instanceNameRef;
+    }
+
+    @Override
+    public boolean isStarted()
+    {
+        return serviceStarted;
+    }
+
+    @Override
+    public void start() throws SystemServiceStartException
+    {
+        serviceStarted = true;
+    }
+
+    @Override
+    public void shutdown()
+    {
+        serviceStarted = false;
+        for (ShippingInfo info : shippingInfoMap.values())
+        {
+            for (SnapVlmDataInfo snapVlmDataInfo : info.snapVlmDataInfoMap.values())
+            {
+                snapVlmDataInfo.daemon.shutdown();
+            }
+        }
+    }
+
+    @Override
+    public void awaitShutdown(long timeoutRef) throws InterruptedException
+    {
+        long exitTime = Math.addExact(System.currentTimeMillis(), timeoutRef);
+        for (ShippingInfo info : shippingInfoMap.values())
+        {
+            for (SnapVlmDataInfo snapVlmDataInfo : info.snapVlmDataInfoMap.values())
+            {
+                long now = System.currentTimeMillis();
+                if (now < exitTime)
+                {
+                    long maxWaitTime = exitTime - now;
+                    snapVlmDataInfo.daemon.awaitShutdown(maxWaitTime);
+                }
+            }
         }
     }
 

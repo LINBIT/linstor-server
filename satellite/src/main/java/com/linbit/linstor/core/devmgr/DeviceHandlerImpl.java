@@ -42,7 +42,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
@@ -86,7 +86,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final OpenflexLayer openflexLayer;
     private final StorageLayer storageLayer;
     private final ExtCmdFactory extCmdFactory;
-    private final SnapshotShippingManager snapshotShippingManager;
+    private final SnapshotShippingService snapshotShippingManager;
 
     private final SysFsHandler sysFsHandler;
 
@@ -103,7 +103,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         ResourceStateEvent resourceStateEventRef,
         ExtCmdFactory extCmdFactoryRef,
         SysFsHandler sysFsHandlerRef,
-        SnapshotShippingManager snapshotShippingManagerRef
+        SnapshotShippingService snapshotShippingManagerRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -832,13 +832,15 @@ public class DeviceHandlerImpl implements DeviceHandler
     // command. This method should be a central point for future logging or other extensions / purposes
 
     @Override
-    public void fullSyncApplied(Node localNode)
+    public void fullSyncApplied(Node localNode) throws StorageException
     {
         fullSyncApplied.set(true);
         try
         {
             Props localNodeProps = localNode.getProps(wrkCtx);
             localNodePropsChanged(localNodeProps);
+
+            snapshotShippingManager.killAllShipping();
         }
         catch (AccessDeniedException exc)
         {

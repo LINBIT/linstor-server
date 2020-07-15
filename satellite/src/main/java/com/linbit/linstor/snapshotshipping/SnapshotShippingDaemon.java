@@ -1,6 +1,7 @@
 package com.linbit.linstor.snapshotshipping;
 
 import com.linbit.ImplementationError;
+import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.DaemonHandler;
 import com.linbit.extproc.OutputProxy.EOFEvent;
 import com.linbit.extproc.OutputProxy.Event;
@@ -25,12 +26,13 @@ public class SnapshotShippingDaemon implements Runnable
     private final LinkedBlockingDeque<Event> deque;
     private final DaemonHandler handler;
 
-    private boolean running = true;
+    private boolean started = false;
 
     private final Consumer<Boolean> afterTermination;
 
     public SnapshotShippingDaemon(
         ErrorReporter errorReporterRef,
+        ThreadGroup threadGroupRef,
         String threadName,
         String[] commandRef,
         Consumer<Boolean> afterTerminationRef
@@ -43,92 +45,96 @@ public class SnapshotShippingDaemon implements Runnable
         deque = new LinkedBlockingDeque<>(DFLT_DEQUE_CAPACITY);
         handler = new DaemonHandler(deque, command);
 
-        thread = new Thread(this, threadName);
+        thread = new Thread(threadGroupRef, this, threadName);
     }
 
     public void start()
     {
         thread.start();
+        errorReporter.logTrace("starting daemon: %s", Arrays.toString(command));
+        try
+        {
+            handler.start();
+        }
+        catch (IOException exc)
+        {
+            errorReporter.reportError(
+                new SystemServiceStartException(
+                    "Unable to daemon for SnapshotShipping",
+                    "I/O error attempting to start '" + Arrays.toString(command) + "'",
+                    exc.getMessage(),
+                    null,
+                    null,
+                    exc,
+                    false
+                )
+            );
+        }
+        started = true;
     }
 
     @Override
     public void run()
     {
-        try
+        while (started)
         {
-            errorReporter.logTrace("starting daemon: %s", Arrays.toString(command));
-            handler.start();
-
-            boolean success = true;
-            while (running)
+            Event event;
+            try
             {
-                Event event;
-                try
+                event = deque.take();
+                if (event instanceof StdOutEvent)
                 {
-                    event = deque.take();
-                    if (event instanceof StdOutEvent)
-                    {
-                        errorReporter.logTrace("stdOut: %s", new String(((StdOutEvent) event).data));
-                        // ignore for now...
-                    }
-                    else
-                    if (event instanceof StdErrEvent)
-                    {
-                        errorReporter.logTrace("stdErr: %s", new String(((StdErrEvent) event).data));
-                        errorReporter.logWarning(
-                            "command '%s' returned error: %n%s",
-                            Arrays.toString(command),
-                            new String(((StdErrEvent) event).data)
-                        );
-                    }
-                    else
-                    if (event instanceof ExceptionEvent)
-                    {
-                        errorReporter.logTrace("ExceptionEvent in '%s':", Arrays.toString(command));
-                        errorReporter.reportError(((ExceptionEvent) event).exc);
-                        // FIXME: Report the exception to the controller
-                    }
-                    else
-                    if (event instanceof PoisonEvent)
-                    {
-                        errorReporter.logTrace("PoisonEvent");
-                        break;
-                    }
-                    else
-                    if (event instanceof EOFEvent)
-                    {
-                        errorReporter.logTrace("EOF");
-                        afterTermination.accept(success);
-                    }
+                    errorReporter.logTrace("stdOut: %s", new String(((StdOutEvent) event).data));
+                    // ignore for now...
                 }
-                catch (InterruptedException exc)
+                else
+                if (event instanceof StdErrEvent)
                 {
-                    if (running)
-                    {
-                        errorReporter.reportError(new ImplementationError(exc));
-                    }
-                }
-                catch (Exception exc)
-                {
-                    errorReporter.reportError(
-                        new ImplementationError(
-                            "Unknown exception occurred while executing '" + Arrays.toString(command) + "'",
-                            exc
-                        )
+                    errorReporter.logTrace("stdErr: %s", new String(((StdErrEvent) event).data));
+                    errorReporter.logWarning(
+                        "command '%s' returned error: %n%s",
+                        Arrays.toString(command),
+                        new String(((StdErrEvent) event).data)
                     );
                 }
+                else
+                if (event instanceof ExceptionEvent)
+                {
+                    errorReporter.logTrace("ExceptionEvent in '%s':", Arrays.toString(command));
+                    errorReporter.reportError(((ExceptionEvent) event).exc);
+                    // FIXME: Report the exception to the controller
+                }
+                else
+                if (event instanceof PoisonEvent)
+                {
+                    errorReporter.logTrace("PoisonEvent");
+                    break;
+                }
+                else
+                if (event instanceof EOFEvent)
+                {
+                    int exitCode = handler.getExitCode();
+                    errorReporter.logTrace("EOF. Exit code: " + exitCode);
+                    afterTermination.accept(exitCode == 0);
+                }
+            }
+            catch (InterruptedException exc)
+            {
+                if (started)
+                {
+                    errorReporter.reportError(new ImplementationError(exc));
+                }
+            }
+            catch (Exception exc)
+            {
+                errorReporter.reportError(
+                    new ImplementationError(
+                        "Unknown exception occurred while executing '" + Arrays.toString(command) + "'",
+                        exc
+                    )
+                );
             }
         }
-        catch (IOException exc)
-        {
-            errorReporter.reportError(exc);
-        }
-    }
-
-    public void stop()
-    {
-        running = false;
-        deque.add(new PoisonEvent());
     }
 
     /**
@@ -136,4 +142,23 @@ public class SnapshotShippingDaemon implements Runnable
      */
     private static class PoisonEvent implements Event
     {}
+
+    public void shutdown()
+    {
+        started = false;
+        handler.stop(true);
+        if (thread != null)
+        {
+            thread.interrupt();
+        }
+        deque.addFirst(new PoisonEvent());
+    }
+
+    public void awaitShutdown(long timeoutRef) throws InterruptedException
+    {
+        if (thread != null)
+        {
+            thread.join(timeoutRef);
+        }
+    }
 }

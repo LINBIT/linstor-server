@@ -202,6 +202,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                         // however, DO NOT call run(cfg) within this synchronized block, as that could
                         // cause a deadlock
                     }
+                    cfg.shippingInProgress = false;
                     break;
                 }
             }
@@ -221,7 +222,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             for (AutoSnapshotConfig cfg : configSet)
             {
-                if (cfg.nextRerunAt <= curTime)
+                if (cfg.nextRerunAt <= curTime && !cfg.shippingInProgress)
                 {
                     cfgSet.add(cfg);
                 }
@@ -250,6 +251,10 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                 )
             )
             .subscribe();
+        if (cfgRef.shipping)
+        {
+            cfgRef.shippingInProgress = true;
+        }
         cfgRef.nextRerunAt += cfgRef.runEveryInMs;
     }
 
@@ -274,6 +279,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
 
         private long runEveryInMs;
         private long nextRerunAt;
+        public boolean shippingInProgress = false;
 
         private AutoSnapshotConfig(String rscNameRef, long runEveryInMsRef, boolean shippingRef)
         {

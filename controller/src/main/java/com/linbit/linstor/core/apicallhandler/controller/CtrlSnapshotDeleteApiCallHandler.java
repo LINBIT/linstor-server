@@ -192,7 +192,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     }
 
     // Restart from here when connection established and DELETE flag set
-    private Flux<ApiCallRc> deleteSnapshotsOnNodes(ResourceName rscName, SnapshotName snapshotName)
+    public Flux<ApiCallRc> deleteSnapshotsOnNodes(ResourceName rscName, SnapshotName snapshotName)
     {
         return scopeRunner
             .fluxInTransactionlessScope(

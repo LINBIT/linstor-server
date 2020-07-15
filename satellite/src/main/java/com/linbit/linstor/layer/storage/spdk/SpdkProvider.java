@@ -31,7 +31,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.snapshotshipping.SnapshotShippingManager;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
@@ -76,7 +76,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         Provider<TransactionMgr> transMgrProvider,
         String subTypeDescr,
         DeviceProviderKind subTypeKind,
-        SnapshotShippingManager snapShipMrgRef
+        SnapshotShippingService snapShipMrgRef
     )
     {
         super(
@@ -102,7 +102,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingManager snapShipMrgRef
+        SnapshotShippingService snapShipMrgRef
     )
     {
         super(

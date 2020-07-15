@@ -160,7 +160,7 @@ public class CtrlSnapshotShippingApiCallHandler
             {
                 sourceNodeName = getActiveResourceNodeName(rscDfn);
             }
-            flux = shipSnapshotInTransaction(rscNameRef, sourceNodeName, null, targetNodeName, null);
+            flux = shipSnapshotInTransaction(rscNameRef, sourceNodeName, null, targetNodeName, null, true);
         }
         return flux;
     }
@@ -207,7 +207,8 @@ public class CtrlSnapshotShippingApiCallHandler
         String fromNodeNameRef,
         String fromNicRef,
         String toNodeNameRef,
-        String toNicRef
+        String toNicRef,
+        boolean suppressErrors
     )
     {
         ResponseContext context = makeSnapshotContext(
@@ -224,7 +225,14 @@ public class CtrlSnapshotShippingApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> shipSnapshotInTransaction(rscNameRef, fromNodeNameRef, fromNicRef, toNodeNameRef, toNicRef)
+                () -> shipSnapshotInTransaction(
+                    rscNameRef,
+                    fromNodeNameRef,
+                    fromNicRef,
+                    toNodeNameRef,
+                    toNicRef,
+                    suppressErrors
+                )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -234,7 +242,8 @@ public class CtrlSnapshotShippingApiCallHandler
         String fromNodeNameRef,
         String fromNicRef,
         String toNodeNameRef,
-        String toNicRef
+        String toNicRef,
+        boolean autoShipping
     )
     {
         ResourceConnection rscConn = rscConnHelper.loadOrCreateRscConn(

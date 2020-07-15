@@ -19,7 +19,6 @@ import com.linbit.linstor.api.protobuf.ProtobufApiType;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.devmgr.DevMgrModule;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.SatelliteDbModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -44,6 +43,7 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SatelliteSecurityModule;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.security.StltCoreObjProtInitializer;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.systemstarter.NetComInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.StartupInitializer;
@@ -105,11 +105,14 @@ public final class Satellite
 
     private final DrbdEventService drbdEventSvc;
 
+    private final SnapshotShippingService snapShipSvc;
+
     private final SatelliteNetComInitializer satelliteNetComInitializer;
 
     private final StltCoreObjProtInitializer stltCoreObjProtInitializer;
 
     private final StltConfig stltCfg;
+
 
     @Inject
     public Satellite(
@@ -126,6 +129,7 @@ public final class Satellite
         DebugConsoleCreator debugConsoleCreatorRef,
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
+        SnapshotShippingService snapShipSvcRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
         StltCoreObjProtInitializer stltCoreObjProtInitializerRef,
         StltConfig stltCfgRef
@@ -142,6 +146,7 @@ public final class Satellite
         debugConsoleCreator = debugConsoleCreatorRef;
         fsWatchSvc = fsWatchSvcRef;
         drbdEventSvc = drbdEventSvcRef;
+        snapShipSvc = snapShipSvcRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
         stltCoreObjProtInitializer = stltCoreObjProtInitializerRef;
         stltCfg = stltCfgRef;
@@ -218,6 +223,7 @@ public final class Satellite
                 startOrderlist.add(new ServiceStarter(drbdEventSvc));
                 startOrderlist.add(new ServiceStarter(drbdEventPublisher));
             }
+            startOrderlist.add(new ServiceStarter(snapShipSvc));
             startOrderlist.add(new ServiceStarter(devMgrService));
             startOrderlist.add(stltCoreObjProtInitializer);
             errorReporter.logInfo("Initializing main network communications service");
@@ -230,6 +236,7 @@ public final class Satellite
                 systemServicesMap.put(drbdEventSvc.getInstanceName(), drbdEventSvc);
                 systemServicesMap.put(drbdEventPublisher.getInstanceName(), drbdEventPublisher);
             }
+            systemServicesMap.put(snapShipSvc.getInstanceName(), snapShipSvc);
             systemServicesMap.put(devMgrService.getInstanceName(), devMgrService);
 
             applicationLifecycleManager.startSystemServices(startOrderlist);

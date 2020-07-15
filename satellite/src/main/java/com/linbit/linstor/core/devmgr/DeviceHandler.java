@@ -60,7 +60,7 @@ public interface DeviceHandler
 
     void localNodePropsChanged(Props propsRef);
 
-    void fullSyncApplied(Node localNodeRef);
+    void fullSyncApplied(Node localNodeRef) throws StorageException;
 
     SpaceInfo getSpaceInfo(StorPool storPoolRef) throws StorageException;
 }
