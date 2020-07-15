@@ -3,6 +3,7 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -59,6 +60,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Singleton
 public class LayerDataFactory
@@ -123,6 +125,20 @@ public class LayerDataFactory
     )
         throws DatabaseException
     {
+        // check that the nodeid is unique within rscdatalist
+        // there is somewhere a race condition and we couldn't determine the cause yet
+        for (DrbdRscData<RSC> sib : rscDfnData.getDrbdRscDataList())
+        {
+            if (sib.getNodeId().equals(nodeId))
+            {
+                final String allIds = rscDfnData.getDrbdRscDataList().stream()
+                    .map(rscData -> Integer.toString(rscData.getNodeId().value))
+                    .collect(Collectors.joining(","));
+                throw new LinStorRuntimeException(
+                    String.format("Duplicate node id '%d' detected. ids: [%s]", nodeId.value, allIds)
+                );
+            }
+        }
         DrbdRscData<RSC> drbdRscData = new DrbdRscData<>(
             rscLayerId,
             rsc,
