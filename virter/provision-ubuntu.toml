@@ -4,7 +4,7 @@ script = '''
 add-apt-repository -y ppa:linbit/linbit-drbd9-stack
 
 # maria db stable
-apt-get install software-properties-common
+DEBIAN_FRONTEND=noninteractive apt-get install -yq software-properties-common
 #sudo apt-key adv --fetch-keys 'https://mariadb.org/mariadb_release_signing_key.asc'
 #add-apt-repository 'deb [arch=amd64,arm64,ppc64el] http://mirror.biznetgio.com/mariadb/repo/10.4/ubuntu focal main'
 
@@ -55,8 +55,4 @@ EOF
 
 systemctl daemon-reload
 systemctl enable etcd.service
-
-mkdir -p /root/.ssh
-cat /tmp/host_id_rsa.pub >> /root/.ssh/authorized_keys
-sed -i "/#PermitRootLogin yes/s/^#//g" /etc/ssh/sshd_config
 '''
