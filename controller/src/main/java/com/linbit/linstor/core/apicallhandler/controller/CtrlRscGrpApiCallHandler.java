@@ -206,7 +206,8 @@ public class CtrlRscGrpApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_PLACE_COUNT,
-                        getRscGrpDescription(rscGrpNameStr) + ", place-count must be positive."
+                        getRscGrpDescription(rscGrpNameStr) + ", place-count must be positive.",
+                        true
                     )
                 );
             }
@@ -330,7 +331,8 @@ public class CtrlRscGrpApiCallHandler
                 throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                                 ApiConsts.FAIL_INVLD_PLACE_COUNT,
-                                getRscGrpDescription(rscGrpNameStrRef) + ", place-count must be positive."
+                                getRscGrpDescription(rscGrpNameStrRef) + ", place-count must be positive.",
+                            true
                         )
                 );
             }
@@ -475,7 +477,8 @@ public class CtrlRscGrpApiCallHandler
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_EXISTS_RSC_DFN,
                         "Cannot delete " + getRscGrpDescriptionInline(rscGrpNameStrRef) +
-                        " because it has existing resource definitions."
+                        " because it has existing resource definitions.",
+                        true
                     )
                 );
             }
@@ -722,23 +725,25 @@ public class CtrlRscGrpApiCallHandler
             List<VolumeGroup> vlmGrps = rscGrp.getVolumeGroups(peerCtx);
             final int vlmSizeLen = vlmSizesRef.size();
             final int vlmGrpLen = vlmGrps.size();
-            if (vlmSizeLen == vlmGrps.size() || partialRef)
+            if (vlmSizeLen == vlmGrpLen || partialRef)
             {
                 for (int idx = 0; idx < vlmSizeLen; ++idx)
                 {
-                    VolumeGroup vlmGrp = vlmGrps.get(idx);
-
-                    long vlmSize = vlmSizesRef.get(idx);
                     Integer vlmNr = null;
+                    long flags = 0;
                     if (idx < vlmGrpLen)
                     {
+                        VolumeGroup vlmGrp = vlmGrps.get(idx);
                         vlmNr = vlmGrp.getVolumeNumber().value;
+                        flags = vlmGrp.getFlags().getFlagsBits(peerCtx);
                     }
+
+                    long vlmSize = vlmSizesRef.get(idx);
                     vlmDfnCrtList.add(
                         createVlmDfnWithCreationPayload(
                             vlmNr,
                             vlmSize,
-                            vlmGrp.getFlags().getFlagsBits(peerCtx)
+                            flags
                         )
                     );
                 }
@@ -753,6 +758,7 @@ public class CtrlRscGrpApiCallHandler
                     .setDetails("The " + getRscGrpDescriptionInline(rscGrpNameRef) + " has " + vlmGrps.size() +
                         " Volume groups, but only " + vlmSizeLen + " sizes were provided.")
                     .setCorrection("Either provide the correct count of volume sizes or use the 'partial' option")
+                    .setSkipErrorReport(true)
                 );
             }
 
@@ -899,7 +905,8 @@ public class CtrlRscGrpApiCallHandler
                     new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_INVLD_PLACE_COUNT,
-                            "Replica count is required for this operation"
+                            "Replica count is required for this operation",
+                            true
                         )
                     )
                 );
