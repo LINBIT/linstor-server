@@ -44,7 +44,7 @@ public class StltExtToolsChecker
     private static final Pattern CRYPTSETUP_VERSION_PATTERN = Pattern
         .compile("(?:cryptsetup )?(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern LVM_VERSION_PATTERN = Pattern
-        .compile("(?:\\s*LVM vesion:\\s*)?(\\d+)\\.(\\d+)\\.(\\d+)");
+        .compile("(?:\\s*LVM version:\\s*)(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern LVM_THIN_VERSION_PATTERN = Pattern
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern ZFS_VERSION_PATTERN = Pattern
