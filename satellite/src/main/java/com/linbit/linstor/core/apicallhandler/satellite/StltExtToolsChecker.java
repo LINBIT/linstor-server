@@ -54,7 +54,7 @@ public class StltExtToolsChecker
     private static final Pattern SPDK_VERSION_PATTERN = Pattern
         .compile("(?:\\s*version\\s*)?(\\d+)\\.(\\d+)");
     private static final Pattern LOSETUP_VERSION_PATTERN = Pattern
-        .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
+        .compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
 
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
