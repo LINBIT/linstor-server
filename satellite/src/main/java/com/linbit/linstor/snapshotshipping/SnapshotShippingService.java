@@ -37,13 +37,22 @@ public class SnapshotShippingService implements SystemService
     public static final String SERVICE_INFO = "SnapshotShippingService";
 
     private static final String CMD_FORMAT_RECEIVING =
-        "set -o pipefail; socat TCP-LISTEN:%s STDOUT | zstd -d | " +
-        // "pv -s 100m -bnr -i 0.1 | " +
-        "%s";
+        "trap 'kill -HUP 0' SIGTERM; " +
+        "set -o pipefail; " +
+        "(" +
+            "socat TCP-LISTEN:%s STDOUT | " +
+            "zstd -d | " +
+            // "pv -s 100m -bnr -i 0.1 | " +
+            "%s ;" +
+        ")& wait -n";
     private static final String CMD_FORMAT_SENDING =
-        "%s | " +
-        // "pv -s 100m -bnr -i 0.1 | " +
-        "zstd | socat STDIN TCP:%s:%s";
+        "trap 'kill -HUP 0' SIGTERM; " +
+        "(" +
+            "%s | " +
+            // "pv -s 100m -bnr -i 0.1 | " +
+            "zstd | " +
+            "socat STDIN TCP:%s:%s ;" +
+        ")&\\wait -n";
 
     private final AccessContext storDriverAccCtx;
     private final ExtCmdFactory extCmdFactory;
@@ -99,12 +108,30 @@ public class SnapshotShippingService implements SystemService
 
     public void killAllShipping() throws StorageException
     {
-        killIfRunning(
-            "^\\s*[0-9]+\\s+bash -c " + String.format(CMD_FORMAT_RECEIVING, "[0-9]+", ".+").replaceAll("[|]", "[|]") + "$"
-        );
-        killIfRunning(
-            "^\\s*[0-9]+\\s+bash -c " + String.format(CMD_FORMAT_SENDING, ".+", "[0-9.]+", "[0-9]+").replaceAll("[|]", "[|]") + "$"
-        );
+        for (ShippingInfo shippingInfo : shippingInfoMap.values())
+        {
+            for (SnapVlmDataInfo snapVlmDataInfo : shippingInfo.snapVlmDataInfoMap.values())
+            {
+                snapVlmDataInfo.daemon.shutdown();
+            }
+        }
+        shippingInfoMap.clear();
+    }
+
+    public void abort(AbsStorageVlmData<Snapshot> snapVlmData)
+    {
+        errorReporter
+            .logDebug("aborting snapshot shipping: %s", snapVlmData.getRscLayerObject().getAbsResource().toString());
+        Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
+        ShippingInfo info = shippingInfoMap.get(snap);
+        if (info != null)
+        {
+            SnapVlmDataInfo snapVlmDataInfo = info.snapVlmDataInfoMap.get(snapVlmData);
+            if (snapVlmDataInfo != null)
+            {
+                snapVlmDataInfo.daemon.shutdown();
+            }
+        }
     }
 
     public void startReceiving(
@@ -119,8 +146,8 @@ public class SnapshotShippingService implements SystemService
             snapshotShippingReceivingCommandRef,
             new String[]
             {
-                "bash",
-                "-c",
+                "setsid", "-w",
+                "bash", "-c",
                 String.format(CMD_FORMAT_RECEIVING, port, snapshotShippingReceivingCommandRef)
             },
             shippingDescr,
@@ -146,8 +173,8 @@ public class SnapshotShippingService implements SystemService
             snapshotShippingSendingCommandRef,
             new String[]
             {
-                "bash",
-                "-c",
+                "setsid", "-w",
+                "bash", "-c",
                 String.format(
                     CMD_FORMAT_SENDING,
                     snapshotShippingSendingCommandRef,
@@ -156,11 +183,6 @@ public class SnapshotShippingService implements SystemService
                 )
             },
             shippingDescr,
-            // success -> postShipping(
-            // success,
-            // snapVlmData,
-            // InternalApiConsts.API_NOTIFY_SNAPSHOT_SHIPPING_SENT
-            // ),
             success -> postShipping(
                 success,
                 snapVlmData,

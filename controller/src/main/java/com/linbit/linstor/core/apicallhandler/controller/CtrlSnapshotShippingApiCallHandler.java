@@ -12,7 +12,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -63,9 +62,7 @@ public class CtrlSnapshotShippingApiCallHandler
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final CtrlSnapshotHelper ctrlSnapshotHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
@@ -74,7 +71,6 @@ public class CtrlSnapshotShippingApiCallHandler
 
     private final CtrlSnapshotCrtHelper snapCrtHelper;
     private final CtrlSnapshotCrtApiCallHandler snapCrtHandler;
-    private final CtrlSnapshotDeleteApiCallHandler snapDelHandler;
     private final DynamicNumberPool snapshotShippingPortPool;
 
     @Inject
@@ -82,16 +78,13 @@ public class CtrlSnapshotShippingApiCallHandler
         @ApiContext AccessContext apiCtxRef,
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlSnapshotHelper ctrlSnapshotHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscConnectionHelper rscConnHelperRef,
         CtrlSnapshotCrtHelper snapCrtHelperRef,
         CtrlSnapshotCrtApiCallHandler snapCrtHandlerRef,
-        CtrlSnapshotDeleteApiCallHandler snapDelHandlerRef,
         CtrlPropsHelper propsHelperRef,
         @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef
     )
@@ -99,16 +92,13 @@ public class CtrlSnapshotShippingApiCallHandler
         apiCtx = apiCtxRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        ctrlSnapshotHelper = ctrlSnapshotHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
         peerAccCtx = peerAccCtxRef;
         lockGuardFactory = lockGuardFactoryRef;
         rscConnHelper = rscConnHelperRef;
         snapCrtHelper = snapCrtHelperRef;
         snapCrtHandler = snapCrtHandlerRef;
-        snapDelHandler = snapDelHandlerRef;
         propsHelper = propsHelperRef;
         snapshotShippingPortPool = snapshotShippingPortPoolRef;
     }

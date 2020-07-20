@@ -50,8 +50,8 @@ public class SnapshotShippingDaemon implements Runnable
 
     public void start()
     {
+        started = true;
         thread.start();
-        errorReporter.logTrace("starting daemon: %s", Arrays.toString(command));
         try
         {
             handler.start();
@@ -70,12 +70,12 @@ public class SnapshotShippingDaemon implements Runnable
                 )
             );
         }
-        started = true;
     }
 
     @Override
     public void run()
     {
+        errorReporter.logTrace("starting daemon: %s", Arrays.toString(command));
         while (started)
         {
             Event event;
@@ -90,12 +90,7 @@ public class SnapshotShippingDaemon implements Runnable
                 else
                 if (event instanceof StdErrEvent)
                 {
-                    errorReporter.logTrace("stdErr: %s", new String(((StdErrEvent) event).data));
-                    errorReporter.logWarning(
-                        "command '%s' returned error: %n%s",
-                        Arrays.toString(command),
-                        new String(((StdErrEvent) event).data)
-                    );
+                    errorReporter.logWarning("stdErr: %s", new String(((StdErrEvent) event).data));
                 }
                 else
                 if (event instanceof ExceptionEvent)
@@ -146,7 +141,7 @@ public class SnapshotShippingDaemon implements Runnable
     public void shutdown()
     {
         started = false;
-        handler.stop(true);
+        handler.stop(false);
         if (thread != null)
         {
             thread.interrupt();

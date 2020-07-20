@@ -11,5 +11,6 @@ public enum ExtTools
     DM_WRITECACHE,
     DM_CACHE,
     LOSETUP,
-    ZSTD, SOCAT
+    ZSTD,
+    SOCAT
 }

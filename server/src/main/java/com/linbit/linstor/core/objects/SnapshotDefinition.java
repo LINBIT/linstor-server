@@ -592,8 +592,9 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         DELETE(1L << 3),
         SHIPPING(1L << 4),
         SHIPPING_CLEANUP(1L << 5),
-        SHIPPED(1L << 6),
-        AUTO_SNAPSHOT(1L << 7),
+        SHIPPING_ABORT(1L << 6),
+        SHIPPED(1L << 7),
+        AUTO_SNAPSHOT(1L << 8),
         ;
 
         public final long flagValue;

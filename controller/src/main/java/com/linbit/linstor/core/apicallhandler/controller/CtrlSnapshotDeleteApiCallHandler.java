@@ -64,6 +64,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlPropsHelper propsHelper;
     private final ErrorReporter errorReporter;
+    private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
 
     @Inject
     public CtrlSnapshotDeleteApiCallHandler(
@@ -76,7 +77,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         LockGuardFactory lockguardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlPropsHelper propsHelperRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -89,6 +91,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         peerAccCtx = peerAccCtxRef;
         propsHelper = propsHelperRef;
         errorReporter = errorReporterRef;
+        snapShipAbortHandler = snapShipAbortHandlerRef;
     }
 
     @Override
@@ -146,12 +149,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
         if (isSnapshotShippingInProgress(snapshotDfn))
         {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_SNAPSHOT_SHIPPING_IN_PROGRESS,
-                    "Cannot delete a snapshot while it is being shipped"
-                )
-            );
+            snapShipAbortHandler.markSnapshotShippingAborted(snapshotDfn);
         }
 
         markSnapshotDfnDeleted(snapshotDfn);

@@ -915,6 +915,7 @@ public class DrbdLayer implements DeviceLayer
             .getDefinition().getFlags();
         if (rscDfnFlags.isSet(workerCtx, ResourceDefinition.Flags.FROM_SHIPPED_SNAPSHOT))
         {
+            errorReporter.logTrace("FROM_SHIPPED_SNAPSHOT flag is set. Ignoring existing metadata");
             hasMetaData = false;
         }
         else
@@ -969,6 +970,7 @@ public class DrbdLayer implements DeviceLayer
         {
             hasMetaData = true; // just dont create new meta-data if "checkMetaData" is disabled
         }
+        errorReporter.logTrace("Found metadata: %s", hasMetaData);
         return hasMetaData;
     }
 

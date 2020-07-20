@@ -322,33 +322,43 @@ public class CtrlSatelliteUpdateCaller
         Flux<ApiCallRc> response;
         Peer currentPeer = node.getPeer(apiCtx);
 
-        if (currentPeer.isConnected() && currentPeer.hasFullSyncFailed())
+        if (currentPeer == null)
         {
-            response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(currentPeer)));
+            // might be null if controller is just starting and establishing connection
+            // to the first node which triggers an update to a all resources / snapshots
+            // of a rsc-/snap-dfn, even to an rsc/snap with a node to which the controller
+            // did not even attempted to connect -> null as peer
+            response = notConnectedHandler.handleNotConnected(nodeName);
         }
         else
         {
-            response = currentPeer
-                .apiCall(
-                    InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT,
-                    internalComSerializer
-                        .headerlessBuilder()
-                        .changedSnapshot(
-                            snapshot.getResourceName().displayValue,
-                            snapshot.getUuid(),
-                            snapshot.getSnapshotName().displayValue
-                        )
-                        .build()
-                )
+            if (currentPeer.isConnected() && currentPeer.hasFullSyncFailed())
+            {
+                response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(currentPeer)));
+            }
+            else
+            {
+                response = currentPeer
+                    .apiCall(
+                        InternalApiConsts.API_CHANGED_IN_PROGRESS_SNAPSHOT,
+                        internalComSerializer
+                            .headerlessBuilder()
+                            .changedSnapshot(
+                                snapshot.getResourceName().displayValue,
+                                snapshot.getUuid(),
+                                snapshot.getSnapshotName().displayValue
+                            )
+                            .build()
+                    )
 
-                .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
+                    .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
 
-                .onErrorResume(
-                    PeerNotConnectedException.class,
-                    ignored -> notConnectedHandler.handleNotConnected(nodeName)
-                );
+                    .onErrorResume(
+                        PeerNotConnectedException.class,
+                        ignored -> notConnectedHandler.handleNotConnected(nodeName)
+                    );
+            }
         }
-
         return response;
     }
 

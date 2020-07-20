@@ -6,6 +6,7 @@ import com.linbit.extproc.OutputProxy.Event;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 public class DaemonHandler
 {
@@ -65,13 +66,23 @@ public class DaemonHandler
     public int getExitCode()
     {
         int exitValue;
-        if (process != null)
+        Process proc = process;
+        if (proc != null)
         {
-            if (process.isAlive())
+            if (proc.isAlive())
             {
-                throw new ImplementationError("Process is still running");
+                try
+                {
+                    proc.waitFor(500, TimeUnit.MILLISECONDS);
+                }
+                catch (InterruptedException ignored)
+                {}
+                if (proc.isAlive())
+                {
+                    throw new ImplementationError("Process is still running");
+                }
             }
-            exitValue = process.exitValue();
+            exitValue = proc.exitValue();
         }
         else
         {

@@ -26,6 +26,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
@@ -42,6 +43,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -526,25 +528,22 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             if (!snapVlm.exists())
             {
-                /*
-                 * this might happened when we already merged the previous shipping, but before the
-                 * SHIPPING_TARGET flag is removed from the snapshot, this satellite receives a new
-                 * update.
-                 * The snapshot is gone, the merge was successful (hopefully :) ) but the SHIPPING_TARGET
-                 * is still present.
-                 *
-                 * In this case, we should skip the finishShipReceive step, as that might delete
-                 * the original volume (which would be very bad in this case as we also no longer have the
-                 * snapshot which should usually replace the original volume, so we would end up with
-                 * no data at all for this linstor-volume)
-                 */
                 errorReporter.logTrace(
-                    "Snapshot '%s' not found (already finished / merged?) . Skipping merging.",
+                    "Snapshot '%s' not found. Skipping deletion.",
                     snapVlm.toString()
                 );
             }
             else
             {
+
+                Snapshot snap = snapVlm.getRscLayerObject().getAbsResource();
+                StateFlags<Flags> snapDfnFlags = snap.getSnapshotDefinition()
+                    .getFlags();
+                if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
+                {
+                    snapShipMgr.abort(snapVlm);
+                }
+
                 errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
                 if (snapshotExists(snapVlm))
                 {
@@ -681,7 +680,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 }
             }
         }
-
         return prevSnapVlmData;
     }
 

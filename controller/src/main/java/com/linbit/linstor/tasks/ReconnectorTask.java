@@ -1,8 +1,10 @@
 package com.linbit.linstor.tasks;
 
+import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.SatelliteConnector;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingAbortHandler;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -31,6 +33,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import reactor.util.context.Context;
+
 @Singleton
 public class ReconnectorTask implements Task
 {
@@ -45,6 +49,7 @@ public class ReconnectorTask implements Task
     private final TransactionMgrGenerator transactionMgrGenerator;
     private final LinStorScope reconnScope;
     private final LockGuardFactory lockGuardFactory;
+    private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
 
     @Inject
     public ReconnectorTask(
@@ -53,7 +58,8 @@ public class ReconnectorTask implements Task
         Provider<SatelliteConnector> satelliteConnectorRef,
         TransactionMgrGenerator transactionMgrGeneratorRef,
         LinStorScope reconnScopeRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -62,6 +68,7 @@ public class ReconnectorTask implements Task
         reconnScope = reconnScopeRef;
         lockGuardFactory = lockGuardFactoryRef;
         transactionMgrGenerator = transactionMgrGeneratorRef;
+        snapShipAbortHandler = snapShipAbortHandlerRef;
     }
 
     void setPingTask(PingTask pingTaskRef)
@@ -85,6 +92,15 @@ public class ReconnectorTask implements Task
                 peerSet.add(peer);
             }
         }
+
+        snapShipAbortHandler.abortSnapshotShippingPrivileged(peer.getNode())
+            .subscriberContext(Context.of(
+                ApiModule.API_CALL_NAME, "Abort currently shipped snapshots",
+                AccessContext.class, peer.getAccessContext(),
+                Peer.class, peer
+            ))
+            .subscribe();
+
         if (sendAuthentication)
         {
             /*

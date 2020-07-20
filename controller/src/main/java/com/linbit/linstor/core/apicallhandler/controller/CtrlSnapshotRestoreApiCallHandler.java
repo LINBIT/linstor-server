@@ -172,7 +172,10 @@ public class CtrlSnapshotRestoreApiCallHandler
                 ));
             }
 
-            if (isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPING))
+            if (
+                isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPING) ||
+                    isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPING_CLEANUP)
+            )
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

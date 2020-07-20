@@ -8,6 +8,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -147,19 +148,27 @@ public class SnapshotShippingInternalApiCallHandler
         Snapshot snapTarget = ctrlApiDataLoader.loadSnapshot(stltPeer.getNode(), snapDfn);
         Snapshot snapSource = getSnapshotShippingSource(snapDfn);
 
-        updateRscConPropsAfterReceived(snapSource, snapTarget);
+        updateRscConPropsAfterReceived(snapSource, snapTarget, successRef);
+
+        disableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
 
         Flux<ApiCallRc> flux;
         if (!successRef)
         {
+            enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING_ABORT);
+
             ctrlTransactionHelper.commit();
+
+            errorReporter.logWarning(
+                "Snapshot-shipping failed. Removing %s",
+                CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline(snapDfn)
+            );
 
             // deletes the whole snapshotDfn
             flux = snapshotDeleteApiCallHandler.deleteSnapshot(rscNameRef, snapNameRef);
         }
         else
         {
-            disableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
             enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING_CLEANUP);
 
             copyLuksKeysIfNeeded(snapSource, snapTarget);
@@ -200,7 +209,7 @@ public class SnapshotShippingInternalApiCallHandler
         Snapshot snapTarget = ctrlApiDataLoader.loadSnapshot(stltPeer.getNode(), snapDfn);
         Snapshot snapSource = getSnapshotShippingSource(snapDfn);
 
-        updateRscConPropsAfterReceived(snapSource, snapTarget);
+        updateRscConPropsAfterReceived(snapSource, snapTarget, successRef);
 
         snapshotShippingPortPool.deallocate(getPort(snapDfn));
 
@@ -280,7 +289,7 @@ public class SnapshotShippingInternalApiCallHandler
         }
     }
 
-    private void updateRscConPropsAfterReceived(Snapshot snapSource, Snapshot snapTarget)
+    private void updateRscConPropsAfterReceived(Snapshot snapSource, Snapshot snapTarget, boolean success)
     {
         ResourceConnection rscConn = ctrlApiDataLoader.loadRscConn(
             snapSource.getResourceDefinition().getName(),
@@ -289,11 +298,14 @@ public class SnapshotShippingInternalApiCallHandler
         );
         try
         {
-            Props rscConnProps = rscConn.getProps(apiCtx);
-            rscConnProps.setProp(
-                InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_PREV,
-                snapSource.getSnapshotName().displayValue
-            );
+            if (success)
+            {
+                Props rscConnProps = rscConn.getProps(apiCtx);
+                rscConnProps.setProp(
+                    InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_PREV,
+                    snapSource.getSnapshotName().displayValue
+                );
+            }
             rscConn.setSnapshotShippingNameInProgress(null);
         }
         catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
