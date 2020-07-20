@@ -62,31 +62,33 @@ public class EventProcessor
 
     public void connectionClosed(Peer peer)
     {
-        eventHandlingLock.lock();
-        try
+        try (LockGuard lockGuard = lockGuardFactory.build(LockGuardFactory.LockType.READ, NODES_MAP))
         {
-            Node node = peer.getNode();
-            if (node != null && !node.isDeleted())
+            eventHandlingLock.lock();
+            try
             {
-                // The peer is a Satellite
-                for (Map.Entry<String, Provider<EventHandler>> eventHandlerEntry : eventHandlers.entrySet())
+                Node node = peer.getNode();
+                if (node != null && !node.isDeleted())
                 {
-                    Collection<EventIdentifier> eventStreams = incomingEventStreamStore.getDescendantEventStreams(
-                        EventIdentifier.node(eventHandlerEntry.getKey(), node.getName())
-                    );
-
-                    for (EventIdentifier eventIdentifier : eventStreams)
+                    // The peer is a Satellite
+                    for (Map.Entry<String, Provider<EventHandler>> eventHandlerEntry : eventHandlers.entrySet())
                     {
-                        executeNoConnection(eventHandlerEntry.getValue(), eventIdentifier);
+                        Collection<EventIdentifier> eventStreams = incomingEventStreamStore.getDescendantEventStreams(
+                            EventIdentifier.node(eventHandlerEntry.getKey(), node.getName())
+                        );
 
-                        incomingEventStreamStore.removeEventStream(eventIdentifier);
+                        for (EventIdentifier eventIdentifier : eventStreams)
+                        {
+                            executeNoConnection(eventHandlerEntry.getValue(), eventIdentifier);
+
+                            incomingEventStreamStore.removeEventStream(eventIdentifier);
+                        }
                     }
                 }
+            } finally
+            {
+                eventHandlingLock.unlock();
             }
-        }
-        finally
-        {
-            eventHandlingLock.unlock();
         }
     }
 
