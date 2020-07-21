@@ -1,5 +1,6 @@
 package com.linbit.linstor.tasks;
 
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CtrlAuthenticator;
@@ -42,6 +43,8 @@ public class ReconnectorTask implements Task
 
     private final Object syncObj = new Object();
     private final HashSet<Peer> peerSet = new HashSet<>();
+
+    private final AccessContext apiCtx;
     private final ErrorReporter errorReporter;
     private PingTask pingTask;
     private final Provider<CtrlAuthenticator> authenticatorProvider;
@@ -51,8 +54,10 @@ public class ReconnectorTask implements Task
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
 
+
     @Inject
     public ReconnectorTask(
+        @SystemContext AccessContext apiCtxRef,
         ErrorReporter errorReporterRef,
         Provider<CtrlAuthenticator> authenticatorRef,
         Provider<SatelliteConnector> satelliteConnectorRef,
@@ -62,6 +67,7 @@ public class ReconnectorTask implements Task
         CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef
     )
     {
+        apiCtx = apiCtxRef;
         errorReporter = errorReporterRef;
         authenticatorProvider = authenticatorRef;
         satelliteConnector = satelliteConnectorRef;
@@ -96,7 +102,7 @@ public class ReconnectorTask implements Task
         snapShipAbortHandler.abortSnapshotShippingPrivileged(peer.getNode())
             .subscriberContext(Context.of(
                 ApiModule.API_CALL_NAME, "Abort currently shipped snapshots",
-                AccessContext.class, peer.getAccessContext(),
+                AccessContext.class, apiCtx,
                 Peer.class, peer
             ))
             .subscribe();
