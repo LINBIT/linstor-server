@@ -23,6 +23,7 @@ import com.linbit.linstor.storage.layer.provider.WipeHandler;
 import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
+import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
@@ -31,6 +32,7 @@ import javax.inject.Singleton;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
 
 @Singleton
 public class LvmThinProvider extends LvmProvider
@@ -83,28 +85,56 @@ public class LvmThinProvider extends LvmProvider
         LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
         String volumeGroup = vlmData.getVolumeGroup();
         String lvId = asLvIdentifier(vlmData);
-        LvmUtils.execWithRetry(
-            extCmdFactory,
-            Collections.singleton(volumeGroup),
-            config -> LvmCommands.createThin(
+
+        List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateOptions(vlmData));
+        String[] additionalOptionsArr = new String[additionalOptions.size()];
+        additionalOptions.toArray(additionalOptionsArr);
+
+        if (additionalOptions.contains("--config"))
+        {
+            // no retry, use only users '--config' settings
+            LvmCommands.createThin(
                 extCmdFactory.create(),
                 volumeGroup,
                 vlmData.getThinPool(),
                 lvId,
                 vlmData.getExepectedSize(),
-                config
-            )
-        );
-        LvmUtils.execWithRetry(
-            extCmdFactory,
-            Collections.singleton(volumeGroup),
-            config -> LvmCommands.activateVolume(
+                null, // config is contained in additionalOptions
+                additionalOptionsArr
+            );
+
+            LvmCommands.activateVolume(
                 extCmdFactory.create(),
                 volumeGroup,
                 lvId,
-                config
-            )
-        );
+                additionalOptions.get(additionalOptions.indexOf("--config") + 1)
+            );
+        }
+        else
+        {
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(volumeGroup),
+                config -> LvmCommands.createThin(
+                    extCmdFactory.create(),
+                    volumeGroup,
+                    vlmData.getThinPool(),
+                    lvId,
+                    vlmData.getExepectedSize(),
+                    config
+                )
+            );
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(volumeGroup),
+                config -> LvmCommands.activateVolume(
+                    extCmdFactory.create(),
+                    volumeGroup,
+                    lvId,
+                    config
+                )
+            );
+        }
     }
 
     @Override

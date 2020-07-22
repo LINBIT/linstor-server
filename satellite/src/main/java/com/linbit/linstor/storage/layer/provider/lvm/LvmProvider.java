@@ -36,6 +36,7 @@ import com.linbit.linstor.storage.utils.LsBlkUtils;
 import com.linbit.linstor.storage.utils.LvmCommands;
 import com.linbit.linstor.storage.utils.LvmUtils;
 import com.linbit.linstor.storage.utils.LvmUtils.LvsInfo;
+import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.PmemUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
@@ -249,18 +250,37 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected void createLvImpl(LvmData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
-        LvmUtils.execWithRetry(
-            extCmdFactory,
-            Collections.singleton(vlmData.getVolumeGroup()),
-            config -> LvmCommands.createFat(
+        List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateOptions(vlmData));
+        String[] additionalOptionsArr = new String[additionalOptions.size()];
+        additionalOptions.toArray(additionalOptionsArr);
+
+        if (additionalOptions.contains("--config"))
+        {
+            // no retry, use only users '--config' settings
+            LvmCommands.createFat(
                 extCmdFactory.create(),
                 vlmData.getVolumeGroup(),
                 asLvIdentifier(vlmData),
                 vlmData.getExepectedSize(),
-                config,
-                "--type=" + getLvCreateType(vlmData)
-            )
-        );
+                null, // config is contained in additionalOptions
+                additionalOptionsArr
+            );
+        }
+        else
+        {
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(vlmData.getVolumeGroup()),
+                config -> LvmCommands.createFat(
+                    extCmdFactory.create(),
+                    vlmData.getVolumeGroup(),
+                    asLvIdentifier(vlmData),
+                    vlmData.getExepectedSize(),
+                    config,
+                    additionalOptionsArr
+                )
+            );
+        }
     }
 
     protected String getLvCreateType(LvmData<Resource> vlmDataRef)
@@ -268,33 +288,56 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         String type;
         try
         {
-            Volume vlm = (Volume) vlmDataRef.getVolume();
-            Resource rsc = vlm.getAbsResource();
-            ResourceDefinition rscDfn = vlm.getResourceDefinition();
-            ResourceGroup rscGrp = rscDfn.getResourceGroup();
-            VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-            PriorityProps prioProps = new PriorityProps(
-                vlm.getProps(storDriverAccCtx),
-                vlmDfn.getProps(storDriverAccCtx),
-                rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
-                rsc.getProps(storDriverAccCtx),
-                rscDfn.getProps(storDriverAccCtx),
-                rscGrp.getProps(storDriverAccCtx),
-                vlmDataRef.getStorPool().getProps(storDriverAccCtx),
-                rsc.getNode().getProps(storDriverAccCtx),
-                stltConfigAccessor.getReadonlyProps()
-            );
-            type = prioProps.getProp(
-                ApiConsts.KEY_STOR_POOL_LVCREATE_TYPE,
-                ApiConsts.NAMESPC_STORAGE_DRIVER,
-                DFLT_LVCREATE_TYPE
-            );
+            type = getPrioProps(vlmDataRef)
+                .getProp(
+                    ApiConsts.KEY_STOR_POOL_LVCREATE_TYPE,
+                    ApiConsts.NAMESPC_STORAGE_DRIVER,
+                    DFLT_LVCREATE_TYPE
+                );
         }
         catch (AccessDeniedException | InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }
         return type;
+    }
+
+    protected PriorityProps getPrioProps(LvmData<Resource> vlmDataRef) throws AccessDeniedException
+    {
+        Volume vlm = (Volume) vlmDataRef.getVolume();
+        Resource rsc = vlm.getAbsResource();
+        ResourceDefinition rscDfn = vlm.getResourceDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+        return new PriorityProps(
+            vlm.getProps(storDriverAccCtx),
+            rsc.getProps(storDriverAccCtx),
+            vlmDataRef.getStorPool().getProps(storDriverAccCtx),
+            rsc.getNode().getProps(storDriverAccCtx),
+            vlmDfn.getProps(storDriverAccCtx),
+            rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
+            rscDfn.getProps(storDriverAccCtx),
+            rscGrp.getProps(storDriverAccCtx),
+            stltConfigAccessor.getReadonlyProps()
+        );
+    }
+
+    protected String getLvcreateOptions(LvmData<Resource> vlmDataRef)
+    {
+        String options;
+        try
+        {
+            options = getPrioProps(vlmDataRef).getProp(
+                ApiConsts.KEY_STOR_POOL_LVCREATE_OPTIONS,
+                ApiConsts.NAMESPC_STORAGE_DRIVER,
+                ""
+            );
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return options;
     }
 
     @Override
