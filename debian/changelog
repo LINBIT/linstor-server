@@ -1,3 +1,16 @@
+linstor-server (1.7.3-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * layerdatafactory: add unique node-id check
+  * stlttoolschecker: fix losetup parsing without PATCH number
+  * stlttoolschecker: fix LVM version typo
+  * eventprocessor: read lock node map on connection closed
+
+  [ Gabor Hernadi ]
+  * Lvm,thin: Added LvcreateOptions
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 22 Jul 2020 13:21:05 +0000
+
 linstor-server (1.7.2-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
