@@ -266,10 +266,11 @@ public final class ControllerNetComInitializer implements StartupInitializer
         throws SystemServiceStartException
     {
         String bindAddressStr = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_BINDADDR);
-        Integer port = Integer.parseInt(loadPropChecked(configProp, PROPSCON_KEY_NETCOM_PORT));
+        int port = Integer.parseInt(loadPropChecked(configProp, PROPSCON_KEY_NETCOM_PORT));
         String type = loadPropChecked(configProp, PROPSCON_KEY_NETCOM_TYPE);
 
-        SocketAddress bindAddress = new InetSocketAddress(bindAddressStr, port);
+        final SocketAddress bindAddress =
+            !bindAddressStr.isEmpty() ? new InetSocketAddress(bindAddressStr, port) : null;
 
         if (type.equals(PROPSCON_NETCOM_TYPE_PLAIN))
         {
@@ -532,10 +533,8 @@ public final class ControllerNetComInitializer implements StartupInitializer
             systemServicesMap.put(serviceName, netComSvc);
             netComSvc.start();
             errorLogRef.logInfo(
-                String.format(
-                    "Created network communication service '%s', bound to %s:%d",
-                    serviceName.displayValue, bindAddressStr, port
-                )
+                String.format("Created network communication service '%s'", serviceName.displayValue) +
+                        (bindAddress != null ? String.format(", bound to %s:%d", bindAddressStr, port) : "")
             );
         }
 

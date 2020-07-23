@@ -16,6 +16,7 @@ import com.linbit.linstor.netcom.TcpConnectorPeer.ReadState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Inet6Address;
@@ -175,7 +176,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
         ErrorReporter errorReporterRef,
         CommonSerializer commonSerializerRef,
         MessageProcessor msgProcessorRef,
-        SocketAddress bindAddressRef,
+        @Nullable SocketAddress bindAddressRef,
         AccessContext defaultPeerAccCtxRef,
         AccessContext privilegedAccCtxRef,
         ConnectionObserver connObserverRef
@@ -183,12 +184,10 @@ public class TcpConnectorService implements Runnable, TcpConnector
     {
         ErrorCheck.ctorNotNull(TcpConnectorService.class, ErrorReporter.class, errorReporterRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, MessageProcessor.class, msgProcessorRef);
-        ErrorCheck.ctorNotNull(TcpConnectorService.class, SocketAddress.class, bindAddressRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, AccessContext.class, defaultPeerAccCtxRef);
         ErrorCheck.ctorNotNull(TcpConnectorService.class, AccessContext.class, privilegedAccCtxRef);
         serviceInstanceName = SERVICE_NAME;
 
-        bindAddress     = DEFAULT_BIND_ADDRESS;
         serverSocket    = null;
         serverSelector  = null;
         errorReporter   = errorReporterRef;
@@ -1075,208 +1074,202 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
     public void initialize() throws IOException
     {
-        boolean initFlag = false;
-        try
+        serverSelector = Selector.open();
+
+        if (bindAddress != null)
         {
-            serverSocket = ServerSocketChannel.open();
-            serverSelector = Selector.open();
-            IOException savedExc = null;
+            // setup bind socket
+            boolean initFlag = false;
             try
             {
-                serverSocket.bind(bindAddress);
-            }
-            catch (AlreadyBoundException boundExc)
-            {
-                // Thrown if this server socket is already bound.
-                // This is NOT the same error as if the TCP port is already in use,
-                // which will generate a java.net.BindException instead (subclass of IOException)
-                // This should not happen, unless there is a bug in the code that already
-                // bound the socket before trying to bind() again in this section of code
-                throw new ImplementationError(
-                    "A newly created server socket could not be bound, because it is bound already.",
-                    boundExc
-                );
-            }
-            catch (UnsupportedAddressTypeException addrExc)
-            {
-                // Thrown if the socket can not be bound, because the type of
-                // address to bind the socket to is unsupported
-                savedExc = new IOException(
-                    "Server socket creation failed, the specified server address " +
-                    "is not of a supported type.",
-                    addrExc
-                );
-            }
-            catch (ClosedChannelException closeExc)
-            {
-                // Thrown if the socket is closed when bind() is called
-                savedExc = new IOException(
-                    "Server socket creation failed. The server socket was closed " +
-                    "while its initialization was still in progress.",
-                    closeExc
-                );
-            }
-            catch (IOException ioExc)
-            {
-                savedExc = ioExc;
-            }
-
-            // If binding the socket failed for a local or 'anylocal' IPv6 address,
-            // fall back to the corresponding IPv4 addresses
-            if (savedExc != null)
-            {
-                InetSocketAddress inetBindAddress;
+                serverSocket = ServerSocketChannel.open();
+                IOException savedExc = null;
                 try
                 {
-                    inetBindAddress = (InetSocketAddress) bindAddress;
-                }
-                catch (ClassCastException ccExc)
+                    serverSocket.bind(bindAddress);
+                } catch (AlreadyBoundException boundExc)
                 {
-                    // bindAddress is not a known IP protocol
-                    // No automatic failback is possible, throw the original exception
-                    throw savedExc;
-                }
-
-                InetAddress addr = inetBindAddress.getAddress();
-                if (addr instanceof Inet6Address)
+                    // Thrown if this server socket is already bound.
+                    // This is NOT the same error as if the TCP port is already in use,
+                    // which will generate a java.net.BindException instead (subclass of IOException)
+                    // This should not happen, unless there is a bug in the code that already
+                    // bound the socket before trying to bind() again in this section of code
+                    throw new ImplementationError(
+                        "A newly created server socket could not be bound, because it is bound already.",
+                        boundExc
+                    );
+                } catch (UnsupportedAddressTypeException addrExc)
                 {
-                    SocketAddress fallbackAddress = null;
-                    if (addr.isLoopbackAddress())
-                    {
-                        errorReporter.logWarning(
-                            "%s: Connector %s: Binding the socket to the IPv6 loopback address failed, " +
-                            "attempting fallback to IPv4",
-                            SERVICE_NAME, serviceInstanceName
-                        );
-                        // IPv6 ::1 address, fallback to IPv4 127.0.0.1
-                        fallbackAddress = new InetSocketAddress(
-                            InetAddress.getByAddress(FALLBACK_LOOPBACK_ADDR),
-                            inetBindAddress.getPort()
-                        );
-                    }
-                    else
-                    if (addr.isAnyLocalAddress())
-                    {
-                        errorReporter.logWarning(
-                            "%s: Connector %s: Binding the socket to the IPv6 anylocal address failed, " +
-                            "attempting fallback to IPv4",
-                            SERVICE_NAME, serviceInstanceName
-                        );
-                        // IPv6 ::0 address, fallback to IPv4 0.0.0.0
-                        fallbackAddress = new InetSocketAddress(
-                            InetAddress.getByAddress(FALLBACK_ANY_LOCAL_ADDR),
-                            inetBindAddress.getPort()
-                        );
-                    }
-
-                    if (fallbackAddress != null)
-                    {
-                        try
-                        {
-                            serverSocket.bind(fallbackAddress);
-                            // Fallback succeeded, discard the exception
-                            savedExc = null;
-                        }
-                        catch (AlreadyBoundException boundExc)
-                        {
-                            // Thrown if this server socket is already bound.
-                            // This is NOT the same error as if the TCP port is already in use,
-                            // see code comment further above in this same method for details.
-                            throw new ImplementationError(
-                                "The IPv6 to IPv4 fallback code failed to bind the server socket, " +
-                                "because the socket is bound already.",
-                                boundExc
-                            );
-                        }
-                        catch (UnsupportedAddressTypeException | IOException ignored)
-                        {
-                            // Fallback attempt failed
-                            // Will throw the original exception further below
-                            errorReporter.logError(
-                                "%s: Connector %s: Attempt to fallback to IPv4 failed",
-                                SERVICE_NAME, serviceInstanceName
-                            );
-                        }
-                    }
+                    // Thrown if the socket can not be bound, because the type of
+                    // address to bind the socket to is unsupported
+                    savedExc = new IOException(
+                        "Server socket creation failed, the specified server address " +
+                            "is not of a supported type.",
+                        addrExc
+                    );
+                } catch (ClosedChannelException closeExc)
+                {
+                    // Thrown if the socket is closed when bind() is called
+                    savedExc = new IOException(
+                        "Server socket creation failed. The server socket was closed " +
+                            "while its initialization was still in progress.",
+                        closeExc
+                    );
+                } catch (IOException ioExc)
+                {
+                    savedExc = ioExc;
                 }
 
-                // If there was no known IPv4 fallback method or if the fallback attempt failed,
-                // throw the original exception
+                // If binding the socket failed for a local or 'anylocal' IPv6 address,
+                // fall back to the corresponding IPv4 addresses
                 if (savedExc != null)
                 {
-                    throw savedExc;
+                    InetSocketAddress inetBindAddress;
+                    try
+                    {
+                        inetBindAddress = (InetSocketAddress) bindAddress;
+                    } catch (ClassCastException ccExc)
+                    {
+                        // bindAddress is not a known IP protocol
+                        // No automatic failback is possible, throw the original exception
+                        throw savedExc;
+                    }
+
+                    InetAddress addr = inetBindAddress.getAddress();
+                    if (addr instanceof Inet6Address)
+                    {
+                        SocketAddress fallbackAddress = null;
+                        if (addr.isLoopbackAddress())
+                        {
+                            errorReporter.logWarning(
+                                "%s: Connector %s: Binding the socket to the IPv6 loopback address failed, " +
+                                    "attempting fallback to IPv4",
+                                SERVICE_NAME, serviceInstanceName
+                            );
+                            // IPv6 ::1 address, fallback to IPv4 127.0.0.1
+                            fallbackAddress = new InetSocketAddress(
+                                InetAddress.getByAddress(FALLBACK_LOOPBACK_ADDR),
+                                inetBindAddress.getPort()
+                            );
+                        } else if (addr.isAnyLocalAddress())
+                        {
+                            errorReporter.logWarning(
+                                "%s: Connector %s: Binding the socket to the IPv6 anylocal address failed, " +
+                                    "attempting fallback to IPv4",
+                                SERVICE_NAME, serviceInstanceName
+                            );
+                            // IPv6 ::0 address, fallback to IPv4 0.0.0.0
+                            fallbackAddress = new InetSocketAddress(
+                                InetAddress.getByAddress(FALLBACK_ANY_LOCAL_ADDR),
+                                inetBindAddress.getPort()
+                            );
+                        }
+
+                        if (fallbackAddress != null)
+                        {
+                            try
+                            {
+                                serverSocket.bind(fallbackAddress);
+                                // Fallback succeeded, discard the exception
+                                savedExc = null;
+                            } catch (AlreadyBoundException boundExc)
+                            {
+                                // Thrown if this server socket is already bound.
+                                // This is NOT the same error as if the TCP port is already in use,
+                                // see code comment further above in this same method for details.
+                                throw new ImplementationError(
+                                    "The IPv6 to IPv4 fallback code failed to bind the server socket, " +
+                                        "because the socket is bound already.",
+                                    boundExc
+                                );
+                            } catch (UnsupportedAddressTypeException | IOException ignored)
+                            {
+                                // Fallback attempt failed
+                                // Will throw the original exception further below
+                                errorReporter.logError(
+                                    "%s: Connector %s: Attempt to fallback to IPv4 failed",
+                                    SERVICE_NAME, serviceInstanceName
+                                );
+                            }
+                        }
+                    }
+
+                    // If there was no known IPv4 fallback method or if the fallback attempt failed,
+                    // throw the original exception
+                    if (savedExc != null)
+                    {
+                        throw savedExc;
+                    }
+                }
+
+                serverSocket.configureBlocking(false);
+                try
+                {
+                    serverSocket.register(serverSelector, OP_ACCEPT);
+                } catch (IllegalBlockingModeException illModeExc)
+                {
+                    // Implementation error, configureBlocking() skipped
+                    throw new ImplementationError(
+                        "The server socket could not be initialized because its " +
+                            "blocking mode was not configured correctly",
+                        illModeExc
+                    );
+                } catch (ClosedSelectorException closeExc)
+                {
+                    // Thrown if the selector is closed when register() is called
+                    throw new IOException(
+                        "The server socket could not be initialized because the " +
+                            "selector for the channel was closed when trying to register " +
+                            "I/O operations for the server socket.",
+                        closeExc
+                    );
+                } catch (CancelledKeyException cancelExc)
+                {
+                    // May be thrown by register() if the channel is already registered
+                    // with the selector, but has already been cancelled too (which should
+                    // be impossible, because the channel is first registered after being
+                    // accepted)
+                    throw new ImplementationError(
+                        "Initialization of the server socket failed, because the socket's " +
+                            "selection key was already registered and cancelled during initialization",
+                        cancelExc
+                    );
+                } catch (IllegalSelectorException illSelExc)
+                {
+                    // Thrown by register() if the selector is from another I/O provider
+                    // than the channel that is being registered
+                    throw new ImplementationError(
+                        "Initialization of the server socket failed because the channel " +
+                            "was created by another type of I/O provider than the associated selector",
+                        illSelExc
+                    );
+                } catch (IllegalArgumentException illArg)
+                {
+                    // Generated if a bit in the I/O operations specified
+                    // in register() does not correspond with a supported I/O operation
+                    // Should not happen; log the error.
+                    // Server socket can not accept connections, treat this as an I/O error
+                    throw new IOException(
+                        "Configuring the server socket to accept new connections failed",
+                        illArg
+                    );
+                }
+
+                // Enable entering the run() method's selector loop
+                shutdownFlag.set(false);
+                initFlag = true;
+            } finally
+            {
+                if (!initFlag)
+                {
+                    // Initialization failed, clean up
+                    uninitialize();
                 }
             }
-
-            serverSocket.configureBlocking(false);
-            try
-            {
-                serverSocket.register(serverSelector, OP_ACCEPT);
-            }
-            catch (IllegalBlockingModeException illModeExc)
-            {
-                // Implementation error, configureBlocking() skipped
-                throw new ImplementationError(
-                    "The server socket could not be initialized because its " +
-                    "blocking mode was not configured correctly",
-                    illModeExc
-                );
-            }
-            catch (ClosedSelectorException closeExc)
-            {
-                // Thrown if the selector is closed when register() is called
-                throw new IOException(
-                    "The server socket could not be initialized because the " +
-                    "selector for the channel was closed when trying to register " +
-                    "I/O operations for the server socket.",
-                    closeExc
-                );
-            }
-            catch (CancelledKeyException cancelExc)
-            {
-                // May be thrown by register() if the channel is already registered
-                // with the selector, but has already been cancelled too (which should
-                // be impossible, because the channel is first registered after being
-                // accepted)
-                throw new ImplementationError(
-                    "Initialization of the server socket failed, because the socket's " +
-                    "selection key was already registered and cancelled during initialization",
-                    cancelExc
-                );
-            }
-            catch (IllegalSelectorException illSelExc)
-            {
-                // Thrown by register() if the selector is from another I/O provider
-                // than the channel that is being registered
-                throw new ImplementationError(
-                    "Initialization of the server socket failed because the channel " +
-                    "was created by another type of I/O provider than the associated selector",
-                    illSelExc
-                );
-            }
-            catch (IllegalArgumentException illArg)
-            {
-                // Generated if a bit in the I/O operations specified
-                // in register() does not correspond with a supported I/O operation
-                // Should not happen; log the error.
-                // Server socket can not accept connections, treat this as an I/O error
-                throw new IOException(
-                    "Configuring the server socket to accept new connections failed",
-                    illArg
-                );
-            }
-
-            // Enable entering the run() method's selector loop
-            shutdownFlag.set(false);
-            initFlag = true;
         }
-        finally
+        else
         {
-            if (!initFlag)
-            {
-                // Initialization failed, clean up
-                uninitialize();
-            }
+            shutdownFlag.set(false);
         }
     }
 

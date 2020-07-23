@@ -1,6 +1,5 @@
 package com.linbit.linstor.netcom.ssl;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -14,6 +13,7 @@ import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 
@@ -36,7 +36,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         final ErrorReporter errorReporter,
         final CommonSerializer commonSerializer,
         final MessageProcessor msgProcessorRef,
-        final SocketAddress bindAddress,
+        @Nullable final SocketAddress bindAddress,
         final AccessContext peerAccCtxRef,
         final AccessContext privAccCtxRef,
         final ConnectionObserver connObserverRef,
@@ -71,8 +71,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         final char[] trustStorePasswd
     )
         throws ImplementationError, NoSuchAlgorithmException, KeyManagementException,
-        KeyStoreException, IOException, CertificateException, UnrecoverableKeyException,
-        FileNotFoundException
+        KeyStoreException, IOException, CertificateException, UnrecoverableKeyException
     {
         try
         {
