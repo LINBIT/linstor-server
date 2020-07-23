@@ -2,6 +2,7 @@ package com.linbit.utils;
 
 import com.google.inject.Module;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.logging.ErrorReporter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -23,7 +24,8 @@ public class InjectorLoader
     public static boolean dynLoadInjModule(
         final String className,
         final List<Module> injModList,
-        final ErrorReporter errorLog
+        final ErrorReporter errorLog,
+        final DatabaseDriverInfo.DatabaseType dbType
     )
     {
         boolean loaded = false;
@@ -31,8 +33,29 @@ public class InjectorLoader
         try
         {
             Class<?> injClass = Class.forName(className);
-            Constructor<?> injModuleConstr = injClass.getDeclaredConstructor();
-            Module injModule = (Module) injModuleConstr.newInstance();
+            boolean constrWithDbType = false;
+            Constructor<?> injModuleConstr;
+            try
+            {
+                injModuleConstr = injClass.getDeclaredConstructor(DatabaseDriverInfo.DatabaseType.class);
+                constrWithDbType = true;
+            }
+            catch (NoSuchMethodException constrExc)
+            {
+                injModuleConstr = injClass.getDeclaredConstructor();
+            }
+            Class<?>[] constrParams = injModuleConstr.getParameterTypes();
+            Module injModule;
+            if (constrParams.length >= 1 && constrParams[0] == DatabaseDriverInfo.DatabaseType.class)
+            {
+                errorLog.logDebug("Constructing instance of module \"%s\" with database type parameter", className);
+                injModule  = (Module) injModuleConstr.newInstance(dbType);
+            }
+            else
+            {
+                errorLog.logDebug("Constructing instance of module \"%s\" with default constructor", className);
+                injModule  = (Module) injModuleConstr.newInstance();
+            }
             errorLog.logInfo("Dynamic load of extension module \"%s\" was successful", className);
             injModList.add(injModule);
             loaded = true;
