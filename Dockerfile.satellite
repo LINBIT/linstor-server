@@ -61,7 +61,9 @@ RUN { \
 	echo 'gpgcheck=1' ;\
 	echo 'gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7' ;\
 } >/etc/yum.repos.d/Centos-Base.repo
-RUN yum install -y cryptsetup nvme-cli && yum clean all -y
+RUN yum install -y cryptsetup nvme-cli socat epel-release && yum clean all -y
+
+RUN yum install -y zstd && yum clean all -y
 
 RUN sed -i 's/udev_rules.*=.*/udev_rules=0/' /etc/lvm/lvm.conf
 RUN sed -i '/^devices {/a global_filter = [ "r|^/dev/drbd|" ]' /etc/lvm/lvm.conf

@@ -35,7 +35,10 @@ Architecture: all
 Depends: ${misc:Depends},
          linstor-common (= ${binary:Version}),
          thin-provisioning-tools
-Suggests: drbd-utils (>= 9.7.0)
+Suggests: drbd-utils (>= 9.7.0),
+          socat,
+          zstd,
+          thin-send-recv
 Description: DRBD distributed resource management utility
  This is the linstor satellite.
  .
