@@ -84,6 +84,11 @@ public class ReconnectorTask implements Task
 
     public void add(Peer peer, boolean authenticateImmediately)
     {
+        add(peer, authenticateImmediately, false);
+    }
+
+    public void add(Peer peer, boolean authenticateImmediately, boolean abortSnapshotShippings)
+    {
         boolean sendAuthentication = false;
         synchronized (syncObj)
         {
@@ -99,13 +104,33 @@ public class ReconnectorTask implements Task
             }
         }
 
-        snapShipAbortHandler.abortSnapshotShippingPrivileged(peer.getNode())
-            .subscriberContext(Context.of(
-                ApiModule.API_CALL_NAME, "Abort currently shipped snapshots",
-                AccessContext.class, apiCtx,
-                Peer.class, peer
-            ))
-            .subscribe();
+        if (abortSnapshotShippings)
+        {
+            /*
+             * FIXME NEEDS PROPER FIX
+             *
+             * quick and dirty fix. this method could be called by changing the active
+             * netif of a node. in this case, the caller is already in a scoped-transaction
+             * which means that the above .subscribe will complain about
+             *
+             * The current scope has already been entered
+             *
+             * the only way I can think of now would require some rewriting of many method-signatures
+             * converting them from non-flux to flux returning methods.
+             */
+            snapShipAbortHandler.abortSnapshotShippingPrivileged(peer.getNode())
+                .subscriberContext(
+                    Context.of(
+                        ApiModule.API_CALL_NAME,
+                        "Abort currently shipped snapshots",
+                        AccessContext.class,
+                        apiCtx,
+                        Peer.class,
+                        peer
+                    )
+                )
+                .subscribe();
+        }
 
         if (sendAuthentication)
         {

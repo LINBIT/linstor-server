@@ -1,16 +1,16 @@
 package com.linbit.linstor.tasks;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 @Singleton
 public class PingTask implements Task
@@ -87,7 +87,7 @@ public class PingTask implements Task
                 peersToRemove.add(peer);
                 try
                 {
-                    reconnector.add(peer.getConnector().reconnect(peer), true);
+                    reconnector.add(peer.getConnector().reconnect(peer), true, true);
                 }
                 catch (IOException ioExc)
                 {
