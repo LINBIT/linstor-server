@@ -39,6 +39,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -501,15 +502,20 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         throws StorageException, AccessDeniedException, DatabaseException
     {
         Set<StorPool> storPools = new TreeSet<>();
+
+        List<ZfsData<?>> combinedList = new ArrayList<>();
+        combinedList.addAll(vlmDataList);
+        combinedList.addAll(snapVlms);
+
         /*
          *  updating volume states
          */
-        for (ZfsData<Resource> vlmData : vlmDataList)
+        for (ZfsData<?> vlmData : combinedList)
         {
             storPools.add(vlmData.getStorPool());
 
             vlmData.setZPool(getZPool(vlmData.getStorPool()));
-            vlmData.setIdentifier(asLvIdentifier(vlmData));
+            vlmData.setIdentifier(asIdentifierRaw(vlmData));
             ZfsInfo info = infoListCache.get(vlmData.getFullQualifiedLvIdentifier());
 
             if (info != null)
@@ -518,7 +524,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
 
                 final long expectedSize = vlmData.getExepectedSize();
                 final long actualSize = info.usableSize;
-                if (actualSize != expectedSize)
+                if (actualSize != expectedSize && vlmData.getRscLayerObject().getAbsResource() instanceof Resource)
                 {
                     if (actualSize < expectedSize)
                     {
@@ -554,7 +560,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         }
     }
 
-    private void updateInfo(ZfsData<Resource> vlmData, ZfsInfo zfsInfo) throws DatabaseException
+    private void updateInfo(ZfsData<?> vlmData, ZfsInfo zfsInfo) throws DatabaseException
     {
         vlmData.setExists(true);
         vlmData.setZPool(zfsInfo.poolName);
