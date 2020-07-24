@@ -511,21 +511,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         for (LAYER_SNAP_DATA snapVlm : snapVlmsDataList)
         {
-            LAYER_DATA vlmData = vlmDataLut.get(
-                new Pair<>(
-                    snapVlm.getRscLayerObject().getSuffixedResourceName(),
-                    snapVlm.getVlmNr()
-                )
-            );
-            if (vlmData == null)
-            {
-                throw new StorageException(
-                    String.format(
-                        "Could not merge snapshot '%s' into its volume as the volume was not found.",
-                        snapVlm.toString()
-                    )
-                );
-            }
             if (!snapVlm.exists())
             {
                 errorReporter.logTrace(
@@ -535,7 +520,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
-
                 Snapshot snap = snapVlm.getRscLayerObject().getAbsResource();
                 StateFlags<Flags> snapDfnFlags = snap.getSnapshotDefinition()
                     .getFlags();
@@ -553,10 +537,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 {
                     errorReporter.logTrace("Snapshot '%s' already deleted", snapVlm.toString());
                 }
-
                 addSnapDeletedMsg(snapVlm, apiCallRc);
             }
-
         }
     }
 
