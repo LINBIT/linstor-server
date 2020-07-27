@@ -182,6 +182,11 @@ public class CtrlRscCrtApiHelper
                 FlagsHelper.isFlagEnabled(flags, Resource.Flags.NVME_INITIATOR) ||
                 (storPool != null && storPool.getDeviceProviderKind().equals(DeviceProviderKind.DISKLESS));
 
+            if (FlagsHelper.isFlagEnabled(flags, Resource.Flags.INACTIVE))
+            {
+                setResourceFlags(rsc, Resource.Flags.INACTIVE);
+            }
+
             if (!isDiskless)
             {
                 // target resource is diskful
@@ -986,6 +991,26 @@ public class CtrlRscCrtApiHelper
             );
         }
         return ret;
+    }
+
+    private void setResourceFlags(Resource rsc, Resource.Flags... flags)
+    {
+        try
+        {
+            rsc.getStateFlags().enableFlags(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "Setting flag for resource",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
     }
 
     private ApiCallRcImpl.ApiCallRcEntry makeFlaggedNvmeInitiatorWarning(StorPool storPool)
