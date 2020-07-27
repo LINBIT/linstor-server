@@ -68,6 +68,13 @@ import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
+import com.google.inject.ConfigurationException;
+import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.ProvisionException;
+import com.google.inject.name.Names;
+import com.linbit.utils.InjectorLoader;
+import java.util.LinkedList;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -91,6 +98,12 @@ import org.slf4j.event.Level;
  */
 public final class Controller
 {
+    private static final String PROPSCON_KEY_NETCOM = "netcom";
+    public static final String SPC_TRK_MODULE_NAME = "com.linbit.linstor.spacetracking.ControllerSpaceTrackingModule";
+
+    public static final int API_VERSION = 4;
+    public static final int API_MIN_VERSION = API_VERSION;
+
     // Error & exception logging facility
     private final ErrorReporter errorReporter;
 
@@ -257,6 +270,19 @@ public final class Controller
             systemServicesMap.put(controllerDb.getInstanceName(), controllerDb);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
+            SystemService spaceTrackingService = null;
+            try
+            {
+                spaceTrackingService = injector.getInstance(
+                    Key.get(SystemService.class, Names.named(Controller.SPC_TRK_MODULE_NAME))
+                );
+                systemServicesMap.put(spaceTrackingService.getInstanceName(), spaceTrackingService);
+                errorReporter.logInfo("%s", "SpaceTrackingService: Instance added as a system service");
+            }
+            catch (ConfigurationException | ProvisionException injExc)
+            {
+                errorReporter.logDebug("%s", "SpaceTrackingService: No instance available to add as a system service");
+            }
 
             ConnectNodesInitializer connectNodesInitializer = new ConnectNodesInitializer(
                 errorReporter,
@@ -292,6 +318,10 @@ public final class Controller
             startOrderlist.add(preConnectCleanupInitializer);
             startOrderlist.add(connectNodesInitializer);
             startOrderlist.add(openflexTargetProcessMgrInit);
+            if (spaceTrackingService != null)
+            {
+                startOrderlist.add(new ServiceStarter(spaceTrackingService));
+            }
             if (ctrlCfg.getMasterPassphrase() != null)
             {
                 startOrderlist.add(passphraseInitializer);
@@ -478,30 +508,39 @@ public final class Controller
 
             errorLog.logInfo("Dependency injection started.");
             long startDepInjectionTime = System.currentTimeMillis();
-            Injector injector = Guice.createInjector(
-                new GuiceConfigModule(),
-                new LoggingModule(errorLog),
-                new SecurityModule(),
-                new ControllerSecurityModule(),
-                new CtrlConfigModule(cfg),
-                new CoreTimerModule(),
-                new MetaDataModule(),
-                new ControllerLinstorModule(),
-                new LinStorModule(),
-                new CoreModule(),
-                new ControllerCoreModule(),
-                new ControllerSatelliteCommunicationModule(),
-                new ControllerDbModule(dbType),
-                new NetComModule(),
-                new NumberPoolModule(),
-                new ApiModule(apiType, apiCalls),
-                new ApiCallHandlerModule(),
-                new CtrlApiCallHandlerModule(),
-                new EventModule(eventSerializers, eventHandlers),
-                new DebugModule(),
-                new ControllerDebugModule(),
-                new ControllerTransactionMgrModule(dbType)
+
+            final List<Module> injModList = new LinkedList<>(
+                Arrays.asList(
+                    new Module[]
+                    {
+                        new GuiceConfigModule(),
+                        new LoggingModule(errorLog),
+                        new SecurityModule(),
+                        new ControllerSecurityModule(),
+                        new CtrlConfigModule(cfg),
+                        new CoreTimerModule(),
+                        new MetaDataModule(),
+                        new ControllerLinstorModule(),
+                        new LinStorModule(),
+                        new CoreModule(),
+                        new ControllerCoreModule(),
+                        new ControllerSatelliteCommunicationModule(),
+                        new ControllerDbModule(dbType),
+                        new NetComModule(),
+                        new NumberPoolModule(),
+                        new ApiModule(apiType, apiCalls),
+                        new ApiCallHandlerModule(),
+                        new CtrlApiCallHandlerModule(),
+                        new EventModule(eventSerializers, eventHandlers),
+                        new DebugModule(),
+                        new ControllerDebugModule(),
+                        new ControllerTransactionMgrModule(dbType)
+                    }
+                )
             );
+            InjectorLoader.dynLoadInjModule(SPC_TRK_MODULE_NAME, injModList, errorLog, dbType);
+            Injector injector = Guice.createInjector(injModList);
+
             errorLog.logInfo(
                 String.format(
                     "Dependency injection finished: %dms",
