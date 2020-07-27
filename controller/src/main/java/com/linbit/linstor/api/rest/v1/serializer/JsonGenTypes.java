@@ -708,7 +708,7 @@ public class JsonGenTypes
     {
         public boolean diskless_on_remaining = false;
         public AutoSelectFilter select_filter = new AutoSelectFilter();
-        public List<String> layer_list = Collections.emptyList();
+        public List<String> layer_list = null;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

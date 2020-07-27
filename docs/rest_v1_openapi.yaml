@@ -29,6 +29,7 @@ info:
        - Added /v1/resource-definitions/{resource}/snapshot-shipping
        - Allow to modify the resource group in Resource definitions
        - Added createTimestamp to Resource and Snapshot
+       - Added default value (null) for AutoPlaceRequest's layer_list
     * 1.1.0
        - Added /v1/view/snapshots for a faster all in one snapshot list
        - Filter lists by properties:
@@ -4799,6 +4800,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LayerType'
+          default: null
     AutoSelectFilter:
       # do not add defaults
       type: object
