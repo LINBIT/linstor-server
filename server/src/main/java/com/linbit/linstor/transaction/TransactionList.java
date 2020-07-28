@@ -69,6 +69,7 @@ public class TransactionList<PARENT, VALUE>
         synchronized (oldValues)
         {
             oldValues.clear();
+            isDirty = false;
         }
     }
 
@@ -81,6 +82,7 @@ public class TransactionList<PARENT, VALUE>
             backingList.clear();
             backingList.addAll(oldValues);
             oldValues.clear();
+            isDirty = false;
         }
     }
 
