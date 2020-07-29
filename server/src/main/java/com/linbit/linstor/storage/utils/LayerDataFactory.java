@@ -3,7 +3,6 @@ package com.linbit.linstor.storage.utils;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -13,16 +12,18 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
@@ -34,8 +35,6 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
-import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
-import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -60,7 +59,6 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 @Singleton
 public class LayerDataFactory
@@ -127,18 +125,18 @@ public class LayerDataFactory
     {
         // check that the nodeid is unique within rscdatalist
         // there is somewhere a race condition and we couldn't determine the cause yet
-        for (DrbdRscData<RSC> sib : rscDfnData.getDrbdRscDataList())
-        {
-            if (sib.getNodeId().equals(nodeId))
-            {
-                final String allIds = rscDfnData.getDrbdRscDataList().stream()
-                    .map(rscData -> Integer.toString(rscData.getNodeId().value))
-                    .collect(Collectors.joining(","));
-                throw new LinStorRuntimeException(
-                    String.format("Duplicate node id '%d' detected. ids: [%s]", nodeId.value, allIds)
-                );
-            }
-        }
+        // for (DrbdRscData<RSC> sib : rscDfnData.getDrbdRscDataList())
+        // {
+        // if (sib.getNodeId().equals(nodeId))
+        // {
+        // final String allIds = rscDfnData.getDrbdRscDataList().stream()
+        // .map(rscData -> Integer.toString(rscData.getNodeId().value))
+        // .collect(Collectors.joining(","));
+        // throw new LinStorRuntimeException(
+        // String.format("Duplicate node id '%d' detected. ids: [%s]", nodeId.value, allIds)
+        // );
+        // }
+        // }
         DrbdRscData<RSC> drbdRscData = new DrbdRscData<>(
             rscLayerId,
             rsc,
