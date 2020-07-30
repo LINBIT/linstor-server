@@ -1,3 +1,150 @@
+linstor-server (1.8.0~rc1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * RscGrp,spawn: Added optional select_filter
+  * ExtToolsCheck: use /proc/modules instead of modprobe
+  * Cache: Added dependency to dm-cache module
+  * File/thin: Added dependency to losetup
+  * Writecache: renamed enum to DM_WRITECACHE
+  * StorPool: Prevent deletion if StorPool has snapshots
+  * LvcreateType: Added rsc, node and controller to prioprops
+  * Autoplacer: ignore already selected DISKLESS provider
+  * SslTcpConnectorHandshaker: change thrown exception
+  * SqlGenerator: reworked to be easier to understand
+  * DB: Added SqlDump utility
+  * Fixed some tests
+  * Snapshot: Resume-IO on error and add timeout to takeSnapshot
+  * LVM: LvmProvider also activates LVs
+  * TcpConnectorService: Attempt resolving deadlock
+  * Allow some mixed storage pools for actual data devices
+  * Lvm,thin: Added LvcreateOptions
+  * Moved merger classes to correct package
+  * Removed unnecessary .satellite package ending
+  * Moved VlmGrpStltFactory to correct package
+  * Removed unused classes
+  * Restructured packages of layer-classes
+  * Moved drbdstate into layer.drbd package
+  * Cleanup: removed unused imports
+  * CtrlSnapCrt: Refactored snapshot creation
+  * SnapshotShipping: First version
+  * SnapshotShipping: Added incremental shipping
+  * SnapshotShipping: Prevent snapshot deletion while shipping
+  * SnapshotShipping: Generated name can now skip ids
+  * SnapshopShipping: Added check for required utilities
+  * SnapshotShipping: Added inactive resource-flag
+  * Auto-Snapshotting/-SnapshotShipping
+  * AutoSnap: Skip used snapshotName
+  * AudoSnap: Removes old autoSnapshots
+  * AutoSnap,Cleanup: Added trigger to property changes
+  * AutoShipping: source must no longer be active
+  * RscActivate: fixed possible NPE
+  * AutoSnap/Ship: Removing RunEvery property stops auto-task
+  * AutoSnapTask: adding with RunEvery<=0 will be converted into a remove call
+  * AbsStorProvider: Fixed wrong cast
+  * Resource: Introduce reactive flag
+  * SnapShip: Copy Luks password if needed
+  * SnapShip: Prevent multiple merging of snapshots
+  * Fixed tests
+  * RscActivate: Improved nvme-related in-use check
+  * DevMgr: Improved send ready-state handler
+  * NvmeLayer: fixed incorrect INACTIVE handling
+  * SnapShip: Added zfs support
+  * Rsc,Activate: DRBD resource can no longer be activated
+  * Snap,restore: recreate metadata when restoring shipped snapshot
+  * Ship,received: cleanup flag for lvm-merge
+  * LvmThin: Recreate shipped snapshot after merging
+  * SnapShip: restarting ctrl also restarts snap-shipping
+  * SnapShip: Fixed some issues when restarting ctrl/stlt
+  * ReconnectorTask: Fixed NPE
+  * Zfs: Fixed snapshot-update bug
+  * AbsStorProvider: Fix snapshot deletion bug
+  * Reconnector: workaround for incompatibe fluxing
+  * use AbsResource base class in database drivers
+  * SysFs: Only throttle data-path, not meta-path
+  * SysFs: Only apply settings to lowest local device
+  * CrtRsc: Do not ignore --inaktive during takeover
+  * RD.autoplace: layer_list now defaults to null
+  * TxList: Fixed dirty status
+  * LayerData: Disabled dup-node-id check
+
+  [ Rene Peinthor ]
+  * virter: remove multipath-tools and cleanup
+  * rest-api-docu: fix incorrect changelog
+  * disable rest-access.log per default now
+  * rest-api: simplify http server init and use single resourceconfig
+  * virter: extend provision to centos vms
+  * skip initial sync on VDO
+  * stlt: fix NPE on apply controller changes
+  * ctrlpropshelper: indicate if properties were really changed
+  * update satellites only if properties changed or really got deleted
+  * ctrl-props: only update satellites on real changes
+  * gradle: grizzly-http-server fix to version 2.4.4
+  * virter-provisioning: use new virter features
+  * gradle: update jackson to 2.11.+
+  * gradle: update httpclient to 4.5.12
+  * gradle: update reactor-core to 3.3.5
+  * gradle: update etcd-java to 0.0.14
+  * rest-api-doc: increment API version to 1.2.0
+  * controller: small cleanup
+  * request-helper: add error report id to apicall answer
+  * errors: add skipErrorReport flag and do not gen. error report for warnings
+  * errors: do not create error reports for already exists errors
+  * rscdfn-create: do not create error-report for invalid transp-type
+  * crtvlmdfn: do not create error-report for invalid user data
+  * linstor.toml-example: fix incorrect enum values
+  * fix incorrect use of ErrorReport.reportProblem()
+  * stderrreporter: check mkdirs result
+  * gradle: move h2, dbcp2 libs into server, so it can be used by ctrl and stlt
+  * error-report: log and read error-reports into/from h2 database
+  * sos-report: download error-report db
+  * gitlab: enable java assert for tests
+  * Don't close the err-reporter database immediately after start if no DbgCsl
+  * CtlrErrorListApi: error reports should be a list now(sorted by date)
+  * http: add /metrics url for prometheus export support
+  * proto/error-report: serialize module value
+  * error-reports: sort final list by date
+  * grizzly: do not report 404 exceptions
+  * grizzly: improve error reporting for basic http errors
+  * etcd: Add missing resource group-storage pool migration
+  * RscDfn: Allow to modify the resource group via REST-API
+  * error-logging: at least log apicallrc exc to normal log
+  * ext-metadata: allow ext metadata storage pool to be different driver
+  * lvm-cmds: force resize command, otherwise shrink will fail
+  * vdfn-shrink: remove shrink check and implement shrink
+  * storagepools: merge all pool name properties into a single key
+  * requesthelper: catch all Throwable to report errors
+  * add generate db constants program
+  * layerdatafactory: add unique node-id check
+  * virter: set correct global_filter for lvm
+  * virter: add manage.py script and update provision-ubuntu.toml
+  * rsg-grp/spawn: fix ArrayoutofBounds if partial and no volume-groups
+  * stlttoolschecker: fix losetup parsing without PATCH number
+  * stlttoolschecker: fix LVM version typo
+  * eventprocessor: read lock node map on connection closed
+  * pkging: add new suggested deps
+  * store resource and snapshot creation date in the database
+  * controller: do not bind tcpconnectors on controller side
+
+  [ Johanna Kucera ]
+  * ErrorReports: always use limit and offset
+  * logging: Add general LinstorFile class to file content
+  * sos-report: collect all sort of logs and info for download
+  * set config: allow changing of log level through rest
+  * set-config: allow getting and setting of stlt configs
+
+  [ Robert Altnoeder ]
+  * CmdDisplayThreads: Make room for longer thread names
+  * StdErrorReporter: Avoid interpretation of exception messages as format [...]
+  * Added class InjectorLoader
+
+  [ Roland Kammerer ]
+  * containers: add support for multiarch
+
+  [ Beorn Facchini ]
+  * Add Sentry integration to capture error info
+
+ -- Gabor Hernadi <gabor.hernadi@linbit.com>  Thu, 30 Jul 2020 07:30:24 +0000
+
 linstor-server (1.7.1-1) experimental; urgency=medium
 
   [ Rainer Laschober ]

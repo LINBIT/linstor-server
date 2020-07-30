@@ -1,13 +1,13 @@
 Name: linstor
-Version: 1.7.1
-Release: 1%{?dist}
+Version: 1.8.0
+Release: 0rc1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
 %define GRADLE_TASKS installdist
 %define GRADLE_FLAGS --offline --gradle-user-home /tmp --no-daemon --exclude-task generateJava
 %define LS_PREFIX /usr/share/linstor-server
 %define FIREWALLD_SERVICES /usr/lib/firewalld/services
-%define NAME_VERS %{name}-server-%{version}
+%define NAME_VERS %{name}-server-%{version}.rc1
 
 # Prevent brp-java-repack-jars from being run.
 %define __jar_repack %{nil}
@@ -15,7 +15,7 @@ BuildArch: noarch
 Group: System Environment/Daemons
 License: GPLv2+
 URL: https://github.com/LINBIT/linstor-server
-Source0: http://www.linbit.com/downloads/linstor/linstor-server-%{version}.tar.gz
+Source0: http://www.linbit.com/downloads/linstor/linstor-server-%{version}.rc1.tar.gz
 
 %if 0%{?suse_version} >= 1500
 BuildRequires: java-1_8_0-openjdk-headless java-1_8_0-openjdk-devel python
@@ -71,7 +71,7 @@ Linstor shared components between linstor-controller and linstor-satellite
 %files common -f %{_builddir}/%{NAME_VERS}/server/jar.deps
 %dir %{LS_PREFIX}
 %dir %{LS_PREFIX}/lib
-%{LS_PREFIX}/lib/server-%{version}.jar
+%{LS_PREFIX}/lib/server-%{version}.rc1.jar
 %dir %{LS_PREFIX}/lib/conf
 %{LS_PREFIX}/lib/conf/logback.xml
 
@@ -87,7 +87,7 @@ Linstor controller manages linstor satellites and persistant data storage.
 %files controller -f %{_builddir}/%{NAME_VERS}/controller/jar.deps
 %dir %{LS_PREFIX}
 %dir %{LS_PREFIX}/lib
-%{LS_PREFIX}/lib/controller-%{version}.jar
+%{LS_PREFIX}/lib/controller-%{version}.rc1.jar
 %dir %{LS_PREFIX}/bin
 %{LS_PREFIX}/bin/Controller
 %{LS_PREFIX}/bin/linstor-config
@@ -118,7 +118,7 @@ and creates drbd resource files.
 %files satellite -f %{_builddir}/%{NAME_VERS}/satellite/jar.deps
 %dir %{LS_PREFIX}
 %dir %{LS_PREFIX}/lib
-%{LS_PREFIX}/lib/satellite-%{version}.jar
+%{LS_PREFIX}/lib/satellite-%{version}.rc1.jar
 %dir %{LS_PREFIX}/bin
 %{LS_PREFIX}/bin/Satellite
 %{_unitdir}/linstor-satellite.service
@@ -134,6 +134,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Thu Jul 30 2020 Gabor Hernadi <gabor.hernadi@linbit.com> 1.8.0-0rc1
+- New upstream release-candidate. Sos-Report, Snapshot-shipping, bug fixes.
+
 * Thu May 14 2020 Rene Peinthor <rene.peinthor@linbit.com> 1.7.1-1
 - New upstream release. Bug fixes.
 
