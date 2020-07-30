@@ -1,4 +1,4 @@
-package com.linbit.linstor.api.protobuf.satellite;
+package com.linbit.linstor.api.protobuf;
 
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
