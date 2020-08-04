@@ -38,8 +38,6 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 
-import reactor.core.publisher.Flux;
-
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -56,6 +54,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlRscAutoPlaceApiCallHandler
@@ -253,7 +253,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                 mergedSelectFilter.getReplicasOnDifferentList(),
                 mergedSelectFilter.getLayerStackList(),
                 mergedSelectFilter.getProviderList(),
-                mergedSelectFilter.getDisklessOnRemaining() // should be ignored anyways
+                mergedSelectFilter.getDisklessOnRemaining(), // should be ignored anyways
+                mergedSelectFilter.skipAlreadyPlacedOnNodeCheck()
             );
 
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);

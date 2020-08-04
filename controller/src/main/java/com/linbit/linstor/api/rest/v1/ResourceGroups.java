@@ -33,6 +33,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -179,7 +180,8 @@ public class ResourceGroups
                     LinstorParsingUtils.asDeviceLayerKind(select_filter.layer_stack),
                 select_filter.provider_list == null ? null :
                     LinstorParsingUtils.asProviderKind(select_filter.provider_list),
-                select_filter.diskless_on_remaining
+                select_filter.diskless_on_remaining,
+                null
             );
         }
 

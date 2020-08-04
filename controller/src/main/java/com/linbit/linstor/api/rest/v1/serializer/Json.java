@@ -790,6 +790,12 @@ public class Json
         {
             return autoSelectFilter.diskless_on_remaining;
         }
+
+        @Override
+        public Boolean skipAlreadyPlacedOnNodeCheck()
+        {
+            return null;
+        }
     }
 
     public static JsonGenTypes.SnapshotVolumeDefinition apiToSnapshotVolumeDefinition(

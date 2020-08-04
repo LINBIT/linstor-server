@@ -1,14 +1,5 @@
 package com.linbit.linstor.api;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
@@ -50,17 +41,6 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 
-import com.google.inject.testing.fieldbinder.Bind;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.slf4j.event.Level;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import javax.inject.Inject;
 
 import java.util.ArrayList;
@@ -76,6 +56,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import com.google.inject.testing.fieldbinder.Bind;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.slf4j.event.Level;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:descendenttokencheck"})
 public class RscAutoPlaceApiTest extends ApiTestBase
@@ -1805,6 +1805,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final List<String> replicasOnSameNodePropList = new ArrayList<>();
         private final List<String> replicasOnDifferentNodePropList = new ArrayList<>();
         private boolean disklessOnRemaining;
+        private boolean skipAlreadyPlacedOnNodeCheck;
 
         private final List<DeviceLayerKind> layerStack = new ArrayList<>(Arrays.asList(DRBD, STORAGE));
         private final List<DeviceProviderKind> providerList =
@@ -1890,6 +1891,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
+        RscAutoPlaceApiCall skipAlreadyPlacedOnNodeCheck(boolean skipAlreadyPlacedOnNodeCheckRef)
+        {
+            skipAlreadyPlacedOnNodeCheck = skipAlreadyPlacedOnNodeCheckRef;
+            return this;
+        }
+
         @Override
         public ApiCallRc executeApiCall()
             throws Exception
@@ -1958,6 +1965,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     public Boolean getDisklessOnRemaining()
                     {
                         return disklessOnRemaining;
+                    }
+
+                    @Override
+                    public Boolean skipAlreadyPlacedOnNodeCheck()
+                    {
+                        return skipAlreadyPlacedOnNodeCheck;
                     }
                 }
             ).subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);

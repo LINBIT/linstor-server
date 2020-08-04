@@ -20,8 +20,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.ComparatorUtils;
 
-import reactor.core.publisher.Flux;
-
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -34,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlQueryMaxVlmSizeHelper
@@ -94,6 +94,7 @@ public class CtrlQueryMaxVlmSizeHelper
                     null,
                     null,
                     Collections.singletonList(storPoolNameStr), // only consider this one storpoolname
+                    null,
                     null,
                     null,
                     null,

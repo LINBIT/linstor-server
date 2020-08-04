@@ -250,7 +250,8 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             Collections.unmodifiableList(replicasOnDifferentList),
             Collections.unmodifiableList(layerStack),
             Collections.unmodifiableList(allowedProviderList),
-            disklessOnRemaining.get()
+            disklessOnRemaining.get(),
+            null
         );
     }
 

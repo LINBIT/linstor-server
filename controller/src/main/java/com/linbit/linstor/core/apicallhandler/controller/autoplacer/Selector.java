@@ -540,7 +540,11 @@ class Selector
         private void clear() throws AccessDeniedException
         {
             selectedNodes.clear();
-            selectedNodes.addAll(alreadyDeployedOnNodes);
+            Boolean skipAlreadyPlacedOnNodeCheck = selectFilter.skipAlreadyPlacedOnNodeCheck();
+            if (skipAlreadyPlacedOnNodeCheck == null || !skipAlreadyPlacedOnNodeCheck)
+            {
+                selectedNodes.addAll(alreadyDeployedOnNodes);
+            }
 
             selectedProviderKind = null;
 

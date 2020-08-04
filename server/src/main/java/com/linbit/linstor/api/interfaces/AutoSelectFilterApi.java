@@ -27,4 +27,5 @@ public interface AutoSelectFilterApi
 
     Boolean getDisklessOnRemaining();
 
+    Boolean skipAlreadyPlacedOnNodeCheck();
 }

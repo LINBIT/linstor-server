@@ -3,6 +3,7 @@ package com.linbit.linstor.event.handler.protobuf.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -17,11 +18,13 @@ import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -29,6 +32,7 @@ import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -44,6 +48,9 @@ public class ResourceStateEventHandler implements EventHandler
     private final ResourceStateEvent resourceStateEvent;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final LockGuardFactory lockGuardFactory;
+    private final AutoDiskfulTask autoDiskfulTask;
+    private final StltConfigAccessor stltConfigAccesor;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public ResourceStateEventHandler(
@@ -52,7 +59,10 @@ public class ResourceStateEventHandler implements EventHandler
         SatelliteStateHelper satelliteStateHelperRef,
         ResourceStateEvent resourceStateEventRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        AutoDiskfulTask autoDiskfulTaskRef,
+        StltConfigAccessor stltConfigAccesorRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -61,6 +71,9 @@ public class ResourceStateEventHandler implements EventHandler
         resourceStateEvent = resourceStateEventRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         lockGuardFactory = lockGuardFactoryRef;
+        autoDiskfulTask = autoDiskfulTaskRef;
+        stltConfigAccesor = stltConfigAccesorRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -128,17 +141,22 @@ public class ResourceStateEventHandler implements EventHandler
         NodeName nodeName = eventIdentifierRef.getNodeName();
         ResourceName resourceName = eventIdentifierRef.getResourceName();
 
-        if (inUseRef != null && inUseRef) {
             // EventProcessor has already taken write lock on NodesMap
             try (LockGuard lg = lockGuardFactory.build(LockType.WRITE, LockObj.RSC_DFN_MAP))
             {
                 Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, resourceName, true);
-
                 StateFlags<Flags> flags = rsc.getStateFlags();
-                if (flags.isSet(apiCtx, Resource.Flags.TIE_BREAKER))
+                if (inUseRef != null && inUseRef)
                 {
-                    flags.disableFlags(apiCtx, Flags.TIE_BREAKER);
-                    flags.enableFlags(apiCtx, Resource.Flags.DRBD_DISKLESS);
+                    if (flags.isSet(apiCtx, Resource.Flags.TIE_BREAKER))
+                    {
+                        flags.disableFlags(apiCtx, Flags.TIE_BREAKER);
+                        flags.enableFlags(apiCtx, Resource.Flags.DRBD_DISKLESS);
+                    }
+                }
+                if (flags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS))
+                {
+                    autoDiskfulTask.update(rsc);
                 }
             }
             catch (AccessDeniedException exc)
@@ -150,6 +168,5 @@ public class ResourceStateEventHandler implements EventHandler
                 throw new ApiDatabaseException(exc);
             }
             ctrlTransactionHelper.commit();
-        }
     }
 }

@@ -64,9 +64,6 @@ import static com.linbit.locks.LockGuardFactory.LockObj.RSC_GRP_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
-import com.google.inject.Provider;
-import reactor.core.publisher.Flux;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -79,6 +76,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import com.google.inject.Provider;
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlRscGrpApiCallHandler
@@ -789,7 +789,8 @@ public class CtrlRscGrpApiCallHandler
                     autoPlaceConfig.getReplicasOnDifferentList(),
                     layerStackDevLayerKind,
                     autoPlaceConfig.getProviderList(),
-                    autoPlaceConfig.getDisklessOnRemaining()
+                    autoPlaceConfig.getDisklessOnRemaining(),
+                    autoPlaceConfig.skipAlreadyPlacedOnNodeCheck()
                 );
                 deployedResources = ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
                     /*

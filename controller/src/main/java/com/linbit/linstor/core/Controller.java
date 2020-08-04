@@ -58,6 +58,7 @@ import com.linbit.linstor.systemstarter.PassphraseInitializer;
 import com.linbit.linstor.systemstarter.PreConnectInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.StartupInitializer;
+import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.linstor.tasks.LogArchiveTask;
 import com.linbit.linstor.tasks.PingTask;
@@ -123,6 +124,7 @@ public final class Controller
     private final ReconnectorTask reconnectorTask;
     private final LogArchiveTask logArchiveTask;
     private final AutoSnapshotTask autoSnapshotTask;
+    private final AutoDiskfulTask autoDiskfulTask;
 
     private final DebugConsoleCreator debugConsoleCreator;
     private final ControllerNetComInitializer controllerNetComInitializer;
@@ -137,6 +139,7 @@ public final class Controller
     private final PassphraseInitializer passphraseInitializer;
 
     private PreConnectInitializer preConnectCleanupInitializer;
+
 
     @Inject
     public Controller(
@@ -161,6 +164,7 @@ public final class Controller
         RetryResourcesTask retryResourcesTaskRef,
         LogArchiveTask logArchiveTaskRef,
         AutoSnapshotTask autoSnapshotTaskRef,
+        AutoDiskfulTask autoDiskfulTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
         OpenFlexTargetProcessManager openFlexTargetProcessManagerRef,
@@ -190,6 +194,7 @@ public final class Controller
         logArchiveTask = logArchiveTaskRef;
         retryResourcesTask = retryResourcesTaskRef;
         autoSnapshotTask = autoSnapshotTaskRef;
+        autoDiskfulTask = autoDiskfulTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
         openflexTargetProcessManager = openFlexTargetProcessManagerRef;
@@ -247,6 +252,7 @@ public final class Controller
             taskScheduleService.addTask(retryResourcesTask);
             taskScheduleService.addTask(logArchiveTask);
             taskScheduleService.addTask(autoSnapshotTask);
+            taskScheduleService.addTask(autoDiskfulTask);
 
             systemServicesMap.put(controllerDb.getInstanceName(), controllerDb);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);

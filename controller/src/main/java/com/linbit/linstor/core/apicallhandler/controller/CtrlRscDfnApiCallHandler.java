@@ -57,6 +57,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.locks.LockGuardFactory;
 
@@ -107,6 +108,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlRscLayerDataFactory ctrlLayerStackHelper;
     private final EncryptionHelper encHelper;
     private final AutoSnapshotTask autoSnapshotTask;
+    private final AutoDiskfulTask autoDiskfulTask;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
 
     @Inject
@@ -132,6 +134,7 @@ public class CtrlRscDfnApiCallHandler
         CtrlRscLayerDataFactory ctrlLayerStackHelperRef,
         EncryptionHelper encHelperRef,
         AutoSnapshotTask autoSnapshotTaskRef,
+        AutoDiskfulTask autoDiskfulTaskRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef
     )
     {
@@ -156,6 +159,7 @@ public class CtrlRscDfnApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         encHelper = encHelperRef;
         autoSnapshotTask = autoSnapshotTaskRef;
+        autoDiskfulTask = autoDiskfulTaskRef;
         ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
     }
 
@@ -422,46 +426,7 @@ public class CtrlRscDfnApiCallHandler
                     deletePropNamespaces
                 ) || notifyStlts;
 
-                String autoSnapShipKey = ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_RUN_EVERY;
-                String autoSnapShipVal = overrideProps.get(autoSnapShipKey);
-                if (autoSnapShipVal != null)
-                {
-                    autoFlux = autoSnapshotTask.addAutoSnapshotShipping(rscNameStr, Long.parseLong(autoSnapShipVal));
-                }
-                else
-                {
-                    if (deletePropKeys.contains(autoSnapShipKey))
-                    {
-                        autoSnapshotTask.removeAutoSnapshotShipping(rscNameStr);
-                    }
-                }
-                String autoSnapShipKeepKey = ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_KEEP;
-                if (overrideProps.containsKey(autoSnapShipKeepKey) || deletePropKeys.contains(autoSnapShipKeepKey))
-                {
-                    autoFlux = autoFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldShippedSnapshots(rscDfn));
-                }
-
-                String autoSnapKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_RUN_EVERY;
-                String autoSnapVal = overrideProps.get(autoSnapKey);
-                if (autoSnapVal != null)
-                {
-                    autoFlux = autoFlux.concatWith(
-                        autoSnapshotTask.addAutoSnapshotting(rscNameStr, Long.parseLong(autoSnapVal))
-                    );
-                }
-                else
-                {
-                    if (deletePropKeys.contains(autoSnapKey))
-                    {
-                        autoSnapshotTask.removeAutoSnapshotting(rscNameStr);
-                    }
-                }
-
-                String autoSnapKeepKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP;
-                if (overrideProps.containsKey(autoSnapKeepKey) || deletePropKeys.contains(autoSnapKeepKey))
-                {
-                    autoFlux = autoFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldAutoSnapshots(rscDfn));
-                }
+                autoFlux = handleChangedProperties(rscDfn, overrideProps, deletePropKeys);
 
             }
 
@@ -509,6 +474,65 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
+    }
+
+    private Flux<ApiCallRc> handleChangedProperties(
+        ResourceDefinition rscDfn,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys
+    )
+    {
+        Flux<ApiCallRc> retFlux = Flux.empty();
+        String rscNameStr = rscDfn.getName().displayValue;
+
+        String autoSnapShipKey = ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_RUN_EVERY;
+        String autoSnapShipVal = overrideProps.get(autoSnapShipKey);
+        if (autoSnapShipVal != null)
+        {
+            retFlux = autoSnapshotTask.addAutoSnapshotShipping(rscNameStr, Long.parseLong(autoSnapShipVal));
+        }
+        else
+        {
+            if (deletePropKeys.contains(autoSnapShipKey))
+            {
+                autoSnapshotTask.removeAutoSnapshotShipping(rscNameStr);
+            }
+        }
+        String autoSnapShipKeepKey = ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_KEEP;
+        if (overrideProps.containsKey(autoSnapShipKeepKey) || deletePropKeys.contains(autoSnapShipKeepKey))
+        {
+            retFlux = retFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldShippedSnapshots(rscDfn));
+        }
+
+        String autoSnapKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_RUN_EVERY;
+        String autoSnapVal = overrideProps.get(autoSnapKey);
+        if (autoSnapVal != null)
+        {
+            retFlux = retFlux.concatWith(
+                autoSnapshotTask.addAutoSnapshotting(rscNameStr, Long.parseLong(autoSnapVal))
+            );
+        }
+        else
+        {
+            if (deletePropKeys.contains(autoSnapKey))
+            {
+                autoSnapshotTask.removeAutoSnapshotting(rscNameStr);
+            }
+        }
+
+        String autoSnapKeepKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP;
+        if (overrideProps.containsKey(autoSnapKeepKey) || deletePropKeys.contains(autoSnapKeepKey))
+        {
+            retFlux = retFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldAutoSnapshots(rscDfn));
+        }
+
+        String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;
+        if (overrideProps.containsKey(autoDiskfulKey) || deletePropKeys.contains(autoDiskfulKey))
+        {
+            autoDiskfulTask.update(rscDfn);
+        }
+
+        return retFlux;
     }
 
     ArrayList<ResourceDefinitionApi> listResourceDefinitions(List<String> rscDfnNames, List<String> propFilters)
