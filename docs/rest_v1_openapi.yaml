@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.3.0
+       - Added /v1/view/snapshot-shipping
     * 1.2.0
        - Added optional AutoSelectFilter to resource-group/spawn
        - Added /v1/nodes/{node}/config, that allows you to get and set the satellite config
@@ -94,7 +96,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.2.0
+  version: 1.3.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -5183,6 +5185,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SnapshotNode'
+    SnapshotShippingStatus:
+      type: object
+      properties:
+        snapshot:
+          $ref: '#/components/schemas/Snapshot'
+        from_node_name:
+          type: string
+        to_node_name:
+          type: string
+        status:
+          type: string
+          enum:
+             - running
+             - complete
     SnapshotNode:
       type: object
       description: Actual snapshot data from a node

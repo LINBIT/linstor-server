@@ -30,6 +30,7 @@ import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.SnapshotApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
+import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
@@ -833,6 +834,18 @@ public class Json
             .map(Json::apiToSnapshotNode)
             .collect(Collectors.toList());
         return snapshot;
+    }
+
+    public static JsonGenTypes.SnapshotShippingStatus apiToSnapshotShipping(
+        SnapshotShippingListItemApi snapshotShippingListItemApi
+    )
+    {
+        JsonGenTypes.SnapshotShippingStatus shippingStatus = new JsonGenTypes.SnapshotShippingStatus();
+        shippingStatus.snapshot = apiToSnapshot(snapshotShippingListItemApi);
+        shippingStatus.from_node_name = snapshotShippingListItemApi.getSourceNodeName();
+        shippingStatus.to_node_name = snapshotShippingListItemApi.getTargetNodeName();
+        shippingStatus.status = snapshotShippingListItemApi.getShippingStatus();
+        return shippingStatus;
     }
 
     public static JsonGenTypes.ResourceConnection apiToResourceConnection(

@@ -11,6 +11,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.SnapshotShippingListItemPojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -18,13 +19,18 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
+import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -33,6 +39,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
@@ -40,6 +47,7 @@ import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.utils.ExceptionThrowingPredicate;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
 
@@ -49,10 +57,15 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
 
@@ -63,6 +76,7 @@ public class CtrlSnapshotShippingApiCallHandler
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final ResponseConverter responseConverter;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
@@ -76,6 +90,7 @@ public class CtrlSnapshotShippingApiCallHandler
     @Inject
     public CtrlSnapshotShippingApiCallHandler(
         @ApiContext AccessContext apiCtxRef,
+        ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
@@ -90,6 +105,7 @@ public class CtrlSnapshotShippingApiCallHandler
     )
     {
         apiCtx = apiCtxRef;
+        resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
@@ -590,5 +606,122 @@ public class CtrlSnapshotShippingApiCallHandler
                 exc
             );
         }
+    }
+
+    public ArrayList<SnapshotShippingListItemApi> listSnapshotShippings(
+        List<String> nodeNamesRef,
+        List<String> resourceNamesRef,
+        List<String> snapshotnamesRef,
+        List<String> statusRef
+    )
+    {
+        ArrayList<SnapshotShippingListItemApi> ret = new ArrayList<>();
+
+        Predicate<String> nodeNameFilter = createFilter(nodeNamesRef, String::toUpperCase);
+        Predicate<ResourceName> rscNameFilter = createFilter(resourceNamesRef, LinstorParsingUtils::asRscName);
+        Predicate<SnapshotName> snapNameFilter = createFilter(snapshotnamesRef, LinstorParsingUtils::asSnapshotName);
+
+        ExceptionThrowingPredicate<StateFlags<SnapshotDefinition.Flags>, AccessDeniedException> running = ignored -> false;
+        ExceptionThrowingPredicate<StateFlags<SnapshotDefinition.Flags>, AccessDeniedException> completed = ignored -> false;
+        if (statusRef == null || statusRef.isEmpty())
+        {
+            running = flags -> flags.isSomeSet(
+                peerAccCtx.get(),
+                SnapshotDefinition.Flags.SHIPPING,
+                SnapshotDefinition.Flags.SHIPPING_ABORT,
+                SnapshotDefinition.Flags.SHIPPING_CLEANUP
+            );
+            completed = flags -> flags.isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+        }
+        else
+        {
+            for (String stat : statusRef)
+            {
+                if (ApiConsts.SnapshotShipStatus.COMPLETE.getValue().equalsIgnoreCase(stat))
+                {
+                    running = flags -> flags.isSomeSet(
+                        peerAccCtx.get(),
+                        SnapshotDefinition.Flags.SHIPPING,
+                        SnapshotDefinition.Flags.SHIPPING_ABORT,
+                        SnapshotDefinition.Flags.SHIPPING_CLEANUP
+                    );
+                }
+                if (ApiConsts.SnapshotShipStatus.COMPLETE.getValue().equals(stat))
+                {
+                    completed = flags -> flags.isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                }
+            }
+        }
+        try
+        {
+            for (ResourceDefinition rscDfn : resourceDefinitionRepository.getMapForView(peerAccCtx.get()).values())
+            {
+                if (rscNameFilter.test(rscDfn.getName()))
+                {
+                    for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
+                    {
+                        if (snapNameFilter.test(snapshotDfn.getName()))
+                        {
+                            try
+                            {
+                                StateFlags<Flags> snapDfnFlags = snapshotDfn.getFlags();
+                                boolean isShippmentInProgress = running.test(snapDfnFlags);
+                                if (isShippmentInProgress || completed.test(snapDfnFlags))
+                                {
+                                    final SnapshotDefinitionListItemApi snapItem = snapshotDfn
+                                        .getListItemApiData(peerAccCtx.get());
+
+                                    Props snapDfnProps = snapshotDfn.getProps(peerAccCtx.get());
+                                    String sourceNode = snapDfnProps
+                                        .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_SOURCE_NODE);
+                                    String targetNode = snapDfnProps
+                                        .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_TARGET_NODE);
+
+                                    if (nodeNameFilter.test(sourceNode) || nodeNameFilter.test(targetNode))
+                                    {
+                                        ret.add(
+                                            new SnapshotShippingListItemPojo(
+                                                snapItem,
+                                                sourceNode,
+                                                targetNode,
+                                                isShippmentInProgress ?
+                                                    ApiConsts.SnapshotShipStatus.RUNNING.getValue() :
+                                                    ApiConsts.SnapshotShipStatus.COMPLETE.getValue()
+                                            )
+                                        );
+                                    }
+                                }
+                            }
+                            catch (AccessDeniedException accDeniedExc)
+                            {
+                                // don't add snapshot definition without access
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            // for now return an empty list.
+        }
+        return ret;
+    }
+
+    private <T> Predicate<T> createFilter(List<String> list, Function<String, T> mappingFkt)
+    {
+        Predicate<T> predicate;
+        if (list == null || list.isEmpty())
+        {
+            predicate = ignored -> true;
+        }
+        else
+        {
+            final Set<T> filteredList = list.stream().map(mappingFkt)
+                .collect(Collectors.toSet());
+            predicate = filteredList::contains;
+        }
+
+        return predicate;
     }
 }
