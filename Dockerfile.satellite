@@ -66,7 +66,7 @@ RUN curl https://packages.linbit.com/package-signing-pubkey.asc > /etc/pki/rpm-g
 RUN { \
 	echo '[linbit-public]' ;\
 	echo 'name=LINBIT Public Packages for - $basearch;' ;\
-	echo 'baseurl=https://packages.linbit.com/public/yum/rhel7.0/misc/$basearch/' ;\
+	echo 'baseurl=https://packages.linbit.com/public/yum/rhel7/misc/$basearch/' ;\
 	echo 'enabled=1' ;\
 	echo 'gpgkey=file:///etc/pki/rpm-gpg/package-signing-pubkey.asc' ;\
 	echo 'gpgcheck=1' ;\
