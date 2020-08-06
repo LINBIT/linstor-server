@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
 
 import java.util.Comparator;
 
@@ -13,6 +14,12 @@ public class ResourceConnectionKey
             if (result == 0)
             {
                 result = key1st.tgtNodeName.compareTo(key2nd.tgtNodeName);
+                if (result == 0)
+                {
+                    ResourceName rsc1SrcName = key1st.getSource().getResourceDefinition().getName();
+                    ResourceName rsc2SrcName = key2nd.getSource().getResourceDefinition().getName();
+                    result = rsc1SrcName.compareTo(rsc2SrcName);
+                }
             }
             return result;
         };
