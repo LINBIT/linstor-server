@@ -36,6 +36,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -244,7 +245,13 @@ class CtrlRscConnectionApiCallHandler
                 keysIgnored
             );
             notifyStlts = ctrlPropsHelper.remove(
-                apiCallRcs, LinStorObject.RSC_CONN, props, deletePropKeys, deletePropNamespaces) || notifyStlts;
+                apiCallRcs,
+                LinStorObject.RSC_CONN,
+                props,
+                deletePropKeys,
+                deletePropNamespaces,
+                keysIgnored
+            ) || notifyStlts;
 
             ctrlTransactionHelper.commit();
 

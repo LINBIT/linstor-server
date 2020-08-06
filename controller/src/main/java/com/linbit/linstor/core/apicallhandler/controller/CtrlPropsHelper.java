@@ -549,6 +549,18 @@ public class CtrlPropsHelper
         removeUnconditional(props, deletePropKeys, deleteNamespaces);
     }
 
+    public boolean remove(
+        ApiCallRcImpl apiCallRc,
+        LinStorObject linstorObj,
+        Props props,
+        Collection<String> deletePropKeys,
+        Collection<String> deleteNamespaces
+    )
+        throws InvalidKeyException, AccessDeniedException, DatabaseException
+    {
+        return remove(apiCallRc, linstorObj, props, deletePropKeys, deleteNamespaces, new ArrayList<>());
+    }
+
     /**
      * Remove a key from the property container
      * @param apiCallRc
@@ -566,12 +578,13 @@ public class CtrlPropsHelper
         LinStorObject linstorObj,
         Props props,
         Collection<String> deletePropKeys,
-        Collection<String> deleteNamespaces
+        Collection<String> deleteNamespaces,
+        List<String> ignoredKeys
     )
         throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
         boolean propsModified = false;
-        List<String> ignoredKeys = Collections.singletonList(ApiConsts.NAMESPC_AUXILIARY + "/");
+        ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
 
         for (String key : deletePropKeys)
         {
