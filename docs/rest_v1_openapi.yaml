@@ -22,7 +22,7 @@ info:
     Changelog:
 
     * 1.3.0
-       - Added /v1/view/snapshot-shipping
+       - Added /v1/view/snapshot-shippings
     * 1.2.0
        - Added optional AutoSelectFilter to resource-group/spawn
        - Added /v1/nodes/{node}/config, that allows you to get and set the satellite config
@@ -224,13 +224,7 @@ paths:
       description: |
         Returns an array of all nodes registered to Linstor.
       parameters:
-        - name: nodes
-          in: query
-          description: Filter only for the specified nodes, if not specified no filtering.
-          schema:
-            type: array
-            items:
-              type: string
+        - $ref: '#/components/parameters/Nodes'
         - $ref: '#/components/parameters/Props'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
@@ -580,13 +574,7 @@ paths:
       operationId: nodeStoragePoolList
       description: Lists all storage pools of a node
       parameters:
-        - name: nodes
-          in: query
-          description: Filter only for the specified nodes, if not specified no filtering.
-          schema:
-            type: array
-            items:
-              type: string
+        - $ref: '#/components/parameters/Nodes'
         - name: storage_pools
           in: query
           description: Filter only for the specified storage pools, if not specified
@@ -3520,25 +3508,12 @@ paths:
       description: This REST-resource should be used if you want to get an overview
         of all resources with their volumes.
       parameters:
-        - name: nodes
-          in: query
-          description: Filter only for the specified nodes, if not specified no filtering.
-          schema:
-            type: array
-            items:
-              type: string
+        - $ref: '#/components/parameters/Nodes'
+        - $ref: '#/components/parameters/Resources'
         - name: storage_pools
           in: query
           description: Filter only for the specified storage pools, if not specified
             no filtering.
-          schema:
-            type: array
-            items:
-              type: string
-        - name: resources
-          in: query
-          description: Filter only for the specified resources, if not specified no
-            filtering.
           schema:
             type: array
             items:
@@ -3567,13 +3542,7 @@ paths:
       description: This REST-resource should be used if you want to get an overview
         of all storage pools.
       parameters:
-        - name: nodes
-          in: query
-          description: Filter only for the specified nodes, if not specified no filtering.
-          schema:
-            type: array
-            items:
-              type: string
+        - $ref: '#/components/parameters/Nodes'
         - name: storage_pools
           in: query
           description: Filter only for the specified storage pools, if not specified
@@ -3606,21 +3575,8 @@ paths:
       description: This REST-resource should be used if you want to get an overview
         of all snapshots.
       parameters:
-        - name: nodes
-          in: query
-          description: Filter only for the specified nodes, if not specified, no filtering.
-          schema:
-            type: array
-            items:
-              type: string
-        - name: resources
-          in: query
-          description: Filter only for the specified resources, if not specified,
-            no filtering.
-          schema:
-            type: array
-            items:
-              type: string
+        - $ref: '#/components/parameters/Nodes'
+        - $ref: '#/components/parameters/Resources'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -3632,6 +3588,48 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Snapshot'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
+  /v1/view/snapshot-shippings:
+    get:
+      tags:
+        - developers
+      operationId: viewSnapshotShippings
+      summary: view current snapshot shippings
+      parameters:
+        - $ref: '#/components/parameters/Nodes'
+        - $ref: '#/components/parameters/Resources'
+        - name: snapshots
+          in: query
+          description: Filter only for the specified snapshots, if not specified,
+            no filtering.
+          schema:
+            type: array
+            items:
+              type: string
+        - name: status
+          in: query
+          description: Filter only for the specified status, if not specified,
+            no filtering.
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - running
+                - complete
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: physical storage list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SnapshotShippingStatus'
         '500':
           $ref: '#/components/responses/OperationFailed'
 
@@ -3748,6 +3746,23 @@ components:
       description: node to use
       schema:
         type: string
+    Nodes:
+      name: nodes
+      in: query
+      description: Filter only for the specified nodes, if not specified, no filtering.
+      schema:
+        type: array
+        items:
+          type: string
+    Resources:
+      name: resources
+      in: query
+      description: Filter only for the specified resources, if not specified,
+        no filtering.
+      schema:
+        type: array
+        items:
+          type: string
     NetInterface:
       name: netinterface
       in: path
