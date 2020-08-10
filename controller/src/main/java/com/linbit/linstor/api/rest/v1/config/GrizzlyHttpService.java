@@ -104,11 +104,14 @@ public class GrizzlyHttpService implements SystemService
                 @Override
                 public void service(Request request, Response response) throws Exception
                 {
-                    response.setStatus(HttpStatus.NOT_FOUND_404);
-                    response.sendRedirect(
-                        String.format("https://%s:%d", request.getServerName(), httpsPort) +
-                            request.getHttpHandlerPath()
-                    );
+                    if (!request.getHttpHandlerPath().equals("/health")) // do not redirect health url
+                    {
+                        response.setStatus(HttpStatus.NOT_FOUND_404);
+                        response.sendRedirect(
+                            String.format("https://%s:%d", request.getServerName(), httpsPort) +
+                                request.getHttpHandlerPath()
+                        );
+                    }
                 }
             }
         );
