@@ -677,7 +677,8 @@ public class CtrlSnapshotShippingApiCallHandler
                                     String targetNode = snapDfnProps
                                         .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_TARGET_NODE);
 
-                                    if (nodeNameFilter.test(sourceNode) || nodeNameFilter.test(targetNode))
+                                    if (nodeNameFilter.test(sourceNode.toUpperCase()) ||
+                                        nodeNameFilter.test(targetNode.toUpperCase()))
                                     {
                                         ret.add(
                                             new SnapshotShippingListItemPojo(
