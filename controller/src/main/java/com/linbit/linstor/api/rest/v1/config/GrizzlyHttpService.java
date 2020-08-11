@@ -4,6 +4,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
@@ -11,7 +12,15 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig.RestAccessLogMode;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+
+import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
+import static com.linbit.locks.LockGuardFactory.LockType.READ;
 
 import javax.ws.rs.NotAllowedException;
 import javax.ws.rs.NotFoundException;
@@ -25,11 +34,13 @@ import java.net.SocketException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import org.glassfish.grizzly.http.CompressionConfig;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -57,6 +68,9 @@ public class GrizzlyHttpService implements SystemService
     private final String trustStorePassword;
     private final ResourceConfig restResourceConfig;
     private final Path restAccessLogPath;
+    private final SystemConfRepository systemConfRepository;
+    private final AccessContext sysCtx;
+    private final LockGuardFactory lockGuardFactory;
     private RestAccessLogMode restAccessLogMode;
 
     private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
@@ -86,6 +100,9 @@ public class GrizzlyHttpService implements SystemService
         restResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest");
         restResourceConfig.register(new CORSFilter());
         registerExceptionMappers(restResourceConfig);
+        lockGuardFactory = injector.getInstance(LockGuardFactory.class);
+        systemConfRepository = injector.getInstance(SystemConfRepository.class);
+        sysCtx = injector.getInstance(Key.get(AccessContext.class, SystemContext.class));
 
         try
         {
@@ -96,25 +113,47 @@ public class GrizzlyHttpService implements SystemService
         }
     }
 
+    private static class HTTPSForwarder extends HttpHandler {
+        private final int httpsPort;
+        public HTTPSForwarder(int httpsPort)
+        {
+            this.httpsPort = httpsPort;
+        }
+
+        @Override
+        public void service(Request request, Response response) throws Exception
+        {
+            response.setStatus(HttpStatus.NOT_FOUND_404);
+            response.sendRedirect(
+                String.format("https://%s:%d", request.getServerName(), httpsPort) +
+                    request.getRequestURI()
+            );
+        }
+    }
+
     private void addHTTPSRedirectHandler(HttpServer httpServerRef, int httpsPort)
     {
-        httpServerRef.getServerConfiguration().addHttpHandler(
-            new HttpHandler()
+        ArrayList<String> fwdMappings = new ArrayList<>();
+        fwdMappings.add("/v1");
+
+        boolean disableHttpMetrics = false;
+        try
+        {
+            try (LockGuard ignored = lockGuardFactory.build(READ, CTRL_CONFIG))
             {
-                @Override
-                public void service(Request request, Response response) throws Exception
-                {
-                    if (!request.getHttpHandlerPath().equals("/health")) // do not redirect health url
-                    {
-                        response.setStatus(HttpStatus.NOT_FOUND_404);
-                        response.sendRedirect(
-                            String.format("https://%s:%d", request.getServerName(), httpsPort) +
-                                request.getHttpHandlerPath()
-                        );
-                    }
-                }
+                disableHttpMetrics = systemConfRepository.getCtrlConfForView(sysCtx)
+                    .getPropWithDefault(ApiConsts.KEY_DISABLE_HTTP_METRICS, ApiConsts.NAMESPC_REST, "false")
+                    .equalsIgnoreCase("true");
             }
-        );
+        } catch (AccessDeniedException ignored) {}
+        if (disableHttpMetrics)
+        {
+            fwdMappings.add("/metrics");
+        }
+
+        httpServerRef.getServerConfiguration().addHttpHandler(
+            new HTTPSForwarder(httpsPort),
+            fwdMappings.toArray(new String[0]));
     }
 
     private void enableCompression(HttpServer httpServerRef)
@@ -134,6 +173,7 @@ public class GrizzlyHttpService implements SystemService
             // only install a redirect handler for http
             httpServer = GrizzlyHttpServerFactory.createHttpServer(
                 URI.create(String.format("http://%s", bindAddress)),
+                restResourceConfig,
                 false
             );
 

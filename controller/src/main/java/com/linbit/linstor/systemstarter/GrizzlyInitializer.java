@@ -16,10 +16,10 @@ import org.slf4j.event.Level;
 
 public class GrizzlyInitializer implements StartupInitializer
 {
-    private Injector injector;
-    private ErrorReporter errorReporter;
-    private CtrlConfig ctrlCfg;
-    private Map<ServiceName, SystemService> systemServicesMap;
+    private final Injector injector;
+    private final ErrorReporter errorReporter;
+    private final CtrlConfig ctrlCfg;
+    private final Map<ServiceName, SystemService> systemServicesMap;
     private GrizzlyHttpService grizzlyHttpService;
 
     public GrizzlyInitializer(
