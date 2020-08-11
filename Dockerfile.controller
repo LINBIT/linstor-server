@@ -55,7 +55,7 @@ ENV PSK=https://packages.linbit.com/package-signing-pubkey.asc
 ENV REPO=/etc/yum.repos.d/linbit.repo
 RUN curl "$PSK" >/tmp/psk.asc && rpm --import /tmp/psk.asc && rm /tmp/psk.asc && \
   printf '[linstor-client]\nname=Linstor Client - $basearch \
-    \nbaseurl=http://packages.linbit.com/piraeus/rhel7/drbd-9.0/$basearch \
+    \nbaseurl=http://packages.linbit.com/public/yum/rhel7/misc/$basearch \
     \nenabled=1\ngpgcheck=1\ngpgkey=%s\n' "$PSK" | tee "$REPO"
 
 COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/

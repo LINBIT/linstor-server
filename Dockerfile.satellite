@@ -1,6 +1,7 @@
 FROM centos:centos7 as builder
 
 ENV LINSTOR_VERSION 1.7.1
+ARG ARCH=amd64
 
 ENV GRADLE_VERSION 4.4.1
 
@@ -9,6 +10,12 @@ ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
 
 USER root
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
+RUN case $ARCH in \
+	amd64) cp /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 /etc/pki/rpm-gpg/tools-key ;;\
+	s390x) cp /etc/pki/rpm-gpg/RPM-GPG-KEY-ClefOS-7 /etc/pki/rpm-gpg/tools-key ;;\
+	*) echo "unsupported ARCH: $ARCH"; exit 1 ;;\
+	esac
+
 RUN groupadd makepkg # !lbbuild
 RUN useradd -m -g makepkg makepkg # !lbbuild
 
@@ -34,11 +41,13 @@ RUN cd ${HOME} && \
   cd ${LINSTOR_TGZNAME}-${LINSTOR_VERSION} && \
   PATH=/opt/gradle/gradle-$GRADLE_VERSION/bin:$PATH rpmbuild -bb --define "debug_package %{nil}"  linstor.spec
 
+
 FROM quay.io/linbit/drbd-utils
 # this is/needs to be based on registry.access.redhat.com/ubi7/ubi
 
 ENV LINSTOR_VERSION 1.7.1
 ARG release=1
+ARG ARCH=amd64
 
 LABEL name="linstor-satellite" \
       vendor="LINBIT" \
@@ -53,15 +62,12 @@ COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
   yum install -y which lvm2 util-linux socat && yum install -y /tmp/linstor-common*.rpm /tmp/linstor-satellite*.rpm && yum clean all -y
 
-COPY --from=builder /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 /etc/pki/rpm-gpg/
-RUN { \
-	echo '[base]' ;\
-	echo 'name=CentOS-7 - Base' ;\
-	echo 'baseurl=http://mirror.centos.org/centos/7/os/$basearch/' ;\
-	echo 'gpgcheck=1' ;\
-	echo 'gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7' ;\
-} >/etc/yum.repos.d/Centos-Base.repo
+# repo for additional tools not in UBI (cryptsetup,...)
+COPY --from=builder /etc/pki/rpm-gpg/tools-key /etc/pki/rpm-gpg/
+COPY scripts/centos_cleafos_tools.sh /tmp/
+RUN /tmp/centos_cleafos_tools.sh "$ARCH"
 
+# linbit public repo for thin-send-recv
 RUN curl https://packages.linbit.com/package-signing-pubkey.asc > /etc/pki/rpm-gpg/package-signing-pubkey.asc
 RUN { \
 	echo '[linbit-public]' ;\
@@ -72,8 +78,12 @@ RUN { \
 	echo 'gpgcheck=1' ;\
 } >/etc/yum.repos.d/linbit-public.repo
 
+# currently no thin-send-recv/snapshotshipping on !amd64.
+# we will build that for s390x soon, then we can rm the conditional
 RUN yum install -y cryptsetup nvme-cli epel-release && \
-	yum install -y zstd thin-send-recv && yum clean all -y
+	yum install -y zstd && \
+	if [ "$ARCH" = amd64 ]; then yum install -y thin-send-recv; fi && \
+	yum clean all -y
 
 RUN sed -i 's/udev_rules.*=.*/udev_rules=0/' /etc/lvm/lvm.conf
 RUN sed -i '/^devices {/a global_filter = [ "r|^/dev/drbd|" ]' /etc/lvm/lvm.conf
