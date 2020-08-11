@@ -60,8 +60,6 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
 
     private LinStorScope linstorScope;
 
-
-
     @Inject
     public AutoDiskfulTask(
         @SystemContext AccessContext sysCtxRef,
@@ -98,7 +96,6 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         {
             if (LayerUtils.hasLayer(rsc.getLayerData(sysCtx), DeviceLayerKind.DRBD))
             {
-
                 PriorityProps prioProps = new PriorityProps(
                     rsc.getProps(sysCtx),
                     rsc.getNode().getProps(sysCtx),
@@ -109,53 +106,56 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                 String autoDiskful = prioProps
                     .getProp(ApiConsts.KEY_DRBD_AUTO_DISKFUL, ApiConsts.NAMESPC_DRBD_OPTIONS);
 
-                synchronized (configSet)
+                if (rsc.getStateFlags().isSet(sysCtx, Resource.Flags.DRBD_DISKLESS))
                 {
-                    AutoDiskfulConfig cfg = configSetByRsc.get(rsc);
-                    if (autoDiskful == null)
+                    synchronized (configSet)
                     {
-                        if (cfg != null)
+                        AutoDiskfulConfig cfg = configSetByRsc.get(rsc);
+                        if (autoDiskful == null)
                         {
-                            configSet.remove(cfg);
-                            configSetByRsc.remove(rsc);
-                            errorReporter.logTrace(
-                                "Removed %s to autoDiskfulTask",
-                                CtrlRscApiCallHandler.getRscDescription(rsc)
-                            );
-                        }
-                    }
-                    else
-                    {
-                        long toggleDiskAfter = Long.parseLong(autoDiskful) * 1000 * 60; // property is in minutes
-                        if (cfg != null)
-                        {
-                            /*
-                             * changing toggleDiskAfter might change the configSet's order.
-                             * To force the TreeSet to reorder, we need to remove and re-add the object
-                             */
-                            configSet.remove(cfg);
-                            cfg.toggleDiskAfter = toggleDiskAfter;
-                            configSet.add(cfg);
-                            // no need to update configSetByRsc, as resource did not change
-                            errorReporter.logTrace(
-                                "Updated %s to autoDiskfulTask in %dms",
-                                CtrlRscApiCallHandler.getRscDescription(rsc),
-                                (cfg.disklessPrimarySince + toggleDiskAfter) - System.currentTimeMillis()
-                            );
+                            if (cfg != null)
+                            {
+                                configSet.remove(cfg);
+                                configSetByRsc.remove(rsc);
+                                errorReporter.logTrace(
+                                    "Removed %s to autoDiskfulTask",
+                                    CtrlRscApiCallHandler.getRscDescription(rsc)
+                                );
+                            }
                         }
                         else
                         {
-                            cfg = new AutoDiskfulConfig(System.currentTimeMillis(), rsc, toggleDiskAfter);
-                            configSet.add(cfg);
-                            configSetByRsc.put(rsc, cfg);
-                            errorReporter.logTrace(
-                                "Added %s to autoDiskfulTask in %dms",
-                                CtrlRscApiCallHandler.getRscDescription(rsc),
-                                toggleDiskAfter
-                            );
+                            long toggleDiskAfter = Long.parseLong(autoDiskful) * 1000 * 60; // property is in minutes
+                            if (cfg != null)
+                            {
+                                /*
+                                 * changing toggleDiskAfter might change the configSet's order.
+                                 * To force the TreeSet to reorder, we need to remove and re-add the object
+                                 */
+                                configSet.remove(cfg);
+                                cfg.toggleDiskAfter = toggleDiskAfter;
+                                configSet.add(cfg);
+                                // no need to update configSetByRsc, as resource did not change
+                                errorReporter.logTrace(
+                                    "Updated %s to autoDiskfulTask in %dms",
+                                    CtrlRscApiCallHandler.getRscDescription(rsc),
+                                    (cfg.disklessPrimarySince + toggleDiskAfter) - System.currentTimeMillis()
+                                );
+                            }
+                            else
+                            {
+                                cfg = new AutoDiskfulConfig(System.currentTimeMillis(), rsc, toggleDiskAfter);
+                                configSet.add(cfg);
+                                configSetByRsc.put(rsc, cfg);
+                                errorReporter.logTrace(
+                                    "Added %s to autoDiskfulTask in %dms",
+                                    CtrlRscApiCallHandler.getRscDescription(rsc),
+                                    toggleDiskAfter
+                                );
+                            }
                         }
                     }
-                }
+                } // else: silently ignore diskful resources
             }
             else
             {
