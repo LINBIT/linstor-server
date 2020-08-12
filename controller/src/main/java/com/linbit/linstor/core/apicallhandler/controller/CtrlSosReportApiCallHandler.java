@@ -35,6 +35,7 @@ import com.linbit.utils.FileCollector;
 
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -276,76 +277,84 @@ public class CtrlSosReportApiCallHandler
         String timeContent = "Local Time: " + SDF.format(now) + "\nUTC Time:   " + SDF_UTC.format(now);
         makeFile(sosDir.resolve("timeInfo"), timeContent, now.getTime());
         getDbDump(sosDir);
-        try
+
+        String tomlPath = ctrlCfg.getConfigDir() + CtrlConfig.LINSTOR_CTRL_CONFIG;
+        CommandHelper[] commands = new CommandHelper[]
         {
-            String tomlPath = ctrlCfg.getConfigDir() + CtrlConfig.LINSTOR_CTRL_CONFIG;
-            CommandHelper[] commands = new CommandHelper[]
-            {
-                new CommandHelper(
-                    sosDir.resolve(CtrlConfig.LINSTOR_CTRL_CONFIG),
-                    new String[]
-                    {
-                        "cp", "-p", tomlPath, sosDir.toString()
-                    },
-                    this::makeFileFromCmdErrOnly
-                ),
-                new CommandHelper(
-                    sosDir.resolve("journalctl"),
-                    new String[]
-                    {
-                        "journalctl", "-u", "linstor-satellite", "--since", LinStor.JOURNALCTL_DF.format(since)
-                    },
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    sosDir.resolve("ip-a"),
-                    new String[]
-                    {
-                        "ip", "a"
-                    },
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    sosDir.resolve("log-syslog"),
-                    new String[]
-                    {
-                        "cp", "-p", "/var/log/syslog", sosDir.toString() + "/log-syslog"
-                    },
-                    this::makeFileFromCmdIfFailed
-                ),
-                new CommandHelper(
-                    sosDir.resolve("log-kern.log"),
-                    new String[]
-                    {
-                        "cp", "-p", "/var/log/kern.log", sosDir.toString() + "/log-kern.log"
-                    },
-                    this::makeFileFromCmdIfFailed
-                ),
-                new CommandHelper(
-                    sosDir.resolve("log-messages"),
-                    new String[]
-                    {
-                        "cp", "-p", "/var/log/messages", sosDir.toString() + "/log-messages"
-                    },
-                    this::makeFileFromCmdIfFailed
-                ),
-                new CommandHelper(
-                    sosDir.resolve("release"),
-                    new String[]
-                    {
-                        "cat", "/etc/redhat-release", "/etc/lsb-release", "/etc/os-release"
-                    },
-                    this::makeFileFromCmdNoFailed
-                ),
-            };
-            for (CommandHelper cmd : commands)
+            new CommandHelper(
+                sosDir.resolve(CtrlConfig.LINSTOR_CTRL_CONFIG),
+                new String[]
+                {
+                    "cp", "-p", tomlPath, sosDir.toString()
+                },
+                this::makeFileFromCmdErrOnly
+            ),
+            new CommandHelper(
+                sosDir.resolve("journalctl"),
+                new String[]
+                {
+                    "journalctl", "-u", "linstor-controller", "--since", LinStor.JOURNALCTL_DF.format(since)
+                },
+                this::makeFileFromCmd
+            ),
+            new CommandHelper(
+                sosDir.resolve("ip-a"),
+                new String[]
+                {
+                    "ip", "a"
+                },
+                this::makeFileFromCmd
+            ),
+            new CommandHelper(
+                sosDir.resolve("log-syslog"),
+                new String[]
+                {
+                    "cp", "-p", "/var/log/syslog", sosDir.toString() + "/log-syslog"
+                },
+                this::makeFileFromCmdIfFailed
+            ),
+            new CommandHelper(
+                sosDir.resolve("log-kern.log"),
+                new String[]
+                {
+                    "cp", "-p", "/var/log/kern.log", sosDir.toString() + "/log-kern.log"
+                },
+                this::makeFileFromCmdIfFailed
+            ),
+            new CommandHelper(
+                sosDir.resolve("log-messages"),
+                new String[]
+                {
+                    "cp", "-p", "/var/log/messages", sosDir.toString() + "/log-messages"
+                },
+                this::makeFileFromCmdIfFailed
+            ),
+            new CommandHelper(
+                sosDir.resolve("release"),
+                new String[]
+                {
+                    "cat", "/etc/redhat-release", "/etc/lsb-release", "/etc/os-release"
+                },
+                this::makeFileFromCmdNoFailed
+            ),
+        };
+        for (CommandHelper cmd : commands)
+        {
+            try
             {
                 cmd.handleExitCode.accept(cmd.file, cmd.cmd);
             }
-        }
-        catch (ChildProcessTimeoutException exc)
-        {
-            errorReporter.reportError(exc);
+            catch (ChildProcessTimeoutException exc)
+            {
+                String reportName = errorReporter.reportError(exc);
+                makeFile(
+                    Paths.get(cmd.file.toString() + ".failed"), "ErrorReport-" + reportName, System.currentTimeMillis()
+                );
+            }
+            catch (IOException exc)
+            {
+                errorReporter.reportError(exc);
+            }
         }
 
         FileCollector collector = new FileCollector(nodeName, errorReporter.getLogDirectory());
@@ -395,9 +404,10 @@ public class CtrlSosReportApiCallHandler
 
     // make error report and write it in file if failed, no action if successful
     private void makeFileFromCmdErrOnly(Path filePath, String[] command)
-        throws IOException, ChildProcessTimeoutException
+        throws ChildProcessTimeoutException, IOException
     {
-        OutputData output = extCmdFactory.create().exec(command);
+        OutputData output;
+        output = extCmdFactory.create().exec(command);
         if (output.exitCode != 0)
         {
             String reportName = errorReporter.reportError(new ExtCmdFailedException(command, output));
@@ -408,8 +418,7 @@ public class CtrlSosReportApiCallHandler
     }
 
     // make error report and write it in file if failed, make file with stdout if successful
-    private void makeFileFromCmd(Path filePath, String[] command)
-        throws IOException, ChildProcessTimeoutException
+    private void makeFileFromCmd(Path filePath, String[] command) throws ChildProcessTimeoutException, IOException
     {
         OutputData output = extCmdFactory.create().exec(command);
         if (output.exitCode != 0)
@@ -427,7 +436,7 @@ public class CtrlSosReportApiCallHandler
 
     // make file with stderr & stdout if failed, but don't mark it as failed, make file with stdout if successful
     private void makeFileFromCmdNoFailed(Path filePath, String[] command)
-        throws IOException, ChildProcessTimeoutException
+        throws ChildProcessTimeoutException, IOException
     {
         OutputData output = extCmdFactory.create().exec(command);
         if (output.exitCode != 0)
@@ -444,7 +453,7 @@ public class CtrlSosReportApiCallHandler
 
     // make file with stderr & stdout if failed, no action if successful
     private void makeFileFromCmdIfFailed(Path filePath, String[] command)
-        throws IOException, ChildProcessTimeoutException
+        throws ChildProcessTimeoutException, IOException
     {
         OutputData output = extCmdFactory.create().exec(command);
         if (output.exitCode != 0)
