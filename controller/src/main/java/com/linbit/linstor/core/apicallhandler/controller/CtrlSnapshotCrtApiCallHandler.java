@@ -41,6 +41,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSat
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -375,28 +376,34 @@ public class CtrlSnapshotCrtApiCallHandler
         Throwable exception
     )
     {
-        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
+        Flux<ApiCallRc> retFlux = Flux.empty();
 
-        SnapshotDefinition.Flags flag = exception instanceof CtrlResponseUtils.DelayedApiRcException &&
-            isFailNotConnected((CtrlResponseUtils.DelayedApiRcException) exception) ?
-                SnapshotDefinition.Flags.FAILED_DISCONNECT : SnapshotDefinition.Flags.FAILED_DEPLOYMENT;
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, false);
+        // might be null when a snapshot(-shipping) is aborted multiple times
+        // which can happen as both, sender and receiver try to abort a failed shipment
+        if (snapshotDfn != null)
+        {
+            SnapshotDefinition.Flags flag = exception instanceof CtrlResponseUtils.DelayedApiRcException &&
+                isFailNotConnected((CtrlResponseUtils.DelayedApiRcException) exception) ?
+                    SnapshotDefinition.Flags.FAILED_DISCONNECT :
+                    SnapshotDefinition.Flags.FAILED_DEPLOYMENT;
 
-        enableFlagPrivileged(snapshotDfn, flag);
-        unsetInCreationPrivileged(snapshotDfn);
-        ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
-        resumeIoPrivileged(rscDfn);
+            enableFlagPrivileged(snapshotDfn, flag);
+            unsetInCreationPrivileged(snapshotDfn);
+            ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
+            resumeIoPrivileged(rscDfn);
 
-        ctrlTransactionHelper.commit();
+            ctrlTransactionHelper.commit();
 
-        Flux<ApiCallRc> satelliteUpdateResponses =
-            ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedCannotAbort())
+            Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
+                .updateSatellites(snapshotDfn, notConnectedCannotAbort())
                 .transform(
                     responses -> CtrlResponseUtils.combineResponses(
                         responses,
                         rscName,
                         "Aborted snapshot of {1} on {0}"
                     )
-                )
+                    )
                 .concatWith(
                     ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                         .transform(
@@ -409,8 +416,11 @@ public class CtrlSnapshotCrtApiCallHandler
                     )
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
 
-        return satelliteUpdateResponses
-            .concatWith(Flux.error(exception));
+            retFlux = satelliteUpdateResponses
+                .concatWith(Flux.error(exception));
+        }
+
+        return retFlux;
     }
 
     private Flux<ApiCallRc> takeSnapshot(ResourceName rscName, SnapshotName snapshotName)
