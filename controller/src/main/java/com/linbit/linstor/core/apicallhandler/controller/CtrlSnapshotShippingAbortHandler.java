@@ -9,6 +9,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -57,7 +58,7 @@ public class CtrlSnapshotShippingAbortHandler
     {
         return scopeRunner
             .fluxInTransactionalScope(
-                "Delete snapshot",
+                "Abort all snapshot shipments to node",
                 lockGuardFactory.create()
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
@@ -89,7 +90,44 @@ public class CtrlSnapshotShippingAbortHandler
             throw new ImplementationError(exc);
         }
         return flux;
+    }
 
+    public Flux<ApiCallRc> abortSnapshotShippingPrivileged(ResourceDefinition rscDfn)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Abort snapshot shipments of rscDfn",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> abortSnapshotShippingPrivilegedInTransaction(rscDfn)
+            );
+    }
+
+    private Flux<ApiCallRc> abortSnapshotShippingPrivilegedInTransaction(ResourceDefinition rscDfn)
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        try
+        {
+
+            for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(apiCtx))
+            {
+                if (snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING))
+                {
+                    flux = flux.concatWith(
+                        snapDelHandlerProvider.get()
+                        .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue)
+                    );
+                }
+            }
+            ctrlTransactionHelper.commit();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return flux;
     }
 
     public void markSnapshotShippingAborted(SnapshotDefinition snapDfnRef)
@@ -133,4 +171,5 @@ public class CtrlSnapshotShippingAbortHandler
             throw new ApiDatabaseException(exc);
         }
     }
+
 }

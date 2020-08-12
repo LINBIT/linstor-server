@@ -59,6 +59,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlRscAutoHelper autoHelper;
+    private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
 
     @Inject
     public CtrlRscDeleteApiCallHandler(
@@ -71,7 +72,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlRscAutoHelper autoHelperRef
+        CtrlRscAutoHelper autoHelperRef,
+        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -84,6 +86,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         rscDfnMapLock = rscDfnMapLockRef;
         peerAccCtx = peerAccCtxRef;
         autoHelper = autoHelperRef;
+        snapShipAbortHandler = snapShipAbortHandlerRef;
     }
 
     @Override
@@ -177,6 +180,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             rsc.getDefinition()
         );
 
+        Flux<ApiCallRc> abortSnapShipFlux = snapShipAbortHandler.abortSnapshotShippingPrivileged(rsc.getDefinition());
+
         ctrlTransactionHelper.commit();
 
 
@@ -205,7 +210,9 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         {
             flux = Flux.just(responses);
         }
-        flux = flux.concatWith(autoResult.getFlux());
+        flux = flux
+            .concatWith(abortSnapShipFlux)
+            .concatWith(autoResult.getFlux());
 
         return flux;
     }
