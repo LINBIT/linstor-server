@@ -44,6 +44,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -92,6 +93,7 @@ public class CtrlConfApiCallHandler
     private final CtrlNodeApiCallHandler ctrlNodeApiCallHandler;
 
     private final LockGuardFactory lockGuardFactory;
+    private AutoDiskfulTask autoDiskfulTask;
 
 
     @Inject
@@ -111,7 +113,8 @@ public class CtrlConfApiCallHandler
         ScopeRunner scopeRunnerRef,
         CtrlConfig ctrlCfgRef,
         ResponseConverter responseConverterRef,
-        CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef
+        CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef,
+        AutoDiskfulTask autoDiskfulTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -131,6 +134,7 @@ public class CtrlConfApiCallHandler
         ctrlCfg = ctrlCfgRef;
         responseConverter = responseConverterRef;
         ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
+        autoDiskfulTask = autoDiskfulTaskRef;
     }
 
     private void updateSatelliteConf() throws AccessDeniedException
@@ -171,6 +175,16 @@ public class CtrlConfApiCallHandler
             // for some of the deleted keys.
             apiCallRc.addEntries(deleteNamespace(deleteNamespace));
         }
+
+        String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;
+        if (
+            overridePropsRef.containsKey(autoDiskfulKey) || deletePropKeysRef.contains(autoDiskfulKey) ||
+                deletePropNamespacesRef.contains(ApiConsts.NAMESPC_DRBD_OPTIONS)
+        )
+        {
+            autoDiskfulTask.update();
+        }
+
         return apiCallRc;
     }
 

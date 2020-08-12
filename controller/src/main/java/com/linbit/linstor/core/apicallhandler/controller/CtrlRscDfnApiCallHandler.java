@@ -426,7 +426,7 @@ public class CtrlRscDfnApiCallHandler
                     deletePropNamespaces
                 ) || notifyStlts;
 
-                autoFlux = handleChangedProperties(rscDfn, overrideProps, deletePropKeys);
+                autoFlux = handleChangedProperties(rscDfn, overrideProps, deletePropKeys, deletePropNamespaces);
 
             }
 
@@ -479,7 +479,8 @@ public class CtrlRscDfnApiCallHandler
     private Flux<ApiCallRc> handleChangedProperties(
         ResourceDefinition rscDfn,
         Map<String, String> overrideProps,
-        Set<String> deletePropKeys
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespacesRef
     )
     {
         Flux<ApiCallRc> retFlux = Flux.empty();
@@ -527,7 +528,10 @@ public class CtrlRscDfnApiCallHandler
         }
 
         String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;
-        if (overrideProps.containsKey(autoDiskfulKey) || deletePropKeys.contains(autoDiskfulKey))
+        if (
+            overrideProps.containsKey(autoDiskfulKey) || deletePropKeys.contains(autoDiskfulKey) ||
+                deletePropNamespacesRef.contains(ApiConsts.NAMESPC_DRBD_OPTIONS)
+        )
         {
             autoDiskfulTask.update(rscDfn);
         }

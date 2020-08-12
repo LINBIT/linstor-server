@@ -54,6 +54,7 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -102,6 +103,7 @@ public class CtrlRscGrpApiCallHandler
 
     private final CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
+    private AutoDiskfulTask autoDiskfulTask;
 
     @Inject
     public CtrlRscGrpApiCallHandler(
@@ -122,7 +124,8 @@ public class CtrlRscGrpApiCallHandler
         CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef,
         CtrlQueryMaxVlmSizeHelper qmvsHelperRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        AutoDiskfulTask autoDiskfulTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -143,6 +146,7 @@ public class CtrlRscGrpApiCallHandler
         qmvsHelper = qmvsHelperRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         lockGuardFactory = lockGuardFactoryRef;
+        autoDiskfulTask = autoDiskfulTaskRef;
     }
 
     List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames, List<String> propFilters)
@@ -362,6 +366,10 @@ public class CtrlRscGrpApiCallHandler
                     deletePropKeysRef,
                     deleteNamespacesRef
                 ) || notifyStlts;
+
+                reRunAutoPlace = reRunAutoPlace.concatWith(
+                    handleChangedProperties(rscGrpData, overrideProps, deletePropKeysRef, deleteNamespacesRef)
+                );
             }
 
             if (autoApiRef != null)
@@ -443,6 +451,25 @@ public class CtrlRscGrpApiCallHandler
 
         return Flux.<ApiCallRc>just(apiCallRcs)
             .concatWith(reRunAutoPlace);
+    }
+
+    private Flux<ApiCallRc> handleChangedProperties(
+        ResourceGroup rscGrp,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deletePropNamespacesRef
+    )
+    {
+        Flux<ApiCallRc> retFlux = Flux.empty();
+        String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;
+        if (
+            overrideProps.containsKey(autoDiskfulKey) || deletePropKeys.contains(autoDiskfulKey) ||
+                deletePropNamespacesRef.contains(ApiConsts.NAMESPC_DRBD_OPTIONS)
+        )
+        {
+            autoDiskfulTask.update(rscGrp);
+        }
+        return retFlux;
     }
 
     public ApiCallRc delete(String rscGrpNameStrRef)

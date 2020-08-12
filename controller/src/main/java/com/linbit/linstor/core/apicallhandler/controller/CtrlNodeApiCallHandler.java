@@ -58,6 +58,7 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -110,6 +111,7 @@ public class CtrlNodeApiCallHandler
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlStltSerializer stltComSerializer;
+    private AutoDiskfulTask autoDiskfulTask;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -132,7 +134,8 @@ public class CtrlNodeApiCallHandler
         Scheduler schedulerRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlStltSerializer stltComSerializerRef
+        CtrlStltSerializer stltComSerializerRef,
+        AutoDiskfulTask autoDiskfulTaskRef
     )
     {
         apiCtx = apiCtxRef;
@@ -155,6 +158,7 @@ public class CtrlNodeApiCallHandler
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         stltComSerializer = stltComSerializerRef;
+        autoDiskfulTask = autoDiskfulTaskRef;
     }
 
     Node createNodeImpl(
@@ -445,7 +449,7 @@ public class CtrlNodeApiCallHandler
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs, LinStorObject.NODE, props, deletePropKeys, deleteNamespaces) || notifyStlts;
 
-            checkProperties(apiCallRcs, node, overrideProps);
+            flux = flux.concatWith(checkProperties(apiCallRcs, node, overrideProps, deletePropKeys, deleteNamespaces));
 
             ctrlTransactionHelper.commit();
 
@@ -741,14 +745,23 @@ public class CtrlNodeApiCallHandler
      * other checks only generate a warning message for the user.
      *
      * @param apiCallRcsRef
+     * @param deleteNamespacesRef
      * @param overridePropsRef
      *
      * @throws InvalidNameException
      * @throws AccessDeniedException
      */
-    private void checkProperties(ApiCallRcImpl apiCallRcsRef, Node node, Map<String, String> overrideProps)
+    private Flux<ApiCallRc> checkProperties(
+        ApiCallRcImpl apiCallRcsRef,
+        Node node,
+        Map<String, String> overrideProps,
+        Set<String> deletePropKeys,
+        Set<String> deleteNamespaces
+    )
         throws AccessDeniedException, InvalidNameException
     {
+        Flux<ApiCallRc> retFlux = Flux.empty();
+
         /*
          * Checks that throw exceptions
          */
@@ -796,6 +809,17 @@ public class CtrlNodeApiCallHandler
                 }
             }
         }
+
+        String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;
+        if (
+            overrideProps.containsKey(autoDiskfulKey) || deletePropKeys.contains(autoDiskfulKey) ||
+                deleteNamespaces.contains(ApiConsts.NAMESPC_DRBD_OPTIONS)
+        )
+        {
+            autoDiskfulTask.update(node);
+        }
+
+        return retFlux;
     }
 
     public static String getNodeDescription(String nodeNameStr)
@@ -838,7 +862,7 @@ public class CtrlNodeApiCallHandler
 
     public Flux<ApiCallRc> setGlobalConfig(SatelliteConfigApi config) throws AccessDeniedException, IOException
     {
-        ArrayList<Flux<ApiCallRc>> answers = new ArrayList<Flux<ApiCallRc>>();
+        ArrayList<Flux<ApiCallRc>> answers = new ArrayList<>();
 
         for (NodeName nodeName : nodeRepository.getMapForView(peerAccCtx.get()).keySet())
         {
