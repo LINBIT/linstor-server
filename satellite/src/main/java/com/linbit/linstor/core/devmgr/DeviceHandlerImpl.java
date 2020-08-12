@@ -340,8 +340,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                  * This also means that we only send the resourceApplied messages
                  * at the very end
                  */
-                boolean rscInactive = rscFlags.isSet(wrkCtx, Resource.Flags.INACTIVE);
-                if (rscFlags.isSet(wrkCtx, Resource.Flags.DELETE) && !rscInactive)
+                if (rscFlags.isSet(wrkCtx, Resource.Flags.DELETE))
                 {
                     rscListNotifyDelete.add(rsc);
                     notificationListener.get().notifyResourceDeleted(rsc);
@@ -366,7 +365,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
 
-                if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) || rscInactive)
+                if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE))
                 {
                     sysFsUpdateList.add(rsc);
                 }
