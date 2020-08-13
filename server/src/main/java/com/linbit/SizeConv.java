@@ -1,8 +1,8 @@
 package com.linbit;
 
-import java.math.BigInteger;
-
 import com.linbit.utils.BigIntegerUtils;
+
+import java.math.BigInteger;
 
 /**
  * Methods for converting decimal and binary sizes of different magnitudes
@@ -99,6 +99,109 @@ public class SizeConv
                     );
             }
             return factor;
+        }
+
+        public static SizeUnit parse(String str, boolean forcePowerOfTwo)
+        {
+            SizeUnit unit;
+            switch (str.toLowerCase().trim())
+            {
+                case "":
+                case "b":
+                    unit = SizeUnit.UNIT_B;
+                    break;
+                case "k":
+                case "kb":
+                    if (!forcePowerOfTwo)
+                    {
+                        unit = SizeUnit.UNIT_kB;
+                        break;
+                    }
+                    // else: fallthrough
+                case "kib":
+                    unit = SizeUnit.UNIT_KiB;
+                    break;
+                case "m":
+                case "mb":
+                    if (!forcePowerOfTwo)
+                    {
+                        unit = SizeUnit.UNIT_MB;
+                        break;
+                    }
+                    // else: fallthrough
+                case "mib":
+                    unit = SizeUnit.UNIT_MiB;
+                    break;
+                case "g":
+                case "gb":
+                    if (!forcePowerOfTwo)
+                    {
+                        unit = SizeUnit.UNIT_GB;
+                        break;
+                    }
+                    // else: fallthrough
+                case "gib":
+                    unit = SizeUnit.UNIT_GiB;
+                    break;
+                case "t":
+                case "tb":
+                    if (!forcePowerOfTwo)
+                    {
+                        unit = SizeUnit.UNIT_TB;
+                        break;
+                    }
+                    // else: fallthrough
+                case "tib":
+                    unit = SizeUnit.UNIT_TiB;
+                    break;
+                case "p":
+                case "pb":
+                    if (!forcePowerOfTwo)
+                    {
+                        unit = SizeUnit.UNIT_PB;
+                        break;
+                    }
+                    // else: fallthrough
+                case "pib":
+                    unit = SizeUnit.UNIT_PiB;
+                    break;
+                case "e":
+                case "eb":
+                    if (!forcePowerOfTwo)
+                    {
+                        unit = SizeUnit.UNIT_EB;
+                        break;
+                    }
+                    // else: fallthrough
+                case "eib":
+                    unit = SizeUnit.UNIT_EiB;
+                    break;
+                case "z":
+                case "zb":
+                    if (!forcePowerOfTwo)
+                    {
+                        unit = SizeUnit.UNIT_ZB;
+                        break;
+                    }
+                    // else: fallthrough
+                case "zib":
+                    unit = SizeUnit.UNIT_ZiB;
+                    break;
+                case "y":
+                case "yb":
+                    if (!forcePowerOfTwo)
+                    {
+                        unit = SizeUnit.UNIT_YB;
+                        break;
+                    }
+                    // else: fallthrough
+                case "yib":
+                    unit = SizeUnit.UNIT_YiB;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown size unit '" + str + "'");
+            }
+            return unit;
         }
     }
 

@@ -320,8 +320,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             vlmDataRef.getStorPool().getProps(storDriverAccCtx),
             rsc.getNode().getProps(storDriverAccCtx),
             vlmDfn.getProps(storDriverAccCtx),
-            rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
             rscDfn.getProps(storDriverAccCtx),
+            rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
             rscGrp.getProps(storDriverAccCtx),
             stltConfigAccessor.getReadonlyProps()
         );

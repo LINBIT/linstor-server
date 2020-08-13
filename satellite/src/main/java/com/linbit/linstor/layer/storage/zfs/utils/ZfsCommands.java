@@ -10,6 +10,8 @@ import com.linbit.utils.StringUtils;
 import static com.linbit.linstor.layer.storage.utils.Commands.genericExecutor;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -57,34 +59,33 @@ public class ZfsCommands
         );
     }
 
-    public static OutputData create(ExtCmd extCmd, String zpool, String identifier, long size, boolean thin)
+    public static OutputData create(
+        ExtCmd extCmd,
+        String zpool,
+        String identifier,
+        long size,
+        boolean thin,
+        String... additionalParameters
+    )
         throws StorageException
     {
         String fullQualifiedId = zpool + File.separator + identifier;
-        String[] command;
+        ArrayList<String> cmdList = new ArrayList<>();
+
+        cmdList.add("zfs");
+        cmdList.add("create");
         if (thin)
         {
-            command = new String[] {
-                "zfs",
-                "create",
-                "-s",
-                "-V", size + "KB",
-                fullQualifiedId
-            };
+            cmdList.add("-s");
         }
-        else
-        {
-            command = new String[] {
-                "zfs",
-                "create",
-                // "-s",
-                "-V", size + "KB",
-                fullQualifiedId
-            };
-        }
+        cmdList.add("-V");
+        cmdList.add(size + "KB");
+        cmdList.addAll(Arrays.asList(additionalParameters));
+        cmdList.add(fullQualifiedId);
+
         return genericExecutor(
             extCmd,
-            command,
+            cmdList.toArray(new String[0]),
             "Failed to create zfsvolume",
             "Failed to create new zfs volume '" + fullQualifiedId + "' with size " + size + "kb"
         );

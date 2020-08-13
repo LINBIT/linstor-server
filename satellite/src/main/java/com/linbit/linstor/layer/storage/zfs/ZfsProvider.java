@@ -1,23 +1,31 @@
 package com.linbit.linstor.layer.storage.zfs;
 
 import com.linbit.ImplementationError;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.WipeHandler;
+import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
@@ -47,6 +55,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Singleton
 public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, ZfsData<Snapshot>>
@@ -58,6 +68,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     public static final String FORMAT_SNAP_TO_ZFS_ID = FORMAT_RSC_TO_ZFS_ID + "@%s";
     private static final String FORMAT_ZFS_DEV_PATH = "/dev/zvol/%s/%s";
     private static final int TOLERANCE_FACTOR = 3;
+
+    private static final Pattern PATTERN_EXTENT_SIZE = Pattern.compile("(\\d+)\\s*(.*)");
 
     private Map<StorPool, Long> extentSizes = new TreeMap<>();
 
@@ -198,27 +210,87 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             vlmData.getZPool(),
             asLvIdentifier(vlmData),
             vlmData.getExepectedSize(),
-            false
+            false,
+            getZfscreateOptions(vlmData)
         );
     }
 
-    protected long roundUpToExtentSize(long sizeRef)
+    protected String[] getZfscreateOptions(ZfsData<Resource> vlmDataRef)
+    {
+        String[] additionalOptionsArr;
+
+        try
+        {
+            String options = getPrioProps(vlmDataRef).getProp(
+                ApiConsts.KEY_STOR_POOL_ZFS_CREATE_OPTIONS,
+                ApiConsts.NAMESPC_STORAGE_DRIVER,
+                ""
+            );
+            List<String> additionalOptions = MkfsUtils.shellSplit(options);
+            additionalOptionsArr = new String[additionalOptions.size()];
+            additionalOptions.toArray(additionalOptionsArr);
+        }
+        catch (AccessDeniedException | InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return additionalOptionsArr;
+    }
+
+    protected long roundUpToExtentSize(ZfsData<Resource> vlmDataRef, long sizeRef)
     {
         long volumeSize = sizeRef;
-        if (volumeSize % DEFAULT_ZFS_EXTENT_SIZE != 0)
+
+        long extentSize = getExtentSize(vlmDataRef);
+
+        if (volumeSize % extentSize != 0)
         {
             long origSize = volumeSize;
-            volumeSize = ((volumeSize / DEFAULT_ZFS_EXTENT_SIZE) + 1) * DEFAULT_ZFS_EXTENT_SIZE;
+            volumeSize = ((volumeSize / extentSize) + 1) * extentSize;
             errorReporter.logInfo(
                 String.format(
                     "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
                     origSize,
                     volumeSize,
-                    DEFAULT_ZFS_EXTENT_SIZE
+                    extentSize
                 )
             );
         }
         return volumeSize;
+    }
+
+    private long getExtentSize(ZfsData<Resource> vlmDataRef)
+    {
+        long extentSize = DEFAULT_ZFS_EXTENT_SIZE;
+        String[] zfscreateOptions = getZfscreateOptions(vlmDataRef);
+        for (int i = 0; i < zfscreateOptions.length; i++)
+        {
+            String opt = zfscreateOptions[i];
+            if (opt.equals("-b"))
+            {
+                if (zfscreateOptions.length < i + 1)
+                {
+                    errorReporter.reportError(
+                        new StorageException(
+                            "-b option for 'zfs create ...' requires an argument. Defaulting to " +
+                                DEFAULT_ZFS_EXTENT_SIZE + "KiB"
+                        )
+                    );
+                }
+                String extSizeStr = zfscreateOptions[i + 1];
+                Matcher matcher = PATTERN_EXTENT_SIZE.matcher(extSizeStr);
+                if (matcher.find())
+                {
+                    long val = Long.parseLong(matcher.group(1));
+                    SizeUnit unit = SizeUnit.parse(matcher.group(2), true);
+
+                    extentSize = SizeConv.convert(val, unit, SizeUnit.UNIT_KiB);
+                }
+                break;
+            }
+        }
+
+        return extentSize;
     }
 
     @Override
@@ -570,6 +642,25 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         vlmData.setDevicePath(zfsInfo.path);
     }
 
+    protected PriorityProps getPrioProps(ZfsData<Resource> vlmDataRef) throws AccessDeniedException
+    {
+        Volume vlm = (Volume) vlmDataRef.getVolume();
+        Resource rsc = vlm.getAbsResource();
+        ResourceDefinition rscDfn = vlm.getResourceDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+        return new PriorityProps(
+            vlm.getProps(storDriverAccCtx),
+            rsc.getProps(storDriverAccCtx),
+            vlmDataRef.getStorPool().getProps(storDriverAccCtx),
+            rsc.getNode().getProps(storDriverAccCtx),
+            vlmDfn.getProps(storDriverAccCtx),
+            rscDfn.getProps(storDriverAccCtx),
+            rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
+            rscGrp.getProps(storDriverAccCtx),
+            stltConfigAccessor.getReadonlyProps()
+        );
+    }
     @Override
     protected void setDevicePath(ZfsData<Resource> vlmDataRef, String devicePathRef) throws DatabaseException
     {
@@ -592,7 +683,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected void setExpectedUsableSize(ZfsData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setExepectedSize(
-            roundUpToExtentSize(size)
+            roundUpToExtentSize(vlmData, size)
         );
     }
 
