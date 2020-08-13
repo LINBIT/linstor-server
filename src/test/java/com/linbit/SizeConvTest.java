@@ -1,27 +1,30 @@
 package com.linbit;
 
+import com.linbit.SizeConv.SizeUnit;
+
+import static com.linbit.SizeConv.SizeUnit.UNIT_B;
+import static com.linbit.SizeConv.SizeUnit.UNIT_EB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_EiB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_GB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_GiB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_KiB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_MB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_MiB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_PB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_PiB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_TB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_TiB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_YB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_YiB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_ZB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_ZiB;
+import static com.linbit.SizeConv.SizeUnit.UNIT_kB;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.linbit.SizeConv.SizeUnit.UNIT_B;
-import static com.linbit.SizeConv.SizeUnit.UNIT_KiB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_MiB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_GiB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_TiB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_PiB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_EiB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_ZiB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_YiB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_kB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_MB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_GB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_TB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_PB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_EB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_ZB;
-import static com.linbit.SizeConv.SizeUnit.UNIT_YB;
-
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -188,6 +191,55 @@ public class SizeConvTest
         }
     }
 
+    @Test
+    public void testParse() throws Exception
+    {
+        ParseEntry[] entries = new ParseEntry[] {
+            new ParseEntry(SizeUnit.UNIT_B, SizeUnit.UNIT_B, false, "", "b", "B"),
+            new ParseEntry(SizeUnit.UNIT_kB, SizeUnit.UNIT_KiB, false, "k", "kib", "kb", "KB", "KiB", "kiB", "kIb"),
+            new ParseEntry(SizeUnit.UNIT_MB, SizeUnit.UNIT_MiB, false, "m", "mb", "mib", "MB", "MiB", "miB", "mIb"),
+            new ParseEntry(SizeUnit.UNIT_GB, SizeUnit.UNIT_GiB, false, "g", "gb", "gib", "GB", "GiB", "giB", "gIb"),
+            new ParseEntry(SizeUnit.UNIT_TB, SizeUnit.UNIT_TiB, false, "t", "tb", "tib", "TB", "TiB", "tiB", "tIb"),
+            new ParseEntry(SizeUnit.UNIT_PB, SizeUnit.UNIT_PiB, false, "p", "pb", "pib", "PB", "PiB", "piB", "pIb"),
+            new ParseEntry(SizeUnit.UNIT_EB, SizeUnit.UNIT_EiB, false, "e", "eb", "eib", "EB", "EiB", "eiB", "eIb"),
+            new ParseEntry(SizeUnit.UNIT_ZB, SizeUnit.UNIT_ZiB, false, "z", "zb", "zib", "ZB", "ZiB", "ziB", "zIb"),
+            new ParseEntry(SizeUnit.UNIT_YB, SizeUnit.UNIT_YiB, false, "y", "yb", "yib", "YB", "YiB", "yiB", "yIb"),
+            new ParseEntry(null, null, true, "a", "cb", "gibb", "gi b", "gbi", "9001"),
+        };
+
+        for (ParseEntry entry : entries)
+        {
+            for (String str : entry.strArr)
+            {
+                if (entry.expectException)
+                {
+                    try
+                    {
+                        SizeUnit.parse(str, false);
+                        fail("Exception expected at: " + str + ", force^2: false");
+                    }
+                    catch (IllegalArgumentException ignored)
+                    {}
+                    try
+                    {
+                        SizeUnit.parse(str, true);
+                        fail("Exception expected at: " + str + ", force^2: true");
+                    }
+                    catch (IllegalArgumentException ignored)
+                    {}
+                }
+                else
+                {
+                    SizeUnit expectedBaseUnit = str.toLowerCase().contains("i") ?
+                        entry.expectedPowerTwoUnit :
+                        entry.expectedUnit;
+                    assertEquals(expectedBaseUnit, SizeUnit.parse(str, false));
+                    assertEquals(entry.expectedPowerTwoUnit, SizeUnit.parse(str, true));
+                }
+            }
+        }
+    }
+
     public static void printConstants()
     {
         System.out.println("== Begin: Constants dump ==");
@@ -233,5 +285,21 @@ public class SizeConvTest
         SizeConv.SizeUnit unitOut;
         long expectedResult;
         boolean expectedRounded;
+    }
+
+    static class ParseEntry
+    {
+        SizeUnit expectedUnit;
+        SizeUnit expectedPowerTwoUnit;
+        boolean expectException;
+        String[] strArr;
+
+        ParseEntry(SizeUnit unitRef, SizeUnit expectedPowerTwoUnitRef, boolean expectExceptionRef, String... strArrRef)
+        {
+            expectedUnit = unitRef;
+            expectedPowerTwoUnit = expectedPowerTwoUnitRef;
+            expectException = expectExceptionRef;
+            strArr = strArrRef;
+        }
     }
 }
