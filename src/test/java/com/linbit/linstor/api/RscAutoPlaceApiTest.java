@@ -671,6 +671,55 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
+    public void replicasOnDifferentWithOutValueTest() throws Exception
+    {
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                2,
+                true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED // rsc autoplace
+            )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("node0.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node1.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node2.val0")
+                .setNodeProp("Aux/A", "0")
+                .addStorPool("stor", 10 * GB)
+                .build()
+            .stltBuilder("node3.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 100 * GB)
+                .build()
+            .stltBuilder("node4.val1")
+                .setNodeProp("Aux/A", "1")
+                .addStorPool("stor", 100 * GB)
+                .build()
+
+            .addReplicasOnDifferentNodeProp("Aux/A")
+        );
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(2, deployedNodes.size());
+
+        String firstNodePropVal = deployedNodes.get(0).getProps(GenericDbBase.SYS_CTX).getProp("Aux/A");
+        String secondNodePropVal = deployedNodes.get(1).getProps(GenericDbBase.SYS_CTX).getProp("Aux/A");
+
+        assertNotEquals(secondNodePropVal, firstNodePropVal);
+    }
+
+    @Test
     public void replicasOnDifferentWithValueTest() throws Exception
     {
         evaluateTest(
