@@ -22,6 +22,7 @@ message ExternalToolsInfo
         LOSETUP = 11;
         ZSTD = 13;
         SOCAT = 14;
+        UTIL_LINUX = 15;
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

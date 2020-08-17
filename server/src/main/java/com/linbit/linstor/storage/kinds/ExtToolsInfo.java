@@ -100,10 +100,10 @@ public class ExtToolsInfo
         return sb.toString();
     }
 
-    public boolean hasVersionOrHigher(int maj, int min, int patch)
+    public boolean hasVersionOrHigher(int maj, Integer min, Integer patch)
     {
         return versionMajor != null && versionMajor >= maj &&
-            versionMinor != null && versionMinor >= min &&
-            (versionPatch == null || versionPatch >= patch);
+            versionMinor != null && (min == null || versionMinor >= min) &&
+            (versionPatch == null || patch == null || versionPatch >= patch);
     }
 }

@@ -12,5 +12,6 @@ public enum ExtTools
     DM_CACHE,
     LOSETUP,
     ZSTD,
-    SOCAT
+    SOCAT,
+    UTIL_LINUX
 }

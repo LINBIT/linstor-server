@@ -1239,6 +1239,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case SOCAT:
                 ret = ExternalTools.SOCAT;
                 break;
+            case UTIL_LINUX:
+                ret = ExternalTools.UTIL_LINUX;
+                break;
             default:
                 throw new RuntimeException("Not implemented.");
         }

@@ -72,6 +72,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlSnapshotShippingApiCallHandler
 {
+    private static final String DUMMY_SNAPSHOT_SHIPPING_NAME = "ship$Generated";
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -221,7 +222,7 @@ public class CtrlSnapshotShippingApiCallHandler
             ApiOperation.makeModifyOperation(),
             Collections.emptyList(),
             rscNameRef,
-            ApiConsts.VAL_SNAP_SHIP_NAME
+            DUMMY_SNAPSHOT_SHIPPING_NAME
         );
 
         return scopeRunner
@@ -333,48 +334,25 @@ public class CtrlSnapshotShippingApiCallHandler
                     );
                 }
                 ExtToolsManager extToolsManager = rsc.getNode().getPeer(peerAccCtx.get()).getExtToolsManager();
-                ExtToolsInfo zstdInfo = extToolsManager.getExtToolInfo(ExtTools.ZSTD);
-                if (zstdInfo == null || !zstdInfo.isSupported())
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
-                            String.format(
-                                "Snapshot shipping requires 'zstd' to be installed",
-                                deviceProviderKind.name()
-                            )
-                        )
-                    );
-                }
-                ExtToolsInfo soCatInfo = extToolsManager.getExtToolInfo(ExtTools.SOCAT);
-                if (soCatInfo == null || !soCatInfo.isSupported())
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
-                            String.format(
-                                "Snapshot shipping requires 'socat' to be installed",
-                                deviceProviderKind.name()
-                            )
-                        )
-                    );
-                }
-
+                checkRequiredExtTool(deviceProviderKind, extToolsManager, ExtTools.ZSTD, "zstd");
+                checkRequiredExtTool(deviceProviderKind, extToolsManager, ExtTools.SOCAT, "socat");
+                checkRequiredExtTool(
+                    deviceProviderKind,
+                    extToolsManager,
+                    ExtTools.UTIL_LINUX,
+                    "setsid from util_linux",
+                    2,
+                    24,
+                    null
+                );
                 if (deviceProviderKind.equals(DeviceProviderKind.LVM_THIN))
                 {
-                    ExtToolsInfo thinSendRecvInfo = extToolsManager.getExtToolInfo(ExtTools.THIN_SEND_RECV);
-                    if (thinSendRecvInfo == null || !thinSendRecvInfo.isSupported())
-                    {
-                        throw new ApiRcException(
-                            ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
-                                String.format(
-                                    "The storage pool kind %s requires support for thin_recv",
-                                    deviceProviderKind.name()
-                                )
-                            )
-                        );
-                    }
+                    checkRequiredExtTool(
+                        deviceProviderKind,
+                        extToolsManager,
+                        ExtTools.THIN_SEND_RECV,
+                        "thin_send_recv"
+                    );
                 }
             }
         }
@@ -388,6 +366,81 @@ public class CtrlSnapshotShippingApiCallHandler
             );
         }
 
+    }
+
+    private void checkRequiredExtTool(
+        DeviceProviderKind deviceProviderKind,
+        ExtToolsManager extToolsManagerRef,
+        ExtTools extTool,
+        String descr
+    )
+    {
+        checkRequiredExtTool(deviceProviderKind, extToolsManagerRef, extTool, descr, null, null, null);
+    }
+
+    private void checkRequiredExtTool(
+        DeviceProviderKind deviceProviderKind,
+        ExtToolsManager extToolsManagerRef,
+        ExtTools extTool,
+        String toolDescr,
+        Integer majorVer,
+        Integer minorVer,
+        Integer patchVer
+    )
+    {
+        ExtToolsInfo info = extToolsManagerRef.getExtToolInfo(extTool);
+        if (info == null || !info.isSupported())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
+                    String.format(
+                        "%s based snapshot shipping requires support for %s",
+                        deviceProviderKind.name(),
+                        toolDescr
+                    ),
+                    true
+                )
+            );
+        }
+        if (majorVer != null && !info.hasVersionOrHigher(majorVer, minorVer, patchVer))
+        {
+            String excDescr;
+            if (minorVer == null)
+            {
+                excDescr = String.format(
+                    "%s based snapshot shipping requires at least version %d for " + toolDescr,
+                    deviceProviderKind.name(),
+                    majorVer
+                );
+            }
+            else if (patchVer == null)
+            {
+                excDescr = String.format(
+                    "%s based snapshot shipping requires at least version %d.%d for " + toolDescr,
+                    deviceProviderKind.name(),
+                    majorVer,
+                    minorVer
+                );
+            }
+            else
+            {
+
+                excDescr = String.format(
+                    "%s based snapshot shipping requires at least version %d.%d.%d for " + toolDescr,
+                    deviceProviderKind.name(),
+                    majorVer,
+                    minorVer,
+                    patchVer
+                );
+            }
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
+                    excDescr
+                )
+            );
+        }
     }
 
     private void enableFlags(SnapshotDefinition snapDfnRef, SnapshotDefinition.Flags... flags)

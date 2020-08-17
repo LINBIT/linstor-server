@@ -362,6 +362,9 @@ public class ProtoDeserializationUtils
             case SOCAT:
                 tool = ExtTools.SOCAT;
                 break;
+            case UTIL_LINUX:
+                tool = ExtTools.UTIL_LINUX;
+                break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through
             default:

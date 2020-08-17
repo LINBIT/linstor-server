@@ -58,6 +58,7 @@ public class StltExtToolsChecker
         .compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
     private static final Pattern ZSTD_VERSION_PATTERN = Pattern.compile("v(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern SOCAT_VERSION_PATTERN = Pattern.compile("version (\\d+)\\.(\\d+)\\.(\\d+)");
+    private static final Pattern UTIL_LINUX_VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)");
 
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
@@ -96,7 +97,8 @@ public class StltExtToolsChecker
             getCacheInfo(loadedModules),
             getLosetupInfo(),
             getZstdInfo(),
-            getSocatInfo()
+            getSocatInfo(),
+            getUtilLinuxInfo()
         );
     }
 
@@ -225,6 +227,11 @@ public class StltExtToolsChecker
     private ExtToolsInfo getSocatInfo()
     {
         return infoBy3MatchGroupPattern(SOCAT_VERSION_PATTERN, ExtTools.SOCAT, false, "socat", "-V");
+    }
+
+    private ExtToolsInfo getUtilLinuxInfo()
+    {
+        return infoBy3MatchGroupPattern(UTIL_LINUX_VERSION_PATTERN, ExtTools.UTIL_LINUX, false, "setsid", "-V");
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)
