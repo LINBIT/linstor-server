@@ -349,7 +349,8 @@ public class CtrlSnapshotShippingApiCallHandler
                         deviceProviderKind,
                         extToolsManager,
                         ExtTools.THIN_SEND_RECV,
-                        "thin_send_recv"
+                        "thin_send_recv",
+                        new ExtToolsInfo.Version(0, 23)
                     );
                 }
             }
