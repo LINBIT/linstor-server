@@ -341,9 +341,7 @@ public class CtrlSnapshotShippingApiCallHandler
                     extToolsManager,
                     ExtTools.UTIL_LINUX,
                     "setsid from util_linux",
-                    2,
-                    24,
-                    null
+                    new ExtToolsInfo.Version(2, 24)
                 );
                 if (deviceProviderKind.equals(DeviceProviderKind.LVM_THIN))
                 {
@@ -375,7 +373,7 @@ public class CtrlSnapshotShippingApiCallHandler
         String descr
     )
     {
-        checkRequiredExtTool(deviceProviderKind, extToolsManagerRef, extTool, descr, null, null, null);
+        checkRequiredExtTool(deviceProviderKind, extToolsManagerRef, extTool, descr, null);
     }
 
     private void checkRequiredExtTool(
@@ -383,9 +381,7 @@ public class CtrlSnapshotShippingApiCallHandler
         ExtToolsManager extToolsManagerRef,
         ExtTools extTool,
         String toolDescr,
-        Integer majorVer,
-        Integer minorVer,
-        Integer patchVer
+        ExtToolsInfo.Version version
     )
     {
         ExtToolsInfo info = extToolsManagerRef.getExtToolInfo(extTool);
@@ -403,41 +399,18 @@ public class CtrlSnapshotShippingApiCallHandler
                 )
             );
         }
-        if (majorVer != null && !info.hasVersionOrHigher(majorVer, minorVer, patchVer))
+        if (version != null && !info.hasVersionOrHigher(version))
         {
-            String excDescr;
-            if (minorVer == null)
-            {
-                excDescr = String.format(
-                    "%s based snapshot shipping requires at least version %d for " + toolDescr,
-                    deviceProviderKind.name(),
-                    majorVer
-                );
-            }
-            else if (patchVer == null)
-            {
-                excDescr = String.format(
-                    "%s based snapshot shipping requires at least version %d.%d for " + toolDescr,
-                    deviceProviderKind.name(),
-                    majorVer,
-                    minorVer
-                );
-            }
-            else
-            {
-
-                excDescr = String.format(
-                    "%s based snapshot shipping requires at least version %d.%d.%d for " + toolDescr,
-                    deviceProviderKind.name(),
-                    majorVer,
-                    minorVer,
-                    patchVer
-                );
-            }
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
-                    excDescr
+                    String.format(
+                        "%s based snapshot shipping requires at least version %d for %s",
+                        deviceProviderKind.name(),
+                        version.toString(),
+                        toolDescr
+                    ),
+                    true
                 )
             );
         }

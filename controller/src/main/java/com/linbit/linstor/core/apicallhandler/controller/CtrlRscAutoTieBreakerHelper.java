@@ -36,6 +36,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuard;
 
@@ -486,7 +487,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         return node.getPeer(peerAccCtx)
             .getExtToolsManager()
             .getExtToolInfo(ExtTools.DRBD9)
-            .hasVersionOrHigher(9, 0, 19);
+            .hasVersionOrHigher(new ExtToolsInfo.Version(9, 0, 19));
     }
 
     private boolean isFlagSet(Resource rsc, Resource.Flags... flags)

@@ -22,6 +22,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import static com.linbit.linstor.api.ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -301,6 +302,6 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
         return node.getPeer(accCtx)
             .getExtToolsManager()
             .getExtToolInfo(ExtTools.DRBD9)
-            .hasVersionOrHigher(9, 0, 18);
+            .hasVersionOrHigher(new ExtToolsInfo.Version(9, 0, 18));
     }
 }
