@@ -10,7 +10,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -yq software-properties-common
 
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get purge -yq multipath-tools unattended-upgrades
-DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -yd
+DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -yq
 DEBIAN_FRONTEND=noninteractive apt-get install -yq thin-provisioning-tools drbd-dkms drbd-utils zfsutils-linux \
 default-jre-headless python virtualenv postgresql mariadb-server
 DEBIAN_FRONTEND=noninteractive apt-get autoremove -yq
