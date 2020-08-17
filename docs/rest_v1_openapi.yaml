@@ -298,9 +298,12 @@ paths:
 
         - `StorPoolNameDrbdMeta` - regex[`^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
-            Linstor storage pool name to use.
+            Linstor storage pool name to use for external metadata.
 
         - `DrbdMetaType` - enum
+
+            Where to place DRBD meta data
+
             * external
             * internal
 
@@ -379,7 +382,7 @@ paths:
 
             Name of the storage pool used for the cache cache device
 
-        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+        - `Cache/Cachesize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
             Size of the cache in % (0-100) or KiB otherwise.
 
@@ -395,17 +398,48 @@ paths:
             * smq
             * cleaner
 
+        - `StorDriver/LvcreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'lvcreate ... ' command
+
         - `StorDriver/Openflex/ApiHost` - regex[`.+`]
+
+            Openflex API host name
+
         - `StorDriver/Openflex/ApiPort` - regex[`[0-9]+`]
+
+            Openflex API port
+
         - `StorDriver/Openflex/UserName` - regex[`.+`]
+
+            Openflex user name
+
         - `StorDriver/Openflex/UserPassword` - regex[`.+`]
+
+            Openflex password
+
         - `StorDriver/Openflex/StorDev` - regex[`.+`]
+
+            Openflex storage device
+
         - `StorDriver/Openflex/StorDevHost` - regex[`.+`]
+
+            Openflex storage device host
+
         - `StorDriver/Openflex/JobWaitDelay` - regex[`[0-9]+`]
 
             Delay in milliseconds linstor waits between fetching the job status
 
         - `StorDriver/Openflex/JobWaitMaxCount` - regex[`[0-9]+`]
+
+            Maximum retries with wait delay until openflex fails
+
+        - `Autoplacer/MaxThroughput` - long
+
+            The maximum throughput the given storage pool is capable of.
+
+        - `DrbdProxy/AutoEnable` - boolean_true_false
+        - `Site` - string
       responses:
         '200':
           description: node modified
@@ -646,6 +680,7 @@ paths:
         Sets or modifies properties
 
         Possible properties are:
+        - `StorDriver/StorPoolName` - regex[`[a-zA-Z0-9_/-]+`]
         - `StorDriver/LvmVg` - regex[`[a-zA-Z0-9_-]+`]
         - `StorDriver/ThinPool` - regex[`[a-zA-Z0-9_-]+`]
         - `StorDriver/ZPool` - regex[`[a-zA-Z0-9_/-]+`]
@@ -672,6 +707,10 @@ paths:
             * lzma
             * lz4
 
+        - `StorDriver/LvcreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'lvcreate ... ' command
+
         - `StorDriver/WaitTimeoutAfterCreate` - regex[`[0-9]+`]
         - `sys/fs/blkio_throttle_read` - long
 
@@ -682,12 +721,37 @@ paths:
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
 
         - `StorDriver/Openflex/ApiHost` - regex[`.+`]
+
+            Openflex API host name
+
         - `StorDriver/Openflex/ApiPort` - regex[`[0-9]+`]
+
+            Openflex API port
+
         - `StorDriver/Openflex/UserName` - regex[`.+`]
+
+            Openflex user name
+
         - `StorDriver/Openflex/UserPassword` - regex[`.+`]
+
+            Openflex password
+
         - `StorDriver/Openflex/StorDev` - regex[`.+`]
+
+            Openflex storage device
+
         - `StorDriver/Openflex/StorDevHost` - regex[`.+`]
+
+            Openflex storage device host
+
         - `StorDriver/Openflex/StorPool` - regex[`[0-9]+`]
+
+            Openflex storage pool name
+
+        - `Autoplacer/MaxThroughput` - long
+
+            The maximum throughput the given storage pool is capable of.
+
       responses:
         '200':
           description: storage pool modified
@@ -856,9 +920,12 @@ paths:
 
         - `StorPoolNameDrbdMeta` - regex[`^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
-            Linstor storage pool name to use.
+            Linstor storage pool name to use for external metadata.
 
         - `DrbdMetaType` - enum
+
+            Where to place DRBD meta data
+
             * external
             * internal
 
@@ -883,11 +950,17 @@ paths:
 
             Additional parameters for the mkfs command
 
-        - `NVMe/enabled` - enum
+        - `NVMe/TRType` - enum
+
+            NVMe transportion type
+
             * rdma
             * tcp
 
-        - `NVMe/enabled` - range[`1-65535`]
+        - `NVMe/Port` - range[`1-65535`]
+
+            NVMe port
+
         - `StorDriver/LvcreateType` - enum
             * linear
             * striped
@@ -900,6 +973,10 @@ paths:
             * raid10
             * lzma
             * lz4
+
+        - `StorDriver/LvcreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'lvcreate ... ' command
 
         - `sys/fs/blkio_throttle_read` - long
 
@@ -988,7 +1065,7 @@ paths:
 
             Name of the storage pool used for the cache cache device
 
-        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+        - `Cache/Cachesize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
             Size of the cache in % (0-100) or KiB otherwise.
 
@@ -1003,6 +1080,34 @@ paths:
             * mq
             * smq
             * cleaner
+
+        - `SnapshotShipping/SourceNode` - string
+
+            Node name of the snapshot shipping source
+
+        - `SnapshotShipping/TargetNode` - string
+
+            Node name of the snapshot shipping target
+
+        - `SnapshotShipping/RunEvery` - long
+
+            Runs every X minutes an auto-snapshot-shipping unless the current snapshot-shipping is still running. In this case a new one will be started asap.
+
+        - `SnapshotShipping/Keep` - long
+
+            Keeps the last X sihpped snapshots. Removing this property or having a value <= 0 disables auto-cleanup, all auto-snapshots will be kept
+
+        - `AutoSnapshot/RunEvery` - long
+
+            Runs every X minutes an snapshot-creation. Removing this property or having a value <= 0 disables auto-snapshotting.
+
+        - `AutoSnapshot/Keep` - long
+
+            Keeps the last X auto-snapshots. Removing this property or having a value <= 0 disables auto-cleanup, all auto-snapshots will be kept
+
+        - `AutoSnapshot/NextAutoId` - long
+
+            The next ID to try for auto-snapshots
 
         - `DrbdOptions/Disk/on-io-error` - enum
             * pass_on
@@ -1249,9 +1354,12 @@ paths:
 
         - `StorPoolNameDrbdMeta` - regex[`^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
-            Linstor storage pool name to use.
+            Linstor storage pool name to use for external metadata.
 
         - `DrbdMetaType` - enum
+
+            Where to place DRBD meta data
+
             * external
             * internal
 
@@ -1287,7 +1395,14 @@ paths:
             * lzma
             * lz4
 
+        - `StorDriver/LvcreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'lvcreate ... ' command
+
         - `DrbdCurrentGi` - regex[`[a-fA-F0-9]{16}`]
+
+            Initial DRBD generation id, if initial sync is skipped, this ID will be set
+
         - `sys/fs/blkio_throttle_read` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
@@ -1363,7 +1478,7 @@ paths:
 
             Name of the storage pool used for the cache cache device
 
-        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+        - `Cache/Cachesize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
             Size of the cache in % (0-100) or KiB otherwise.
 
@@ -1551,9 +1666,12 @@ paths:
 
         - `StorPoolNameDrbdMeta` - regex[`^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
-            Linstor storage pool name to use.
+            Linstor storage pool name to use for external metadata.
 
         - `DrbdMetaType` - enum
+
+            Where to place DRBD meta data
+
             * external
             * internal
 
@@ -2752,11 +2870,17 @@ paths:
 
             Bool if REST API should be enabled
 
-        - `NVMe/enabled` - enum
+        - `NVMe/TRType` - enum
+
+            NVMe transportion type
+
             * rdma
             * tcp
 
-        - `NVMe/enabled` - range[`1-65535`]
+        - `NVMe/Port` - range[`1-65535`]
+
+            NVMe port
+
         - `NVMe/PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Preferred network interface to use
@@ -2857,7 +2981,7 @@ paths:
 
             Name of the storage pool used for the cache cache device
 
-        - `Cache/Metasize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
+        - `Cache/Cachesize` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
             Size of the cache in % (0-100) or KiB otherwise.
 
@@ -2873,15 +2997,64 @@ paths:
             * smq
             * cleaner
 
+        - `StorDriver/LvcreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'lvcreate ... ' command
+
         - `StorDriver/Openflex/ApiHost` - regex[`.+`]
+
+            Openflex API host name
+
         - `StorDriver/Openflex/ApiPort` - regex[`[0-9]+`]
+
+            Openflex API port
+
         - `StorDriver/Openflex/UserName` - regex[`.+`]
+
+            Openflex user name
+
         - `StorDriver/Openflex/UserPassword` - regex[`.+`]
+
+            Openflex password
+
         - `StorDriver/Openflex/JobWaitDelay` - regex[`[0-9]+`]
 
             Delay in milliseconds linstor waits between fetching the job status
 
         - `StorDriver/Openflex/JobWaitMaxCount` - regex[`[0-9]+`]
+
+            Maximum retries with wait delay until openflex fails
+
+        - `Autoplacer/Weights/MaxFreeSpace` - regex[`^[0-9]+([.][0-9]+)?`]
+
+            Weight of 'MaxFreeSpace' autoplacer-strategy
+
+        - `Autoplacer/Weights/MinReservedSpace` - regex[`^[0-9]+([.][0-9]+)?`]
+
+            Weight of 'MinReservedSpace' autoplacer-strategy
+
+        - `Autoplacer/Weights/MinRscCount` - regex[`^[0-9]+([.][0-9]+)?`]
+
+            Weight of 'MinRscCount' autoplacer-strategy
+
+        - `Autoplacer/Weights/MaxThroughput` - regex[`^[0-9]+([.][0-9]+)?`]
+
+            Weight of 'MaxThroughput' autoplacer-strategy
+
+        - `Autoplacer/PreSelectScript` - string
+
+            Filename of the preselection script. File must be in /etc/linstor/selector/
+
+        - `Autoplacer/PreSelectScriptTimeout` - long
+
+            Timeout in ms Linstor waits for the script to run.
+
+        - `Autoplacer/MaxThroughput` - long
+
+            The maximum throughput the given storage pool is capable of.
+
+        - `DrbdProxy/AutoEnable` - boolean_true_false
+        - `Site` - string
         - `DrbdOptions/Disk/on-io-error` - enum
             * pass_on
             * call-local-io-error
@@ -3610,8 +3783,8 @@ paths:
               type: string
         - name: status
           in: query
-          description: Filter only for the specified status, if not specified,
-            no filtering.
+          description: Filter only for the specified status, if not specified, no
+            filtering.
           schema:
             type: array
             items:
@@ -3757,8 +3930,7 @@ components:
     Resources:
       name: resources
       in: query
-      description: Filter only for the specified resources, if not specified,
-        no filtering.
+      description: Filter only for the specified resources, if not specified, no filtering.
       schema:
         type: array
         items:
@@ -5212,8 +5384,8 @@ components:
         status:
           type: string
           enum:
-             - running
-             - complete
+            - running
+            - complete
     SnapshotNode:
       type: object
       description: Actual snapshot data from a node
