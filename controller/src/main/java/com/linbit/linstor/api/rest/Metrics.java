@@ -73,39 +73,6 @@ public class Metrics {
     {
         scrape_requests.incrementAndGet();
         long scrape_start = System.currentTimeMillis();
-        Flux<ResourceList> fluxVlms = ctrlVlmListApiCallHandler.listVlms(
-            Collections.emptyList(),
-            Collections.emptyList(),
-            Collections.emptyList(),
-            Collections.emptyList()).subscriberContext(requestHelper.createContext("metrics", request));
-
-        ResourceList rlTmp = null;
-        if (resources) {
-            try {
-                long start = System.currentTimeMillis();
-                rlTmp = fluxVlms.next().block(Duration.ofSeconds(5));
-                errorReporter.logTrace("Metric/ListVlms: %dms", System.currentTimeMillis() - start);
-            } catch (RuntimeException timeoutExc) {
-                errorReporter.reportError(
-                    new LinStorRuntimeException("Gathering resource stats took longer than 5 seconds", timeoutExc));
-            }
-        }
-
-        List<StorPoolApi> storagePoolListTmp = null;
-        if (storagePools) {
-            Flux<List<StorPoolApi>> fluxStorPools = ctrlStorPoolListApiCallHandler
-                .listStorPools(Collections.emptyList(), Collections.emptyList(), Collections.emptyList())
-                .subscriberContext(requestHelper.createContext("metrics", request));
-
-            try {
-                long start = System.currentTimeMillis();
-                storagePoolListTmp = fluxStorPools.next().block(Duration.ofSeconds(5));
-                errorReporter.logTrace("Metric/ListStorPools: %dms", System.currentTimeMillis() - start);
-            } catch (RuntimeException timeoutExc) {
-                errorReporter.reportError(
-                    new LinStorRuntimeException("Gathering storage pool stats took longer than 5 seconds", timeoutExc));
-            }
-        }
 
         List<ErrorReport> errorReportsTmp = null;
         if (withErrorReports) {
@@ -115,7 +82,7 @@ public class Metrics {
 
             try {
                 long start = System.currentTimeMillis();
-                errorReportsTmp = fluxErrorReports.next().block(Duration.ofSeconds(5));
+                errorReportsTmp = fluxErrorReports.next().block(Duration.ofSeconds(10));
                 errorReporter.logTrace("Metric/ListErrorReports: %dms", System.currentTimeMillis() - start);
             } catch (RuntimeException timeoutExc) {
                 errorReporter.reportError(
@@ -123,11 +90,21 @@ public class Metrics {
             }
         }
 
-        final ResourceList rl = rlTmp;
-        final List<StorPoolApi> storagePoolList = storagePoolListTmp;
         final List<ErrorReport> errorReports = errorReportsTmp;
         return requestHelper.doInScope(requestHelper.createContext("metrics", request), () ->
             {
+                final ResourceList rl = resources ? ctrlVlmListApiCallHandler.listVlmsCached(
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList()) : null;
+
+                final List<StorPoolApi> storagePoolList = storagePools ?
+                    ctrlStorPoolListApiCallHandler.listStorPoolsCached(
+                        Collections.emptyList(),
+                        Collections.emptyList(),
+                        Collections.emptyList()) : null;
+
                 final List<NodeApi> nodeApiList = ctrlApiCallHandler.listNodes(
                     Collections.emptyList(), Collections.emptyList());
                 final List<ResourceDefinitionApi> rscDfns = ctrlApiCallHandler.listResourceDefinitions();

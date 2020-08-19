@@ -65,6 +65,7 @@ import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.RetryResourcesTask;
 import com.linbit.linstor.tasks.TaskScheduleService;
+import com.linbit.linstor.tasks.UpdateSpaceInfoTask;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
@@ -138,6 +139,7 @@ public final class Controller
     private final LogArchiveTask logArchiveTask;
     private final AutoSnapshotTask autoSnapshotTask;
     private final AutoDiskfulTask autoDiskfulTask;
+    private final UpdateSpaceInfoTask updateSpaceInfoTask;
 
     private final DebugConsoleCreator debugConsoleCreator;
     private final ControllerNetComInitializer controllerNetComInitializer;
@@ -175,6 +177,7 @@ public final class Controller
         PingTask pingTaskRef,
         ReconnectorTask reconnectorTaskRef,
         RetryResourcesTask retryResourcesTaskRef,
+        UpdateSpaceInfoTask updateSpaceInfoTaskRef,
         LogArchiveTask logArchiveTaskRef,
         AutoSnapshotTask autoSnapshotTaskRef,
         AutoDiskfulTask autoDiskfulTaskRef,
@@ -206,6 +209,7 @@ public final class Controller
         reconnectorTask = reconnectorTaskRef;
         logArchiveTask = logArchiveTaskRef;
         retryResourcesTask = retryResourcesTaskRef;
+        updateSpaceInfoTask = updateSpaceInfoTaskRef;
         autoSnapshotTask = autoSnapshotTaskRef;
         autoDiskfulTask = autoDiskfulTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
@@ -266,6 +270,7 @@ public final class Controller
             taskScheduleService.addTask(logArchiveTask);
             taskScheduleService.addTask(autoSnapshotTask);
             taskScheduleService.addTask(autoDiskfulTask);
+            taskScheduleService.addTask(updateSpaceInfoTask);
 
             systemServicesMap.put(controllerDb.getInstanceName(), controllerDb);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);

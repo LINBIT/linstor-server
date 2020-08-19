@@ -459,6 +459,9 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM:
                             notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                             break;
+                        case ApiConsts.KEY_UPDATE_CACHE_INTERVAL:
+                            setCtrlProp(peerAccCtx.get(), key, normalized, namespace); // no need to update stlts
+                            break;
                         case ApiConsts.KEY_EXT_CMD_WAIT_TO:
                             try
                             {

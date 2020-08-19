@@ -18,10 +18,17 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.READ;
+
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -78,18 +85,35 @@ public class CtrlStorPoolListApiCallHandler
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble storage pool list",
                     lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.STOR_POOL_DFN_MAP),
-                    () -> assembleList(nodesFilter, storPoolsFilter, propFilters, freeCapacityAnswers)
+                    () -> Flux.just(assembleList(nodesFilter, storPoolsFilter, propFilters, freeCapacityAnswers))
                 )
             );
 
         return flux;
     }
 
-    private Flux<List<StorPoolApi>> assembleList(
+    public List<StorPoolApi> listStorPoolsCached(
+        List<String> nodeNames,
+        List<String> storPoolNames,
+        List<String> propFilters
+    )
+    {
+        final Set<StorPoolName> storPoolsFilter =
+            storPoolNames.stream().map(LinstorParsingUtils::asStorPoolName).collect(Collectors.toSet());
+        final Set<NodeName> nodesFilter =
+            nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
+
+        try (LockGuard ignored = lockGuardFactory.build(READ, STOR_POOL_DFN_MAP))
+        {
+            return assembleList(nodesFilter, storPoolsFilter, propFilters, null);
+        }
+    }
+
+    private List<StorPoolApi> assembleList(
         Set<NodeName> nodesFilter,
         Set<StorPoolName> storPoolsFilter,
         List<String> propFilters,
-        Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>> freeCapacityAnswers
+        @Nullable Map<StorPool.Key, Tuple2<SpaceInfo, List<ApiCallRc>>> freeCapacityAnswers
     )
     {
         ArrayList<StorPoolApi> storPools = new ArrayList<>();
@@ -116,9 +140,8 @@ public class CtrlStorPoolListApiCallHandler
                                 Long freeCapacity;
                                 Long totalCapacity;
 
-                                Tuple2<SpaceInfo, List<ApiCallRc>> storageInfo = freeCapacityAnswers.get(
-                                    new StorPool.Key(storPool)
-                                );
+                                final Tuple2<SpaceInfo, List<ApiCallRc>> storageInfo = freeCapacityAnswers != null ?
+                                    freeCapacityAnswers.get(new StorPool.Key(storPool)) : null;
 
                                 Peer peer = storPool.getNode().getPeer(peerAccCtx.get());
                                 if (peer == null || !peer.isConnected())
@@ -179,6 +202,6 @@ public class CtrlStorPoolListApiCallHandler
             );
         }
 
-        return Flux.just(storPools);
+        return storPools;
     }
 }

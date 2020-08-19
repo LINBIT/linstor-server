@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -29,14 +27,17 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
-import com.linbit.locks.LockGuardFactory.LockObj;
-import com.linbit.locks.LockGuardFactory.LockType;
 
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.READ;
+
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -46,6 +47,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
+
+import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlVlmListApiCallHandler
@@ -96,18 +99,28 @@ public class CtrlVlmListApiCallHandler
             .flatMapMany(vlmAllocatedAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble volume list",
-                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
-                    () -> assembleList(nodesFilter, storPoolsFilter, resourceFilter, propFilters, vlmAllocatedAnswers)
+                    lockGuardFactory.buildDeferred(READ, NODES_MAP, RSC_DFN_MAP),
+                    () -> Flux.just(
+                        assembleList(nodesFilter, storPoolsFilter, resourceFilter, propFilters, vlmAllocatedAnswers))
                 )
             );
     }
 
-    public Flux<ResourceList> assembleList(
+    /**
+     *
+     * @param nodesFilter
+     * @param storPoolsFilter
+     * @param resourceFilter
+     * @param propFilters
+     * @param vlmAllocatedAnswers if null an cached result will be returned
+     * @return Filtered ResourceList result
+     */
+    private ResourceList assembleList(
         Set<NodeName> nodesFilter,
         Set<StorPoolName> storPoolsFilter,
         Set<ResourceName> resourceFilter,
         List<String> propFilters,
-        final Map<Volume.Key, VlmAllocatedResult> vlmAllocatedAnswers
+        final @Nullable Map<Volume.Key, VlmAllocatedResult> vlmAllocatedAnswers
     )
     {
         ResourceList rscList = new ResourceList();
@@ -159,11 +172,14 @@ public class CtrlVlmListApiCallHandler
                                 }
                                 if (addToList)
                                 {
-                                    VlmAllocatedResult vlmAllocResult = vlmAllocatedAnswers.get(vlm.getKey());
-                                    if (vlmAllocResult != null)
+                                    if (vlmAllocatedAnswers != null)
                                     {
-                                        vlm.clearReports();
-                                        vlm.addReports(vlmAllocResult.getApiCallRc());
+                                        VlmAllocatedResult vlmAllocResult = vlmAllocatedAnswers.get(vlm.getKey());
+                                        if (vlmAllocResult != null)
+                                        {
+                                            vlm.clearReports();
+                                            vlm.addReports(vlmAllocResult.getApiCallRc());
+                                        }
                                     }
                                     volumes.add(vlm.getApiData(
                                         getAllocated(vlmAllocatedAnswers, vlm),
@@ -238,44 +254,51 @@ public class CtrlVlmListApiCallHandler
             errorReporter.reportError(accDeniedExc);
         }
 
-        return Flux.just(rscList);
+        return rscList;
     }
 
-    private Long getAllocated(
-        Map<Volume.Key, VlmAllocatedResult> vlmAllocatedCapacities,
+    private long getAllocated(
+        final @Nullable Map<Volume.Key, VlmAllocatedResult> vlmAllocatedCapacities,
         Volume vlm
     )
         throws AccessDeniedException
     {
-        // first, check if we just queried the data
-        VlmAllocatedResult allocatedResult = vlmAllocatedCapacities.get(vlm.getKey());
         long allocated = 0L;
-        if (allocatedResult == null)
+        if (vlmAllocatedCapacities != null)
         {
-            /*
-             * if the vlm was thinly provisioned, we should have found that in the map, or the
-             * satellite of the vlm is not reachable.
-             *
-             * here it would be quite cumbersome to check if the satellite is reachable, so we simply
-             * test if the vlm is thick-provisioned which would mean that the has already set its
-             * allocated size, as that will not change.
-             */
-            if (vlm.isAllocatedSizeSet(peerAccCtx.get()))
+            // first, check if we just queried the data
+            VlmAllocatedResult allocatedResult = vlmAllocatedCapacities.get(vlm.getKey());
+            if (allocatedResult == null)
             {
-                allocated = vlm.getAllocatedSize(peerAccCtx.get());
+                /*
+                 * if the vlm was thinly provisioned, we should have found that in the map, or the
+                 * satellite of the vlm is not reachable.
+                 *
+                 * here it would be quite cumbersome to check if the satellite is reachable, so we simply
+                 * test if the vlm is thick-provisioned which would mean that the has already set its
+                 * allocated size, as that will not change.
+                 */
+                if (vlm.isAllocatedSizeSet(peerAccCtx.get()))
+                {
+                    allocated = vlm.getAllocatedSize(peerAccCtx.get());
+                }
+//                else
+//                {
+//                    the satellite is offline, but an appropriate message should already have been
+//                    generated by our caller method
+//                }
             }
             else
             {
-                // the satellite is offline, but an appropriate message should already have been
-                // generated by our caller method
+                if (!allocatedResult.hasErrors())
+                {
+                    allocated = allocatedResult.getAllocatedSize();
+                }
             }
         }
-        else
+        else if(vlm.isAllocatedSizeSet(peerAccCtx.get()))
         {
-            if (!allocatedResult.hasErrors())
-            {
-                allocated = allocatedResult.getAllocatedSize();
-            }
+            allocated = vlm.getAllocatedSize(peerAccCtx.get());
         }
 
         return allocated;
@@ -305,6 +328,26 @@ public class CtrlVlmListApiCallHandler
         }
         return allocated;
         */
+    }
+
+    public ResourceList listVlmsCached(
+        List<String> nodeNames,
+        List<String> storPools,
+        List<String> resources,
+        List<String> propFilters
+    )
+    {
+        final Set<NodeName> nodesFilter =
+            nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
+        final Set<StorPoolName> storPoolsFilter =
+            storPools.stream().map(LinstorParsingUtils::asStorPoolName).collect(Collectors.toSet());
+        final Set<ResourceName> resourceFilter =
+            resources.stream().map(LinstorParsingUtils::asRscName).collect(Collectors.toSet());
+
+        try (LockGuard ignored = lockGuardFactory.build(READ, NODES_MAP, RSC_DFN_MAP))
+        {
+            return assembleList(nodesFilter, storPoolsFilter, resourceFilter, propFilters, null);
+        }
     }
 
 //    private Long getDiskAllocated(Map<Volume.Key, Long> vlmAllocatedCapacities, Volume vlm)
