@@ -64,6 +64,10 @@ RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Cri
   yum install -y linstor-client /tmp/linstor-common*.rpm /tmp/linstor-controller*.rpm && \
   rm /tmp/*.rpm && yum clean all -y
 
+ARG ARCH=amd64
+ARG K8S_AWAIT_ELECTION_VERSION=v0.2.0
+RUN curl --fail --location "https://github.com/LINBIT/k8s-await-election/releases/download/${K8S_AWAIT_ELECTION_VERSION}/k8s-await-election-${K8S_AWAIT_ELECTION_VERSION}-linux-${ARCH}.tar.gz" | tar -xvz -C /usr/local/bin/
+
 RUN groupadd linstor
 RUN useradd -m -g linstor linstor
 RUN mkdir /var/log/linstor-controller
@@ -77,4 +81,4 @@ COPY scripts/entry.sh /
 USER linstor
 
 CMD ["startController"]
-ENTRYPOINT ["/entry.sh"]
+ENTRYPOINT ["/usr/local/bin/k8s-await-election", "/entry.sh"]
