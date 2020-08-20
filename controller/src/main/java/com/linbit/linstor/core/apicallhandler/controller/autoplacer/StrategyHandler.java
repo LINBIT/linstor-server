@@ -60,7 +60,7 @@ class StrategyHandler
     }
 
     public Collection<StorPoolWithScore> rate(
-        List<StorPool> storPoolListRef
+        Collection<StorPool> storPoolListRef
     )
         throws AccessDeniedException
     {

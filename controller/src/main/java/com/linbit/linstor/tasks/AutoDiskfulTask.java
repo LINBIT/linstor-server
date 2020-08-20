@@ -4,12 +4,16 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.objects.Node;
@@ -19,19 +23,29 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.event.EventWaiter;
+import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerNotConnectedException;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
@@ -42,6 +56,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.inject.Key;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 @Singleton
@@ -59,7 +75,14 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
     private final SortedSet<AutoDiskfulConfig> configSet = new TreeSet<>();
     private final TreeMap<Resource, AutoDiskfulConfig> configSetByRsc = new TreeMap<>();
 
-    private LinStorScope linstorScope;
+    private final LinStorScope linstorScope;
+
+    private final BackgroundRunner backgroundRunner;
+    private final ResourceStateEvent resourceStateEvent;
+    private final EventWaiter eventWaiter;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
+    private final CtrlRscDeleteApiCallHandler rscDeleteApiCallHandler;
 
     @Inject
     public AutoDiskfulTask(
@@ -69,7 +92,13 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         StltConfigAccessor stltConfigAccesorRef,
         ResourceDefinitionRepository rscDfnRepoRef,
         Autoplacer autoplacerRef,
-        LinStorScope linstorScopeRef
+        LinStorScope linstorScopeRef,
+        BackgroundRunner backgroundRunnerRef,
+        ResourceStateEvent resourceStateEventRef,
+        EventWaiter eventWaiterRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlRscDeleteApiCallHandler rscDeleteApiCallHandlerRef
     )
     {
         sysCtx = sysCtxRef;
@@ -79,6 +108,12 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         rscDfnRepo = rscDfnRepoRef;
         autoplacer = autoplacerRef;
         linstorScope = linstorScopeRef;
+        backgroundRunner = backgroundRunnerRef;
+        resourceStateEvent = resourceStateEventRef;
+        eventWaiter = eventWaiterRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
+        rscDeleteApiCallHandler = rscDeleteApiCallHandlerRef;
     }
 
     /**
@@ -97,13 +132,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         {
             if (LayerUtils.hasLayer(rsc.getLayerData(sysCtx), DeviceLayerKind.DRBD))
             {
-                PriorityProps prioProps = new PriorityProps(
-                    rsc.getProps(sysCtx),
-                    rsc.getNode().getProps(sysCtx),
-                    rsc.getDefinition().getProps(sysCtx),
-                    rsc.getDefinition().getResourceGroup().getProps(sysCtx),
-                    stltConfigAccesor.getReadonlyProps()
-                );
+                PriorityProps prioProps = getPrioProps(rsc);
                 String autoDiskful = prioProps
                     .getProp(ApiConsts.KEY_DRBD_AUTO_DISKFUL, ApiConsts.NAMESPC_DRBD_OPTIONS);
 
@@ -172,6 +201,17 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         }
     }
 
+    private PriorityProps getPrioProps(Resource rsc) throws AccessDeniedException
+    {
+        return new PriorityProps(
+            rsc.getProps(sysCtx),
+            rsc.getNode().getProps(sysCtx),
+            rsc.getDefinition().getProps(sysCtx),
+            rsc.getDefinition().getResourceGroup().getProps(sysCtx),
+            stltConfigAccesor.getReadonlyProps()
+        );
+    }
+
     public void update(Node node)
     {
         try
@@ -198,7 +238,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         }
     }
 
-    public void update(ResourceGroup rscGrp) {
+    public void update(ResourceGroup rscGrp)
+    {
         try
         {
             rscGrp.getRscDfns(sysCtx).stream().flatMap(this::streamRscsPrivileged)
@@ -282,6 +323,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
 
                     linstorScope.enter();
                     linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
+
                     Optional<Set<StorPool>> autoPlace = autoplacer.autoPlace(
                         AutoSelectFilterPojo.merge(
                             new AutoSelectFilterPojo(
@@ -323,15 +365,18 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                             null,
                             false
                         )
-                        .subscriberContext(
-                            Context.of(
-                                ApiModule.API_CALL_NAME,
-                                "Abort currently shipped snapshots",
-                                AccessContext.class, sysCtx,
-                                Peer.class, rsc.getNode().getPeer(sysCtx)
+                            .concatWith(removeExcessFlux(rsc))
+                            .subscriberContext(
+                                Context.of(
+                                    ApiModule.API_CALL_NAME,
+                                    "Auto diskful task for " + CtrlRscApiCallHandler.getRscDescription(rsc),
+                                    AccessContext.class,
+                                    sysCtx,
+                                    Peer.class,
+                                    rsc.getNode().getPeer(sysCtx)
+                                )
                             )
-                        )
-                        .subscribe();
+                            .subscribe();
                     }
                 }
             }
@@ -341,6 +386,91 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
             }
         }
         return Math.min(nextRunIn, TASK_TIMEOUT);
+    }
+
+    private Mono<ApiCallRc> removeExcessFlux(Resource rsc) throws AccessDeniedException
+    {
+        return Mono.fromRunnable(
+            () -> backgroundRunner.runInBackground(
+                "Remove excess rsc",
+                eventWaiter.waitForStream(
+                    resourceStateEvent.get(),
+                    ObjectIdentifier.resource(rsc.getNode().getName(), rsc.getDefinition().getName())
+                )
+                    .skipUntil(usage -> usage.getUpToDate() != null && usage.getUpToDate())
+                    .next()
+                    .thenMany(
+                        scopeRunner.fluxInTransactionalScope(
+                            "Delete excess after auto-diskful of " + CtrlRscApiCallHandler.getRscDescription(rsc),
+                            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),
+                            () -> removeExcessFluxInTransaction(rsc)
+                        )
+                    )
+                    .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
+            )
+        );
+    }
+
+    private Flux<ApiCallRc> removeExcessFluxInTransaction(Resource rsc) throws InvalidKeyException, AccessDeniedException
+    {
+        Flux<ApiCallRc> retFlux;
+        Resource excessRsc = getExcessRsc(rsc);
+
+        if (excessRsc == null)
+        {
+            errorReporter.logDebug("Could not find resource to automatically cleanup after auto-diskful.");
+            retFlux = Flux.empty();
+        }
+        else
+        {
+            errorReporter.logDebug(
+                "Deleting excess %s after auto-diskful of %s",
+                CtrlRscApiCallHandler.getRscDescription(excessRsc),
+                CtrlRscApiCallHandler.getRscDescription(rsc)
+            );
+            retFlux = rscDeleteApiCallHandler.deleteResource(
+                excessRsc.getNode().getName().displayValue,
+                excessRsc.getDefinition().getName().displayValue
+            ).subscriberContext(
+                Context.of(
+                    ApiModule.API_CALL_NAME,
+                    "Deleting excess " + CtrlRscApiCallHandler.getRscDescription(excessRsc),
+                    AccessContext.class,
+                    sysCtx,
+                    Peer.class,
+                    excessRsc.getNode().getPeer(sysCtx)
+                )
+            );
+        }
+        return retFlux;
+    }
+
+    private Resource getExcessRsc(Resource rscRef) throws InvalidKeyException, AccessDeniedException
+    {
+        ResourceDefinition rscDfn = rscRef.getDefinition();
+
+        Set<Resource> rscsToIgnore = new HashSet<>();
+        rscsToIgnore.add(rscRef);
+
+        Iterator<Resource> rscIt = rscDfn.iterateResource(sysCtx);
+        while (rscIt.hasNext())
+        {
+            Resource rsc = rscIt.next();
+            String cleanupAllowed = getPrioProps(rsc).getProp(
+                ApiConsts.KEY_DRBD_AUTO_DISKFUL_ALLOW_CLEANUP,
+                ApiConsts.NAMESPC_DRBD_OPTIONS
+            );
+            if (
+                !LayerRscUtils.getLayerStack(rsc, sysCtx).contains(DeviceLayerKind.DRBD) ||
+                rsc.getStateFlags().isSet(sysCtx,Resource.Flags.DRBD_DISKLESS) ||
+                ApiConsts.VAL_FALSE.equalsIgnoreCase(cleanupAllowed) // cleanupAllowed might be null
+            )
+            {
+                rscsToIgnore.add(rsc);
+            }
+        }
+
+        return autoplacer.autoUnplace(rscDfn, rscsToIgnore);
     }
 
     private long getSize(ResourceDefinition rscDfnRef) throws AccessDeniedException

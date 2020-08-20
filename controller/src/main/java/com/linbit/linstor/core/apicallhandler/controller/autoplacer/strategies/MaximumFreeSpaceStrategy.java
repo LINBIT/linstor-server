@@ -10,8 +10,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Singleton
@@ -40,7 +40,7 @@ public class MaximumFreeSpaceStrategy implements AutoplaceStrategy
     }
 
     @Override
-    public Map<StorPool, Double> rate(List<StorPool> storPoolsRef, RatingAdditionalInfo additionalInfoRef)
+    public Map<StorPool, Double> rate(Collection<StorPool> storPoolsRef, RatingAdditionalInfo additionalInfoRef)
         throws AccessDeniedException
     {
         Map<StorPool, Double> ret = new HashMap<>();

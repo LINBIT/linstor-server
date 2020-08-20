@@ -13,9 +13,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 public class MaximumThroughputRemainingStrategy implements AutoplaceStrategy
@@ -33,7 +33,7 @@ public class MaximumThroughputRemainingStrategy implements AutoplaceStrategy
     }
 
     @Override
-    public Map<StorPool, Double> rate(List<StorPool> storPoolsRef, RatingAdditionalInfo additionalInfoRef)
+    public Map<StorPool, Double> rate(Collection<StorPool> storPoolsRef, RatingAdditionalInfo additionalInfoRef)
         throws AccessDeniedException
     {
         Map<StorPool, Double> ret = new HashMap<>();

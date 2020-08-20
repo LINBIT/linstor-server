@@ -12,9 +12,9 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 @Singleton
@@ -31,7 +31,7 @@ public class MinimumResourceCountStrategy implements AutoplaceStrategy
     }
 
     @Override
-    public Map<StorPool, Double> rate(List<StorPool> storPoolsRef, RatingAdditionalInfo additionalInfoRef)
+    public Map<StorPool, Double> rate(Collection<StorPool> storPoolsRef, RatingAdditionalInfo additionalInfoRef)
         throws AccessDeniedException
     {
         Map<StorPool, Double> ret = new HashMap<>();

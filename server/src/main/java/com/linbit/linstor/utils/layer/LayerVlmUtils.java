@@ -27,12 +27,18 @@ public class LayerVlmUtils
 {
     public static Set<StorPool> getStorPools(Resource rscRef, AccessContext accCtxRef) throws AccessDeniedException
     {
+        return getStorPools(rscRef, accCtxRef, true);
+    }
+
+    public static Set<StorPool> getStorPools(Resource rscRef, AccessContext accCtxRef, boolean withMetaStoragePools)
+        throws AccessDeniedException
+    {
         Iterator<Volume> vlmIt = rscRef.iterateVolumes();
         Set<StorPool> storPools = new TreeSet<>();
         while (vlmIt.hasNext())
         {
             Volume vlm = vlmIt.next();
-            storPools.addAll(getStorPoolSet(vlm, accCtxRef, true));
+            storPools.addAll(getStorPoolSet(vlm, accCtxRef, withMetaStoragePools));
         }
         return storPools;
     }

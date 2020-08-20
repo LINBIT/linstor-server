@@ -233,12 +233,43 @@ class Selector
     }
 
 
+    public Node unselect(
+        ResourceDefinition rscDfn,
+        List<Node> fixedNodes,
+        StorPoolWithScore[] sortedStorPoolByScoreArr
+    )
+        throws AccessDeniedException
+    {
+        // Selector.SelectionManger selMgr = new SelectionManger(
+        // rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),
+        // fixedNodes,
+        // null,
+        // sortedStorPoolByScoreArr
+        // );
+        /*
+         * TODO: implement a more clever unselection-strategy, which also considers auto-place config
+         * as --replicas-on-same, --replicas-on-different etc..
+         */
+
+        // default: no node to unselect
+        Node ret = null;
+        if (sortedStorPoolByScoreArr.length > 0)
+        {
+            // sorts highest to lowest as defined in StorPoolWithScore' Comparator
+            Arrays.sort(sortedStorPoolByScoreArr);
+
+            // return node of storage pool with lowest score
+            ret = sortedStorPoolByScoreArr[sortedStorPoolByScoreArr.length - 1].storPool.getNode();
+        }
+        return ret;
+    }
+
     /**
      * This class has two purposes:
      * First, it has to perform a fast verification if a given storage pool can be selected
      * (this step needs to consider rules like only one storage pool per node, replicas on same,
      * replicas on different, etc...)
-     * Second, it has to be able to rollback such a
+     * Second, it has to be able to rollback such a selection, even only partially.
      */
     private class SelectionManger
     {
