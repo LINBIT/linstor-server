@@ -42,6 +42,7 @@ public class Metrics {
     private final PrometheusBuilder prometheusBuilder;
 
     private static final AtomicLong scrape_requests = new AtomicLong();
+    private static final int BLOCK_TIMEOUT = 10;
 
     @Inject
     public Metrics(
@@ -82,11 +83,13 @@ public class Metrics {
 
             try {
                 long start = System.currentTimeMillis();
-                errorReportsTmp = fluxErrorReports.next().block(Duration.ofSeconds(10));
+                errorReportsTmp = fluxErrorReports.next().block(Duration.ofSeconds(BLOCK_TIMEOUT));
                 errorReporter.logTrace("Metric/ListErrorReports: %dms", System.currentTimeMillis() - start);
             } catch (RuntimeException timeoutExc) {
                 errorReporter.reportError(
-                    new LinStorRuntimeException("Gathering error reports took longer than 5 seconds", timeoutExc));
+                    new LinStorRuntimeException(
+                        String.format("Gathering error reports took longer than %d seconds", BLOCK_TIMEOUT),
+                        timeoutExc));
             }
         }
 
