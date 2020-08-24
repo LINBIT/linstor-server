@@ -48,6 +48,7 @@ import javax.inject.Singleton;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -263,31 +264,73 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     {
         long extentSize = DEFAULT_ZFS_EXTENT_SIZE;
         String[] zfscreateOptions = getZfscreateOptions(vlmDataRef);
-        for (int i = 0; i < zfscreateOptions.length; i++)
+        try
         {
-            String opt = zfscreateOptions[i];
-            if (opt.equals("-b"))
+            for (int i = 0; i < zfscreateOptions.length; i++)
             {
-                if (zfscreateOptions.length < i + 1)
-                {
-                    errorReporter.reportError(
-                        new StorageException(
-                            "-b option for 'zfs create ...' requires an argument. Defaulting to " +
-                                DEFAULT_ZFS_EXTENT_SIZE + "KiB"
-                        )
-                    );
-                }
-                String extSizeStr = zfscreateOptions[i + 1];
-                Matcher matcher = PATTERN_EXTENT_SIZE.matcher(extSizeStr);
-                if (matcher.find())
-                {
-                    long val = Long.parseLong(matcher.group(1));
-                    SizeUnit unit = SizeUnit.parse(matcher.group(2), true);
+                String opt = zfscreateOptions[i];
+                String extSizeStr;
 
-                    extentSize = SizeConv.convert(val, unit, SizeUnit.UNIT_KiB);
+                /*
+                 * might be {..., "-b", "32k", ... } but also {..., "-b32k", ... }
+                 */
+                if (opt.equals("-b"))
+                {
+                    extSizeStr = zfscreateOptions[i + 1];
                 }
-                break;
+                else
+                if (opt.startsWith("-b"))
+                {
+                    extSizeStr = opt;
+                }
+                else
+                if (opt.equals("-o"))
+                {
+                    extSizeStr = zfscreateOptions[i + 1].startsWith("volblocksize=") ?
+                        zfscreateOptions[i + 1] :
+                        null;
+                }
+                else
+                if (opt.startsWith("-ovolblocksize="))
+                {
+                    extSizeStr = opt;
+                }
+                else
+                {
+                    extSizeStr = null;
+                }
+
+
+                if (extSizeStr != null)
+                {
+                    Matcher matcher = PATTERN_EXTENT_SIZE.matcher(extSizeStr);
+                    if (matcher.find())
+                    {
+                        long val = Long.parseLong(matcher.group(1));
+                        SizeUnit unit = SizeUnit.parse(matcher.group(2), true);
+
+                        extentSize = SizeConv.convert(val, unit, SizeUnit.UNIT_KiB);
+                    }
+                    else
+                    {
+                        throw new StorageException("Could not find blocksize in string: " + extSizeStr);
+                    }
+                    break;
+                }
             }
+        }
+        catch (ArrayIndexOutOfBoundsException aioobe) {
+            throw new StorageException(
+                "Expected additional argument while looking for extentSize in: " + Arrays.toString(zfscreateOptions)
+            );
+        }
+        catch (NumberFormatException nfe)
+        {
+            throw new StorageException("Could not parse blocksize", nfe);
+        }
+        catch (IllegalArgumentException exc)
+        {
+            throw new StorageException("Could not parse blocksize unit ", exc);
         }
 
         return extentSize;
