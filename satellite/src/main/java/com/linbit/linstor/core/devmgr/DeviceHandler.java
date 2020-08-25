@@ -38,21 +38,27 @@ public interface DeviceHandler
 
     /**
      * @see DeviceLayer#updateAllocatedSizeFromUsableSize(VlmProviderObject)
+     *
      * @param vlmData
+     *
      * @throws AccessDeniedException
      * @throws DatabaseException
+     * @throws StorageException
      */
     void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException;
+        throws AccessDeniedException, DatabaseException, StorageException;
 
     /**
      * @see DeviceLayer#updateUsableSizeFromAllocatedSize(VlmProviderObject)
+     *
      * @param vlmData
+     *
      * @throws AccessDeniedException
      * @throws DatabaseException
+     * @throws StorageException
      */
     void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException;
+        throws AccessDeniedException, DatabaseException, StorageException;
 
     void sendResourceCreatedEvent(AbsRscLayerObject<Resource> layerDataRef, UsageState usageStateRef);
 

@@ -147,14 +147,14 @@ public class CacheLayer implements DeviceLayer
 
     @Override
     public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         updateSize((CacheVlmData<Resource>) vlmData, true);
     }
 
     @Override
     public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         updateSize((CacheVlmData<Resource>) vlmData, false);
     }
@@ -163,7 +163,7 @@ public class CacheLayer implements DeviceLayer
         CacheVlmData<Resource> vlmData,
         boolean fromUsable
     )
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         VlmProviderObject<Resource> dataChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
         VlmProviderObject<Resource> cacheChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);

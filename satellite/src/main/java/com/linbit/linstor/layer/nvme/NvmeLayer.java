@@ -252,7 +252,7 @@ public class NvmeLayer implements DeviceLayer
 
     @Override
     public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         NvmeVlmData<Resource> nvmeVlmData = (NvmeVlmData<Resource>) vlmData;
 
@@ -267,7 +267,7 @@ public class NvmeLayer implements DeviceLayer
 
     @Override
     public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         NvmeVlmData<Resource> nvmeVlmData = (NvmeVlmData<Resource>) vlmData;
 

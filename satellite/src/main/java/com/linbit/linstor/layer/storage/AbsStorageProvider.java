@@ -1041,7 +1041,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     @SuppressWarnings("unchecked")
     @Override
     public void updateGrossSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         // usable size was just updated (set) by the layer above us. copy that, so we can
         // update it again with the actual usable size when we are finished
@@ -1229,5 +1229,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     protected abstract void setUsableSize(LAYER_DATA vlmData, long size) throws DatabaseException;
 
-    protected abstract void setExpectedUsableSize(LAYER_DATA vlmData, long size) throws DatabaseException;
+    protected abstract void setExpectedUsableSize(LAYER_DATA vlmData, long size)
+        throws DatabaseException, StorageException;
 }

@@ -183,14 +183,14 @@ public class StorageLayer implements DeviceLayer
 
     @Override
     public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmObj)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         getDevProviderByVlmObj(vlmObj).updateGrossSize(vlmObj);
     }
 
     @Override
     public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmObj)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         // just copy (for now) usableSize = allocateSize and let the DeviceProviders recalculate the allocatedSize
         vlmObj.setUsableSize(vlmObj.getAllocatedSize());

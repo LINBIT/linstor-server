@@ -106,7 +106,7 @@ public class LuksLayer implements DeviceLayer
 
     @Override
     public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         LuksVlmData<Resource> luksData = (LuksVlmData<Resource>) vlmData;
         long grossSize = luksData.getUsableSize() + 16 * MIB;
@@ -119,7 +119,7 @@ public class LuksLayer implements DeviceLayer
 
     @Override
     public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         LuksVlmData<Resource> luksData = (LuksVlmData<Resource>) vlmData;
         long grossSize = luksData.getAllocatedSize();

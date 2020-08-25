@@ -182,7 +182,7 @@ public class DrbdLayer implements DeviceLayer
 
     @Override
     public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
         String peerSlotsProp = vlmData.getVolume().getAbsResource()
@@ -251,7 +251,7 @@ public class DrbdLayer implements DeviceLayer
 
     @Override
     public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
         String peerSlotsProp = vlmData.getVolume().getAbsResource()

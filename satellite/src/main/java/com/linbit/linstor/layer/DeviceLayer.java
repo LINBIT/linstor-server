@@ -44,11 +44,13 @@ public interface DeviceLayer
      * The implementation is expected to call an update*Size method for the next layer
      *
      * @param vlmData
+     *
      * @throws AccessDeniedException
      * @throws DatabaseException
+     * @throws StorageException
      */
     void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException;
+        throws AccessDeniedException, DatabaseException, StorageException;
 
     /**
      * The layer implementing this method can assume that its allocated size is already set.
@@ -57,11 +59,13 @@ public interface DeviceLayer
      * The implementation is expected to call an update*Size method for the next layer
      *
      * @param vlmData
+     *
      * @throws AccessDeniedException
      * @throws DatabaseException
+     * @throws StorageException
      */
     void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException;
+        throws AccessDeniedException, DatabaseException, StorageException;
 
     /**
      * @param rscLayerData The current layer's data. This is an explicit parameter in case we

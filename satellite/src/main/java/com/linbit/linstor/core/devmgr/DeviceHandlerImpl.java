@@ -124,12 +124,12 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void dispatchResources(Collection<Resource> rscs, Collection<Snapshot> snapshots)
+    public void dispatchResources(Collection<Resource> rscsRef, Collection<Snapshot> snapshots)
     {
-        Map<DeviceLayer, Set<AbsRscLayerObject<Resource>>> rscByLayer = groupByLayer(rscs);
-        Map<DeviceLayer, Set<AbsRscLayerObject<Snapshot>>> snapByLayer = groupByLayer(snapshots);
+        Collection<Resource> resources = calculateGrossSizes(rscsRef);
 
-        calculateGrossSizes(rscs);
+        Map<DeviceLayer, Set<AbsRscLayerObject<Resource>>> rscByLayer = groupByLayer(resources);
+        Map<DeviceLayer, Set<AbsRscLayerObject<Snapshot>>> snapByLayer = groupByLayer(snapshots);
 
         boolean prepareSuccess = prepareLayers(rscByLayer, snapByLayer);
 
@@ -143,7 +143,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             List<Snapshot> snapListNotifyDelete = new ArrayList<>();
 
             processResourcesAndSnapshots(
-                rscs,
+                resources,
                 snapshots,
                 unprocessedSnapshots,
                 rscListNotifyApplied,
@@ -208,31 +208,56 @@ public class DeviceHandlerImpl implements DeviceHandler
         return ret;
     }
 
-    private void calculateGrossSizes(Collection<Resource> resources) throws ImplementationError
+    private ArrayList<Resource> calculateGrossSizes(Collection<Resource> resources) throws ImplementationError
     {
+        ArrayList<Resource> rscs = new ArrayList<>();
         try
         {
             for (Resource rsc : resources)
             {
-                AbsRscLayerObject<Resource> rscData = rsc.getLayerData(wrkCtx);
-                for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
+                try
                 {
-                    long vlmDfnSize = vlmData.getVolume().getVolumeSize(wrkCtx);
-                    boolean calculateNetSizes = vlmData.getVolume().getVolumeDefinition().getFlags()
-                        .isSet(wrkCtx, VolumeDefinition.Flags.GROSS_SIZE);
+                    AbsRscLayerObject<Resource> rscData = rsc.getLayerData(wrkCtx);
+                    for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
+                    {
+                        long vlmDfnSize = vlmData.getVolume().getVolumeSize(wrkCtx);
+                        boolean calculateNetSizes = vlmData.getVolume().getVolumeDefinition().getFlags()
+                            .isSet(wrkCtx, VolumeDefinition.Flags.GROSS_SIZE);
 
-                    if (calculateNetSizes)
-                    {
-                        vlmData.setAllocatedSize(vlmDfnSize);
-                        updateUsableSizeFromAllocatedSize(vlmData);
-                        vlmData.setOriginalSize(vlmDfnSize);
+                        if (calculateNetSizes)
+                        {
+                            vlmData.setAllocatedSize(vlmDfnSize);
+                            updateUsableSizeFromAllocatedSize(vlmData);
+                            vlmData.setOriginalSize(vlmDfnSize);
+                        }
+                        else
+                        {
+                            vlmData.setUsableSize(vlmDfnSize);
+                            updateAllocatedSizeFromUsableSize(vlmData);
+                            vlmData.setOriginalSize(vlmDfnSize);
+                        }
                     }
-                    else
-                    {
-                        vlmData.setUsableSize(vlmDfnSize);
-                        updateAllocatedSizeFromUsableSize(vlmData);
-                        vlmData.setOriginalSize(vlmDfnSize);
-                    }
+                    rscs.add(rsc);
+                }
+                catch (StorageException exc)
+                {
+                    String errorId = errorReporter.reportError(
+                        exc,
+                        null,
+                        null,
+                        "An error occurred while calculating gross size of resource '" + rsc + "'"
+                    );
+                    ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                        ApiCallRcImpl
+                            .entryBuilder(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage())
+                            .setCause(exc.getCauseText())
+                            .setCorrection(exc.getCorrectionText())
+                            .setDetails(exc.getDetailsText())
+                            .addErrorId(errorId)
+                            .build()
+                    );
+
+                    notificationListener.get().notifyResourceFailed(rsc, apiCallRc);
                 }
             }
         }
@@ -240,6 +265,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             throw new ImplementationError(exc);
         }
+        return rscs;
     }
 
     private boolean prepareLayers(
@@ -777,7 +803,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     @Override
     public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
 
@@ -803,7 +829,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     @Override
     public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
 

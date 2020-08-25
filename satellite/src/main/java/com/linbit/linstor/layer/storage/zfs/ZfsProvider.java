@@ -237,7 +237,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return additionalOptionsArr;
     }
 
-    protected long roundUpToExtentSize(ZfsData<Resource> vlmDataRef, long sizeRef)
+    protected long roundUpToExtentSize(ZfsData<Resource> vlmDataRef, long sizeRef) throws StorageException
     {
         long volumeSize = sizeRef;
 
@@ -259,7 +259,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return volumeSize;
     }
 
-    private long getExtentSize(ZfsData<Resource> vlmDataRef)
+    private long getExtentSize(ZfsData<Resource> vlmDataRef) throws StorageException
     {
         long extentSize = DEFAULT_ZFS_EXTENT_SIZE;
         String[] zfscreateOptions = getZfscreateOptions(vlmDataRef);
@@ -680,7 +680,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected void setExpectedUsableSize(ZfsData<Resource> vlmData, long size) throws DatabaseException
+    protected void setExpectedUsableSize(ZfsData<Resource> vlmData, long size)
+        throws DatabaseException, StorageException
     {
         vlmData.setExepectedSize(
             roundUpToExtentSize(vlmData, size)

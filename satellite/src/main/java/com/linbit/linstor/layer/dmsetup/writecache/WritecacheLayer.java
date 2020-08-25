@@ -168,7 +168,7 @@ public class WritecacheLayer implements DeviceLayer
 
     @Override
     public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         updateSize((WritecacheVlmData<Resource>) vlmData, true);
 
@@ -176,13 +176,13 @@ public class WritecacheLayer implements DeviceLayer
 
     @Override
     public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         updateSize((WritecacheVlmData<Resource>) vlmData, false);
     }
 
     private void updateSize(WritecacheVlmData<Resource> vlmData, boolean fromUsable)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         VlmProviderObject<Resource> dataChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
         VlmProviderObject<Resource> cacheChildVlmData = vlmData.getChildBySuffix(
