@@ -686,8 +686,8 @@ public class DeviceHandlerImpl implements DeviceHandler
             );
             for (AbsRscLayerObject<Resource> failedResource : rscSet)
             {
-                notificationListener.get().notifyResourceDispatchResponse(
-                    failedResource.getResourceName(),
+                notificationListener.get().notifyResourceFailed(
+                    failedResource.getAbsResource(),
                     apiCallRc
                 );
             }
