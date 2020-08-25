@@ -132,16 +132,18 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         {
             if (LayerUtils.hasLayer(rsc.getLayerData(sysCtx), DeviceLayerKind.DRBD))
             {
-                PriorityProps prioProps = getPrioProps(rsc);
-                String autoDiskful = prioProps
-                    .getProp(ApiConsts.KEY_DRBD_AUTO_DISKFUL, ApiConsts.NAMESPC_DRBD_OPTIONS);
-
                 if (rsc.getStateFlags().isSet(sysCtx, Resource.Flags.DRBD_DISKLESS))
                 {
+                    String autoDiskful = getPrioProps(rsc)
+                        .getProp(ApiConsts.KEY_DRBD_AUTO_DISKFUL, ApiConsts.NAMESPC_DRBD_OPTIONS);
+                    Boolean isPrimary = rsc.getNode().getPeer(sysCtx).getSatelliteState().getResourceStates()
+                        .get(rsc.getDefinition().getName()).isInUse();
+
+                    boolean enableAutoDiskful = autoDiskful != null && isPrimary != null && isPrimary;
                     synchronized (configSet)
                     {
                         AutoDiskfulConfig cfg = configSetByRsc.get(rsc);
-                        if (autoDiskful == null)
+                        if (!enableAutoDiskful)
                         {
                             if (cfg != null)
                             {
