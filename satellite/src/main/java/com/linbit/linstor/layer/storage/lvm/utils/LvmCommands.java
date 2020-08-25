@@ -122,7 +122,8 @@ public class LvmCommands
                 lvmConfig,
                 additionalParameters,
                 "--size", size + "k",
-                "-n", volumeGroup + "/" + vlmId,
+                volumeGroup,
+                "-n", vlmId,
                 "-y" // force, skip "wipe signature question"
             ),
             "Failed to create lvm volume",
@@ -174,8 +175,9 @@ public class LvmCommands
                 lvmConfig,
                 additionalParameters,
                 "--virtualsize", size + "k", // -V
+                volumeGroup,
                 "--thinpool", thinPoolName,
-                "--name", volumeGroup + "/" + vlmId        // -n
+                "--name", vlmId        // -n
             ),
             "Failed to create lvm volume",
             "Failed to create new lvm volume '" + vlmId + "' in volume group '" + volumeGroup +
@@ -550,10 +552,8 @@ public class LvmCommands
                 null,
                 (Collection<String>) null,
                 "--columns",
-                "-o",
-                "pv_name",
-                "-S",
-                "vg_name=" + volumeGroupRef,
+                "-o", "pv_name",
+                "-S", "vg_name=" + volumeGroupRef,
                 "--noheadings",
                 "--nosuffix"
             ),
