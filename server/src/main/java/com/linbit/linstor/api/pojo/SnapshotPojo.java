@@ -7,8 +7,10 @@ import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.objects.AbsResource;
 
 import javax.annotation.Nullable;
+
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,6 +28,7 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     private final String nodeName;
     @Nullable
     private final Date createTimestamp;
+    private final Map<String, String> propsMap;
 
     public SnapshotPojo(
         SnapshotDefinitionApi snaphotDfnRef,
@@ -38,7 +41,8 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         List<SnapshotVolumeApi> snapshotVlmsRef,
         RscLayerDataApi layerDataRef,
         String nodeNameRef,
-        @Nullable Date createTimestampRef
+        @Nullable Date createTimestampRef,
+        Map<String, String> propsMapRef
     )
     {
         snaphotDfn = snaphotDfnRef;
@@ -51,6 +55,7 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         snapshotVlms = snapshotVlmsRef;
         layerData = layerDataRef;
         nodeName = nodeNameRef;
+        propsMap = propsMapRef;
         createTimestamp = createTimestampRef != null &&
             createTimestampRef.getTime() != AbsResource.CREATE_DATE_INIT_VALUE ?
                 createTimestampRef : null;
@@ -117,6 +122,12 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
     }
 
     @Override
+    public Map<String, String> getPropsMap()
+    {
+        return propsMap;
+    }
+
+    @Override
     public int compareTo(SnapshotPojo otherSnapshotPojo)
     {
         int eq = snaphotDfn.getRscDfn().getResourceName().compareTo(
@@ -128,6 +139,7 @@ public class SnapshotPojo implements SnapshotApi, Comparable<SnapshotPojo>
         return eq;
     }
 
+    @Override
     public RscLayerDataApi getLayerData()
     {
         return layerData;

@@ -216,6 +216,11 @@ class StltSnapshotApiCallHandler
                     snapshotVlmDfnFlags
                 );
             }
+
+            Props snapVlmDfnProps = snapshotVolumeDefinition.getProps(apiCtx);
+            snapVlmDfnProps.map().putAll(snapshotVlmDfnApi.getPropsMap());
+            snapVlmDfnProps.keySet().retainAll(snapshotVlmDfnApi.getPropsMap().keySet());
+
             snapshotVolumeDefinition.getFlags().resetFlagsTo(apiCtx, snapshotVlmDfnFlags);
         }
 
@@ -250,6 +255,10 @@ class StltSnapshotApiCallHandler
         snapshot.setSuspendResource(apiCtx, snapshotRaw.getSuspendResource());
         snapshot.setTakeSnapshot(apiCtx, snapshotRaw.getTakeSnapshot());
 
+        Props snapProps = snapshot.getProps(apiCtx);
+        snapProps.map().putAll(snapshotRaw.getPropsMap());
+        snapProps.keySet().retainAll(snapshotRaw.getPropsMap().keySet());
+
         for (SnapshotVolumeApi snapshotVlmApi : snapshotRaw.getSnapshotVlmList())
         {
             mergeSnapshotVolume(snapshotVlmApi, snapshot);
@@ -274,6 +283,11 @@ class StltSnapshotApiCallHandler
 
             snapshot.putVolume(apiCtx, snapshotVolume);
         }
+
+        Props snapVlmProps = snapshotVolume.getProps(apiCtx);
+        snapVlmProps.map().putAll(snapshotVlmApi.getPropsMap());
+        snapVlmProps.keySet().retainAll(snapshotVlmApi.getPropsMap().keySet());
+
         checkUuid(snapshotVolume, snapshotVlmApi);
     }
 

@@ -29,6 +29,7 @@ message IntSnapshot
     common.RscGrp                     rsc_grp           = 21;
     common.RscLayerData               layer_object      = 22;
     string                            node_name         = 17;
+    map<string, string>               snapshot_props    = 23;
 }
 
 message SnapshotVlmDfn
@@ -37,6 +38,7 @@ message SnapshotVlmDfn
     sint32 vlm_nr = 2;
     int64 vlm_size = 3;
     sint64 flags = 4;
+    map<string, string> snapshot_vlm_dfn_props = 5;
 }
 
 message SnapshotVlm
@@ -44,4 +46,5 @@ message SnapshotVlm
     string snapshot_vlm_uuid = 1;
     string snapshot_vlm_dfn_uuid = 2;
     sint32 vlm_nr = 3;
+    map<string, string> snapshot_vlm_props = 5;
 }

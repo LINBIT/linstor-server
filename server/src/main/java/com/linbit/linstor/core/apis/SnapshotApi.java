@@ -4,6 +4,7 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,4 +21,5 @@ public interface SnapshotApi
     Long getUpdateId();
     List<? extends SnapshotVolumeApi> getSnapshotVlmList();
     RscLayerDataApi getLayerData();
+    Map<String, String> getPropsMap();
 }

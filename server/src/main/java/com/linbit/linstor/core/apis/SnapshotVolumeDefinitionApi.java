@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apis;
 
+import java.util.Map;
 import java.util.UUID;
 
 public interface SnapshotVolumeDefinitionApi
@@ -8,4 +9,5 @@ public interface SnapshotVolumeDefinitionApi
     Integer getVolumeNr();
     long getSize();
     long getFlags();
+    Map<String, String> getPropsMap();
 }

@@ -63,7 +63,8 @@ public class ApplySnapshot implements ApiCall
                     UUID.fromString(snapshotVlmDfn.getSnapshotVlmDfnUuid()),
                     snapshotVlmDfn.getVlmNr(),
                     snapshotVlmDfn.getVlmSize(),
-                    snapshotVlmDfn.getFlags()
+                    snapshotVlmDfn.getFlags(),
+                    snapshotVlmDfn.getSnapshotVlmDfnPropsMap()
                 ))
                 .collect(Collectors.toList());
 
@@ -72,7 +73,8 @@ public class ApplySnapshot implements ApiCall
                 .map(snapshotVlm -> new SnapshotVlmPojo(
                     UUID.fromString(snapshotVlm.getSnapshotVlmDfnUuid()),
                     UUID.fromString(snapshotVlm.getSnapshotVlmUuid()),
-                    snapshotVlm.getVlmNr()
+                    snapshotVlm.getVlmNr(),
+                    snapshotVlm.getSnapshotVlmPropsMap()
                 ))
                 .collect(Collectors.toList());
 
@@ -110,7 +112,8 @@ public class ApplySnapshot implements ApiCall
             snapshotVlms,
             snapLayerData,
             snapshot.getNodeName(),
-            null
+            null,
+            snapshot.getSnapshotPropsMap()
         );
     }
 }

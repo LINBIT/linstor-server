@@ -1,5 +1,7 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
@@ -82,8 +84,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
-
-import static java.util.stream.Collectors.toList;
 
 public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     implements CtrlStltSerializer.CtrlStltSerializerBuilder
@@ -1063,6 +1063,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setVlmNr(snapshotVolumeDefinition.getVolumeNumber().value)
                         .setVlmSize(snapshotVolumeDefinition.getVolumeSize(serializerCtx))
                         .setFlags(snapshotVolumeDefinition.getFlags().getFlagsBits(serializerCtx))
+                        .putAllSnapshotVlmDfnProps(snapshotVolumeDefinition.getProps(serializerCtx).map())
                         .build()
                 );
             }
@@ -1077,6 +1078,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
                         .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
                         .setVlmNr(snapshotVolume.getVolumeNumber().value)
+                        .putAllSnapshotVlmProps(snapshotVolume.getProps(serializerCtx).map())
                         .build()
                 );
             }
@@ -1094,6 +1096,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllSnapshotVlmDfns(snapshotVlmDfns)
                 .setSnapshotDfnFlags(snapshotDfn.getFlags().getFlagsBits(serializerCtx))
                 .putAllSnapshotDfnProps(snapshotDfn.getProps(serializerCtx).map())
+                .putAllSnapshotProps(snapshot.getProps(serializerCtx).map())
                 .addAllSnapshotVlms(snapshotVlms)
                 .setFlags(snapshot.getFlags().getFlagsBits(serializerCtx))
                 .setSuspendResource(snapshot.getSuspendResource(serializerCtx))

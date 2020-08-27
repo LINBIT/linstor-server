@@ -331,7 +331,8 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
             getUuid(),
             getVolumeNumber().value,
             getVolumeSize(accCtx),
-            flags.getFlagsBits(accCtx)
+            flags.getFlagsBits(accCtx),
+            snapshotVlmDfnProps.map()
         );
     }
 

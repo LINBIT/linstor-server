@@ -302,7 +302,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
             snapshotVlms,
             getLayerData(accCtx).asPojo(accCtx),
             getNodeName().displayValue,
-            getCreateTimestamp().orElse(null)
+            getCreateTimestamp().orElse(null),
+            props.map()
         );
     }
 

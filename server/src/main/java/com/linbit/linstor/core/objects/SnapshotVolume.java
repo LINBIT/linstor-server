@@ -120,7 +120,8 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
         return new SnapshotVlmPojo(
             getSnapshotVolumeDefinition().getUuid(),
             getUuid(),
-            getVolumeNumber().value
+            getVolumeNumber().value,
+            props.map()
         );
     }
 
