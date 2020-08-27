@@ -18,6 +18,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -43,6 +44,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -211,7 +213,10 @@ public class SnapshotShippingInternalApiCallHandler
 
         updateRscConPropsAfterReceived(snapSource, snapTarget, successRef);
 
-        snapshotShippingPortPool.deallocate(getPort(snapDfn));
+        for (Integer port : getPorts(snapDfn))
+        {
+            snapshotShippingPortPool.deallocate(port);
+        }
 
         Flux<ApiCallRc> flux;
         if (!successRef)
@@ -382,16 +387,24 @@ public class SnapshotShippingInternalApiCallHandler
         }
     }
 
-    private int getPort(SnapshotDefinition snapDfn)
+    @SuppressWarnings("boxing")
+    private ArrayList<Integer> getPorts(SnapshotDefinition snapDfn)
     {
+        ArrayList<Integer> ports = new ArrayList<>();
         try
         {
-            return Integer.parseInt(snapDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT));
+            for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(apiCtx))
+            {
+                ports.add(
+                    Integer.parseInt(snapVlmDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT))
+                );
+            }
         }
         catch (NumberFormatException | InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
+        return ports;
     }
 
     /**

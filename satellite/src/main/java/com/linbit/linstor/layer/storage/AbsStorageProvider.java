@@ -669,12 +669,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         LAYER_DATA vlmDataRef,
         LAYER_SNAP_DATA snapVlmData
     )
-        throws AccessDeniedException, StorageException, DatabaseException
+        throws AccessDeniedException, StorageException
     {
-        Props snapDfnProps = snapVlmData.getRscLayerObject().getAbsResource().getSnapshotDefinition().getProps(
+        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
+        Props snapVlmDfnProps = snapVlm.getSnapshotVolumeDefinition().getProps(
             storDriverAccCtx
         );
-        String socatPort = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
+        String socatPort = snapVlmDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
 
         snapShipMgr.startReceiving(
             asSnapLvIdentifier(snapVlmData),
@@ -692,9 +693,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         Snapshot snapSource = curSnapVlmData.getRscLayerObject().getAbsResource();
 
         SnapshotDefinition snapDfn = snapSource.getSnapshotDefinition();
+        SnapshotVolumeDefinition snapVlmDfn = ((SnapshotVolume) curSnapVlmData.getVolume())
+            .getSnapshotVolumeDefinition();
         Props snapDfnProps = snapDfn.getProps(storDriverAccCtx);
+        Props snapVlmDfnProps = snapVlmDfn.getProps(storDriverAccCtx);
 
-        String socatPort = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
+        String socatPort = snapVlmDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
         String snapTargetName = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_TARGET_NODE);
 
         NetInterface targetNetIf = getTargetNetIf(snapDfn, snapTargetName);

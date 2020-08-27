@@ -29,6 +29,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -595,7 +596,8 @@ public class CtrlSnapshotShippingApiCallHandler
 
             // TODO: find previous snapshot (if available) and set corresponding property
 
-            Props snapDfnProps = propsHelper.getProps(snapSource.getSnapshotDefinition());
+            SnapshotDefinition snapDfn = snapSource.getSnapshotDefinition();
+            Props snapDfnProps = propsHelper.getProps(snapDfn);
             snapDfnProps.setProp(
                 InternalApiConsts.KEY_SNAPSHOT_SHIPPING_TARGET_NODE,
                 snapTarget.getNode().getName().displayValue
@@ -605,10 +607,14 @@ public class CtrlSnapshotShippingApiCallHandler
                 snapSource.getNode().getName().displayValue
             );
 
-            snapDfnProps.setProp(
-                InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT,
-                Integer.toString(snapshotShippingPortPool.autoAllocate())
-            );
+            for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(apiCtx))
+            {
+                snapVlmDfn.getProps(apiCtx)
+                    .setProp(
+                        InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT,
+                        Integer.toString(snapshotShippingPortPool.autoAllocate())
+                    );
+            }
         }
         catch (InvalidKeyException | InvalidValueException exc)
         {
