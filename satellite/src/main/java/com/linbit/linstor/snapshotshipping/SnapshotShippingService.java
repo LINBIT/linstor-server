@@ -120,8 +120,10 @@ public class SnapshotShippingService implements SystemService
 
     public void abort(AbsStorageVlmData<Snapshot> snapVlmData)
     {
-        errorReporter
-            .logDebug("aborting snapshot shipping: %s", snapVlmData.getRscLayerObject().getAbsResource().toString());
+        errorReporter.logDebug(
+            "aborting snapshot shipping: %s",
+            snapVlmData.getRscLayerObject().getAbsResource().toString()
+        );
         Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
         ShippingInfo info = shippingInfoMap.get(snap);
         if (info != null)
@@ -131,6 +133,10 @@ public class SnapshotShippingService implements SystemService
             {
                 snapVlmDataInfo.daemon.shutdown();
             }
+        }
+        else
+        {
+            errorReporter.logDebug("  shippingInfo is null, nothing to shutdown");
         }
     }
 
@@ -262,6 +268,11 @@ public class SnapshotShippingService implements SystemService
                         controllerPeerConnector.getControllerPeer().sendMessage(
                             interComSerializer.onewayBuilder(internalApiName).notifySnapshotShipped(snap, success).build()
                         );
+                    }
+
+                    for (SnapVlmDataInfo snapVlmDataInfo : shippingInfo.snapVlmDataInfoMap.values())
+                    {
+                        snapVlmDataInfo.daemon.shutdown(); // just make sure that everything is already stopped
                     }
                     shippingInfoMap.remove(snap);
                 }
