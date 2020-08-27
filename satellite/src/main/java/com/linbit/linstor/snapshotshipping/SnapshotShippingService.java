@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 
 @Singleton
@@ -61,6 +63,7 @@ public class SnapshotShippingService implements SystemService
     private final CtrlStltSerializer interComSerializer;
 
     private final Map<Snapshot, ShippingInfo> shippingInfoMap;
+    private final Set<Snapshot> startedShippments;
     private final ThreadGroup threadGroup;
 
     private ServiceName instanceName;
@@ -103,6 +106,7 @@ public class SnapshotShippingService implements SystemService
         }
 
         shippingInfoMap = Collections.synchronizedMap(new TreeMap<>());
+        startedShippments = Collections.synchronizedSet(new TreeSet<>());
         threadGroup = new ThreadGroup("SnapshotShippingSerivceThreadGroup");
     }
 
@@ -294,6 +298,7 @@ public class SnapshotShippingService implements SystemService
                         for (SnapVlmDataInfo snapVlmDataInfo : info.snapVlmDataInfoMap.values())
                         {
                             snapVlmDataInfo.daemon.start();
+                            startedShippments.add(snap);
                         }
                         info.isStarted = true;
                     }
@@ -304,8 +309,7 @@ public class SnapshotShippingService implements SystemService
 
     private boolean alreadyStarted(AbsStorageVlmData<Snapshot> snapVlmDataRef)
     {
-        ShippingInfo shippingInfo = shippingInfoMap.get(snapVlmDataRef.getVolume().getAbsResource());
-        return shippingInfo != null && shippingInfo.snapVlmDataInfoMap.containsKey(snapVlmDataRef);
+        return startedShippments.contains(snapVlmDataRef.getVolume().getAbsResource());
     }
 
     private void killIfRunning(String cmdToKill) throws StorageException
@@ -402,6 +406,11 @@ public class SnapshotShippingService implements SystemService
                 }
             }
         }
+    }
+
+    public void snapshotDeleted(Snapshot snap)
+    {
+        startedShippments.remove(snap);
     }
 
     private static class ShippingInfo

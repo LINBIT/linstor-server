@@ -50,6 +50,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -191,6 +192,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private final DeviceHandler devHandler;
     private ResourceStateEvent resourceStateEvent;
 
+    private SnapshotShippingService snapshipService;
 
     @Inject
     DeviceManagerImpl(
@@ -216,7 +218,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         ResourceStateEvent resourceStateEventRef,
         DeviceHandler deviceHandlerRef,
         DrbdVersion drbdVersionRef,
-        ExtCmdFactory extCmdFactoryRef
+        ExtCmdFactory extCmdFactoryRef,
+        SnapshotShippingService snapshipServiceRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -240,6 +243,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         resourceStateEvent = resourceStateEventRef;
         drbdVersion = drbdVersionRef;
         extCmdFactory = extCmdFactoryRef;
+        snapshipService = snapshipServiceRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -1062,6 +1066,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
                         for (Snapshot snapshot : snapshotDefinition.getAllSnapshots(wrkCtx))
                         {
+                            snapshipService.snapshotDeleted(snapshot);
                             snapshot.delete(wrkCtx);
                         }
 
