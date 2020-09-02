@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.responses;
+option go_package = "responses";
+
+import "common/ApiCallResponse.proto";
+
+message MsgApiRcResponse
+{
+  repeated common.ApiCallResponse responses = 1;
+}

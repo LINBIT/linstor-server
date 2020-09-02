@@ -1,11 +1,13 @@
 package com.linbit.linstor.logging;
 
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
 
 import javax.annotation.Nullable;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.sql.Clob;
@@ -194,6 +196,96 @@ public class H2ErrorReporter {
         }
 
         return errors;
+    }
+
+    public ApiCallRc deleteErrorReports(
+        @Nullable final Date since,
+        @Nullable final Date to,
+        @Nullable final String exception,
+        @Nullable final String version,
+        @Nullable final List<String> ids)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        // prevent an "empty" where clause(delete all)
+        if (to == null && exception == null && version == null && (ids == null || ids.isEmpty()))
+            return apiCallRc;
+
+        try
+        {
+            int index = 1;
+            StringBuilder stmt = new StringBuilder();
+            stmt.append("DELETE FROM ERRORS WHERE 1=1");
+            if (to != null)
+            {
+                stmt.append(" AND DATETIME < ?");
+            }
+            if (since != null)
+            {
+                stmt.append(" AND DATETIME >= ?");
+            }
+            if (exception != null)
+            {
+                stmt.append(" AND EXCEPTION=?");
+            }
+            if (version != null)
+            {
+                stmt.append(" AND VERSION=?");
+            }
+            if (ids != null && !ids.isEmpty())
+            {
+                stmt.append(" AND ERROR_ID in (");
+
+                for (String ignored : ids)
+                {
+                    stmt.append("?,");
+                }
+
+                stmt.deleteCharAt(stmt.length() - 1);
+                stmt.append(")");
+            }
+
+            try (Connection con = dataSource.getConnection();
+                 PreparedStatement pStmt = con.prepareStatement(stmt.toString()))
+            {
+                if (to != null)
+                {
+                    pStmt.setTimestamp(index++, new java.sql.Timestamp(to.getTime()));
+                }
+                if(since != null)
+                {
+                    pStmt.setTimestamp(index++, new java.sql.Timestamp(since.getTime()));
+                }
+                if (exception != null)
+                {
+                    pStmt.setString(index++, exception);
+                }
+                if (version != null)
+                {
+                    pStmt.setString(index++, version);
+                }
+                if (ids != null)
+                {
+                    for (String id : ids)
+                    {
+                        pStmt.setString(index++, id);
+                    }
+                }
+
+                final int deleted = pStmt.executeUpdate();
+                if (deleted > 0)
+                {
+                    apiCallRc.addEntry(String.format("Deleted %d error-report(s)", deleted), ApiConsts.DELETED);
+                }
+            }
+        } catch (SQLException sqlExc)
+        {
+            final String errorMsg = "Unable to operate on error-reports database: " + sqlExc.getMessage();
+            final String errorId = errorReporter.reportError(sqlExc);
+            apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_SQL, errorMsg).addErrorId(errorId));
+        }
+
+        return apiCallRc;
     }
 
     public void shutdown() throws SQLException

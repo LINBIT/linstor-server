@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.requests;
+
+message MsgDelErrorReports
+{
+  // Since unix epoch utc in millis
+  optional uint64 since = 1;
+  // Until unix epoch utc in millis
+  optional uint64 to = 2;
+  optional string version = 3;
+  optional string exception = 4;
+  repeated string ids = 5;
+}

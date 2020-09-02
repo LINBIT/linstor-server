@@ -1,6 +1,8 @@
 package com.linbit.linstor.logging;
 
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -186,6 +188,16 @@ public interface ErrorReporter
     )
     {
         return Collections.emptyList();
+    }
+
+    default ApiCallRc deleteErrorReports(
+        @Nullable final Date since,
+        @Nullable final Date to,
+        @Nullable final String exception,
+        @Nullable final String version,
+        @Nullable final List<String> ids)
+    {
+        return new ApiCallRcImpl();
     }
 
     default void archiveLogDirectory()

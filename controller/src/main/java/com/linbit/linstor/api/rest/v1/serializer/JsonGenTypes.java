@@ -931,6 +931,35 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ErrorReportDelete
+    {
+        /**
+         * timestamp in millis start date to delete
+         */
+        public Long since;
+        /**
+         * timestamp in millis for the end date to delete
+         */
+        public Long to;
+        /**
+         * on which nodes to delete error-reports, if empty/null all nodes
+         */
+        public List<String> nodes = Collections.emptyList();
+        /**
+         * delete all error reports with the given exception
+         */
+        public String exception;
+        /**
+         * delete all error reports from the given version
+         */
+        public String version;
+        /**
+         * error report ids to delete
+         */
+        public List<String> ids = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class KeyValueStore
     {
         /**

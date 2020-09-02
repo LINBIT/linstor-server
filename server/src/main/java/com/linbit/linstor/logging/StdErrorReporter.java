@@ -4,6 +4,7 @@ import com.linbit.AutoIndent;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
@@ -611,6 +612,17 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         return h2ErrorReporter.listReports(withText, since, to, ids);
     }
 
+    @Override
+    public ApiCallRc deleteErrorReports(
+        @Nullable final Date since,
+        @Nullable final Date to,
+        @Nullable final String exception,
+        @Nullable final String version,
+        @Nullable final List<String> ids)
+    {
+        return h2ErrorReporter.deleteErrorReports(since, to, exception, version, ids);
+    }
+
     private BasicFileAttributes getAttributes(final Path file)
     {
         BasicFileAttributes basicFileAttributes = null;
@@ -627,20 +639,21 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     @Override
     public void archiveLogDirectory()
     {
+        // create a Date instance that is starting 2 months before.
+        final Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -1);
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        final Date beforeDate = cal.getTime();
+
         try (Stream<Path> files = Files.list(getLogDirectory()))
         {
             logInfo("LogArchive: Running log archive on directory: " + getLogDirectory().toAbsolutePath().normalize());
             final long startTime = System.currentTimeMillis();
             int archiveCount = 0;
-            // create a Date instance that is starting 2 months before.
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.MONTH, -1);
-            cal.set(Calendar.DAY_OF_MONTH, 1);
-            cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.set(Calendar.MINUTE, 0);
-            cal.set(Calendar.SECOND, 0);
-            cal.set(Calendar.MILLISECOND, 0);
-            Date beforeDate = cal.getTime();
 
             DateFormat df = new SimpleDateFormat("yyyy-MM"); // grouping format
 

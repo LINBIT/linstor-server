@@ -9,6 +9,7 @@ import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
@@ -840,6 +841,21 @@ public class StltApiCallHandler
 
         return interComSerializer.answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, apiCallId.get())
             .errorReports(errorReports).build();
+    }
+
+    public byte[] deleteErrorReports(
+        @Nullable final Date since,
+        @Nullable final Date to,
+        @Nullable final String exception,
+        @Nullable final String version,
+        @Nullable final List<String> ids)
+    {
+        ApiCallRc rc = errorReporter.deleteErrorReports(since, to, exception, version, ids);
+
+        return interComSerializer
+            .answerBuilder(ApiConsts.API_DEL_ERROR_REPORT, apiCallId.get())
+            .apiCallAnswerMsg(rc)
+            .build();
     }
 
     public boolean modifyStltConfig(StltConfigOuterClass.StltConfig stltConfRef)

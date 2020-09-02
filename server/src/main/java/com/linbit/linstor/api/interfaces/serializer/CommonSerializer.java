@@ -11,6 +11,7 @@ import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
+import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -56,6 +57,7 @@ public interface CommonSerializer
         CommonSerializerBuilder bytes(byte[] bytes);
 
         CommonSerializerBuilder apiCallRcSeries(ApiCallRc apiCallRc);
+        CommonSerializerBuilder apiCallAnswerMsg(ApiCallRc apiCallRc);
 
         CommonSerializerBuilder event(
             Integer watchId,
@@ -75,6 +77,14 @@ public interface CommonSerializer
             Date since,
             Date to,
             Set<String> ids
+        );
+
+        CommonSerializerBuilder deleteErrorReports(
+            @Nullable final Date since,
+            @Nullable final Date to,
+            @Nullable final String exception,
+            @Nullable final String version,
+            @Nullable final List<String> ids
         );
 
         CommonSerializerBuilder requestSosReport(Date since);

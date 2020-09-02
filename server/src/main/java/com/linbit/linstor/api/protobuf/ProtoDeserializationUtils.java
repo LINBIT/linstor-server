@@ -18,6 +18,7 @@ import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
 import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
+import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -25,6 +26,8 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.StringUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -73,6 +76,24 @@ public class ProtoDeserializationUtils
         return new ApiCallRcImpl(apiCallRcs.stream()
             .map(apiCallResponse -> parseApiCallRc(apiCallResponse, ""))
             .collect(Collectors.toList()));
+    }
+
+    public static ApiCallRc parseApiCallRcList(
+        List<ApiCallResponseOuterClass.ApiCallResponse> apiCallRcs,
+        final String messagePrefix
+    )
+    {
+        return new ApiCallRcImpl(apiCallRcs.stream()
+            .map(apiCallResponse -> parseApiCallRc(apiCallResponse, messagePrefix))
+            .collect(Collectors.toList()));
+    }
+
+    public static ApiCallRc parseApiCallAnswerMsg(
+        final ByteArrayInputStream protobufMsg,
+        final String messagePrefix) throws IOException
+    {
+        MsgApiRcResponse apiCallResponse = MsgApiRcResponse.parseDelimitedFrom(protobufMsg);
+        return parseApiCallRcList(apiCallResponse.getResponsesList(), messagePrefix);
     }
 
     public static byte[] extractByteArray(ByteString protoBytes)

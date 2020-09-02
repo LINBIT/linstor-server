@@ -1,13 +1,19 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlErrorListApiCallHandler;
 import com.linbit.linstor.logging.ErrorReport;
 
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -18,6 +24,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -157,5 +165,45 @@ public class ErrorReports
             .next();
 
         requestHelper.doFlux(asyncResponse, flux);
+    }
+
+    @PATCH
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void deleteErrorReports(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData)
+    {
+        try
+        {
+            JsonGenTypes.ErrorReportDelete data = objectMapper.readValue(
+                jsonData, JsonGenTypes.ErrorReportDelete.class);
+
+            Date optSince = data.since != null ? new Date(data.since) : null;
+            Date optTo = data.to != null ? new Date(data.to) : null;
+            Flux<ApiCallRc> flux = ctrlErrorListApiCallHandler
+                .deleteErrorReports(optSince, optTo, data.nodes, data.exception, data.version, data.ids)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_ERROR_REPORTS, request));
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+    }
+
+    @DELETE
+    @Path("{reportId}")
+    public void deleteErrorReport(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("reportId") String reportId)
+    {
+        Flux<ApiCallRc> flux = ctrlErrorListApiCallHandler.deleteErrorReports(
+                null, null, null, null, null, Collections.singletonList(reportId))
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_ERROR_REPORT, request));
+
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
 }

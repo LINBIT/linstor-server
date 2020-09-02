@@ -112,9 +112,11 @@ import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
+import com.linbit.linstor.proto.requests.MsgDelErrorReportsOuterClass.MsgDelErrorReports;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
 import com.linbit.linstor.proto.requests.MsgReqSosReportOuterClass.MsgReqSosReport;
 import com.linbit.linstor.proto.responses.FileOuterClass.File;
+import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
 import com.linbit.linstor.proto.responses.MsgSosReportOuterClass.MsgSosReport;
@@ -399,6 +401,22 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
+    public CommonSerializer.CommonSerializerBuilder apiCallAnswerMsg(ApiCallRc apiCallRc)
+    {
+        try
+        {
+            MsgApiRcResponse.Builder bld = MsgApiRcResponse.newBuilder();
+            bld.addAllResponses(serializeApiCallRc(apiCallRc));
+            bld.build().writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
     public CommonSerializer.CommonSerializerBuilder event(
         Integer watchId,
         EventIdentifier eventIdentifier,
@@ -584,6 +602,41 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 errReport.getText().ifPresent(msgErrorReport::setText);
                 msgErrorReport.build().writeDelimitedTo(baos);
             }
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder deleteErrorReports(
+        @Nullable final Date since,
+        @Nullable final Date to,
+        @Nullable final String exception,
+        @Nullable final String version,
+        @Nullable final List<String> ids)
+    {
+        try
+        {
+            final MsgDelErrorReports.Builder bld = MsgDelErrorReports.newBuilder();
+            if (since != null) {
+                bld.setSince(since.getTime());
+            }
+            if (to != null) {
+                bld.setTo(to.getTime());
+            }
+            if (exception != null) {
+                bld.setException(exception);
+            }
+            if (version != null) {
+                bld.setVersion(version);
+            }
+            if (ids != null) {
+                bld.addAllIds(ids);
+            }
+            bld.build().writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

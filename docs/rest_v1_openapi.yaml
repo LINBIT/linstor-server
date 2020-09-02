@@ -23,6 +23,7 @@ info:
 
     * 1.4.0
        - Added promotion_score and may_promote to DrbdResource object
+       - Added /v1/error-reports DELETE method, to delete a range of error reports or single ones
     * 1.3.0
        - Added /v1/view/snapshot-shippings
     * 1.2.0
@@ -3523,6 +3524,26 @@ paths:
           description: Query parameter invalid.
         '500':
           $ref: '#/components/responses/OperationFailed'
+    patch:
+      tags:
+        - developers
+      summary: Deletes a range of error-reports
+      operationId: errorReportDelete
+      description: Deletes a range of error-reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorReportDelete'
+      responses:
+        '200':
+          description: error-reports deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
   /v1/error-reports/{reportid}:
     get:
       tags:
@@ -3568,6 +3589,28 @@ paths:
                   $ref: '#/components/schemas/ErrorReport'
         '404':
           description: Query parameter invalid.
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+    delete:
+      tags:
+        - developers
+      summary: Deletes a single error-report
+      operationId: errorReportDelete
+      description: Deletes a single error-report
+      parameters:
+        - name: reportid
+          in: path
+          required: true
+          description: Error id to select
+          schema:
+            type: string
+      responses:
+        '200':
+          description: error-report deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRc'
         '500':
           $ref: '#/components/responses/OperationFailed'
 
@@ -5299,6 +5342,33 @@ components:
           type: integer
           format: int32
           description: Origin line number
+    ErrorReportDelete:
+      type: object
+      properties:
+        since:
+          type: integer
+          format: int64
+          description: timestamp in millis start date to delete
+        to:
+          type: integer
+          format: int64
+          description: timestamp in millis for the end date to delete
+        nodes:
+          type: array
+          description: on which nodes to delete error-reports, if empty/null all nodes
+          items:
+            type: string
+        exception:
+          type: string
+          description: delete all error reports with the given exception
+        version:
+          type: string
+          description: delete all error reports from the given version
+        ids:
+          type: array
+          description: error report ids to delete
+          items:
+            type: string
     KeyValueStore:
       type: object
       properties:

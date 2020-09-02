@@ -1,8 +1,11 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -12,7 +15,6 @@ import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LinstorFile;
-import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass;
@@ -30,10 +32,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -71,6 +73,116 @@ public class CtrlErrorListApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
     }
 
+    public Flux<ApiCallRc> deleteErrorReports(
+        @Nullable final Date since,
+        @Nullable final Date to,
+        @Nullable final List<String> nodes,
+        @Nullable final String exception,
+        @Nullable final String version,
+        @Nullable final List<String> ids
+    )
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Delete error reports on nodes",
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
+                () -> assembleDeleteRequests(since, to, nodes, exception, version, ids))
+            .collectList()
+            .flatMapMany(deleteAnswer ->
+                scopeRunner.fluxInTransactionalScope(
+                    "Delete error report on controller and build api answers",
+                    lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP),
+                    () -> assembleDeleteRcs(since, to, nodes, exception, version, ids, deleteAnswer)
+                ));
+    }
+
+    private Flux<Tuple2<NodeName, ByteArrayInputStream>> assembleDeleteRequests(
+        @Nullable final Date since,
+        @Nullable final Date to,
+        @Nullable final List<String> nodes,
+        @Nullable final String exception,
+        @Nullable final String version,
+        @Nullable final List<String> ids)
+        throws AccessDeniedException
+    {
+        Set<String> nodesFilter = nodes != null ?
+            nodes.stream().map(String::toLowerCase).collect(Collectors.toSet()) : Collections.emptySet();
+        final Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream();
+
+        List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> nameAndRequests = nodeStream
+            .filter(n -> nodesFilter.isEmpty() || nodesFilter.contains(n.getName().displayValue.toLowerCase()))
+            .map(node -> Tuples.of(node.getName(), prepareErrDelReq(node, since, to, exception, version, ids)))
+            .collect(Collectors.toList());
+
+        return Flux
+            .fromIterable(nameAndRequests)
+            .flatMap(nameAndRequest -> nameAndRequest.getT2()
+                .map(byteStream -> Tuples.of(nameAndRequest.getT1(), byteStream)));
+    }
+
+    private Flux<ByteArrayInputStream> prepareErrDelReq(
+        final Node node,
+        @Nullable final Date since,
+        @Nullable final Date to,
+        @Nullable final String exception,
+        @Nullable final String version,
+        @Nullable final List<String> ids)
+    {
+        Peer peer = getPeer(node);
+        Flux<ByteArrayInputStream> fluxReturn = Flux.empty();
+        if (peer != null)
+        {
+            byte[] msg = stltComSerializer.headerlessBuilder()
+                .deleteErrorReports(since, to, exception, version, ids).build();
+            fluxReturn = peer.apiCall(ApiConsts.API_DEL_ERROR_REPORT, msg)
+                .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+        }
+        return fluxReturn;
+    }
+
+    private Flux<ApiCallRc> assembleDeleteRcs(
+        @Nullable final Date since,
+        @Nullable final Date to,
+        @Nullable final List<String> nodes,
+        @Nullable final String exception,
+        @Nullable final String version,
+        @Nullable final List<String> ids,
+        List<Tuple2<NodeName, ByteArrayInputStream>> deleteAnswers)
+        throws IOException
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        if (nodes == null ||
+            nodes.isEmpty() ||
+            nodes.stream().anyMatch(n -> n.equalsIgnoreCase(LinStor.CONTROLLER_MODULE)))
+        {
+            // delete on controller
+            apiCallRc.addEntries(errorReporter.deleteErrorReports(
+                since,
+                to,
+                exception,
+                version,
+                ids
+            ));
+        }
+
+        // Returned satellite error deletion answers
+        for (Tuple2<NodeName, ByteArrayInputStream> deleteAnswer : deleteAnswers)
+        {
+            NodeName nodeName = deleteAnswer.getT1();
+            ByteArrayInputStream dataIn = deleteAnswer.getT2();
+
+            ApiCallRc nodeApis = ProtoDeserializationUtils.parseApiCallAnswerMsg(dataIn,nodeName.displayValue + ": ");
+            nodeApis.getEntries().forEach(entry -> entry.getObjRefs().put(ApiConsts.KEY_NODE, nodeName.displayValue));
+            apiCallRc.addEntries(nodeApis);
+        }
+        if (apiCallRc.isEmpty())
+        {
+            apiCallRc.addEntry("No error reports deleted.", ApiConsts.INFO_NOOP);
+        }
+        return Flux.just(apiCallRc);
+    }
+
     public Flux<List<ErrorReport>> listErrorReports(
         final Set<String> nodes,
         boolean withContent,
@@ -89,7 +201,7 @@ public class CtrlErrorListApiCallHandler
             .flatMapMany(errorReportAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble error report list",
-                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
+                    lockGuardFactory.buildDeferred(LockType.READ), // no lock needed
                     () -> Flux.just(assembleList(nodes, withContent, since, to, ids, errorReportAnswers))
                 )
             );
