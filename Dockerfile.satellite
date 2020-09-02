@@ -31,15 +31,20 @@ RUN mkdir -p /tmp/linstor-$LINSTOR_VERSION
 RUN cd /tmp && wget https://www.linbit.com/downloads/linstor/$LINSTOR_TGZ # !lbbuild
 # =lbbuild COPY /${LINSTOR_TGZ} /tmp/
 
+# =lbbuild COPY /pkgcache/* /tmp/pkgcache/
+
 USER makepkg
 
 RUN cd ${HOME} && \
   cp /tmp/${LINSTOR_TGZ} ${HOME} && \
   mkdir -p ${HOME}/rpmbuild/SOURCES && \
+  mkdir -p ${HOME}/rpmbuild/RPMS/noarch && \
   cp /tmp/${LINSTOR_TGZ} ${HOME}/rpmbuild/SOURCES && \
   tar xvf ${LINSTOR_TGZ} && \
   cd ${LINSTOR_TGZNAME}-${LINSTOR_VERSION} && \
-  PATH=/opt/gradle/gradle-$GRADLE_VERSION/bin:$PATH rpmbuild -bb --define "debug_package %{nil}"  linstor.spec
+  ( cp /tmp/pkgcache/linstor-common*.rpm    ${HOME}/rpmbuild/RPMS/noarch/ && \
+    cp /tmp/pkgcache/linstor-satellite*.rpm ${HOME}/rpmbuild/RPMS/noarch/    \
+  ) || PATH=/opt/gradle/gradle-$GRADLE_VERSION/bin:$PATH rpmbuild -bb --define "debug_package %{nil}"  linstor.spec
 
 
 FROM quay.io/linbit/drbd-utils
