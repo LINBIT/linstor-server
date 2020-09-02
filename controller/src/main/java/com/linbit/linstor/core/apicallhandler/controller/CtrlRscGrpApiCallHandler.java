@@ -817,7 +817,7 @@ public class CtrlRscGrpApiCallHandler
                     layerStackDevLayerKind,
                     autoPlaceConfig.getProviderList(),
                     autoPlaceConfig.getDisklessOnRemaining(),
-                    autoPlaceConfig.skipAlreadyPlacedOnNodeCheck()
+                    autoPlaceConfig.skipAlreadyPlacedOnNodeNamesCheck()
                 );
                 deployedResources = ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
                     /*

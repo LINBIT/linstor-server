@@ -74,6 +74,7 @@ public class CtrlRscAutoPlaceApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<CtrlRscAutoHelper> autoHelperProvider;
+    private CtrlRscToggleDiskApiCallHandler toggleDiskHelper;
 
     @Inject
     public CtrlRscAutoPlaceApiCallHandler(
@@ -90,7 +91,8 @@ public class CtrlRscAutoPlaceApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<CtrlRscAutoHelper> autoHelperProviderRef
+        Provider<CtrlRscAutoHelper> autoHelperProviderRef,
+        CtrlRscToggleDiskApiCallHandler toggleDiskHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -107,6 +109,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         autoHelperProvider = autoHelperProviderRef;
+        toggleDiskHelper = toggleDiskHelperRef;
     }
 
     public Flux<ApiCallRc> autoPlace(
@@ -174,11 +177,13 @@ public class CtrlRscAutoPlaceApiCallHandler
         List<Resource> alreadyPlaced = privilegedStreamResources(
             ctrlApiDataLoader.loadRscDfn(rscNameStr, true)
         )
+            .collect(Collectors.toList());
+        List<Resource> alreadyPlacedDiskless = alreadyPlaced.stream()
             .filter(rsc ->
             {
                 try
                 {
-                    return !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER);
+                    return rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
                 }
                 catch (AccessDeniedException exc)
                 {
@@ -189,7 +194,7 @@ public class CtrlRscAutoPlaceApiCallHandler
 
         int additionalPlaceCount = Optional.ofNullable(
             mergedSelectFilter.getReplicaCount()
-        ).orElse(0) - alreadyPlaced.size();
+        ).orElse(0) - (alreadyPlaced.size() - alreadyPlacedDiskless.size());
 
         if (additionalPlaceCount < 0)
         {
@@ -207,9 +212,11 @@ public class CtrlRscAutoPlaceApiCallHandler
         }
         else
         {
-            storPoolNameList = Collections.singletonList(
-                ctrlPropsHelper.getProps(alreadyPlaced.get(0)).map().get(InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME)
-            );
+            String autoSelectedStorPoolName = ctrlPropsHelper.getProps(alreadyPlaced.get(0)).map()
+                .get(InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME);
+            storPoolNameList = autoSelectedStorPoolName != null && !autoSelectedStorPoolName.trim().isEmpty() ?
+                Collections.singletonList(autoSelectedStorPoolName) :
+                Collections.emptyList();
         }
 
         errorReporter.logDebug(
@@ -237,6 +244,9 @@ public class CtrlRscAutoPlaceApiCallHandler
         }
         else
         {
+            List<String> disklessNodeNames = alreadyPlacedDiskless.stream()
+                .map(rsc -> rsc.getNode().getName().displayValue).collect(Collectors.toList());
+
             AutoSelectFilterPojo autoStorConfig = new AutoSelectFilterPojo(
                 additionalPlaceCount,
                 mergedSelectFilter.getNodeNameList(),
@@ -254,7 +264,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 mergedSelectFilter.getLayerStackList(),
                 mergedSelectFilter.getProviderList(),
                 mergedSelectFilter.getDisklessOnRemaining(), // should be ignored anyways
-                mergedSelectFilter.skipAlreadyPlacedOnNodeCheck()
+                disklessNodeNames
             );
 
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);
@@ -353,7 +363,6 @@ public class CtrlRscAutoPlaceApiCallHandler
             Resource rsc = createdRsc.objB.extractApiCallRc(responses);
             autoFlux.addAll(createdRsc.objA);
             deployedResources.add(rsc);
-
             // bypass the whilteList
             ctrlPropsHelper.getProps(rsc).map().put(
                 InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME,
@@ -424,6 +433,24 @@ public class CtrlRscAutoPlaceApiCallHandler
         );
 
         return new Pair<>(autoFlux, deployedResources);
+    }
+
+    private boolean isFlagSet(Resource rsc, Resource.Flags... flags)
+    {
+        boolean flagSet = false;
+        try
+        {
+            flagSet = rsc.getStateFlags().isSet(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + CtrlRscApiCallHandler.getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return flagSet;
     }
 
     private long calculateResourceDefinitionSize(String rscNameStr)

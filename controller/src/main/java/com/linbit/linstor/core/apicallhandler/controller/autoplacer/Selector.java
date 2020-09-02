@@ -77,7 +77,16 @@ class Selector
             {
                 Resource rsc = rscIt.next();
                 Node node = rsc.getNode();
-                alreadyDeployedOnNodes.add(node);
+
+                List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilterRef.skipAlreadyPlacedOnNodeNamesCheck();
+                if (
+                    skipAlreadyPlacedOnNodeNamesCheck == null ||
+                        !skipAlreadyPlacedOnNodeNamesCheck.contains(node.getName().displayValue)
+                )
+                {
+                    alreadyDeployedOnNodes.add(node);
+                }
+
                 nodeStrList.add(node.getName().displayValue);
 
                 // determine already selected provider kind
@@ -540,11 +549,7 @@ class Selector
         private void clear() throws AccessDeniedException
         {
             selectedNodes.clear();
-            Boolean skipAlreadyPlacedOnNodeCheck = selectFilter.skipAlreadyPlacedOnNodeCheck();
-            if (skipAlreadyPlacedOnNodeCheck == null || !skipAlreadyPlacedOnNodeCheck)
-            {
-                selectedNodes.addAll(alreadyDeployedOnNodes);
-            }
+            selectedNodes.addAll(alreadyDeployedOnNodes);
 
             selectedProviderKind = null;
 

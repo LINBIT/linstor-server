@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.inject.Key;
@@ -294,7 +295,9 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                                 null,
                                 null,
                                 null,
-                                true
+                                rscDfn.streamResource(sysCtx)
+                                    .map(tmpRsc -> tmpRsc.getNode().getName().displayValue)
+                                    .collect(Collectors.toList())
                             ),
                             rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
                         ),

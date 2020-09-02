@@ -328,20 +328,23 @@ class StorPoolFilter
                         matchesRegex = ignored -> false;
                     }
 
-                    Iterator<Resource> iterateResources = node.iterateResources(apiAccCtx);
-                    while (nodeMatches && iterateResources.hasNext())
+                    if (!selectFilter.skipAlreadyPlacedOnNodeNamesCheck().contains(nodeDisplayValue))
                     {
-                        String rscName = iterateResources.next().getDefinition().getName().value;
-
-                        boolean hasRscDeployed = matchesRegex.test(rscName) || containedInList.test(rscName);
-                        nodeMatches = !hasRscDeployed;
-                        if (hasRscDeployed)
+                        Iterator<Resource> iterateResources = node.iterateResources(apiAccCtx);
+                        while (nodeMatches && iterateResources.hasNext())
                         {
-                            errorReporter.logTrace(
-                                "Autoplacer.Filter: Disqualifying node '%s' as it has resource '%s' deployed",
-                                nodeDisplayValue,
-                                rscName
-                            );
+                            String rscName = iterateResources.next().getDefinition().getName().value;
+
+                            boolean hasRscDeployed = matchesRegex.test(rscName) || containedInList.test(rscName);
+                            nodeMatches = !hasRscDeployed;
+                            if (hasRscDeployed)
+                            {
+                                errorReporter.logTrace(
+                                    "Autoplacer.Filter: Disqualifying node '%s' as it has resource '%s' deployed",
+                                    nodeDisplayValue,
+                                    rscName
+                                );
+                            }
                         }
                     }
                 }

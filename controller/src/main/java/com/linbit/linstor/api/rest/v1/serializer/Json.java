@@ -792,7 +792,7 @@ public class Json
         }
 
         @Override
-        public Boolean skipAlreadyPlacedOnNodeCheck()
+        public List<String> skipAlreadyPlacedOnNodeNamesCheck()
         {
             return null;
         }
