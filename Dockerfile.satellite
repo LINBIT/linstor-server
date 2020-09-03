@@ -69,8 +69,8 @@ RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Cri
 
 # repo for additional tools not in UBI (cryptsetup,...)
 COPY --from=builder /etc/pki/rpm-gpg/tools-key /etc/pki/rpm-gpg/
-COPY scripts/centos_cleafos_tools.sh /tmp/
-RUN /tmp/centos_cleafos_tools.sh "$ARCH"
+COPY scripts/centos_clefos_tools.sh /tmp/
+RUN /tmp/centos_clefos_tools.sh "$ARCH"
 
 # linbit public repo for thin-send-recv
 RUN curl https://packages.linbit.com/package-signing-pubkey.asc > /etc/pki/rpm-gpg/package-signing-pubkey.asc
