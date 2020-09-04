@@ -353,6 +353,8 @@ public class Json
         drbdResource.drbd_volumes = drbdRscPojo.getVolumeList().stream()
             .map(Json::pojoToDrbdVolume)
             .collect(Collectors.toList());
+        drbdResource.promotion_score = drbdRscPojo.getPromotionScore();
+        drbdResource.may_promote = drbdRscPojo.mayPromote();
         return drbdResource;
     }
 

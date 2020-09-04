@@ -9,9 +9,10 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ConnectionStateEvent;
 import com.linbit.linstor.event.common.ResourceStateEvent;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Map;
@@ -131,6 +132,24 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     }
 
     @Override
+    public void promotionScoreChanged(DrbdResource resource, Integer prevPromitionScore, Integer current)
+    {
+        if (resource.isKnownByLinstor())
+        {
+            triggerResourceStateEvent(resource);
+        }
+    }
+
+    @Override
+    public void mayPromoteChanged(DrbdResource resource, @Nullable Boolean prevMayPromote, @Nullable Boolean current)
+    {
+        if (resource.isKnownByLinstor())
+        {
+            triggerResourceStateEvent(resource);
+        }
+    }
+
+    @Override
     public void resourceDestroyed(DrbdResource resource)
     {
         if (resource.isKnownByLinstor())
@@ -211,7 +230,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     {
         resourceStateEvent.get().triggerEvent(
             ObjectIdentifier.resourceDefinition(resource.getResName()),
-            determineUsageState(resource)
+            determineResourceState(resource)
         );
     }
 
@@ -223,14 +242,16 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         );
     }
 
-    private UsageState determineUsageState(DrbdResource drbdResource)
+    private ResourceState determineResourceState(DrbdResource drbdResource)
     {
         Map<VolumeNumber, DrbdVolume> volumesMap = drbdResource.getVolumesMap();
 
-        return new UsageState(
+        return new ResourceState(
             !volumesMap.isEmpty() && volumesMap.values().stream().allMatch(this::volumeReady),
             drbdResource.getRole() == DrbdResource.Role.PRIMARY,
-            volumesMap.values().stream().map(DrbdVolume::getDiskState).allMatch(DrbdVolume.DiskState.UP_TO_DATE::equals)
+            volumesMap.values().stream().map(DrbdVolume::getDiskState).allMatch(DrbdVolume.DiskState.UP_TO_DATE::equals),
+            drbdResource.getPromotionScore(),
+            drbdResource.mayPromote()
         );
     }
 

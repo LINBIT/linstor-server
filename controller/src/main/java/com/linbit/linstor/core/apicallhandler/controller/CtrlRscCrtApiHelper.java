@@ -38,7 +38,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -580,7 +580,7 @@ public class CtrlRscCrtApiHelper
                                     // TODO if anything is allowed above DRBD, this resource-name must be adjusted
                                     ObjectIdentifier.resource(nodeName, rscName)
                                 )
-                                .skipUntil(UsageState::getResourceReady)
+                                .skipUntil(ResourceState::getResourceReady)
                                 .next()
                                 .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
                                 .onErrorResume(

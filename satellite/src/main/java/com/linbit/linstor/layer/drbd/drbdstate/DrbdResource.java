@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 /**
@@ -24,6 +25,8 @@ public class DrbdResource
     public static final String PROP_KEY_RES_NAME = "name";
     public static final String PROP_KEY_ROLE = "role";
     public static final String PROP_KEY_SUSPENDED = "suspended";
+    public static final String PROP_KEY_MAY_PROMOTE = "may_promote";
+    public static final String PROP_KEY_PROMOTION_SCORE = "promotion_score";
 
     public static final String ROLE_LABEL_PRIMARY  = "Primary";
     public static final String ROLE_LABEL_SECONDARY = "Secondary";
@@ -37,7 +40,7 @@ public class DrbdResource
         SECONDARY(ROLE_LABEL_SECONDARY),
         UNKNOWN(ROLE_LABEL_UNKNOWN);
 
-        private String roleLabel;
+        private final String roleLabel;
 
         Role(String label)
         {
@@ -70,6 +73,8 @@ public class DrbdResource
     protected final String resNameStr;
     protected Role resRole;
     protected Boolean suspendedUser;
+    protected Boolean mayPromote;
+    protected Integer promotionScore;
     private final Map<String, DrbdConnection> connList;
     private final Map<VolumeNumber, DrbdVolume> volList;
     protected boolean isLinstorDrbdResource;
@@ -117,6 +122,16 @@ public class DrbdResource
         return suspendedUser;
     }
 
+    public Integer getPromotionScore()
+    {
+        return promotionScore;
+    }
+
+    public Boolean mayPromote()
+    {
+        return mayPromote;
+    }
+
     protected static DrbdResource newFromProps(
         Map<String, String> props,
         ResourceDefinitionMap rscDfnMap
@@ -146,9 +161,12 @@ public class DrbdResource
     }
 
     protected void update(Map<String, String> props, ResourceObserver obs)
+        throws EventsSourceException
     {
         String roleLabel = props.get(PROP_KEY_ROLE);
         String suspendedLabel = props.get(PROP_KEY_SUSPENDED);
+        String mayPromoteLabel = props.get(PROP_KEY_MAY_PROMOTE);
+        String promotionScoreLabel = props.get(PROP_KEY_PROMOTION_SCORE);
 
         if (roleLabel != null)
         {
@@ -162,7 +180,49 @@ public class DrbdResource
 
         if (suspendedLabel != null)
         {
-            suspendedUser = Arrays.stream(suspendedLabel.split(",")).anyMatch(SUSPENDED_LABEL_USER::equals);
+            suspendedUser = Arrays.asList(suspendedLabel.split(",")).contains(SUSPENDED_LABEL_USER);
+        }
+
+        if (mayPromoteLabel != null)
+        {
+            final Boolean prevMayPromote = mayPromote;
+            if (mayPromoteLabel.equals("yes"))
+            {
+                mayPromote = true;
+            }
+            else
+            if (mayPromoteLabel.equals("no"))
+            {
+                mayPromote = false;
+            }
+            else
+            {
+                mayPromote = null;
+            }
+            if (!Objects.equals(prevMayPromote, mayPromote))
+            {
+                obs.mayPromoteChanged(this, prevMayPromote, mayPromote);
+            }
+        }
+
+        if (promotionScoreLabel != null)
+        {
+            final Integer prevPromotionScore = promotionScore;
+            try
+            {
+                promotionScore = Integer.parseInt(promotionScoreLabel);
+            }
+            catch (NumberFormatException nfExc)
+            {
+                promotionScore = null;
+                throw new EventsSourceException(
+                    "Event line with unparsable " + PROP_KEY_PROMOTION_SCORE + " number"
+                );
+            }
+            if (!Objects.equals(prevPromotionScore, promotionScore))
+            {
+                obs.promotionScoreChanged(this, prevPromotionScore, promotionScore);
+            }
         }
     }
 
@@ -175,7 +235,7 @@ public class DrbdResource
                 new NullPointerException()
             );
         }
-        DrbdConnection conn = null;
+        DrbdConnection conn;
         synchronized (connList)
         {
             conn = connList.get(name);
@@ -201,7 +261,7 @@ public class DrbdResource
                 new NullPointerException()
             );
         }
-        DrbdConnection removedConn = null;
+        DrbdConnection removedConn;
         synchronized (connList)
         {
             removedConn = connList.remove(name);
@@ -221,7 +281,7 @@ public class DrbdResource
 
     public DrbdVolume getVolume(VolumeNumber volNr)
     {
-        DrbdVolume vol = null;
+        DrbdVolume vol;
         synchronized (volList)
         {
             vol = volList.get(volNr);
@@ -259,7 +319,7 @@ public class DrbdResource
 
     DrbdVolume removeVolume(VolumeNumber volNr)
     {
-        DrbdVolume removedVol = null;
+        DrbdVolume removedVol;
         synchronized (volList)
         {
             removedVol = volList.remove(volNr);

@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.3.0";
+    public static final String REST_API_VERSION = "1.4.0";
 
     /**
      * Common api reply structure
@@ -320,6 +320,8 @@ public class JsonGenTypes
         public List<String> flags = Collections.emptyList();
         public List<DrbdVolume> drbd_volumes = Collections.emptyList();
         public Map<String, DrbdConnection> connections = Collections.emptyMap();
+        public Integer promotion_score;
+        public Boolean may_promote;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

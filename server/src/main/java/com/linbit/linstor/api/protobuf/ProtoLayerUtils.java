@@ -88,7 +88,9 @@ public class ProtoLayerUtils
                             protoDrbdRsc.getAlSize(),
                             protoDrbdRsc.getFlags(),
                             new ArrayList<>(),
-                            protoRscData.getSuspend()
+                            protoRscData.getSuspend(),
+                            null,
+                            null
                         );
 
                         for (DrbdVlm protoDrbdVlm : protoDrbdRsc.getDrbdVlmsList())

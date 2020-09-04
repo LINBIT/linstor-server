@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * 1.4.0
+       - Added promotion_score and may_promote to DrbdResource object
     * 1.3.0
        - Added /v1/view/snapshot-shippings
     * 1.2.0
@@ -96,7 +98,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.3.0
+  version: 1.4.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -4478,6 +4480,11 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/DrbdConnection'
+        promotion_score:
+          type: integer
+          format: int32
+        may_promote:
+          type: boolean
     StorageResource:
       type: object
       properties:

@@ -4,6 +4,9 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -12,6 +15,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.security.AccessContext;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 
@@ -25,6 +29,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.google.inject.Key;
 import reactor.core.publisher.Flux;
 
 /**
@@ -37,6 +42,8 @@ public class EventProcessor
     private final Map<String, Provider<EventHandler>> eventHandlers;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<Peer> peerProvider;
+    private final AccessContext sysCtx;
+    private final LinStorScope linstorScope;
 
     // Synchronizes access to incomingEventStreamStore and pendingEventsPerPeer
     private final ReentrantLock eventHandlingLock;
@@ -45,16 +52,20 @@ public class EventProcessor
 
     @Inject
     public EventProcessor(
+        @SystemContext AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
         Map<String, Provider<EventHandler>> eventHandlersRef,
         LockGuardFactory lockGuardFactoryRef,
-        Provider<Peer> peerProviderRef
+        Provider<Peer> peerProviderRef,
+        LinStorScope linstorScopeRef
     )
     {
         errorReporter = errorReporterRef;
         eventHandlers = eventHandlersRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerProvider = peerProviderRef;
+        linstorScope = linstorScopeRef;
+        sysCtx = sysCtxRef;
 
         eventHandlingLock = new ReentrantLock();
         incomingEventStreamStore = new EventStreamStoreImpl();
@@ -166,6 +177,8 @@ public class EventProcessor
         EventIdentifier eventIdentifier
     )
     {
+        linstorScope.enter();
+        linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
         try
         {
             eventHandler.get().execute(
@@ -176,5 +189,6 @@ public class EventProcessor
             errorReporter.reportError(exc, null, null,
                 "Event handler for " + eventIdentifier + " failed on connection closed");
         }
+        linstorScope.exit();
     }
 }

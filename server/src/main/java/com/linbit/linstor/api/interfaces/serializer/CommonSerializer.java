@@ -6,7 +6,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.event.EventIdentifier;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
@@ -65,7 +65,7 @@ public interface CommonSerializer
 
         CommonSerializerBuilder volumeDiskState(String diskState);
 
-        CommonSerializerBuilder resourceStateEvent(UsageState usageState);
+        CommonSerializerBuilder resourceStateEvent(ResourceState resourceState);
 
         CommonSerializerBuilder connectionState(String connectionState);
 

@@ -9,15 +9,15 @@ import javax.inject.Singleton;
 @Singleton
 public class ResourceStateEvent
 {
-    private final LinstorTriggerableEvent<UsageState> event;
+    private final LinstorTriggerableEvent<ResourceState> event;
 
     @Inject
-    public ResourceStateEvent(GenericEvent<UsageState> eventRef)
+    public ResourceStateEvent(GenericEvent<ResourceState> eventRef)
     {
         event = eventRef;
     }
 
-    public LinstorTriggerableEvent<UsageState> get()
+    public LinstorTriggerableEvent<ResourceState> get()
     {
         return event;
     }

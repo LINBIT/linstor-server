@@ -11,7 +11,7 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -92,12 +92,14 @@ public class LuksLayer implements DeviceLayer
             boolean isActive = rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE);
             resourceProcessorProvider.get().sendResourceCreatedEvent(
                 layerDataRef,
-                new UsageState(
+                new ResourceState(
                     isActive,
                     // we could check here if one of your LuksVlms is open - but this method is only called
                     // right after the creation, where nothing can be in use now.
                     false,
-                    isActive
+                    isActive,
+                    null,
+                    null
                 )
             );
         }

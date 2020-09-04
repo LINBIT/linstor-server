@@ -16,7 +16,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -90,10 +90,12 @@ public class StorageLayer implements DeviceLayer
             boolean isActive = rscFlags.isSet(storDriverAccCtx, Resource.Flags.INACTIVE);
             resourceProcessorProvider.get().sendResourceCreatedEvent(
                 layerDataRef,
-                new UsageState(
+                new ResourceState(
                     isActive,
                     null, // will be mapped to unknown
-                    isActive
+                    isActive,
+                    null,
+                    null
                 )
             );
         }

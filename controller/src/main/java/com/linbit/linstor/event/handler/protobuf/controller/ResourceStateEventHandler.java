@@ -3,7 +3,6 @@ package com.linbit.linstor.event.handler.protobuf.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -13,18 +12,21 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventIdentifier;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
-import com.linbit.linstor.event.common.UsageState;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -32,9 +34,9 @@ import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 
 @ProtobufEventHandler(
     eventName = InternalApiConsts.EVENT_RESOURCE_STATE
@@ -49,8 +51,6 @@ public class ResourceStateEventHandler implements EventHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final LockGuardFactory lockGuardFactory;
     private final AutoDiskfulTask autoDiskfulTask;
-    private final StltConfigAccessor stltConfigAccesor;
-    private final ErrorReporter errorReporter;
 
     @Inject
     public ResourceStateEventHandler(
@@ -60,9 +60,7 @@ public class ResourceStateEventHandler implements EventHandler
         ResourceStateEvent resourceStateEventRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         LockGuardFactory lockGuardFactoryRef,
-        AutoDiskfulTask autoDiskfulTaskRef,
-        StltConfigAccessor stltConfigAccesorRef,
-        ErrorReporter errorReporterRef
+        AutoDiskfulTask autoDiskfulTaskRef
     )
     {
         apiCtx = apiCtxRef;
@@ -72,15 +70,13 @@ public class ResourceStateEventHandler implements EventHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         lockGuardFactory = lockGuardFactoryRef;
         autoDiskfulTask = autoDiskfulTaskRef;
-        stltConfigAccesor = stltConfigAccesorRef;
-        errorReporter = errorReporterRef;
     }
 
     @Override
     public void execute(String eventAction, EventIdentifier eventIdentifier, InputStream eventDataIn)
         throws IOException
     {
-        UsageState usageState;
+        ResourceState resourceState;
 
         if (eventAction.equals(InternalApiConsts.EVENT_STREAM_VALUE))
         {
@@ -112,13 +108,21 @@ public class ResourceStateEventHandler implements EventHandler
                 )
             );
 
-            usageState = new UsageState(
+            final Integer promotionScore = eventRscState.hasPromotionScore() ?
+                eventRscState.getPromotionScore() : null;
+            final Boolean mayPromote = eventRscState.hasMayPromote() ?
+                eventRscState.getMayPromote() : null;
+
+            resourceState = new ResourceState(
                 eventRscState.getReady(),
                 inUse,
-                eventRscState.getUpToDate()
+                eventRscState.getUpToDate(),
+                promotionScore,
+                mayPromote
             );
 
             processEvent(eventIdentifier, inUse);
+            processEventUpdateVolatile(eventIdentifier, promotionScore, mayPromote);
         }
         else
         {
@@ -130,10 +134,11 @@ public class ResourceStateEventHandler implements EventHandler
                 )
             );
 
-            usageState = null;
+            processEventUpdateVolatile(eventIdentifier, null, null);
+            resourceState = null;
         }
 
-        resourceStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, usageState);
+        resourceStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, resourceState);
     }
 
     private void processEvent(EventIdentifier eventIdentifierRef, Boolean inUseRef)
@@ -142,7 +147,7 @@ public class ResourceStateEventHandler implements EventHandler
         ResourceName resourceName = eventIdentifierRef.getResourceName();
 
             // EventProcessor has already taken write lock on NodesMap
-            try (LockGuard lg = lockGuardFactory.build(LockType.WRITE, LockObj.RSC_DFN_MAP))
+            try (LockGuard ignored = lockGuardFactory.build(LockType.WRITE, LockObj.RSC_DFN_MAP))
             {
                 Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, resourceName, true);
                 StateFlags<Flags> flags = rsc.getStateFlags();
@@ -168,5 +173,33 @@ public class ResourceStateEventHandler implements EventHandler
                 throw new ApiDatabaseException(exc);
             }
             ctrlTransactionHelper.commit();
+    }
+
+    private void processEventUpdateVolatile(
+        EventIdentifier eventIdentifierRef,
+        Integer promotionScore,
+        Boolean mayPromote)
+    {
+        NodeName nodeName = eventIdentifierRef.getNodeName();
+        ResourceName resourceName = eventIdentifierRef.getResourceName();
+
+        // EventProcessor has already taken write lock on NodesMap
+        try (LockGuard ignored = lockGuardFactory.build(LockType.WRITE, LockObj.RSC_DFN_MAP))
+        {
+            Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, resourceName, true);
+
+            Set<AbsRscLayerObject<Resource>> drbdDataSet = LayerRscUtils.getRscDataByProvider(
+                rsc.getLayerData(apiCtx), DeviceLayerKind.DRBD);
+            for (AbsRscLayerObject<Resource> rlo : drbdDataSet)
+            {
+                DrbdRscData<Resource> drbdRscData = ((DrbdRscData<Resource>) rlo);
+                drbdRscData.setPromotionScore(promotionScore);
+                drbdRscData.setMayPromote(mayPromote);
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("ApiCtx does not have enough privileges");
+        }
     }
 }

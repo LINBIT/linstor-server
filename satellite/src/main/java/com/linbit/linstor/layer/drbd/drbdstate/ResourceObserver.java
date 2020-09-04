@@ -2,6 +2,8 @@ package com.linbit.linstor.layer.drbd.drbdstate;
 
 import com.linbit.linstor.core.types.MinorNumber;
 
+import javax.annotation.Nullable;
+
 /**
  * Observes the state of a DRBD resource
  *
@@ -32,6 +34,20 @@ public interface ResourceObserver
     )
     {
         // Do nothing
+    }
+
+    default void promotionScoreChanged(
+        DrbdResource resource,
+        @Nullable Integer prevPromitionScore, @Nullable Integer current
+    )
+    {
+    }
+
+    default void mayPromoteChanged(
+        DrbdResource resource,
+        @Nullable Boolean prevMayPromote, @Nullable Boolean current
+    )
+    {
     }
 
     /**

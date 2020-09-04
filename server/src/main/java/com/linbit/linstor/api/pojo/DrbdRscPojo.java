@@ -7,6 +7,7 @@ import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class DrbdRscPojo implements RscLayerDataApi
@@ -23,6 +24,8 @@ public class DrbdRscPojo implements RscLayerDataApi
     private final long flags;
     private final List<DrbdVlmPojo> vlms;
     private final boolean suspend;
+    private final @Nullable Integer promotionScore;
+    private final @Nullable Boolean mayPromote;
 
     public DrbdRscPojo(
         int idRef,
@@ -35,7 +38,9 @@ public class DrbdRscPojo implements RscLayerDataApi
         long alStripeSizeRef,
         long flagsRef,
         List<DrbdVlmPojo> vlmsRef,
-        boolean suspendRef
+        boolean suspendRef,
+        @Nullable Integer promotionScoreRef,
+        @Nullable Boolean mayPromoteRef
     )
     {
         id = idRef;
@@ -49,6 +54,8 @@ public class DrbdRscPojo implements RscLayerDataApi
         flags = flagsRef;
         vlms = vlmsRef;
         suspend = suspendRef;
+        promotionScore = promotionScoreRef;
+        mayPromote = mayPromoteRef;
     }
 
     @Override
@@ -109,6 +116,17 @@ public class DrbdRscPojo implements RscLayerDataApi
     public boolean getSuspend()
     {
         return suspend;
+    }
+
+    public @Nullable Integer getPromotionScore()
+    {
+        return promotionScore;
+    }
+
+    @Nullable
+    public Boolean mayPromote()
+    {
+        return mayPromote;
     }
 
     @Override

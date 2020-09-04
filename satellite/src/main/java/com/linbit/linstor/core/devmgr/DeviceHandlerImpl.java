@@ -28,7 +28,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.AbortLayerProcessingException;
 import com.linbit.linstor.layer.DeviceLayer.LayerProcessResult;
@@ -754,11 +754,11 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void sendResourceCreatedEvent(AbsRscLayerObject<Resource> layerDataRef, UsageState usageStateRef)
+    public void sendResourceCreatedEvent(AbsRscLayerObject<Resource> layerDataRef, ResourceState resourceStateRef)
     {
         resourceStateEvent.get().triggerEvent(
             ObjectIdentifier.resourceDefinition(layerDataRef.getResourceName()),
-            usageStateRef
+            resourceStateRef
         );
     }
 

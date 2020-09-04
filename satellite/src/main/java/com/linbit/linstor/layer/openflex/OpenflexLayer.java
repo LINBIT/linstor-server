@@ -13,7 +13,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.nvme.NvmeUtils;
 import com.linbit.linstor.layer.storage.openflex.rest.OpenflexRestClient;
@@ -344,10 +344,12 @@ public class OpenflexLayer implements DeviceLayer
         {
             resourceProcessorProvider.get().sendResourceCreatedEvent(
                 ofRscData,
-                new UsageState(
+                new ResourceState(
                     true,
                     null, // will be mapped to unknown
-                    ofRscData.isInUse()
+                    ofRscData.isInUse(),
+                    null,
+                    null
                 )
             );
         }

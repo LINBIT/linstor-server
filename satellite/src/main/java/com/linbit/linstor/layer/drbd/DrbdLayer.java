@@ -478,8 +478,7 @@ public class DrbdLayer implements DeviceLayer
      * the resource specific .res file
      * {@link Resource#delete(AccessContext)} is also called on the given resource
      *
-     * @param drbdRsc
-     * @param rscNameSuffix
+     * @param drbdRscData
      * @throws StorageException
      * @throws DatabaseException
      * @throws AccessDeniedException
@@ -1099,6 +1098,11 @@ public class DrbdLayer implements DeviceLayer
                     {
                         drbdRscData.setPrimary(true);
                     }
+                }
+
+                { // check promotion stuff, not used on Satellite yet
+                    drbdRscData.setPromotionScore(drbdRscState.getPromotionScore());
+                    drbdRscData.setMayPromote(drbdRscState.mayPromote());
                 }
 
                 { // check drbd connections

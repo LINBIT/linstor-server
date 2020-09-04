@@ -44,6 +44,8 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     private final StateFlags<DrbdRscFlags> flags;
 
     // not persisted, serialized
+    private @Nullable Integer promotionScore = null;
+    private @Nullable Boolean mayPromote = null;
 
     // not persisted, not serialized, stlt only
     private boolean requiresAdjust = false;
@@ -245,6 +247,26 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         isPrimary = isPrimaryRef;
     }
 
+    public @Nullable Boolean mayPromote()
+    {
+        return mayPromote;
+    }
+
+    public void setMayPromote(@Nullable Boolean mayPromote)
+    {
+        this.mayPromote = mayPromote;
+    }
+
+    public Integer getPromotionScore()
+    {
+        return promotionScore;
+    }
+
+    public void setPromotionScore(Integer promotionScoreRef)
+    {
+        promotionScore = promotionScoreRef;
+    }
+
     public boolean isSuspended()
     {
         return isSuspended;
@@ -284,7 +306,9 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             alStripeSize,
             flags.getFlagsBits(accCtx),
             vlmPojos,
-            suspend.get()
+            suspend.get(),
+            promotionScore,
+            mayPromote
         );
     }
 }

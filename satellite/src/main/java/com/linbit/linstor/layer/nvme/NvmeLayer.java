@@ -12,7 +12,7 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -306,10 +306,12 @@ public class NvmeLayer implements DeviceLayer
         {
             resourceProcessorProvider.get().sendResourceCreatedEvent(
                 nvmeRscData,
-                new UsageState(
+                new ResourceState(
                     true,
                     null, // will be mapped to unknown
-                    true
+                    true,
+                    null,
+                    null
                 )
             );
         }

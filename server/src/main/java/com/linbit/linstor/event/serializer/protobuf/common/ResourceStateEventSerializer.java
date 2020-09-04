@@ -5,7 +5,7 @@ import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.event.LinstorEvent;
 import com.linbit.linstor.event.WatchableObject;
 import com.linbit.linstor.event.common.ResourceStateEvent;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.ProtobufEventSerializer;
 
@@ -17,7 +17,7 @@ import javax.inject.Singleton;
     objectType = WatchableObject.RESOURCE
 )
 @Singleton
-public class ResourceStateEventSerializer implements EventSerializer, EventSerializer.Serializer<UsageState>
+public class ResourceStateEventSerializer implements EventSerializer, EventSerializer.Serializer<ResourceState>
 {
     private final CommonSerializer commonSerializer;
     private final ResourceStateEvent resourceStateEvent;
@@ -39,9 +39,9 @@ public class ResourceStateEventSerializer implements EventSerializer, EventSeria
     }
 
     @Override
-    public byte[] writeEventValue(UsageState usageState)
+    public byte[] writeEventValue(ResourceState resourceState)
     {
-        return commonSerializer.headerlessBuilder().resourceStateEvent(usageState).build();
+        return commonSerializer.headerlessBuilder().resourceStateEvent(resourceState).build();
     }
 
     @Override

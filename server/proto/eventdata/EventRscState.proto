@@ -17,4 +17,7 @@ message EventRscState
     optional InUse in_use = 2 [default = UNKNOWN];
 
     optional bool up_to_date = 3;
+
+    optional int32 promotion_score = 4;
+    optional bool may_promote = 5;
 }

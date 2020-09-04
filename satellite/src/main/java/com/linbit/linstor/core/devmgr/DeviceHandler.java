@@ -9,7 +9,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.LayerProcessResult;
 import com.linbit.linstor.propscon.Props;
@@ -60,7 +60,7 @@ public interface DeviceHandler
     void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
         throws AccessDeniedException, DatabaseException, StorageException;
 
-    void sendResourceCreatedEvent(AbsRscLayerObject<Resource> layerDataRef, UsageState usageStateRef);
+    void sendResourceCreatedEvent(AbsRscLayerObject<Resource> layerDataRef, ResourceState resourceStateRef);
 
     void sendResourceDeletedEvent(AbsRscLayerObject<Resource> layerDataRef);
 

@@ -19,7 +19,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
@@ -488,10 +488,12 @@ public class WritecacheLayer implements DeviceLayer
                 boolean isActive = rscFlags.isUnset(storDriverAccCtx, Resource.Flags.INACTIVE);
                 resourceProcessorProvider.get().sendResourceCreatedEvent(
                     layerDataRef,
-                    new UsageState(
+                    new ResourceState(
                         isActive,
                         null, // will be mapped to unknown
-                        isActive
+                        isActive,
+                        null,
+                        null
                     )
                 );
             }

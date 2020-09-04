@@ -50,7 +50,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.event.EventIdentifier;
-import com.linbit.linstor.event.common.UsageState;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LinstorFile;
@@ -466,19 +466,27 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder resourceStateEvent(UsageState usageState)
+    public CommonSerializer.CommonSerializerBuilder resourceStateEvent(ResourceState resourceState)
     {
         try
         {
             EventRscStateOuterClass.EventRscState.Builder builder = EventRscStateOuterClass.EventRscState.newBuilder();
-            if (usageState.getResourceReady() != null)
+            if (resourceState.getResourceReady() != null)
             {
-                builder.setReady(usageState.getResourceReady());
+                builder.setReady(resourceState.getResourceReady());
             }
-            builder.setInUse(asProtoInUse(usageState.getInUse()));
-            if (usageState.getUpToDate() != null)
+            builder.setInUse(asProtoInUse(resourceState.getInUse()));
+            if (resourceState.getUpToDate() != null)
             {
-                builder.setUpToDate(usageState.getUpToDate());
+                builder.setUpToDate(resourceState.getUpToDate());
+            }
+            if (resourceState.getPromotionScore() != null)
+            {
+                builder.setPromotionScore(resourceState.getPromotionScore());
+            }
+            if (resourceState.mayPromote() != null)
+            {
+                builder.setMayPromote(resourceState.mayPromote());
             }
 
             builder.build().writeDelimitedTo(baos);

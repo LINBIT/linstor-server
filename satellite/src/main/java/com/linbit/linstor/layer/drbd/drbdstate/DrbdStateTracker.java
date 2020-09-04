@@ -4,9 +4,9 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.core.DrbdStateChange;
 import com.linbit.linstor.core.types.MinorNumber;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,6 +60,12 @@ public class DrbdStateTracker
     // Observe connection state change
     public static final long OBS_CONN       = 0x800;
 
+    // Observe promotion score change
+    public static final long OBS_PROMO_SCORE = 0x1000;
+
+    // Observe may promote change
+    public static final long OBS_PROMO_MAY   = 0x2000;
+
     // Observe everything
     public static final long OBS_ALL        = 0xFFFFFFFFFFFFFFFFL;
 
@@ -76,10 +82,12 @@ public class DrbdStateTracker
     private static final int OBS_CONN_CRT_SLOT;
     private static final int OBS_CONN_DSTR_SLOT;
     private static final int OBS_CONN_SLOT;
+    private static final int OBS_PROMO_SCORE_SLOT;
+    private static final int OBS_PROMO_MAY_SLOT;
 
     private static int obsSlotCount;
-    private Set<ResourceObserver>[] observers;
-    private Map<ResourceObserver, Long> obsMaskMap;
+    private final Set<ResourceObserver>[] observers;
+    private final Map<ResourceObserver, Long> obsMaskMap;
     List<DrbdStateChange> drbdStateChangeObservers;
 
     private final Map<String, DrbdResource> resList;
@@ -108,6 +116,8 @@ public class DrbdStateTracker
         OBS_CONN_CRT_SLOT    = initBitToSlot(OBS_CONN_CRT);
         OBS_CONN_DSTR_SLOT   = initBitToSlot(OBS_CONN_DSTR);
         OBS_CONN_SLOT        = initBitToSlot(OBS_CONN);
+        OBS_PROMO_SCORE_SLOT = initBitToSlot(OBS_PROMO_SCORE);
+        OBS_PROMO_MAY_SLOT   = initBitToSlot(OBS_PROMO_MAY);
     }
 
     @SuppressWarnings("unchecked")
@@ -141,7 +151,7 @@ public class DrbdStateTracker
                 new NullPointerException()
             );
         }
-        DrbdResource res = null;
+        DrbdResource res;
         synchronized (resList)
         {
             res = resList.get(name);
@@ -177,7 +187,7 @@ public class DrbdStateTracker
                 new NullPointerException()
             );
         }
-        DrbdResource removedRes = null;
+        DrbdResource removedRes;
         synchronized (resList)
         {
             removedRes = resList.remove(name);
@@ -269,6 +279,27 @@ public class DrbdStateTracker
             for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_RES_CRT_SLOT])
             {
                 obs.resourceCreated(resource);
+            }
+        }
+
+        @Override
+        public void promotionScoreChanged(DrbdResource resource, Integer prevPromitionScore, Integer current)
+        {
+            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_PROMO_SCORE_SLOT])
+            {
+                obs.promotionScoreChanged(resource, prevPromitionScore, current);
+            }
+        }
+
+        @Override
+        public void mayPromoteChanged(
+            DrbdResource resource,
+            @Nullable Boolean prevMayPromote,
+            @Nullable Boolean current)
+        {
+            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_PROMO_MAY_SLOT])
+            {
+                obs.mayPromoteChanged(resource, prevMayPromote, current);
             }
         }
 
