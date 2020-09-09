@@ -48,7 +48,6 @@ import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LinstorFile;
-import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -66,6 +65,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -79,7 +79,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -92,6 +91,8 @@ import org.slf4j.event.Level;
 @Singleton
 public class StltApiCallHandler
 {
+    private static boolean firstTimeFullSync = true;
+
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final StltConfig stltCfg;
@@ -420,6 +421,25 @@ public class StltApiCallHandler
                 );
             }
             success = true;
+
+            if (firstTimeFullSync)
+            {
+                // only execute this after the very first fullsync, skip when satellite simply reconnects
+                firstTimeFullSync = false;
+
+                String notifySocket = System.getenv("NOTIFY_SOCKET");
+                if (notifySocket != null && !notifySocket.trim().isEmpty())
+                {
+                    extCmdFactory.create().exec("systemd-notify", "READY=1");
+                }
+                else
+                {
+                    errorReporter.logWarning(
+                        "Not calling 'systemd-notify' as NOTIFY_SOCKET is %s",
+                        notifySocket == null ? "null" : "empty"
+                    );
+                }
+            }
         }
         catch (Exception | ImplementationError exc)
         {
