@@ -43,4 +43,10 @@ public class LsIpAddress
         }
         return ipType;
     }
+
+    @Override
+    public String toString()
+    {
+        return getAddress();
+    }
 }
