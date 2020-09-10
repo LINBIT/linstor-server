@@ -46,7 +46,7 @@ public class StorageConstants
     public static final String CONFIG_OF_API_PORT_KEY = ApiConsts.KEY_STOR_POOL_OPENFLEX_API_PORT;
     public static final String CONFIG_OF_STOR_DEV_KEY = ApiConsts.KEY_STOR_POOL_OPENFLEX_STOR_DEV;
     public static final String CONFIG_OF_STOR_DEV_HOST_KEY = ApiConsts.KEY_STOR_POOL_OPENFLEX_STOR_DEV_HOST;
-    public static final String CONFIG_OF_STOR_POOL_KEY = ApiConsts.KEY_STOR_POOL_OPENFLEX_STOR_POOL;
+    public static final String CONFIG_OF_STOR_POOL_KEY = ApiConsts.KEY_STOR_POOL_NAME;
     public static final String CONFIG_OF_USER_NAME_KEY = ApiConsts.KEY_STOR_POOL_OPENFLEX_USER_NAME;
     public static final String CONFIG_OF_USER_PW_KEY = ApiConsts.KEY_STOR_POOL_OPENFLEX_USER_PW;
     public static final String CONFIG_OF_JOB_WAIT_MAX_COUNT = ApiConsts.KEY_STOR_POOL_OPENFLEX_JOB_WAIT_MAX_COUNT;
