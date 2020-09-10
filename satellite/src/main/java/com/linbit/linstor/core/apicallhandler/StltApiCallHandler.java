@@ -92,8 +92,6 @@ import org.slf4j.event.Level;
 @Singleton
 public class StltApiCallHandler
 {
-    private static boolean firstTimeFullSync = true;
-
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final StltConfig stltCfg;
@@ -422,25 +420,6 @@ public class StltApiCallHandler
                 );
             }
             success = true;
-
-            if (firstTimeFullSync)
-            {
-                // only execute this after the very first fullsync, skip when satellite simply reconnects
-                firstTimeFullSync = false;
-
-                String notifySocket = System.getenv("NOTIFY_SOCKET");
-                if (notifySocket != null && !notifySocket.trim().isEmpty())
-                {
-                    extCmdFactory.create().exec("systemd-notify", "READY=1");
-                }
-                else
-                {
-                    errorReporter.logWarning(
-                        "Not calling 'systemd-notify' as NOTIFY_SOCKET is %s",
-                        notifySocket == null ? "null" : "empty"
-                    );
-                }
-            }
         }
         catch (Exception | ImplementationError exc)
         {

@@ -6,6 +6,7 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.drbd.DrbdVersion;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -153,6 +154,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
     private final StltSecurityObjects stltSecObj;
 
+    private static boolean firstTimeDevMgrRun = true;
+    private final ExtCmdFactory extCmdFactory;
+
     private static final ServiceName DEV_MGR_NAME;
     static
     {
@@ -211,7 +215,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         UpdateMonitor updateMonitorRef,
         ResourceStateEvent resourceStateEventRef,
         DeviceHandler deviceHandlerRef,
-        DrbdVersion drbdVersionRef
+        DrbdVersion drbdVersionRef,
+        ExtCmdFactory extCmdFactoryRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -234,6 +239,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         updateMonitor = updateMonitorRef;
         resourceStateEvent = resourceStateEventRef;
         drbdVersion = drbdVersionRef;
+        extCmdFactory = extCmdFactoryRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -543,7 +549,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
     private void devMgrLoop()
     {
-
         SyncPoint phaseLock = new AtomicSyncPoint();
 
         while (!shutdownFlag.get())
@@ -616,6 +621,25 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 if (!drbdVersion.hasDrbd9() || stateAvailable)
                 {
                     phaseDispatchDeviceHandlers(phaseLock);
+
+                    if (firstTimeDevMgrRun && fullSyncApplied)
+                    {
+                        // only execute this after the very first fullsync, skip when satellite simply reconnects
+                        firstTimeDevMgrRun = false;
+
+                        String notifySocket = System.getenv("NOTIFY_SOCKET");
+                        if (notifySocket != null && !notifySocket.trim().isEmpty())
+                        {
+                            extCmdFactory.create().exec("systemd-notify", "READY=1");
+                        }
+                        else
+                        {
+                            errLog.logWarning(
+                                "Not calling 'systemd-notify' as NOTIFY_SOCKET is %s",
+                                notifySocket == null ? "null" : "empty"
+                            );
+                        }
+                    }
                 }
                 else
                 {
