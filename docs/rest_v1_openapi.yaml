@@ -24,6 +24,7 @@ info:
     * unreleased
        - Added promotion_score and may_promote to DrbdResource object
        - Added /v1/error-reports DELETE method, to delete a range of error reports or single ones
+       - Added SSE (Server Sent Events) url /v1/events/drbd/promotion
     * 1.3.0
        - Added /v1/view/snapshot-shippings
     * 1.2.0
@@ -3941,6 +3942,21 @@ paths:
         '500':
           $ref: '#/components/responses/OperationFailed'
 
+  /v1/events/drbd/promotion:
+    get:
+      tags:
+        - developers
+      summary: drbd promotion event changes
+      description: Notifies clients about changes in may_promote of resources
+      responses:
+        '200':
+          description: drbd promotion event stream
+          content:
+            text/event-stream:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/EventMayPromoteChange'
+
 components:
   parameters:
     Resource:
@@ -5653,3 +5669,13 @@ components:
           default: 0
         with_storage_pool:
           $ref: '#/components/schemas/PhysicalStorageStoragePoolCreate'
+    EventMayPromoteChange:
+      type: object
+      description: may-promote-change
+      properties:
+        resource_name:
+          type: string
+        node_name:
+          type: string
+        may_promote:
+          type: boolean

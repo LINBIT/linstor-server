@@ -243,7 +243,7 @@ version = project(':server').version
 project(':controller').version = version
 project(':satellite').version = version
 
-def jerseyVersion = '2.30.1'
+def jerseyVersion = '2.31'
 
 project(':controller') {
     apply plugin: 'application'
@@ -264,6 +264,7 @@ project(':controller') {
             compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
             compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: jerseyVersion
             compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-servlet', version: jerseyVersion
+            compile group: 'org.glassfish.jersey.media', name: 'jersey-media-sse', version: jerseyVersion
 
             // prometheus client library
             compile group: 'io.prometheus', name: 'simpleclient_common', version: '0.9.0'

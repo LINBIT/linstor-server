@@ -3,6 +3,7 @@ package com.linbit.linstor.event.handler.protobuf.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.rest.v1.events.EventHandlerBridge;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -36,6 +37,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Set;
 
 @ProtobufEventHandler(
@@ -51,6 +53,7 @@ public class ResourceStateEventHandler implements EventHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final LockGuardFactory lockGuardFactory;
     private final AutoDiskfulTask autoDiskfulTask;
+    private final EventHandlerBridge eventHandlerBridge;
 
     @Inject
     public ResourceStateEventHandler(
@@ -60,7 +63,8 @@ public class ResourceStateEventHandler implements EventHandler
         ResourceStateEvent resourceStateEventRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         LockGuardFactory lockGuardFactoryRef,
-        AutoDiskfulTask autoDiskfulTaskRef
+        AutoDiskfulTask autoDiskfulTaskRef,
+        EventHandlerBridge eventHandlerBridgeRef
     )
     {
         apiCtx = apiCtxRef;
@@ -70,6 +74,7 @@ public class ResourceStateEventHandler implements EventHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         lockGuardFactory = lockGuardFactoryRef;
         autoDiskfulTask = autoDiskfulTaskRef;
+        eventHandlerBridge = eventHandlerBridgeRef;
     }
 
     @Override
@@ -194,6 +199,10 @@ public class ResourceStateEventHandler implements EventHandler
             {
                 DrbdRscData<Resource> drbdRscData = ((DrbdRscData<Resource>) rlo);
                 drbdRscData.setPromotionScore(promotionScore);
+                if (!Objects.equals(drbdRscData.mayPromote(), mayPromote))
+                {
+                    eventHandlerBridge.triggerMayPromote(rsc, mayPromote);
+                }
                 drbdRscData.setMayPromote(mayPromote);
             }
         }

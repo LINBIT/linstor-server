@@ -1192,6 +1192,14 @@ public class JsonGenTypes
         public PhysicalStorageStoragePoolCreate with_storage_pool;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class EventMayPromoteChange
+    {
+        public String resource_name;
+        public String node_name;
+        public Boolean may_promote;
+    }
+
     private JsonGenTypes()
     {
     }
