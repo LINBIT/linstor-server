@@ -30,7 +30,8 @@ public enum DeviceLayerKind
         ExtTools.DM_CACHE
     ),
     OPENFLEX(
-        false
+        false,
+        ExtTools.NVME
     ),
     STORAGE(true);
     private final ExtTools[] startupVerifications;
