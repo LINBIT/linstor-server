@@ -38,7 +38,7 @@ public class LvmUtils
     public static final String DELIMITER = ";";
     private static final float LVM_DEFAULT_DATA_PERCENT = 100;
 
-    private static final HashMap<Collection<String>, String> CACHED_LVM_CONFIG_STRING = new HashMap<>();
+    private static final HashMap<Set<String>, String> CACHED_LVM_CONFIG_STRING = new HashMap<>();
 
     private LvmUtils()
     {
@@ -74,14 +74,14 @@ public class LvmUtils
         }
     }
 
-    private static String getLvmConfig(ExtCmdFactory extCmdFactory, Collection<String> volumeGroups)
+    private static String getLvmConfig(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
         throws StorageException
     {
         String lvmConfig = CACHED_LVM_CONFIG_STRING.get(volumeGroups);
 
         if (lvmConfig == null)
         {
-            List<String> vlmGrps = new ArrayList<>();
+            Set<String> vlmGrps = new HashSet<>();
             for (String vlmGrp : volumeGroups)
             {
                 int thinPoolIdx = vlmGrp.indexOf("/");
@@ -148,7 +148,7 @@ public class LvmUtils
         return recacheLvmConfig(extCmdFactory, Collections.singleton(volumeGroup));
     }
 
-    private static String recacheLvmConfig(ExtCmdFactory extCmdFactory, Collection<String> volumeGroups)
+    private static String recacheLvmConfig(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
         throws StorageException
     {
         CACHED_LVM_CONFIG_STRING.remove(volumeGroups);
