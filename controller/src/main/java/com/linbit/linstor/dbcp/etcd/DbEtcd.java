@@ -43,8 +43,9 @@ public class DbEtcd implements ControllerETCDDatabase
     private static final String SERVICE_INFO = "ETCD database handler";
     private static final String ETCD_SCHEME = "etcd://";
     private static final String DB_HISTORY_VERSION_KEY = EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version";
+    private static final String DB_HISTORY_VERSION_KEY_PRE34 = "LINSTOR/DBHISTORY/version";
 
-    private AtomicBoolean atomicStarted = new AtomicBoolean(false);
+    private final AtomicBoolean atomicStarted = new AtomicBoolean(false);
 
     private final ErrorReporter errorReporter;
     private final CtrlConfig ctrlCfg;
@@ -110,10 +111,18 @@ public class DbEtcd implements ControllerETCDDatabase
         EtcdTransaction etcdTx = etcdTxMgr.getTransaction();
 
         Map<String, String> dbHistoryVersionResponse = etcdTx.get(DB_HISTORY_VERSION_KEY);
+        Map<String, String> dbHistoryVersionPre34 = etcdTx.get(DB_HISTORY_VERSION_KEY_PRE34);
 
         int dbVersion = dbHistoryVersionResponse.size() > 0
             ? Integer.parseInt(dbHistoryVersionResponse.values().iterator().next())
             : 0;
+
+        if ((dbVersion > 0 && dbVersion <= 34) || dbHistoryVersionPre34.size() > 0)
+        {
+            throw new InitializationException(
+                "This Linstor version doesn't support upgrading from old etcd database. " +
+                "Last supported Linstor version for that is 1.8.x");
+        }
 
         ClassPathLoader classPathLoader = new ClassPathLoader(errorReporter);
         List<Class<? extends BaseEtcdMigration>> etcdMigrationClasses = classPathLoader.loadClasses(

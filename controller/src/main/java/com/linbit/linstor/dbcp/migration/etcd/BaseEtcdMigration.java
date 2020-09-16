@@ -5,11 +5,9 @@ import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
 import static com.linbit.linstor.dbdrivers.etcd.EtcdUtils.PATH_DELIMITER;
-import static com.linbit.linstor.dbdrivers.etcd.EtcdUtils.PK_DELIMITER;
 
 public abstract class BaseEtcdMigration
 {
-    protected static final String LINSTOR_PREFIX_PRE_34 = "LINSTOR/";
     private final int version;
     private final String description;
 
@@ -37,30 +35,12 @@ public abstract class BaseEtcdMigration
 
     protected String buildTableKey(String tableName, String... primKeys)
     {
-        String key;
-        if (version <= 34) // 34 changes "LINSTOR/" to "/LINSTOR/"
-        {
-            key = buildTableKeyPre34(tableName, primKeys);
-        }
-        else
-        {
-            key = EtcdUtils.buildKey(tableName, primKeys);
-        }
-        return key;
+        return EtcdUtils.buildKey(tableName, primKeys);
     }
 
     public String buildColumnKey(Column col, String... primKeys)
     {
-        String key;
-        if (version <= 34) // 34 changes "LINSTOR/" to "/LINSTOR/"
-        {
-            key = buildTableKeyPre34(col.getTable().getName(), primKeys) + col.getName();
-        }
-        else
-        {
-            key = EtcdUtils.buildKey(col, primKeys);
-        }
-        return key;
+        return EtcdUtils.buildKey(col, primKeys);
     }
 
     public String buildKeyStr(
@@ -69,61 +49,12 @@ public abstract class BaseEtcdMigration
         String... pks
     )
     {
-        String key;
-        if (version <= 34) // 34 changes "LINSTOR/" to "/LINSTOR/"
-        {
-            key = buildTableKey(tableName, pks) + columnName;
-        }
-        else
-        {
-            key = EtcdUtils.buildKeyStr(tableName, columnName, pks);
-        }
-        return key;
+        return EtcdUtils.buildKeyStr(tableName, columnName, pks);
     }
 
     public String extractPrimaryKey(String fullEtcdKey)
     {
-        String primaryKey;
-        if (version <= 34) // 34 changes "LINSTOR/" to "/LINSTOR/"
-        {
-            primaryKey = extractPrimaryKeyPre34(fullEtcdKey);
-        }
-        else
-        {
-            primaryKey = EtcdUtils.extractPrimaryKey(fullEtcdKey);
-        }
-        return primaryKey;
-    }
-
-    private String buildTableKeyPre34(String tableName, String... primKeys)
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(LINSTOR_PREFIX_PRE_34).append(tableName).append(PATH_DELIMITER);
-        if (primKeys.length > 0)
-        {
-            for (String pk : primKeys)
-            {
-                if (pk != null)
-                {
-                    sb.append(pk);
-                }
-                sb.append(PK_DELIMITER);
-            }
-            sb.setLength(sb.length() - PK_DELIMITER.length()); // cut last PK_DELIMITER
-            sb.append(PATH_DELIMITER);
-        }
-        return sb.toString();
-    }
-
-    private String extractPrimaryKeyPre34(String key)
-    {
-        // key is something like
-        // LINSTOR/$table/$composedPk/$column = $valueOfColumn
-        int tableStartIdx = LINSTOR_PREFIX_PRE_34.length();
-        int composedKeyStartIdx = key.indexOf(PATH_DELIMITER, tableStartIdx + 1);
-        int composedKeyEndIdx = key.lastIndexOf(PATH_DELIMITER);
-
-        return key.substring(composedKeyStartIdx + 1, composedKeyEndIdx);
+        return EtcdUtils.extractPrimaryKey(fullEtcdKey);
     }
 
     protected String getColumnName(String etcdKeyRef)

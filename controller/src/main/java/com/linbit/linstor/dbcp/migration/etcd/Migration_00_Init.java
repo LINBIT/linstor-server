@@ -175,6 +175,7 @@ public class Migration_00_Init extends BaseEtcdMigration
         tx.put(buildColumnKey(ResourceGroups.UUID, pk), uuid);
         tx.put(buildColumnKey(ResourceGroups.RESOURCE_GROUP_NAME, pk), resourceGroupName);
         tx.put(buildColumnKey(ResourceGroups.RESOURCE_GROUP_DSP_NAME, pk), resourceGroupDspName);
+        tx.put(buildColumnKey(ResourceGroups.REPLICA_COUNT, pk), "2");
     }
 
     private void propsContainers(
@@ -185,10 +186,10 @@ public class Migration_00_Init extends BaseEtcdMigration
     )
     {
         tx.put(
-            GeneratedDatabaseTables.DATABASE_SCHEMA_NAME + "/" +
-                GeneratedDatabaseTables.PROPS_CONTAINERS.getName() + "/" +
-                propsInstance + PRIMARY_KEY_DELI + propKey,
-                propValue
+            EtcdUtils.LINSTOR_PREFIX +
+            GeneratedDatabaseTables.PROPS_CONTAINERS.getName() + "/" +
+            propsInstance + PRIMARY_KEY_DELI + propKey,
+            propValue
         );
     }
 
@@ -312,6 +313,15 @@ public class Migration_00_Init extends BaseEtcdMigration
         propsContainers(tx, "/CTRLCFG", "defaultPlainConSvc", "PlainConnector");
         propsContainers(tx, "/CTRLCFG", "defaultSslConSvc", "SslConnector");
 
-        tx.put(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "1");
+        propsContainers(tx, "/CTRLCFG", "DrbdOptions/auto-quorum", "io-error");
+        propsContainers(tx, "/CTRLCFG", "DrbdOptions/auto-add-quorum-tiebreaker", "True");
+
+        tx.put(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "34");
+    }
+
+    @Override
+    public int getNextVersion()
+    {
+        return 35;
     }
 }
