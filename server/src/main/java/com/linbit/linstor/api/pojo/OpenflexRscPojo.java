@@ -74,14 +74,17 @@ public class OpenflexRscPojo implements RscLayerDataApi
     public static class OpenflexRscDfnPojo implements RscDfnLayerDataApi
     {
         private final String resourceNameSuffix;
+        private final String shortName;
         private final String nqn;
 
         public OpenflexRscDfnPojo(
             String resourceNameSuffixRef,
+            String shortNameRef,
             String nqnRef
         )
         {
             resourceNameSuffix = resourceNameSuffixRef;
+            shortName = shortNameRef;
             nqn = nqnRef;
         }
 
@@ -100,6 +103,11 @@ public class OpenflexRscPojo implements RscLayerDataApi
         public String getNqn()
         {
             return nqn;
+        }
+
+        public String getShortName()
+        {
+            return shortName;
         }
     }
 

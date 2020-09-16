@@ -871,6 +871,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             ofRscDfnData = layerDataFactory.createOpenflexRscDfnData(
                 rscDfn.getName(),
                 ofRscDfnPojoRef.getRscNameSuffix(),
+                ofRscDfnPojoRef.getShortName(),
                 ofRscDfnPojoRef.getNqn()
             );
             rscDfn.setLayerData(apiCtx, ofRscDfnData);

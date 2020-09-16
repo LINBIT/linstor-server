@@ -29,7 +29,7 @@ public class OpenflexRscDfnData<RSC extends AbsResource<RSC>>
     private final String resourceNameSuffix;
     private final OpenflexLayerDatabaseDriver ofDbDriver;
 
-    private final String suffixedResourceName;
+    private final String shortName;
 
     // persisted, serialized, ctrl and stlt
     private final TransactionList<OpenflexRscDfnData<?>, OpenflexRscData<RSC>> ofRscDataList;
@@ -38,6 +38,7 @@ public class OpenflexRscDfnData<RSC extends AbsResource<RSC>>
     public OpenflexRscDfnData(
         ResourceName rscNameRef,
         String rscNameSuffixRef,
+        String shortNameRef,
         List<OpenflexRscData<RSC>> ofRscDataListRef,
         String nqnRef,
         OpenflexLayerDatabaseDriver dbDriverRef,
@@ -49,9 +50,8 @@ public class OpenflexRscDfnData<RSC extends AbsResource<RSC>>
         super(transMgrProviderRef);
         rscName = rscNameRef;
         resourceNameSuffix = rscNameSuffixRef;
+        shortName = shortNameRef;
         ofDbDriver = dbDriverRef;
-
-        suffixedResourceName = rscNameRef.displayValue + rscNameSuffixRef;
 
         nqn = transObjFactoryRef.createTransactionSimpleObject(this, nqnRef, dbDriverRef.getNqnDriver());
         ofRscDataList = transObjFactoryRef.createTransactionList(this, ofRscDataListRef, null);
@@ -80,6 +80,12 @@ public class OpenflexRscDfnData<RSC extends AbsResource<RSC>>
     }
 
     @Override
+    public String getShortName()
+    {
+        return shortName;
+    }
+
+    @Override
     public SnapshotName getSnapshotName()
     {
         return null; // not supported
@@ -96,6 +102,7 @@ public class OpenflexRscDfnData<RSC extends AbsResource<RSC>>
     {
         return new OpenflexRscDfnPojo(
             resourceNameSuffix,
+            shortName,
             nqn.get()
         );
     }

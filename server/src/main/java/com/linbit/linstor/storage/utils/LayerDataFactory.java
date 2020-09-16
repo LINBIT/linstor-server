@@ -368,6 +368,7 @@ public class LayerDataFactory
     public <RSC extends AbsResource<RSC>> OpenflexRscDfnData<RSC> createOpenflexRscDfnData(
         ResourceName nameRef,
         String rscNameSuffixRef,
+        String shortNameRef,
         String nqnRef
     )
         throws DatabaseException
@@ -375,6 +376,7 @@ public class LayerDataFactory
         OpenflexRscDfnData<RSC> ofRscDfnData = new OpenflexRscDfnData<>(
             nameRef,
             rscNameSuffixRef,
+            shortNameRef,
             new ArrayList<>(),
             nqnRef,
             openflexDbDriver,

@@ -18,6 +18,7 @@ message OpenflexRscDfn
 {
     required string             rsc_name_suffix = 1;
     optional string             nqn = 2;
+    required string             short_name = 3;
 }
 
 message OpenflexVlm

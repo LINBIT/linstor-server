@@ -66,6 +66,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.ControllerSQLTransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
+import com.linbit.linstor.utils.NameShortenerModule;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -290,7 +291,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             new ApiCallHandlerModule(),
             new CtrlConfigModule(new CtrlConfig(null)),
             additionalModule,
-            BoundFieldModule.of(this)
+            BoundFieldModule.of(this),
+            new NameShortenerModule()
         );
 
         injector.getInstance(DbCoreObjProtInitializer.class).initialize();

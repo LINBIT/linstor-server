@@ -33,9 +33,11 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
+import com.linbit.linstor.utils.NameShortener;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -61,6 +63,7 @@ public class OpenflexLayerETCDDriver extends BaseEtcdDriver implements OpenflexL
     private final ErrorReporter errorReporter;
     private final ResourceLayerIdDatabaseDriver idDriver;
     private final TransactionObjectFactory transObjFactory;
+    private final NameShortener nameShortener;
 
     private final NqnDriver nqnDriver;
 
@@ -74,7 +77,8 @@ public class OpenflexLayerETCDDriver extends BaseEtcdDriver implements OpenflexL
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgrETCD> transMgrProviderRef
+        Provider<TransactionMgrETCD> transMgrProviderRef,
+        @Named(NameShortener.OPENFLEX) NameShortener nameShortenerRef
     )
     {
         super(transMgrProviderRef);
@@ -82,6 +86,7 @@ public class OpenflexLayerETCDDriver extends BaseEtcdDriver implements OpenflexL
         errorReporter = errorReporterRef;
         idDriver = idDriverRef;
         transObjFactory = transObjFactoryRef;
+        nameShortener = nameShortenerRef;
 
         nqnDriver = new NqnDriver();
     }
@@ -161,9 +166,10 @@ public class OpenflexLayerETCDDriver extends BaseEtcdDriver implements OpenflexL
 
                     ArrayList<OpenflexRscData<Resource>> rscDataList = new ArrayList<>();
 
-                    ofRscDfnData = new OpenflexRscDfnData<Resource>(
+                    ofRscDfnData = new OpenflexRscDfnData<>(
                         rscDfn.getName(),
                         rscNameSuffix,
+                        nameShortener.shorten(rscDfn, rscNameSuffix),
                         rscDataList,
                         nqn,
                         this,

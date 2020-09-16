@@ -1588,7 +1588,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         private static OpenflexRscDfn buildOpenflexRscDfnData(OpenflexRscDfnPojo ofRscDfnPojo)
         {
             OpenflexRscDfn.Builder builder = OpenflexRscDfn.newBuilder()
-                .setRscNameSuffix(ofRscDfnPojo.getRscNameSuffix());
+                .setRscNameSuffix(ofRscDfnPojo.getRscNameSuffix())
+                .setShortName(ofRscDfnPojo.getShortName());
             if (ofRscDfnPojo.getNqn() != null)
             {
                 builder.setNqn(ofRscDfnPojo.getNqn());

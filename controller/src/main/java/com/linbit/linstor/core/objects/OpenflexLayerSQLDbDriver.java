@@ -26,6 +26,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
+import com.linbit.linstor.utils.NameShortener;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
@@ -40,6 +41,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_LAYER_OPENFLEX_
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VLM_NR;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -113,6 +115,7 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
 
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
+    private final NameShortener nameShortener;
 
     private final NqnDriver nqnDriver;
 
@@ -120,13 +123,15 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
     private Map<Integer, List<OpenflexVlmInfo>> cachedVlmInfoMap;
     private Map<Pair<ResourceDefinition, String>, Pair<OpenflexRscDfnData<Resource>, ArrayList<OpenflexRscData<Resource>>>> cacheRscDfnDataMap;
 
+
     @Inject
     public OpenflexLayerSQLDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
         ResourceLayerIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
-        Provider<TransactionMgrSQL> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef,
+        @Named(NameShortener.OPENFLEX) NameShortener nameShortenerRef
     )
     {
         dbCtx = accCtx;
@@ -134,6 +139,7 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
         idDriver = idDriverRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
+        nameShortener = nameShortenerRef;
 
         nqnDriver = new NqnDriver();
     }
@@ -197,13 +203,12 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
                 {
                     String nqn = resultSet.getString(NQN);
 
-                    new Exception("loaded nqn from db: " + nqn).printStackTrace();
-
                     ArrayList<OpenflexRscData<Resource>> rscDataList = new ArrayList<>();
 
-                    ofRscDfnData = new OpenflexRscDfnData<Resource>(
+                    ofRscDfnData = new OpenflexRscDfnData<>(
                         rscDfn.getName(),
                         rscNameSuffix,
+                        nameShortener.shorten(rscDfn, rscNameSuffix),
                         rscDataList,
                         nqn,
                         this,

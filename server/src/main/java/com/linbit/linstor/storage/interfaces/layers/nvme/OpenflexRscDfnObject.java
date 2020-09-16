@@ -5,4 +5,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObje
 public interface OpenflexRscDfnObject extends RscDfnLayerObject
 {
     String getNqn();
+
+    String getShortName();
 }

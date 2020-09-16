@@ -69,13 +69,8 @@ import com.linbit.linstor.tasks.UpdateSpaceInfoTask;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
-import com.google.inject.ConfigurationException;
-import com.google.inject.Key;
-import com.google.inject.Module;
-import com.google.inject.ProvisionException;
-import com.google.inject.name.Names;
+import com.linbit.linstor.utils.NameShortenerModule;
 import com.linbit.utils.InjectorLoader;
-import java.util.LinkedList;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -84,12 +79,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.ProvisionException;
+import com.google.inject.name.Names;
 import org.slf4j.event.Level;
 
 /**
@@ -516,31 +517,29 @@ public final class Controller
 
             final List<Module> injModList = new LinkedList<>(
                 Arrays.asList(
-                    new Module[]
-                    {
-                        new GuiceConfigModule(),
-                        new LoggingModule(errorLog),
-                        new SecurityModule(),
-                        new ControllerSecurityModule(),
-                        new CtrlConfigModule(cfg),
-                        new CoreTimerModule(),
-                        new MetaDataModule(),
-                        new ControllerLinstorModule(),
-                        new LinStorModule(),
-                        new CoreModule(),
-                        new ControllerCoreModule(),
-                        new ControllerSatelliteCommunicationModule(),
-                        new ControllerDbModule(dbType),
-                        new NetComModule(),
-                        new NumberPoolModule(),
-                        new ApiModule(apiType, apiCalls),
-                        new ApiCallHandlerModule(),
-                        new CtrlApiCallHandlerModule(),
-                        new EventModule(eventSerializers, eventHandlers),
-                        new DebugModule(),
-                        new ControllerDebugModule(),
-                        new ControllerTransactionMgrModule(dbType)
-                    }
+                    new GuiceConfigModule(),
+                    new LoggingModule(errorLog),
+                    new SecurityModule(),
+                    new ControllerSecurityModule(),
+                    new CtrlConfigModule(cfg),
+                    new CoreTimerModule(),
+                    new MetaDataModule(),
+                    new ControllerLinstorModule(),
+                    new LinStorModule(),
+                    new CoreModule(),
+                    new ControllerCoreModule(),
+                    new ControllerSatelliteCommunicationModule(),
+                    new ControllerDbModule(dbType),
+                    new NetComModule(),
+                    new NumberPoolModule(),
+                    new ApiModule(apiType, apiCalls),
+                    new ApiCallHandlerModule(),
+                    new CtrlApiCallHandlerModule(),
+                    new EventModule(eventSerializers, eventHandlers),
+                    new DebugModule(),
+                    new ControllerDebugModule(),
+                    new ControllerTransactionMgrModule(dbType),
+                    new NameShortenerModule()
                 )
             );
             InjectorLoader.dynLoadInjModule(SPC_TRK_MODULE_NAME, injModList, errorLog, dbType);

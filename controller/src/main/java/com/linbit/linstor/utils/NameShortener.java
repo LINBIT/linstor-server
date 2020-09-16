@@ -34,8 +34,6 @@ public class NameShortener
 {
     public static final String OPENFLEX = "OpenFlex";
 
-    public static final int OPENFLEX_MAX_LEN = 32;
-
     /**
      * The property key used for lookup of already shortened name
      */

@@ -30,6 +30,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
+import com.linbit.linstor.utils.NameShortener;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -45,13 +46,16 @@ public class RscOpenflexLayerHelper
         OpenflexRscDfnData<Resource>, VlmDfnLayerObject
 >
 {
+    private final NameShortener nameShortener;
+
     @Inject
     RscOpenflexLayerHelper(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
-        Provider<CtrlRscLayerDataFactory> layerDataHelperProviderRef
+        Provider<CtrlRscLayerDataFactory> layerDataHelperProviderRef,
+        @Named(NameShortener.OPENFLEX) NameShortener nameShortenerRef
     )
     {
         super(
@@ -66,6 +70,7 @@ public class RscOpenflexLayerHelper
             DeviceLayerKind.OPENFLEX,
             layerDataHelperProviderRef
         );
+        nameShortener = nameShortenerRef;
     }
 
     @Override
@@ -76,9 +81,11 @@ public class RscOpenflexLayerHelper
     ) throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
+        String shortName = nameShortener.shorten(rscDfnRef, rscNameSuffixRef);
         return layerDataFactory.createOpenflexRscDfnData(
             rscDfnRef.getName(),
             rscNameSuffixRef,
+            shortName,
             payloadRef.ofRscDfn.nqn
         );
     }
@@ -223,9 +230,11 @@ public class RscOpenflexLayerHelper
                 DeviceLayerKind.OPENFLEX,
                 resourceNameSuffix
             );
+        String shortName = nameShortener.shorten(rscDfnRef, resourceNameSuffix);
         return layerDataFactory.createOpenflexRscDfnData(
             rscDfnRef.getName(),
             resourceNameSuffix,
+            shortName,
             snapDfnData.getNqn()
         );
     }

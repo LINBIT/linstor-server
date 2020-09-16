@@ -49,8 +49,8 @@ public class OpenflexLayer implements DeviceLayer
     // linstor calculates everything in KiB.. 1<<20 is therefore 1GiB outside of linstor
     private static final Align ALIGN_TO_NEXT_GB = new Align(1L << 20);
 
-    // private static final String FORMAT_NAME = "%s%s_%05d";
-    private static final String FORMAT_NAME = "%s%s";
+    // private static final String FORMAT_NAME = "%s_%05d";
+    private static final String FORMAT_NAME = "%s";
 
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
@@ -264,11 +264,10 @@ public class OpenflexLayer implements DeviceLayer
 
     private String getName(OpenflexVlmData<Resource> vlmRef)
     {
-        AbsRscLayerObject<Resource> rlo = vlmRef.getRscLayerObject();
+        OpenflexRscData<Resource> rlo = vlmRef.getRscLayerObject();
         return String.format(
             FORMAT_NAME,
-            rlo.getResourceName().displayValue,
-            rlo.getResourceNameSuffix()
+            rlo.getRscDfnLayerObject().getShortName()
             // vlmRef.getVlmNr().value
         );
     }
