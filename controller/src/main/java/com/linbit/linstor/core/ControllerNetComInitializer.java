@@ -237,13 +237,19 @@ public final class ControllerNetComInitializer implements StartupInitializer
     @Override
     public void shutdown()
     {
-        netComSvc.shutdown();
+        if (netComSvc != null)
+        {
+            netComSvc.shutdown();
+        }
     }
 
     @Override
     public void awaitShutdown(long timeout) throws InterruptedException
     {
-        netComSvc.awaitShutdown(timeout);
+        if (netComSvc != null)
+        {
+            netComSvc.awaitShutdown(timeout);
+        }
     }
 
     private Path resolveConfigFilePath(final String filePath)
