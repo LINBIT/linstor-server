@@ -3595,7 +3595,7 @@ paths:
       tags:
         - developers
       summary: Deletes a single error-report
-      operationId: errorReportDelete
+      operationId: errorReportDeleteSingle
       description: Deletes a single error-report
       parameters:
         - name: reportid
