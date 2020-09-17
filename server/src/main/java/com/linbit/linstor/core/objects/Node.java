@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.AccessToDeletedDataException;
@@ -62,6 +60,8 @@ import java.util.stream.Stream;
 
 import reactor.core.publisher.FluxSink;
 
+import static java.util.stream.Collectors.toList;
+
 /**
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
@@ -69,7 +69,7 @@ import reactor.core.publisher.FluxSink;
 public class Node extends BaseTransactionObject
     implements DbgInstanceUuid, Comparable<Node>, ProtectedObject
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<ResourceName, Resource> getRscMap();
         Map<SnapshotDefinition.Key, Snapshot> getSnapshotMap();
@@ -921,7 +921,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.ZFS_THIN,
                 DeviceProviderKind.FILE,
                 DeviceProviderKind.FILE_THIN,
-                DeviceProviderKind.SPDK
+                DeviceProviderKind.SPDK,
+                DeviceProviderKind.OPENFLEX_TARGET
             )
         ),
         COMBINED(
@@ -934,7 +935,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.ZFS_THIN,
                 DeviceProviderKind.FILE,
                 DeviceProviderKind.FILE_THIN,
-                DeviceProviderKind.SPDK
+                DeviceProviderKind.SPDK,
+                DeviceProviderKind.OPENFLEX_TARGET
             )
         ),
         AUXILIARY(
