@@ -363,8 +363,6 @@ public class CtrlRscCrtApiHelper
                 rscProps.map().put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
             }
 
-            List<Volume> createdVolumes = new ArrayList<>();
-
             for (VolumeApi vlmApi : vlmApiList)
             {
                 VolumeDefinition vlmDfn = loadVlmDfn(rscDfn, vlmApi.getVlmNr(), true);
@@ -374,7 +372,6 @@ public class CtrlRscCrtApiHelper
                     vlmDfn,
                     thinFreeCapacities
                 ).extractApiCallRc(responses);
-                createdVolumes.add(vlmData);
 
                 Props vlmProps = ctrlPropsHelper.getProps(vlmData);
 
@@ -398,7 +395,6 @@ public class CtrlRscCrtApiHelper
                         vlmDfn,
                         thinFreeCapacities
                     ).extractApiCallRc(responses);
-                    createdVolumes.add(vlm);
 
                     setDrbdPropsForThinVolumesIfNeeded(vlm);
                 }
