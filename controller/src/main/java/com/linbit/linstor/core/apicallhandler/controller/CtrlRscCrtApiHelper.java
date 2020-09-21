@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -72,12 +73,14 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.reactivestreams.Publisher;
@@ -577,6 +580,7 @@ public class CtrlRscCrtApiHelper
                                     ObjectIdentifier.resource(nodeName, rscName)
                                 )
                                 .skipUntil(ResourceState::getResourceReady)
+                                .timeout(Duration.ofMillis(ExtCmd.dfltWaitTimeout))
                                 .next()
                                 .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
                                 .onErrorResume(
@@ -584,6 +588,7 @@ public class CtrlRscCrtApiHelper
                                         ApiCallRcImpl.singletonApiCallRc(ResponseUtils.makeNotConnectedWarning(nodeName))
                                     )
                                 )
+                                .onErrorResume(TimeoutException.class, te -> makeRdyTimeoutApiRc(nodeName))
                         );
                     }
                 }
@@ -605,6 +610,17 @@ public class CtrlRscCrtApiHelper
                 )
             )
             .concatWith(readyResponses);
+    }
+
+    private Mono<ApiCallRc> makeRdyTimeoutApiRc(NodeName nodeName)
+    {
+        final String msg = String.format("Resource did not became ready on node '%s' within" +
+            " reasonable time, check Satellite for errors.", nodeName);
+        ApiCallRcImpl.ApiCallRcEntry apiEntry = ApiCallRcImpl.entryBuilder(
+                ApiConsts.MASK_ERROR | ApiConsts.MASK_RSC, msg)
+            .putObjRef(ApiConsts.KEY_NODE, nodeName.displayValue)
+            .build();
+        return Mono.just(ApiCallRcImpl.singletonApiCallRc(apiEntry));
     }
 
     public ApiCallRc makeResourceDidNotAppearMessage(ResponseContext context)
