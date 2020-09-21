@@ -50,6 +50,11 @@ public class ExtToolsInfo
         return version;
     }
 
+    public boolean isSupportedAndHasVersionOrHigher(Version versionRef)
+    {
+        return isSupported && versionRef.greaterOrEqual(versionRef);
+    }
+
     public final Integer getVersionMajor()
     {
         return version.major;

@@ -487,7 +487,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         return node.getPeer(peerAccCtx)
             .getExtToolsManager()
             .getExtToolInfo(ExtTools.DRBD9)
-            .hasVersionOrHigher(new ExtToolsInfo.Version(9, 0, 19));
+            .isSupportedAndHasVersionOrHigher(new ExtToolsInfo.Version(9, 0, 19));
     }
 
     private boolean isFlagSet(Resource rsc, Resource.Flags... flags)
