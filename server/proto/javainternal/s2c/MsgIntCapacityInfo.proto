@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+// Space tracking response reporting the satellite's storage capacity
+message MsgIntCapacityInfo
+{
+    // Indicates whether any of the storage pools failed to report their capacity
+    bool exc_flag   = 1;
+
+    // Serialized BigInteger data
+    bytes capacity  = 2;
+}
