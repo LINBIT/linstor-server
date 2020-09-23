@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.4.0
        - Added promotion_score and may_promote to DrbdResource object
        - Added /v1/error-reports DELETE method, to delete a range of error reports or single ones
        - Added SSE (Server Sent Events) url /v1/events/drbd/promotion

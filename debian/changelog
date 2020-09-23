@@ -1,3 +1,54 @@
+linstor-server (1.9.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * metrics: read cached values for volumes sizes and storagepools
+  * metrics: fix incorrect block log message
+  * etcddb: single column driver for modify uses the toString of objects
+  * resource/drbd: expose promotion_score and may_promote to rest API
+  * error-report: Add delete API
+  * gitlab-ci: deploy to nexus
+  * rest-api-doc: fix duplicate operationId
+  * TcpConnectorPeer: add completion Id for unexpected
+  * CtrlRscCrtHelper: remove unused create volume list
+  * CtrlRscCrtHelper: Add timeout while waiting for the resource ready event
+  * rest-sse-events: HTTP-SSE may_promote changes on url /v1/events/drbd/p [...]
+  * controller-init: fix NPE on intialization startup fail
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * Add k8s-await-election as entrypoint for controller
+
+  [ Gabor Hernadi ]
+  * Lvcreate: fixed position of VG argument
+  * DevHandler: Failure should be responded as failure
+  * DevHandlerImpl: allow storExc in calcGrossSize
+  * Zfscreateoptions: Extend getExtentSize with other combinations
+  * Autoplace: Also consider toggle-disking diskless resources
+  * AutoDiskfulAllowCleanup: Remove excessive resource
+  * AutoDiskful: Deactivate when secondary
+  * Stlt: Call systemd-notify READY=1 after first fullsync
+  * systemd-notify gets called in correct place
+  * OpenFlex: Changed prop to StorPoolName
+  * RscCrt: Fixed 'typo'
+  * SnapShip: Make sure ship-daemons are killed when aborting
+  * SnapShip: move socat-port to snapVlmDfn
+  * Snap,SnapVlm,SnapVlmDfn props: serialize and apply
+  * SnapShip: Fixed alreadyStarted method
+  * DevLayerKind: Add NVMe as dependency for OpenFlex
+  * Lvm: Fixed recaching of lvm-filter
+  * NameShortener: added implementation
+  * OpenFlex: Added limitation of 32 chars
+  * Openflex: Allow Provider for Satellite and Combined type
+  * Ctrl,Drbd-support-check: Fixed version check
+  * Fixed string-format for snapShip error message
+  * SnaShip: Increased req. version of thin_send_recv
+
+  [ Roland Kammerer ]
+  * containers: add pkgcache
+  * containers: fix ClefOS name
+  * api doc: mark unreleased
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 23 Sep 2020 09:24:07 +0000
+
 linstor-server (1.8.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
