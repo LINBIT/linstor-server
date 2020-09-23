@@ -407,7 +407,7 @@ public class CtrlSnapshotShippingApiCallHandler
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
                     String.format(
-                        "%s based snapshot shipping requires at least version %d for %s",
+                        "%s based snapshot shipping requires at least version %s for %s",
                         deviceProviderKind.name(),
                         version.toString(),
                         toolDescr

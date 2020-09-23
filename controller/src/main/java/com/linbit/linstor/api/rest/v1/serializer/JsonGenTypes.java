@@ -1192,6 +1192,9 @@ public class JsonGenTypes
         public PhysicalStorageStoragePoolCreate with_storage_pool;
     }
 
+    /**
+     * may-promote-change
+     */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class EventMayPromoteChange
     {
