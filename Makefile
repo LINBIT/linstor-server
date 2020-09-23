@@ -23,6 +23,7 @@ GITHASH := $(shell git rev-parse HEAD)
 .filelist:
 	@set -e ; submodules=`$(GIT) submodule foreach --quiet 'echo $$path'`; \
 		$(GIT) ls-files | \
+		grep -v "^\.gitlab" | \
 		grep -vxF -e "$$submodules" | \
 		sed '$(if $(PRESERVE_DEBIAN),,/^debian/d)' | \
 		grep -v "gitignore\|gitmodules" > .filelist
