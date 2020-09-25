@@ -28,7 +28,8 @@ public class EtcdUtils
     public static final String PATH_DELIMITER = "/";
     @UsedByMigration
     public static final String PK_DELIMITER = ":";
-    public static final String LINSTOR_PREFIX = PATH_DELIMITER + "LINSTOR" + PATH_DELIMITER;
+    // not really a constant anymore as it can be set via a configuration property
+    public static String LINSTOR_PREFIX = null;
 
     private static final Deadline DEFAULT_DEADLINE = Deadline.after(60, TimeUnit.SECONDS);
 

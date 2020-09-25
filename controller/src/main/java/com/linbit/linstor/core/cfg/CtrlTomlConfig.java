@@ -145,10 +145,12 @@ public class CtrlTomlConfig
     static class Etcd
     {
         private Integer ops_per_transaction;
+        private String prefix;
 
         public void applyTo(CtrlConfig cfg)
         {
             cfg.setEtcdOperationsPerTransaction(ops_per_transaction);
+            cfg.setEtcdPrefix(prefix);
         }
     }
 

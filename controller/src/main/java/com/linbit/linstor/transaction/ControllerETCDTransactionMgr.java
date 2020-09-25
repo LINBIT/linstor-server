@@ -13,19 +13,18 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
 {
     private final ControllerETCDDatabase etcdDb;
     private final TransactionObjectCollection transactionObjectCollection;
-    private final int maxOpsPerTx;
     private final ControllerETCDRollbackMgr rollbackMgr;
 
     private EtcdTransaction currentTransaction;
 
-    public ControllerETCDTransactionMgr(ControllerETCDDatabase controllerETCDDatabase, int maxOpsPerTxRef)
+    public ControllerETCDTransactionMgr(
+        ControllerETCDDatabase controllerETCDDatabase, int maxOpsPerTxRef, String prefix)
     {
         etcdDb = controllerETCDDatabase;
-        maxOpsPerTx = maxOpsPerTxRef;
         transactionObjectCollection = new TransactionObjectCollection();
         currentTransaction = createNewEtcdTx();
 
-        rollbackMgr = new ControllerETCDRollbackMgr(controllerETCDDatabase, maxOpsPerTxRef);
+        rollbackMgr = new ControllerETCDRollbackMgr(controllerETCDDatabase, maxOpsPerTxRef, prefix);
     }
 
     private EtcdTransaction createNewEtcdTx()

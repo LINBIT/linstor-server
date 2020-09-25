@@ -12,9 +12,9 @@ import java.util.TreeMap;
 public class Migration_09_RscGrpStorPoolToList extends BaseEtcdMigration
 {
     @Override
-    public void migrate(EtcdTransaction tx) throws Exception
+    public void migrate(EtcdTransaction tx, final String prefix) throws Exception
     {
-        TreeMap<String, String> allRscGrps = tx.get("/LINSTOR/RESOURCE_GROUPS", true);
+        TreeMap<String, String> allRscGrps = tx.get(prefix + "RESOURCE_GROUPS", true);
 
         for (Map.Entry<String, String> entry : allRscGrps.entrySet())
         {

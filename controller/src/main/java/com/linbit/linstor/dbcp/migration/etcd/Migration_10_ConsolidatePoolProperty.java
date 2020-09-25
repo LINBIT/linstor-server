@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
 import java.util.HashMap;
@@ -15,9 +14,9 @@ import java.util.TreeMap;
 public class Migration_10_ConsolidatePoolProperty extends BaseEtcdMigration
 {
     @Override
-    public void migrate(EtcdTransaction tx) throws Exception
+    public void migrate(EtcdTransaction tx, final String prefix) throws Exception
     {
-        TreeMap<String, String> allRscGrps = tx.get("/LINSTOR/PROPS_CONTAINERS//storPoolConf", true);
+        TreeMap<String, String> allRscGrps = tx.get(prefix + "PROPS_CONTAINERS//storPoolConf", true);
 
         HashMap<String, String> newKeys = new HashMap<>();
         for (Map.Entry<String, String> entry : allRscGrps.entrySet())

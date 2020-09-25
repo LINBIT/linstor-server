@@ -10,14 +10,16 @@ public class Migration_08_FixAutoTiebreakerProps extends BaseEtcdMigration
 {
 
     @Override
-    public void migrate(EtcdTransaction tx) throws Exception
+    public void migrate(EtcdTransaction tx, final String prefix) throws Exception
     {
-        String oldAutoTieBreakerKey = "/LINSTOR/PROPS_CONTAINER/CTRLCFG/DrbdOptions/auto-add-quorum-tiebreaker";
-        String newAutoTieBreakerKey = "/LINSTOR/PROPS_CONTAINERS//CTRLCFG:DrbdOptions/auto-add-quorum-tiebreaker";
+        String oldAutoTieBreakerKey = prefix +
+            "PROPS_CONTAINER/CTRLCFG/DrbdOptions/auto-add-quorum-tiebreaker";
+        String newAutoTieBreakerKey = prefix +
+            "PROPS_CONTAINERS//CTRLCFG:DrbdOptions/auto-add-quorum-tiebreaker";
         String autoTieBreakerValue = tx.getFirstValue(oldAutoTieBreakerKey);
 
-        String oldAutoQuorumKey = "/LINSTOR/PROPS_CONTAINER/CTRLCFG/DrbdOptions/auto-quorum";
-        String newAutoQuorumKey = "/LINSTOR/PROPS_CONTAINERS//CTRLCFG:DrbdOptions/auto-quorum";
+        String oldAutoQuorumKey = prefix + "PROPS_CONTAINER/CTRLCFG/DrbdOptions/auto-quorum";
+        String newAutoQuorumKey = prefix + "PROPS_CONTAINERS//CTRLCFG:DrbdOptions/auto-quorum";
         String autoQuorumValue = tx.getFirstValue(oldAutoQuorumKey);
 
         if (autoTieBreakerValue != null)

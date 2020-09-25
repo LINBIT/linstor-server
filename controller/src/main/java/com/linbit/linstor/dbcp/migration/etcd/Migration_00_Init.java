@@ -13,7 +13,6 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecRoles;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecTypeRules;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecTypes;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.StorPoolDefinitions;
-import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
 @SuppressWarnings("checkstyle:typename")
@@ -24,6 +23,7 @@ import com.linbit.linstor.transaction.EtcdTransaction;
 public class Migration_00_Init extends BaseEtcdMigration
 {
     private static final String PRIMARY_KEY_DELI = ":";
+    private String etcdPrefix = null;
 
     private void secConfiguration(
         EtcdTransaction tx,
@@ -186,7 +186,7 @@ public class Migration_00_Init extends BaseEtcdMigration
     )
     {
         tx.put(
-            EtcdUtils.LINSTOR_PREFIX +
+            etcdPrefix +
             GeneratedDatabaseTables.PROPS_CONTAINERS.getName() + "/" +
             propsInstance + PRIMARY_KEY_DELI + propKey,
             propValue
@@ -194,8 +194,10 @@ public class Migration_00_Init extends BaseEtcdMigration
     }
 
     @Override
-    public void migrate(EtcdTransaction tx)
+    public void migrate(EtcdTransaction tx, final String prefix)
     {
+        etcdPrefix = prefix;
+
         // push init values
         secConfiguration(tx, "SECURITYLEVEL", "SecurityLevel", "NO_SECURITY");
         secConfiguration(tx, "AUTHREQUIRED", "AuthRequired", "false");
@@ -316,7 +318,7 @@ public class Migration_00_Init extends BaseEtcdMigration
         propsContainers(tx, "/CTRLCFG", "DrbdOptions/auto-quorum", "io-error");
         propsContainers(tx, "/CTRLCFG", "DrbdOptions/auto-add-quorum-tiebreaker", "True");
 
-        tx.put(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "34");
+        tx.put(prefix + "DBHISTORY/version", "34");
     }
 
     @Override

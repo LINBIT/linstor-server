@@ -28,7 +28,8 @@ public class ControllerETCDTransactionMgrGenerator implements TransactionMgrGene
     {
         return new ControllerETCDTransactionMgr(
             controllerDatabase.get(),
-            ctrlCfg.getEtcdOperationsPerTransaction()
+            ctrlCfg.getEtcdOperationsPerTransaction(),
+            ctrlCfg.getEtcdPrefix()
         );
     }
 }

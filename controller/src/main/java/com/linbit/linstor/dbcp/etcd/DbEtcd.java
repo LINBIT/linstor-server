@@ -42,7 +42,6 @@ public class DbEtcd implements ControllerETCDDatabase
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "ETCD database handler";
     private static final String ETCD_SCHEME = "etcd://";
-    private static final String DB_HISTORY_VERSION_KEY = EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version";
     private static final String DB_HISTORY_VERSION_KEY_PRE34 = "LINSTOR/DBHISTORY/version";
 
     private final AtomicBoolean atomicStarted = new AtomicBoolean(false);
@@ -110,7 +109,7 @@ public class DbEtcd implements ControllerETCDDatabase
         etcdTxMgr.rollbackIfNeeded();
         EtcdTransaction etcdTx = etcdTxMgr.getTransaction();
 
-        Map<String, String> dbHistoryVersionResponse = etcdTx.get(DB_HISTORY_VERSION_KEY);
+        Map<String, String> dbHistoryVersionResponse = etcdTx.get(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version");
         Map<String, String> dbHistoryVersionPre34 = etcdTx.get(DB_HISTORY_VERSION_KEY_PRE34);
 
         int dbVersion = dbHistoryVersionResponse.size() > 0
@@ -171,7 +170,7 @@ public class DbEtcd implements ControllerETCDDatabase
                     );
                 }
                 errorReporter.logDebug("Migration DB: " + dbVersion + ": " + migration.getDescription());
-                migration.migrate(etcdTx);
+                migration.migrate(etcdTx, EtcdUtils.LINSTOR_PREFIX);
 
                 dbVersion = migration.getNextVersion();
                 etcdTx.put(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + dbVersion);
@@ -217,6 +216,11 @@ public class DbEtcd implements ControllerETCDDatabase
     @Override
     public void start() throws SystemServiceStartException
     {
+        if (EtcdUtils.LINSTOR_PREFIX == null)
+        {
+            throw new SystemServiceStartException("ETCD prefix is not set", true);
+        }
+
         final String origConUrl = ctrlCfg.getDbConnectionUrl();
         final String connectionUrl = origConUrl.toLowerCase().startsWith(ETCD_SCHEME) ?
             origConUrl.substring(ETCD_SCHEME.length()) : origConUrl;
@@ -305,7 +309,7 @@ public class DbEtcd implements ControllerETCDDatabase
         ControllerETCDTransactionMgr etcdTxMgr = txMgrGenerator.startTransaction();
         EtcdTransaction etcdTx = etcdTxMgr.getTransaction();
 
-        TreeMap<String, String> entries = etcdTx.get(DB_HISTORY_VERSION_KEY, true);
+        TreeMap<String, String> entries = etcdTx.get(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", true);
         if (entries.size() == 0)
         {
             throw new DatabaseException("ETCD database reported 0 entries ");

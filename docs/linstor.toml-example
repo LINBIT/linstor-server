@@ -8,6 +8,8 @@
   ## for etcd
   ## do not set user field if no authentication required
   # connection_url = "etcd://etcdhost:2379"
+  [db.etcd]
+  prefix = "/LINSTOR/"
 
   ## if you use TLS
   # ca_certificate = "ca.pem"

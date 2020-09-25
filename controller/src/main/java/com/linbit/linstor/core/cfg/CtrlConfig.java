@@ -33,6 +33,7 @@ public class CtrlConfig extends LinstorConfig
      * Database.ETCD
      */
     private int etcdOperationsPerTransaction = 128;
+    private String etcdPrefix;
 
     /*
      * Logging
@@ -85,6 +86,7 @@ public class CtrlConfig extends LinstorConfig
         super.applyDefaultValues();
         setDbConnectionUrl("jdbc:h2:/var/lib/linstor/linstordb");
         setDbDisableVersionCheck(false);
+        setEtcdPrefix("/LINSTOR/");
 
         setLogRestAccessLogPath("rest-access.log");
         setLogRestAccessMode(RestAccessLogMode.NO_LOG);
@@ -215,6 +217,14 @@ public class CtrlConfig extends LinstorConfig
         if (etcdOperationsPerTransactionRef != null)
         {
             etcdOperationsPerTransaction = etcdOperationsPerTransactionRef;
+        }
+    }
+
+    public void setEtcdPrefix(final String etcdPrefixRef)
+    {
+        if (etcdPrefixRef != null)
+        {
+            etcdPrefix = etcdPrefixRef;
         }
     }
 
@@ -418,6 +428,11 @@ public class CtrlConfig extends LinstorConfig
     public int getEtcdOperationsPerTransaction()
     {
         return etcdOperationsPerTransaction;
+    }
+
+    public String getEtcdPrefix()
+    {
+        return etcdPrefix;
     }
 
     public String getLogRestAccessLogPath()

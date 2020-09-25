@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.4.0";
+    public static final String REST_API_VERSION = "1.5.0";
 
     /**
      * Common api reply structure
@@ -808,6 +808,7 @@ public class JsonGenTypes
     public static class ControllerConfigDbEtcd
     {
         public Integer operations_per_transaction;
+        public String prefix;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

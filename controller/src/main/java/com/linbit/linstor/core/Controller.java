@@ -24,6 +24,7 @@ import com.linbit.linstor.core.cfg.CtrlConfigModule;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugConsole;
 import com.linbit.linstor.debug.DebugConsoleCreator;
@@ -74,7 +75,6 @@ import com.linbit.utils.InjectorLoader;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -154,7 +154,7 @@ public final class Controller
 
     private final PassphraseInitializer passphraseInitializer;
 
-    private PreConnectInitializer preConnectCleanupInitializer;
+    private final PreConnectInitializer preConnectCleanupInitializer;
 
 
     @Inject
@@ -440,6 +440,8 @@ public final class Controller
 
         System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.CONTROLLER_MODULE);
         LinStor.printStartupInfo();
+
+        EtcdUtils.LINSTOR_PREFIX = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
 
         StdErrorReporter errorLog = new StdErrorReporter(
             LinStor.CONTROLLER_MODULE,

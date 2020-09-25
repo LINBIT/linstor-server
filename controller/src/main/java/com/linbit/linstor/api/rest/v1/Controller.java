@@ -199,6 +199,7 @@ public class Controller
 
         controllerConfig.db.etcd = new JsonGenTypes.ControllerConfigDbEtcd();
         controllerConfig.db.etcd.operations_per_transaction = ctrlCfg.getEtcdOperationsPerTransaction();
+        controllerConfig.db.etcd.prefix = ctrlCfg.getEtcdPrefix();
 
         controllerConfig.debug = new JsonGenTypes.ControllerConfigDebug();
         controllerConfig.debug.console_enabled = ctrlCfg.isDebugConsoleEnabled();

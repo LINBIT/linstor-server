@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+       - Added etcd.prefix to ControllerConfigDbEtcd parameters
     * 1.4.0
        - Added promotion_score and may_promote to DrbdResource object
        - Added /v1/error-reports DELETE method, to delete a range of error reports or single ones
@@ -100,7 +102,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.4.0
+  version: 1.5.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -5217,6 +5219,8 @@ components:
         operations_per_transaction:
           type: integer
           format: int32
+        prefix:
+          type: string
     ControllerConfigHttp:
       type: object
       properties:

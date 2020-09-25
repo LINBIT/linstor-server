@@ -29,10 +29,10 @@ import com.ibm.etcd.client.kv.KvClient.FluentTxnOps;
 
 public class ControllerETCDRollbackMgr
 {
-    private static final String NAMESPACE_ROLLBACK = EtcdUtils.LINSTOR_PREFIX + "ROLLBACK/";
-    private static final String NAMESPACE_ROLLBACK_UPDATE = NAMESPACE_ROLLBACK + "UPDATE/";
-    private static final String NAMESPACE_ROLLBACK_DEL = NAMESPACE_ROLLBACK + "DELETE/";
-    private static final String KEY_ROLLBACK_STATUS = NAMESPACE_ROLLBACK + "STATUS";
+    private final String namespaceRollback;
+    private final String namespaceRollbackUpdate;
+    private final String namespaceRollbackDel;
+    private final String namespaceRollbackStatus;
     private static final String VALUE_STATUS_READY = "ready";
     private static final String VALUE_DELETE_DUMMY_STR = ":deleteMe";
     private static final ByteString VALUE_DELETE_DUMMY_BS = KeyUtils.bs(VALUE_DELETE_DUMMY_STR);
@@ -42,12 +42,16 @@ public class ControllerETCDRollbackMgr
 
     private final Map<String, String> currentRollbackMap;
 
-    public ControllerETCDRollbackMgr(ControllerETCDDatabase controllerETCDDatabaseRef, int maxOpsPerTxRef)
+    public ControllerETCDRollbackMgr(ControllerETCDDatabase controllerETCDDatabaseRef, int maxOpsPerTxRef, final String prefix)
     {
         etcdDb = controllerETCDDatabaseRef;
         maxOpsPerTx = maxOpsPerTxRef;
 
         currentRollbackMap = new TreeMap<>();
+        namespaceRollback = prefix + "ROLLBACK/";
+        namespaceRollbackUpdate = namespaceRollback + "UPDATE/";
+        namespaceRollbackDel = namespaceRollback + "UPDATE/";
+        namespaceRollbackStatus = namespaceRollback + "STATUS";
     }
 
     /**
@@ -71,7 +75,7 @@ public class ControllerETCDRollbackMgr
     public void cleanup()
     {
         FluentTxnOps<?> tmpTx = etcdDb.getKvClient().batch();
-        ByteString bsKey = KeyUtils.bs(NAMESPACE_ROLLBACK);
+        ByteString bsKey = KeyUtils.bs(namespaceRollback);
         tmpTx.delete(
             DeleteRangeRequest.newBuilder()
                 .setKey(bsKey)
@@ -86,7 +90,7 @@ public class ControllerETCDRollbackMgr
     {
         if (!currentRollbackMap.isEmpty())
         {
-            String rollbackStatus = currentRollbackMap.get(KEY_ROLLBACK_STATUS);
+            String rollbackStatus = currentRollbackMap.get(namespaceRollbackStatus);
             if (rollbackStatus != null && rollbackStatus.equals(VALUE_STATUS_READY))
             {
                 FluentTxnOps<?> tx = etcdDb.getKvClient().batch();
@@ -101,9 +105,9 @@ public class ControllerETCDRollbackMgr
                     }
                     String key = entry.getKey();
                     String value = entry.getValue();
-                    if (key.startsWith(NAMESPACE_ROLLBACK_DEL))
+                    if (key.startsWith(namespaceRollbackDel))
                     {
-                        key = key.substring(NAMESPACE_ROLLBACK_DEL.length());
+                        key = key.substring(namespaceRollbackDel.length());
                         tx.delete(
                             DeleteRangeRequest.newBuilder()
                                 .setKey(KeyUtils.bs(key))
@@ -111,9 +115,9 @@ public class ControllerETCDRollbackMgr
                         );
                     }
                     else
-                    if (key.startsWith(NAMESPACE_ROLLBACK_UPDATE))
+                    if (key.startsWith(namespaceRollbackUpdate))
                     {
-                        key = key.substring(NAMESPACE_ROLLBACK_UPDATE.length());
+                        key = key.substring(namespaceRollbackUpdate.length());
                         tx.put(
                             PutRequest.newBuilder()
                                 .setKey(KeyUtils.bs(key))
@@ -138,11 +142,11 @@ public class ControllerETCDRollbackMgr
         FluentTxnOps<?> tx = etcdDb.getKvClient().batch();
         tx.get(
             RangeRequest.newBuilder()
-                .setKey(KeyUtils.bs(NAMESPACE_ROLLBACK))
+                .setKey(KeyUtils.bs(namespaceRollback))
                 .setRangeEnd(
                     KeyUtils.plusOne(
                         KeyUtils.bs(
-                            NAMESPACE_ROLLBACK
+                            namespaceRollback
                         )
                     )
                 )
@@ -332,7 +336,7 @@ public class ControllerETCDRollbackMgr
                 {
                     tmpTx.put(
                         PutRequest.newBuilder()
-                            .setKey(KeyUtils.bs(NAMESPACE_ROLLBACK_DEL + key))
+                            .setKey(KeyUtils.bs(namespaceRollbackDel + key))
                             .setValue(VALUE_DELETE_DUMMY_BS)
                             .build()
                     );
@@ -341,7 +345,7 @@ public class ControllerETCDRollbackMgr
                 {
                     tmpTx.put(
                         PutRequest.newBuilder()
-                            .setKey(KeyUtils.bs(NAMESPACE_ROLLBACK_UPDATE + key))
+                            .setKey(KeyUtils.bs(namespaceRollbackUpdate + key))
                             .setValue(KeyUtils.bs(valueToRollback))
                             .build()
                     );
@@ -357,7 +361,7 @@ public class ControllerETCDRollbackMgr
                 }
                 tmpTx.put(
                     PutRequest.newBuilder()
-                        .setKey(KeyUtils.bs(KEY_ROLLBACK_STATUS))
+                        .setKey(KeyUtils.bs(namespaceRollbackStatus))
                         .setValue(KeyUtils.bs(VALUE_STATUS_READY))
                         .build()
                 );
