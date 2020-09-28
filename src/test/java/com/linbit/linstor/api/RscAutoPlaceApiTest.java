@@ -9,7 +9,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -2176,7 +2176,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             }
             FreeSpaceMgr fsm = freeSpaceMgrFactory.getInstance(
                 BOB_ACC_CTX,
-                new FreeSpaceMgrName(stlt.getName(), DFLT_DISKLESS_STOR_POOL_NAME)
+                new SharedStorPoolName(stlt.getName(), DFLT_DISKLESS_STOR_POOL_NAME)
             );
             storPoolFactory.create(
                 BOB_ACC_CTX,
@@ -2352,8 +2352,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             FreeSpaceMgr fsm = freeSpaceMgrFactory.getInstance(
                 BOB_ACC_CTX,
                 freeSpaceMgrName == null ?
-                    new FreeSpaceMgrName(stlt.getName(), storPoolDfn.getName()) :
-                    FreeSpaceMgrName.restoreName(freeSpaceMgrName)
+                    new SharedStorPoolName(stlt.getName(), storPoolDfn.getName()) :
+                    SharedStorPoolName.restoreName(freeSpaceMgrName)
             );
 
             StorPool storPool = storPoolFactory.create(

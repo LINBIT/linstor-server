@@ -8,6 +8,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.CacheRscPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
@@ -19,14 +21,13 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
-import com.linbit.linstor.api.pojo.CacheRscPojo;
-import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.AbsLayerRscDataMerger;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsVolume;
@@ -44,6 +45,8 @@ import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
@@ -55,8 +58,6 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
-import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
-import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -404,7 +405,9 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
                     vlm.getAbsResource().getNode(),
                     storPoolDfn,
                     storPoolApi.getDeviceProviderKind(),
-                    freeSpaceMgrFactory.getInstance()
+                    freeSpaceMgrFactory.getInstance(
+                        SharedStorPoolName.restoreName(storPoolApi.getFreeSpaceManagerName())
+                    )
                 );
                 storPool.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolProps());
             }

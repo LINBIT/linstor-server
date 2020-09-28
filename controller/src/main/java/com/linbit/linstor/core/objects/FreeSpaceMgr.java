@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -28,7 +28,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
 
     private final ObjectProtection objProt;
 
-    private final FreeSpaceMgrName sharedPoolName;
+    private final SharedStorPoolName sharedPoolName;
 
     private final TransactionSimpleObject<FreeSpaceMgr, Long> freeCapacity;
     private final TransactionSimpleObject<FreeSpaceMgr, Long> totalCapacity;
@@ -39,7 +39,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     public FreeSpaceMgr(
         AccessContext privCtxRef,
         ObjectProtection objProtRef,
-        FreeSpaceMgrName freeSpaceMgrNameRef,
+        SharedStorPoolName sharedStorPoolNameRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
         TransactionObjectFactory transObjFactory
     )
@@ -47,7 +47,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         super(transMgrProviderRef);
         privCtx = privCtxRef;
         objProt = objProtRef;
-        sharedPoolName = freeSpaceMgrNameRef;
+        sharedPoolName = sharedStorPoolNameRef;
 
         freeCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
         totalCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
@@ -65,7 +65,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @return The name of the shared pool
      */
     @Override
-    public FreeSpaceMgrName getName()
+    public SharedStorPoolName getName()
     {
         return sharedPoolName;
     }

@@ -82,7 +82,7 @@ public class CtrlStorPoolCrtApiCallHandler
         String nodeNameStr,
         String storPoolNameStr,
         DeviceProviderKind providerKindRef,
-        String freeSpaceMgrNameStr,
+        String sharedStorPoolNameStr,
         Map<String, String> storPoolPropsMap,
         Flux<ApiCallRc> onError
     )
@@ -101,7 +101,7 @@ public class CtrlStorPoolCrtApiCallHandler
                     nodeNameStr,
                     storPoolNameStr,
                     providerKindRef,
-                    freeSpaceMgrNameStr,
+                    sharedStorPoolNameStr,
                     storPoolPropsMap,
                     context,
                     onError
@@ -114,7 +114,7 @@ public class CtrlStorPoolCrtApiCallHandler
         String nodeNameStr,
         String storPoolNameStr,
         DeviceProviderKind deviceProviderKindRef,
-        String freeSpaceMgrNameStr,
+        String sharedStorPoolNameStr,
         Map<String, String> storPoolPropsMap,
         ResponseContext context,
         Flux<ApiCallRc> onError
@@ -134,7 +134,7 @@ public class CtrlStorPoolCrtApiCallHandler
                 nodeNameStr,
                 storPoolNameStr,
                 deviceProviderKindRef,
-                freeSpaceMgrNameStr
+                sharedStorPoolNameStr
             );
 
             // check if specified preferred network interface exists

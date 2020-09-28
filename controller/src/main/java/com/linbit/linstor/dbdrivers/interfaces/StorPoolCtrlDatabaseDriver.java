@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
@@ -19,5 +19,5 @@ public interface StorPoolCtrlDatabaseDriver extends StorPoolDatabaseDriver,
             Map<StorPoolName, ? extends StorPoolDefinition>>>
 {
 
-    Map<FreeSpaceMgrName, FreeSpaceMgr> getAllLoadedFreeSpaceMgrs();
+    Map<SharedStorPoolName, FreeSpaceMgr> getAllLoadedFreeSpaceMgrs();
 }

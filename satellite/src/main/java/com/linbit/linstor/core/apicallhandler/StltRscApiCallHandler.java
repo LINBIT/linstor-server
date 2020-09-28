@@ -23,6 +23,7 @@ import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
@@ -796,7 +797,9 @@ class StltRscApiCallHandler
                         rsc.getNode(),
                         storPoolDfn,
                         storPoolApi.getDeviceProviderKind(),
-                        freeSpaceMgrFactory.getInstance()
+                        freeSpaceMgrFactory.getInstance(
+                            SharedStorPoolName.restoreName(storPoolApi.getFreeSpaceManagerName())
+                        )
                     );
                     storPool.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolProps());
 

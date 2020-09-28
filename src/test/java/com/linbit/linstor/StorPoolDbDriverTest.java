@@ -8,7 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
@@ -78,9 +78,9 @@ public class StorPoolDbDriverTest extends GenericDbBase
         node = nodeFactory.create(SYS_CTX, nodeName, Node.Type.SATELLITE, null);
         spdd = storPoolDefinitionFactory.create(SYS_CTX, spName);
 
-        fsm = freeSpaceMgrFactory.getInstance(SYS_CTX, new FreeSpaceMgrName(node.getName(), spdd.getName()));
+        fsm = freeSpaceMgrFactory.getInstance(SYS_CTX, new SharedStorPoolName(node.getName(), spdd.getName()));
         disklessFsm = freeSpaceMgrFactory.getInstance(
-            SYS_CTX, new FreeSpaceMgrName(node.getName(), new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME)));
+            SYS_CTX, new SharedStorPoolName(node.getName(), new StorPoolName(LinStor.DISKLESS_STOR_POOL_NAME)));
 
         uuid = randomUUID();
     }
@@ -174,7 +174,7 @@ public class StorPoolDbDriverTest extends GenericDbBase
             )
         );
 
-        Map<FreeSpaceMgrName, FreeSpaceMgr> tmpFreeSpaceMgrMap = new HashMap<>();
+        Map<SharedStorPoolName, FreeSpaceMgr> tmpFreeSpaceMgrMap = new HashMap<>();
         tmpFreeSpaceMgrMap.put(fsm.getName(), fsm);
         tmpFreeSpaceMgrMap.put(disklessFsm.getName(), disklessFsm);
 

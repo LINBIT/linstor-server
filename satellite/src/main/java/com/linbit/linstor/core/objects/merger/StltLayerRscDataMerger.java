@@ -27,6 +27,7 @@ import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.AbsLayerRscDataMerger;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsVolume;
@@ -412,7 +413,9 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
                     vlm.getAbsResource().getNode(),
                     storPoolDfn,
                     storPoolApi.getDeviceProviderKind(),
-                    freeSpaceMgrFactory.getInstance()
+                    freeSpaceMgrFactory.getInstance(
+                        SharedStorPoolName.restoreName(storPoolApi.getFreeSpaceManagerName())
+                    )
                 );
                 storPool.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolProps());
             }

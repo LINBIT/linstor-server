@@ -1,6 +1,6 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface FreeSpaceTracker extends TransactionObject
 {
-    FreeSpaceMgrName getName();
+    SharedStorPoolName getName();
 
     void vlmCreating(AccessContext accCtx, VlmProviderObject<?> vlmProviderObjRef) throws AccessDeniedException;
 

@@ -16,7 +16,7 @@ import com.linbit.linstor.core.SeedDefaultPeerRule;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlConfigModule;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -791,7 +791,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         throws AccessDeniedException, DatabaseException, InvalidNameException
     {
         return freeSpaceMgrFactory.getInstance(
-            SYS_CTX, new FreeSpaceMgrName(node.getName(), storPoolDfn.getName())
+            SYS_CTX, new SharedStorPoolName(node.getName(), storPoolDfn.getName())
         );
     }
 

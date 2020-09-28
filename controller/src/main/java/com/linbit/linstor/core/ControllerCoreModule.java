@@ -4,7 +4,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
 
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -40,13 +40,13 @@ public class ControllerCoreModule extends AbstractModule
         return propsContainerFactory.create(DB_CONTROLLER_PROPSCON_INSTANCE_NAME);
     }
 
-    public interface FreeSpaceMgrMap extends Map<FreeSpaceMgrName, FreeSpaceMgr>
+    public interface FreeSpaceMgrMap extends Map<SharedStorPoolName, FreeSpaceMgr>
     {
     }
 
     @Singleton
     public static class FreeSpaceMgrMapImpl
-        extends TransactionMap<FreeSpaceMgrName, FreeSpaceMgr> implements FreeSpaceMgrMap
+        extends TransactionMap<SharedStorPoolName, FreeSpaceMgr> implements FreeSpaceMgrMap
     {
         @Inject
         public FreeSpaceMgrMapImpl(Provider<TransactionMgr> transMgrProvider)

@@ -2,7 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
@@ -541,12 +541,12 @@ public final class ObjectProtection extends BaseTransactionObject
     /**
      * ObjProt-Path for FreeSpaceMgrs
      *
-     * @param freeSpaceMgrName
+     * @param sharedStorPoolName
      * @return
      */
-    public static String buildPath(FreeSpaceMgrName freeSpaceMgrName)
+    public static String buildPath(SharedStorPoolName sharedStorPoolName)
     {
-        return PATH_FREE_SPACE_MGRS + freeSpaceMgrName.value;
+        return PATH_FREE_SPACE_MGRS + sharedStorPoolName.value;
     }
 
     String getObjectProtectionPath()

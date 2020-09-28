@@ -6,7 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -273,21 +273,21 @@ public class LinstorParsingUtils
         return snapshotName;
     }
 
-    public static FreeSpaceMgrName asFreeSpaceMgrName(String freeSpaceMgrNameStr)
+    public static SharedStorPoolName asSharedStorPoolName(String sharedStorPoolNameStr)
     {
-        FreeSpaceMgrName fsmName;
+        SharedStorPoolName sharedStorPoolName;
         try
         {
-            fsmName = new FreeSpaceMgrName(freeSpaceMgrNameStr);
+            sharedStorPoolName = new SharedStorPoolName(sharedStorPoolNameStr);
         }
         catch (InvalidNameException invalidNameExc)
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_INVLD_FREE_SPACE_MGR_NAME,
-                "The given free space manager name '" + freeSpaceMgrNameStr + "' is invalid."
+                "The given free space manager name '" + sharedStorPoolNameStr + "' is invalid."
             ), invalidNameExc);
         }
-        return fsmName;
+        return sharedStorPoolName;
     }
 
     /**

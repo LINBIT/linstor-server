@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -16,31 +14,20 @@ import java.util.Optional;
 
 public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTracker
 {
-    private static final FreeSpaceMgrName FREE_SPACE_MGR_NAME;
+    private final SharedStorPoolName sharedStorPoolName;
 
-    static
-    {
-        try
-        {
-            FREE_SPACE_MGR_NAME = new FreeSpaceMgrName("DummyFreeSpace");
-        }
-        catch (InvalidNameException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
-    public StltFreeSpaceMgr(Provider<TransactionMgr> transMgrProvider)
+    public StltFreeSpaceMgr(Provider<TransactionMgr> transMgrProvider, SharedStorPoolName sharedStorPoolNameRef)
     {
         super(transMgrProvider);
 
         transObjs = Collections.emptyList();
+        sharedStorPoolName = sharedStorPoolNameRef;
     }
 
     @Override
-    public FreeSpaceMgrName getName()
+    public SharedStorPoolName getName()
     {
-        return FREE_SPACE_MGR_NAME;
+        return sharedStorPoolName;
     }
 
     @Override

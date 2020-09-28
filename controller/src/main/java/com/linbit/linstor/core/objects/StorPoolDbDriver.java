@@ -4,7 +4,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
@@ -49,7 +49,7 @@ public class StorPoolDbDriver
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
 
-    private final Map<FreeSpaceMgrName, FreeSpaceMgr> freeSpaceMgrMap;
+    private final Map<SharedStorPoolName, FreeSpaceMgr> freeSpaceMgrMap;
 
     @Inject
     public StorPoolDbDriver(
@@ -79,7 +79,7 @@ public class StorPoolDbDriver
     }
 
     @Override
-    public Map<FreeSpaceMgrName, FreeSpaceMgr> getAllLoadedFreeSpaceMgrs()
+    public Map<SharedStorPoolName, FreeSpaceMgr> getAllLoadedFreeSpaceMgrs()
     {
         return freeSpaceMgrMap;
     }
@@ -94,9 +94,9 @@ public class StorPoolDbDriver
     {
         final NodeName nodeName = raw.build(NODE_NAME, NodeName::new);
         final StorPoolName poolName = raw.build(POOL_NAME, StorPoolName::new);
-        final FreeSpaceMgrName fsmName = raw.build(FREE_SPACE_MGR_DSP_NAME, FreeSpaceMgrName::restoreName);
+        final SharedStorPoolName sharedStorPoolName = raw.build(FREE_SPACE_MGR_DSP_NAME, SharedStorPoolName::restoreName);
 
-        final FreeSpaceMgr fsm = restore(fsmName);
+        final FreeSpaceMgr fsm = restore(sharedStorPoolName);
 
         final Map<String, VlmProviderObject<Resource>> vlmMap = new TreeMap<>();
         final Map<String, VlmProviderObject<Snapshot>> snapVlmMap = new TreeMap<>();
@@ -119,19 +119,19 @@ public class StorPoolDbDriver
         );
     }
 
-    private FreeSpaceMgr restore(FreeSpaceMgrName fsmNameRef) throws DatabaseException
+    private FreeSpaceMgr restore(SharedStorPoolName sharedStorPoolNameRef) throws DatabaseException
     {
-        FreeSpaceMgr fsm = freeSpaceMgrMap.get(fsmNameRef);
+        FreeSpaceMgr fsm = freeSpaceMgrMap.get(sharedStorPoolNameRef);
         if (fsm == null)
         {
             fsm = new FreeSpaceMgr(
                 dbCtx,
-                getObjectProtection(ObjectProtection.buildPath(fsmNameRef)),
-                fsmNameRef,
+                getObjectProtection(ObjectProtection.buildPath(sharedStorPoolNameRef)),
+                sharedStorPoolNameRef,
                 transMgrProvider,
                 transObjFactory
             );
-            freeSpaceMgrMap.put(fsmNameRef, fsm);
+            freeSpaceMgrMap.put(sharedStorPoolNameRef, fsm);
         }
         return fsm;
     }

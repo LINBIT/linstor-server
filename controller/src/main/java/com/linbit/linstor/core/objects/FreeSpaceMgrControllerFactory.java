@@ -2,7 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.ControllerCoreModule;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class FreeSpaceMgrControllerFactory
 {
-    private final Map<FreeSpaceMgrName, FreeSpaceMgr> freeSpaceMgrMap;
+    private final Map<SharedStorPoolName, FreeSpaceMgr> freeSpaceMgrMap;
     private final AccessContext privCtx;
     private final ObjectProtectionFactory objProtFactory;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -39,24 +39,24 @@ public class FreeSpaceMgrControllerFactory
         transObjFactory = trasnObjFactoryRef;
     }
 
-    public FreeSpaceMgr getInstance(AccessContext accCtx, FreeSpaceMgrName fsmName)
+    public FreeSpaceMgr getInstance(AccessContext accCtx, SharedStorPoolName sharedStorPoolName)
         throws AccessDeniedException, DatabaseException
     {
-        FreeSpaceMgr ret = freeSpaceMgrMap.get(fsmName);
+        FreeSpaceMgr ret = freeSpaceMgrMap.get(sharedStorPoolName);
         if (ret == null)
         {
             ret = new FreeSpaceMgr(
                 privCtx,
                 objProtFactory.getInstance(
                     accCtx,
-                    ObjectProtection.buildPath(fsmName),
+                    ObjectProtection.buildPath(sharedStorPoolName),
                     true
                 ),
-                fsmName,
+                sharedStorPoolName,
                 transMgrProvider,
                 transObjFactory
             );
-            freeSpaceMgrMap.put(fsmName, ret);
+            freeSpaceMgrMap.put(sharedStorPoolName, ret);
         }
         return ret;
     }

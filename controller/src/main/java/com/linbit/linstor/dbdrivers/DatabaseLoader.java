@@ -7,7 +7,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
@@ -326,7 +326,7 @@ public class DatabaseLoader implements DatabaseDriver
                     .put(storPool.getNode().getName(), storPool);
             }
             // loading free space managers
-            Map<FreeSpaceMgrName, FreeSpaceMgr> tmpFreeSpaceMgrMap = storPoolDriver.getAllLoadedFreeSpaceMgrs();
+            Map<SharedStorPoolName, FreeSpaceMgr> tmpFreeSpaceMgrMap = storPoolDriver.getAllLoadedFreeSpaceMgrs();
 
             // temporary storPool map
             Map<Pair<NodeName, StorPoolName>, StorPool> tmpStorPoolMap =

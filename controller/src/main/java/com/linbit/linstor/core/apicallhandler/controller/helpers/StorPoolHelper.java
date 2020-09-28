@@ -11,7 +11,7 @@ import com.linbit.linstor.core.apicallhandler.controller.exceptions.IllegalStora
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.FreeSpaceMgrName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgrControllerFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
@@ -55,7 +55,7 @@ public class StorPoolHelper
         String nodeNameStr,
         String storPoolNameStr,
         DeviceProviderKind deviceProviderKindRef,
-        String freeSpaceMgrNameStr
+        String sharedStorPoolNameStr
     )
     {
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
@@ -83,16 +83,16 @@ public class StorPoolHelper
                 );
             }
 
-            FreeSpaceMgrName fsmName = freeSpaceMgrNameStr != null && !freeSpaceMgrNameStr.isEmpty() ?
-                LinstorParsingUtils.asFreeSpaceMgrName(freeSpaceMgrNameStr) :
-                new FreeSpaceMgrName(node.getName(), storPoolDef.getName());
+            SharedStorPoolName sharedSpaceName = sharedStorPoolNameStr != null && !sharedStorPoolNameStr.isEmpty() ?
+                LinstorParsingUtils.asSharedStorPoolName(sharedStorPoolNameStr) :
+                new SharedStorPoolName(node.getName(), storPoolDef.getName());
 
             storPool = storPoolFactory.create(
                 peerAccCtx.get(),
                 node,
                 storPoolDef,
                 deviceProviderKindRef,
-                freeSpaceMgrFactory.getInstance(peerAccCtx.get(), fsmName)
+                freeSpaceMgrFactory.getInstance(peerAccCtx.get(), sharedSpaceName)
             );
         }
         catch (AccessDeniedException accDeniedExc)

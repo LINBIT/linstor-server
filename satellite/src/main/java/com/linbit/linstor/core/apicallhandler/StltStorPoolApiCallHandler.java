@@ -14,6 +14,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgrSatelliteFactory;
 import com.linbit.linstor.core.objects.Node;
@@ -198,7 +199,9 @@ class StltStorPoolApiCallHandler
                     controllerPeerConnector.getLocalNode(),
                     storPoolDfn,
                     storPoolRaw.getDeviceProviderKind(),
-                    freeSpaceMgrFactory.getInstance()
+                    freeSpaceMgrFactory.getInstance(
+                        SharedStorPoolName.restoreName(storPoolRaw.getFreeSpaceManagerName())
+                    )
                 );
 
                 storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
