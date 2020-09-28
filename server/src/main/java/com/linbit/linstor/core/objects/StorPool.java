@@ -42,7 +42,7 @@ import java.util.UUID;
 public class StorPool extends BaseTransactionObject
     implements DbgInstanceUuid, Comparable<StorPool>, LinstorDataObject
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<String, VlmProviderObject<Resource>> getVolumeMap();
 
@@ -270,7 +270,6 @@ public class StorPool extends BaseTransactionObject
 
             node.removeStorPool(accCtx, this);
             storPoolDef.removeStorPool(accCtx, this);
-            freeSpaceTracker.remove(accCtx, this);
 
             props.delete();
 

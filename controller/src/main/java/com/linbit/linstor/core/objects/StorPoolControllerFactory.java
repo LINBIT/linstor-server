@@ -86,7 +86,6 @@ public class StorPoolControllerFactory
             new TreeMap<>()
         );
         driver.create(storPool);
-        freeSpaceTrackerRef.add(accCtx, storPool);
         node.addStorPool(accCtx, storPool);
         storPoolDef.addStorPool(accCtx, storPool);
 

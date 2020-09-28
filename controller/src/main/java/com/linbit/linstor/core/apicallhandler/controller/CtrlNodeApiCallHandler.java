@@ -308,7 +308,7 @@ public class CtrlNodeApiCallHandler
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_POOL_EXHAUSTED_OPENFLEX_TCP_PORT,
+                        ApiConsts.FAIL_POOL_EXHAUSTED_SPECIAL_SATELLTE_TCP_PORT,
                         "No TCP/IP port number could be allocated for the openflex_target node"
                     ),
                     exc

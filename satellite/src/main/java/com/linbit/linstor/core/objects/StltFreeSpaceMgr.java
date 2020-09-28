@@ -44,20 +44,6 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     }
 
     @Override
-    public void add(AccessContext accCtx, StorPool storPool)
-        throws AccessDeniedException
-    {
-        // Ignore
-    }
-
-    @Override
-    public void remove(AccessContext accCtx, StorPool storPool)
-        throws AccessDeniedException
-    {
-        // Ignore
-    }
-
-    @Override
     public void vlmCreating(AccessContext accCtx, VlmProviderObject<?> vlm)
         throws AccessDeniedException
     {

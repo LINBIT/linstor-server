@@ -29,7 +29,6 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     private final ObjectProtection objProt;
 
     private final FreeSpaceMgrName sharedPoolName;
-    private final Set<StorPool> sharedStoragePools;
 
     private final TransactionSimpleObject<FreeSpaceMgr, Long> freeCapacity;
     private final TransactionSimpleObject<FreeSpaceMgr, Long> totalCapacity;
@@ -49,7 +48,6 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         privCtx = privCtxRef;
         objProt = objProtRef;
         sharedPoolName = freeSpaceMgrNameRef;
-        sharedStoragePools = new TreeSet<>();
 
         freeCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
         totalCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
@@ -70,34 +68,6 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     public FreeSpaceMgrName getName()
     {
         return sharedPoolName;
-    }
-
-    /**
-     * Adds a new {@link StorPool} to this shared storage pool.
-     *
-     * @param storPool
-     * @throws AccessDeniedException
-     */
-    @Override
-    public void add(AccessContext accCtx, StorPool storPool) throws AccessDeniedException
-    {
-        objProt.requireAccess(accCtx, AccessType.USE);
-
-        // TODO: add check if vlm is part of a registered storPool
-        synchronizedAdd(sharedStoragePools, storPool);
-    }
-
-    /**
-     * Removes a new {@link StorPool} to this shared storage pool.
-     *
-     * @param storPool
-     */
-    @Override
-    public void remove(AccessContext accCtx, StorPool storPool) throws AccessDeniedException
-    {
-        objProt.requireAccess(accCtx, AccessType.USE);
-
-        synchronizedRemove(sharedStoragePools, storPool);
     }
 
     /**

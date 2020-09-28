@@ -12,10 +12,6 @@ public interface FreeSpaceTracker extends TransactionObject
 {
     FreeSpaceMgrName getName();
 
-    void add(AccessContext accCtx, StorPool storPool) throws AccessDeniedException;
-
-    void remove(AccessContext accCtx, StorPool storPool) throws AccessDeniedException;
-
     void vlmCreating(AccessContext accCtx, VlmProviderObject<?> vlmProviderObjRef) throws AccessDeniedException;
 
     void ensureVlmNoLongerCreating(
