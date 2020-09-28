@@ -5,8 +5,6 @@ import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -24,10 +22,6 @@ import java.util.TreeSet;
 
 public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTracker
 {
-    private final AccessContext privCtx;
-
-    private final ObjectProtection objProt;
-
     private final SharedStorPoolName sharedPoolName;
 
     private final TransactionSimpleObject<FreeSpaceMgr, Long> freeCapacity;
@@ -37,16 +31,12 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     private final TransactionSet<FreeSpaceMgr, VlmProviderObject<Snapshot>> pendingSnapshotVolumesToAdd;
 
     public FreeSpaceMgr(
-        AccessContext privCtxRef,
-        ObjectProtection objProtRef,
         SharedStorPoolName sharedStorPoolNameRef,
         Provider<? extends TransactionMgr> transMgrProviderRef,
         TransactionObjectFactory transObjFactory
     )
     {
         super(transMgrProviderRef);
-        privCtx = privCtxRef;
-        objProt = objProtRef;
         sharedPoolName = sharedStorPoolNameRef;
 
         freeCapacity = transObjFactory.createTransactionSimpleObject(this, null, null);
@@ -81,9 +71,8 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      */
     @SuppressWarnings("unchecked")
     @Override
-    public void vlmCreating(AccessContext accCtx, VlmProviderObject<?> vlm) throws AccessDeniedException
+    public void vlmCreating(AccessContext accCtx, VlmProviderObject<?> vlm)
     {
-        objProt.requireAccess(accCtx, AccessType.USE);
         // TODO: add check if vlm is part of a registered storPool
 
         if (vlm.getVolume() instanceof Volume)
@@ -99,14 +88,11 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
     /**
      * This method is called just to make sure that the reference to a soon deleted volume from this
      * {@link FreeSpaceMgr} are cleaned up
-     * @throws AccessDeniedException
      */
     @SuppressWarnings("unchecked")
     @Override
     public void ensureVlmNoLongerCreating(AccessContext accCtx, VlmProviderObject<?> vlm)
-        throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.USE);
         // no need to update capacity or free space as we are only deleting possible references
         // from the pendingAdding list. The "estimated space" will no longer consider this volume
         // and thus will "free up" the until now reserved space.
@@ -139,9 +125,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         Long freeCapacityRef,
         Long totalCapacityRef
     )
-        throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.USE);
 
         if (vlm.getVolume() instanceof Volume)
         {
@@ -163,21 +147,16 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @return the last received free space size (or {@link Optional#empty()} if not initialized yet).
      * This value will not include the changes of pending adds or removes.
      *
-     * @throws AccessDeniedException
      */
     @Override
-    public Optional<Long> getFreeCapacityLastUpdated(AccessContext accCtx) throws AccessDeniedException
+    public Optional<Long> getFreeCapacityLastUpdated(AccessContext accCtx)
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-
         return Optional.ofNullable(freeCapacity.get());
     }
 
     @Override
-    public Optional<Long> getTotalCapacity(AccessContext accCtx) throws AccessDeniedException
+    public Optional<Long> getTotalCapacity(AccessContext accCtx)
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-
         return Optional.ofNullable(totalCapacity.get());
     }
 
@@ -189,10 +168,8 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @throws AccessDeniedException
      */
     @Override
-    public long getReservedCapacity(AccessContext accCtx) throws AccessDeniedException
+    public long getReservedCapacity(AccessContext accCtx)
     {
-        objProt.requireAccess(accCtx, AccessType.VIEW);
-
         long sum = 0;
         HashSet<VlmProviderObject<?>> pendingAddVlmCopy;
         synchronized (pendingVolumesToAdd)
@@ -212,10 +189,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
 
     @Override
     public void setCapacityInfo(AccessContext accCtx, long freeSpaceRef, long totalCapacityRef)
-        throws AccessDeniedException
     {
-        objProt.requireAccess(accCtx, AccessType.USE);
-
         setImpl(freeSpaceRef, totalCapacityRef);
     }
 

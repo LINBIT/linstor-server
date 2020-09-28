@@ -4,8 +4,8 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -15,7 +15,6 @@ import com.linbit.linstor.dbdrivers.interfaces.StorPoolCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -125,8 +124,6 @@ public class StorPoolDbDriver
         if (fsm == null)
         {
             fsm = new FreeSpaceMgr(
-                dbCtx,
-                getObjectProtection(ObjectProtection.buildPath(sharedStorPoolNameRef)),
                 sharedStorPoolNameRef,
                 transMgrProvider,
                 transObjFactory
