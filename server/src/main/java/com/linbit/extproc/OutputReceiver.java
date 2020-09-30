@@ -1,6 +1,7 @@
 package com.linbit.extproc;
 
 import com.linbit.linstor.logging.ErrorReporter;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -34,6 +35,7 @@ public class OutputReceiver implements Runnable
 
     private IOException savedIoExc;
     private ErrorReporter errLog;
+    private boolean logExecution;
 
     /**
      * Creates a new instance that reads from the specified InputStream
@@ -42,8 +44,14 @@ public class OutputReceiver implements Runnable
      */
     public OutputReceiver(InputStream in, ErrorReporter errLogRef)
     {
+        this(in, errLogRef, true);
+    }
+
+    public OutputReceiver(InputStream in, ErrorReporter errLogRef, boolean logExecutionRef)
+    {
         dataIn = in;
         errLog = errLogRef;
+        logExecution = logExecutionRef;
         data = new byte[INIT_DATA_SIZE];
         dataSize = 0;
         finished = false;
@@ -241,13 +249,16 @@ public class OutputReceiver implements Runnable
     private int logLines(final int lineOffset, final int lastSearchPos)
     {
         int updLineOffset = lineOffset;
-        for (int idx = lastSearchPos; idx < dataSize; ++idx)
+        if (logExecution)
         {
-            if (data[idx] == '\n')
+            for (int idx = lastSearchPos; idx < dataSize; ++idx)
             {
-                String logString = new String(data, updLineOffset, idx - updLineOffset);
-                errLog.logTrace("%s", logString);
-                updLineOffset = idx + 1;
+                if (data[idx] == '\n')
+                {
+                    String logString = new String(data, updLineOffset, idx - updLineOffset);
+                    errLog.logTrace("%s", logString);
+                    updLineOffset = idx + 1;
+                }
             }
         }
         return updLineOffset;

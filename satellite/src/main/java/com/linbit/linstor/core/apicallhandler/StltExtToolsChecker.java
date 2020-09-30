@@ -248,7 +248,7 @@ public class StltExtToolsChecker
         String... cmd
     )
     {
-        return getStdoutOrErrorReason(cmd).map(
+        ExtToolsInfo extToolsInfo = getStdoutOrErrorReason(cmd).map(
             pair ->
             {
                 ExtToolsInfo ret;
@@ -283,6 +283,23 @@ public class StltExtToolsChecker
             },
             notSupportedReasonList -> new ExtToolsInfo(tool, false, null, null, null, notSupportedReasonList)
         );
+        if (extToolsInfo.isSupported())
+        {
+            errorReporter.logTrace(
+                "Checking support for %s: supported (%s)",
+                tool.name(),
+                extToolsInfo.getVersion().toString()
+            );
+        }
+        else
+        {
+            errorReporter.logTrace("Checking support for %s: NOT supported:", tool.name());
+            for (String reason : extToolsInfo.getNotSupportedReasons())
+            {
+                errorReporter.logTrace("   %s", reason);
+            }
+        }
+        return extToolsInfo;
     }
 
     private void checkModuleLoaded(List<String> loadedModulesRef, String moduleName, List<String> failReasons)
@@ -320,7 +337,7 @@ public class StltExtToolsChecker
         Either<Pair<String, String>, List<String>> ret;
         try
         {
-            OutputData out = extCmdFactory.create().exec(cmds);
+            OutputData out = extCmdFactory.create().logExecution(false).exec(cmds);
             if (exitCodeTest.test(out.exitCode))
             {
                 ret = Either.left(new Pair<>(new String(out.stdoutData), new String(out.stderrData)));
@@ -361,7 +378,7 @@ public class StltExtToolsChecker
         List<String> ret = new ArrayList<>();
         try
         {
-            errorReporter.logTrace("Scanning /proc/modules");
+            errorReporter.logTrace("Caching /proc/modules");
             Matcher matcher = PROC_MODULES_NAME_PATTERN.matcher(
                 new String(Files.readAllBytes(Paths.get("/proc/modules")))
             );

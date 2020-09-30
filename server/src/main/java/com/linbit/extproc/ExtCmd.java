@@ -30,6 +30,8 @@ public class ExtCmd extends ChildProcessHandler
     private String[] execCommand;
     private String execCommandStr;
 
+    private boolean logExecution = true;
+
     public ExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
     {
         super(timer);
@@ -77,7 +79,10 @@ public class ExtCmd extends ChildProcessHandler
         execCommand = command;
         execCommandStr = StringUtils.join(" ", command);
 
-        errLog.logDebug("Executing command: %s", execCommandStr);
+        if (logExecution)
+        {
+            errLog.logDebug("Executing command: %s", execCommandStr);
+        }
 
         ProcessBuilder pBuilder = new ProcessBuilder();
         pBuilder.directory(directory);
@@ -88,8 +93,8 @@ public class ExtCmd extends ChildProcessHandler
         Process child = pBuilder.start();
         startTime = System.currentTimeMillis();
         setChild(child);
-        outReceiver = new OutputReceiver(child.getInputStream(), errLog);
-        errReceiver = new OutputReceiver(child.getErrorStream(), errLog);
+        outReceiver = new OutputReceiver(child.getInputStream(), errLog, logExecution);
+        errReceiver = new OutputReceiver(child.getErrorStream(), errLog, logExecution);
         new Thread(outReceiver).start();
         new Thread(errReceiver).start();
 
@@ -108,13 +113,22 @@ public class ExtCmd extends ChildProcessHandler
             exitCode
         );
 
-        errLog.logTrace(
-            "External command finished in %dms: %s",
-            (System.currentTimeMillis() - startTime),
-            execCommandStr
-        );
+        if (logExecution)
+        {
+            errLog.logTrace(
+                "External command finished in %dms: %s",
+                (System.currentTimeMillis() - startTime),
+                execCommandStr
+            );
+        }
 
         return outData;
+    }
+
+    public ExtCmd logExecution(boolean logRef)
+    {
+        logExecution = logRef;
+        return this;
     }
 
     public static class OutputData
