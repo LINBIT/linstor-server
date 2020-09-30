@@ -19,6 +19,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -290,6 +292,10 @@ public class StltExtToolsChecker
         {
             check(failReasons, "modprobe", moduleName);
         }
+        else
+        {
+            errorReporter.logTrace("Module '%s' already loaded (found in /proc/modules)", module_Name);
+        }
     }
 
     private void check(List<String> resultErrors, String... commandParts)
@@ -355,26 +361,16 @@ public class StltExtToolsChecker
         List<String> ret = new ArrayList<>();
         try
         {
-            OutputData out = extCmdFactory.create().exec("cat", "/proc/modules");
-            if (out.exitCode != 0)
+            errorReporter.logTrace("Scanning /proc/modules");
+            Matcher matcher = PROC_MODULES_NAME_PATTERN.matcher(
+                new String(Files.readAllBytes(Paths.get("/proc/modules")))
+            );
+            while (matcher.find())
             {
-                errorReporter.logError(
-                    "External command 'cat /proc/modules' exited with return code %d.\nStdOut: \n%s\n\nStdErr:\n%s\n",
-                    out.exitCode,
-                    new String(out.stdoutData),
-                    new String(out.stderrData)
-                );
-            }
-            else
-            {
-                Matcher matcher = PROC_MODULES_NAME_PATTERN.matcher(new String(out.stdoutData));
-                while (matcher.find())
-                {
-                    ret.add(matcher.group(1));
-                }
+                ret.add(matcher.group(1));
             }
         }
-        catch (ChildProcessTimeoutException | IOException exc)
+        catch (IOException exc)
         {
             errorReporter.reportError(exc);
         }
