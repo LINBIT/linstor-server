@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 @Singleton
 public class StltExtToolsChecker
 {
-    private static final Pattern PROC_MODULES_NAME_PATTERN = Pattern.compile("^([^ ]+)");
+    private static final Pattern PROC_MODULES_NAME_PATTERN = Pattern.compile("^([^ ]+)", Pattern.MULTILINE);
 
     private static final Pattern DRBD_PROXY_VERSION_PATTERN = Pattern
         .compile("(?:Drbd-proxy )?(\\d+)\\.(\\d+)\\.(\\d+)");
