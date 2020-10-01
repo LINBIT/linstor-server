@@ -2,18 +2,30 @@ package com.linbit.linstor.tasks;
 
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.SatelliteConnector;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoRePlaceRscHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingAbortHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
@@ -36,8 +48,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import reactor.core.publisher.Flux;
 import reactor.util.context.Context;
+import reactor.util.function.Tuple2;
 
 @Singleton
 public class ReconnectorTask implements Task
@@ -57,6 +73,9 @@ public class ReconnectorTask implements Task
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
     private final SystemConfRepository systemConfRepo;
+    private final CtrlSatelliteUpdateCaller ctrlStltUpdateCaller;
+    private final CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelper;
+    private final NodeRepository nodeRepository;
 
     @Inject
     public ReconnectorTask(
@@ -68,7 +87,10 @@ public class ReconnectorTask implements Task
         LinStorScope reconnScopeRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
-        SystemConfRepository systemConfRepoRef
+        SystemConfRepository systemConfRepoRef,
+        CtrlSatelliteUpdateCaller ctlrStltUpdateCallerRef,
+        CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef,
+        NodeRepository nodeRepositoryRef
     )
     {
         apiCtx = apiCtxRef;
@@ -80,6 +102,9 @@ public class ReconnectorTask implements Task
         transactionMgrGenerator = transactionMgrGeneratorRef;
         snapShipAbortHandler = snapShipAbortHandlerRef;
         systemConfRepo = systemConfRepoRef;
+        ctrlStltUpdateCaller = ctlrStltUpdateCallerRef;
+        autoRePlaceRscHelper = autoRePlaceRscHelperRef;
+        nodeRepository = nodeRepositoryRef;
     }
 
     void setPingTask(PingTask pingTaskRef)
@@ -105,14 +130,7 @@ public class ReconnectorTask implements Task
             }
             else
             {
-                try
-                {
-                    peerSet.add(new ReconnectConfig(peer, systemConfRepo));
-                }
-                catch (AccessDeniedException exc)
-                {
-                    errorReporter.reportError(exc);
-                }
+                peerSet.add(new ReconnectConfig(peer, drbdConnectionsOk(peer)));
             }
         }
 
@@ -374,19 +392,106 @@ public class ReconnectorTask implements Task
     private ArrayList<ReconnectConfig> getFailedPeers()
     {
         ArrayList<ReconnectConfig> retry = new ArrayList<>();
+        PriorityProps props;
+        Long timeout;
         for (ReconnectConfig config : peerSet)
         {
-            System.out.println(config.aliveUntil);
-            if (System.currentTimeMillis() < config.aliveUntil)
+            try
             {
-                retry.add(config);
+                boolean drbdOkNew = drbdConnectionsOk(config.peer);
+                props = new PriorityProps(
+                    config.peer.getNode().getProps(config.peer.getAccessContext()),
+                    systemConfRepo.getCtrlConfForView(config.peer.getAccessContext())
+                );
+                timeout = Long.parseLong(
+                    props.getProp(
+                        ApiConsts.KEY_NODE_MAX_OFFLINE_TIME,
+                        ApiConsts.NAMESPC_NODE,
+                        "60" // 1 hour
+                    )
+                ) * 60 * 100; // to milliseconds
+                if (config.drbdOk != drbdOkNew)
+                {
+                    config.drbdOk = drbdOkNew;
+                    if (!config.drbdOk)
+                    {
+                        config.offlineSince = System.currentTimeMillis();
+                    }
+                }
+                if ((!config.drbdOk && System.currentTimeMillis() < config.offlineSince + timeout) || (config.drbdOk))
+                {
+                    retry.add(config);
+                }
+                else
+                {
+                    retry.add(config);
+                    int numLost = peerSet.size();
+                    int maxPercentLost = Integer.parseInt(
+                        props.getProp(ApiConsts.KEY_MAX_DISCONNECTED_NODES, ApiConsts.NAMESPC_NODE, "10")
+                    );
+                    if (maxPercentLost < 0 || maxPercentLost > 100)
+                    {
+                        maxPercentLost = 10;
+                    }
+                    int numNodes = nodeRepository.getMapForView(apiCtx).size();
+                    int maxLost = Math.round(maxPercentLost * numNodes / 100);
+                    if (numLost < maxLost && !config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.DEAD))
+                    {
+                        errorReporter.logTrace(
+                            config.peer + " has been offline for too long, relocation of resources started."
+                        );
+                        Node node = config.peer.getNode();
+                        node.markDead(apiCtx);
+                        Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlStltUpdateCaller.updateSatellites(
+                            node.getUuid(),
+                            node.getName(),
+                            CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
+                        );
+                        CtrlRscAutoHelper.AutoHelperInternalState autoState = new AutoHelperInternalState();
+                        autoState.additionalFluxList.add(
+                            flux.transform(tuple ->
+                            {
+                                return Flux.<ApiCallRc> empty();
+                            })
+                        );
+                        for (Resource res : node.streamResources(apiCtx).collect(Collectors.toList()))
+                        {
+                            res.markDeleted(apiCtx);
+                            autoRePlaceRscHelper.addNeedRePlaceRsc(res);
+                            autoRePlaceRscHelper.manage(new ApiCallRcImpl(), res.getDefinition(), autoState);
+                        }
+                        Flux.concat(autoState.additionalFluxList).subscribe();
+                    }
+                }
             }
-            else
+            catch (AccessDeniedException exc)
             {
-                // TODO: proclaim peer node DEAD
+                errorReporter.reportError(exc);
+            }
+            catch (DatabaseException exc)
+            {
+                errorReporter.reportError(exc);
             }
         }
         return retry;
+    }
+
+    private boolean drbdConnectionsOk(Peer peer)
+    {
+        Map<ResourceName, SatelliteResourceState> resStates = peer.getSatelliteState().getResourceStates();
+        if (resStates.isEmpty())
+        {
+            return false;
+        }
+        boolean drbdOk = true;
+        for (SatelliteResourceState state : resStates.values())
+        {
+            if (state.getConnectionStates().isEmpty())
+            {
+                drbdOk = false;
+            }
+        }
+        return drbdOk;
     }
 
     public void startReconnecting(Collection<Node> nodes, AccessContext initCtx)
@@ -411,23 +516,14 @@ public class ReconnectorTask implements Task
     private static class ReconnectConfig
     {
         private Peer peer;
-        private final long aliveUntil;
+        private long offlineSince;
+        private boolean drbdOk;
 
-        private ReconnectConfig(Peer peerRef, SystemConfRepository systemConfRepo)
-            throws AccessDeniedException
+        private ReconnectConfig(Peer peerRef, boolean drbdRef)
         {
             peer = peerRef;
-            PriorityProps props = new PriorityProps(
-                peer.getNode().getProps(peer.getAccessContext()),
-                systemConfRepo.getCtrlConfForView(peer.getAccessContext())
-            );
-            aliveUntil = System.currentTimeMillis() + Long.parseLong(
-                props.getProp(
-                    ApiConsts.KEY_NODE_MAX_OFFLINE_TIME,
-                    ApiConsts.NAMESPC_NODE,
-                    "18000000" // 5 hours
-                )
-            );
+            drbdOk = drbdRef;
+            offlineSince = System.currentTimeMillis();
         }
 
         public ReconnectConfig newPeer(Peer peerRef)
@@ -441,7 +537,7 @@ public class ReconnectorTask implements Task
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + (int) (aliveUntil ^ (aliveUntil >>> 32));
+            result = prime * result + (int) (offlineSince ^ (offlineSince >>> 32));
             result = prime * result + ((peer == null) ? 0 : peer.hashCode());
             return result;
         }
@@ -456,7 +552,7 @@ public class ReconnectorTask implements Task
             if (getClass() != obj.getClass())
                 return false;
             ReconnectConfig other = (ReconnectConfig) obj;
-            if (aliveUntil != other.aliveUntil)
+            if (offlineSince != other.offlineSince)
                 return false;
             if (peer == null)
             {

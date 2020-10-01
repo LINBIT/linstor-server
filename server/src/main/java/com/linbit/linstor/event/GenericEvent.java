@@ -7,15 +7,9 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import reactor.core.publisher.ConnectableFlux;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
-import reactor.core.publisher.UnicastProcessor;
-import reactor.core.scheduler.Scheduler;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,6 +21,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import reactor.core.publisher.ConnectableFlux;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.UnicastProcessor;
+import reactor.core.scheduler.Scheduler;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 public class GenericEvent<T> implements LinstorTriggerableEvent<T>
 {
