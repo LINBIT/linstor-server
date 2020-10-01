@@ -219,7 +219,8 @@ public class Node extends BaseTransactionObject
             storPoolMap,
             nodeConnections,
             nodeProps,
-            deleted, activeStltConn
+            deleted,
+            activeStltConn
         );
 
     }
@@ -718,7 +719,6 @@ public class Node extends BaseTransactionObject
         }
     }
 
-
     public boolean isDeleted()
     {
         return deleted.get();
@@ -732,6 +732,19 @@ public class Node extends BaseTransactionObject
         }
     }
 
+    public void markDead(AccessContext accCtx) throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        getFlags().enableFlags(accCtx, Flags.DEAD);
+    }
+
+    public void unMarkDead(AccessContext accCtx) throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CONTROL);
+        getFlags().disableFlags(accCtx, Flags.DEAD);
+    }
 
     public NodeApi getApiData(
         AccessContext accCtx,
@@ -849,6 +862,7 @@ public class Node extends BaseTransactionObject
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),
+        DEAD(DELETE.flagValue | 1L << 1),
         QIGNORE(0x10000L);
 
         public final long flagValue;
