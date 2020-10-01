@@ -73,8 +73,8 @@ public class ReconnectorTask implements Task
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
     private final SystemConfRepository systemConfRepo;
-    private final CtrlSatelliteUpdateCaller ctrlStltUpdateCaller;
-    private final CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelper;
+    private final Provider<CtrlSatelliteUpdateCaller> ctrlStltUpdateCaller;
+    private final Provider<CtrlRscAutoRePlaceRscHelper> autoRePlaceRscHelper;
     private final NodeRepository nodeRepository;
 
     @Inject
@@ -88,8 +88,8 @@ public class ReconnectorTask implements Task
         LockGuardFactory lockGuardFactoryRef,
         CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
         SystemConfRepository systemConfRepoRef,
-        CtrlSatelliteUpdateCaller ctlrStltUpdateCallerRef,
-        CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef,
+        Provider<CtrlSatelliteUpdateCaller> ctlrStltUpdateCallerRef,
+        Provider<CtrlRscAutoRePlaceRscHelper> autoRePlaceRscHelperRef,
         NodeRepository nodeRepositoryRef
     )
     {
@@ -442,7 +442,7 @@ public class ReconnectorTask implements Task
                         );
                         Node node = config.peer.getNode();
                         node.markDead(apiCtx);
-                        Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlStltUpdateCaller.updateSatellites(
+                        Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlStltUpdateCaller.get().updateSatellites(
                             node.getUuid(),
                             node.getName(),
                             CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
@@ -457,8 +457,8 @@ public class ReconnectorTask implements Task
                         for (Resource res : node.streamResources(apiCtx).collect(Collectors.toList()))
                         {
                             res.markDeleted(apiCtx);
-                            autoRePlaceRscHelper.addNeedRePlaceRsc(res);
-                            autoRePlaceRscHelper.manage(new ApiCallRcImpl(), res.getDefinition(), autoState);
+                            autoRePlaceRscHelper.get().addNeedRePlaceRsc(res);
+                            autoRePlaceRscHelper.get().manage(new ApiCallRcImpl(), res.getDefinition(), autoState);
                         }
                         Flux.concat(autoState.additionalFluxList).subscribe();
                     }

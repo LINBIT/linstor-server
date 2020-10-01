@@ -113,7 +113,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                         autoPlaceConfig.getLayerStackList(accCtx.get()),
                         autoPlaceConfig.getProviderList(accCtx.get()),
                         autoPlaceConfig.getDisklessOnRemaining(accCtx.get()),
-                        false
+                        null
                     );
                     try
                     {

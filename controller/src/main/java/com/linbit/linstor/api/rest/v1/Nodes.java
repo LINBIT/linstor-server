@@ -18,6 +18,7 @@ import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.SatelliteConfigApi;
 import com.linbit.linstor.core.cfg.StltConfig;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -241,6 +242,47 @@ public class Nodes
             ApiCallRc apiCallRc = ctrlApiCallHandler.reconnectNode(nodes);
 
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
+        }, false);
+    }
+
+    @PUT
+    @Path("{nodeName}/restore")
+    public Response restoreNode(
+        @Context Request request,
+        @PathParam("nodeName") String nodeName
+    )
+    {
+        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_NODE_RECONNECT, request), () ->
+        {
+            Response resp;
+            try {
+                ctrlNodeApiCallHandler.restoreNode(nodeName);
+                ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
+                    "Successfully restored node " + nodeName
+                );
+                resp = Response.status(Response.Status.OK).entity(ApiCallRcRestUtils.toJSON(rc)).build();
+            }
+            catch (AccessDeniedException exc)
+            {
+                errorReporter.reportError(exc);
+                ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_ACC_DENIED_NODE | ApiConsts.MASK_NODE,
+                    "Access to node " + nodeName + " denied"
+                );
+                resp = Response.status(Response.Status.UNAUTHORIZED).entity(ApiCallRcRestUtils.toJSON(rc)).build();
+            }
+            catch (DatabaseException exc)
+            {
+                String rep = errorReporter.reportError(exc);
+                ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_SQL | ApiConsts.MASK_NODE,
+                    "Database Error, see error report " + rep
+                );
+                resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ApiCallRcRestUtils.toJSON(rc))
+                    .build();
+            }
+            return resp;
         }, false);
     }
 

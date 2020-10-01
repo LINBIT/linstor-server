@@ -954,4 +954,9 @@ public class CtrlNodeApiCallHandler
             .transform(response -> responseConverter.reportingExceptions(context, response));
         return fluxReturn;
     }
+
+    public void restoreNode(String nodeName) throws AccessDeniedException, DatabaseException
+    {
+        ctrlApiDataLoader.loadNode(nodeName, true).unMarkDead(apiCtx);
+    }
 }

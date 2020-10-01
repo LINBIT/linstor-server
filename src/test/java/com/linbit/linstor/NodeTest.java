@@ -20,12 +20,13 @@ public class NodeTest
     public void testAllFlags()
     {
         final long mask = Node.Flags.DELETE.flagValue |
-                Node.Flags.QIGNORE.flagValue;
+                Node.Flags.QIGNORE.flagValue |
+                Node.Flags.DEAD.flagValue;
         List<String> strList = Node.Flags.toStringList(mask);
         assertEquals(Node.Flags.values().length, strList.size());
 
         assertArrayEquals(
-                new String[]{ApiConsts.FLAG_DELETE, ApiConsts.FLAG_QIGNORE},
+                new String[]{ApiConsts.FLAG_DELETE, ApiConsts.FLAG_DEAD, ApiConsts.FLAG_QIGNORE},
                 strList.toArray());
         assertEquals(mask, Node.Flags.fromStringList(strList));
     }
