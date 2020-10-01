@@ -307,7 +307,6 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
                 autoHelperState.preventUpdateSatellitesForResourceDelete = true;
                 autoHelperState.requiresUpdateFlux = true;
-                autoHelperState.fluxUpdateApplied = true;
             }
             apiCallRcImpl.addEntries(
                 ApiCallRcImpl.singleApiCallRc(

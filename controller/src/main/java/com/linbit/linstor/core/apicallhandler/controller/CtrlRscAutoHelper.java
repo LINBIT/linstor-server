@@ -65,6 +65,7 @@ public class CtrlRscAutoHelper
         CtrlRscAutoQuorumHelper autoQuorumHelperRef,
         CtrlRscAutoTieBreakerHelper autoTieBreakerRef,
         CtrlRscAutoDrbdProxyHelper autoDrbdProxyHelperRef,
+        CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef,
         CtrlApiDataLoader dataLoaderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscCrtApiHelper rscCrtHelperRef,
@@ -72,7 +73,8 @@ public class CtrlRscAutoHelper
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
     )
     {
-        autohelperList = Arrays.asList(autoTieBreakerRef, autoQuorumHelperRef, autoDrbdProxyHelperRef);
+        autohelperList = Arrays
+            .asList(autoTieBreakerRef, autoQuorumHelperRef, autoDrbdProxyHelperRef, autoRePlaceRscHelperRef);
 
         dataLoader = dataLoaderRef;
         peerAccCtx = peerAccCtxRef;
@@ -94,6 +96,7 @@ public class CtrlRscAutoHelper
     {
         AutoHelperResult result = new AutoHelperResult();
         AutoHelperInternalState autoHelperInternalState = new AutoHelperInternalState();
+        boolean fluxUpdateApplied = false;
 
         for (AutoHelper autohelper : autohelperList)
         {
@@ -108,7 +111,7 @@ public class CtrlRscAutoHelper
                     autoHelperInternalState.resourcesToCreate
                 )
             );
-            autoHelperInternalState.fluxUpdateApplied = true;
+            fluxUpdateApplied = true;
         }
 
         if (!autoHelperInternalState.nodeNamesForDelete.isEmpty())
@@ -119,10 +122,10 @@ public class CtrlRscAutoHelper
                     rscDfn.getName()
                 )
             );
-            autoHelperInternalState.fluxUpdateApplied = true;
+            fluxUpdateApplied = true;
         }
 
-        if (autoHelperInternalState.requiresUpdateFlux && !autoHelperInternalState.fluxUpdateApplied)
+        if (autoHelperInternalState.requiresUpdateFlux && !fluxUpdateApplied)
         {
             autoHelperInternalState.additionalFluxList.add(
                 ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
@@ -185,19 +188,18 @@ public class CtrlRscAutoHelper
         }
     }
 
-    static class AutoHelperInternalState
+    public static class AutoHelperInternalState
     {
         TreeSet<Resource> resourcesToCreate = new TreeSet<>();
         TreeSet<NodeName> nodeNamesForDelete = new TreeSet<>();
 
-        List<Flux<ApiCallRc>> additionalFluxList = new ArrayList<>();
+        public List<Flux<ApiCallRc>> additionalFluxList = new ArrayList<>();
 
         boolean requiresUpdateFlux = false;
-        boolean fluxUpdateApplied = false;
 
         boolean preventUpdateSatellitesForResourceDelete = false;
 
-        private AutoHelperInternalState()
+        public AutoHelperInternalState()
         {
 
         }
