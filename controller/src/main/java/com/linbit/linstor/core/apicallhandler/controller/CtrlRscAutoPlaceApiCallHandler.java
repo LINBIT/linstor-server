@@ -183,7 +183,8 @@ public class CtrlRscAutoPlaceApiCallHandler
             {
                 try
                 {
-                    return rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
+                    return rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) ||
+                        rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DELETE);
                 }
                 catch (AccessDeniedException exc)
                 {
