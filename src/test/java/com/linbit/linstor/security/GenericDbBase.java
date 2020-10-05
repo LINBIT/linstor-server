@@ -16,10 +16,10 @@ import com.linbit.linstor.core.SeedDefaultPeerRule;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlConfigModule;
-import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
@@ -61,6 +61,15 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.test.factories.NetInterfaceTestFactory;
+import com.linbit.linstor.test.factories.NodeTestFactory;
+import com.linbit.linstor.test.factories.ResourceDefinitionTestFactory;
+import com.linbit.linstor.test.factories.ResourceGroupTestFactory;
+import com.linbit.linstor.test.factories.ResourceTestFactory;
+import com.linbit.linstor.test.factories.StorPoolDefinitionTestFactory;
+import com.linbit.linstor.test.factories.StorPoolTestFactory;
+import com.linbit.linstor.test.factories.VolumeDefinitionTestFactory;
+import com.linbit.linstor.test.factories.VolumeTestFactory;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.ControllerSQLTransactionMgr;
@@ -201,11 +210,17 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject
     protected NodeControllerFactory nodeFactory;
     @Inject
+    protected NodeTestFactory nodeTestFactory;
+    @Inject
     protected ResourceConnectionControllerFactory resourceConnectionFactory;
     @Inject
     protected ResourceControllerFactory resourceFactory;
     @Inject
+    protected ResourceTestFactory resourceTestFactory;
+    @Inject
     protected StorPoolDefinitionControllerFactory storPoolDefinitionFactory;
+    @Inject
+    protected StorPoolDefinitionTestFactory storPoolDefinitionTestFactory;
     @Inject
     protected VolumeConnectionFactory volumeConnectionFactory;
     @Inject
@@ -213,17 +228,29 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @Inject
     protected StorPoolControllerFactory storPoolFactory;
     @Inject
+    protected StorPoolTestFactory storPoolTestFactory;
+    @Inject
     protected FreeSpaceMgrControllerFactory freeSpaceMgrFactory;
     @Inject
     protected VolumeControllerFactory volumeFactory;
     @Inject
+    protected VolumeTestFactory volumeTestFactory;
+    @Inject
     protected VolumeDefinitionControllerFactory volumeDefinitionFactory;
+    @Inject
+    protected VolumeDefinitionTestFactory volumeDefinitionTestFactory;
     @Inject
     protected ResourceDefinitionControllerFactory resourceDefinitionFactory;
     @Inject
+    protected ResourceDefinitionTestFactory resourceDefinitionTestFactory;
+    @Inject
     protected ResourceGroupControllerFactory resourceGroupFactory;
     @Inject
+    protected ResourceGroupTestFactory resourceGroupTestFactory;
+    @Inject
     protected NetInterfaceFactory netInterfaceFactory;
+    @Inject
+    protected NetInterfaceTestFactory netInterfaceTestFactory;
 
     @Inject
     protected LinStorScope testScope;

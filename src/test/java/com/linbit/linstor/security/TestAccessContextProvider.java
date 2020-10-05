@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 public class TestAccessContextProvider
 {
     public static final AccessContext SYS_CTX;
+    public static final AccessContext INIT_CTX;
     public static final AccessContext PUBLIC_CTX;
 
     public static final AccessContext ALICE_ACC_CTX;
@@ -18,6 +19,9 @@ public class TestAccessContextProvider
         {
             SYS_CTX = (AccessContext) getDeclaredField(SecurityModule.class, "SYSTEM_CTX", securityModule);
             PUBLIC_CTX = (AccessContext) getDeclaredField(SecurityModule.class, "PUBLIC_CTX", securityModule);
+
+            INIT_CTX = SYS_CTX.clone();
+            INIT_CTX.privEffective.enablePrivileges(Privilege.PRIVILEGE_LIST);
 
             PrivilegeSet alicePrivSet = new PrivilegeSet();
             ALICE_ACC_CTX = new AccessContext(
