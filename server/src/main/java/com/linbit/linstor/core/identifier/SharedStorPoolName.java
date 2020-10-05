@@ -1,8 +1,8 @@
 package com.linbit.linstor.core.identifier;
 
-import com.linbit.InvalidNameException;
 import com.linbit.Checks;
 import com.linbit.GenericName;
+import com.linbit.InvalidNameException;
 
 /**
  * Valid name of a linstor free space manager
@@ -20,15 +20,19 @@ public class SharedStorPoolName extends GenericName
     // at least as much as NodeName!
     public static final byte[] VALID_INNER_CHARS = {'_', '-', '.'};
 
+    private final boolean shared;
+
     public SharedStorPoolName(String sharedStorPoolNameStr) throws InvalidNameException
     {
         super(sharedStorPoolNameStr);
         Checks.nameCheck(sharedStorPoolNameStr, MIN_LENGTH, MAX_LENGTH, VALID_CHARS, VALID_INNER_CHARS);
+        shared = !sharedStorPoolNameStr.contains(RESERVED_CONNECTOR);
     }
 
     public SharedStorPoolName(NodeName nodeName, StorPoolName storPoolName) throws InvalidNameException
     {
         super(nodeName.displayValue + RESERVED_CONNECTOR + storPoolName.displayValue);
+        shared = false;
     }
 
     public static SharedStorPoolName restoreName(String sharedStorPoolNameStr) throws InvalidNameException
@@ -48,5 +52,10 @@ public class SharedStorPoolName extends GenericName
             ret = new SharedStorPoolName(new NodeName(parts[0]), new StorPoolName(parts[1]));
         }
         return ret;
+    }
+
+    public boolean isShared()
+    {
+        return shared;
     }
 }

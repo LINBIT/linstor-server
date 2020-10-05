@@ -54,6 +54,7 @@ import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.TestDbModule;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
+import com.linbit.linstor.layer.resource.AbsRscLayerHelper;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -297,6 +298,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         errorReporter.logTrace("Running cleanups for next method: %s", testMethodName.getMethodName());
         truncateTables();
         insertDefaults(con);
+
+        AbsRscLayerHelper.databaseLoadingFinished();
         errorReporter.logTrace("cleanups done, initializing: %s", testMethodName.getMethodName());
 
         MockitoAnnotations.initMocks(this);

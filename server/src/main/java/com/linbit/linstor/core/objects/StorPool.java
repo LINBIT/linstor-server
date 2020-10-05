@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
@@ -330,6 +331,11 @@ public class StorPool extends BaseTransactionObject
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
         return supportsSnapshots.get() != null;
+    }
+
+    public SharedStorPoolName getSharedStorPoolName()
+    {
+        return freeSpaceTracker.getName();
     }
 
     private void checkDeleted()
