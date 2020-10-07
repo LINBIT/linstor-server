@@ -10,14 +10,14 @@ import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
 
 @Singleton
 public class TransactionObjectFactory
@@ -32,13 +32,20 @@ public class TransactionObjectFactory
         transMgrProvider = transMgrProviderRef;
     }
 
+    public <ELEMENT> TransactionSimpleObject<Void, ELEMENT> createVolatileTransactionSimpleObject(
+        ELEMENT element
+    )
+    {
+        return createTransactionSimpleObject(null, element, null);
+    }
+
     public <PARENT, ELEMENT> TransactionSimpleObject<PARENT, ELEMENT> createTransactionSimpleObject(
         PARENT parent,
         ELEMENT element,
         SingleColumnDatabaseDriver<PARENT, ELEMENT> driver
     )
     {
-        return new TransactionSimpleObject<PARENT, ELEMENT>(
+        return new TransactionSimpleObject<>(
             parent,
             element,
             driver,
@@ -46,6 +53,12 @@ public class TransactionObjectFactory
         );
     }
 
+    public <KEY, VALUE extends TransactionObject> TransactionMap<KEY, VALUE> createVolatileTransactionMap(
+        Map<KEY, VALUE> mapRef
+    )
+    {
+        return createTransactionMap(mapRef, null);
+    }
     public <KEY, VALUE extends TransactionObject> TransactionMap<KEY, VALUE> createTransactionMap(
         Map<KEY, VALUE> mapRef,
         MapDatabaseDriver<KEY, VALUE> driver
@@ -54,13 +67,27 @@ public class TransactionObjectFactory
         return new TransactionMap<>(mapRef, driver, transMgrProvider);
     }
 
+    public <VALUE extends TransactionObject> TransactionSet<Void, VALUE> createVolatileTransactionSet(
+        Set<VALUE> backingSet
+    )
+    {
+        return createTransactionSet(null, backingSet, null);
+    }
+
     public <PARENT, VALUE extends TransactionObject> TransactionSet<PARENT, VALUE> createTransactionSet(
         PARENT parent,
         Set<VALUE> backingSet,
         CollectionDatabaseDriver<PARENT, VALUE> dbDriver
     )
     {
-        return new TransactionSet<PARENT, VALUE>(parent, backingSet, dbDriver, transMgrProvider);
+        return new TransactionSet<>(parent, backingSet, dbDriver, transMgrProvider);
+    }
+
+    public <VALUE extends TransactionObject> TransactionList<Void, VALUE> createVolatileTransactionList(
+        List<VALUE> backingList
+    )
+    {
+        return createTransactionList(null, backingList, null);
     }
 
     public <PARENT, VALUE extends TransactionObject> TransactionList<PARENT, VALUE> createTransactionList(
@@ -69,7 +96,14 @@ public class TransactionObjectFactory
         CollectionDatabaseDriver<PARENT, VALUE> dbDriver
     )
     {
-        return new TransactionList<PARENT, VALUE>(parent, backingList, dbDriver, transMgrProvider);
+        return new TransactionList<>(parent, backingList, dbDriver, transMgrProvider);
+    }
+
+    public <VALUE> TransactionList<Void, VALUE> createVolatileTransactionPrimitiveList(
+        List<VALUE> backingList
+    )
+    {
+        return createTransactionPrimitiveList(null, backingList, null);
     }
 
     public <PARENT, VALUE> TransactionList<PARENT, VALUE> createTransactionPrimitiveList(
@@ -78,7 +112,7 @@ public class TransactionObjectFactory
         CollectionDatabaseDriver<PARENT, VALUE> dbDriver
     )
     {
-        return new TransactionList<PARENT, VALUE>(parent, backingList, dbDriver, transMgrProvider);
+        return new TransactionList<>(parent, backingList, dbDriver, transMgrProvider);
     }
 
     public <PARENT, FLAG extends Enum<FLAG> & Flags> StateFlags<FLAG> createStateFlagsImpl(
@@ -106,7 +140,7 @@ public class TransactionObjectFactory
         long initFlags
     )
     {
-        return new StateFlagsBits<PARENT, FLAG>(
+        return new StateFlagsBits<>(
             objProts,
             parentObj,
             StateFlagsBits.getMask(
