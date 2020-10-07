@@ -6,6 +6,9 @@ before_script:
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
+  VIRTER_VERSION: v0.6.0
+  VMSHED_VERSION: v0.7.0
+  BUILD_HELPERS_VERSION: c0d39c0e5a2235262f21d072c4bf3b2dd62b2040
 
 cache:
   paths:
@@ -13,8 +16,16 @@ cache:
     - .gradle/caches
     - tools
 
+stages:
+  - build
+  - test
+  - deploy
+  - test-e2e
+
 build:
   stage: build
+  rules:
+    - when: on_success
   script:
     - gradle -PversionOverride= assemble
   artifacts:
@@ -24,6 +35,8 @@ build:
 
 test:
   stage: test
+  rules:
+    - when: on_success
   script:
     - JAVA_OPTS="-ea" gradle -PversionOverride= test
   artifacts:
@@ -32,8 +45,8 @@ test:
 
 deploy:
   stage: deploy
-  dependencies:
-    - build
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
   before_script:
     - echo "DEPLOY"
   script:
@@ -43,20 +56,60 @@ deploy:
     - docker push $CI_REGISTRY/linstor/linstor-server/controller:latest
   tags:
     - shell
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
 
 deploy-nexus:
   stage: deploy
   image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
   rules:
-    - if: '$CI_COMMIT_BRANCH == "jenkins"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == 'jenkins'
+    - if: $CI_COMMIT_BRANCH == 'master'
   before_script:
     - curl -sSL $LINBIT_REGISTRY_URL/repository/lbbuild/lbbuildctl-latest -o /usr/local/bin/lbbuildctl
     - chmod +x /usr/local/bin/lbbuildctl
   script:
-    - LINSTOR_VERSION=1.99.0
+    - LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
     - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
     - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
     - lbbuildctl build linstor-server --arch amd64 --ci -v "$LINSTOR_VERSION" -l -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL -d ubuntu-bionic,ubuntu-focal,rhel7.0,rhel8.0
+
+test-e2e:
+  stage: test-e2e
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: $CI_COMMIT_BRANCH == 'jenkins'
+    - if: $CI_COMMIT_BRANCH == 'master'
+  tags:
+    - libvirt
+  before_script:
+    - echo "no before"
+  script:
+    - mkdir -p linstor-test-bundle
+    - curl -sSL $LINBIT_REGISTRY_URL/repository/test-suite/linstor-test-bundle.tgz | tar -C linstor-test-bundle -xvzf -
+    - |
+      curl -sSfL -u gitlab-ci-token:$CI_JOB_TOKEN https://gitlab.at.linbit.com/linbit/build-helpers/-/archive/$BUILD_HELPERS_VERSION/ignored.tar.gz | tar -xvzf -
+      mv build-helpers-* build-helpers
+      . build-helpers/gitlab-utils.sh
+    - |
+      ci_prepare_tools
+      ci_fetch_rq
+      ci_fetch_binary virter virter-$VIRTER_VERSION https://github.com/LINBIT/virter/releases/download/$VIRTER_VERSION/virter-linux-amd64
+      ci_fetch_binary vmshed vmshed-$VMSHED_VERSION https://github.com/LINBIT/vmshed/releases/download/$VMSHED_VERSION/vmshed-linux-amd64
+    - docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:latest
+    - |
+      case "$CI_COMMIT_BRANCH" in
+       "jenkins") VARIANTS="--variant default --variant etcd" ;;
+       *) VARIANTS=$VMSHED_VARIANTS ;;
+      esac
+    - echo "Running variants $VARIANTS"
+    - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
+    - ./linstor-test-bundle/virter/run-test.sh $VARIANTS $VMSHED_TORUN
+  artifacts:
+    # provide a convenient name so that the downloaded artifacts can be identified
+    name: $CI_PROJECT_NAME-$CI_JOB_ID
+    paths:
+      - tests-out/
+    when: always
+    reports:
+      junit: tests-out/test-results/*.xml
