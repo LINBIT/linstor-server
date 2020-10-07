@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.internal;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
@@ -17,11 +18,14 @@ import com.linbit.locks.LockGuard;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
+
+import reactor.core.publisher.Flux;
 
 import static java.util.stream.Collectors.toList;
 
@@ -121,5 +125,15 @@ public class NodeInternalCallHandler
                 new ImplementationError(exc)
             );
         }
+    }
+
+    public Flux<ApiCallRc> handleDevMgrRunCompleted(Node node)
+    {
+        // node is null if the peer calling this API was not a satellite...
+        if (node != null)
+        {
+            errorReporter.logTrace("%s finished with devMgr", node);
+        }
+        return Flux.empty();
     }
 }

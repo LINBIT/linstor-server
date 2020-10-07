@@ -1016,11 +1016,17 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             }
             dispatchRscResponses.clear();
 
-
             for (FluxSink<ApiCallRc> responseSink : responseSinks)
             {
                 responseSink.complete();
             }
+
+            Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+            ctrlPeer.sendMessage(
+                interComSerializer
+                    .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
+                    .build()
+            );
         }
     }
 
