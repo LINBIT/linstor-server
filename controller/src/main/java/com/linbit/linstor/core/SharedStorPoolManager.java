@@ -5,12 +5,14 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSet;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -22,8 +24,8 @@ import javax.inject.Singleton;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -31,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 @Singleton
 public class SharedStorPoolManager extends BaseTransactionObject
@@ -38,8 +41,9 @@ public class SharedStorPoolManager extends BaseTransactionObject
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
     private final TransactionObjectFactory transFactory;
+    private final Provider<? extends TransactionMgr> transMgrProvider;
 
-    private final TransactionMap<SharedStorPoolName, TransactionSet<SharedStorPoolManager, Resource>> queue;
+    private final TransactionMap<SharedStorPoolName, TransactionSet<Void, TransactionObject>> queue;
     private final TransactionMap<SharedStorPoolName, Node> activeLocks;
 
     @Inject
@@ -47,13 +51,14 @@ public class SharedStorPoolManager extends BaseTransactionObject
         @SystemContext AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
         TransactionObjectFactory transFactoryRef,
-        Provider<? extends TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
-        super(transMgrProvider);
+        super(transMgrProviderRef);
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
         transFactory = transFactoryRef;
+        transMgrProvider = transMgrProviderRef;
 
         // queue = transFactoryRef.createTransactionSet(this, new LinkedHashSet<>(), null);
         queue = transFactoryRef.createTransactionMap(new TreeMap<>(), null);
@@ -105,28 +110,23 @@ public class SharedStorPoolManager extends BaseTransactionObject
     }
 
     /**
-     * Requests all shared locks required for processing the given Resource.
+     * Requests all shared locks (if any) required for processing the given Resource.
      *
-     * @return A set of {@link Resource}s that were waiting for the now acquired lock(s), and are now ready to be sent
-     *         to the satellite for processing.<br />
-     *
-     *         The returned set can be empty, but not null.<br />
-     *
-     *         An empty set means that the lock could not be acquired. In this case the request is queued. As soon as
-     *         the lock is released, the next set of Resources will be processed.
+     * @return True if the lock could be acquired. False otherwise.
      */
-    public Set<Resource> requestSharedLock(Resource rsc)
+    public boolean requestSharedLock(TransactionObject txObj)
     {
-        errorReporter.logTrace("%s requesting shared lock(s)", rsc);
-        Set<Resource> resourcesReadyToProces = new TreeSet<>();
-        try
+        boolean granted = true;
+        synchronized (activeLocks)
         {
-            Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, sysCtx);
-            Set<SharedStorPoolName> sharedNames = getSharedSpNames(storPools);
-
-            boolean granted = true;
-            synchronized (activeLocks)
+            Set<SharedStorPoolName> sharedNames = getSharedSpNames(txObj);
+            if (sharedNames.isEmpty())
             {
+                errorReporter.logTrace("No locks required for %s", txObj);
+            }
+            else
+            {
+                errorReporter.logTrace("%s requesting shared lock(s): %s ", txObj, sharedNames);
                 for (SharedStorPoolName spSharedName : sharedNames)
                 {
                     if (activeLocks.containsKey(spSharedName))
@@ -142,14 +142,8 @@ public class SharedStorPoolManager extends BaseTransactionObject
                     {
                         for (SharedStorPoolName spSharedName : sharedNames)
                         {
-                            TransactionSet<SharedStorPoolManager, Resource> spQueue = queue.get(spSharedName);
-                            if (
-                                spQueue != null && !spQueue.isEmpty() &&
-                                    !Objects.equals(
-                                        spQueue.iterator().next(),
-                                        rsc
-                                    )
-                            )
+                            TransactionSet<Void, TransactionObject> spsharedSpQueue = queue.get(spSharedName);
+                            if (spsharedSpQueue != null && !spsharedSpQueue.isEmpty())
                             {
                                 /*
                                  * the requesting resource is not the next. We have to delay the requesting resource
@@ -166,43 +160,37 @@ public class SharedStorPoolManager extends BaseTransactionObject
                 }
                 if (granted)
                 {
-                    lock(rsc, sharedNames);
-                    resourcesReadyToProces.add(rsc);
+                    lock(getNode(txObj), sharedNames);
                 }
                 else
                 {
                     synchronized (queue)
                     {
+                        errorReporter.logTrace("at least some locks already taken. Adding to queue");
                         for (SharedStorPoolName spSharedName : sharedNames)
                         {
-                            errorReporter.logTrace("Lock(s) %s rejected for %s. Queuing request", sharedNames, rsc);
-                            TransactionSet<SharedStorPoolManager, Resource> sharedSpQueue = queue.get(spSharedName);
+                            TransactionSet<Void, TransactionObject> sharedSpQueue = queue.get(spSharedName);
                             if (sharedSpQueue == null)
                             {
-                                sharedSpQueue = transFactory.createTransactionSet(this, new LinkedHashSet<>(), null);
+                                sharedSpQueue = transFactory.createVolatileTransactionSet(new LinkedHashSet<>());
                                 queue.put(spSharedName, sharedSpQueue);
                             }
-                            sharedSpQueue.add(rsc);
+                            sharedSpQueue.add(txObj);
                         }
                     }
                 }
             }
         }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return resourcesReadyToProces;
+        return granted;
     }
 
-    private void lock(Resource rsc, Set<SharedStorPoolName> sharedNames)
+    private void lock(Node node, Set<SharedStorPoolName> sharedNames)
     {
-        Node node = rsc.getNode();
         for (SharedStorPoolName spSharedName : sharedNames)
         {
             activeLocks.put(spSharedName, node);
         }
-        errorReporter.logTrace("Lock(s) %s granted for %s", sharedNames, rsc);
+        errorReporter.logTrace("Lock(s) %s granted for %s", sharedNames, node);
     }
 
     /**
@@ -210,101 +198,164 @@ public class SharedStorPoolManager extends BaseTransactionObject
      *
      * @param storPools
      *
-     * @return A set of {@link Resource}s that were waiting for the now acquired lock(s), and are now ready to be sent
-     *         to the satellite for processing.<br />
+     * @return A set of {@link Node}s, {@link StorPool}s, {@link Resource}s and/or {@link Snapshot}s that were waiting
+     *         for the now acquired lock(s), and are now ready to be sent to the satellite for processing.<br />
      *
-     *         The returned set can be empty, but not null.<br />
+     *         Every returned set can be empty, but not null.<br />
      *
-     *         An empty set means either that no lock-requests were queued, or that all Resources waiting for the lock
-     *         also require
-     *         at least one additional lock and still have to wait.
+     *         An empty set means either that no lock-requests were queued, or that all items waiting for the lock
+     *         also require at least one additional lock and still have to wait.
      */
-    public Set<Resource> releaseLock(StorPool... storPools)
+    public UpdateSet releaseLock(StorPool... storPools)
     {
-        Set<Resource> nextSet = new TreeSet<>();
+        UpdateSet updateSet = new UpdateSet();
 
-        try
+        Map<SharedStorPoolName, StorPool> sharedSpNames = groupBySharedSpName(Arrays.asList(storPools));
+        if (!sharedSpNames.isEmpty())
         {
-            Map<SharedStorPoolName, StorPool> sharedSpNames = groupBySharedSpName(Arrays.asList(storPools));
-            if (!sharedSpNames.isEmpty())
+            synchronized (activeLocks)
             {
-                synchronized (activeLocks)
+                synchronized (queue)
                 {
-                    synchronized (queue)
+                    // preserve order of next objects
+                    Set<TransactionObject> nextObjectsToCheck = new LinkedHashSet<>();
+                    errorReporter.logTrace("Releasing shared storPool locks %s", sharedSpNames.keySet());
+                    for (Entry<SharedStorPoolName, StorPool> entry : sharedSpNames.entrySet())
                     {
-                        Set<Resource> resourcesToCheck = new LinkedHashSet<>();
-                        errorReporter.logTrace("Releasing shared storPool locks %s", sharedSpNames);
-                        for (Entry<SharedStorPoolName, StorPool> entry : sharedSpNames.entrySet())
+                        SharedStorPoolName sharedSpName = entry.getKey();
+                        // release the lock
+                        Node node = activeLocks.remove(sharedSpName);
+                        if (node == null)
                         {
-                            SharedStorPoolName sharedSpName = entry.getKey();
-                            Node node = activeLocks.remove(sharedSpName);
-                            if (node == null)
-                            {
-                                throw new ImplementationError("Cannot release shared lock before lock was acquired");
-                            }
-                            if (!Objects.equals(entry.getValue().getNode(), node))
-                            {
-                                throw new ImplementationError(
-                                    "The shared lock can only be released by the original requester."
-                                );
-                            }
-
-                            TransactionSet<SharedStorPoolManager, Resource> sharedSpQueue = queue.get(sharedSpName);
-                            if (sharedSpQueue != null)
-                            {
-                                resourcesToCheck.addAll(sharedSpQueue);
-                            }
+                            throw new ImplementationError("Cannot release shared lock before lock was acquired");
+                        }
+                        if (!Objects.equals(entry.getValue().getNode(), node))
+                        {
+                            throw new ImplementationError(
+                                "The shared lock can only be released by the original requester."
+                            );
                         }
 
-                        Map<SharedStorPoolName, Node> reservedLocks = new HashMap<>();
-                        Set<SharedStorPoolName> currentlyAcquiredLock = new HashSet<>();
-
-                        System.out.println("checking resources: " + resourcesToCheck);
-                        for (Resource rsc : resourcesToCheck)
+                        TransactionSet<Void, TransactionObject> sharedSpQueue = queue.get(sharedSpName);
+                        if (sharedSpQueue != null)
                         {
-                            System.out.println("  rsc: " + rsc);
-                            Set<SharedStorPoolName> requiredLocks = getSharedSpNames(
-                                LayerVlmUtils.getStorPools(rsc, sysCtx)
-                            );
+                            // see if any of these waiting objects can now acquire all the required locks
+                            nextObjectsToCheck.addAll(sharedSpQueue);
+                        }
+                    }
 
-                            boolean granted = true;
-                            for (SharedStorPoolName lock : requiredLocks)
+                    Map<SharedStorPoolName, Node> currentlyAcquiredLockBy = new HashMap<>();
+
+                    for (TransactionObject txObj : nextObjectsToCheck)
+                    {
+                        Set<SharedStorPoolName> requiredLocks = getSharedSpNames(txObj);
+                        Node currentNode = getNode(txObj);
+
+                        boolean granted = true;
+                        for (SharedStorPoolName lock : requiredLocks)
+                        {
+                            // is the lock currently taken
+                            if (activeLocks.containsKey(lock))
                             {
-                                Node reservedByNode = reservedLocks.get(lock);
-                                if (
-                                    (activeLocks.containsKey(lock) && !currentlyAcquiredLock.contains(lock)) ||
-                                    (reservedByNode != null && !Objects.equals(reservedByNode, rsc.getNode()))
-                                )
+                                // Objects.equals would return true if we took this lock just now
+                                // (i.e. in a previous iteration of this for loop)
+                                if (!Objects.equals(currentlyAcquiredLockBy.get(lock), currentNode))
                                 {
                                     granted = false;
-                                    System.out.println("lock already/still taken: " + lock);
-                                    // DO NOT break!
-                                }
-                                else
-                                {
-                                    reservedLocks.put(lock, rsc.getNode());
+                                    break;
                                 }
                             }
-                            if (granted)
+                            else
                             {
-                                lock(rsc, requiredLocks);
-                                for (SharedStorPoolName lock : requiredLocks)
+                                if (!Objects.equals(getNode(queue.get(lock).iterator().next()), currentNode))
                                 {
-                                    queue.get(lock).remove(rsc);
+                                    granted = false;
+                                    break;
                                 }
-                                currentlyAcquiredLock.addAll(requiredLocks);
-                                nextSet.add(rsc);
                             }
+                        }
+                        if (granted)
+                        {
+                            lock(currentNode, requiredLocks);
+                            for (SharedStorPoolName lock : requiredLocks)
+                            {
+                                queue.get(lock).remove(txObj);
+                                currentlyAcquiredLockBy.put(lock, currentNode);
+                            }
+                            updateSet.add(txObj);
                         }
                     }
                 }
             }
         }
+        return updateSet;
+    }
+
+    private Node getNode(TransactionObject txObj)
+    {
+        Node ret;
+        if(txObj instanceof Resource)
+        {
+            ret = ((Resource) txObj).getNode();
+        }
+        else if (txObj instanceof Snapshot)
+        {
+            ret = ((Snapshot) txObj).getNode();
+        }
+        else if (txObj instanceof Node)
+        {
+            ret = (Node) txObj;
+        }
+        else if (txObj instanceof StorPool)
+        {
+            ret = ((StorPool) txObj).getNode();
+        }
+        else
+        {
+            throw new ImplementationError("Unknown TransactionObject type - cannot map to Node");
+        }
+        return ret;
+    }
+
+    private Set<SharedStorPoolName> getSharedSpNames(TransactionObject txObj)
+    {
+        Set<SharedStorPoolName> ret;
+        try
+        {
+            if (txObj instanceof Resource)
+            {
+                ret = getSharedSpNames(LayerVlmUtils.getStorPools((Resource) txObj, sysCtx));
+            }
+            else
+                if (txObj instanceof Snapshot)
+                {
+                    ret = getSharedSpNames(LayerVlmUtils.getStorPools((Snapshot) txObj, sysCtx));
+                }
+                else
+                    if (txObj instanceof Node)
+                    {
+                        ret = getSharedSpNames(
+                            ((Node) txObj).streamStorPools(sysCtx)
+                                .collect(Collectors.toList())
+                        );
+                    }
+                    else
+                        if (txObj instanceof StorPool)
+                        {
+                            ret = getSharedSpNames(Collections.singleton((StorPool) txObj));
+                        }
+                        else
+                        {
+                            throw new ImplementationError(
+                                "Unknown TransactionObject type - cannot map to Storage Pool"
+                            );
+                        }
+        }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
-        return nextSet;
+        return ret;
     }
 
     private Set<SharedStorPoolName> getSharedSpNames(Collection<StorPool> storPoolsRef)
@@ -328,5 +379,45 @@ public class SharedStorPoolManager extends BaseTransactionObject
             }
         }
         return ret;
+    }
+
+    public static class UpdateSet
+    {
+        public final Set<Node> nodesToUpdate;
+        public final Set<StorPool> spToUpdate;
+        public final Set<Resource> rscsToUpdate;
+        public final Set<Snapshot> snapsToUpdate;
+
+        public UpdateSet()
+        {
+            nodesToUpdate = new TreeSet<>();
+            spToUpdate = new TreeSet<>();
+            rscsToUpdate = new TreeSet<>();
+            snapsToUpdate = new TreeSet<>();
+        }
+
+        private void add(TransactionObject txObj)
+        {
+            if(txObj instanceof Resource)
+            {
+                rscsToUpdate.add((Resource) txObj);
+            }
+            else if (txObj instanceof Snapshot)
+            {
+                snapsToUpdate.add((Snapshot) txObj);
+            }
+            else if (txObj instanceof Node)
+            {
+                nodesToUpdate.add((Node) txObj);
+            }
+            else if (txObj instanceof StorPool)
+            {
+                spToUpdate.add((StorPool) txObj);
+            }
+            else
+            {
+                throw new ImplementationError("Unknown TransactionObject type - cannot add to UpdateSet");
+            }
+        }
     }
 }
