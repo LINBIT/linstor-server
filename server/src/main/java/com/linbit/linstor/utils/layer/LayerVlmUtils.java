@@ -5,9 +5,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
-import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
@@ -25,19 +23,24 @@ import java.util.TreeSet;
 
 public class LayerVlmUtils
 {
-    public static Set<StorPool> getStorPools(Resource rscRef, AccessContext accCtxRef) throws AccessDeniedException
-    {
-        return getStorPools(rscRef, accCtxRef, true);
-    }
-
-    public static Set<StorPool> getStorPools(Resource rscRef, AccessContext accCtxRef, boolean withMetaStoragePools)
+    public static <RSC extends AbsResource<RSC>> Set<StorPool> getStorPools(RSC absRscRef, AccessContext accCtxRef)
         throws AccessDeniedException
     {
-        Iterator<Volume> vlmIt = rscRef.iterateVolumes();
+        return getStorPools(absRscRef, accCtxRef, true);
+    }
+
+    public static <RSC extends AbsResource<RSC>> Set<StorPool> getStorPools(
+        RSC absRscRef,
+        AccessContext accCtxRef,
+        boolean withMetaStoragePools
+    )
+        throws AccessDeniedException
+    {
+        Iterator<? extends AbsVolume<RSC>> vlmIt = absRscRef.iterateVolumes();
         Set<StorPool> storPools = new TreeSet<>();
         while (vlmIt.hasNext())
         {
-            Volume vlm = vlmIt.next();
+            AbsVolume<RSC> vlm = vlmIt.next();
             storPools.addAll(getStorPoolSet(vlm, accCtxRef, withMetaStoragePools));
         }
         return storPools;
