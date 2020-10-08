@@ -29,7 +29,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -55,6 +57,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
 import com.linbit.utils.Either;
@@ -193,6 +196,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private ResourceStateEvent resourceStateEvent;
 
     private SnapshotShippingService snapshipService;
+
+    // Saved for later check against what the controller granted
+    private Set<SharedStorPoolName> grantedLocks;
 
     @Inject
     DeviceManagerImpl(
@@ -783,7 +789,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     private void phaseDispatchDeviceHandlers(SyncPoint phaseLock)
-        throws AccessDeniedException
+        throws AccessDeniedException, SvcCondException
     {
         errLog.logTrace("Dispatching nodes and resources to device handlers");
 
@@ -921,6 +927,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         break;
                     }
                 }
+
+                phaseRequestSharedLock(resourcesToDispatch, snapshotsToDispatch);
+
                 dispatchResources(resourcesToDispatch, snapshotsToDispatch, phaseLock);
 
                 if (abortDevHndFlag)
@@ -962,7 +971,131 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 rscDfnWrLock.unlock();
                 nodesWrLock.unlock();
                 reconfWrLock.unlock();
+
+                Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+                ctrlPeer.sendMessage(
+                    interComSerializer
+                        .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
+                        .build()
+                );
+                grantedLocks = null; // notifying ctrl about devMgrRunCompleted also releases our share-SP-locks
             }
+        }
+    }
+
+    private <RSC extends AbsResource<RSC>> void phaseRequestSharedLock(
+        Set<Resource> resourcesToDispatchRef,
+        Set<Snapshot> snapshotsToDispatchRef
+    )
+        throws SvcCondException
+    {
+        boolean waitMsg = true;
+
+        try
+        {
+            Set<StorPool> allStorPools = new TreeSet<>();
+            for (Resource rsc : resourcesToDispatchRef)
+            {
+                allStorPools.addAll(LayerVlmUtils.getStorPools(rsc, wrkCtx, true));
+            }
+            for (Snapshot snap : snapshotsToDispatchRef)
+            {
+                allStorPools.addAll(LayerVlmUtils.getStorPools(snap, wrkCtx, true));
+            }
+
+            TreeSet<SharedStorPoolName> requiredLocks = new TreeSet<>();
+            for (StorPool sp : allStorPools)
+            {
+                SharedStorPoolName sharedStorPoolName = sp.getSharedStorPoolName();
+                if (sharedStorPoolName.isShared())
+                {
+                    requiredLocks.add(sharedStorPoolName);
+                }
+            }
+
+            if (requiredLocks.isEmpty())
+            {
+                errLog.logTrace("No shared locks required. Continuing");
+            }
+            else
+            {
+                if (grantedLocks != null)
+                {
+                    throw new ImplementationError(
+                        "Locks " + grantedLocks + " already granted. Cannot send another request of " +
+                            requiredLocks
+                    );
+                }
+
+                synchronized (sched)
+                {
+                    errLog.logTrace("Requesting shared locks: " + requiredLocks);
+                    stltUpdateRequester.requestSharedLocks(requiredLocks);
+
+                    // Wait until all requested updates are applied
+                    while (!svcCondFlag.get() && grantedLocks == null)
+                    {
+                        if (waitMsg)
+                        {
+                            errLog.logTrace("Waiting for shared stor pool locks to be granted");
+                            waitMsg = false;
+                        }
+                        try
+                        {
+                            sched.wait();
+                        }
+                        catch (InterruptedException ignored)
+                        {}
+                    }
+                    if (svcCondFlag.get())
+                    {
+                        throw new SvcCondException();
+                    }
+                }
+
+                if (!grantedLocks.equals(requiredLocks))
+                {
+                    throw new ImplementationError(
+                        "Requested locks: " + requiredLocks + " but got granted: " + grantedLocks
+                    );
+                }
+            }
+
+            errLog.logTrace("Requested shared locks granted");
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    @Override
+    public void sharedStorPoolLocksGranted(List<String> sharedStorPoolLocksListRef)
+    {
+        if (grantedLocks != null)
+        {
+            throw new ImplementationError(
+                "Locks " + grantedLocks + " already grunted, but still got locks granted (additionally?): " +
+                    sharedStorPoolLocksListRef
+            );
+        }
+        try
+        {
+            Set<SharedStorPoolName> grantedLocksByCtrl = new TreeSet<>();
+            for (String sharedLock : sharedStorPoolLocksListRef)
+            {
+                grantedLocksByCtrl.add(new SharedStorPoolName(sharedLock));
+            }
+            synchronized (sched)
+            {
+                grantedLocks = grantedLocksByCtrl;
+                sched.notifyAll();
+            }
+
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
@@ -1020,13 +1153,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             {
                 responseSink.complete();
             }
-
-            Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-            ctrlPeer.sendMessage(
-                interComSerializer
-                    .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
-                    .build()
-            );
         }
     }
 

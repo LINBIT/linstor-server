@@ -13,6 +13,7 @@ import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.StorageException;
 
+import java.util.List;
 import java.util.Set;
 
 public interface DeviceManager extends DrbdStateChange, DeviceLayer.NotificationListener
@@ -36,4 +37,5 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
 
     SpaceInfo getSpaceInfo(StorPool storPoolRef) throws StorageException;
 
+    void sharedStorPoolLocksGranted(List<String> sharedStorPoolLocksListRef);
 }

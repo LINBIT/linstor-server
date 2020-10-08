@@ -64,6 +64,20 @@ public class LvmCommands
         return cmdArr;
     }
 
+    public static OutputData lvscan(ExtCmd extCmd) throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                "lvscan",
+                "-qq" // quite and auto-"no"
+            },
+            "'lvscan' failed",
+            "'lvscan' failed"
+        );
+    }
+
     public static OutputData lvs(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig) throws StorageException
     {
         return genericExecutor(
@@ -588,5 +602,4 @@ public class LvmCommands
     private LvmCommands()
     {
     }
-
 }

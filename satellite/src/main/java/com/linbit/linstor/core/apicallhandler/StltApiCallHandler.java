@@ -761,7 +761,6 @@ public class StltApiCallHandler
                         {
                             applyData.applyChange();
                         }
-
                         dataToApply.remove(nextEntry.getKey());
                         updateMonitor.awaitedUpdateApplied();
 

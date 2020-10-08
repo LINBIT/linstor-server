@@ -47,6 +47,8 @@ public class InternalApiConsts
     public static final String API_UPDATE_FREE_CAPACITY    = "UpdateFreeCapacity";
     public static final String API_NOTIFY_STOR_POOL_APPLIED  = "NotifyStorPoolApplied";
 
+    public static final String API_REQUEST_SHARED_SP_LOCKS = "RequestSharedStorPoolLocks";
+    public static final String API_APPLY_SHARED_STOR_POOL_LOCKS = "ApplySharedStorPoolLocks";
     public static final String API_NOTIFY_DEV_MGR_RUN_COMPLETED = "NotifyDevMgrRunCompleted";
 
     public static final String API_CRYPT_KEY = "cryptKey";

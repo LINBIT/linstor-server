@@ -5,6 +5,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -12,6 +13,8 @@ import com.linbit.linstor.netcom.Peer;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import java.util.Set;
 import java.util.UUID;
 
 @Singleton
@@ -87,6 +90,15 @@ public class StltUpdateRequester
         );
     }
 
+    public void requestSharedLocks(Set<SharedStorPoolName> sharedSPLocksRef)
+    {
+        sendRequest(
+            interComSerializer
+                .onewayBuilder(InternalApiConsts.API_REQUEST_SHARED_SP_LOCKS)
+                .requestSharedStorPoolLocks(sharedSPLocksRef)
+                .build()
+        );
+    }
     private void sendRequest(byte[] requestData)
     {
         if (requestData != null && requestData.length > 0)
@@ -104,4 +116,5 @@ public class StltUpdateRequester
             );
         }
     }
+
 }

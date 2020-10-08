@@ -454,6 +454,11 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     )
         throws StorageException, AccessDeniedException
     {
+        if (hasSharedVolumeGroups(vlmDataList, snapVlms))
+        {
+            LvmCommands.lvscan(extCmdFactory.create());
+        }
+
         return LvmUtils.getLvsInfo(
             extCmdFactory,
             getAffectedVolumeGroups(vlmDataList, snapVlms)
@@ -585,6 +590,28 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             }
         }
         return volumeGroups;
+    }
+
+    private boolean hasSharedVolumeGroups(
+        Collection<LvmData<Resource>> vlmDataList,
+        Collection<LvmData<Snapshot>> snapVlms
+    )
+    {
+        boolean ret = false;
+        ArrayList<LvmData<?>> combinedList = new ArrayList<>();
+        combinedList.addAll(vlmDataList);
+        combinedList.addAll(snapVlms);
+
+        for (LvmData<?> vlmData : combinedList)
+        {
+            StorPool storPool = vlmData.getStorPool();
+            if (storPool.isShared())
+            {
+                ret = true;
+                break;
+            }
+        }
+        return ret;
     }
 
     @Override

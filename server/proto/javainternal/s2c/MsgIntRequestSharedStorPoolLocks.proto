@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+// Internal message requesting locks for the given shared storage pools
+message MsgIntRequestSharedStorPoolLocks
+{
+    repeated string shared_stor_pool_locks = 1;
+}

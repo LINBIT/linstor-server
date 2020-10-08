@@ -156,7 +156,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
 
     public abstract Iterator<? extends AbsVolume<RSC>> iterateVolumes();
 
-    protected abstract Stream<? extends AbsVolume<RSC>> streamVolumes();
+    public abstract Stream<? extends AbsVolume<RSC>> streamVolumes();
 
     public abstract ResourceDefinition getResourceDefinition();
 

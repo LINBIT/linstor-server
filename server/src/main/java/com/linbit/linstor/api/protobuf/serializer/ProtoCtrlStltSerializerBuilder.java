@@ -8,6 +8,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltS
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
@@ -47,6 +48,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedStorPoolOuter
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyNodeOuterClass.MsgIntApplyNode;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgIntApplyRsc;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySharedStorPoolLocksOuterClass.MsgIntApplySharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
@@ -59,6 +61,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntSnapshotShippedOuterClass.MsgIntSnapshotShipped;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass;
@@ -82,6 +85,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -500,6 +504,26 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         return this;
     }
 
+    @Override
+    public CtrlStltSerializerBuilder grantsharedStorPoolLocks(Set<SharedStorPoolName> locksRef)
+    {
+        try
+        {
+            MsgIntApplySharedStorPoolLocks.Builder builder = MsgIntApplySharedStorPoolLocks.newBuilder();
+            for (SharedStorPoolName lock : locksRef)
+            {
+                builder.addSharedStorPoolLocks(lock.displayValue);
+            }
+            builder.build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
     /*
      * Satellite -> Controller
      */
@@ -678,6 +702,28 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         appendObjectId(null, rscName);
         appendObjectId(snapshotUuid, snapshotName);
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder requestSharedStorPoolLocks(Set<SharedStorPoolName> sharedSPLocksRef)
+    {
+        try
+        {
+            Set<String> stringSet = new TreeSet<>();
+            for (SharedStorPoolName lock : sharedSPLocksRef)
+            {
+                stringSet.add(lock.displayValue);
+            }
+            MsgIntRequestSharedStorPoolLocks.newBuilder()
+                .addAllSharedStorPoolLocks(stringSet)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
         return this;
     }
 
@@ -1175,5 +1221,4 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             .setPriority(entry.getPriority())
             .setType(entry.getType().getName());
     }
-
 }

@@ -3,6 +3,7 @@ package com.linbit.linstor.api.interfaces.serializer;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.cfg.StltConfig;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -70,6 +71,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             long fullSyncId,
             long updateId
         );
+
         CtrlStltSerializerBuilder fullSync(
             Set<Node> nodeSet,
             Set<StorPool> storPools,
@@ -77,6 +79,8 @@ public interface CtrlStltSerializer extends CommonSerializer
             Set<Snapshot> snapshots, long timestamp,
             long updateId
         );
+
+        CtrlStltSerializerBuilder grantsharedStorPoolLocks(Set<SharedStorPoolName> locksRef);
 
         /*
          * Satellite -> Controller
@@ -106,6 +110,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             UUID snapshotUuid,
             String snapshotName
         );
+        CtrlStltSerializerBuilder requestSharedStorPoolLocks(Set<SharedStorPoolName> sharedSPLocksRef);
 
         CtrlStltSerializerBuilder updateFreeCapacities(Map<StorPool, SpaceInfo> spaceInfoMap);
 

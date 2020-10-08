@@ -1,25 +1,31 @@
 package com.linbit.linstor.core;
 
-import com.linbit.ImplementationError;
-import com.linbit.linstor.core.SharedStorPoolManager.UpdateSet;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.TestAccessContextProvider;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+
+import javax.inject.Provider;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -29,6 +35,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
 
     private SharedStorPoolManager sharedStorPoolMgr;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws Exception
     {
@@ -38,7 +45,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             TestAccessContextProvider.SYS_CTX,
             errorReporter,
             transObjFactory,
-            transMgrProvider
+            (Provider<TransactionMgr>) ((Object) transMgrProvider)
         );
 
         resourceGroupTestFactory.initDfltRscGrp();
@@ -68,10 +75,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertTrue(sharedStorPoolMgr.requestSharedLock(rsc)); // granted
         assertTrue(sharedStorPoolMgr.isActive(sp));
 
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sp),
-            emptyUpdateSet()
-        );
+        assertNextNodes(sharedStorPoolMgr.releaseLocks(sp.getNode()));
         assertFalse(sharedStorPoolMgr.isActive(sp));
     }
 
@@ -108,15 +112,15 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertFalse(sharedStorPoolMgr.requestSharedLock(rsc));
         assertTrue(sharedStorPoolMgr.isActive(sp));
 
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sp),
-            updateSetBuilder().add(rsc).build()
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sp.getNode()),
+            expectedPairsFrom(sp)
         );
         assertTrue(sharedStorPoolMgr.isActive(sp));
 
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sp),
-            emptyUpdateSet() // done, previous 2x rejects were grouped together
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sp.getNode())
+            // empty, done, previous 2x rejects were grouped together
         );
         assertFalse(sharedStorPoolMgr.isActive(sp));
     }
@@ -155,15 +159,15 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertTrue(sharedStorPoolMgr.isActive(sp));
 
         // update once
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sp),
-            rsc
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sp.getNode()),
+            expectedPairsFrom(sp)
         );
         assertTrue(sharedStorPoolMgr.isActive(sp));
 
         // no more updates, done
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sp)
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sp.getNode())
             // empty
         );
         assertFalse(sharedStorPoolMgr.isActive(sp));
@@ -188,13 +192,13 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         StorPool sharedSp = storPoolTestFactory.builder("node", "spShared")
             .setFreeSpaceMgrName("shared")
             .build();
-        StorPool simpleSp = storPoolTestFactory.builder("node", "spSimple")
+        StorPool simpleSp = storPoolTestFactory.builder("node2", "spSimple")
             .build();
 
         Volume sharedVlm = volumeTestFactory.builder("node", "rsc").build();
         Resource sharedRsc = sharedVlm.getAbsResource();
 
-        Volume simpleVlm = volumeTestFactory.builder("node", "rsc2")
+        Volume simpleVlm = volumeTestFactory.builder("node2", "rsc2")
             .setStorPoolData(simpleSp).build();
         Resource simpleRsc = simpleVlm.getAbsResource();
 
@@ -224,15 +228,15 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertTrue(sharedStorPoolMgr.isActive(sharedSp));
         assertTrue(sharedStorPoolMgr.isActive(simpleSp));
 
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp),
-            sharedRsc
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp.getNode()),
+            expectedPairsFrom(sharedSp)
         );
         assertTrue(sharedStorPoolMgr.isActive(sharedSp));
         assertTrue(sharedStorPoolMgr.isActive(simpleSp));
 
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp)
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp.getNode())
             // empty, done
         );
         assertFalse(sharedStorPoolMgr.isActive(sharedSp));
@@ -281,15 +285,15 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertTrue(sharedStorPoolMgr.isActive(sharedSp));
 
         // rsc1 finally finishes
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp),
-            rsc2, rsc3, rsc4
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp.getNode()),
+            expectedPairsFrom(sharedSp)
         );
         assertTrue(sharedStorPoolMgr.isActive(sharedSp));
 
         // rsc2-4 finish
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp)
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp.getNode())
         );
         assertFalse(sharedStorPoolMgr.isActive(sharedSp));
     }
@@ -338,25 +342,24 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertTrue(sharedStorPoolMgr.isActive(sharedSpN1));
 
         // n1/rsc1 finally finishes
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSpN1),
-            rsc21,
-            rsc22
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSpN1.getNode()),
+            expectedPairsFrom(sharedSpN2)
         );
         assertFalse(sharedStorPoolMgr.isActive(sharedSpN1));
         assertTrue(sharedStorPoolMgr.isActive(sharedSpN2));
 
         // n2/rsc1 and n2/rsc2 done
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSpN2),
-            rsc12
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSpN2.getNode()),
+            expectedPairsFrom(sharedSpN1)
         );
         assertTrue(sharedStorPoolMgr.isActive(sharedSpN1));
         assertFalse(sharedStorPoolMgr.isActive(sharedSpN2));
 
         // all done
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSpN1)
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSpN1.getNode())
         );
         assertFalse(sharedStorPoolMgr.isActive(sharedSpN1));
         assertFalse(sharedStorPoolMgr.isActive(sharedSpN2));
@@ -378,65 +381,67 @@ public class SharedStorPoolManagerTest extends GenericDbBase
     @Test
     public void delayMultiLock() throws Exception
     {
-        StorPool sharedSp1 = storPoolTestFactory.builder("node", "spShared")
+        StorPool sharedSp1 = storPoolTestFactory.builder("node1", "spShared")
             .setFreeSpaceMgrName("shared")
             .build();
-        StorPool sharedSp2 = storPoolTestFactory.builder("node", "spShared2")
+        StorPool sharedSp2 = storPoolTestFactory.builder("node2", "spShared2")
+            .setFreeSpaceMgrName("shared2")
+            .build();
+
+        StorPool sharedSp31 = storPoolTestFactory.builder("node3", "spShared")
+            .setFreeSpaceMgrName("shared")
+            .build();
+        StorPool sharedSp32 = storPoolTestFactory.builder("node3", "spShared2")
             .setFreeSpaceMgrName("shared2")
             .build();
 
         // in spShared
-        Resource rsc1 = volumeTestFactory.builder("node", "rsc1").build().getAbsResource();
+        Resource rsc1 = volumeTestFactory.builder("node1", "rsc1").build().getAbsResource();
         // in spShared2
-        Resource rsc2 = volumeTestFactory.builder("node", "rsc2")
+        Resource rsc2 = volumeTestFactory.builder("node2", "rsc2")
             .setStorPoolData(sharedSp2)
             .build().getAbsResource();
         // in spShared1 AND spShared2
-        Resource rsc12 = volumeTestFactory.builder("node", "rsc12")
-            .setStorPoolData(sharedSp1)
-            .putStorPool(".meta", sharedSp2)
+        Resource rsc12 = volumeTestFactory.builder("node3", "rsc12")
+            .setStorPoolData(sharedSp31)
+            .putStorPool(".meta", sharedSp32)
             .build().getAbsResource();
 
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp1));
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
+        List<StorPool> allSps = Arrays.asList(sharedSp1, sharedSp2, sharedSp31, sharedSp32);
+
+        assertInactiveExcept(allSps);
 
         // rsc1 can start
         assertTrue(sharedStorPoolMgr.requestSharedLock(rsc1));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps, sharedSp1);
 
         // rsc2 can start
         assertTrue(sharedStorPoolMgr.requestSharedLock(rsc2));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps, sharedSp1, sharedSp2);
 
         // rsc12 has to be delayed
         assertFalse(sharedStorPoolMgr.requestSharedLock(rsc12));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps, sharedSp1, sharedSp2);
 
         // rsc2 finishes, rsc12 still delayed
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp2)
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp2.getNode())
             // empty
         );
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps, sharedSp1);
 
         // rsc1 finishes, rsc12 can start
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp1),
-            rsc12
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp1.getNode()),
+            expectedPairsFrom(sharedSp31, sharedSp32)
         );
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps, sharedSp31, sharedSp32);
 
         // rsc12 finishes, all done
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp1, sharedSp2)
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp31.getNode())
         );
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp1));
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps);
     }
 
     /*
@@ -459,73 +464,74 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         StorPool sharedSp1 = storPoolTestFactory.builder("node", "spShared")
             .setFreeSpaceMgrName("shared")
             .build();
-        StorPool sharedSp2 = storPoolTestFactory.builder("node", "spShared2")
+        StorPool sharedSp2 = storPoolTestFactory.builder("node2", "spShared2")
+            .setFreeSpaceMgrName("shared2")
+            .build();
+
+        StorPool sharedSp13 = storPoolTestFactory.builder("node3", "spShared")
+            .setFreeSpaceMgrName("shared")
+            .build();
+        StorPool sharedSp23 = storPoolTestFactory.builder("node3", "spShared2")
             .setFreeSpaceMgrName("shared2")
             .build();
 
         // in spShared
         Resource rsc1 = volumeTestFactory.builder("node", "rsc1").build().getAbsResource();
         // in spShared2
-        Resource rsc2 = volumeTestFactory.builder("node", "rsc2")
+        Resource rsc2 = volumeTestFactory.builder("node2", "rsc2")
             .setStorPoolData(sharedSp2)
             .build().getAbsResource();
         // in spShared1 AND spShared2
-        Resource rsc12 = volumeTestFactory.builder("node", "rsc12")
-            .setStorPoolData(sharedSp1)
-            .putStorPool(".meta", sharedSp2)
+        Resource rsc12 = volumeTestFactory.builder("node3", "rsc12")
+            .setStorPoolData(sharedSp13)
+            .putStorPool(".meta", sharedSp23)
             .build().getAbsResource();
 
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp1));
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
+        List<StorPool> allSps = Arrays.asList(sharedSp1, sharedSp2, sharedSp13, sharedSp23);
+        assertInactiveExcept(allSps);
 
         // rsc1 can start
         assertTrue(sharedStorPoolMgr.requestSharedLock(rsc1));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps, sharedSp1);
 
         // rsc12 gets rejected
         assertFalse(sharedStorPoolMgr.requestSharedLock(rsc12));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp2)); // although reserved for rsc12
+        assertInactiveExcept(allSps, sharedSp1);
 
         // rsc2 rejected
         assertFalse(sharedStorPoolMgr.requestSharedLock(rsc2));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps, sharedSp1);
 
         // rsc1 finishes, rsc12 can go
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp1),
-            rsc12
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp1.getNode()),
+            expectedPairsFrom(sharedSp13, sharedSp23)
         );
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps, sharedSp13, sharedSp23);
 
         // rsc12 finishes, rsc2 can start
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp1, sharedSp2),
-            rsc2
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp13.getNode()),
+            expectedPairsFrom(sharedSp2)
         );
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp1));
-        assertTrue(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps, sharedSp2);
 
         // rsc2 finishes, all done
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp2)
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp2.getNode())
         );
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp1));
-        assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
+        assertInactiveExcept(allSps);
     }
 
-    @Test(expected = ImplementationError.class)
+    @Test
     public void releaseUnlockedSharedSp() throws Exception
     {
         StorPool sharedSp = storPoolTestFactory.builder("node", "spShared")
             .setFreeSpaceMgrName("shared")
             .build();
 
-        // not locked
-        sharedStorPoolMgr.releaseLock(sharedSp);
+        // not locked, nothing to release
+        sharedStorPoolMgr.releaseLocks(sharedSp.getNode());
     }
 
     @Test()
@@ -535,7 +541,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             .build();
 
         // not locked
-        sharedStorPoolMgr.releaseLock(simpleSp); // no error
+        sharedStorPoolMgr.releaseLocks(simpleSp.getNode()); // no error
     }
 
     /*
@@ -581,15 +587,15 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertTrue(sharedStorPoolMgr.isActive(sharedSp1));
         assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
 
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp1),
-            sharedSp2
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp1.getNode()),
+            expectedPairsFrom(sharedSp2)
         );
         assertFalse(sharedStorPoolMgr.isActive(sharedSp1));
         assertTrue(sharedStorPoolMgr.isActive(sharedSp2));
 
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sharedSp2)
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sharedSp2.getNode())
             // empty, done
         );
         assertFalse(sharedStorPoolMgr.isActive(sharedSp2));
@@ -702,67 +708,91 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertInactiveExcept(allStorPools, sp11, sp54);
 
         // rsc1 finished, rsc2 can start
-        assertNextUpdates(
-            sharedStorPoolMgr.releaseLock(sp11),
-            rsc2
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(sp11.getNode()),
+            expectedPairsFrom(sp12, sp22)
         );
         assertInactiveExcept(allStorPools, sp12, sp22, sp54);
 
         // rsc2 finished, nothing can start
-        assertNextUpdates(sharedStorPoolMgr.releaseLock(sp12, sp22));
+        assertNextNodes(sharedStorPoolMgr.releaseLocks(sp12.getNode()));
         assertInactiveExcept(allStorPools, sp54);
 
         // rsc5 finished, rsc4 can start
-        assertNextUpdates(sharedStorPoolMgr.releaseLock(sp54), rsc4);
+        assertNextNodes(sharedStorPoolMgr.releaseLocks(sp54.getNode()), expectedPairsFrom(sp34, sp44));
         assertInactiveExcept(allStorPools, sp34, sp44);
 
         // rsc4 finished, node3 can start
-        assertNextUpdates(sharedStorPoolMgr.releaseLock(sp34, sp44), node3);
+        assertNextNodes(sharedStorPoolMgr.releaseLocks(sp34.getNode()), expectedPairsFrom(sp23, sp33));
         assertInactiveExcept(allStorPools, sp23, sp33);
 
         // node finished, empty, done
-        assertNextUpdates(sharedStorPoolMgr.releaseLock(sp23, sp33));
+        assertNextNodes(sharedStorPoolMgr.releaseLocks(sp23.getNode()));
         assertInactiveExcept(allStorPools);
     }
 
     private void assertInactiveExcept(List<StorPool> allSps, StorPool... activeSps)
     {
         List<StorPool> activeSpList = Arrays.asList(activeSps);
+        StringBuilder sb = new StringBuilder("\n");
+        boolean allCorrect = true;
         for (StorPool sp : allSps)
         {
-            if (activeSpList.contains(sp))
+            sb.append(sp);
+            boolean isActive = sharedStorPoolMgr.isActive(sp);
+            boolean correct = activeSpList.contains(sp) == isActive;
+            sb.append("  ");
+            if (correct)
             {
-                assertTrue(sharedStorPoolMgr.isActive(sp));
+                if (!isActive)
+                {
+                    sb.append("in");
+                }
+                sb.append("active (correct)\n");
             }
             else
             {
-                assertFalse(sharedStorPoolMgr.isActive(sp));
+                if (!isActive)
+                {
+                    sb.append("in");
+                }
+                sb.append("active but should not be\n");
+                allCorrect = false;
             }
+        }
+        if (!allCorrect)
+        {
+            fail(sb.toString());
         }
     }
 
-    private final <T> void assertNextUpdates(UpdateSet actualUS, UpdateSet expectedUS)
+    private ExpectedPair[] expectedPairsFrom(StorPool... storPools)
     {
-        try
+        Map<Node, Set<SharedStorPoolName>> expectedMap = new TreeMap<>();
+        for (StorPool sp : storPools)
         {
-            assertSetEquals(expectedUS.nodesToUpdate, actualUS.nodesToUpdate);
-            assertSetEquals(expectedUS.spToUpdate, actualUS.spToUpdate);
-            assertSetEquals(expectedUS.rscsToUpdate, actualUS.rscsToUpdate);
-            assertSetEquals(expectedUS.snapsToUpdate, actualUS.snapsToUpdate);
+            expectedMap.computeIfAbsent(sp.getNode(), ignore -> new TreeSet<>()).add(sp.getSharedStorPoolName());
         }
-        catch (AssertionError err)
+
+        ExpectedPair[] ret = new ExpectedPair[expectedMap.size()];
+        int idx = 0;
+        for (Entry<Node, Set<SharedStorPoolName>> entry : expectedMap.entrySet())
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\n");
-            sb.append("Expected nodes: ").append(expectedUS.nodesToUpdate).append("\n");
-            sb.append("Actual nodes:   ").append(actualUS.nodesToUpdate).append("\n");
-            sb.append("Expected storage pools: ").append(expectedUS.spToUpdate).append("\n");
-            sb.append("Actual storage pools:   ").append(actualUS.spToUpdate).append("\n");
-            sb.append("Expected resources: ").append(expectedUS.rscsToUpdate).append("\n");
-            sb.append("Actual resources:   ").append(actualUS.rscsToUpdate).append("\n");
-            sb.append("Expected snapshots: ").append(expectedUS.snapsToUpdate).append("\n");
-            sb.append("Actual snapshots:   ").append(actualUS.snapsToUpdate).append("\n");
-            fail(sb.toString());
+            ret[idx] = new ExpectedPair(entry.getKey(), entry.getValue());
+            idx++;
+        }
+        return ret;
+    }
+
+    private void assertNextNodes(Map<Node, Set<SharedStorPoolName>> actualNext, ExpectedPair... expectedNext)
+    {
+        assertEquals(expectedNext.length, actualNext.size());
+
+        for (ExpectedPair pair : expectedNext)
+        {
+            Set<SharedStorPoolName> actualSspNameSet = actualNext.get(pair.node);
+            assertNotNull(actualSspNameSet);
+            assertSetEquals(pair.sspNameSet, actualSspNameSet);
         }
     }
 
@@ -777,78 +807,20 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertTrue(copy.isEmpty());
     }
 
-    /*
-     * Utility methods
-     */
-    private void assertNextUpdates(UpdateSet releaseLockRef)
+    private static class ExpectedPair
     {
-        assertNextUpdates(releaseLockRef, emptyUpdateSet());
-    }
+        private Node node;
+        private Set<SharedStorPoolName> sspNameSet;
 
-    private void assertNextUpdates(UpdateSet releaseLockRef, Node... nodes)
-    {
-        assertNextUpdates(releaseLockRef, updateSetBuilder().add(nodes).build());
-    }
-
-    private void assertNextUpdates(UpdateSet releaseLockRef, StorPool... sps)
-    {
-        assertNextUpdates(releaseLockRef, updateSetBuilder().add(sps).build());
-    }
-    private void assertNextUpdates(UpdateSet releaseLockRef, Resource... rscs)
-    {
-        assertNextUpdates(releaseLockRef, updateSetBuilder().add(rscs).build());
-    }
-
-    private void assertNextUpdates(UpdateSet releaseLockRef, Snapshot... snaps)
-    {
-        assertNextUpdates(releaseLockRef, updateSetBuilder().add(snaps).build());
-    }
-
-    private UpdateSet emptyUpdateSet()
-    {
-        return new UpdateSet();
-    }
-
-    private UpdateSetBuilder updateSetBuilder()
-    {
-        return new UpdateSetBuilder();
-    }
-
-
-    private class UpdateSetBuilder
-    {
-        private UpdateSet updateSet = new UpdateSet();
-
-        private UpdateSetBuilder add(Resource... rscs)
+        public ExpectedPair(Node nodeRef, SharedStorPoolName... sspNames)
         {
-            return add(updateSet.rscsToUpdate, rscs);
+            this(nodeRef, new HashSet<>(Arrays.asList(sspNames)));
         }
 
-        private UpdateSetBuilder add(Node... nodes)
+        public ExpectedPair(Node nodeRef, Set<SharedStorPoolName> sspNameSetRef)
         {
-            return add(updateSet.nodesToUpdate, nodes);
-        }
-
-        private UpdateSetBuilder add(StorPool... storPools)
-        {
-            return add(updateSet.spToUpdate, storPools);
-        }
-
-        private UpdateSetBuilder add(Snapshot... snaps)
-        {
-            return add(updateSet.snapsToUpdate, snaps);
-        }
-
-        @SuppressWarnings("unchecked")
-        private <T> UpdateSetBuilder add(Set<T> set, T... elements)
-        {
-            set.addAll(Arrays.asList(elements));
-            return this;
-        }
-
-        private UpdateSet build()
-        {
-            return updateSet;
+            node = nodeRef;
+            sspNameSet = sspNameSetRef;
         }
     }
 }
