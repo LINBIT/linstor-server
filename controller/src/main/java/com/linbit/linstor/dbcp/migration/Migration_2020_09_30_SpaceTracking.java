@@ -18,6 +18,6 @@ public class Migration_2020_09_30_SpaceTracking extends LinstorMigration
         throws Exception
     {
         final String sqlScript = MigrationUtils.loadResource("2020_09_30_spacetracking.sql");
-        SQLUtils.runSql(dbConn, sqlScript);
+        SQLUtils.runSql(dbConn, MigrationUtils.replaceTypesByDialect(product, sqlScript));
     }
 }
