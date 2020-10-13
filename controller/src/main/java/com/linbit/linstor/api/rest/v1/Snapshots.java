@@ -92,7 +92,9 @@ public class Snapshots
             if (rscDfnExists)
             {
                 Stream<SnapshotDefinitionListItemApi> snapsStream =
-                    ctrlApiCallHandler.listSnapshotDefinition(Collections.emptyList(), Collections.emptyList()).stream();
+                    ctrlApiCallHandler.listSnapshotDefinition(
+                        Collections.emptyList(),
+                        Collections.singletonList(rscName)).stream();
 
                 if (limit > 0)
                 {
@@ -100,7 +102,7 @@ public class Snapshots
                 }
 
                 List<JsonGenTypes.Snapshot> snapshot = snapsStream
-                    .filter(snaphotDfn -> snaphotDfn.getRscDfn().getResourceName().equalsIgnoreCase(rscName))
+                    .filter(snaphotDfn -> snapName == null || snaphotDfn.getSnapshotName().equalsIgnoreCase(snapName))
                     .map(Json::apiToSnapshot)
                     .collect(Collectors.toList());
 
