@@ -226,6 +226,9 @@ public class TestFactory
 
     /**
      * Creates a new {@link StorPool} without persisting it to the database
+     *
+     * @param externalLockingRef
+     *
      * @throws DatabaseException
      */
     public static StorPool createStorPool(
@@ -234,6 +237,7 @@ public class TestFactory
         StorPoolDefinition spddRef,
         DeviceProviderKind lvmRef,
         FreeSpaceMgr fsmRef,
+        boolean externalLockingRef,
         StorPoolDbDriver driverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -249,6 +253,7 @@ public class TestFactory
             spddRef,
             lvmRef,
             fsmRef,
+            externalLockingRef,
             driverRef,
             propsContainerFactoryRef,
             transObjFactoryRef,

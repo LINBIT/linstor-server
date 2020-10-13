@@ -1006,10 +1006,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             TreeSet<SharedStorPoolName> requiredLocks = new TreeSet<>();
             for (StorPool sp : allStorPools)
             {
-                SharedStorPoolName sharedStorPoolName = sp.getSharedStorPoolName();
-                if (sharedStorPoolName.isShared())
+                if (sp.isShared())
                 {
-                    requiredLocks.add(sharedStorPoolName);
+                    requiredLocks.add(sp.getSharedStorPoolName());
                 }
             }
 

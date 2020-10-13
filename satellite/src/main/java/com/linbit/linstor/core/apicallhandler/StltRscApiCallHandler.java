@@ -799,7 +799,8 @@ class StltRscApiCallHandler
                         storPoolApi.getDeviceProviderKind(),
                         freeSpaceMgrFactory.getInstance(
                             SharedStorPoolName.restoreName(storPoolApi.getFreeSpaceManagerName())
-                        )
+                        ),
+                        storPoolApi.isExternalLocking()
                     );
                     storPool.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolProps());
 

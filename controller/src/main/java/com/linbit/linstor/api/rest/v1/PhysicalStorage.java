@@ -181,6 +181,7 @@ public class PhysicalStorage
                         createData.with_storage_pool.name,
                         deviceProviderKind,
                         null,
+                        false, // FIXME: physical storage api MUST support shared storage + external locking
                         storPoolProps,
                         physicalStorageApiCallHandler.deleteDevicePool(
                             nodeName,

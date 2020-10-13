@@ -524,24 +524,33 @@ public class SharedStorPoolManagerTest extends GenericDbBase
     }
 
     @Test
-    public void releaseUnlockedSharedSp() throws Exception
+    public void releaseUnlockedSp() throws Exception
     {
         StorPool sharedSp = storPoolTestFactory.builder("node", "spShared")
             .setFreeSpaceMgrName("shared")
             .build();
-
-        // not locked, nothing to release
-        sharedStorPoolMgr.releaseLocks(sharedSp.getNode());
-    }
-
-    @Test()
-    public void releaseUnlockedSimpleSp() throws Exception
-    {
         StorPool simpleSp = storPoolTestFactory.builder("node", "sp1")
             .build();
 
-        // not locked
+        // not locked, nothing to release
+        sharedStorPoolMgr.releaseLocks(sharedSp.getNode());
         sharedStorPoolMgr.releaseLocks(simpleSp.getNode()); // no error
+    }
+
+    @Test()
+    public void unmanagedSharedSp() throws Exception
+    {
+        StorPool extLockSharedSp = storPoolTestFactory.builder("node", "spShared")
+            .setFreeSpaceMgrName("shared")
+            .setExternalLocking(true)
+            .build();
+
+        assertTrue(sharedStorPoolMgr.isActive(extLockSharedSp)); // external locking
+        assertTrue(sharedStorPoolMgr.requestSharedLock(extLockSharedSp));
+        assertTrue(sharedStorPoolMgr.requestSharedLock(extLockSharedSp));
+        assertTrue(sharedStorPoolMgr.requestSharedLock(extLockSharedSp)); // not considered "shared"
+
+        assertNextNodes(sharedStorPoolMgr.releaseLocks(extLockSharedSp.getNode()));
     }
 
     /*

@@ -9,9 +9,9 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoPlaceApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
-import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
@@ -2183,7 +2183,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 stlt,
                 dfltDisklessStorPoolDfn,
                 DeviceProviderKind.DISKLESS,
-                fsm
+                fsm,
+                false
             );
 
             commitAndCleanUp(true);
@@ -2361,7 +2362,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 stlt,
                 storPoolDfn,
                 providerKind,
-                fsm
+                fsm,
+                false
             );
 
             storPool.getFreeSpaceTracker().setCapacityInfo(GenericDbBase.SYS_CTX, freeSpace, totalCapacity);

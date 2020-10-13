@@ -1,10 +1,5 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
@@ -49,6 +44,11 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class NodeDbDriverTest extends GenericDbBase
 {
@@ -400,7 +400,8 @@ public class NodeDbDriverTest extends GenericDbBase
                 node1,
                 storPoolDfn,
                 storPoolDriver1,
-                getFreeSpaceMgr(storPoolDfn, node1)
+                getFreeSpaceMgr(storPoolDfn, node1),
+                false
             );
             storPool1.getProps(SYS_CTX).setProp(storPool1TestKey, storPool1TestValue);
 
@@ -410,7 +411,8 @@ public class NodeDbDriverTest extends GenericDbBase
                 node2,
                 storPoolDfn,
                 storPoolDriver2,
-                getFreeSpaceMgr(storPoolDfn, node2)
+                getFreeSpaceMgr(storPoolDfn, node2),
+                false
             );
             storPool2.getProps(SYS_CTX).setProp(storPool2TestKey, storPool2TestValue);
 

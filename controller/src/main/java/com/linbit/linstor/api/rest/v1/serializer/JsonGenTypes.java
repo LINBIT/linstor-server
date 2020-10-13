@@ -155,6 +155,10 @@ public class JsonGenTypes
          * true if the storage pool supports snapshots. false otherwise
          */
         public Boolean supports_snapshots;
+        /**
+         * true if a shared storage pool uses linstor-external locking, like cLVM
+         */
+        public Boolean external_locking;
     }
 
 //    @JsonInclude(JsonInclude.Include.NON_EMPTY)

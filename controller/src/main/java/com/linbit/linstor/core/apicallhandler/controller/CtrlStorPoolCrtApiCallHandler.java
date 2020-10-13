@@ -28,15 +28,16 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import reactor.core.publisher.Flux;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler.makeStorPoolContext;
+import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Map;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler.makeStorPoolContext;
-import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlStorPoolCrtApiCallHandler
@@ -83,6 +84,7 @@ public class CtrlStorPoolCrtApiCallHandler
         String storPoolNameStr,
         DeviceProviderKind providerKindRef,
         String sharedStorPoolNameStr,
+        boolean externalLockingRef,
         Map<String, String> storPoolPropsMap,
         Flux<ApiCallRc> onError
     )
@@ -102,6 +104,7 @@ public class CtrlStorPoolCrtApiCallHandler
                     storPoolNameStr,
                     providerKindRef,
                     sharedStorPoolNameStr,
+                    externalLockingRef,
                     storPoolPropsMap,
                     context,
                     onError
@@ -115,6 +118,7 @@ public class CtrlStorPoolCrtApiCallHandler
         String storPoolNameStr,
         DeviceProviderKind deviceProviderKindRef,
         String sharedStorPoolNameStr,
+        boolean externalLockingRef,
         Map<String, String> storPoolPropsMap,
         ResponseContext context,
         Flux<ApiCallRc> onError
@@ -134,7 +138,8 @@ public class CtrlStorPoolCrtApiCallHandler
                 nodeNameStr,
                 storPoolNameStr,
                 deviceProviderKindRef,
-                sharedStorPoolNameStr
+                sharedStorPoolNameStr,
+                externalLockingRef
             );
 
             // check if specified preferred network interface exists

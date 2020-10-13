@@ -28,6 +28,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     private final Boolean supportsSnapshots;
     private final Boolean isPmem;
     private final Boolean isVDO;
+    private final Boolean externalLocking;
 
     public StorPoolPojo(
         final UUID storPoolUuidRef,
@@ -47,7 +48,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         final ApiCallRc reportsRef,
         final Boolean supportsSnapshotsRef,
         final Boolean isPmemRef,
-        final Boolean isVDORef
+        final Boolean isVDORef,
+        final Boolean isExternalLockingRef
     )
     {
         storPoolUuid = storPoolUuidRef;
@@ -68,6 +70,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         supportsSnapshots = supportsSnapshotsRef;
         isPmem = isPmemRef;
         isVDO = isVDORef;
+        externalLocking = isExternalLockingRef;
     }
 
     @Override
@@ -173,6 +176,12 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     @Override
     public Boolean isVDO() {
         return isVDO;
+    }
+
+    @Override
+    public Boolean isExternalLocking()
+    {
+        return externalLocking;
     }
 
     @Override

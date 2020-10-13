@@ -626,6 +626,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl DRIVER_NAME = new ColumnImpl("DRIVER_NAME", Types.VARCHAR, false, false);
         public static final ColumnImpl FREE_SPACE_MGR_NAME = new ColumnImpl("FREE_SPACE_MGR_NAME", Types.VARCHAR, false, false);
         public static final ColumnImpl FREE_SPACE_MGR_DSP_NAME = new ColumnImpl("FREE_SPACE_MGR_DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl EXTERNAL_LOCKING = new ColumnImpl("EXTERNAL_LOCKING", Types.BOOLEAN, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -634,7 +635,8 @@ public class GeneratedDatabaseTables
             POOL_NAME,
             DRIVER_NAME,
             FREE_SPACE_MGR_NAME,
-            FREE_SPACE_MGR_DSP_NAME
+            FREE_SPACE_MGR_DSP_NAME,
+            EXTERNAL_LOCKING
         };
 
         @Override
@@ -1678,6 +1680,7 @@ public class GeneratedDatabaseTables
         NodeStorPool.DRIVER_NAME.table = NODE_STOR_POOL;
         NodeStorPool.FREE_SPACE_MGR_NAME.table = NODE_STOR_POOL;
         NodeStorPool.FREE_SPACE_MGR_DSP_NAME.table = NODE_STOR_POOL;
+        NodeStorPool.EXTERNAL_LOCKING.table = NODE_STOR_POOL;
         PropsContainers.PROPS_INSTANCE.table = PROPS_CONTAINERS;
         PropsContainers.PROP_KEY.table = PROPS_CONTAINERS;
         PropsContainers.PROP_VALUE.table = PROPS_CONTAINERS;

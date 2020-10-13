@@ -256,7 +256,8 @@ public class CtrlNodeApiCallHandler
                         nodeNameStr,
                         LinStor.DISKLESS_STOR_POOL_NAME,
                         DeviceProviderKind.DISKLESS,
-                        null
+                        (String) null,
+                        false // no diskless shared SP
                     );
                 }
 
@@ -936,7 +937,7 @@ public class CtrlNodeApiCallHandler
         String logLevelLinstor = config.getLogLevelLinstor();
         if (logLevel == null || logLevel.isEmpty())
         {
-            if (!(logLevelLinstor == null || logLevelLinstor.isEmpty()))
+            if (((logLevelLinstor != null) && !logLevelLinstor.isEmpty()))
             {
                 LinstorParsingUtils.asLogLevel(logLevelLinstor);
                 stltConf.setLogLevelLinstor(logLevelLinstor);
@@ -946,7 +947,7 @@ public class CtrlNodeApiCallHandler
         {
             LinstorParsingUtils.asLogLevel(logLevel);
             stltConf.setLogLevel(logLevel);
-            if (!(logLevelLinstor == null || logLevelLinstor.isEmpty()))
+            if (((logLevelLinstor != null) && !logLevelLinstor.isEmpty()))
             {
                 LinstorParsingUtils.asLogLevel(logLevelLinstor);
                 stltConf.setLogLevelLinstor(logLevelLinstor);

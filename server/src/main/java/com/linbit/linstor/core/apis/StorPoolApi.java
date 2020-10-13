@@ -29,6 +29,7 @@ public interface StorPoolApi
     Boolean supportsSnapshots();
     Boolean isPmem();
     Boolean isVDO();
+    Boolean isExternalLocking();
 
     @Nonnull
     default String getBackingPoolName() {

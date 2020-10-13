@@ -55,7 +55,8 @@ public class StorPoolHelper
         String nodeNameStr,
         String storPoolNameStr,
         DeviceProviderKind deviceProviderKindRef,
-        String sharedStorPoolNameStr
+        String sharedStorPoolNameStr,
+        boolean externalLockingRef
     )
     {
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
@@ -92,7 +93,8 @@ public class StorPoolHelper
                 node,
                 storPoolDef,
                 deviceProviderKindRef,
-                freeSpaceMgrFactory.getInstance(peerAccCtx.get(), sharedSpaceName)
+                freeSpaceMgrFactory.getInstance(peerAccCtx.get(), sharedSpaceName),
+                externalLockingRef
             );
         }
         catch (AccessDeniedException accDeniedExc)

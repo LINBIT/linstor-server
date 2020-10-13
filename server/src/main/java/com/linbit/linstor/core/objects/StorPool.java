@@ -62,6 +62,7 @@ public class StorPool extends BaseTransactionObject
     private final Node node;
     private final StorPoolDatabaseDriver dbDriver;
     private final FreeSpaceTracker freeSpaceTracker;
+    private final boolean externalLocking;
 
     private final TransactionMap<String, VlmProviderObject<Resource>> vlmProviderMap;
     private final TransactionMap<String, VlmProviderObject<Snapshot>> snapVlmProviderMap;
@@ -79,12 +80,14 @@ public class StorPool extends BaseTransactionObject
 
     private ApiCallRcImpl reports;
 
+
     StorPool(
         UUID id,
         Node nodeRef,
         StorPoolDefinition storPoolDefRef,
         DeviceProviderKind providerKindRef,
         FreeSpaceTracker freeSpaceTrackerRef,
+        boolean externalLockingRef,
         StorPoolDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactory,
         TransactionObjectFactory transObjFactory,
@@ -104,6 +107,7 @@ public class StorPool extends BaseTransactionObject
         freeSpaceTracker = freeSpaceTrackerRef;
         node = nodeRef;
         dbDriver = dbDriverRef;
+        externalLocking = externalLockingRef;
         vlmProviderMap = transObjFactory.createTransactionMap(volumeMapRef, null);
         snapVlmProviderMap = transObjFactory.createTransactionMap(snapshotVolumeMapRef, null);
 
@@ -333,6 +337,16 @@ public class StorPool extends BaseTransactionObject
         return supportsSnapshots.get() != null;
     }
 
+    public boolean isExternalLocking()
+    {
+        return externalLocking;
+    }
+
+    public boolean isShared()
+    {
+        return freeSpaceTracker.getName().isShared() && !externalLocking;
+    }
+
     public SharedStorPoolName getSharedStorPoolName()
     {
         return freeSpaceTracker.getName();
@@ -406,7 +420,8 @@ public class StorPool extends BaseTransactionObject
             getReports(),
             supportsSnapshots.get(),
             isPmem.get(),
-            isVDO.get()
+            isVDO.get(),
+            externalLocking
         );
     }
 

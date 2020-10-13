@@ -121,6 +121,7 @@ public class StorPoolTestFactory
         private String storPoolName;
         private DeviceProviderKind driverKind;
         private FreeSpaceTracker freeSpaceTracker;
+        private boolean externalLocking;
 
         public StorPoolBuilder(String nodeNameRef, String storPoolNameRef)
             throws AccessDeniedException, DatabaseException, InvalidNameException
@@ -161,6 +162,12 @@ public class StorPoolTestFactory
             return this;
         }
 
+        public StorPoolBuilder setExternalLocking(boolean extLockingRef)
+        {
+            externalLocking = extLockingRef;
+            return this;
+        }
+
         public StorPool build()
             throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException, InvalidNameException,
             IllegalStorageDriverException
@@ -170,7 +177,8 @@ public class StorPoolTestFactory
                 nodeFact.get(nodeName, true),
                 storPoolDfnFact.get(storPoolName, true),
                 driverKind,
-                freeSpaceTracker
+                freeSpaceTracker,
+                externalLocking
             );
             storPoolMap.put(new Pair<>(nodeName.toUpperCase(), storPoolName.toUpperCase()), storPool);
             return storPool;

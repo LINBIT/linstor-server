@@ -144,10 +144,20 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
         storPoolDfnMap.put(storPoolDfn.getName(), storPoolDfn);
 
         storPool1 = storPoolFactory.create(
-            SYS_CTX, nodeSrc, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, nodeSrc)
+            SYS_CTX,
+            nodeSrc,
+            storPoolDfn,
+            DeviceProviderKind.LVM,
+            getFreeSpaceMgr(storPoolDfn, nodeSrc),
+            false
         );
         storPool2 = storPoolFactory.create(
-            SYS_CTX, nodeDst, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, nodeDst)
+            SYS_CTX,
+            nodeDst,
+            storPoolDfn,
+            DeviceProviderKind.LVM,
+            getFreeSpaceMgr(storPoolDfn, nodeDst),
+            false
         );
 
         volSrc = volumeFactory.create(

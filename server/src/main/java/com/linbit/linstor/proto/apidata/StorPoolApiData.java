@@ -148,4 +148,10 @@ public class StorPoolApiData implements StorPoolApi
     public Boolean isVDO() {
         return storPool.getIsVdo();
     }
+
+    @Override
+    public Boolean isExternalLocking()
+    {
+        return storPool.getIsExternalLocking();
+    }
 }

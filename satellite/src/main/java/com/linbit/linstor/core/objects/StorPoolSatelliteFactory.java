@@ -46,7 +46,8 @@ public class StorPoolSatelliteFactory
         Node node,
         StorPoolDefinition storPoolDef,
         DeviceProviderKind providerKind,
-        FreeSpaceTracker freeSpaceTrackerRef
+        FreeSpaceTracker freeSpaceTrackerRef,
+        boolean externalLocking
     )
         throws ImplementationError
     {
@@ -73,6 +74,7 @@ public class StorPoolSatelliteFactory
                     storPoolDef,
                     providerKind,
                     fsm,
+                    externalLocking,
                     driver,
                     propsContainerFactory,
                     transObjFactory,

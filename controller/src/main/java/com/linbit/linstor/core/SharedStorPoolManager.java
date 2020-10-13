@@ -74,8 +74,7 @@ public class SharedStorPoolManager extends BaseTransactionObject
     public boolean isActive(StorPool sp)
     {
         boolean ret;
-        SharedStorPoolName sharedSpName = sp.getSharedStorPoolName();
-        if (sharedSpName == null || !sharedSpName.isShared())
+        if (!sp.isShared())
         { // not shared
             ret = true;
         }
@@ -84,7 +83,7 @@ public class SharedStorPoolManager extends BaseTransactionObject
             Node activeNode;
             synchronized (activeLocksByLock)
             {
-                activeNode = activeLocksByLock.get(sharedSpName);
+                activeNode = activeLocksByLock.get(sp.getSharedStorPoolName());
             }
             ret = Objects.equals(activeNode, sp.getNode()); // activeNode might be null
         }
@@ -425,10 +424,9 @@ public class SharedStorPoolManager extends BaseTransactionObject
         HashMap<SharedStorPoolName, StorPool> ret = new HashMap<>();
         for (StorPool sp : storPools)
         {
-            SharedStorPoolName sharedSpName = sp.getSharedStorPoolName();
-            if (sharedSpName != null && sharedSpName.isShared())
+            if (sp.isShared())
             {
-                StorPool oldSp = ret.put(sharedSpName, sp);
+                StorPool oldSp = ret.put(sp.getSharedStorPoolName(), sp);
                 if (oldSp != null)
                 {
                     throw new ImplementationError("Cannot process more than one storage pool with same shared name");

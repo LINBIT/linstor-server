@@ -24,6 +24,7 @@ info:
     * unreleased
        - Added makeResourceAvailable API
        - Added diskless storage pool filter to AutoSelectFilter
+       - Added external_locking to StoragePool
     * 1.6.0
        - Added PropsInfoAll, PropsInfo and PropsInfoDetails as well as these entrypoints:
           - /v1/controller/properties/info
@@ -4603,6 +4604,9 @@ components:
         supports_snapshots:
           type: boolean
           description: true if the storage pool supports snapshots. false otherwise
+        external_locking:
+          type: boolean
+          description: true if a shared storage pool uses linstor-external locking, like cLVM
     LayerType:
       type: string
       enum:

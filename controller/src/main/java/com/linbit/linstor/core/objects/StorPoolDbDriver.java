@@ -22,6 +22,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeStorPool.DRIVER_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeStorPool.EXTERNAL_LOCKING;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_DSP_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.NodeStorPool.NODE_NAME;
@@ -75,6 +76,7 @@ public class StorPoolDbDriver
         setColumnSetter(DRIVER_NAME, sp -> sp.getDeviceProviderKind().name());
         setColumnSetter(FREE_SPACE_MGR_NAME, sp -> sp.getFreeSpaceTracker().getName().value);
         setColumnSetter(FREE_SPACE_MGR_DSP_NAME, sp -> sp.getFreeSpaceTracker().getName().displayValue);
+        setColumnSetter(EXTERNAL_LOCKING, sp -> Boolean.toString(sp.isExternalLocking()));
     }
 
     @Override
@@ -94,6 +96,7 @@ public class StorPoolDbDriver
         final NodeName nodeName = raw.build(NODE_NAME, NodeName::new);
         final StorPoolName poolName = raw.build(POOL_NAME, StorPoolName::new);
         final SharedStorPoolName sharedStorPoolName = raw.build(FREE_SPACE_MGR_DSP_NAME, SharedStorPoolName::restoreName);
+        final boolean externalLocking = raw.build(EXTERNAL_LOCKING, Boolean::parseBoolean);
 
         final FreeSpaceMgr fsm = restore(sharedStorPoolName);
 
@@ -107,6 +110,7 @@ public class StorPoolDbDriver
                 parent.objB.get(poolName),
                 LinstorParsingUtils.asProviderKind(raw.<String>get(DRIVER_NAME)),
                 fsm,
+                externalLocking,
                 this,
                 propsContainerFactory,
                 transObjFactory,

@@ -44,7 +44,8 @@ public class StorPoolControllerFactory
         Node node,
         StorPoolDefinition storPoolDef,
         DeviceProviderKind deviceProviderKindRef,
-        FreeSpaceTracker freeSpaceTrackerRef
+        FreeSpaceTracker freeSpaceTrackerRef,
+        boolean externalLockingRef
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, IllegalStorageDriverException
     {
@@ -78,6 +79,7 @@ public class StorPoolControllerFactory
             storPoolDef,
             deviceProviderKindRef,
             freeSpaceTrackerRef,
+            externalLockingRef,
             driver,
             propsContainerFactory,
             transObjFactory,

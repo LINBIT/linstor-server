@@ -120,10 +120,20 @@ public class ConnectionPropsTest extends GenericDbBase
         storPoolDfn = storPoolDefinitionFactory.create(SYS_CTX, storPoolName);
 
         storPool1 = storPoolFactory.create(
-            SYS_CTX, node1, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, node1)
+            SYS_CTX,
+            node1,
+            storPoolDfn,
+            DeviceProviderKind.LVM,
+            getFreeSpaceMgr(storPoolDfn, node1),
+            false
         );
         storPool2 = storPoolFactory.create(
-            SYS_CTX, node2, storPoolDfn, DeviceProviderKind.LVM, getFreeSpaceMgr(storPoolDfn, node2)
+            SYS_CTX,
+            node2,
+            storPoolDfn,
+            DeviceProviderKind.LVM,
+            getFreeSpaceMgr(storPoolDfn, node2),
+            false
         );
 
         volDfn = volumeDefinitionFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);

@@ -129,7 +129,8 @@ public class VolumeDbDriverTest extends GenericDbBase
             node,
             storPoolDfn,
             DeviceProviderKind.LVM,
-            getFreeSpaceMgr(storPoolDfn, node)
+            getFreeSpaceMgr(storPoolDfn, node),
+            false
         );
 
         volNr = new VolumeNumber(13);

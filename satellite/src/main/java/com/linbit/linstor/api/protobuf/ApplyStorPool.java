@@ -82,7 +82,8 @@ public class ApplyStorPool implements ApiCall
             null,
             protoStorPool.getSnapshotSupported(),
             protoStorPool.getIsPmem(),
-            protoStorPool.getIsVdo()
+            protoStorPool.getIsVdo(),
+            protoStorPool.getIsExternalLocking()
         );
     }
 

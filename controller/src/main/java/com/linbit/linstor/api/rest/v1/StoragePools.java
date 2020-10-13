@@ -269,6 +269,7 @@ public class StoragePools
                 storPoolData.storage_pool_name,
                 LinstorParsingUtils.asProviderKind(storPoolData.provider_kind),
                 storPoolData.free_space_mgr_name,
+                storPoolData.external_locking,
                 storPoolData.props,
                 Flux.empty()
             )

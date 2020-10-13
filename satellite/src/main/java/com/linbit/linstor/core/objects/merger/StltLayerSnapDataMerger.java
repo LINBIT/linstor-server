@@ -407,7 +407,8 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
                     storPoolApi.getDeviceProviderKind(),
                     freeSpaceMgrFactory.getInstance(
                         SharedStorPoolName.restoreName(storPoolApi.getFreeSpaceManagerName())
-                    )
+                    ),
+                    storPoolApi.isExternalLocking()
                 );
                 storPool.getProps(apiCtx).map().putAll(storPoolApi.getStorPoolProps());
             }
