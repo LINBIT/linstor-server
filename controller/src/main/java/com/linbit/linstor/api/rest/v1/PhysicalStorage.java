@@ -175,13 +175,14 @@ public class PhysicalStorage
             {
                 Map<String, String> storPoolProps = deviceProviderToStorPoolProperty(deviceProviderKind, poolName);
                 storPoolProps.putAll(createData.with_storage_pool.props);
+                Boolean externalLocking = createData.with_storage_pool.external_locking;
                 responses = responses.concatWith(
                     storPoolCrtApiCallHandler.createStorPool(
                         nodeName,
                         createData.with_storage_pool.name,
                         deviceProviderKind,
-                        null,
-                        false, // FIXME: physical storage api MUST support shared storage + external locking
+                        createData.with_storage_pool.shared_space,
+                        externalLocking == null ? false : externalLocking,
                         storPoolProps,
                         physicalStorageApiCallHandler.deleteDevicePool(
                             nodeName,

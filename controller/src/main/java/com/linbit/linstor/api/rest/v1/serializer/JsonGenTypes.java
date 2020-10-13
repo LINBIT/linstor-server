@@ -1204,6 +1204,14 @@ public class JsonGenTypes
          */
         public String name;
         public Map<String, String> props = Collections.emptyMap();
+        /**
+         * Name of the shared space
+         */
+        public String shared_space;
+        /**
+         * true if a shared storage pool uses linstor-external locking, like cLVM
+         */
+        public Boolean external_locking;
     }
 
     /**

@@ -25,6 +25,7 @@ info:
        - Added makeResourceAvailable API
        - Added diskless storage pool filter to AutoSelectFilter
        - Added external_locking to StoragePool
+       - Added shared_space and external_locking to PhysicalStorageStoragePoolCreate
     * 1.6.0
        - Added PropsInfoAll, PropsInfo and PropsInfoDetails as well as these entrypoints:
           - /v1/controller/properties/info
@@ -5984,6 +5985,12 @@ components:
           description: Name of the linstor storage pool
         props:
           $ref: '#/components/schemas/Properties'
+        shared_space:
+          type: string
+          description: Name of the shared space
+        external_locking:
+          type: boolean
+          description: true if a shared storage pool uses linstor-external locking, like cLVM
     PhysicalStorageCreate:
       type: object
       description: If `with_storage_pool` is set a linstor storage pool will also

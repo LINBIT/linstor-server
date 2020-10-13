@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -96,7 +97,19 @@ public class StorPoolDbDriver
         final NodeName nodeName = raw.build(NODE_NAME, NodeName::new);
         final StorPoolName poolName = raw.build(POOL_NAME, StorPoolName::new);
         final SharedStorPoolName sharedStorPoolName = raw.build(FREE_SPACE_MGR_DSP_NAME, SharedStorPoolName::restoreName);
-        final boolean externalLocking = raw.build(EXTERNAL_LOCKING, Boolean::parseBoolean);
+        final boolean externalLocking;
+
+        switch(getDbType())
+        {
+            case ETCD:
+                externalLocking = raw.build(EXTERNAL_LOCKING, Boolean::parseBoolean);
+                break;
+            case SQL:
+                externalLocking = raw.get(EXTERNAL_LOCKING);
+                break;
+            default:
+                throw new ImplementationError("Unknown database type: " + getDbType());
+        }
 
         final FreeSpaceMgr fsm = restore(sharedStorPoolName);
 
