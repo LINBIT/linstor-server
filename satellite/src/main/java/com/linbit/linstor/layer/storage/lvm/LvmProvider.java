@@ -605,7 +605,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         for (LvmData<?> vlmData : combinedList)
         {
             StorPool storPool = vlmData.getStorPool();
-            if (storPool.isShared())
+            if (storPool.getSharedStorPoolName().isShared())
             {
                 ret = true;
                 break;
