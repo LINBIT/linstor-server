@@ -732,18 +732,18 @@ public class Node extends BaseTransactionObject
         }
     }
 
-    public void markDead(AccessContext accCtx) throws AccessDeniedException, DatabaseException
+    public void markEvicted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
-        getFlags().enableFlags(accCtx, Flags.DEAD);
+        getFlags().enableFlags(accCtx, Flags.EVICTED);
     }
 
-    public void unMarkDead(AccessContext accCtx) throws AccessDeniedException, DatabaseException
+    public void unMarkEvicted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CONTROL);
-        getFlags().disableFlags(accCtx, Flags.DEAD);
+        getFlags().disableFlags(accCtx, Flags.EVICTED);
     }
 
     public NodeApi getApiData(
@@ -862,7 +862,7 @@ public class Node extends BaseTransactionObject
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),
-        DEAD(DELETE.flagValue | 1L << 1),
+        EVICTED(DELETE.flagValue | 1L << 1),
         QIGNORE(0x10000L);
 
         public final long flagValue;

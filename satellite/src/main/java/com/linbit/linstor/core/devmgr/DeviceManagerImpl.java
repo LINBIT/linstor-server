@@ -1165,7 +1165,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         if (!remoteNode.iterateResources(wrkCtx).hasNext())
                         {
                             nodesMap.remove(remoteNode.getName());
-                            if (!remoteNode.getFlags().isSet(wrkCtx, Node.Flags.DEAD))
+                            if (!remoteNode.getFlags().isSet(wrkCtx, Node.Flags.EVICTED))
                             {
                                 remoteNode.delete(wrkCtx);
                             }

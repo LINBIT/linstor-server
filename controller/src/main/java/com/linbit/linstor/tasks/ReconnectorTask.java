@@ -416,16 +416,16 @@ public class ReconnectorTask implements Task
                     );
                     int numNodes = nodeRepository.getMapForView(apiCtx).size();
                     int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
-                    if (numDiscon < maxDiscon && !config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.DEAD))
+                    if (numDiscon < maxDiscon && !config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                     {
                         errorReporter.logTrace(
                             config.peer + " has been offline for too long, relocation of resources started."
                         );
-                        ctrlNodeApiCallHandler.get().declareDead(config.peer.getNode()).subscribe();
+                        ctrlNodeApiCallHandler.get().declareEvicted(config.peer.getNode()).subscribe();
                     }
                     else {
                         errorReporter.logTrace(
-                            "Currently more than %d%% nodes are not connected to the controller. The controller might have a problem with it's connections, therefore no nodes will be declared as DEAD",
+                            "Currently more than %d%% nodes are not connected to the controller. The controller might have a problem with it's connections, therefore no nodes will be declared as EVICTED",
                             maxPercentDiscon
                         );
                     }

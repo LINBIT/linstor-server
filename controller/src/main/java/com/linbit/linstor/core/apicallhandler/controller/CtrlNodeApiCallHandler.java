@@ -970,7 +970,7 @@ public class CtrlNodeApiCallHandler
             () ->
             {
                 Node node = ctrlApiDataLoader.loadNode(nodeName, true);
-                node.unMarkDead(apiCtx);
+                node.unMarkEvicted(apiCtx);
                 Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlSatelliteUpdateCaller.updateSatellites(
                     node.getUuid(),
                     node.getName(),
@@ -985,14 +985,14 @@ public class CtrlNodeApiCallHandler
         );
     }
 
-    public Flux<ApiCallRc> declareDead(Node node) throws AccessDeniedException
+    public Flux<ApiCallRc> declareEvicted(Node node) throws AccessDeniedException
     {
         return scopeRunner.fluxInTransactionalScope(
             "Declare node DEAD",
             lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
             () ->
             {
-                node.markDead(apiCtx);
+                node.markEvicted(apiCtx);
                 Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlSatelliteUpdateCaller.updateSatellites(
                     node.getUuid(),
                     node.getName(),
