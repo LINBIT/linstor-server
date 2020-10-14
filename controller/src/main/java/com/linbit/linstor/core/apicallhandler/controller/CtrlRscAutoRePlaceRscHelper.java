@@ -60,7 +60,6 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
             PriorityProps props;
             int minReplicaCount;
             int placeCount;
-            int curResourceCount = 0;
             int curReplicaCount = 0;
             try
             {
@@ -86,16 +85,15 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                 {
                     Resource res = itres.next();
                     StateFlags<Flags> flags = res.getStateFlags();
-                    if (!flags.isSomeSet(accCtx.get(), Resource.Flags.DELETE, Resource.Flags.TIE_BREAKER))
+                    if (
+                        !flags.isSomeSet(
+                            accCtx.get(), Resource.Flags.DELETE, Resource.Flags.TIE_BREAKER,
+                            Resource.Flags.DRBD_DISKLESS
+                        ) &&
+                            LayerRscUtils.getLayerStack(res, accCtx.get()).contains(DeviceLayerKind.DRBD)
+                    )
                     {
-                        curResourceCount++;
-                        if (
-                            !flags.isSet(accCtx.get(), Resource.Flags.DRBD_DISKLESS) &&
-                                !LayerRscUtils.getLayerStack(res, accCtx.get()).contains(DeviceLayerKind.DRBD)
-                        )
-                        {
-                            curReplicaCount++;
-                        }
+                        curReplicaCount++;
                     }
                 }
                 if (curReplicaCount < minReplicaCount)
@@ -103,7 +101,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
 
                     AutoSelectorConfig autoPlaceConfig = rscDfn.getResourceGroup().getAutoPlaceConfig();
                     AutoSelectFilterApi selectFilter = new AutoSelectFilterPojo(
-                        curResourceCount + 1,
+                        minReplicaCount,
                         autoPlaceConfig.getNodeNameList(accCtx.get()),
                         autoPlaceConfig.getStorPoolNameList(accCtx.get()),
                         autoPlaceConfig.getDoNotPlaceWithRscList(accCtx.get()),

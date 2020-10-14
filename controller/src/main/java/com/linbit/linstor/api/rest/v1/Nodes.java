@@ -247,43 +247,49 @@ public class Nodes
 
     @PUT
     @Path("{nodeName}/restore")
-    public Response restoreNode(
+    public void restoreNode(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_NODE_RECONNECT, request), () ->
+        Flux<ApiCallRc> flux = Flux.empty();
+        try
         {
-            Response resp;
-            try {
-                ctrlNodeApiCallHandler.restoreNode(nodeName);
-                ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
-                    ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
-                    "Successfully restored node " + nodeName
-                );
-                resp = Response.status(Response.Status.OK).entity(ApiCallRcRestUtils.toJSON(rc)).build();
-            }
-            catch (AccessDeniedException exc)
-            {
-                errorReporter.reportError(exc);
-                ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
-                    ApiConsts.FAIL_ACC_DENIED_NODE | ApiConsts.MASK_NODE,
-                    "Access to node " + nodeName + " denied"
-                );
-                resp = Response.status(Response.Status.UNAUTHORIZED).entity(ApiCallRcRestUtils.toJSON(rc)).build();
-            }
-            catch (DatabaseException exc)
-            {
-                String rep = errorReporter.reportError(exc);
-                ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
-                    ApiConsts.FAIL_SQL | ApiConsts.MASK_NODE,
-                    "Database Error, see error report " + rep
-                );
-                resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ApiCallRcRestUtils.toJSON(rc))
-                    .build();
-            }
-            return resp;
-        }, false);
+            flux = ctrlNodeApiCallHandler.restoreNode(nodeName);
+            ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
+                "Successfully restored node " + nodeName
+            );
+            flux.concatWithValues(rc)
+                .subscriberContext(requestHelper.createContext(InternalApiConsts.API_NODE_RESTORE, request));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (AccessDeniedException exc)
+        {
+            errorReporter.reportError(exc);
+            ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                ApiConsts.FAIL_ACC_DENIED_NODE | ApiConsts.MASK_NODE,
+                "Access to node " + nodeName + " denied"
+            );
+            flux.concatWithValues(rc)
+                .subscriberContext(requestHelper.createContext(InternalApiConsts.API_NODE_RESTORE, request));
+            requestHelper
+                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.UNAUTHORIZED));
+        }
+        catch (DatabaseException exc)
+        {
+            String rep = errorReporter.reportError(exc);
+            ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                ApiConsts.FAIL_SQL | ApiConsts.MASK_NODE,
+                "Database Error, see error report " + rep
+            );
+            flux.concatWithValues(rc)
+                .subscriberContext(requestHelper.createContext(InternalApiConsts.API_NODE_RESTORE, request));
+            requestHelper.doFlux(
+                asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.INTERNAL_SERVER_ERROR)
+            );
+        }
     }
 
     @GET

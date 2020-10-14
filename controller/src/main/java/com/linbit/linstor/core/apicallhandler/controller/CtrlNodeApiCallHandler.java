@@ -21,8 +21,10 @@ import com.linbit.linstor.core.OpenFlexTargetProcessManager;
 import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -41,6 +43,7 @@ import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeControllerFactory;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
@@ -87,6 +90,7 @@ import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Scheduler;
+import reactor.util.function.Tuple2;
 
 @Singleton
 public class CtrlNodeApiCallHandler
@@ -112,6 +116,7 @@ public class CtrlNodeApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final CtrlStltSerializer stltComSerializer;
     private AutoDiskfulTask autoDiskfulTask;
+    private final CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelper;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -135,7 +140,8 @@ public class CtrlNodeApiCallHandler
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlStltSerializer stltComSerializerRef,
-        AutoDiskfulTask autoDiskfulTaskRef
+        AutoDiskfulTask autoDiskfulTaskRef,
+        CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -159,6 +165,7 @@ public class CtrlNodeApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         stltComSerializer = stltComSerializerRef;
         autoDiskfulTask = autoDiskfulTaskRef;
+        autoRePlaceRscHelper = autoRePlaceRscHelperRef;
     }
 
     Node createNodeImpl(
@@ -955,8 +962,58 @@ public class CtrlNodeApiCallHandler
         return fluxReturn;
     }
 
-    public void restoreNode(String nodeName) throws AccessDeniedException, DatabaseException
+    public Flux<ApiCallRc> restoreNode(String nodeName) throws AccessDeniedException, DatabaseException
     {
-        ctrlApiDataLoader.loadNode(nodeName, true).unMarkDead(apiCtx);
+        return scopeRunner.fluxInTransactionalScope(
+            "Declare node DEAD",
+            lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
+            () ->
+            {
+                Node node = ctrlApiDataLoader.loadNode(nodeName, true);
+                node.unMarkDead(apiCtx);
+                Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                    node.getUuid(),
+                    node.getName(),
+                    CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
+                );
+                ctrlTransactionHelper.commit();
+                return flux.transform(tuple ->
+                {
+                    return Flux.<ApiCallRc> empty();
+                });
+            }
+        );
+    }
+
+    public Flux<ApiCallRc> declareDead(Node node) throws AccessDeniedException
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Declare node DEAD",
+            lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
+            () ->
+            {
+                node.markDead(apiCtx);
+                Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                    node.getUuid(),
+                    node.getName(),
+                    CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
+                );
+                CtrlRscAutoHelper.AutoHelperInternalState autoState = new AutoHelperInternalState();
+                autoState.additionalFluxList.add(
+                    flux.transform(tuple ->
+                    {
+                        return Flux.<ApiCallRc> empty();
+                    })
+                );
+                for (Resource res : node.streamResources(apiCtx).collect(Collectors.toList()))
+                {
+                    res.markDeleted(apiCtx);
+                    autoRePlaceRscHelper.addNeedRePlaceRsc(res);
+                    autoRePlaceRscHelper.manage(new ApiCallRcImpl(), res.getDefinition(), autoState);
+                }
+                ctrlTransactionHelper.commit();
+                return Flux.concat(autoState.additionalFluxList);
+            }
+        );
     }
 }
