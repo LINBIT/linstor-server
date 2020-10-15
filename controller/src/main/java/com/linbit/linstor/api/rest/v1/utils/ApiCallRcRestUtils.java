@@ -23,9 +23,15 @@ import reactor.core.publisher.Mono;
 
 public class ApiCallRcRestUtils
 {
+    private static final long MIN_NOT_FOUND = 300;
+    private static final long MAX_NOT_FOUND = 399;
+    private static final long MIN_ACC_DENIED = 400;
+    private static final long MAX_ACC_DENIED = 499;
+
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ApiCallData
     {
+
         public long ret_code;
         public String message;
         public String cause;
@@ -98,14 +104,16 @@ public class ApiCallRcRestUtils
         {
             if ((ApiConsts.MASK_ERROR & rc.getReturnCode()) == ApiConsts.MASK_ERROR)
             {
-                long strippedCode = rc.getReturnCode() & ~ApiConsts.MASK_ERROR;
-                if (strippedCode >= (ApiConsts.FAIL_NOT_FOUND_NODE & ~ApiConsts.MASK_ERROR) &&
-                    strippedCode <= (ApiConsts.FAIL_NOT_FOUND_KVS & ~ApiConsts.MASK_ERROR))
+                long strippedCode = rc.getReturnCode() & ApiConsts.MASK_BITS_CODE;
+                if (strippedCode >= MIN_NOT_FOUND &&
+                    strippedCode <= MAX_NOT_FOUND)
                 {
                     status = Response.Status.NOT_FOUND;
                 }
                 else
-                if (rc.getReturnCode() == ApiConsts.FAIL_SIGN_IN)
+                if (rc.getReturnCode() == ApiConsts.FAIL_SIGN_IN ||
+                    strippedCode >= MIN_ACC_DENIED &&
+                    strippedCode <= MAX_ACC_DENIED)
                 {
                     status = Response.Status.FORBIDDEN;
                 }
