@@ -49,6 +49,7 @@ import reactor.util.context.Context;
 public class ReconnectorTask implements Task
 {
     private static final int RECONNECT_SLEEP = 10_000;
+    private static final String STATUS_CONNECTED = "Connected";
 
     private final Object syncObj = new Object();
 
@@ -394,8 +395,8 @@ public class ReconnectorTask implements Task
                 );
                 timeout = Long.parseLong(
                     props.getProp(
-                        ApiConsts.KEY_NODE_MAX_OFFLINE_TIME,
-                        ApiConsts.NAMESPC_NODE,
+                        ApiConsts.KEY_AUTO_EVICT_AFTER_TIME,
+                        ApiConsts.NAMESPC_DRBD_OPTIONS,
                         "60" // 1 hour
                     )
                 ) * 60 * 1000; // to milliseconds
@@ -412,7 +413,11 @@ public class ReconnectorTask implements Task
                 {
                     int numDiscon = peerSet.size();
                     int maxPercentDiscon = Integer.parseInt(
-                        props.getProp(ApiConsts.KEY_MAX_DISCONNECTED_NODES, ApiConsts.NAMESPC_NODE, "20")
+                        props.getProp(
+                            ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES,
+                            ApiConsts.NAMESPC_DRBD_OPTIONS,
+                            "20"
+                        )
                     );
                     int numNodes = nodeRepository.getMapForView(apiCtx).size();
                     int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
@@ -453,7 +458,7 @@ public class ReconnectorTask implements Task
             {
                 for (String conVal : conStates.values())
                 {
-                    if (!conVal.equalsIgnoreCase("Connected"))
+                    if (!conVal.equalsIgnoreCase(STATUS_CONNECTED))
                     {
                         drbdOk = false;
                     }

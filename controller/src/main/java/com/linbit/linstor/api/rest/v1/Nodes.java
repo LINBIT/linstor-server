@@ -18,7 +18,6 @@ import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.SatelliteConfigApi;
 import com.linbit.linstor.core.cfg.StltConfig;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -254,42 +253,9 @@ public class Nodes
     )
     {
         Flux<ApiCallRc> flux = Flux.empty();
-        try
-        {
-            flux = ctrlNodeApiCallHandler.restoreNode(nodeName);
-            ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
-                ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
-                "Successfully restored node " + nodeName
-            );
-            flux.concatWithValues(rc)
-                .subscriberContext(requestHelper.createContext(InternalApiConsts.API_NODE_RESTORE, request));
-            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
-        }
-        catch (AccessDeniedException exc)
-        {
-            errorReporter.reportError(exc);
-            ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
-                ApiConsts.FAIL_ACC_DENIED_NODE | ApiConsts.MASK_NODE,
-                "Access to node " + nodeName + " denied"
-            );
-            flux.concatWithValues(rc)
-                .subscriberContext(requestHelper.createContext(InternalApiConsts.API_NODE_RESTORE, request));
-            requestHelper
-                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.UNAUTHORIZED));
-        }
-        catch (DatabaseException exc)
-        {
-            String rep = errorReporter.reportError(exc);
-            ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
-                ApiConsts.FAIL_SQL | ApiConsts.MASK_NODE,
-                "Database Error, see error report " + rep
-            );
-            flux.concatWithValues(rc)
-                .subscriberContext(requestHelper.createContext(InternalApiConsts.API_NODE_RESTORE, request));
-            requestHelper.doFlux(
-                asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.INTERNAL_SERVER_ERROR)
-            );
-        }
+        flux = ctrlNodeApiCallHandler.restoreNode(nodeName)
+            .subscriberContext(requestHelper.createContext(InternalApiConsts.API_NODE_RESTORE, request));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @GET

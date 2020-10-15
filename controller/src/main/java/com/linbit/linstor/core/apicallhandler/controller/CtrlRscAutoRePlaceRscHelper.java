@@ -71,8 +71,8 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                 placeCount = rscDfn.getResourceGroup().getAutoPlaceConfig().getReplicaCount(accCtx.get());
                 minReplicaCount = Integer.parseInt(
                     props.getProp(
-                        ApiConsts.KEY_MIN_REPLICA_COUNT,
-                        "",
+                        ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT,
+                        ApiConsts.NAMESPC_DRBD_OPTIONS,
                         "" + placeCount
                     )
                 );

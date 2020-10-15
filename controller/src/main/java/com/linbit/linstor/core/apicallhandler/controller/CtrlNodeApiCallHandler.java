@@ -49,6 +49,7 @@ import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -117,6 +118,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlStltSerializer stltComSerializer;
     private AutoDiskfulTask autoDiskfulTask;
     private final CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelper;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -141,7 +143,8 @@ public class CtrlNodeApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         CtrlStltSerializer stltComSerializerRef,
         AutoDiskfulTask autoDiskfulTaskRef,
-        CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef
+        CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -166,6 +169,7 @@ public class CtrlNodeApiCallHandler
         stltComSerializer = stltComSerializerRef;
         autoDiskfulTask = autoDiskfulTaskRef;
         autoRePlaceRscHelper = autoRePlaceRscHelperRef;
+        errorReporter = errorReporterRef;
     }
 
     Node createNodeImpl(
@@ -962,33 +966,60 @@ public class CtrlNodeApiCallHandler
         return fluxReturn;
     }
 
-    public Flux<ApiCallRc> restoreNode(String nodeName) throws AccessDeniedException, DatabaseException
+    public Flux<ApiCallRc> restoreNode(String nodeName)
     {
         return scopeRunner.fluxInTransactionalScope(
-            "Declare node DEAD",
+            "Restore EVICTED node",
             lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
             () ->
             {
-                Node node = ctrlApiDataLoader.loadNode(nodeName, true);
-                node.unMarkEvicted(apiCtx);
-                Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlSatelliteUpdateCaller.updateSatellites(
-                    node.getUuid(),
-                    node.getName(),
-                    CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
-                );
-                ctrlTransactionHelper.commit();
-                return flux.transform(tuple ->
+                Flux<ApiCallRc> flux = Flux.empty();
+                try
                 {
-                    return Flux.<ApiCallRc> empty();
-                });
+                    Node node = ctrlApiDataLoader.loadNode(nodeName, true);
+                    node.unMarkEvicted(apiCtx);
+                    Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateFlux = ctrlSatelliteUpdateCaller.updateSatellites(
+                        node.getUuid(),
+                        node.getName(),
+                        CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
+                    );
+                    ctrlTransactionHelper.commit();
+                    ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
+                        "Successfully restored node " + nodeName
+                    );
+                    flux = updateFlux.transform(tuple ->
+                    {
+                        return Flux.<ApiCallRc> empty();
+                    });
+                    return flux.concatWithValues(rc);
+                }
+                catch (AccessDeniedException exc)
+                {
+                    errorReporter.reportError(exc);
+                    ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_ACC_DENIED_NODE | ApiConsts.MASK_NODE,
+                        "Access to node " + nodeName + " denied"
+                    );
+                    return flux.concatWithValues(rc);
+                }
+                catch (DatabaseException exc)
+                {
+                    String rep = errorReporter.reportError(exc);
+                    ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_SQL | ApiConsts.MASK_NODE,
+                        "Database Error, see error report " + rep
+                    );
+                    return flux.concatWithValues(rc);
+                }
             }
         );
     }
 
-    public Flux<ApiCallRc> declareEvicted(Node node) throws AccessDeniedException
+    public Flux<ApiCallRc> declareEvicted(Node node)
     {
         return scopeRunner.fluxInTransactionalScope(
-            "Declare node DEAD",
+            "Declare node EVICTED",
             lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
             () ->
             {

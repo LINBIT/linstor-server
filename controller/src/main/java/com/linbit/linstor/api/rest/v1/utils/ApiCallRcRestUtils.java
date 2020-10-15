@@ -23,9 +23,9 @@ import reactor.core.publisher.Mono;
 
 public class ApiCallRcRestUtils
 {
-    private static final long MIN_NOT_FOUND = 300;
+    private static final long MIN_NOT_FOUND = ApiConsts.FAIL_NOT_FOUND_NODE & ~ApiConsts.MASK_ERROR;
     private static final long MAX_NOT_FOUND = 399;
-    private static final long MIN_ACC_DENIED = 400;
+    private static final long MIN_ACC_DENIED = ApiConsts.FAIL_ACC_DENIED_NODE & ~ApiConsts.MASK_ERROR;
     private static final long MAX_ACC_DENIED = 499;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

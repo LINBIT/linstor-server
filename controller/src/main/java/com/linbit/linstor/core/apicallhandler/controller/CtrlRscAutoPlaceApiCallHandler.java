@@ -179,16 +179,10 @@ public class CtrlRscAutoPlaceApiCallHandler
         )
             .collect(Collectors.toList());
         List<Resource> alreadyPlacedDiskless = alreadyPlaced.stream()
-            .filter(rsc ->
-            {
-                return isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS);
-            })
+            .filter(rsc -> isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
             .collect(Collectors.toList());
         List<Resource> alreadyDeleted = alreadyPlaced.stream()
-            .filter(rsc ->
-            {
-                return isFlagSet(rsc, Resource.Flags.DELETE);
-            })
+            .filter(rsc -> isFlagSet(rsc, Resource.Flags.DELETE))
             .collect(Collectors.toList());
 
         int additionalPlaceCount = Optional.ofNullable(
