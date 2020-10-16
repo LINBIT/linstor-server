@@ -264,12 +264,13 @@ public class StoragePools
 
             convertStorPoolProp(storPoolData.props);
 
+            Boolean externalLocking = storPoolData.external_locking == null ? false : storPoolData.external_locking;
             Flux<ApiCallRc> responses = ctrlStorPoolCrtApiCallHandler.createStorPool(
                 nodeName,
                 storPoolData.storage_pool_name,
                 LinstorParsingUtils.asProviderKind(storPoolData.provider_kind),
                 storPoolData.free_space_mgr_name,
-                storPoolData.external_locking,
+                externalLocking,
                 storPoolData.props,
                 Flux.empty()
             )
