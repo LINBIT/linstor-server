@@ -270,7 +270,6 @@ public class ReconnectorTask implements Task
                             {
                                 peerSet.add(config.newPeer(config.peer.getConnector().reconnect(config.peer)));
                             }
-                            removePeer(config.peer);
                         }
                         catch (AccessDeniedException | DatabaseException exc)
                         {
