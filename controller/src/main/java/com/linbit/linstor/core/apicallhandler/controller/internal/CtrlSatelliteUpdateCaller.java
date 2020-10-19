@@ -395,6 +395,12 @@ public class CtrlSatelliteUpdateCaller
         return nodeName -> Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName)));
     }
 
+    public static NotConnectedHandler notConnectedIgnoreIfNot(NodeName toggleNode)
+    {
+        return nodeName -> nodeName.equals(toggleNode) ?
+            Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))) : Flux.empty();
+    }
+
     public static NotConnectedHandler notConnectedError()
     {
         return nodeName -> Flux.error(new ApiRcException(ApiCallRcImpl.simpleEntry(

@@ -189,7 +189,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         // Only restart the migration watch if adding the disk is complete
         boolean diskAddRequested = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISK_ADD_REQUESTED);
 
-        return migrateFromNodeNameStr == null && !diskAddRequested ?
+        return migrateFromNodeNameStr == null || !diskAddRequested ?
             Collections.emptySet() :
             Collections.singleton(Flux.from(waitForMigration(
                 rsc.getNode().getName(),
@@ -471,15 +471,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         try
         {
-            Iterator<Resource> rscIterator = rsc.getDefinition().iterateResource(apiCtx);
-            while (rscIterator.hasNext())
+            Node node = rsc.getNode();
+            if (node.getPeer(apiCtx).getConnectionStatus() != ApiConsts.ConnectionStatus.ONLINE)
             {
-                Resource currentRsc = rscIterator.next();
-                Node node = currentRsc.getNode();
-                if (node.getPeer(apiCtx).getConnectionStatus() != ApiConsts.ConnectionStatus.ONLINE)
-                {
-                    offlineWarnings.addEntry(ResponseUtils.makeNotConnectedWarning(node.getName()));
-                }
+                offlineWarnings.addEntry(ResponseUtils.makeNotConnectedWarning(node.getName()));
             }
         }
         catch (AccessDeniedException implError)
@@ -508,7 +503,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             String actionSelf = removeDisk ? "Removed disk on {0}" : null;
             String actionPeer = removeDisk ? null : "Prepared {0} to expect disk on ''" + nodeName.displayValue + "''";
             Flux<ApiCallRc> nextStep = finishOperation(nodeName, rscName, removeDisk, context);
-            Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep)
+            Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(
+                    rsc.getDefinition(), CtrlSatelliteUpdateCaller.notConnectedIgnoreIfNot(nodeName), nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
