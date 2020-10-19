@@ -248,14 +248,16 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_RSC_BUSY,
-                "Addition of disk to resource already requested"
+                "Addition of disk to resource already requested",
+                true
             ));
         }
         if (hasDiskRemoveRequested(rsc))
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_RSC_BUSY,
-                "Removal of disk from resource already requested"
+                "Removal of disk from resource already requested",
+                true
             ));
         }
 
@@ -263,14 +265,16 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.WARN_RSC_ALREADY_HAS_DISK,
-                "Resource already has disk"
+                "Resource already has disk",
+                true
             ));
         }
         if (removeDisk && ctrlVlmCrtApiHelper.isDiskless(rsc))
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.WARN_RSC_ALREADY_DISKLESS,
-                "Resource already diskless"
+                "Resource already diskless",
+                true
             ));
         }
 
@@ -282,7 +286,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INSUFFICIENT_REPLICA_COUNT,
-                    "Cannot remove the disk from the only resource with a disk"
+                    "Cannot remove the disk from the only resource with a disk",
+                    true
                 ));
             }
 
@@ -290,7 +295,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_LAYER_STACK,
-                    "Toggle disk is only supported in combination with DRBD"
+                    "Toggle disk is only supported in combination with DRBD",
+                    true
                 ));
             }
         }
@@ -321,20 +327,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
 
         // Resolve storage pool now so that nothing is committed if the storage pool configuration is invalid
-
-        Set<AbsRscLayerObject<Resource>> storRscDataSet = getResourceLayerDataPriveleged(
-            rsc, DeviceLayerKind.STORAGE
-        );
-        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = getResourceLayerDataPriveleged(
-            rsc, DeviceLayerKind.DRBD
-        );
-
         Iterator<Volume> vlmIter = rsc.iterateVolumes();
         while (vlmIter.hasNext())
         {
             Volume vlm = vlmIter.next();
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-            VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
 
             ctrlStorPoolResolveHelper.resolveStorPool(rsc, vlmDfn, removeDisk).extractApiCallRc(responses);
         }
@@ -432,7 +429,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
-                    "The specified storage pool for external metadata '" + exc.invalidName + "' is invalid"
+                    "The specified storage pool for external metadata '" + exc.invalidName + "' is invalid",
+                    false
                 )
             );
         }
