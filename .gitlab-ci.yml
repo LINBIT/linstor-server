@@ -85,8 +85,17 @@ test-e2e:
   before_script:
     - echo "no before"
   script:
+    - TEST_BRANCH=latest
+    - TEST_BUNDLE_BRANCH=master
+    - |
+      if docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:$CI_COMMIT_REF_NAME ; then
+          TEST_BRANCH=$CI_COMMIT_REF_NAME
+          TEST_BUNDLE_BRANCH=$CI_COMMIT_REF_NAME
+      else
+          docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:latest
+      fi
     - mkdir -p linstor-test-bundle
-    - curl -sSL $LINBIT_REGISTRY_URL/repository/test-suite/linstor-test-bundle.tgz | tar -C linstor-test-bundle -xvzf -
+    - curl -sSL $LINBIT_REGISTRY_URL/repository/test-suite/linstor-test-bundle-$TEST_BUNDLE_BRANCH.tgz | tar -C linstor-test-bundle -xvzf -
     - |
       curl -sSfL -u gitlab-ci-token:$CI_JOB_TOKEN https://gitlab.at.linbit.com/linbit/build-helpers/-/archive/$BUILD_HELPERS_VERSION/ignored.tar.gz | tar -xvzf -
       mv build-helpers-* build-helpers
@@ -96,14 +105,15 @@ test-e2e:
       ci_fetch_rq
       ci_fetch_binary virter virter-$VIRTER_VERSION https://github.com/LINBIT/virter/releases/download/$VIRTER_VERSION/virter-linux-amd64
       ci_fetch_binary vmshed vmshed-$VMSHED_VERSION https://github.com/LINBIT/vmshed/releases/download/$VMSHED_VERSION/vmshed-linux-amd64
-    - docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:latest
     - |
       case "$CI_COMMIT_BRANCH" in
        "jenkins") VARIANTS="--variant default --variant etcd" ;;
        *) VARIANTS=$VMSHED_VARIANTS ;;
       esac
     - echo "Running variants $VARIANTS"
+    - echo "LINSTOR-TEST BRANCH = $TEST_BRANCH"
     - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
+    - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
     - ./linstor-test-bundle/virter/run-test.sh $VARIANTS $VMSHED_TORUN
   artifacts:
     # provide a convenient name so that the downloaded artifacts can be identified
