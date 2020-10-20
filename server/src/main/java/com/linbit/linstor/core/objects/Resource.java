@@ -499,7 +499,8 @@ public class Resource extends AbsResource<Resource>
         NVME_INITIATOR(DISKLESS.flagValue | 1L << 9),
 
         INACTIVE(1L << 10),
-        REACTIVATE(1L << 11)
+        REACTIVATE(1L << 11),
+        INACTIVE_PERMANENTLY(INACTIVE.flagValue | 1L << 12)
         ;
 
         public final long flagValue;

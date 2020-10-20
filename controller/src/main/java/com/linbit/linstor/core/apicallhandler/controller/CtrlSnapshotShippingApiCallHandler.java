@@ -63,6 +63,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -288,7 +289,7 @@ public class CtrlSnapshotShippingApiCallHandler
         Snapshot snapCurrentSource = getSnapshot(snapDfn, fromNodeNameRef);
         Snapshot snapPreviousSource = getPrevious(snapCurrentSource);
         Snapshot snapTarget = getSnapshot(snapDfn, toNodeNameRef);
-        setShippingPropsAndFlags(snapPreviousSource, snapCurrentSource, snapTarget, toNicRef);
+        setShippingPropsAndFlags(snapPreviousSource, snapCurrentSource, snapTarget, toNicRef, toRsc);
 
         enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
 
@@ -586,13 +587,21 @@ public class CtrlSnapshotShippingApiCallHandler
         @Nullable Snapshot prevSnapSource,
         Snapshot snapSource,
         Snapshot snapTarget,
-        String toNicRef
+        String toNicRef,
+        Resource rscTarget
     )
     {
         try
         {
+            assert Objects.equals(snapSource.getSnapshotDefinition(), snapTarget.getSnapshotDefinition());
+            assert !Objects.equals(snapSource.getNode(), snapTarget.getNode());
+
+            assert Objects.equals(rscTarget.getResourceDefinition(), snapTarget.getResourceDefinition());
+            assert Objects.equals(rscTarget.getNode(), snapTarget.getNode());
+
             snapSource.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.SHIPPING_SOURCE);
             snapTarget.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.SHIPPING_TARGET);
+            rscTarget.getStateFlags().enableFlags(peerAccCtx.get(), Resource.Flags.INACTIVE_PERMANENTLY);
 
             // TODO: find previous snapshot (if available) and set corresponding property
 

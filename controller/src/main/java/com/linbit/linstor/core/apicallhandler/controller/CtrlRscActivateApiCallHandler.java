@@ -108,45 +108,30 @@ public class CtrlRscActivateApiCallHandler
     private Flux<ApiCallRc> setResourceActiveStateInTransaction(
         String nodeNameStrRef,
         String rscNameStrRef,
-        boolean active,
+        boolean activate,
         ResponseContext contextRef
     )
     {
         Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStrRef, rscNameStrRef, true);
         Flux<ApiCallRc> ret;
-        if (isRscActive(rsc) == active)
+        boolean isActive = !isFlagSet(rsc, Resource.Flags.INACTIVE);
+        if (isActive == activate)
         {
             ret = Flux.just(
                 new ApiCallRcImpl(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.INFO_NOOP,
-                        String.format("Resource is already %s. Noop", active ? "activated" : "deactivated")
+                        String.format("Resource is already %s. Noop", activate ? "activated" : "deactivated")
                     )
                 )
             );
         }
         else
         {
-            if (active)
+            if (activate)
             {
-                if (isSnapshotShippingInProgress(rsc))
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_SNAPSHOT_SHIPPING_IN_PROGRESS,
-                            "Cannot activate a resource while being a snapshot-shipping-target!"
-                        )
-                    );
-                }
-                if (hasDrbdInStack(rsc))
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_LAYER_STACK,
-                            "A DRDB-resource cannot be activated again!"
-                        )
-                    );
-                }
+                checkIfReactivatable(rsc);
+
                 unsetFlag(rsc, Resource.Flags.INACTIVE);
                 setFlag(rsc, Resource.Flags.REACTIVATE);
 
@@ -196,6 +181,31 @@ public class CtrlRscActivateApiCallHandler
         return ret;
     }
 
+    private void checkIfReactivatable(Resource rsc)
+    {
+        if (isSnapshotShippingInProgress(rsc))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SNAPSHOT_SHIPPING_IN_PROGRESS,
+                    "Cannot activate a resource while being a snapshot-shipping-target!"
+                )
+            );
+        }
+        if (hasDrbdInStack(rsc))
+        {
+            if (isFlagSet(rsc, Resource.Flags.INACTIVE_PERMANENTLY))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_LAYER_STACK,
+                        "A DRDB-resource cannot be activated after snapshot-shipping!"
+                    )
+                );
+            }
+        }
+    }
+
     private Flux<ApiCallRc> completeActivation(String nodeName, String rscName)
     {
         ResponseContext context = makeRscContext(
@@ -238,18 +248,18 @@ public class CtrlRscActivateApiCallHandler
         );
     }
 
-    private boolean isRscActive(Resource rscRef)
+    private boolean isFlagSet(Resource rsc, Resource.Flags... flags)
     {
         boolean ret;
         try
         {
-            ret = !rscRef.getStateFlags().isSet(peerAccCtx.get(), Resource.Flags.INACTIVE);
+            ret = rsc.getStateFlags().isSet(peerAccCtx.get(), flags);
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access flags of " + getRscDescription(rscRef),
+                "access flags of " + getRscDescription(rsc),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
