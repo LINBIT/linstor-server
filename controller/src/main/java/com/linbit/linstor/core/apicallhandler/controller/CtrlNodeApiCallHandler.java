@@ -59,11 +59,13 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyConfigResponseOuterC
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -77,7 +79,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -116,7 +117,7 @@ public class CtrlNodeApiCallHandler
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlStltSerializer stltComSerializer;
-    private AutoDiskfulTask autoDiskfulTask;
+    private final AutoDiskfulTask autoDiskfulTask;
     private final CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelper;
     private final ErrorReporter errorReporter;
 
@@ -254,7 +255,7 @@ public class CtrlNodeApiCallHandler
                         nodeNameStr,
                         LinStor.DISKLESS_STOR_POOL_NAME,
                         DeviceProviderKind.DISKLESS,
-                        (String) null
+                        null
                     );
                 }
 
@@ -375,7 +376,7 @@ public class CtrlNodeApiCallHandler
 
     private NetInterface getActiveStltConn(Node node)
     {
-        NetInterface netIf = null;
+        NetInterface netIf;
         try
         {
             netIf = node.getActiveStltConn(peerAccCtx.get());
@@ -867,8 +868,7 @@ public class CtrlNodeApiCallHandler
 
     public StltConfig getConfig(String nodeName) throws AccessDeniedException
     {
-        StltConfig stltConf = ctrlApiDataLoader.loadNode(nodeName, true).getPeer(peerAccCtx.get()).getStltConfig();
-        return stltConf;
+        return ctrlApiDataLoader.loadNode(nodeName, true).getPeer(peerAccCtx.get()).getStltConfig();
     }
 
     public Flux<ApiCallRc> setGlobalConfig(SatelliteConfigApi config) throws AccessDeniedException, IOException
@@ -928,7 +928,7 @@ public class CtrlNodeApiCallHandler
         }
         ResponseContext context = makeNodeContext(ApiOperation.makeModifyOperation(), nodeName);
         byte[] msg = stltComSerializer.headerlessBuilder().changedConfig(stltConf).build();
-        Flux<ApiCallRc> fluxReturn = peer
+        return peer
             .apiCall(InternalApiConsts.API_MOD_STLT_CONFIG, msg)
             .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
             .map(responseMsg ->
@@ -963,7 +963,6 @@ public class CtrlNodeApiCallHandler
                 return rc;
             })
             .transform(response -> responseConverter.reportingExceptions(context, response));
-        return fluxReturn;
     }
 
     public Flux<ApiCallRc> restoreNode(String nodeName)
@@ -988,10 +987,7 @@ public class CtrlNodeApiCallHandler
                         ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
                         "Successfully restored node " + nodeName
                     );
-                    flux = updateFlux.transform(tuple ->
-                    {
-                        return Flux.<ApiCallRc> empty();
-                    });
+                    flux = updateFlux.transform(tuple -> Flux.empty());
                     return flux.concatWithValues(rc);
                 }
                 catch (AccessDeniedException exc)
@@ -1030,17 +1026,15 @@ public class CtrlNodeApiCallHandler
                     CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
                 );
                 CtrlRscAutoHelper.AutoHelperInternalState autoState = new AutoHelperInternalState();
-                autoState.additionalFluxList.add(
-                    flux.transform(tuple ->
-                    {
-                        return Flux.<ApiCallRc> empty();
-                    })
-                );
+                autoState.additionalFluxList.add(flux.transform(tuple -> Flux.empty()));
                 for (Resource res : node.streamResources(apiCtx).collect(Collectors.toList()))
                 {
-                    res.markDeleted(apiCtx);
-                    autoRePlaceRscHelper.addNeedRePlaceRsc(res);
-                    autoRePlaceRscHelper.manage(new ApiCallRcImpl(), res.getDefinition(), autoState);
+                    if (LayerRscUtils.getLayerStack(res, apiCtx).contains(DeviceLayerKind.DRBD))
+                    {
+                        res.markDeleted(apiCtx);
+                        autoRePlaceRscHelper.addNeedRePlaceRsc(res);
+                        autoRePlaceRscHelper.manage(new ApiCallRcImpl(), res.getDefinition(), autoState);
+                    }
                 }
                 ctrlTransactionHelper.commit();
                 return Flux.concat(autoState.additionalFluxList);
