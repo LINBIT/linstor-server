@@ -306,7 +306,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 );
 
                 autoHelperState.preventUpdateSatellitesForResourceDelete = true;
-                autoHelperState.requiresUpdateFlux = true;
+                autoHelperState.requiresUpdateFlux = false; // resourceToggleDisk already performs stltUpdate
             }
             apiCallRcImpl.addEntries(
                 ApiCallRcImpl.singleApiCallRc(
