@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
 import reactor.util.context.Context;
 
@@ -54,7 +55,7 @@ public class ReconnectorTask implements Task
     private final Object syncObj = new Object();
 
     private final AccessContext apiCtx;
-    private final HashSet<ReconnectConfig> peerSet = new HashSet<>();
+    private final HashSet<ReconnectConfig> reconnectorConfigSet = new HashSet<>();
     private final ErrorReporter errorReporter;
     private PingTask pingTask;
     private final Provider<CtrlAuthenticator> authenticatorProvider;
@@ -118,7 +119,7 @@ public class ReconnectorTask implements Task
             }
             else
             {
-                peerSet.add(new ReconnectConfig(peer, drbdConnectionsOk(peer)));
+                reconnectorConfigSet.add(new ReconnectConfig(peer, drbdConnectionsOk(peer)));
             }
         }
 
@@ -171,7 +172,7 @@ public class ReconnectorTask implements Task
         {
             Object removed = null;
             ReconnectConfig toRemove = null;
-            for (ReconnectConfig config : peerSet)
+            for (ReconnectConfig config : reconnectorConfigSet)
             {
                 if (config.peer.equals(peer))
                 {
@@ -180,7 +181,7 @@ public class ReconnectorTask implements Task
             }
             if (toRemove != null)
             {
-                removed = peerSet.remove(toRemove);
+                removed = reconnectorConfigSet.remove(toRemove);
             }
             if (removed != null && pingTask != null)
             {
@@ -206,7 +207,7 @@ public class ReconnectorTask implements Task
         synchronized (syncObj)
         {
             ReconnectConfig toRemove = null;
-            for (ReconnectConfig config : peerSet)
+            for (ReconnectConfig config : reconnectorConfigSet)
             {
                 if (config.peer.equals(peer))
                 {
@@ -215,7 +216,7 @@ public class ReconnectorTask implements Task
             }
             if (toRemove != null)
             {
-                peerSet.remove(toRemove);
+                reconnectorConfigSet.remove(toRemove);
             }
             pingTask.remove(peer);
         }
@@ -250,7 +251,7 @@ public class ReconnectorTask implements Task
                     {
                         boolean hasEnteredScope = false;
                         TransactionMgr transMgr = null;
-                        try (LockGuard lockGuard = lockGuardFactory
+                        try (LockGuard ignore = lockGuardFactory
                             .create()
                             .read(CTRL_CONFIG)
                             .write(NODES_MAP)
@@ -268,7 +269,9 @@ public class ReconnectorTask implements Task
                             transMgr.commit();
                             synchronized (syncObj)
                             {
-                                peerSet.add(config.newPeer(config.peer.getConnector().reconnect(config.peer)));
+                                reconnectorConfigSet.add(new ReconnectConfig(
+                                    config, config.peer.getConnector().reconnect(config.peer)));
+                                reconnectorConfigSet.remove(config);
                             }
                         }
                         catch (AccessDeniedException | DatabaseException exc)
@@ -381,24 +384,22 @@ public class ReconnectorTask implements Task
     private ArrayList<ReconnectConfig> getFailedPeers()
     {
         ArrayList<ReconnectConfig> retry = new ArrayList<>();
-        PriorityProps props;
-        Long timeout;
-        for (ReconnectConfig config : peerSet)
+        for (ReconnectConfig config : reconnectorConfigSet)
         {
             try
             {
                 boolean drbdOkNew = drbdConnectionsOk(config.peer);
-                props = new PriorityProps(
+                final PriorityProps props = new PriorityProps(
                     config.peer.getNode().getProps(config.peer.getAccessContext()),
                     systemConfRepo.getCtrlConfForView(config.peer.getAccessContext())
                 );
-                timeout = Long.parseLong(
-                    props.getProp(
-                        ApiConsts.KEY_AUTO_EVICT_AFTER_TIME,
-                        ApiConsts.NAMESPC_DRBD_OPTIONS,
-                        "60" // 1 hour
-                    )
-                ) * 60 * 1000; // to milliseconds
+                final long timeout = Long.parseLong(
+                        props.getProp(
+                            ApiConsts.KEY_AUTO_EVICT_AFTER_TIME,
+                            ApiConsts.NAMESPC_DRBD_OPTIONS,
+                            "60" // 1 hour
+                        )
+                    ) * 60 * 1000; // to milliseconds
                 if (config.drbdOk != drbdOkNew)
                 {
                     config.drbdOk = drbdOkNew;
@@ -410,7 +411,7 @@ public class ReconnectorTask implements Task
                 retry.add(config);
                 if (!config.drbdOk && System.currentTimeMillis() >= config.offlineSince + timeout)
                 {
-                    int numDiscon = peerSet.size();
+                    int numDiscon = reconnectorConfigSet.size();
                     int maxPercentDiscon = Integer.parseInt(
                         props.getProp(
                             ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES,
@@ -460,6 +461,7 @@ public class ReconnectorTask implements Task
                     if (!conVal.equalsIgnoreCase(STATUS_CONNECTED))
                     {
                         drbdOk = false;
+                        break;
                     }
                 }
             }
@@ -488,7 +490,7 @@ public class ReconnectorTask implements Task
 
     private static class ReconnectConfig
     {
-        private Peer peer;
+        private final Peer peer;
         private long offlineSince;
         private boolean drbdOk;
 
@@ -499,10 +501,11 @@ public class ReconnectorTask implements Task
             offlineSince = System.currentTimeMillis();
         }
 
-        public ReconnectConfig newPeer(Peer peerRef)
+        private ReconnectConfig(ReconnectConfig other, Peer peerRef)
         {
             peer = peerRef;
-            return this;
+            drbdOk = other.drbdOk;
+            offlineSince = other.offlineSince;
         }
 
         @Override
@@ -527,14 +530,7 @@ public class ReconnectorTask implements Task
             ReconnectConfig other = (ReconnectConfig) obj;
             if (offlineSince != other.offlineSince)
                 return false;
-            if (peer == null)
-            {
-                if (other.peer != null)
-                    return false;
-            }
-            else if (!peer.equals(other.peer))
-                return false;
-            return true;
+            return Objects.equals(peer, other.peer);
         }
     }
 }
