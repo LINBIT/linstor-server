@@ -24,7 +24,6 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -281,12 +280,12 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         if (removeDisk)
         {
             // Prevent removal of the last disk
-            int haveDiskCount = countDisks(rsc.getDefinition());
+            int haveDiskCount = countDisksAndIsOnline(rsc.getDefinition());
             if (haveDiskCount <= 1)
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INSUFFICIENT_REPLICA_COUNT,
-                    "Cannot remove the disk from the only resource with a disk",
+                    "Cannot remove the disk from the only online resource with a disk",
                     true
                 ));
             }
@@ -692,7 +691,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return deleteFlux;
     }
 
-    private int countDisks(ResourceDefinition rscDfn)
+    private int countDisksAndIsOnline(ResourceDefinition rscDfn)
     {
         int haveDiskCount = 0;
         try
@@ -701,7 +700,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             while (rscIter.hasNext())
             {
                 Resource rsc = rscIter.next();
-                if (!ctrlVlmCrtApiHelper.isDiskless(rsc))
+                if (!ctrlVlmCrtApiHelper.isDiskless(rsc) &&
+                    rsc.getNode().getPeer(peerAccCtx.get()).getConnectionStatus() == ApiConsts.ConnectionStatus.ONLINE)
                 {
                     haveDiskCount++;
                 }
