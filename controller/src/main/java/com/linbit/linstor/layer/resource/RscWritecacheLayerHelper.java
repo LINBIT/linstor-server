@@ -47,7 +47,9 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @Singleton
 class RscWritecacheLayerHelper
@@ -146,6 +148,19 @@ class RscWritecacheLayerHelper
         throws AccessDeniedException, InvalidKeyException
     {
         return true;
+    }
+
+    @Override
+    protected Set<StorPool> getNeededStoragePools(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
+        throws AccessDeniedException
+    {
+        // no special StorPool - only the one from "below" us, and that will be found when asking the next layer
+        return Collections.emptySet();
     }
 
     @Override

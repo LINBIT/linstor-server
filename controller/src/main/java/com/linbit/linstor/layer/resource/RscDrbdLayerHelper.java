@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.NodeIdAlloc;
@@ -16,9 +17,11 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -38,6 +41,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
@@ -50,6 +54,8 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFl
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
@@ -60,8 +66,11 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Singleton
 public class RscDrbdLayerHelper extends
@@ -74,6 +83,7 @@ public class RscDrbdLayerHelper extends
     private final ResourceDefinitionRepository rscDfnMap;
 
     private final Provider<RscNvmeLayerHelper> nvmeHelperProvider;
+    private final CtrlStorPoolResolveHelper storPoolResolveHelper;
 
     @Inject
     RscDrbdLayerHelper(
@@ -84,7 +94,8 @@ public class RscDrbdLayerHelper extends
         @Named(LinStor.SATELLITE_PROPS)Props stltConfRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPool,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
-        Provider<RscNvmeLayerHelper> nvmeHelperProviderRef
+        Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
+        CtrlStorPoolResolveHelper storPoolResolveHelperRef
     )
     {
         super(
@@ -102,6 +113,7 @@ public class RscDrbdLayerHelper extends
         rscDfnMap = rscDfnMapRef;
         stltConf = stltConfRef;
         nvmeHelperProvider = nvmeHelperProviderRef;
+        storPoolResolveHelper = storPoolResolveHelperRef;
     }
 
     @Override
@@ -232,6 +244,14 @@ public class RscDrbdLayerHelper extends
         boolean isNvmeInitiator = rscRef.getStateFlags()
             .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
 
+        Set<StorPool> allStorPools = layerDataHelperProvider.get()
+            .getAllNeededStorPools(rscRef, payloadRef, layerListRef);
+        Set<SharedStorPoolName> sharedStorPoolNames = allStorPools.stream()
+            .map(StorPool::getSharedStorPoolName)
+            .collect(Collectors.toSet());
+
+        boolean isStoragePoolShared = isShared(allStorPools);
+
         if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator)
         {
             // we need to find our nvme-target resource and copy the node-id from that target-resource
@@ -260,7 +280,25 @@ public class RscDrbdLayerHelper extends
                 );
             }
         }
-        else
+        else if (isStoragePoolShared)
+        {
+            for (DrbdRscData<Resource> peerData : drbdRscDfnData.getDrbdRscDataList())
+            {
+                Set<StorPool> peerStorPools = LayerVlmUtils.getStorPools(peerData.getAbsResource(), apiCtx);
+                Set<SharedStorPoolName> peerSharedStorPoolNames = peerStorPools.stream()
+                    .map(StorPool::getSharedStorPoolName)
+                    .collect(Collectors.toSet());
+
+                peerSharedStorPoolNames.retainAll(sharedStorPoolNames);
+                if (!peerSharedStorPoolNames.isEmpty())
+                {
+                    nodeId = peerData.getNodeId();
+                    break;
+                }
+            }
+            // if not found, keep nodeId = null, next if will get a fresh nodeId for this drbdRscData
+        }
+        if (nodeId == null)
         {
             nodeId = getNodeId(payloadRef.drbdRsc.nodeId, drbdRscDfnData);
         }
@@ -279,6 +317,33 @@ public class RscDrbdLayerHelper extends
         );
         drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
         return drbdRscData;
+    }
+
+    private boolean isShared(Set<StorPool> storPools) throws AccessDeniedException
+    {
+        boolean shared = false;
+        boolean nonShared = false;
+        for (StorPool sp : storPools)
+        {
+            if (sp.isShared())
+            {
+                shared = true;
+            }
+            else
+            {
+                nonShared = true;
+            }
+        }
+        if (shared && nonShared)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_PROP,
+                    "All or none of the DRBD metadata must be in shared storage pools"
+                )
+            );
+        }
+        return shared;
     }
 
     @Override
@@ -315,6 +380,30 @@ public class RscDrbdLayerHelper extends
     {
         return childRscDataRef.getAbsResource().getStateFlags()
             .isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
+    }
+
+    @Override
+    protected Set<StorPool> getNeededStoragePools(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
+        throws AccessDeniedException, InvalidNameException
+    {
+        Set<StorPool> storPools = new HashSet<>();
+        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+            rsc.getLayerData(apiCtx),
+            DeviceLayerKind.DRBD
+        );
+        for (AbsRscLayerObject<Resource> drbdRscData : drbdRscDataSet)
+        {
+            if (needsMetaData((DrbdRscData<Resource>) drbdRscData, layerListRef))
+            {
+                storPools.add(getMetaStorPool(rsc, vlmDfn, apiCtx));
+            }
+        }
+        return storPools;
     }
 
     @Override
@@ -458,7 +547,7 @@ public class RscDrbdLayerHelper extends
     }
 
     private boolean needsMetaData(
-        DrbdRscData<Resource> rscDataRef,
+        DrbdRscData<Resource> drbdRscDataRef,
         List<DeviceLayerKind> layerListRef
     ) throws AccessDeniedException
     {
@@ -471,12 +560,12 @@ public class RscDrbdLayerHelper extends
              * in this case we already have loaded all resource-layer-trees, therefore we can simply
              * lookup if we have a direct meta-child
              */
-            ret = rscDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META) != null;
+            ret = drbdRscDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META) != null;
         }
         else
         {
             boolean allVlmsUseInternalMetaData = true;
-            Resource rsc = rscDataRef.getAbsResource();
+            Resource rsc = drbdRscDataRef.getAbsResource();
             ResourceDefinition rscDfn = rsc.getDefinition();
 
             Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
@@ -501,11 +590,11 @@ public class RscDrbdLayerHelper extends
                 }
             }
 
+            StateFlags<Flags> rscFlags = rsc.getStateFlags();
             boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
             boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
-            boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
-                .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-            boolean isDrbdDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
+            boolean isNvmeInitiator = rscFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+            boolean isDrbdDiskless = rscFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
 
             ret = !allVlmsUseInternalMetaData && !isDrbdDiskless &&
                 (!(isNvmeBelow || isOpenflexBelow) || isNvmeInitiator);
@@ -543,45 +632,58 @@ public class RscDrbdLayerHelper extends
     public StorPool getMetaStorPool(Volume vlmRef, AccessContext accCtx)
         throws AccessDeniedException, InvalidNameException
     {
-        StorPool metaStorPool = null;
-        try
-        {
-            VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
-            Resource rsc = vlmRef.getAbsResource();
-            Node node = rsc.getNode();
-            ResourceGroup rscGrp = vlmDfn.getResourceDefinition().getResourceGroup();
-            PriorityProps prioProps = new PriorityProps(
-                vlmDfn.getProps(accCtx),
-                rscGrp.getVolumeGroupProps(accCtx, vlmDfn.getVolumeNumber()),
-                rsc.getProps(accCtx),
-                vlmDfn.getResourceDefinition().getProps(accCtx),
-                rscGrp.getProps(accCtx),
-                node.getProps(accCtx)
-            );
+        return getMetaStorPool(vlmRef.getAbsResource(), vlmRef.getVolumeDefinition(), accCtx);
+    }
 
-            String metaStorPoolStr = prioProps.getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
-            if (
-                isExternalMetaDataPool(metaStorPoolStr) &&
+    public StorPool getMetaStorPool(Resource rsc, VolumeDefinition vlmDfn, AccessContext accCtx)
+        throws AccessDeniedException, InvalidNameException
+    {
+        return getMetaStorPool(rsc, vlmDfn, getPrioProps(rsc, vlmDfn, accCtx), accCtx);
+    }
+
+    private StorPool getMetaStorPool(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        PriorityProps prioProps,
+        AccessContext accCtx
+    )
+        throws AccessDeniedException, InvalidNameException
+    {
+        StorPool metaStorPool = null;
+        String metaStorPoolStr = prioProps.getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
+        if (
+            isExternalMetaDataPool(metaStorPoolStr) &&
                 !rsc.getStateFlags().isSet(accCtx, Resource.Flags.DRBD_DISKLESS)
-            )
+        )
+        {
+            metaStorPool = rsc.getNode().getStorPool(accCtx, new StorPoolName(metaStorPoolStr));
+            if (metaStorPool == null)
             {
-                metaStorPool = node.getStorPool(accCtx, new StorPoolName(metaStorPoolStr));
-                if (metaStorPool == null)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
-                            "Configured (meta) storage pool '" + metaStorPoolStr + "' not found on " +
-                            CtrlNodeApiCallHandler.getNodeDescriptionInline(node))
-                    );
-                }
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
+                        "Configured (meta) storage pool '" + metaStorPoolStr + "' not found on " +
+                            CtrlNodeApiCallHandler.getNodeDescriptionInline(rsc.getNode())
+                    )
+                );
             }
         }
-        catch (InvalidKeyException exc)
-        {
-            throw new ImplementationError("Invalid hardcoded property key");
-        }
         return metaStorPool;
+    }
+
+    private PriorityProps getPrioProps(Resource rsc, VolumeDefinition vlmDfn, AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        ResourceGroup rscGrp = vlmDfn.getResourceDefinition().getResourceGroup();
+        Node node = rsc.getNode();
+        return new PriorityProps(
+            vlmDfn.getProps(accCtx),
+            rscGrp.getVolumeGroupProps(accCtx, vlmDfn.getVolumeNumber()),
+            rsc.getProps(accCtx),
+            vlmDfn.getResourceDefinition().getProps(accCtx),
+            rscGrp.getProps(accCtx),
+            node.getProps(accCtx)
+        );
     }
 
     @Override

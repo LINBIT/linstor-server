@@ -13,6 +13,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -39,10 +40,12 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 @Singleton
 class RscNvmeLayerHelper
@@ -219,6 +222,19 @@ class RscNvmeLayerHelper
         throws AccessDeniedException, InvalidKeyException
     {
         return true;
+    }
+
+    @Override
+    protected Set<StorPool> getNeededStoragePools(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
+        throws AccessDeniedException, InvalidNameException
+    {
+        // no special StorPool - only the one from "below" us, and that will be found when asking the next layer
+        return Collections.emptySet();
     }
 
     @Override

@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.compat.CompatibilityUtils;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -105,6 +106,7 @@ public class CtrlRscCrtApiHelper
     private final CtrlRscLayerDataFactory layerDataHelper;
     private final Provider<CtrlRscAutoHelper> autoHelper;
     private final Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelper;
+    private final SharedResourceManager sharedRscMgr;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -122,7 +124,8 @@ public class CtrlRscCrtApiHelper
         ResourceCreateCheck resourceCreateCheckRef,
         CtrlRscLayerDataFactory layerDataHelperRef,
         Provider<CtrlRscAutoHelper> autoHelperRef,
-        Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelperRef
+        Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelperRef,
+        SharedResourceManager sharedRscMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -140,6 +143,7 @@ public class CtrlRscCrtApiHelper
         layerDataHelper = layerDataHelperRef;
         autoHelper = autoHelperRef;
         toggleDiskHelper = toggleDiskHelperRef;
+        sharedRscMgr = sharedRscMgrRef;
     }
 
     /**
@@ -171,11 +175,12 @@ public class CtrlRscCrtApiHelper
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
 
         Resource tiebreaker = autoHelper.get().getTiebreakerResource(nodeNameStr, rscNameStr);
+        String storPoolName = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
         if (tiebreaker != null)
         {
             rsc = tiebreaker;
             autoHelper.get().removeTiebreakerFlag(tiebreaker);
-            String storPoolNameStr = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
+            String storPoolNameStr = storPoolName;
             StorPool storPool = storPoolNameStr == null ? null
                 : ctrlApiDataLoader.loadStorPool(storPoolNameStr, nodeNameStr, false);
 
@@ -229,6 +234,29 @@ public class CtrlRscCrtApiHelper
         {
             LayerPayload payload = new LayerPayload();
             payload.getDrbdRsc().nodeId = nodeIdInt;
+            if (storPoolName != null)
+            {// null if resource is created with "-d"
+                Iterator<VolumeDefinition> vlmDfnIt = getVlmDfnIterator(rscDfn);
+                while (vlmDfnIt.hasNext())
+                {
+                    /*
+                     * We need to add this to avoid a chicken-egg problem:
+                     *
+                     * after creating the resource-instance, the RscFactory also creates all necessary layer-objects
+                     * the DRBD-layer-object needs to know whether or not the resource is placed within a shared storage
+                     * pool
+                     * however, we cannot ask the volumes of the resource, as those do not exist at the given time.
+                     * the resource-properties are also only copied into the resource-instance after its creation (duh)
+                     */
+                    VolumeDefinition vlmDfn = vlmDfnIt.next();
+                    payload.putStorageVlmPayload(
+                        RscLayerSuffixes.SUFFIX_DATA,
+                        vlmDfn.getVolumeNumber().value,
+                        storPoolName
+                    );
+                }
+            }
+
             List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
 
             if (layerStack.isEmpty())
@@ -274,7 +302,7 @@ public class CtrlRscCrtApiHelper
             }
 
             // compatibility
-            String storPoolNameStr = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
+            String storPoolNameStr = storPoolName;
             StorPool storPool = storPoolNameStr == null ? null
                 : ctrlApiDataLoader.loadStorPool(
                     storPoolNameStr,
@@ -404,6 +432,11 @@ public class CtrlRscCrtApiHelper
             }
 
             resourceCreateCheck.checkCreatedResource(rsc);
+        }
+
+        if (!isFlagSet(rsc, Resource.Flags.INACTIVE) && !sharedRscMgr.isActivationAllowed(rsc))
+        {
+            setResourceFlags(rsc, Resource.Flags.INACTIVE);
         }
 
         return new Pair<>(autoFlux, new ApiCallRcWith<>(responses, rsc));
@@ -1000,6 +1033,24 @@ public class CtrlRscCrtApiHelper
                 accDeniedExc,
                 "accessing resources of " + getRscDfnDescriptionInline(rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        return ret;
+    }
+
+    private boolean isFlagSet(Resource rsc, Resource.Flags... flags)
+    {
+        boolean ret;
+        try
+        {
+            ret = rsc.getStateFlags().isSet(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "getting flag for resource",
+                ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
         return ret;

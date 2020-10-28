@@ -4,6 +4,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -51,6 +52,7 @@ public class CtrlRscActivateApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final SharedResourceManager sharedRscMgr;
 
     @Inject
     public CtrlRscActivateApiCallHandler(
@@ -60,9 +62,11 @@ public class CtrlRscActivateApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlApiDataLoader ctrlApiDataLoaderRef
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        SharedResourceManager sharedRscMgrRef
     )
     {
+        sharedRscMgr = sharedRscMgrRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         responseConverter = responseConverterRef;
@@ -200,6 +204,15 @@ public class CtrlRscActivateApiCallHandler
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_LAYER_STACK,
                         "A DRDB-resource cannot be activated after snapshot-shipping!"
+                    )
+                );
+            }
+            if (!sharedRscMgr.isActivationAllowed(rsc))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_ONLY_ONE_ACT_RSC_PER_SHARED_STOR_POOL_ALLOWED,
+                        "Only one active resource per shared storage pool allowed"
                     )
                 );
             }

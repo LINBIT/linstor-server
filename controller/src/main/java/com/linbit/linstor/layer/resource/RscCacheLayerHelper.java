@@ -12,6 +12,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -39,15 +40,15 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Singleton
 class RscCacheLayerHelper extends AbsRscLayerHelper<
@@ -147,6 +148,31 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         return true;
     }
 
+
+    @Override
+    protected Set<StorPool> getNeededStoragePools(
+        Resource rscRef,
+        VolumeDefinition vlmDfn,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
+        throws AccessDeniedException
+    {
+        Set<StorPool> storPools = new HashSet<>();
+        if (needsCacheDevice(rscRef, layerListRef))
+        {
+            storPools.add(getCacheStorPool(rscRef, vlmDfn));
+            StorPool metaSP = getMetaStorPool(rscRef, vlmDfn);
+
+            if (metaSP != null)
+            {
+                storPools.add(metaSP);
+            }
+        }
+
+        return storPools;
+    }
+
     @Override
     protected CacheVlmData<Resource> createVlmLayerData(
         CacheRscData<Resource> cacheRscData,
@@ -159,7 +185,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     {
         StorPool cacheStorPool = null;
         StorPool metaStorPool = null;
-        if (needsCacheDevice(cacheRscData, layerListRef))
+        if (needsCacheDevice(cacheRscData.getAbsResource(), layerListRef))
         {
             cacheStorPool = getCacheStorPool(vlm);
             metaStorPool = getMetaStorPool(vlm);
@@ -200,7 +226,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         List<ChildResourceData> children = new ArrayList<>();
         children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA));
 
-        if (needsCacheDevice(rscDataRef, layerListRef))
+        if (needsCacheDevice(rscDataRef.getAbsResource(), layerListRef))
         {
             children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_CACHE_CACHE, DeviceLayerKind.STORAGE));
             children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_CACHE_META, DeviceLayerKind.STORAGE));
@@ -210,14 +236,14 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     }
 
     private boolean needsCacheDevice(
-        CacheRscData<Resource> rscDataRef,
+        Resource rscRef,
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException
     {
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
         boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
-        boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
+        boolean isNvmeInitiator = rscRef.getStateFlags()
             .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         boolean needsCacheDevice = (!isNvmeBelow && !isOpenflexBelow) || isNvmeInitiator;
         return needsCacheDevice;
@@ -271,9 +297,49 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         boolean throwIfNull
     ) throws InvalidKeyException, AccessDeniedException
     {
-        String poolName = getPrioProps(vlm).getProp(
+        return getSpecialStorPool(
+            getPrioProps(vlm),
+            vlm.getAbsResource().getNode(),
+            propKey,
+            usage,
+            throwIfNull,
+            CtrlVlmApiCallHandler.getVlmDescriptionInline(vlm)
+        );
+    }
+
+    private StorPool getSpecialStorPool(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        String propKey,
+        String usage,
+        boolean throwIfNull
+    )
+        throws InvalidKeyException, AccessDeniedException
+    {
+        return getSpecialStorPool(
+            getPrioProps(rsc, vlmDfn),
+            rsc.getNode(),
+            propKey,
+            usage,
+            throwIfNull,
+            CtrlVlmApiCallHandler.getVlmDescription(rsc, vlmDfn)
+        );
+    }
+
+    private StorPool getSpecialStorPool(
+        PriorityProps prioProps,
+        Node node,
+        String propKey,
+        String usage,
+        boolean throwIfNull,
+        String vlmDescription
+    )
+        throws AccessDeniedException
+    {
+        String poolName = prioProps.getProp(
             propKey, ApiConsts.NAMESPC_CACHE
         );
+
         if (poolName == null && throwIfNull)
         {
             throw new ApiRcException(
@@ -282,7 +348,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
                     "You have to set the property " +
                         ApiConsts.NAMESPC_CACHE + "/" +
                         propKey +
-                        " for " + CtrlVlmApiCallHandler.getVlmDescriptionInline(vlm) +
+                        " for " + vlmDescription +
                         " in order to use the cache layer."
                 )
             );
@@ -292,7 +358,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         {
             if (poolName != null)
             {
-                specStorPool = vlm.getAbsResource().getNode().getStorPool(
+                specStorPool = node.getStorPool(
                     apiCtx,
                     new StorPoolName(poolName)
                 );
@@ -302,9 +368,9 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
-                            "The " + getVlmDescriptionInline(vlm) + " specified '" + poolName +
+                            "The " + vlmDescription + " specified '" + poolName +
                                 "' as the storage pool for " + usage + ". Node " +
-                                vlm.getAbsResource().getNode().getName() + " does not have a storage pool" +
+                                node.getName() + " does not have a storage pool" +
                                 " with that name"
                         )
                     );
@@ -316,7 +382,7 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
-                    "The " + getVlmDescriptionInline(vlm) + " specified '" + poolName +
+                    "The " + vlmDescription + " specified '" + poolName +
                         "' as the storage pool for " + usage + ". That name is invalid."
                 ),
                 exc
@@ -335,10 +401,35 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         );
     }
 
-    private StorPool getMetaStorPool(Volume vlm) throws InvalidKeyException, AccessDeniedException
+    private StorPool getMetaStorPool(Volume vlm)
+        throws InvalidKeyException, AccessDeniedException
     {
         return getSpecialStorPool(
             vlm,
+            ApiConsts.KEY_CACHE_META_POOL_NAME,
+            "meta data",
+            false
+        );
+    }
+
+    private StorPool getCacheStorPool(Resource rsc, VolumeDefinition vlmDfn)
+        throws InvalidKeyException, AccessDeniedException
+    {
+        return getSpecialStorPool(
+            rsc,
+            vlmDfn,
+            ApiConsts.KEY_CACHE_CACHE_POOL_NAME,
+            "cached data",
+            true
+        );
+    }
+
+    private StorPool getMetaStorPool(Resource rsc, VolumeDefinition vlmDfn)
+        throws InvalidKeyException, AccessDeniedException
+    {
+        return getSpecialStorPool(
+            rsc,
+            vlmDfn,
             ApiConsts.KEY_CACHE_META_POOL_NAME,
             "meta data",
             false
@@ -351,6 +442,22 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         ResourceDefinition rscDfn = vlmRef.getResourceDefinition();
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
         Resource rsc = vlmRef.getAbsResource();
+        PriorityProps prioProps = new PriorityProps(
+            vlmDfn.getProps(apiCtx),
+            rscGrp.getVolumeGroupProps(apiCtx, vlmDfn.getVolumeNumber()),
+            rsc.getProps(apiCtx),
+            rscDfn.getProps(apiCtx),
+            rscGrp.getProps(apiCtx),
+            rsc.getNode().getProps(apiCtx),
+            systemConfRepository.getStltConfForView(apiCtx)
+        );
+        return prioProps;
+    }
+
+    private PriorityProps getPrioProps(Resource rsc, VolumeDefinition vlmDfn) throws AccessDeniedException
+    {
+        ResourceDefinition rscDfn = rsc.getResourceDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
         PriorityProps prioProps = new PriorityProps(
             vlmDfn.getProps(apiCtx),
             rscGrp.getVolumeGroupProps(apiCtx, vlmDfn.getVolumeNumber()),

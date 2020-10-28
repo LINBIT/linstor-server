@@ -5,8 +5,11 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -16,6 +19,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -40,6 +44,7 @@ import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Singleton
 class RscStorageLayerHelper extends AbsRscLayerHelper<
@@ -47,13 +52,16 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     RscDfnLayerObject, VlmDfnLayerObject
 >
 {
+    private final CtrlStorPoolResolveHelper storPoolResolveHelper;
+
     @Inject
     RscStorageLayerHelper(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL)  DynamicNumberPool layerRscIdPoolRef,
-        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory
+        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
+        CtrlStorPoolResolveHelper storPoolResolveHelperRef
     )
     {
         super(
@@ -68,6 +76,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             DeviceLayerKind.STORAGE,
             rscLayerDataFactory
         );
+        storPoolResolveHelper = storPoolResolveHelperRef;
     }
 
     @Override
@@ -144,6 +153,37 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         throws AccessDeniedException, InvalidKeyException
     {
         throw new ImplementationError("Storage layer should not have child volumes to be asked for");
+    }
+
+    @Override
+    protected Set<StorPool> getNeededStoragePools(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
+        throws AccessDeniedException, InvalidNameException
+    {
+        Set<StorPool> neededStorPools = new HashSet<>();
+        for (StorageVlmPayload storageVlmPayload : payloadRef.storagePayload.values())
+        {
+            neededStorPools.add(
+                rsc.getNode().getStorPool(apiCtx, new StorPoolName(storageVlmPayload.storPoolName))
+            );
+        }
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
+        StorPool resolvedStorPool = storPoolResolveHelper.resolveStorPool(
+            rsc,
+            vlmDfn,
+            ctrlRscLayerDataFactory.isDiskless(rsc) && !ctrlRscLayerDataFactory.isDiskAddRequested(rsc),
+            ctrlRscLayerDataFactory.isDiskRemoving(rsc)
+        ).extractApiCallRc(new ApiCallRcImpl());
+        if (resolvedStorPool != null)
+        {
+            neededStorPools.add(resolvedStorPool);
+        }
+
+        return neededStorPools;
     }
 
     @Override

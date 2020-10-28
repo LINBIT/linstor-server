@@ -487,26 +487,35 @@ public class DrbdLayer implements DeviceLayer
      * @throws DatabaseException
      * @throws AccessDeniedException
      */
-    private void deleteDrbd(DrbdRscData<Resource> drbdRscData) throws StorageException
+    private void deleteDrbd(DrbdRscData<Resource> drbdRscData) throws StorageException, AccessDeniedException
     {
         String suffixedRscName = drbdRscData.getSuffixedResourceName();
         try
         {
-            errorReporter.logTrace("Shutting down drbd resource %s", suffixedRscName);
-            drbdUtils.down(drbdRscData);
-            Path resFile = asResourceFile(drbdRscData, false);
-            errorReporter.logTrace("Deleting res file: %s ", resFile);
-            Files.deleteIfExists(resFile);
-            drbdRscData.setResFileExists(false);
-
-            drbdRscData.setExists(false);
-            for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+            /*
+             * If the resource is INACTIVE, this method is also called; every time
+             * the rscDfn changes.
+             * If the DRBD resource is already down, no need to re-issue "drbdsetup down $rscName"
+             */
+            updateResourceToCurrentDrbdState(drbdRscData);
+            if (drbdRscData.exists())
             {
-                drbdVlmData.setExists(false);
-                drbdVlmData.setDevicePath(null);
+                errorReporter.logTrace("Shutting down drbd resource %s", suffixedRscName);
+                drbdUtils.down(drbdRscData);
+                Path resFile = asResourceFile(drbdRscData, false);
+                errorReporter.logTrace("Deleting res file: %s ", resFile);
+                Files.deleteIfExists(resFile);
+                drbdRscData.setResFileExists(false);
 
-                // in case we want to undelete this resource... but the metadata got already wiped
-                drbdVlmData.setCheckMetaData(true);
+                drbdRscData.setExists(false);
+                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                {
+                    drbdVlmData.setExists(false);
+                    drbdVlmData.setDevicePath(null);
+
+                    // in case we want to undelete this resource... but the metadata got already wiped
+                    drbdVlmData.setCheckMetaData(true);
+                }
             }
         }
         catch (ExtCmdFailedException cmdExc)

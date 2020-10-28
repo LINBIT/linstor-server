@@ -34,9 +34,11 @@ import javax.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class AbsRscLayerHelper<
     RSC_LO extends AbsRscLayerObject<Resource>,
@@ -440,6 +442,31 @@ public abstract class AbsRscLayerHelper<
 
     protected abstract boolean needsChildVlm(AbsRscLayerObject<Resource> childRscDataRef, Volume vlmRef)
         throws AccessDeniedException, InvalidKeyException;
+
+    protected Set<StorPool> getNeededStoragePools(
+        Resource rscRef,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
+        throws AccessDeniedException, InvalidNameException
+    {
+        Set<StorPool> storPools = new HashSet<>();
+        Iterator<VolumeDefinition> vlmDfnIt = rscRef.getResourceDefinition().iterateVolumeDfn(apiCtx);
+        while (vlmDfnIt.hasNext())
+        {
+            VolumeDefinition vlmDfn = vlmDfnIt.next();
+            storPools.addAll(getNeededStoragePools(rscRef, vlmDfn, payloadRef, layerListRef));
+        }
+        return storPools;
+    }
+
+    protected abstract Set<StorPool> getNeededStoragePools(
+        Resource rscRef,
+        VolumeDefinition vlmDfn,
+        LayerPayload payloadRef,
+        List<DeviceLayerKind> layerListRef
+    )
+        throws AccessDeniedException, InvalidNameException;
 
     protected abstract VLM_LO createVlmLayerData(
         RSC_LO rscDataRef,

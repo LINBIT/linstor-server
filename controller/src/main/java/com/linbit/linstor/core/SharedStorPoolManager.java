@@ -382,30 +382,27 @@ public class SharedStorPoolManager extends BaseTransactionObject
             {
                 ret = getSharedSpNames(LayerVlmUtils.getStorPools((Resource) txObj, sysCtx));
             }
+            else if (txObj instanceof Snapshot)
+            {
+                ret = getSharedSpNames(LayerVlmUtils.getStorPools((Snapshot) txObj, sysCtx));
+            }
+            else if (txObj instanceof Node)
+            {
+                ret = getSharedSpNames(
+                    ((Node) txObj).streamStorPools(sysCtx)
+                        .collect(Collectors.toList())
+                );
+            }
+            else if (txObj instanceof StorPool)
+            {
+                ret = getSharedSpNames(Collections.singleton((StorPool) txObj));
+            }
             else
-                if (txObj instanceof Snapshot)
-                {
-                    ret = getSharedSpNames(LayerVlmUtils.getStorPools((Snapshot) txObj, sysCtx));
-                }
-                else
-                    if (txObj instanceof Node)
-                    {
-                        ret = getSharedSpNames(
-                            ((Node) txObj).streamStorPools(sysCtx)
-                                .collect(Collectors.toList())
-                        );
-                    }
-                    else
-                        if (txObj instanceof StorPool)
-                        {
-                            ret = getSharedSpNames(Collections.singleton((StorPool) txObj));
-                        }
-                        else
-                        {
-                            throw new ImplementationError(
-                                "Unknown TransactionObject type - cannot map to Storage Pool"
-                            );
-                        }
+            {
+                throw new ImplementationError(
+                    "Unknown TransactionObject type - cannot map to Storage Pool"
+                );
+            }
         }
         catch (AccessDeniedException exc)
         {
@@ -414,12 +411,12 @@ public class SharedStorPoolManager extends BaseTransactionObject
         return ret;
     }
 
-    private Set<SharedStorPoolName> getSharedSpNames(Collection<StorPool> storPoolsRef)
+    static Set<SharedStorPoolName> getSharedSpNames(Collection<StorPool> storPoolsRef)
     {
         return groupBySharedSpName(storPoolsRef).keySet();
     }
 
-    private Map<SharedStorPoolName, StorPool> groupBySharedSpName(Collection<StorPool> storPools)
+    static Map<SharedStorPoolName, StorPool> groupBySharedSpName(Collection<StorPool> storPools)
     {
         HashMap<SharedStorPoolName, StorPool> ret = new HashMap<>();
         for (StorPool sp : storPools)

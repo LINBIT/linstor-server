@@ -41,9 +41,11 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 @Singleton
 public class CtrlRscLayerDataFactory
@@ -436,6 +438,33 @@ public class CtrlRscLayerDataFactory
         return storPool;
     }
 
+    /*
+     * This method should be replaced by most likely a rework of the LayerData-creation:
+     * It would be easier if we would create a (or multiple) builder(s) where all data are collected
+     * for every layer, but are still modifiable. That way we could i.e. only input storPoolNames and resolve
+     * them later. The selection of the storPoolName can this way be much easier split from the resolving / using
+     * the StorPool.
+     */
+    HashSet<StorPool> getAllNeededStorPools(
+        Resource rsc,
+        LayerPayload payload,
+        List<DeviceLayerKind> layerList
+    )
+        throws AccessDeniedException, InvalidNameException
+    {
+        HashSet<StorPool> storPools = new HashSet<>();
+        for (DeviceLayerKind kind : layerList)
+        {
+            AbsRscLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(kind);
+            Set<StorPool> neededStoragePools = layerHelper.getNeededStoragePools(rsc, payload, layerList);
+            if (neededStoragePools != null)
+            {
+                storPools.addAll(neededStoragePools);
+            }
+        }
+        return storPools;
+    }
+
     public void copyLayerData(
         AbsRscLayerObject<Snapshot> fromSnapshot,
         Resource toResource
@@ -560,7 +589,7 @@ public class CtrlRscLayerDataFactory
         return needsLuksLayer;
     }
 
-    private boolean isDiskAddRequested(Resource rsc)
+    boolean isDiskAddRequested(Resource rsc)
     {
         boolean isDiskAddRequested;
         try
@@ -574,7 +603,7 @@ public class CtrlRscLayerDataFactory
         return isDiskAddRequested;
     }
 
-    private boolean isDiskless(Resource rsc)
+    boolean isDiskless(Resource rsc)
     {
         boolean isDiskless;
         try
@@ -590,7 +619,7 @@ public class CtrlRscLayerDataFactory
         return isDiskless;
     }
 
-    private boolean isDiskRemoving(Resource rsc)
+    boolean isDiskRemoving(Resource rsc)
     {
         boolean isDiskless;
         try
