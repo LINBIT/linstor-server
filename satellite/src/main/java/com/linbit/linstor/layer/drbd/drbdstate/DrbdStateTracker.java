@@ -218,42 +218,48 @@ public class DrbdStateTracker
 
     public void addObserver(ResourceObserver obs, long eventMask)
     {
-        // Mask out any invalid event IDs
-        long safeEventMask = eventMask & validEventsMask;
-
-        if (safeEventMask != 0)
+        synchronized (observers)
         {
-            obsMaskMap.put(obs, safeEventMask);
-            // Register the ResourceObserver for all selected event types
-            for (long scanMask = 1; safeEventMask != 0; scanMask <<= 1)
+            // Mask out any invalid event IDs
+            long safeEventMask = eventMask & validEventsMask;
+
+            if (safeEventMask != 0)
             {
-                long eventId = safeEventMask & scanMask;
-                if (eventId != 0)
+                obsMaskMap.put(obs, safeEventMask);
+                // Register the ResourceObserver for all selected event types
+                for (long scanMask = 1; safeEventMask != 0; scanMask <<= 1)
                 {
-                    observers[bitToSlot(eventId)].add(obs);
+                    long eventId = safeEventMask & scanMask;
+                    if (eventId != 0)
+                    {
+                        observers[bitToSlot(eventId)].add(obs);
+                    }
+                    safeEventMask &= (~scanMask);
                 }
-                safeEventMask &= (~scanMask);
             }
         }
     }
 
     public void removeObserver(ResourceObserver obs)
     {
-        Long eventMask = obsMaskMap.get(obs);
-        if (eventMask != null)
+        synchronized (observers)
         {
-            // Remove the ResourceObserver from the list for each selected event type
-            for (long scanMask = 1; eventMask != 0; scanMask <<= 1)
+            Long eventMask = obsMaskMap.get(obs);
+            if (eventMask != null)
             {
-                long eventId = eventMask & scanMask;
-                if (eventId != 0)
+                // Remove the ResourceObserver from the list for each selected event type
+                for (long scanMask = 1; eventMask != 0; scanMask <<= 1)
                 {
-                    observers[bitToSlot(eventId)].remove(obs);
+                    long eventId = eventMask & scanMask;
+                    if (eventId != 0)
+                    {
+                        observers[bitToSlot(eventId)].remove(obs);
+                    }
+                    eventMask &= (~scanMask);
                 }
-                eventMask &= (~scanMask);
             }
+            obsMaskMap.remove(obs);
         }
-        obsMaskMap.remove(obs);
     }
 
     public void addDrbdStateChangeObserver(DrbdStateChange obs)
@@ -273,10 +279,19 @@ public class DrbdStateTracker
             container = containerRef;
         }
 
+        Set<ResourceObserver> syncCopy(int trackerSlot) {
+            Set<ResourceObserver> cpy;
+            synchronized (container.observers)
+            {
+                cpy = new HashSet<>(container.observers[trackerSlot]);
+            }
+            return cpy;
+        }
+
         @Override
         public void resourceCreated(DrbdResource resource)
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_RES_CRT_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_RES_CRT_SLOT))
             {
                 obs.resourceCreated(resource);
             }
@@ -285,7 +300,7 @@ public class DrbdStateTracker
         @Override
         public void promotionScoreChanged(DrbdResource resource, Integer prevPromitionScore, Integer current)
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_PROMO_SCORE_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_PROMO_SCORE_SLOT))
             {
                 obs.promotionScoreChanged(resource, prevPromitionScore, current);
             }
@@ -297,7 +312,7 @@ public class DrbdStateTracker
             @Nullable Boolean prevMayPromote,
             @Nullable Boolean current)
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_PROMO_MAY_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_PROMO_MAY_SLOT))
             {
                 obs.mayPromoteChanged(resource, prevMayPromote, current);
             }
@@ -306,7 +321,7 @@ public class DrbdStateTracker
         @Override
         public void roleChanged(DrbdResource resource, DrbdResource.Role previous, DrbdResource.Role current)
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_ROLE_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_ROLE_SLOT))
             {
                 obs.roleChanged(resource, previous, current);
             }
@@ -318,7 +333,7 @@ public class DrbdStateTracker
             DrbdResource.Role previous, DrbdResource.Role current
         )
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_PEER_ROLE_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_PEER_ROLE_SLOT))
             {
                 obs.peerRoleChanged(resource, connection, previous, current);
             }
@@ -327,7 +342,7 @@ public class DrbdStateTracker
         @Override
         public void resourceDestroyed(DrbdResource resource)
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_RES_DSTR_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_RES_DSTR_SLOT))
             {
                 obs.resourceDestroyed(resource);
             }
@@ -336,7 +351,7 @@ public class DrbdStateTracker
         @Override
         public void volumeCreated(DrbdResource resource, DrbdConnection connection, DrbdVolume volume)
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_VOL_CRT_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_VOL_CRT_SLOT))
             {
                 obs.volumeCreated(resource, connection, volume);
             }
@@ -348,7 +363,7 @@ public class DrbdStateTracker
             MinorNumber previous, MinorNumber current
         )
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_MINOR_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_MINOR_SLOT))
             {
                 obs.minorNrChanged(resource, volume, previous, current);
             }
@@ -360,7 +375,7 @@ public class DrbdStateTracker
             DrbdVolume.DiskState previous, DrbdVolume.DiskState current
         )
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_DISK_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_DISK_SLOT))
             {
                 obs.diskStateChanged(resource, connection, volume, previous, current);
             }
@@ -372,7 +387,7 @@ public class DrbdStateTracker
             DrbdVolume.ReplState previous, DrbdVolume.ReplState current
         )
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_REPL_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_REPL_SLOT))
             {
                 obs.replicationStateChanged(resource, connection, volume, previous, current);
             }
@@ -385,7 +400,7 @@ public class DrbdStateTracker
             DrbdVolume volume
         )
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_VOL_DSTR_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_VOL_DSTR_SLOT))
             {
                 obs.volumeDestroyed(resource, connection, volume);
             }
@@ -394,7 +409,7 @@ public class DrbdStateTracker
         @Override
         public void connectionCreated(DrbdResource resource, DrbdConnection connection)
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_CONN_CRT_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_CONN_CRT_SLOT))
             {
                 obs.connectionCreated(resource, connection);
             }
@@ -406,7 +421,7 @@ public class DrbdStateTracker
             DrbdConnection.State previous, DrbdConnection.State current
         )
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_CONN_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_CONN_SLOT))
             {
                 obs.connectionStateChanged(resource, connection, previous, current);
             }
@@ -415,7 +430,7 @@ public class DrbdStateTracker
         @Override
         public void connectionDestroyed(DrbdResource resource, DrbdConnection connection)
         {
-            for (ResourceObserver obs : container.observers[DrbdStateTracker.OBS_CONN_DSTR_SLOT])
+            for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_CONN_DSTR_SLOT))
             {
                 obs.connectionDestroyed(resource, connection);
             }
