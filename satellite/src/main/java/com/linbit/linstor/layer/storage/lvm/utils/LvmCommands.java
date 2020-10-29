@@ -64,20 +64,6 @@ public class LvmCommands
         return cmdArr;
     }
 
-    public static OutputData lvscan(ExtCmd extCmd) throws StorageException
-    {
-        return genericExecutor(
-            extCmd,
-            new String[]
-            {
-                "lvscan",
-                "-qq" // quite and auto-"no"
-            },
-            "'lvscan' failed",
-            "'lvscan' failed"
-        );
-    }
-
     public static OutputData lvs(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig) throws StorageException
     {
         return genericExecutor(
@@ -596,6 +582,29 @@ public class LvmCommands
             ),
             failMsg,
             failMsg
+        );
+    }
+
+    public static OutputData vgscan(ExtCmd extCmd, boolean ignoreCache) throws StorageException
+    {
+        String[] cmd;
+        if (ignoreCache)
+        {
+            cmd = new String[] { "vgscan", "-qq", // quite and auto-"no"
+                "--cache" // yes, that means to bypass LVMs cache...
+            };
+        }
+        else
+        {
+            cmd = new String[] { "vgscan", "-qq" // quite and auto-"no"
+            };
+        }
+
+        return genericExecutor(
+            extCmd,
+            cmd,
+            "'vgscan' failed",
+            "'vgscan' failed"
         );
     }
 

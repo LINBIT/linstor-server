@@ -325,7 +325,13 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         {
             errorReporter.reportError(exc);
         }
+    }
 
+    @Override
+    protected void deactivateLvImpl(SpdkData<Resource> vlmDataRef, String lvIdRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        // noop, not supported
     }
 
     @Override

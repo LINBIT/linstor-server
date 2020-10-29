@@ -335,6 +335,13 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
+    protected void deactivateLvImpl(FileData<Resource> vlmDataRef, String lvIdRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        // noop, not supported
+    }
+
+    @Override
     protected void createSnapshot(FileData<Resource> fileData, FileData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {

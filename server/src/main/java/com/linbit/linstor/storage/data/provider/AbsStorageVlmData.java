@@ -56,6 +56,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     protected transient String identifier;
     protected transient long expectedSize;
     protected transient long originalSize;
+    protected transient boolean active;
 
     public AbsStorageVlmData(
         AbsVolume<RSC> vlmRef,
@@ -86,6 +87,8 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
             storPoolRef,
             dbDriverRef.getStorPoolDriver()
         );
+
+        active = true; // by default
 
         transObjs = new ArrayList<>(
             // this way subclasses can still extend the list
@@ -264,6 +267,16 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     public long getExepectedSize()
     {
         return expectedSize;
+    }
+
+    public void setActive(boolean activeRef)
+    {
+        active = activeRef;
+    }
+
+    public boolean isActive()
+    {
+        return active;
     }
 
     @Override

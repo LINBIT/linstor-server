@@ -366,6 +366,13 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
+    protected void deactivateLvImpl(ZfsData<Resource> vlmDataRef, String lvIdRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        // noop, not supported
+    }
+
+    @Override
     public boolean snapshotExists(ZfsData<Snapshot> snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {

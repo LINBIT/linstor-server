@@ -203,17 +203,22 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     /*
      * Expected to be overridden (extended) by LvmThinProvider
      */
-    @SuppressWarnings({"unchecked", "unused"})
+    @SuppressWarnings({ "unchecked" })
     protected void updateInfo(LvmData<?> vlmDataRef, LvsInfo info)
         throws DatabaseException, AccessDeniedException, StorageException
     {
+        boolean isAbsRscActive;
         if (vlmDataRef.getVolume() instanceof Volume)
         {
-            vlmDataRef.setIdentifier(asLvIdentifier((LvmData<Resource>) vlmDataRef));
+            LvmData<Resource> vlmData = (LvmData<Resource>) vlmDataRef;
+            vlmDataRef.setIdentifier(asLvIdentifier(vlmData));
+            isAbsRscActive = !vlmData.getVolume().getAbsResource().getStateFlags()
+                .isSet(storDriverAccCtx, Resource.Flags.INACTIVE);
         }
         else
         {
             vlmDataRef.setIdentifier(asSnapLvIdentifier((LvmData<Snapshot>) vlmDataRef));
+            isAbsRscActive = true; // TODO: not sure about this default...
         }
         if (info == null)
         {
@@ -235,7 +240,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             vlmDataRef.setUsableSize(info.size);
             vlmDataRef.setAttributes(info.attributes);
 
-            if (!info.attributes.contains("a"))
+            if (!info.attributes.contains("a") && isAbsRscActive)
             {
                 LvmUtils.execWithRetry(
                     extCmdFactory,
@@ -248,6 +253,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                     )
                 );
             }
+            // deactivating a volume MUST NOT happen within the prepare step
+            // as other layers might still hold the device open
         }
     }
 
@@ -439,6 +446,22 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
+    protected void deactivateLvImpl(LvmData<Resource> vlmDataRef, String lvIdRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmDataRef.getVolumeGroup()),
+            config -> LvmCommands.deactivateVolume(
+                extCmdFactory.create(),
+                vlmDataRef.getVolumeGroup(),
+                vlmDataRef.getIdentifier(),
+                config
+            )
+        );
+    }
+
+    @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
         Map<String, Long> freeSizes = LvmUtils.getVgFreeSize(extCmdFactory, changedStoragePoolStrings);
@@ -461,7 +484,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     {
         if (hasSharedVolumeGroups(vlmDataList, snapVlms))
         {
-            LvmCommands.lvscan(extCmdFactory.create());
+            LvmCommands.vgscan(extCmdFactory.create(), true);
         }
 
         return LvmUtils.getLvsInfo(

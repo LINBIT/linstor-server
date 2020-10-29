@@ -220,6 +220,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
         List<LAYER_DATA> vlmsToCreate = new ArrayList<>();
         List<LAYER_DATA> vlmsToDelete = new ArrayList<>();
+        List<LAYER_DATA> vlmsToDeactivate = new ArrayList<>();
         List<LAYER_DATA> vlmsToResize = new ArrayList<>();
         List<LAYER_DATA> vlmsToCheckForRollback = new ArrayList<>();
 
@@ -237,10 +238,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 storDriverAccCtx,
                 Volume.Flags.DELETE
             );
-            vlmShouldExist &= !vlmData.getRscLayerObject().getAbsResource().getStateFlags().isSet(
+            StateFlags<Resource.Flags> rscFlags = vlmData.getRscLayerObject().getAbsResource().getStateFlags();
+            vlmShouldExist &= !rscFlags.isSet(
                 storDriverAccCtx,
                 Resource.Flags.DISK_REMOVING
             );
+            boolean vlmShouldBeActive = rscFlags.isUnset(storDriverAccCtx, Resource.Flags.INACTIVE);
 
             String lvId = vlmData.getIdentifier();
             if (vlmData.exists())
@@ -250,6 +253,18 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 {
                     errorReporter.logTrace("Lv %s will be deleted", lvId);
                     vlmsToDelete.add(vlmData);
+                }
+                else if (!vlmShouldBeActive)
+                {
+                    if (vlmData.isActive())
+                    {
+                        errorReporter.logTrace("Lv %s will be deactivated", lvId);
+                        vlmsToDeactivate.add(vlmData);
+                    }
+                    else
+                    {
+                        errorReporter.logTrace("Lv %s stays deactivated", lvId);
+                    }
                 }
                 else
                 {
@@ -303,6 +318,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         createVolumes(vlmsToCreate, apiCallRc);
         resizeVolumes(vlmsToResize, apiCallRc);
         deleteVolumes(vlmsToDelete, apiCallRc);
+        deactivateVolumes(vlmsToDeactivate, apiCallRc);
 
         // intentional type erasure
         typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(false);
@@ -502,6 +518,31 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             )
             {
                 addDeletedMsg(vlmData, apiCallRc);
+            }
+        }
+    }
+
+    private void deactivateVolumes(List<LAYER_DATA> vlmsToDeactivate, ApiCallRcImpl apiCallRc)
+        throws AccessDeniedException, StorageException, DatabaseException
+    {
+        for (LAYER_DATA vlmData : vlmsToDeactivate)
+        {
+            String lvId = asLvIdentifier(vlmData);
+
+            if (stltConfigAccessor.useDmStats() && updateDmStats())
+            {
+                // although we do not DELETE the volume, the device (path) will be gone
+                DmStatCommands.delete(extCmdFactory.create(), vlmData.getDevicePath());
+            }
+
+            deactivateLvImpl(vlmData, lvId);
+
+            if (!vlmData.getVolume().getAbsResource().getStateFlags().isSet(
+                storDriverAccCtx,
+                Resource.Flags.DISK_REMOVING)
+            )
+            {
+                addDeactivatedMsg(vlmData, apiCallRc);
             }
         }
     }
@@ -865,6 +906,26 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
     }
 
+    private void addDeactivatedMsg(LAYER_DATA vlmData, ApiCallRcImpl apiCallRc)
+    {
+        String rscName = vlmData.getRscLayerObject().getSuffixedResourceName();
+        int vlmNr = vlmData.getVlmNr().value;
+        apiCallRc.addEntry(
+            ApiCallRcImpl.entryBuilder(
+                ApiConsts.MASK_VLM | ApiConsts.MODIFIED,
+                String.format(
+                    "Volume number %d of resource '%s' [%s] deactivated",
+                    vlmNr,
+                    rscName,
+                    typeDescr
+                )
+            )
+            .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
+            .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
+            .build()
+        );
+    }
+
     private void addSnapCreatedMsg(LAYER_SNAP_DATA snapVlmData, ApiCallRcImpl apiCallRc)
     {
         Snapshot snap = snapVlmData.getVolume().getAbsResource();
@@ -1149,6 +1210,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         throws StorageException, AccessDeniedException, DatabaseException;
 
     protected abstract void deleteLvImpl(LAYER_DATA vlmData, String lvId)
+        throws StorageException, AccessDeniedException, DatabaseException;
+
+    protected abstract void deactivateLvImpl(LAYER_DATA vlmData, String lvId)
         throws StorageException, AccessDeniedException, DatabaseException;
 
 
