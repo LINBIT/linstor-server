@@ -142,6 +142,13 @@ public class CtrlStorPoolCrtApiCallHandler
                 externalLockingRef
             );
 
+            if (storPool.isShared() && !deviceProviderKindRef.isSharedVolumeSupported())
+            {
+                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_STOR_DRIVER,
+                    String.format("Storage driver %s does not support shared volumes", deviceProviderKindRef.name())
+                ));
+            }
             // check if specified preferred network interface exists
             ctrlPropsHelper.checkPrefNic(
                 peerAccCtx.get(),

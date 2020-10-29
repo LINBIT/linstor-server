@@ -22,6 +22,7 @@ public enum DeviceProviderKind
         true,
         false,
         true, // very thin :)
+        true, // no disk, nothing to worry about
         new DisklessDriverKind() // compatibility - will be removed
     ),
     LVM(
@@ -31,12 +32,14 @@ public enum DeviceProviderKind
         true,
         true,
         false,
+        true,
         new LvmDriverKind(),
         ExtTools.LVM
     ),
     LVM_THIN(
         true,
         false,
+        true,
         true,
         true,
         true,
@@ -51,6 +54,7 @@ public enum DeviceProviderKind
         true,
         true,
         false,
+        false,
         new ZfsDriverKind(),
         ExtTools.ZFS
     ),
@@ -61,6 +65,7 @@ public enum DeviceProviderKind
         true,
         true,
         true,
+        false,
         new ZfsThinDriverKind(),
         ExtTools.ZFS
     ),
@@ -70,6 +75,7 @@ public enum DeviceProviderKind
         false,
         true,
         true,
+        false,
         false,
         new FileDriverKind(),
         ExtTools.LOSETUP
@@ -81,6 +87,7 @@ public enum DeviceProviderKind
         true,
         true,
         true,
+        false,
         new FileThinDriverKind(),
         ExtTools.LOSETUP
     ),
@@ -90,6 +97,7 @@ public enum DeviceProviderKind
         false,
         true,
         true,
+        false,
         false,
         new SpdkDriverKind(),
         ExtTools.SPDK
@@ -101,9 +109,11 @@ public enum DeviceProviderKind
         false,
         true,
         false,
+        true, // OpenFlex provides nvmeTarget, nothing to worry about
         new OpenflexTargetDriverKind()
     ),
     FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER(
+        false,
         false,
         false,
         false,
@@ -120,6 +130,7 @@ public enum DeviceProviderKind
     private final boolean isResizeSupported;
     private final boolean hasBackingDevice;
     private final boolean usesThinProvisioning;
+    private final boolean isSharedVolumeSupported;
     @Deprecated
     private final StorageDriverKind storageDriverKind;
     private final ExtTools[] startupVerifications;
@@ -131,6 +142,7 @@ public enum DeviceProviderKind
         boolean isResizeSupportedRef,
         boolean hasBackingDeviceRef,
         boolean usesThinProvisioningRef,
+        boolean isSharedVolumeSupportedRef,
         StorageDriverKind storageDriverKindRef,
         ExtTools... startupVerificationsRef
     )
@@ -141,6 +153,7 @@ public enum DeviceProviderKind
         isResizeSupported = isResizeSupportedRef;
         hasBackingDevice = hasBackingDeviceRef;
         usesThinProvisioning = usesThinProvisioningRef;
+        isSharedVolumeSupported = isSharedVolumeSupportedRef;
         storageDriverKind = storageDriverKindRef;
         startupVerifications = startupVerificationsRef;
     }
@@ -173,6 +186,11 @@ public enum DeviceProviderKind
     public boolean usesThinProvisioning()
     {
         return usesThinProvisioning;
+    }
+
+    public boolean isSharedVolumeSupported()
+    {
+        return isSharedVolumeSupported;
     }
 
     @Deprecated
