@@ -4,6 +4,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
@@ -38,7 +39,8 @@ public class FileThinProvider extends FileProvider
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef
+        SnapshotShippingService snapShipMrgRef,
+        StltExtToolsChecker extToolsCheckerRef
     )
     {
         super(
@@ -51,7 +53,8 @@ public class FileThinProvider extends FileProvider
             transMgrProvider,
             "FILE THIN",
             DeviceProviderKind.FILE_THIN,
-            snapShipMrgRef
+            snapShipMrgRef,
+            extToolsCheckerRef
         );
     }
 

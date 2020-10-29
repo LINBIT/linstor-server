@@ -7,6 +7,7 @@ import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
@@ -76,7 +77,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         Provider<TransactionMgr> transMgrProvider,
         String subTypeDescr,
         DeviceProviderKind subTypeKind,
-        SnapshotShippingService snapShipMrgRef
+        SnapshotShippingService snapShipMrgRef,
+        StltExtToolsChecker extToolsCheckerRef
     )
     {
         super(
@@ -89,7 +91,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             transMgrProvider,
             subTypeDescr,
             subTypeKind,
-            snapShipMrgRef
+            snapShipMrgRef,
+            extToolsCheckerRef
         );
     }
 
@@ -102,7 +105,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef
+        SnapshotShippingService snapShipMrgRef,
+        StltExtToolsChecker extToolsCheckerRef
     )
     {
         super(
@@ -115,7 +119,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             transMgrProvider,
             "SPDK",
             DeviceProviderKind.SPDK,
-            snapShipMrgRef
+            snapShipMrgRef,
+            extToolsCheckerRef
         );
     }
 

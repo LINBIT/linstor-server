@@ -9,6 +9,7 @@ import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsVolume;
@@ -84,7 +85,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         Provider<TransactionMgr> transMgrProvider,
         String subTypeDescr,
         DeviceProviderKind kind,
-        SnapshotShippingService snapShipMrgRef
+        SnapshotShippingService snapShipMrgRef,
+        StltExtToolsChecker extToolsCheckerRef
     )
     {
         super(
@@ -97,7 +99,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             transMgrProvider,
             subTypeDescr,
             kind,
-            snapShipMrgRef
+            snapShipMrgRef,
+            extToolsCheckerRef
         );
     }
 
@@ -110,7 +113,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef
+        SnapshotShippingService snapShipMrgRef,
+        StltExtToolsChecker extToolsCheckerRef
     )
     {
         super(
@@ -123,7 +127,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             transMgrProvider,
             "ZFS",
             DeviceProviderKind.ZFS,
-            snapShipMrgRef
+            snapShipMrgRef,
+            extToolsCheckerRef
         );
     }
 

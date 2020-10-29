@@ -14,6 +14,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -90,6 +91,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected final StltConfigAccessor stltConfigAccessor;
     protected Props localNodeProps;
     private final SnapshotShippingService snapShipMgr;
+    protected final StltExtToolsChecker extToolsChecker;
 
     protected final HashMap<String, INFO> infoListCache;
     protected final List<Consumer<Map<String, Long>>> postRunVolumeNotifications = new ArrayList<>();
@@ -111,7 +113,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         Provider<TransactionMgr> transMgrProviderRef,
         String typeDescrRef,
         DeviceProviderKind kindRef,
-        SnapshotShippingService snapShipMgrRef
+        SnapshotShippingService snapShipMgrRef,
+        StltExtToolsChecker extToolsCheckerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -124,6 +127,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         typeDescr = typeDescrRef;
         kind = kindRef;
         snapShipMgr = snapShipMgrRef;
+        extToolsChecker = extToolsCheckerRef;
 
         infoListCache = new HashMap<>();
         try

@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
@@ -47,7 +48,8 @@ public class LvmThinProvider extends LvmProvider
         WipeHandler wipeHandler,
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef
+        SnapshotShippingService snapShipMrgRef,
+        StltExtToolsChecker extToolsCheckerRef
     )
     {
         super(
@@ -60,7 +62,8 @@ public class LvmThinProvider extends LvmProvider
             transMgrProvider,
             "LVM-Thin",
             DeviceProviderKind.LVM_THIN,
-            snapShipMrgRef
+            snapShipMrgRef,
+            extToolsCheckerRef
         );
     }
 
