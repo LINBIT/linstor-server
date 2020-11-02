@@ -36,43 +36,43 @@ subprojects {
         mavenCentral()
 
         flatDir {
-            dirs 'libs'
+            dirs 'libs/compileClasspath', 'libs/runtimeClasspath'
         }
     }
 
     dependencies {
         if (gradle.startParameter.isOffline()) {
-            compile fileTree(dir: "libs/compile")
-            runtime fileTree(dir: "libs/runtime")
-            testCompile fileTree(dir: "libs/testCompile")
-            testRuntime fileTree(dir: "libs/testRuntime")
+            compile fileTree(dir: "libs/compileClasspath")
+            runtime fileTree(dir: "libs/runtimeClasspath")
+            testCompile fileTree(dir: "libs/compileClasspath")
+            testRuntime fileTree(dir: "libs/runtimeClasspath")
         } else {
-            compile group: 'com.google.inject', name: 'guice', version: '4.2.2'
-            compile group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.2'
+            implementation group: 'com.google.inject', name: 'guice', version: '4.2.2'
+            implementation group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.2'
 
-//            compile group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
-            compile group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
+//            compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
+            compileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
-            compile 'io.sentry:sentry:1.7.30'
-            compile 'info.picocli:picocli:3.9.5'
-            compile group: 'io.projectreactor', name: 'reactor-core', version: '3.3.5.RELEASE'
-            compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
-            compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-            compile 'org.apache.httpcomponents:httpclient:4.5.12'
-            compile 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
-            compile 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
+            implementation 'io.sentry:sentry:1.7.30'
+            implementation 'info.picocli:picocli:3.9.5'
+            implementation group: 'io.projectreactor', name: 'reactor-core', version: '3.3.5.RELEASE'
+            compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
+            implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+            implementation 'org.apache.httpcomponents:httpclient:4.5.12'
+            implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
+            implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
 
-            compile group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.7.0'
-            compile group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
-            runtime group: 'com.h2database', name: 'h2', version: '1.4.197'
+            implementation group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.7.0'
+            implementation group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
+            implementation group: 'com.h2database', name: 'h2', version: '1.4.197'
 
             // toml parsing library
-            compile group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
+            implementation group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
 
             // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
-            compile group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.14'
+            implementation group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.14'
 
-            testCompile group: 'junit', name: 'junit', version: '4.+'
+            testImplementation group: 'junit', name: 'junit', version: '4.+'
         }
     }
 }
@@ -197,7 +197,7 @@ project(':satellite') {
     apply plugin: 'application'
 
     dependencies {
-        compile project(':server')
+        implementation project(':server')
     }
 
     sourceSets {
@@ -249,37 +249,38 @@ project(':controller') {
     apply plugin: 'application'
 
     dependencies {
-        compile project(':server')
-        testCompile project(':server')
+        implementation project(':server')
+        testImplementation project(':server')
 
         if (gradle.startParameter.isOffline()) {
-            compile fileTree(dir: "libs/compile")
-            runtime fileTree(dir: "libs/runtime")
-            testCompile fileTree(dir: "libs/testCompile")
-            testRuntime fileTree(dir: "libs/testRuntime")
+            compileOnly fileTree(dir: "libs/compileOnly")
+            implementation fileTree(dir: "libs/implementation")
+            runtimeOnly fileTree(dir: "libs/runtimeOnly")
+            testCompileOnly fileTree(dir: "libs/testCompileOnly")
+            testImplementation fileTree(dir: "libs/testImplementation")
         } else {
             // rest libs (grizzly http(s), jersey(rest))
-            compile 'org.glassfish.grizzly:grizzly-http-server:2.4.4'
-            compile 'org.glassfish.hk2:guice-bridge:2.6.1'
-            compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
-            compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: jerseyVersion
-            compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-servlet', version: jerseyVersion
-            compile group: 'org.glassfish.jersey.media', name: 'jersey-media-sse', version: jerseyVersion
+            implementation 'org.glassfish.grizzly:grizzly-http-server:2.4.4'
+            implementation 'org.glassfish.hk2:guice-bridge:2.6.1'
+            implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
+            implementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: jerseyVersion
+            implementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-servlet', version: jerseyVersion
+            implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-sse', version: jerseyVersion
 
             // prometheus client library
-            compile group: 'io.prometheus', name: 'simpleclient_common', version: '0.9.0'
-            compile group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.9.0'
+            implementation group: 'io.prometheus', name: 'simpleclient_common', version: '0.9.0'
+            implementation group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.9.0'
 
             // jdk 11 javax.xml dependency needed by jersey
-            compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.11'
-            compile group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
-            compile group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
-            compile group: 'javax.activation', name: 'activation', version: '1.1.1'
+            implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.11'
+            implementation group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
+            implementation group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
+            implementation group: 'javax.activation', name: 'activation', version: '1.1.1'
 
-            compile group: 'org.flywaydb', name: 'flyway-core', version: '6.3.2'
+            implementation group: 'org.flywaydb', name: 'flyway-core', version: '6.3.2'
 
-            runtime 'org.mariadb.jdbc:mariadb-java-client:2.6.0'
-            runtime group: 'org.postgresql', name: 'postgresql', version: '42.2.12'
+            runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:2.6.0'
+            runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.12'
         }
     }
 
@@ -341,7 +342,7 @@ repositories
     mavenCentral()
 
     flatDir {
-       dirs 'libs'
+        dirs 'libs/compileClasspath', 'libs/runtimeClasspath'
     }
 }
 
@@ -354,21 +355,24 @@ sourceSets {
 }
 
 dependencies {
-    compile project(':controller'), project(':satellite')
-    testCompile project(':controller'), project(':satellite')
+    implementation project(':server'), project(':controller'), project(':satellite')
+    testImplementation project(':server'), project(':controller'), project(':satellite')
+
+    testCompileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
     def powerMockVersion = '2.0.2'
-    testCompile group: 'junit', name: 'junit', version: '4.+'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
-    testCompile group: 'org.powermock', name: 'powermock-core', version: powerMockVersion
-    testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: powerMockVersion
-    testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: powerMockVersion
+    testImplementation group: 'junit', name: 'junit', version: '4.+'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
+    testImplementation group: 'org.powermock', name: 'powermock-core', version: powerMockVersion
+    testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: powerMockVersion
+    testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: powerMockVersion
 
-    testCompile group: 'org.assertj', name: 'assertj-core', version: '3.9.0'
-    testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
+    testCompileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
+    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.9.0'
+    testImplementation group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
 
-    testCompile group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.2.2'
-    testCompile group: 'io.projectreactor', name: 'reactor-test', version: '3.2.9.RELEASE'
+    testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.2.2'
+    testImplementation group: 'io.projectreactor', name: 'reactor-test', version: '3.2.9.RELEASE'
 }
 
 /////////////////////////// Start scripts ///////////////////////////
@@ -506,14 +510,14 @@ task deleteLibs(type: Delete) {
 
 task copyToLibs(dependsOn: 'deleteLibs') {
     doLast {
-        ['compile', 'runtime'].each { scope ->
+        ['compileClasspath', 'runtimeClasspath'].each { scope ->
             copy {
                 from configurations.getByName(scope).files
                 into "libs"
             }
         }
         subprojects.each { prj ->
-            ['compile', 'runtime'].each { scope ->
+            ['compileClasspath', 'runtimeClasspath'].each { scope ->
                 mkdir "${prj.name}/libs/${scope}"
                 prj.configurations.getByName(scope).files.each { f ->
                     if (file("libs/" + f.getName()).exists()) {
@@ -539,7 +543,7 @@ task copyToLibs(dependsOn: 'deleteLibs') {
 // it creates a list of dependency jars needed for the server project
 task showServerRuntimeLibs() {
 	doLast {
-		project(':server').configurations.getByName('runtime').files.each { f ->
+		project(':server').configurations.getByName('runtimeClasspath').files.each { f ->
 			print('/usr/share/linstor-server/lib/' + f.getName().toString() + '\n')
 		}
 	}

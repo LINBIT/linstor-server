@@ -39,6 +39,9 @@ GITHASH := $(shell git rev-parse HEAD)
 	@echo server/libs >> .filelist
 	@echo controller/libs >> .filelist
 	@echo satellite/libs >> .filelist
+	@echo gradlew >> .filelist
+	@echo gradle/wrapper/gradle-wrapper.jar >> .filelist
+	@echo gradle/wrapper/gradle-wrapper.properties >> .filelist
 	@echo .filelist >> .filelist
 	@echo "./.filelist updated."
 
@@ -108,9 +111,9 @@ ifneq ("$(wildcard libs/server-st.jar)","")
 endif
 
 controller/jar.deps satellite/jar.deps: build.gradle copytolibs
-	./scripts/diffcopy.py -n ./controller/libs/runtime ./server/libs/runtime /usr/share/linstor-server/lib > controller/jar.deps
+	./scripts/diffcopy.py -n ./controller/libs/runtimeClasspath ./server/libs/runtimeClasspath /usr/share/linstor-server/lib > controller/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' controller/jar.deps
-	./scripts/diffcopy.py -n ./satellite/libs/runtime ./server/libs/runtime /usr/share/linstor-server/lib > satellite/jar.deps
+	./scripts/diffcopy.py -n ./satellite/libs/runtimeClasspath ./server/libs/runtimeClasspath /usr/share/linstor-server/lib > satellite/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' satellite/jar.deps
 ifneq ("$(wildcard libs/controller-st.jar)","")
 	echo "/usr/share/linstor-server/lib/controller-st.jar" >> controller/jar.deps
