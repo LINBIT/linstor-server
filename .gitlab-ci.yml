@@ -2,7 +2,7 @@ image: linbit/linstor-build
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
-  - gradle -PoverrideVersion= getProtoc
+  - ./gradlew -PoverrideVersion= getProtoc
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
@@ -27,7 +27,7 @@ build:
   rules:
     - when: on_success
   script:
-    - gradle -PversionOverride= assemble
+    - ./gradlew -PversionOverride= assemble
   artifacts:
     paths:
       - build/distributions/linstor-server.tar
@@ -38,7 +38,7 @@ test:
   rules:
     - when: on_success
   script:
-    - JAVA_OPTS="-ea" gradle -PversionOverride= test
+    - JAVA_OPTS="-ea" ./gradlew -PversionOverride= test
   artifacts:
     reports:
       junit: build/test-results/test/TEST-*.xml

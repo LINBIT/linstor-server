@@ -91,11 +91,11 @@ Also for alternative, please look at the "Building" section below.
 ## Building
 Gradle is used for building LINSTOR. On a fresh git clone some protobuf java files need to be generated and for that a fitting proto compiler is needed. So before building you need to run:
 ```sh
-$ gradle getProtoc
+$ ./gradlew getProtoc
 ```
 After the correct proto compiler is installed in the ./tools directory you can build with:
 ```sh
-$ gradle assemble
+$ ./gradlew assemble
 ```
 ## Development
 Please check the development documentation for details.  

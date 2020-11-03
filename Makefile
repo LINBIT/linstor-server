@@ -144,7 +144,7 @@ resttypes:
 	python3 ./scripts/rest-gen.py ./docs/rest_v1_openapi.yaml > controller/src/main/java/com/linbit/linstor/api/rest/v1/serializer/JsonGenTypes.java
 
 generate-db-constants:
-	gradle controller:distTar -PversionOverride=
+	./gradlew controller:distTar -PversionOverride=
 	rm -Rf ./controller/build/distributions/controller
 	tar -xf ./controller/build/distributions/controller.tar -C ./controller/build/distributions
 	java -cp "controller/build/distributions/controller/lib/*" com/linbit/linstor/dbcp/GenerateSql
