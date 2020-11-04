@@ -265,7 +265,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @BeforeClass
     public static void setUpBeforeClass()
-        throws DatabaseException, SQLException, InvalidNameException, InitializationException
+        throws DatabaseException, SQLException, InvalidNameException, InitializationException, AccessDeniedException
     {
         if (dbConnPool == null)
         {
@@ -283,6 +283,10 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             SecurityType.load(dbConnPool, initializationSecureDbDriver);
             Role.load(dbConnPool, initializationSecureDbDriver);
         }
+
+        // every test class must explicitly enable security if they want to test.
+        // we should change this default to MAC once the security mechanism works as intended.
+        SecurityLevel.set(SYS_CTX, SecurityLevel.NO_SECURITY, dbConnPool, null);
     }
 
     protected void setUpAndEnterScope() throws Exception
@@ -362,9 +366,6 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     @AfterClass
     public static void tearDownClass() throws Exception
     {
-        // every test class must explicitly enable security if they want to test.
-        // we should change this default to MAC once the security mechanism works as intended.
-        SecurityLevel.set(SYS_CTX, SecurityLevel.NO_SECURITY, dbConnPool, null);
         errorReporter.shutdown();
     }
 
