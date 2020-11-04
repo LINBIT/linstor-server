@@ -92,10 +92,6 @@ public class TcpConnectorService implements Runnable, TcpConnector
     // Selector loop thread
     private Thread selectorLoopThread;
 
-    // Set to indicate that connections have been updated
-    // outside of the selector loop
-    private AtomicBoolean updateFlag;
-
     private ConnectionObserver connObserver;
 
     static
@@ -164,9 +160,6 @@ public class TcpConnectorService implements Runnable, TcpConnector
 
     // Privileged access context for e.g. setting peer to node
     private final AccessContext privilegedAccCtx;
-
-    // List of SocketChannels to register for OP_CONNECT
-    private final LinkedList<SocketChannel> registerToConnect = new LinkedList<>();
 
     // Selector for all connections
     Selector serverSelector;
