@@ -10,12 +10,8 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.transaction.BaseTransactionObject;
-import com.linbit.linstor.transaction.TransactionList;
-import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.linstor.transaction.TransactionSet;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
@@ -24,7 +20,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,16 +33,15 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Singleton
-public class SharedStorPoolManager extends BaseTransactionObject
+public class SharedStorPoolManager
 {
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
-    private final TransactionObjectFactory transFactory;
 
-    private final TransactionMap<SharedStorPoolName, TransactionSet<Void, Node>> queueByLock;
-    private final TransactionMap<Node, TransactionList<Void, SharedStorPoolName>> queueByNode;
-    private final TransactionMap<SharedStorPoolName, Node> activeLocksByLock;
-    private final TransactionMap<Node, TransactionList<Void, SharedStorPoolName>> activeLocksByNode;
+    private final TreeMap<SharedStorPoolName, LinkedHashSet<Node>> queueByLock;
+    private final TreeMap<Node, ArrayList<SharedStorPoolName>> queueByNode;
+    private final TreeMap<SharedStorPoolName, Node> activeLocksByLock;
+    private final TreeMap<Node, ArrayList<SharedStorPoolName>> activeLocksByNode;
 
     @Inject
     public SharedStorPoolManager(
@@ -57,18 +51,13 @@ public class SharedStorPoolManager extends BaseTransactionObject
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
-        super(transMgrProviderRef);
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
-        transFactory = transFactoryRef;
 
-        // queue = transFactoryRef.createTransactionSet(this, new LinkedHashSet<>(), null);
-        queueByLock = transFactoryRef.createTransactionMap(new TreeMap<>(), null);
-        queueByNode = transFactoryRef.createTransactionMap(new TreeMap<>(), null);
-        activeLocksByLock = transFactoryRef.createTransactionMap(new TreeMap<>(), null);
-        activeLocksByNode = transFactoryRef.createTransactionMap(new TreeMap<>(), null);
-
-        transObjs = Arrays.asList(queueByLock, activeLocksByLock);
+        queueByLock = new TreeMap<>();
+        queueByNode = new TreeMap<>();
+        activeLocksByLock = new TreeMap<>();
+        activeLocksByNode = new TreeMap<>();
     }
 
     public boolean isActive(StorPool sp)
@@ -157,7 +146,7 @@ public class SharedStorPoolManager extends BaseTransactionObject
                 {
                     for (SharedStorPoolName spSharedName : locks)
                     {
-                        TransactionSet<Void, Node> spsharedSpQueue = queueByLock.get(spSharedName);
+                        LinkedHashSet<Node> spsharedSpQueue = queueByLock.get(spSharedName);
                         if (spsharedSpQueue != null && !spsharedSpQueue.isEmpty())
                         {
                             /*
@@ -184,10 +173,10 @@ public class SharedStorPoolManager extends BaseTransactionObject
                     errorReporter.logTrace("at least some locks already taken. Adding to queue");
                     for (SharedStorPoolName spSharedName : locks)
                     {
-                        TransactionSet<Void, Node> sharedSpQueue = queueByLock.get(spSharedName);
+                        LinkedHashSet<Node> sharedSpQueue = queueByLock.get(spSharedName);
                         if (sharedSpQueue == null)
                         {
-                            sharedSpQueue = transFactory.createVolatileTransactionSet(new LinkedHashSet<>());
+                            sharedSpQueue = new LinkedHashSet<>();
                             queueByLock.put(spSharedName, sharedSpQueue);
                         }
 
@@ -195,7 +184,7 @@ public class SharedStorPoolManager extends BaseTransactionObject
                         // already existed, which means that the given node already had some requests pending..)
                         queueByNode.put(
                             node,
-                            transFactory.createVolatileTransactionPrimitiveList(new ArrayList<>(locks))
+                            new ArrayList<>(locks)
                         );
                         sharedSpQueue.add(node);
                     }
@@ -217,7 +206,7 @@ public class SharedStorPoolManager extends BaseTransactionObject
                 }
                 activeLocksByNode.put(
                     node,
-                    transFactory.createVolatileTransactionPrimitiveList(new ArrayList<>(locksRef))
+                    new ArrayList<>(locksRef)
                 );
             }
         }
@@ -228,7 +217,7 @@ public class SharedStorPoolManager extends BaseTransactionObject
     {
         synchronized (queueByLock)
         {
-            for (TransactionSet<Void, Node> queueValues : queueByLock.values())
+            for (LinkedHashSet<Node> queueValues : queueByLock.values())
             {
                 queueValues.remove(node);
             }
@@ -259,8 +248,7 @@ public class SharedStorPoolManager extends BaseTransactionObject
         synchronized (activeLocksByNode)
         {
 
-            TransactionList<Void, SharedStorPoolName> activeLocks = activeLocksByNode
-                .get(nodeReleasingLocks);
+            ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(nodeReleasingLocks);
             if (activeLocks != null)
             {
                 locksToRelease.addAll(activeLocks);
@@ -291,7 +279,7 @@ public class SharedStorPoolManager extends BaseTransactionObject
                             );
                         }
 
-                        TransactionSet<Void, Node> sharedSpQueue = queueByLock.get(lock);
+                        LinkedHashSet<Node> sharedSpQueue = queueByLock.get(lock);
                         if (sharedSpQueue != null)
                         {
                             // see if any of these waiting objects can now acquire all the required locks
