@@ -51,6 +51,8 @@ public class SysFsHandler
 
     private static final String THROTTLE_READ_BPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.read_bps_device";
     private static final String THROTTLE_WRITE_BPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.write_bps_device";
+    private static final String THROTTLE_READ_IOPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.read_iops_device";
+    private static final String THROTTLE_WRITE_IOPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.write_iops_device";
 
     private static final String SPDK_THROTTLE_READ_MBPS = "--r_mbytes_per_sec";
     private static final String SPDK_THROTTLE_WRITE_MBPS = "--w_mbytes_per_sec";
@@ -60,6 +62,8 @@ public class SysFsHandler
     private final ExtCmdFactory extCmdFactory;
     private final Map<String, String> cgroupBlkioThrottleReadBpsDeviceMap;
     private final Map<String, String> cgroupBlkioThrottleWriteBpsDeviceMap;
+    private final Map<String, String> cgroupBlkioThrottleReadIopsDeviceMap;
+    private final Map<String, String> cgroupBlkioThrottleWriteIopsDeviceMap;
     private final Map<VlmProviderObject<Resource>, String> deviceMajorMinorMap;
     private final Props satelliteProps;
 
@@ -82,6 +86,8 @@ public class SysFsHandler
         satelliteProps = satellitePropsRef;
         cgroupBlkioThrottleReadBpsDeviceMap = new TreeMap<>();
         cgroupBlkioThrottleWriteBpsDeviceMap = new TreeMap<>();
+        cgroupBlkioThrottleReadIopsDeviceMap = new TreeMap<>();
+        cgroupBlkioThrottleWriteIopsDeviceMap = new TreeMap<>();
         deviceMajorMinorMap = new HashMap<>();
     }
 
@@ -90,7 +96,8 @@ public class SysFsHandler
         try
         {
             updateCgroupBlkioThrottleReadBpsDevice(updateList);
-            cleanupCache(deleteList);
+            updateCgroupBlkioThrottleReadIopsDevice(updateList);
+            cleanupCaches(deleteList);
         }
         catch (AccessDeniedException | StorageException | InvalidKeyException exc)
         {
@@ -98,7 +105,7 @@ public class SysFsHandler
         }
     }
 
-    private void cleanupCache(Collection<Resource> deleteListRef)
+    private void cleanupCaches(Collection<Resource> deleteListRef)
         throws AccessDeniedException, InvalidKeyException, StorageException
     {
         for (Resource rsc : deleteListRef)
@@ -125,6 +132,9 @@ public class SysFsHandler
                         cgroupBlkioThrottleReadBpsDeviceMap.remove(identifier);
                         cgroupBlkioThrottleWriteBpsDeviceMap.remove(identifier);
 
+                        cgroupBlkioThrottleReadIopsDeviceMap.remove(identifier);
+                        cgroupBlkioThrottleWriteIopsDeviceMap.remove(identifier);
+
                         deviceMajorMinorMap.remove(vlmData);
                     }
                 }
@@ -134,6 +144,53 @@ public class SysFsHandler
 
     private void updateCgroupBlkioThrottleReadBpsDevice(Collection<Resource> updateList)
         throws AccessDeniedException, StorageException, InvalidKeyException
+    {
+        execForAllLowestLocalVlmData(updateList, (vlmData, identifier) ->
+        {
+            setThrottle(
+                vlmData,
+                identifier,
+                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
+                cgroupBlkioThrottleReadBpsDeviceMap,
+                THROTTLE_READ_BPS_DEVICE
+            );
+            setThrottle(
+                vlmData,
+                identifier,
+                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE,
+                cgroupBlkioThrottleWriteBpsDeviceMap,
+                THROTTLE_WRITE_BPS_DEVICE
+            );
+        });
+    }
+
+    private void updateCgroupBlkioThrottleReadIopsDevice(Collection<Resource> updateList)
+        throws AccessDeniedException, StorageException, InvalidKeyException
+    {
+        execForAllLowestLocalVlmData(updateList, (vlmData, identifier) ->
+        {
+            setThrottle(
+                vlmData,
+                identifier,
+                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ_IOPS,
+                cgroupBlkioThrottleReadIopsDeviceMap,
+                THROTTLE_READ_IOPS_DEVICE
+            );
+            setThrottle(
+                vlmData,
+                identifier,
+                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE_IOPS,
+                cgroupBlkioThrottleWriteIopsDeviceMap,
+                THROTTLE_WRITE_IOPS_DEVICE
+            );
+        });
+    }
+
+    private void execForAllLowestLocalVlmData(
+        Collection<Resource> updateList,
+        BiExecutor<VlmProviderObject<Resource>, String> consumer
+    )
+        throws AccessDeniedException, InvalidKeyException, StorageException
     {
         for (Resource rsc : updateList)
         {
@@ -172,20 +229,7 @@ public class SysFsHandler
 
                         if (identifier != null && isLowestLocalDevices)
                         {
-                            setThrottle(
-                                vlmData,
-                                identifier,
-                                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
-                                cgroupBlkioThrottleReadBpsDeviceMap,
-                                THROTTLE_READ_BPS_DEVICE
-                            );
-                            setThrottle(
-                                vlmData,
-                                identifier,
-                                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE,
-                                cgroupBlkioThrottleWriteBpsDeviceMap,
-                                THROTTLE_WRITE_BPS_DEVICE
-                            );
+                            consumer.exec(vlmData, identifier);
                         }
                     }
                 }
@@ -327,17 +371,17 @@ public class SysFsHandler
             }
 
             Commands.genericExecutor(
-                    extCmdFactory.create(),
-                    new String[]
-                    {
-                            SPDK_RPC_SCRIPT,
-                            "set_bdev_qos_limit",
-                            path.split(SPDK_PATH_PREFIX)[1],
-                            parameter,
-                            String.valueOf(Integer.valueOf(data) / 1024 / 1024) // bytes to megabytes
-                    },
-                    "Failed to set " + key + " of device " + path,
-                    "Failed to set " + key + " of device " + path
+                extCmdFactory.create(),
+                new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "set_bdev_qos_limit",
+                    path.split(SPDK_PATH_PREFIX)[1],
+                    parameter,
+                    String.valueOf(Integer.valueOf(data) / 1024 / 1024) // bytes to megabytes
+                },
+                "Failed to set " + key + " of device " + path,
+                "Failed to set " + key + " of device " + path
             );
     }
 
@@ -411,5 +455,10 @@ public class SysFsHandler
     private interface Executor<T>
     {
         void exec(T obj) throws StorageException, AccessDeniedException, InvalidKeyException;
+    }
+
+    private interface BiExecutor<T, V>
+    {
+        void exec(T obj, V arg2) throws StorageException, AccessDeniedException, InvalidKeyException;
     }
 }
