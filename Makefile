@@ -103,12 +103,22 @@ copytolibs:
 
 server/jar.deps: build.gradle
 	gradle -q showServerRuntimeLibs > $@
+ifneq ("$(wildcard libs/server-st.jar)","")
+	echo "/usr/share/linstor-server/lib/server-st.jar" >> $@
+endif
 
 controller/jar.deps satellite/jar.deps: build.gradle copytolibs
 	./scripts/diffcopy.py -n ./controller/libs/runtime ./server/libs/runtime /usr/share/linstor-server/lib > controller/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' controller/jar.deps
 	./scripts/diffcopy.py -n ./satellite/libs/runtime ./server/libs/runtime /usr/share/linstor-server/lib > satellite/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' satellite/jar.deps
+ifneq ("$(wildcard libs/controller-st.jar)","")
+	echo "/usr/share/linstor-server/lib/controller-st.jar" >> controller/jar.deps
+endif
+ifneq ("$(wildcard libs/satellite-st.jar)","")
+	echo "/usr/share/linstor-server/lib/satellite-st.jar" >> satellite/jar.deps
+endif
+
 
 tarball: check-all-committed check-submods versioninfo gen-java server/jar.deps controller/jar.deps satellite/jar.deps .filelist
 	$(MAKE) tgz

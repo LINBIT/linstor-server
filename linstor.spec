@@ -39,6 +39,9 @@ for p in server satellite controller; do echo "%{LS_PREFIX}/.$p" >> "%{_builddir
 %install
 mkdir -p %{buildroot}/%{LS_PREFIX}
 cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/lib %{buildroot}/%{LS_PREFIX}
+if [ -f "%{_builddir}/%{NAME_VERS}/libs/server-st.jar" ]; then cp "%{_builddir}/%{NAME_VERS}/libs/server-st.jar" %{buildroot}/%{LS_PREFIX}/lib; fi
+if [ -f "%{_builddir}/%{NAME_VERS}/libs/controller-st.jar" ]; then cp "%{_builddir}/%{NAME_VERS}/libs/controller-st.jar" %{buildroot}/%{LS_PREFIX}/lib; fi
+if [ -f "%{_builddir}/%{NAME_VERS}/libs/satellite-st.jar" ]; then cp "%{_builddir}/%{NAME_VERS}/libs/satellite-st.jar" %{buildroot}/%{LS_PREFIX}/lib; fi
 rm %{buildroot}/%{LS_PREFIX}/lib/%{NAME_VERS}.jar
 cp -r %{_builddir}/%{NAME_VERS}/server/build/install/server/lib/conf %{buildroot}/%{LS_PREFIX}/lib
 mkdir -p %{buildroot}/%{LS_PREFIX}/bin

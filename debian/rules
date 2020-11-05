@@ -20,6 +20,7 @@ override_dh_install:
 	# common
 	mkdir -p $(CURDIR)/debian/linstor-common/$(LS_PREFIX)
 	cp -r $(CURDIR)/server/build/install/server/lib $(CURDIR)/debian/linstor-common/$(LS_PREFIX)
+	if [ -f "$(CURDIR)/libs/server-st.jar" ]; then cp "$(CURDIR)/libs/server-st.jar" $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib; fi
 	# controller
 	cp $(CURDIR)/scripts/linstor-controller.service $(CURDIR)/debian/
 	mkdir -p $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/bin
@@ -27,6 +28,7 @@ override_dh_install:
 	cp $(CURDIR)/build/install/linstor-server/bin/Controller $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/bin
 	cp $(CURDIR)/build/install/linstor-server/bin/linstor-config $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/bin
 	cp $(CURDIR)/controller/build/libs/* $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib
+	if [ -f "$(CURDIR)/libs/controller-st.jar" ]; then cp "$(CURDIR)/libs/controller-st.jar" $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib; fi
 	mkdir -p $(CURDIR)/debian/linstor-controller/etc/linstor
 	cp $(CURDIR)/docs/linstor.toml-example $(CURDIR)/debian/linstor-controller/etc/linstor/
 	# diff and copy additional controller jars
@@ -40,6 +42,7 @@ override_dh_install:
 	mkdir -p $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
 	cp $(CURDIR)/build/install/linstor-server/bin/Satellite $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/bin
 	cp $(CURDIR)/satellite/build/libs/* $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
+	if [ -f "$(CURDIR)/libs/satellite-st.jar" ]; then cp "$(CURDIR)/libs/satellite-st.jar" $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib; fi
 	# diff and copy additional satellite jars
 	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/satellite/build/install/satellite/lib $(CURDIR)/server/build/install/server/lib/ $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
 	# dh_install
