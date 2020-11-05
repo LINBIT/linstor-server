@@ -36,7 +36,7 @@ public class Migration_2020_06_03_ConsolidatePoolProperty extends LinstorMigrati
             {
                 try (PreparedStatement updStmt = connection.prepareStatement(
                     "UPDATE PROPS_CONTAINERS" +
-                        " SET PROP_VALUE=PROP_VALUE||'/'||?" +
+                        " SET PROP_VALUE=CONCAT(PROP_VALUE,'/',?)" +
                         " WHERE PROPS_INSTANCE=? AND PROP_KEY='StorDriver/StorPoolName'"))
                 {
                     updStmt.setString(1, rsSet.getString("PROP_VALUE"));
