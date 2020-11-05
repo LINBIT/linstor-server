@@ -9,21 +9,28 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.util.Objects;
 
 @Singleton
 class StltConnTracker implements ConnectionObserver
 {
     private final CoreModule.PeerMap peerMap;
     private final EventBroker eventBroker;
+    private final ControllerPeerConnector controllerPeerConnector;
+    private final DeviceManager devMgr;
 
     @Inject
     StltConnTracker(
         CoreModule.PeerMap peerMapRef,
-        EventBroker eventBrokerRef
+        EventBroker eventBrokerRef,
+        ControllerPeerConnector controllerPeerConnectorRef,
+        DeviceManager devMgrRef
     )
     {
         peerMap = peerMapRef;
         eventBroker = eventBrokerRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
+        devMgr = devMgrRef;
     }
 
     @Override
@@ -76,6 +83,10 @@ class StltConnTracker implements ConnectionObserver
     {
         if (connPeer != null)
         {
+            if (Objects.equals(connPeer, controllerPeerConnector.getControllerPeer()))
+            {
+                devMgr.controllerConnectionLost();
+            }
             eventBroker.connectionClosed(connPeer);
 
             synchronized (peerMap)

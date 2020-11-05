@@ -2,7 +2,7 @@ package com.linbit.linstor.layer.storage.file;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
-import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -77,7 +77,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
 
     protected FileProvider(
         ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
+        ExtCmdFactoryStlt extCmdFactory,
         AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
@@ -107,7 +107,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     @Inject
     public FileProvider(
         ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
+        ExtCmdFactoryStlt extCmdFactory,
         @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,

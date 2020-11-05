@@ -6,7 +6,9 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
 import com.linbit.drbd.DrbdVersion;
+import com.linbit.extproc.ExtCmd.ExtCmdConditionNotFullfilledException;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -71,6 +73,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -193,12 +196,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private final StltApiCallHandlerUtils apiCallHandlerUtils;
 
     private final DeviceHandler devHandler;
+    private boolean devHandlerInitialized = false;
     private ResourceStateEvent resourceStateEvent;
 
     private SnapshotShippingService snapshipService;
 
     // Saved for later check against what the controller granted
-    private Set<SharedStorPoolName> grantedLocks;
+    private TreeSet<SharedStorPoolName> grantedLocks;
+    private TreeSet<SharedStorPoolName> requiredLocks;
+
+    private HashSet<ExtCmdFactoryStlt> sharedExtCmdFactories;
 
     @Inject
     DeviceManagerImpl(
@@ -259,6 +266,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         stateAvailable = drbdEvent.isDrbdStateAvailable();
         abortDevHndFlag = false;
 
+        grantedLocks = null;
+        requiredLocks = null;
+        sharedExtCmdFactories = new HashSet<>();
+
         devHandler = deviceHandlerRef;
     }
 
@@ -292,6 +303,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         shutdownFlag.set(false);
         if (runningFlag.compareAndSet(false, true))
         {
+            if (!devHandlerInitialized)
+            {
+                devHandler.initialize();
+                devHandlerInitialized = true;
+            }
             svcThr = new Thread(this);
             svcThr.setName(devMgrInstName.displayValue);
             svcThr.start();
@@ -682,6 +698,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 );
                 break;
             }
+            catch (ExtCmdConditionNotFullfilledException exc)
+            {
+                errLog.reportError(Level.ERROR, exc);
+            }
             catch (Exception exc)
             {
                 errLog.reportError(
@@ -978,7 +998,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
                         .build()
                 );
+
+                // ctrlPeer.sendMessage might return false if controller is offline - bad luck, but still just give up
+                // our local locks
                 grantedLocks = null; // notifying ctrl about devMgrRunCompleted also releases our share-SP-locks
+                requiredLocks = null;
             }
         }
     }
@@ -1003,16 +1027,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 allStorPools.addAll(LayerVlmUtils.getStorPools(snap, wrkCtx, true));
             }
 
-            TreeSet<SharedStorPoolName> requiredLocks = new TreeSet<>();
+            TreeSet<SharedStorPoolName> requestingLocks = new TreeSet<>();
             for (StorPool sp : allStorPools)
             {
                 if (sp.isShared())
                 {
-                    requiredLocks.add(sp.getSharedStorPoolName());
+                    requestingLocks.add(sp.getSharedStorPoolName());
                 }
             }
 
-            if (requiredLocks.isEmpty())
+            if (requestingLocks.isEmpty())
             {
                 errLog.logTrace("No shared locks required. Continuing");
             }
@@ -1022,14 +1046,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 {
                     throw new ImplementationError(
                         "Locks " + grantedLocks + " already granted. Cannot send another request of " +
-                            requiredLocks
+                            requestingLocks
                     );
                 }
 
                 synchronized (sched)
                 {
-                    errLog.logTrace("Requesting shared locks: " + requiredLocks);
-                    stltUpdateRequester.requestSharedLocks(requiredLocks);
+                    errLog.logTrace("Requesting shared locks: " + requestingLocks);
+                    requiredLocks = new TreeSet<>(requestingLocks);
+                    stltUpdateRequester.requestSharedLocks(requestingLocks);
 
                     // Wait until all requested updates are applied
                     while (!svcCondFlag.get() && grantedLocks == null)
@@ -1052,10 +1077,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     }
                 }
 
-                if (!grantedLocks.equals(requiredLocks))
+                if (grantedLocks == null || !grantedLocks.equals(requestingLocks))
                 {
                     throw new ImplementationError(
-                        "Requested locks: " + requiredLocks + " but got granted: " + grantedLocks
+                        "Requested locks: " + requestingLocks + " but got granted: " + grantedLocks
                     );
                 }
             }
@@ -1080,7 +1105,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
         try
         {
-            Set<SharedStorPoolName> grantedLocksByCtrl = new TreeSet<>();
+            TreeSet<SharedStorPoolName> grantedLocksByCtrl = new TreeSet<>();
             for (String sharedLock : sharedStorPoolLocksListRef)
             {
                 grantedLocksByCtrl.add(new SharedStorPoolName(sharedLock));
@@ -1090,11 +1115,50 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 grantedLocks = grantedLocksByCtrl;
                 sched.notifyAll();
             }
-
         }
         catch (InvalidNameException exc)
         {
             throw new ImplementationError(exc);
+        }
+    }
+
+    @Override
+    public void controllerConnectionLost()
+    {
+        synchronized (sched)
+        {
+            grantedLocks = null;
+            for (ExtCmdFactoryStlt extCmdFactoryStlt : sharedExtCmdFactories)
+            {
+                extCmdFactoryStlt.killAllExtCmds();
+            }
+        }
+    }
+
+    @Override
+    public boolean hasAllSharedLocksGranted()
+    {
+        boolean allGranted;
+        synchronized (sched)
+        {
+            if (grantedLocks == null)
+            {
+                allGranted = requiredLocks == null;
+            }
+            else
+            {
+                allGranted = grantedLocks.containsAll(requiredLocks);
+            }
+        }
+        return allGranted;
+    }
+
+    @Override
+    public void registerSharedExtCmdFactory(ExtCmdFactoryStlt extCmdFactoryStltRef)
+    {
+        synchronized (sched)
+        {
+            sharedExtCmdFactories.add(extCmdFactoryStltRef);
         }
     }
 

@@ -131,6 +131,12 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
+    public void initialize()
+    {
+        layerFactory.streamDeviceHandlers().forEach(DeviceLayer::initialize);
+    }
+
+    @Override
     public void dispatchResources(Collection<Resource> rscsRef, Collection<Snapshot> snapshots)
     {
         Collection<Resource> resources = calculateGrossSizes(rscsRef);

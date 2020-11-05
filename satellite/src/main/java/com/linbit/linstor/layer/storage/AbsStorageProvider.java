@@ -2,7 +2,7 @@ package com.linbit.linstor.layer.storage;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.fsevent.FileObserver;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.fsevent.FileSystemWatch.Event;
@@ -83,7 +83,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     public static final long SIZE_OF_NOT_FOUND_STOR_POOL = -1;
 
     protected final ErrorReporter errorReporter;
-    protected final ExtCmdFactory extCmdFactory;
+    protected final ExtCmdFactoryStlt extCmdFactory;
     protected final AccessContext storDriverAccCtx;
     protected final Provider<NotificationListener> notificationListenerProvider;
     protected final Provider<TransactionMgr> transMgrProvider;
@@ -105,7 +105,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     public AbsStorageProvider(
         ErrorReporter errorReporterRef,
-        ExtCmdFactory extCmdFactoryRef,
+        ExtCmdFactoryStlt extCmdFactoryRef,
         AccessContext storDriverAccCtxRef,
         StltConfigAccessor stltConfigAccessorRef,
         WipeHandler wipeHandlerRef,
@@ -137,6 +137,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         catch (IOException exc)
         {
             throw new LinStorRuntimeException("Unable to create FileSystemWatch", exc);
+        }
+    }
+
+    public void initialize()
+    {
+        if (kind.isSharedVolumeSupported())
+        {
+            extCmdFactory.setUsedWithSharedLock();
         }
     }
 
@@ -1118,6 +1126,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         setExpectedUsableSize((LAYER_DATA) vlmData, vlmData.getUsableSize());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void updateAllocatedSize(VlmProviderObject<Resource> vlmDataRef)
         throws AccessDeniedException, DatabaseException, StorageException
@@ -1134,35 +1143,30 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     protected abstract String getStorageName(StorPool storPoolRef) throws AccessDeniedException, StorageException;
 
-    @SuppressWarnings("unused")
     protected void createSnapshot(LAYER_DATA vlmData, LAYER_SNAP_DATA snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
-    @SuppressWarnings("unused")
     protected void restoreSnapshot(String sourceLvId, String sourceSnapName, LAYER_DATA vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
-    @SuppressWarnings("unused")
     protected void deleteSnapshot(LAYER_SNAP_DATA snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
-    @SuppressWarnings("unused")
     protected boolean snapshotExists(LAYER_SNAP_DATA snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
-    @SuppressWarnings("unused")
     protected void rollbackImpl(LAYER_DATA vlmData, String rollbackTargetSnapshotName)
         throws StorageException, AccessDeniedException, DatabaseException
     {

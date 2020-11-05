@@ -1,7 +1,7 @@
 package com.linbit.linstor.layer.storage.spdk;
 
 import com.linbit.ImplementationError;
-import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -69,7 +69,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
 
     protected SpdkProvider(
         ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
+        ExtCmdFactoryStlt extCmdFactory,
         AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
@@ -99,7 +99,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     @Inject
     public SpdkProvider(
         ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
+        ExtCmdFactoryStlt extCmdFactory,
         @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,

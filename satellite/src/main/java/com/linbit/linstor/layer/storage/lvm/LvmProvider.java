@@ -1,7 +1,7 @@
 package com.linbit.linstor.layer.storage.lvm;
 
 import com.linbit.ImplementationError;
-import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -72,7 +72,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
 
     protected LvmProvider(
         ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
+        ExtCmdFactoryStlt extCmdFactory,
         AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,
@@ -102,7 +102,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     @Inject
     public LvmProvider(
         ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
+        ExtCmdFactoryStlt extCmdFactory,
         @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,

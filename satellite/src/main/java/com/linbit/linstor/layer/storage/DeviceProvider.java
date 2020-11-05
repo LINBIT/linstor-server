@@ -21,6 +21,13 @@ public interface DeviceProvider
 {
     String STORAGE_NAMESPACE = InternalApiConsts.NAMESPC_INTERNAL + "/" + ApiConsts.NAMESPC_STORAGE_DRIVER;
 
+    /**
+     * Method called right from within the DeviceManagerImpl's constructor - i.e. at a time
+     * where the DeviceManager is already accessible through the injected Provider<DeviceManager>
+     */
+    default void initialize()
+    {}
+
     void clearCache() throws StorageException;
 
     void prepare(List<VlmProviderObject<Resource>> vlmDataList, List<VlmProviderObject<Snapshot>> snapVlms)

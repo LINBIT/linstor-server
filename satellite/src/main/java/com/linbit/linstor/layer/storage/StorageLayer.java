@@ -69,6 +69,15 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
+    public void initialize()
+    {
+        for (DeviceProvider devProvider : deviceProviderMapper.getDriverList())
+        {
+            devProvider.initialize();
+        }
+    }
+
+    @Override
     public void setLocalNodeProps(Props localNodeProps)
     {
         for (DeviceProvider devProvider : deviceProviderMapper.getDriverList())

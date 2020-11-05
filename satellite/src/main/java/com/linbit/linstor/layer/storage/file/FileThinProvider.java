@@ -1,7 +1,7 @@
 package com.linbit.linstor.layer.storage.file;
 
 import com.linbit.extproc.ExtCmd;
-import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -33,7 +33,7 @@ public class FileThinProvider extends FileProvider
     @Inject
     public FileThinProvider(
         ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
+        ExtCmdFactoryStlt extCmdFactory,
         @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,

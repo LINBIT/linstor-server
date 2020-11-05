@@ -1,7 +1,7 @@
 package com.linbit.linstor.layer.storage.lvm;
 
 import com.linbit.ImplementationError;
-import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -42,7 +42,7 @@ public class LvmThinProvider extends LvmProvider
     @Inject
     public LvmThinProvider(
         ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
+        ExtCmdFactoryStlt extCmdFactory,
         @DeviceManagerContext AccessContext storDriverAccCtx,
         StltConfigAccessor stltConfigAccessor,
         WipeHandler wipeHandler,

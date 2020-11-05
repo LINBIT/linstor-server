@@ -30,6 +30,13 @@ public interface DeviceLayer
 {
     String STOR_DRIVER_NAMESPACE = ApiConsts.NAMESPC_STORAGE_DRIVER;
 
+    /**
+     * Method called right from within the DeviceManagerImpl's constructor - i.e. at a time
+     * where the DeviceManager is already accessible through the injected Provider<DeviceManager>
+     */
+    default void initialize()
+    {}
+
     String getName();
 
     void prepare(

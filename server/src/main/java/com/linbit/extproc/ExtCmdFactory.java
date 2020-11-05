@@ -9,13 +9,14 @@ import javax.inject.Inject;
 
 public class ExtCmdFactory
 {
-    private Timer<String, Action<String>> timer;
-    private ErrorReporter errlog;
+    protected final Timer<String, Action<String>> timer;
+    protected final ErrorReporter errlog;
 
     @Inject
     public ExtCmdFactory(
         CoreTimer timerRef,
-        ErrorReporter errorReporterRef)
+        ErrorReporter errorReporterRef
+    )
     {
         timer = timerRef;
         errlog = errorReporterRef;

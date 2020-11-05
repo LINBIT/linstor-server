@@ -1,5 +1,6 @@
 package com.linbit.linstor.core;
 
+import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -38,4 +39,8 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     SpaceInfo getSpaceInfo(StorPool storPoolRef) throws StorageException;
 
     void sharedStorPoolLocksGranted(List<String> sharedStorPoolLocksListRef);
+
+    void controllerConnectionLost();
+    boolean hasAllSharedLocksGranted();
+    void registerSharedExtCmdFactory(ExtCmdFactoryStlt extCmdFactoryStltRef);
 }

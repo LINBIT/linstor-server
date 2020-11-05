@@ -1,6 +1,8 @@
 package com.linbit.extproc;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.timer.Action;
 import com.linbit.timer.Timer;
@@ -11,7 +13,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.regex.Pattern;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Runs an external command, logs and saves its output
@@ -20,7 +26,8 @@ import java.util.regex.Pattern;
  */
 public class ExtCmd extends ChildProcessHandler
 {
-    private static final Pattern SPACE_PATTERN = Pattern.compile(" ");
+    private final Map<ExtCmdCondition, String> conditionsWithDescriptions;
+    private final Set<ExtCmdEndedListener> extCmdEndedListenerSet;
 
     private OutputReceiver  outReceiver;
     private OutputReceiver  errReceiver;
@@ -32,12 +39,25 @@ public class ExtCmd extends ChildProcessHandler
 
     private boolean logExecution = true;
 
+
     public ExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
     {
         super(timer);
+        conditionsWithDescriptions = new HashMap<>();
         outReceiver = null;
         errReceiver = null;
         errLog = errLogRef;
+        extCmdEndedListenerSet = new HashSet<>();
+    }
+
+    public void addCondition(ExtCmdCondition condition, String description)
+    {
+        conditionsWithDescriptions.put(condition, description);
+    }
+
+    public void addExtCmdEndedListener(ExtCmdEndedListener listenerRef)
+    {
+        extCmdEndedListenerSet.add(listenerRef);
     }
 
     public void asyncExec(String... command)
@@ -90,39 +110,92 @@ public class ExtCmd extends ChildProcessHandler
         pBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
         pBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
         pBuilder.redirectInput(stdinRedirect);
-        Process child = pBuilder.start();
-        startTime = System.currentTimeMillis();
-        setChild(child);
-        outReceiver = new OutputReceiver(child.getInputStream(), errLog, logExecution);
-        errReceiver = new OutputReceiver(child.getErrorStream(), errLog, logExecution);
+        Process child;
+        synchronized (conditionsWithDescriptions)
+        {
+            checkForConditions();
+            child = pBuilder.start();
+            startTime = System.currentTimeMillis();
+            setChild(child);
+            outReceiver = new OutputReceiver(child.getInputStream(), errLog, logExecution);
+            errReceiver = new OutputReceiver(child.getErrorStream(), errLog, logExecution);
+        }
         new Thread(outReceiver).start();
         new Thread(errReceiver).start();
 
         return child.getOutputStream();
     }
 
+    private void checkForConditions()
+    {
+        for (Entry<ExtCmdCondition, String> entry : conditionsWithDescriptions.entrySet())
+        {
+            if (!entry.getKey().isMet())
+            {
+                throw new ExtCmdConditionNotFullfilledException(entry.getValue());
+            }
+        }
+    }
+
     public OutputData syncProcess() throws IOException, ChildProcessTimeoutException
     {
-        int exitCode = waitFor();
-        outReceiver.finish();
-        errReceiver.finish();
-        OutputData outData = new OutputData(
-            execCommand,
-            outReceiver.getData(),
-            errReceiver.getData(),
-            exitCode
-        );
-
-        if (logExecution)
+        OutputData outData;
+        try
         {
-            errLog.logTrace(
-                "External command finished in %dms: %s",
-                (System.currentTimeMillis() - startTime),
-                execCommandStr
+            int exitCode = waitFor();
+            outReceiver.finish();
+            errReceiver.finish();
+            outData = new OutputData(
+                execCommand,
+                outReceiver.getData(),
+                errReceiver.getData(),
+                exitCode
             );
-        }
 
+            if (logExecution)
+            {
+                errLog.logTrace(
+                    "External command finished in %dms: %s",
+                    (System.currentTimeMillis() - startTime),
+                    execCommandStr
+                );
+            }
+
+            for (ExtCmdEndedListener listener : extCmdEndedListenerSet)
+            {
+                listener.extCmdEnded(this);
+            }
+        }
+        catch (IOException | ChildProcessTimeoutException exc)
+        {
+            for (ExtCmdEndedListener listener : extCmdEndedListenerSet)
+            {
+                listener.extCmdEnded(this, exc);
+            }
+            throw exc;
+        }
         return outData;
+    }
+
+    public void kill()
+    {
+        synchronized (conditionsWithDescriptions)
+        {
+            conditionsWithDescriptions.put(() -> false, "Process killed");
+            try
+            {
+                waitForDestroy();
+            }
+            catch (ChildProcessTimeoutException termTimedOut)
+            {
+                waitForDestroyForcibly();
+            }
+            catch (ImplementationError implErr)
+            {
+                // process not started, childProcess was still null
+                // this implErr can be ignored
+            }
+        }
     }
 
     public ExtCmd logExecution(boolean logRef)
@@ -155,5 +228,43 @@ public class ExtCmd extends ChildProcessHandler
         {
             return new ByteArrayInputStream(stderrData);
         }
+    }
+
+    public interface ExtCmdCondition
+    {
+        boolean isMet();
+    }
+
+    public static class ExtCmdConditionNotFullfilledException extends LinStorRuntimeException
+    {
+        private static final long serialVersionUID = -3063355037719246587L;
+
+        public ExtCmdConditionNotFullfilledException(String messageRef)
+        {
+            super(messageRef);
+        }
+
+        public ExtCmdConditionNotFullfilledException(
+            String messageRef,
+            String descriptionTextRef,
+            String causeTextRef,
+            String correctionTextRef,
+            String detailsTextRef
+        )
+        {
+            super(messageRef, descriptionTextRef, causeTextRef, correctionTextRef, detailsTextRef);
+        }
+
+        public ExtCmdConditionNotFullfilledException(String messageRef, Throwable causeRef)
+        {
+            super(messageRef, causeRef);
+        }
+    }
+
+    public interface ExtCmdEndedListener
+    {
+        void extCmdEnded(ExtCmd extCmd);
+
+        void extCmdEnded(ExtCmd extCmd, Exception exc);
     }
 }
