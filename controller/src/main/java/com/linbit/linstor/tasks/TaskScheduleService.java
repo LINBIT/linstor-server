@@ -8,6 +8,7 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.util.LinkedList;
 import java.util.Map.Entry;
@@ -15,10 +16,12 @@ import java.util.TreeMap;
 
 import org.slf4j.event.Level;
 
+@Singleton
 public class TaskScheduleService implements SystemService, Runnable
 {
     public interface Task
     {
+        long END_TASK = -1;
         /**
          * When a {@link Task} gets registered in {@link TaskScheduleService}, it will be
          * Immediately executed (calling {@link Task#run()}). <br>

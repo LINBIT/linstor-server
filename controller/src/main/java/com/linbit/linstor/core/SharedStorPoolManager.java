@@ -247,13 +247,11 @@ public class SharedStorPoolManager
         List<SharedStorPoolName> locksToRelease = new ArrayList<>();
         synchronized (activeLocksByNode)
         {
-
             ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(nodeReleasingLocks);
             if (activeLocks != null)
             {
                 locksToRelease.addAll(activeLocks);
             }
-
         }
         if (!locksToRelease.isEmpty())
         {
@@ -334,7 +332,14 @@ public class SharedStorPoolManager
         return ret;
     }
 
-
+    public boolean hasNodeActiveLocks(Node node)
+    {
+        synchronized (activeLocksByNode)
+        {
+            ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(node);
+            return activeLocks == null || !activeLocks.isEmpty();
+        }
+    }
     private Node getNode(TransactionObject txObj)
     {
         Node ret;

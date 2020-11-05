@@ -182,19 +182,24 @@ public class NodeInternalCallHandler
         {
             errorReporter.logTrace("%s finished with devMgr. Releasing locks", node);
 
-            Map<Node, Set<SharedStorPoolName>> nodesToUpdate = sharedStorPoolManager.releaseLocks(node);
+            releaseLocks(node);
+        }
+    }
 
-            try
+    public void releaseLocks(Node node)
+    {
+        Map<Node, Set<SharedStorPoolName>> nodesToUpdate = sharedStorPoolManager.releaseLocks(node);
+
+        try
+        {
+            for (Entry<Node, Set<SharedStorPoolName>> entry : nodesToUpdate.entrySet())
             {
-                for (Entry<Node, Set<SharedStorPoolName>> entry : nodesToUpdate.entrySet())
-                {
-                    updateStlt(entry.getKey(), entry.getValue());
-                }
+                updateStlt(entry.getKey(), entry.getValue());
             }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 }
