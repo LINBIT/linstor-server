@@ -57,7 +57,7 @@ public class CtrlQueryMaxVlmSizeHelper
     public Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> queryMaxVlmSize(
         AutoSelectFilterApi selectFilter,
         @Nullable ResourceDefinition rscDfnRef,
-        int placeCount,
+        int size,
         Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
@@ -109,7 +109,7 @@ public class CtrlQueryMaxVlmSizeHelper
                 selectFilter // copy the rest from selectFilter
             );
 
-            Set<StorPool> selectedStorPoolSet = autoplacer.autoPlace(currentFilter, rscDfnRef, placeCount);
+            Set<StorPool> selectedStorPoolSet = autoplacer.autoPlace(currentFilter, rscDfnRef, size);
             if (selectedStorPoolSet != null)
             {
                 Set<StorPoolDefinition> spDfnSet = new HashSet<>();

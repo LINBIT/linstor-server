@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -70,6 +71,7 @@ class Selector
         List<Node> alreadyDeployedOnNodes = new ArrayList<>();
         int alreadyDeployedDiskfulCount = 0;
         int alreadyDeployedDisklessCount = 0;
+        List<SharedStorPoolName> alreadyDeployedInSharedSPNames = new ArrayList<>();
         DeviceProviderKind alreadySelectedProviderKind = null;
         if (rscDfnRef != null)
         {
@@ -111,7 +113,10 @@ class Selector
                         {
                             for (VlmProviderObject<Resource> storageVlmData : storageRscData.getVlmLayerObjects().values())
                             {
-                                DeviceProviderKind storageVlmProviderKind = storageVlmData.getStorPool().getDeviceProviderKind();
+                                StorPool sp = storageVlmData.getStorPool();
+                                alreadyDeployedInSharedSPNames.add(sp.getSharedStorPoolName());
+
+                                DeviceProviderKind storageVlmProviderKind = sp.getDeviceProviderKind();
                                 if (!storageVlmProviderKind.equals(DeviceProviderKind.DISKLESS))
                                 {
                                     if (alreadySelectedProviderKind == null)
@@ -157,6 +162,7 @@ class Selector
             alreadyDeployedOnNodes,
             alreadyDeployedDiskfulCount,
             alreadyDeployedDisklessCount,
+            alreadyDeployedInSharedSPNames,
             alreadySelectedProviderKind,
             sortedStorPoolByScoreArr
         );
@@ -293,9 +299,11 @@ class Selector
     {
         private final List<Node> alreadyDeployedOnNodes;
         private final DeviceProviderKind alreadySetProviderKind;
+        private final List<SharedStorPoolName> alreadyDeployedInSharedSPNames;
 
         private final AutoSelectFilterApi selectFilter;
         private final Set<Node> selectedNodes;
+        private final Set<SharedStorPoolName> selectedSharedSPNames;
         private final Set<StorPoolWithScore> selectedStorPoolWithScoreSet;
         private final StorPoolWithScore[] sortedStorPoolByScoreArr;
         private final int additionalRscCountToSelect;
@@ -308,12 +316,12 @@ class Selector
         private HashMap<String, String> sameProps = new HashMap<>();
         private HashMap<String, List<String>> diffProps = new HashMap<>();
 
-
         public SelectionManger(
             AutoSelectFilterApi selectFilterRef,
             List<Node> alreadyDeployedOnNodesRef,
             int diskfulNodeCount,
             int disklessNodeCount,
+            List<SharedStorPoolName> alreadyDeployedInSharedSPNamesRef,
             DeviceProviderKind alreadySelectedProviderKindRef,
             StorPoolWithScore[] sortedStorPoolByScoreArrRef
         )
@@ -321,6 +329,8 @@ class Selector
         {
             selectFilter = selectFilterRef;
             alreadyDeployedOnNodes = alreadyDeployedOnNodesRef;
+            alreadyDeployedInSharedSPNames = alreadyDeployedInSharedSPNamesRef;
+            selectedProviderKind = alreadySelectedProviderKindRef;
             sortedStorPoolByScoreArr = sortedStorPoolByScoreArrRef;
 
             if (selectFilterRef.getDisklessType() == null)
@@ -335,6 +345,7 @@ class Selector
             }
 
             selectedNodes = new HashSet<>();
+            selectedSharedSPNames = new HashSet<>();
             selectedStorPoolWithScoreSet = new HashSet<>();
 
             clear();
@@ -409,32 +420,34 @@ class Selector
 
         private boolean chooseIfAllowed(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
         {
-            Node node = currentSpWithScoreRef.storPool.getNode();
+            StorPool sp = currentSpWithScoreRef.storPool;
+            Node node = sp.getNode();
             Props nodeProps = node.getProps(apiCtx);
 
             boolean isAllowed = !selectedNodes.contains(node);
+            isAllowed &= !selectedSharedSPNames.contains(sp.getSharedStorPoolName());
 
             if (!isAllowed)
             {
                 errorReporter.logTrace(
                     "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
                     "canditate-selection as another StorPool was already selected from this node ",
-                    currentSpWithScoreRef.storPool.getName().displayValue,
-                    currentSpWithScoreRef.storPool.getNode().getName().displayValue
+                    sp.getName().displayValue,
+                    sp.getNode().getName().displayValue
                 );
             }
 
             if (
                 selectedProviderKind != null &&
-                    !currentSpWithScoreRef.storPool.getDeviceProviderKind().equals(selectedProviderKind)
+                    !sp.getDeviceProviderKind().equals(selectedProviderKind)
             )
             {
                 errorReporter.logTrace(
                     "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
                         "canditate-selection as its provider kind (%s) does not match already selected (%s)",
-                    currentSpWithScoreRef.storPool.getName().displayValue,
-                    currentSpWithScoreRef.storPool.getNode().getName().displayValue,
-                    currentSpWithScoreRef.storPool.getDeviceProviderKind().name(),
+                    sp.getName().displayValue,
+                    sp.getNode().getName().displayValue,
+                    sp.getDeviceProviderKind().name(),
                     selectedProviderKind.name()
                 );
                 isAllowed = false;
@@ -457,8 +470,8 @@ class Selector
                             "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
                             "canditate-selection as the node has property '%s' set to '%s' while the already selected "+
                             "nodes require the value to be '%s'",
-                            currentSpWithScoreRef.storPool.getName().displayValue,
-                            currentSpWithScoreRef.storPool.getNode().getName().displayValue,
+                            sp.getName().displayValue,
+                            sp.getNode().getName().displayValue,
                             sameProp.getKey(),
                             nodePropValue,
                             samePropValue
@@ -483,8 +496,8 @@ class Selector
                             "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
                             "canditate-selection as the node has property '%s' set to '%s', but that value is already " +
                             "taken by another node from the current selection",
-                            currentSpWithScoreRef.storPool.getName().displayValue,
-                            currentSpWithScoreRef.storPool.getNode().getName().displayValue,
+                            sp.getName().displayValue,
+                            sp.getNode().getName().displayValue,
                             diffProp.getKey(),
                             nodePropValue
                         );
@@ -545,12 +558,15 @@ class Selector
 
             selectedStorPoolWithScoreSet.add(currentSpWithScoreRef);
             selectedNodes.add(currentStorPool.getNode());
+            selectedSharedSPNames.add(currentStorPool.getSharedStorPoolName());
         }
 
         private void unselect(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
         {
+            StorPool sp = currentSpWithScoreRef.storPool;
             selectedStorPoolWithScoreSet.remove(currentSpWithScoreRef);
-            selectedNodes.remove(currentSpWithScoreRef.storPool.getNode());
+            selectedNodes.remove(sp.getNode());
+            selectedSharedSPNames.remove(sp.getSharedStorPoolName());
 
             if (selectedStorPoolWithScoreSet.isEmpty())
             {
@@ -563,8 +579,8 @@ class Selector
 
             errorReporter.logTrace(
                 "Autoplacer.Selector: Removing StorPool '%s' on Node '%s' to current selection",
-                currentSpWithScoreRef.storPool.getName().displayValue,
-                currentSpWithScoreRef.storPool.getNode().getName().displayValue
+                sp.getName().displayValue,
+                sp.getNode().getName().displayValue
             );
 
             rebuildTemporaryMaps();
@@ -646,6 +662,8 @@ class Selector
         {
             selectedNodes.clear();
             selectedNodes.addAll(alreadyDeployedOnNodes);
+            selectedSharedSPNames.clear();
+            selectedSharedSPNames.addAll(alreadyDeployedInSharedSPNames);
 
             selectedProviderKind = alreadySetProviderKind;
 

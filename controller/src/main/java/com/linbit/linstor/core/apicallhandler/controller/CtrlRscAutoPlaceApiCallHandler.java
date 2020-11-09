@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -33,6 +34,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -45,6 +47,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -169,6 +172,9 @@ public class CtrlRscAutoPlaceApiCallHandler
             ctrlApiDataLoader.loadRscDfn(rscNameStr, true)
         )
             .collect(Collectors.toList());
+
+        alreadyPlaced = filterOnlyOneRscPerSharedSp(alreadyPlaced);
+
         List<Resource> alreadyPlacedDiskfulNotDeleting = new ArrayList<>();
         List<Resource> alreadyPlacedDisklessNotDeleting = new ArrayList<>();
         List<Resource> alreadyPlacedDeleting = new ArrayList<>();
@@ -346,6 +352,49 @@ public class CtrlRscAutoPlaceApiCallHandler
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))
             .onErrorResume(EventStreamClosedException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
+    }
+
+    private ArrayList<Resource> filterOnlyOneRscPerSharedSp(List<Resource> list)
+    {
+        Set<SharedStorPoolName> visitedSharedStorPoolNames = new HashSet<>();
+        ArrayList<Resource> ret = new ArrayList<>();
+        for (Resource rsc : list)
+        {
+            boolean sharedSpAlreadyCounted = false;
+            Set<SharedStorPoolName> sharedSpNames = getSharedStorPoolNames(rsc);
+            for (SharedStorPoolName sharedSpName : sharedSpNames)
+            {
+                if (visitedSharedStorPoolNames.contains(sharedSpName))
+                {
+                    sharedSpAlreadyCounted = true;
+                    break;
+                }
+            }
+            if (!sharedSpAlreadyCounted)
+            {
+                visitedSharedStorPoolNames.addAll(sharedSpNames);
+                ret.add(rsc);
+            }
+        }
+
+        return ret;
+    }
+
+    private Set<SharedStorPoolName> getSharedStorPoolNames(Resource rsc)
+    {
+        Set<SharedStorPoolName> sharedSpNames = new TreeSet<>();
+        try
+        {
+            for (StorPool sp : LayerVlmUtils.getStorPools(rsc, apiCtx, false))
+            {
+                sharedSpNames.add(sp.getSharedStorPoolName());
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return sharedSpNames;
     }
 
     private Set<StorPool> findBestCandidate(
