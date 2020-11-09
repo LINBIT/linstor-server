@@ -306,13 +306,6 @@ paths:
 
             Linstor storage pool name to use for external metadata.
 
-        - `DrbdMetaType` - enum
-
-            Where to place DRBD meta data
-
-            * external
-            * internal
-
         - `sys/fs/blkio_throttle_read` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
@@ -321,6 +314,18 @@ paths:
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
 
+        - `sys/fs/blkio_throttle_read_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_iops_device
+
+        - `sys/fs/blkio_throttle_write_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_iops_device
+
+        - `DrbdOptions/AutoEvictAfterTime` - long
+
+            Time a node can be offline before it is declared EVICTED in minutes
+
         - `Writecache/PoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Linstor storage pool name for writecache
@@ -328,10 +333,6 @@ paths:
         - `Writecache/Size` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
             Size of the writecache in % (0-100) or KiB otherwise
-
-        - `Writecache/Blocksize` - long
-
-            4096 is recommended; the maximum block size is the page size
 
         - `Writecache/Options/StartSector` - long
 
@@ -408,6 +409,10 @@ paths:
 
             Additional parameters added to every 'lvcreate ... ' command
 
+        - `StorDriver/ZfscreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'zfs create ... ' command
+
         - `StorDriver/Openflex/ApiHost` - regex[`.+`]
 
             Openflex API host name
@@ -446,6 +451,10 @@ paths:
 
         - `DrbdProxy/AutoEnable` - boolean_true_false
         - `Site` - string
+        - `DrbdOptions/auto-diskful-allow-cleanup` - boolean_true_false
+
+            Allows this resource to be cleaned up after toggle-disk + resync is finished
+
       responses:
         '200':
           description: node modified
@@ -717,6 +726,10 @@ paths:
 
             Additional parameters added to every 'lvcreate ... ' command
 
+        - `StorDriver/ZfscreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'zfs create ... ' command
+
         - `StorDriver/WaitTimeoutAfterCreate` - regex[`[0-9]+`]
         - `sys/fs/blkio_throttle_read` - long
 
@@ -725,6 +738,14 @@ paths:
         - `sys/fs/blkio_throttle_write` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
+        - `sys/fs/blkio_throttle_read_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_iops_device
+
+        - `sys/fs/blkio_throttle_write_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_iops_device
 
         - `StorDriver/Openflex/ApiHost` - regex[`.+`]
 
@@ -928,13 +949,6 @@ paths:
 
             Linstor storage pool name to use for external metadata.
 
-        - `DrbdMetaType` - enum
-
-            Where to place DRBD meta data
-
-            * external
-            * internal
-
         - `PeerSlotsNewResource` - range[`1-31`]
 
             DRBD peer slots to allocate for newly created resources (default 7), the number of peer slots cannot be changed once the resource is created, so allow sufficient slots to increase redundancy in the future
@@ -944,6 +958,10 @@ paths:
             * lzma
             * lz4
             * zstd
+
+        - `DrbdOptions/AutoEvictMinReplicaCount` - long
+
+            The minimum amount of replicas that should be present for a resource at all times.
 
         - `FileSystem/Type` - enum
 
@@ -984,6 +1002,10 @@ paths:
 
             Additional parameters added to every 'lvcreate ... ' command
 
+        - `StorDriver/ZfscreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'zfs create ... ' command
+
         - `sys/fs/blkio_throttle_read` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_bps_device
@@ -991,6 +1013,14 @@ paths:
         - `sys/fs/blkio_throttle_write` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
+        - `sys/fs/blkio_throttle_read_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_iops_device
+
+        - `sys/fs/blkio_throttle_write_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_iops_device
 
         - `DrbdOptions/auto-quorum` - enum
 
@@ -1004,6 +1034,14 @@ paths:
 
             Enables automatic management (creation and deletion) of tie breaking resource
 
+        - `DrbdOptions/auto-diskful` - long
+
+            Makes a resource diskful if it was continously diskless primary for X minutes
+
+        - `DrbdOptions/auto-diskful-allow-cleanup` - boolean_true_false
+
+            Allows this resource to be cleaned up after toggle-disk + resync is finished
+
         - `Writecache/PoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Linstor storage pool name for writecache
@@ -1011,10 +1049,6 @@ paths:
         - `Writecache/Size` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
             Size of the writecache in % (0-100) or KiB otherwise
-
-        - `Writecache/Blocksize` - long
-
-            4096 is recommended; the maximum block size is the page size
 
         - `Writecache/Options/StartSector` - long
 
@@ -1362,20 +1396,9 @@ paths:
 
             Linstor storage pool name to use for external metadata.
 
-        - `DrbdMetaType` - enum
-
-            Where to place DRBD meta data
-
-            * external
-            * internal
-
         - `OverrideVlmId` - regex[`.*`]
 
             Overwrites the generated '<resource-name>_<5 digit volume number>' volume name for migration purposes
-
-        - `AllowLargerVolumeSize` - boolean_true_false
-
-            Do not fail when the underlying volume is larger than expected
 
         - `FileSystem/Type` - enum
 
@@ -1405,6 +1428,10 @@ paths:
 
             Additional parameters added to every 'lvcreate ... ' command
 
+        - `StorDriver/ZfscreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'zfs create ... ' command
+
         - `DrbdCurrentGi` - regex[`[a-fA-F0-9]{16}`]
 
             Initial DRBD generation id, if initial sync is skipped, this ID will be set
@@ -1417,6 +1444,14 @@ paths:
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
 
+        - `sys/fs/blkio_throttle_read_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_iops_device
+
+        - `sys/fs/blkio_throttle_write_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_iops_device
+
         - `Writecache/PoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Linstor storage pool name for writecache
@@ -1424,10 +1459,6 @@ paths:
         - `Writecache/Size` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
             Size of the writecache in % (0-100) or KiB otherwise
-
-        - `Writecache/Blocksize` - long
-
-            4096 is recommended; the maximum block size is the page size
 
         - `Writecache/Options/StartSector` - long
 
@@ -1674,13 +1705,6 @@ paths:
 
             Linstor storage pool name to use for external metadata.
 
-        - `DrbdMetaType` - enum
-
-            Where to place DRBD meta data
-
-            * external
-            * internal
-
         - `PrefNic` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Preferred network interface to use
@@ -1711,6 +1735,18 @@ paths:
         - `sys/fs/blkio_throttle_write` - long
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
+
+        - `sys/fs/blkio_throttle_read_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_iops_device
+
+        - `sys/fs/blkio_throttle_write_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_iops_device
+
+        - `DrbdOptions/auto-diskful-allow-cleanup` - boolean_true_false
+
+            Allows this resource to be cleaned up after toggle-disk + resync is finished
 
       responses:
         '200':
@@ -2860,21 +2896,21 @@ paths:
 
             Enable dmstats on lvm create
 
-        - `GlobSeqApiCalls` - boolean_true_false
+        - `REST/disable-http-metrics` - boolean_true_false
 
-            Globally sequentialize all ctrl -> stlt api calls
+            Disable Prometheus /metrics on HTTP, if HTTPS is enabled
 
-        - `REST/bindAddress` - string
+        - `DrbdOptions/AutoEvictAfterTime` - long
 
-            Bind address of the REST API
+            Time a node can be offline before it is declared EVICTED in minutes
 
-        - `REST/port` - range[`1-65535`]
+        - `DrbdOptions/AutoEvictMaxDisconnectedNodes` - range[`0-100`]
 
-            TCP Port of the REST API
+            Percentage(0-100) of nodes that can disconnect at the same time without the controller stopping the max_offline_time timer
 
-        - `REST/enabled` - boolean_true_false
+        - `DrbdOptions/AutoEvictMinReplicaCount` - long
 
-            Bool if REST API should be enabled
+            The minimum amount of replicas that should be present for a resource at all times.
 
         - `NVMe/TRType` - enum
 
@@ -2900,6 +2936,14 @@ paths:
 
             Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device
 
+        - `sys/fs/blkio_throttle_read_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_iops_device
+
+        - `sys/fs/blkio_throttle_write_iops` - long
+
+            Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_iops_device
+
         - `SearchDomain` - string
 
             Search domain node names, if no FQDN is given.
@@ -2920,6 +2964,14 @@ paths:
 
             Enables automatic management (creation and deletion) of tie breaking resource
 
+        - `DrbdOptions/auto-diskful` - long
+
+            Makes a resource diskful if it was continously diskless primary for X minutes
+
+        - `DrbdOptions/auto-diskful-allow-cleanup` - boolean_true_false
+
+            Allows this resource to be cleaned up after toggle-disk + resync is finished
+
         - `Writecache/PoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Linstor storage pool name for writecache
@@ -2927,10 +2979,6 @@ paths:
         - `Writecache/Size` - regex[`^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$`]
 
             Size of the writecache in % (0-100) or KiB otherwise
-
-        - `Writecache/Blocksize` - long
-
-            4096 is recommended; the maximum block size is the page size
 
         - `Writecache/Options/StartSector` - long
 
@@ -3007,6 +3055,10 @@ paths:
 
             Additional parameters added to every 'lvcreate ... ' command
 
+        - `StorDriver/ZfscreateOptions` - regex[`.*`]
+
+            Additional parameters added to every 'zfs create ... ' command
+
         - `StorDriver/Openflex/ApiHost` - regex[`.+`]
 
             Openflex API host name
@@ -3061,6 +3113,10 @@ paths:
 
         - `DrbdProxy/AutoEnable` - boolean_true_false
         - `Site` - string
+        - `UpdateCacheInterval` - long
+
+            Interval for space cache background updates in seconds
+
         - `DrbdOptions/Disk/on-io-error` - enum
             * pass_on
             * call-local-io-error
