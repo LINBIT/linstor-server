@@ -412,7 +412,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 StateFlags<Resource.Flags> rscFlags = rsc.getStateFlags();
                 if (
                     layerDataHelper.getLayerStack(rsc).contains(DeviceLayerKind.DRBD) &&
-                    rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE)
+                    rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE) &&
+                    rscFlags.isUnset(peerAccCtx, Resource.Flags.INACTIVE)
                 )
                 {
                     if (rscFlags.isSet(peerAccCtx, Resource.Flags.DRBD_DISKLESS))
