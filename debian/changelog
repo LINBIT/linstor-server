@@ -1,3 +1,64 @@
+linstor-server (1.10.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * release-tgz: do not inlcude .gitlab files
+  * gitlab-ci: fix dummy-release usage
+  * SpaceTracking: fix migration for postgresql
+  * rest-snapshots: fix single snapshot filtering
+  * gitlab-ci: add linstor test end2end stage
+  * gitlab-ci: test corresponding test-branch if possible
+  * toggle-disk: do not create error reports for user errors
+  * toggle-disk: allow toggle disk even if a non affected node is offline
+  * toggle-disk: check that the last diskfull resource is online on diskle [...]
+  * gitlab: use a safe name for test bundles
+  * rest-events-promotion: send initial state if requested by Last-Event-ID
+  * etcd: merge migrations til version 35 into initial migration
+  * etcd: allow the linstor prefix to be configured
+  * reconnectorTask: cleanup code a bit
+  * gradle: use gradle-wrapper in online builds
+  * gitlab: use newer vmshed and virter
+  * drbdstatetracker: synchronize observers access
+  * migration-pool-prop: Fix migration on mariadb
+  * pkging: include spacetracking.jars if present
+  * rest-doc: update property documentation
+
+  [ Gabor Hernadi ]
+  * StltExtToolsChecker: Fixed /proc/modules parsing regex
+  * StltExtToolsChecker: Replaced ExtCmd with native Files.readAllBytes
+  * StltExtToolsChecker: Rework trace logging
+  * SnapShip: Fixed incompatible wait option
+  * AutoTiebreaker: fixed race condition
+  * SysFs: Added throttle by iops
+
+  [ Robert Altnoeder ]
+  * SpaceTracking: Added MsgIntCapacityInfo.proto
+  * SpaceTracking: Added REST API for querying space reports
+  * SpaceTracking: Add DB migration
+
+  [ Johanna Kucera ]
+  * code cleanup: remove unused properties, restructured ApiConsts
+  * node-ko: fixed adding/removing nodes from ReconnectorTask
+  * node-ko: fix broken while loop iterating over the netIfs
+  * node-ko: add DEAD-Flag and necessary checks
+  * autoplace: do not count deleted nodes when counting already placed resources
+  * node-ko: add automated re-placement for resources from dead nodes
+  * node-ko: add node-ko-logic to ReconnectorTask
+  * node-ko: add api-endpoint to restore a dead node
+  * node-ko: review changes
+  * node-ko: rename DEAD into EVICTED
+  * fix checks for error codes not working correctly
+  * node-ko: second review changes
+  * ReconnectorTask: fix reconnect
+  * CtrlNodeApiCallHandler: only delete drbd resources on evicted
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * set UTF-8 locale in controller container
+
+  [ Roland Kammerer ]
+  * Dockerfile.controller: set LC_ALL
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 09 Nov 2020 08:11:14 +0000
+
 linstor-server (1.9.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

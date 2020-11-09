@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.5.0
        - Added etcd.prefix to ControllerConfigDbEtcd parameters
     * 1.4.0
        - Added promotion_score and may_promote to DrbdResource object
