@@ -580,6 +580,24 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         while (!shutdownFlag.get())
         {
             errLog.logDebug("Begin DeviceManager cycle %d", cycleNr);
+            synchronized (sched)
+            {
+                boolean printMsg = true;
+                while (!svcCondFlag.get() && !shutdownFlag.get())
+                {
+                    if (printMsg)
+                    {
+                        errLog.logDebug("DeviceManager waiting for service-condition");
+                        printMsg = false;
+                    }
+                    try
+                    {
+                        sched.wait();
+                    }
+                    catch (InterruptedException ignored)
+                    {}
+                }
+            }
 
             try
             {
