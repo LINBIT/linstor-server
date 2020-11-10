@@ -93,19 +93,19 @@ endif
 
 .PHONY: getprotc
 getprotc:
-	@gradle getprotoc
+	@./gradlew getprotoc
 
 .PHONY: gen-java
 gen-java: getprotc
-	@gradle generateJava
+	@./gradlew generateJava
 	@echo "generated java sources"
 
 .PHONY: copytolibs
 copytolibs:
-	gradle --console plain copytolibs
+	./gradlew --console plain copytolibs
 
 server/jar.deps: build.gradle
-	gradle -q showServerRuntimeLibs > $@
+	./gradlew -q showServerRuntimeLibs > $@
 ifneq ("$(wildcard libs/server-st.jar)","")
 	echo "/usr/share/linstor-server/lib/server-st.jar" >> $@
 endif
