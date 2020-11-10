@@ -11,6 +11,8 @@ public class NumericOrSymbolProperty implements Property
     private final Pattern regex;
     private final boolean internal;
     private final String info;
+    private String unit;
+    private String dflt;
 
     public NumericOrSymbolProperty(
         String nameRef,
@@ -19,7 +21,9 @@ public class NumericOrSymbolProperty implements Property
         long maxRef,
         String buildValuesEnumRegexRef,
         boolean internalRef,
-        String infoRef
+        String infoRef,
+        String unitRef,
+        String dfltRef
     )
     {
         name = nameRef;
@@ -29,6 +33,8 @@ public class NumericOrSymbolProperty implements Property
         regex = Pattern.compile(buildValuesEnumRegexRef);
         internal = internalRef;
         info = infoRef;
+        unit = unitRef;
+        dflt = dfltRef;
     }
 
     @Override
@@ -75,6 +81,18 @@ public class NumericOrSymbolProperty implements Property
             valid = regex.matcher(value).matches();
         }
         return valid;
+    }
+
+    @Override
+    public String getUnit()
+    {
+        return unit;
+    }
+
+    @Override
+    public String getDflt()
+    {
+        return dflt;
     }
 
 }

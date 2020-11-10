@@ -6,13 +6,24 @@ public class StringProperty implements Property
     private String key;
     private boolean internal;
     private String info;
+    private String unit;
+    private String dflt;
 
-    public StringProperty(String nameRef, String keyRef, boolean internalRef, String infoRef)
+    public StringProperty(
+        String nameRef,
+        String keyRef,
+        boolean internalRef,
+        String infoRef,
+        String unitRef,
+        String dfltRef
+    )
     {
         name = nameRef;
         key = keyRef;
         internal = internalRef;
         info = infoRef;
+        unit = unitRef;
+        dflt = dfltRef;
     }
 
     @Override
@@ -49,6 +60,18 @@ public class StringProperty implements Property
     public boolean isValid(String value)
     {
         return true;
+    }
+
+    @Override
+    public String getUnit()
+    {
+        return unit;
+    }
+
+    @Override
+    public String getDflt()
+    {
+        return dflt;
     }
 
 }

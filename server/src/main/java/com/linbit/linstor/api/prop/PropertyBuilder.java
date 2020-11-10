@@ -22,6 +22,8 @@ public class PropertyBuilder
     private String[] values;
     private long max;
     private long min;
+    private String dflt;
+    private String unit;
 
     public PropertyBuilder()
     {
@@ -34,28 +36,28 @@ public class PropertyBuilder
         switch (type)
         {
             case REGEX:
-                prop = new RegexProperty(name, key, value, internal, info);
+                prop = new RegexProperty(name, key, value, internal, info, unit, dflt);
                 break;
             case SYMBOL:
-                prop = new RegexProperty(name, key, buildValuesEnumRegex(), internal, info);
+                prop = new RegexProperty(name, key, buildValuesEnumRegex(), internal, info, unit, dflt);
                 break;
             case BOOLEAN:
-                prop = new BooleanProperty(name, key, internal, info);
+                prop = new BooleanProperty(name, key, internal, info, unit, dflt);
                 break;
             case BOOLEAN_TRUE_FALSE:
-                prop = new BooleanTrueFalseProperty(name, key, internal, info);
+                prop = new BooleanTrueFalseProperty(name, key, internal, info, unit, dflt);
                 break;
             case RANGE:
-                prop = new RangeProperty(name, key, min, max, internal, info);
+                prop = new RangeProperty(name, key, min, max, internal, info, unit, dflt);
                 break;
             case STRING:
-                prop = new StringProperty(name, key, internal, info);
+                prop = new StringProperty(name, key, internal, info, unit, dflt);
                 break;
             case NUMERIC_OR_SYMBOL:
-                prop = new NumericOrSymbolProperty(name, key, min, max, buildValuesEnumRegex(), internal, info);
+                prop = new NumericOrSymbolProperty(name, key, min, max, buildValuesEnumRegex(), internal, info, unit, dflt);
                 break;
             case LONG:
-                prop = new RangeProperty(name, key, Long.MIN_VALUE, Long.MAX_VALUE, internal, info);
+                prop = new RangeProperty(name, key, Long.MIN_VALUE, Long.MAX_VALUE, internal, info, unit, dflt);
                 break;
             default:
                 throw new ImplementationError("Unknown property type: " + type, null);
@@ -157,6 +159,18 @@ public class PropertyBuilder
     public PropertyBuilder min(String minStr)
     {
         min = Long.parseLong(minStr);
+        return this;
+    }
+
+    public PropertyBuilder dflt(String dfltStr)
+    {
+        dflt = dfltStr;
+        return this;
+    }
+
+    public PropertyBuilder unit(String unitRef)
+    {
+        unit = unitRef;
         return this;
     }
 }

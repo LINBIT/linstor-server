@@ -8,6 +8,8 @@ public class RangeProperty implements Property
     private long max;
     private boolean internal;
     private String info;
+    private String unit;
+    private String dflt;
 
     public RangeProperty(
         String nameRef,
@@ -15,7 +17,9 @@ public class RangeProperty implements Property
         long minRef,
         long maxRef,
         boolean internalRef,
-        String infoRef
+        String infoRef,
+        String unitRef,
+        String dfltRef
     )
     {
         name = nameRef;
@@ -24,6 +28,8 @@ public class RangeProperty implements Property
         max = maxRef;
         internal = internalRef;
         info = infoRef;
+        unit = unitRef;
+        dflt = dfltRef;
     }
 
     @Override
@@ -69,6 +75,18 @@ public class RangeProperty implements Property
         {
         }
         return valid;
+    }
+
+    @Override
+    public String getUnit()
+    {
+        return unit;
+    }
+
+    @Override
+    public String getDflt()
+    {
+        return dflt;
     }
 
 }

@@ -82,6 +82,16 @@ public interface Property
     boolean isValid(String value);
 
     /**
+     * Describes the unit used by the property
+     */
+    String getUnit();
+
+    /**
+     * Returns information about the default value of the property
+     */
+    String getDflt();
+
+    /**
      * Converts the value to its canonical form
      */
     default String normalize(String value)

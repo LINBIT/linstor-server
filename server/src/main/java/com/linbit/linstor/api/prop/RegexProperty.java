@@ -9,13 +9,17 @@ public class RegexProperty implements Property
     private final Pattern pattern;
     private boolean internal;
     private String info;
+    private String unit;
+    private String dflt;
 
     public RegexProperty(
         String nameRef,
         String keyRef,
         String value,
         boolean internalRef,
-        String infoRef
+        String infoRef,
+        String unitRef,
+        String dfltRef
     )
     {
         name = nameRef;
@@ -23,6 +27,8 @@ public class RegexProperty implements Property
         info = infoRef;
         pattern = Pattern.compile(value);
         internal = internalRef;
+        unit = unitRef;
+        dflt = dfltRef;
     }
 
     @Override
@@ -59,5 +65,17 @@ public class RegexProperty implements Property
     public String getInfo()
     {
         return info;
+    }
+
+    @Override
+    public String getUnit()
+    {
+        return unit;
+    }
+
+    @Override
+    public String getDflt()
+    {
+        return dflt;
     }
 }

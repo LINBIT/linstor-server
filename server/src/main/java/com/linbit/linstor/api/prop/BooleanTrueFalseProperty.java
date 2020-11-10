@@ -10,18 +10,24 @@ public class BooleanTrueFalseProperty implements Property
     private final String key;
     private boolean internal;
     private String info;
+    private String unit;
+    private String dflt;
 
     public BooleanTrueFalseProperty(
         String nameRef,
         String keyRef,
         boolean internalRef,
-        String infoRef
+        String infoRef,
+        String unitRef,
+        String dfltRef
     )
     {
         name = nameRef;
         key = keyRef;
         info = infoRef;
         internal = internalRef;
+        unit = unitRef;
+        dflt = dfltRef;
     }
 
     @Override
@@ -67,5 +73,17 @@ public class BooleanTrueFalseProperty implements Property
     public String getInfo()
     {
         return info;
+    }
+
+    @Override
+    public String getUnit()
+    {
+        return unit;
+    }
+
+    @Override
+    public String getDflt()
+    {
+        return dflt;
     }
 }
