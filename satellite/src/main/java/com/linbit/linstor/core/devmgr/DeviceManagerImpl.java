@@ -1011,16 +1011,20 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 reconfWrLock.unlock();
 
                 Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-                ctrlPeer.sendMessage(
-                    interComSerializer
-                        .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
-                        .build()
-                );
+                synchronized (sched)
+                {
+                    ctrlPeer.sendMessage(
+                        interComSerializer
+                            .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
+                            .build()
+                    );
 
-                // ctrlPeer.sendMessage might return false if controller is offline - bad luck, but still just give up
-                // our local locks
-                grantedLocks = null; // notifying ctrl about devMgrRunCompleted also releases our share-SP-locks
-                requiredLocks = null;
+                    // ctrlPeer.sendMessage might return false if controller is offline - bad luck, but still just
+                    // give
+                    // up our local locks
+                    grantedLocks = null; // notifying ctrl about devMgrRunCompleted also releases our share-SP-locks
+                    requiredLocks = null;
+                }
             }
         }
     }
@@ -1035,6 +1039,11 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
         try
         {
+            errLog.logTrace(
+                "Checking shared locks required for resources: %s, snapshots: %s",
+                resourcesToDispatchRef,
+                snapshotsToDispatchRef
+            );
             Set<StorPool> allStorPools = new TreeSet<>();
             for (Resource rsc : resourcesToDispatchRef)
             {
@@ -1060,16 +1069,16 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             }
             else
             {
-                if (grantedLocks != null)
-                {
-                    throw new ImplementationError(
-                        "Locks " + grantedLocks + " already granted. Cannot send another request of " +
-                            requestingLocks
-                    );
-                }
 
                 synchronized (sched)
                 {
+                    if (grantedLocks != null)
+                    {
+                        throw new ImplementationError(
+                            "Locks " + grantedLocks + " already granted. Cannot send another request of " +
+                                requestingLocks
+                        );
+                    }
                     errLog.logTrace("Requesting shared locks: " + requestingLocks);
                     requiredLocks = new TreeSet<>(requestingLocks);
                     stltUpdateRequester.requestSharedLocks(requestingLocks);
@@ -1101,9 +1110,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         "Requested locks: " + requestingLocks + " but got granted: " + grantedLocks
                     );
                 }
+                errLog.logTrace("Requested shared locks granted: " + grantedLocks);
             }
-
-            errLog.logTrace("Requested shared locks granted");
         }
         catch (AccessDeniedException exc)
         {
@@ -1130,7 +1138,15 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             }
             synchronized (sched)
             {
-                grantedLocks = grantedLocksByCtrl;
+                /*
+                 * We might have sent the request for shared locks, but immediately threw an exception.
+                 * The controller still grants us the shared locks, which we must give up immediately.
+                 */
+                if (requiredLocks != null)
+                {
+                    errLog.logTrace("Shared locks granted: %s", grantedLocksByCtrl);
+                    grantedLocks = grantedLocksByCtrl;
+                }
                 sched.notifyAll();
             }
         }
