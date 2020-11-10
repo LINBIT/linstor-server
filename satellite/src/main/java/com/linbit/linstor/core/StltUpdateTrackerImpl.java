@@ -124,7 +124,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
         synchronized (sched)
         {
             // If no updates are queued, wait for updates
-            while (cachedUpdates.isEmpty() && !condFlag.get() && !forceWake.get() && block)
+            while (cachedUpdates.isEmpty() && condFlag.get() && !forceWake.get() && block)
             {
                 try
                 {

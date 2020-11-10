@@ -323,7 +323,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             // abort early and stop the service as soon as possible
             abortDevHndFlag = true;
             shutdownFlag.set(true);
-            svcCondFlag.set(true);
+            svcCondFlag.set(false);
             sched.notify();
         }
     }
@@ -744,7 +744,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     collectUpdateNofiticationForceWakeFlag,
                     waitUpdFlag.get() && pendingDispatchRscs.isEmpty() && pendingDispatchNodes.isEmpty()
                 );
-                if (svcCondFlag.get())
+                if (!svcCondFlag.get())
                 {
                     throw new SvcCondException();
                 }
@@ -784,7 +784,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         synchronized (sched)
         {
             // Wait until all requested updates are applied
-            while (!svcCondFlag.get() && !rcvPendingBundle.isEmpty())
+            while (svcCondFlag.get() && !rcvPendingBundle.isEmpty())
             {
                 if (waitMsg)
                 {
@@ -799,7 +799,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 {
                 }
             }
-            if (svcCondFlag.get())
+            if (!svcCondFlag.get())
             {
                 throw new SvcCondException();
             }
@@ -1057,7 +1057,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     stltUpdateRequester.requestSharedLocks(requestingLocks);
 
                     // Wait until all requested updates are applied
-                    while (!svcCondFlag.get() && grantedLocks == null)
+                    while (svcCondFlag.get() && grantedLocks == null)
                     {
                         if (waitMsg)
                         {
@@ -1071,7 +1071,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         catch (InterruptedException ignored)
                         {}
                     }
-                    if (svcCondFlag.get())
+                    if (!svcCondFlag.get())
                     {
                         throw new SvcCondException();
                     }
