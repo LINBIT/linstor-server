@@ -3,8 +3,6 @@ FROM centos:centos7 as builder
 ENV LINSTOR_VERSION 1.10.0
 ARG ARCH=amd64
 
-ENV GRADLE_VERSION 4.4.1
-
 ENV LINSTOR_TGZNAME linstor-server
 ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
 
@@ -24,7 +22,6 @@ RUN usermod -a -G wheel makepkg # !lbbuild
 
 RUN yum install -y rpm-build wget unzip which make git java-1.8.0-openjdk-devel && yum clean all -y # !lbbuild
 RUN rpm -e --nodeps fakesystemd && yum install -y systemd && yum clean all -y || true # !lbbuild
-RUN wget --quiet https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-all.zip -O /tmp/gradle.zip && mkdir /opt/gradle && unzip -d /opt/gradle /tmp/gradle.zip && rm -f /tmp/gradle.zip # !lbbuild
 
 RUN mkdir -p /tmp/linstor-$LINSTOR_VERSION
 # one can not comment COPY
@@ -33,6 +30,9 @@ RUN cd /tmp && wget https://www.linbit.com/downloads/linstor/$LINSTOR_TGZ # !lbb
 
 # =lbbuild COPY /pkgcache/* /tmp/pkgcache/
 
+# link gradle to gradle-wrapper
+RUN ln -s /home/makepkg/${LINSTOR_TGZNAME}-${LINSTOR_VERSION}/gradlew /usr/local/bin/gradle # !lbbuild
+
 USER makepkg
 
 RUN cd ${HOME} && \
@@ -40,11 +40,14 @@ RUN cd ${HOME} && \
   mkdir -p ${HOME}/rpmbuild/SOURCES && \
   mkdir -p ${HOME}/rpmbuild/RPMS/noarch && \
   cp /tmp/${LINSTOR_TGZ} ${HOME}/rpmbuild/SOURCES && \
-  tar xvf ${LINSTOR_TGZ} && \
-  cd ${LINSTOR_TGZNAME}-${LINSTOR_VERSION} && \
+  tar xvf ${LINSTOR_TGZ}
+
+RUN cd ${HOME}/${LINSTOR_TGZNAME}-${LINSTOR_VERSION} && ./gradlew wrapper -PversionOverride= # !lbbuild
+
+RUN cd ${HOME}/${LINSTOR_TGZNAME}-${LINSTOR_VERSION} && \
   ( cp /tmp/pkgcache/linstor-common*.rpm    ${HOME}/rpmbuild/RPMS/noarch/ && \
     cp /tmp/pkgcache/linstor-satellite*.rpm ${HOME}/rpmbuild/RPMS/noarch/    \
-  ) || PATH=/opt/gradle/gradle-$GRADLE_VERSION/bin:$PATH rpmbuild -bb --define "debug_package %{nil}"  linstor.spec
+  ) || rpmbuild -bb --define "debug_package %{nil}"  linstor.spec
 
 
 FROM quay.io/linbit/drbd-utils
