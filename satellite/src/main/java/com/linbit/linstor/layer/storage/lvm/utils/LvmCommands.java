@@ -67,7 +67,7 @@ public class LvmCommands
     public static OutputData lvs(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig) throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(true),
             buildCmd(
                 "lvs",
                 lvmConfig,
@@ -88,7 +88,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(true),
             buildCmd(
                 "vgs",
                 lvmConfig,
@@ -116,7 +116,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvcreate",
                 lvmConfig,
@@ -142,7 +142,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvcreate",
                 lvmConfig,
@@ -169,7 +169,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvcreate",
                 lvmConfig,
@@ -189,7 +189,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvremove",
                 lvmConfig,
@@ -207,7 +207,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvresize",
                 lvmConfig,
@@ -231,7 +231,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvrename",
                 lvmConfig,
@@ -280,7 +280,7 @@ public class LvmCommands
         String failMsg = "Failed to create snapshot " + snapshotIdentifier + " from " + identifier +
             " within thin volume group " + volumeGroup + File.separator + thinPool;
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvcreate",
                 lvmConfig,
@@ -309,7 +309,7 @@ public class LvmCommands
         String failMsg = "Failed to restore snapshot " + sourceLvIdWithSnapName +
             " into new volume " + volumeGroup + File.separator + targetId;
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvcreate",
                 lvmConfig,
@@ -332,7 +332,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvconvert",
                 lvmConfig,
@@ -349,7 +349,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(true),
             buildCmd(
                 "vgs",
                 lvmConfig,
@@ -370,7 +370,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(true),
             buildCmd(
                 "vgs",
                 lvmConfig,
@@ -391,7 +391,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(true),
             buildCmd(
                 "lvs",
                 lvmConfig,
@@ -412,7 +412,7 @@ public class LvmCommands
         throws StorageException
     {
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(true),
             buildCmd(
                 "vgs",
                 lvmConfig,
@@ -434,7 +434,7 @@ public class LvmCommands
     {
         String failMsg = "Failed to activate volume " + volumeGroup + File.separator + targetId;
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvchange",
                 lvmConfig,
@@ -454,7 +454,7 @@ public class LvmCommands
     {
         String failMsg = "Failed to deactivate volume " + volumeGroup + File.separator + targetId;
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "lvchange",
                 lvmConfig,
@@ -471,7 +471,7 @@ public class LvmCommands
     {
         String failMsg = "Failed to query list of volume groups";
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(true),
             buildCmd(
                 "vgs",
                 lvmConfig,
@@ -488,7 +488,7 @@ public class LvmCommands
     {
         final String failMsg = "Failed to pvcreate on device: " + devicePath;
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "pvcreate",
                 lvmConfig,
@@ -506,7 +506,7 @@ public class LvmCommands
         // no lvm config for pvremove!
         final String failMsg = "Failed to pvremove on device(s): " + String.join(", ", devicePaths);
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "pvremove",
                 lvmConfig,
@@ -529,7 +529,7 @@ public class LvmCommands
         // no lvm config for vgcreate!
         final String failMsg = "Failed to vgcreate on device(s): " + String.join(" ", devicePaths);
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "vgcreate",
                 lvmConfig,
@@ -546,7 +546,7 @@ public class LvmCommands
     {
         final String failMsg = "Failed to get physical devices for volume group: " + volumeGroupRef;
         return genericExecutor(
-            extCmdRef,
+            extCmdRef.setSaveWithoutSharedLocks(true),
             buildCmd(
                 "pvdisplay",
                 null,
@@ -573,7 +573,7 @@ public class LvmCommands
         // no lvm config for vgremove!
         final String failMsg = "Failed to vgremove on volume group: " + vgName;
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(false),
             buildCmd(
                 "vgremove",
                 lvmConfig,
@@ -601,7 +601,7 @@ public class LvmCommands
         }
 
         return genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(true),
             cmd,
             "'vgscan' failed",
             "'vgscan' failed"

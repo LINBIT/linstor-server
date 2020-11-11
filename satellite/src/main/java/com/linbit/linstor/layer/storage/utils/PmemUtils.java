@@ -35,7 +35,7 @@ public class PmemUtils
         try
         {
             OutputData outputData = Commands.genericExecutor(
-                extCmd,
+                extCmd.setSaveWithoutSharedLocks(true),
                 new String[]
                 {
                     "ndctl", "list"

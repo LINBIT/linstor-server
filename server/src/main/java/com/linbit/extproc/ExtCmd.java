@@ -38,7 +38,7 @@ public class ExtCmd extends ChildProcessHandler
     private String execCommandStr;
 
     private boolean logExecution = true;
-
+    private boolean saveWithoutSharedLocks = false;
 
     public ExtCmd(Timer<String, Action<String>> timer, ErrorReporter errLogRef)
     {
@@ -48,6 +48,17 @@ public class ExtCmd extends ChildProcessHandler
         errReceiver = null;
         errLog = errLogRef;
         extCmdEndedListenerSet = new HashSet<>();
+    }
+
+    public ExtCmd setSaveWithoutSharedLocks(boolean saveWithoutSharedLocksRef)
+    {
+        saveWithoutSharedLocks = saveWithoutSharedLocksRef;
+        return this;
+    }
+
+    public boolean isSaveWithoutSharedLocks()
+    {
+        return saveWithoutSharedLocks;
     }
 
     public void addCondition(ExtCmdCondition condition, String description)
@@ -130,9 +141,9 @@ public class ExtCmd extends ChildProcessHandler
     {
         for (Entry<ExtCmdCondition, String> entry : conditionsWithDescriptions.entrySet())
         {
-            if (!entry.getKey().isMet())
+            if (!entry.getKey().isMet(this))
             {
-                throw new ExtCmdConditionNotFullfilledException(entry.getValue());
+                throw new ExtCmdConditionNotFullfilledException(entry.getValue() + ", command: " + this.execCommandStr);
             }
         }
     }
@@ -181,7 +192,7 @@ public class ExtCmd extends ChildProcessHandler
     {
         synchronized (conditionsWithDescriptions)
         {
-            conditionsWithDescriptions.put(() -> false, "Process killed");
+            conditionsWithDescriptions.put(ignored -> false, "Process killed");
             try
             {
                 waitForDestroy();
@@ -232,7 +243,7 @@ public class ExtCmd extends ChildProcessHandler
 
     public interface ExtCmdCondition
     {
-        boolean isMet();
+        boolean isMet(ExtCmd extCmd);
     }
 
     public static class ExtCmdConditionNotFullfilledException extends LinStorRuntimeException

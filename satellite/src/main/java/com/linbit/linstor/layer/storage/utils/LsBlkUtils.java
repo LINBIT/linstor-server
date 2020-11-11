@@ -76,7 +76,7 @@ public class LsBlkUtils
         throws StorageException
     {
         ExtCmd.OutputData outputData = Commands.genericExecutor(
-            extCmd,
+            extCmd.setSaveWithoutSharedLocks(true),
             new String[]{
                 "lsblk",
                 "-P",

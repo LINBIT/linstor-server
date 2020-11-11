@@ -32,7 +32,7 @@ public class ExtCmdFactoryStlt extends ExtCmdFactory
 
         extCmdWithSharedLocksSet = new HashSet<>();
         extCmdEndedListener = new ExtCmdEndedListener();
-        condition = () -> true;
+        condition = ignored -> true;
     }
 
     public void setUsedWithSharedLock()
@@ -40,16 +40,15 @@ public class ExtCmdFactoryStlt extends ExtCmdFactory
         sharedLocks = true;
         DeviceManager devMgr = devMgrProvider.get();
         devMgr.registerSharedExtCmdFactory(this);
-        condition = devMgr::hasAllSharedLocksGranted;
+        condition = extCmd -> extCmd.isSaveWithoutSharedLocks() || devMgr.hasAllSharedLocksGranted();
     }
 
     @Override
     public ExtCmd create()
     {
-        ExtCmd extCmd;
+        ExtCmd extCmd = new ExtCmd(timer, errlog);
         if (sharedLocks)
         {
-            extCmd = new ExtCmd(timer, errlog);
             extCmd.addCondition(
                 condition,
                 "Required shared locks are not granted"
@@ -58,7 +57,7 @@ public class ExtCmdFactoryStlt extends ExtCmdFactory
         }
         else
         {
-            extCmd = super.create();
+            extCmd.setSaveWithoutSharedLocks(true);
         }
         return extCmd;
     }

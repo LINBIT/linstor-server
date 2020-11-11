@@ -659,6 +659,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     phaseCollectUpdateData();
                 }
 
+                // in both cases, fullsync or not:
+                phaseRequestSharedLock();
+
                 // Cancel nonblocking collection of update notifications
                 waitUpdFlag.set(true);
 
@@ -966,7 +969,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     }
                 }
 
-                phaseRequestSharedLock(resourcesToDispatch, snapshotsToDispatch);
+                checkIfAllRequestSharedLocksAquired(resourcesToDispatch, snapshotsToDispatch);
 
                 dispatchResources(resourcesToDispatch, snapshotsToDispatch, phaseLock);
 
@@ -1029,6 +1032,205 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
+    private void checkIfAllRequestSharedLocksAquired(
+        Set<Resource> resourcesToDispatchRef,
+        Set<Snapshot> snapshotsToDispatchRef
+    )
+    {
+        try
+        {
+            errLog.logTrace(
+                "Checking shared locks required for resources: %s, snapshots: %s",
+                resourcesToDispatchRef,
+                snapshotsToDispatchRef
+            );
+            Set<StorPool> allStorPools = new TreeSet<>();
+            for (Resource rsc : resourcesToDispatchRef)
+            {
+                allStorPools.addAll(LayerVlmUtils.getStorPools(rsc, wrkCtx, true));
+            }
+            for (Snapshot snap : snapshotsToDispatchRef)
+            {
+                allStorPools.addAll(LayerVlmUtils.getStorPools(snap, wrkCtx, true));
+            }
+
+            TreeSet<SharedStorPoolName> requiredLocks = new TreeSet<>();
+            for (StorPool sp : allStorPools)
+            {
+                if (sp.isShared())
+                {
+                    requiredLocks.add(sp.getSharedStorPoolName());
+                }
+            }
+            if (
+                !requiredLocks.isEmpty() &&
+                    (!requiredLocks.equals(grantedLocks) || !requiredLocks.equals(this.requiredLocks))
+            )
+            {
+                throw new ImplementationError(
+                    "Required locks: " + requiredLocks + ", requested locks: " + requiredLocks + ", granted locks: " +
+                        grantedLocks
+                );
+            }
+            // errLog.logTrace("Requested shared locks granted: " + grantedLocks);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private <RSC extends AbsResource<RSC>> void phaseRequestSharedLock()
+        throws SvcCondException
+    {
+        Set<NodeName> dispatchNodesNames;
+        Set<ResourceName> dispatchRscNames;
+        synchronized (sched)
+        {
+            // Add any dispatch requests that were received
+            // into the dispatch set and clear the dispatch requests
+            dispatchNodesNames = new TreeSet<>(pendingDispatchNodes.keySet());
+            dispatchRscNames = new TreeSet<>(pendingDispatchRscs.keySet());
+        }
+        if (!dispatchNodesNames.isEmpty() || !dispatchRscNames.isEmpty())
+        {
+            Lock reconfWrLock = reconfigurationLock.writeLock();
+            Lock nodesWrLock = nodesMapLock.writeLock();
+            Lock rscDfnWrLock = rscDfnMapLock.writeLock();
+            Lock storPoolWrLock = storPoolDfnMapLock.writeLock();
+            reconfWrLock.lock();
+            nodesWrLock.lock();
+            rscDfnWrLock.lock();
+            storPoolWrLock.lock();
+
+            Node localNode = controllerPeerConnector.getLocalNode();
+            Set<SharedStorPoolName> requiredSharedLocks = new TreeSet<>();
+
+            try
+            {
+                for (NodeName nodeName : dispatchNodesNames)
+                {
+                    Node node = nodesMap.get(nodeName);
+                    if (node != null)
+                    {
+                        Iterator<Resource> rscIt = node.iterateResources(wrkCtx);
+                        while (rscIt.hasNext())
+                        {
+                            Resource rsc = rscIt.next();
+                            dispatchRscNames.add(rsc.getResourceDefinition().getName());
+                        }
+                    }
+                }
+
+                for (ResourceName rscName : dispatchRscNames)
+                {
+                    // Dispatch resources that were affected by changes to worker threads
+                    // and to the resource's respective handler
+                    ResourceDefinition rscDfn = rscDfnMap.get(rscName);
+                    if (rscDfn != null)
+                    {
+                        Resource rsc = rscDfn.getResource(wrkCtx, localNode.getName());
+                        /*
+                         * rsc might be null if we have to process a snapshot where the resource was already deleted
+                         */
+                        if (rsc != null)
+                        {
+                            for (StorPool sp : LayerVlmUtils.getStorPools(rsc, wrkCtx, true))
+                            {
+                                SharedStorPoolName sharedName = sp.getSharedStorPoolName();
+                                if (sp.isShared())
+                                {
+                                    requiredSharedLocks.add(sharedName);
+                                }
+                            }
+                        }
+                        for (SnapshotDefinition snapshotDfn : rscDfn.getSnapshotDfns(wrkCtx))
+                        {
+                            Snapshot snapshot = snapshotDfn.getSnapshot(wrkCtx, localNode.getName());
+                            if (snapshot != null)
+                            {
+                                for (StorPool sp : LayerVlmUtils.getStorPools(snapshot, wrkCtx, true))
+                                {
+                                    SharedStorPoolName sharedName = sp.getSharedStorPoolName();
+                                    if (sp.isShared())
+                                    {
+                                        requiredSharedLocks.add(sharedName);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            finally
+            {
+                storPoolWrLock.unlock();
+                rscDfnWrLock.unlock();
+                nodesWrLock.unlock();
+                reconfWrLock.unlock();
+            }
+            // we have to wait for the sharedLocks WITHOUT holding reconf, node, ... writelocks
+            phaseRequestSharedLock(requiredSharedLocks);
+        }
+    }
+
+    private void phaseRequestSharedLock(Set<SharedStorPoolName> requestingLocks) throws SvcCondException
+    {
+        if (requestingLocks.isEmpty())
+        {
+            errLog.logTrace("No shared locks required. Continuing");
+        }
+        else
+        {
+            synchronized (sched)
+            {
+                if (grantedLocks != null)
+                {
+                    throw new ImplementationError(
+                        "Locks " + grantedLocks + " already granted. Cannot send another request of " +
+                            requestingLocks
+                    );
+                }
+                errLog.logTrace("Requesting shared locks: " + requestingLocks);
+                requiredLocks = new TreeSet<>(requestingLocks);
+                stltUpdateRequester.requestSharedLocks(requestingLocks);
+
+                boolean waitMsg = true;
+                // Wait until all requested updates are applied
+                while (svcCondFlag.get() && grantedLocks == null && requiredLocks != null)
+                {
+                    if (waitMsg)
+                    {
+                        errLog.logTrace("Waiting for shared stor pool locks to be granted");
+                        waitMsg = false;
+                    }
+                    try
+                    {
+                        sched.wait();
+                    }
+                    catch (InterruptedException ignored)
+                    {}
+                }
+                if (!svcCondFlag.get())
+                {
+                    throw new SvcCondException();
+                }
+            }
+
+            if (grantedLocks == null || !grantedLocks.equals(requestingLocks))
+            {
+                throw new ImplementationError(
+                    "Requested locks: " + requestingLocks + " but got granted: " + grantedLocks
+                );
+            }
+            errLog.logTrace("Requested shared locks granted: " + grantedLocks);
+        }
+    }
+
     private <RSC extends AbsResource<RSC>> void phaseRequestSharedLock(
         Set<Resource> resourcesToDispatchRef,
         Set<Snapshot> snapshotsToDispatchRef
@@ -1063,55 +1265,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 }
             }
 
-            if (requestingLocks.isEmpty())
-            {
-                errLog.logTrace("No shared locks required. Continuing");
-            }
-            else
-            {
-
-                synchronized (sched)
-                {
-                    if (grantedLocks != null)
-                    {
-                        throw new ImplementationError(
-                            "Locks " + grantedLocks + " already granted. Cannot send another request of " +
-                                requestingLocks
-                        );
-                    }
-                    errLog.logTrace("Requesting shared locks: " + requestingLocks);
-                    requiredLocks = new TreeSet<>(requestingLocks);
-                    stltUpdateRequester.requestSharedLocks(requestingLocks);
-
-                    // Wait until all requested updates are applied
-                    while (svcCondFlag.get() && grantedLocks == null)
-                    {
-                        if (waitMsg)
-                        {
-                            errLog.logTrace("Waiting for shared stor pool locks to be granted");
-                            waitMsg = false;
-                        }
-                        try
-                        {
-                            sched.wait();
-                        }
-                        catch (InterruptedException ignored)
-                        {}
-                    }
-                    if (!svcCondFlag.get())
-                    {
-                        throw new SvcCondException();
-                    }
-                }
-
-                if (grantedLocks == null || !grantedLocks.equals(requestingLocks))
-                {
-                    throw new ImplementationError(
-                        "Requested locks: " + requestingLocks + " but got granted: " + grantedLocks
-                    );
-                }
-                errLog.logTrace("Requested shared locks granted: " + grantedLocks);
-            }
+            phaseRequestSharedLock(requestingLocks);
         }
         catch (AccessDeniedException exc)
         {
@@ -1166,6 +1320,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             {
                 extCmdFactoryStlt.killAllExtCmds();
             }
+            svcCondFlag.set(false);
+            sched.notify();
         }
     }
 
