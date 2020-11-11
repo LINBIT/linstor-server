@@ -140,6 +140,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
     }
 
+    @Override
     public void initialize()
     {
         if (kind.isSharedVolumeSupported())
@@ -1132,7 +1133,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         throws AccessDeniedException, DatabaseException, StorageException
     {
         LAYER_DATA vlmData = (LAYER_DATA) vlmDataRef;
-        setAllocatedSize(vlmData, getAllocatedSize(vlmData));
+        boolean isVlmActive = !vlmData.getVolume().getAbsResource().getStateFlags()
+            .isSet(storDriverAccCtx, Resource.Flags.INACTIVE);
+        // if a volume is not active, there is no devicePath we can run a 'blockdev --getsize64' on...
+        if (isVlmActive)
+        {
+            setAllocatedSize(vlmData, getAllocatedSize(vlmData));
+        }
     }
 
     @Override
