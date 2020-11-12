@@ -43,7 +43,7 @@ public enum DeviceProviderKind
         true,
         true,
         true,
-        true,
+        false,
         new LvmThinDriverKind(),
         ExtTools.LVM_THIN
     ),
