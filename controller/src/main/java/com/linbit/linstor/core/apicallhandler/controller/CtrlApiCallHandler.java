@@ -1,12 +1,9 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
-import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
-import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ControllerConfigApi;
 import com.linbit.linstor.core.apis.KvsApi;
 import com.linbit.linstor.core.apis.NodeApi;
@@ -18,11 +15,8 @@ import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
-import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
@@ -38,7 +32,6 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
@@ -74,11 +67,6 @@ public class CtrlApiCallHandler
     private final CtrlKvsApiCallHandler kvsApiCallHandler;
     private final CtrlRscGrpApiCallHandler rscGrpApiCallHandler;
     private final CtrlVlmGrpApiCallHandler vlmGrpApiCallHandler;
-    private final CtrlConfig ctrlCfg;
-    private final ErrorReporter errorReporter;
-    private final Provider<AccessContext> peerAccCtx;
-    private final ScopeRunner scopeRunner;
-    private final ResponseConverter responseConverter;
 
     private final LockGuardFactory lockGuardFactory;
 
@@ -104,13 +92,7 @@ public class CtrlApiCallHandler
         CtrlKvsApiCallHandler kvsApiCallHandlerRef,
         CtrlRscGrpApiCallHandler rscGrpApiCallHandlerRef,
         CtrlVlmGrpApiCallHandler vlmGrpApiCallHandlerRef,
-        LockGuardFactory lockGuardFactoryRef,
-        CtrlConfig ctrlCfgRef,
-        @PeerContext
-        Provider<AccessContext> peerAccCtxRef,
-        ErrorReporter errorReporterRef,
-        ScopeRunner scopeRunnerRef,
-        ResponseConverter responseConverterRef
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
@@ -134,11 +116,6 @@ public class CtrlApiCallHandler
         rscGrpApiCallHandler = rscGrpApiCallHandlerRef;
         vlmGrpApiCallHandler = vlmGrpApiCallHandlerRef;
         lockGuardFactory = lockGuardFactoryRef;
-        ctrlCfg = ctrlCfgRef;
-        peerAccCtx = peerAccCtxRef;
-        errorReporter = errorReporterRef;
-        scopeRunner = scopeRunnerRef;
-        responseConverter = responseConverterRef;
     }
 
     /**
