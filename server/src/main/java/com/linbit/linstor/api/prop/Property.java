@@ -92,6 +92,11 @@ public interface Property
     String getDflt();
 
     /**
+     * Returns the type of the property
+     */
+    PropertyType getType();
+
+    /**
      * Converts the value to its canonical form
      */
     default String normalize(String value)

@@ -4,10 +4,12 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apis.ControllerConfigApi;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -45,19 +47,22 @@ public class Controller
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlConfig ctrlCfg;
+    private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
     @Inject
     public Controller(
         ErrorReporter errorReporterRef,
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
-        CtrlConfig ctrlCfgRef
+        CtrlConfig ctrlCfgRef,
+        CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
         errorReporter = errorReporterRef;
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlCfg = ctrlCfgRef;
+        ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
     }
@@ -135,6 +140,39 @@ public class Controller
 
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
+    }
+
+    @GET
+    @Path("properties/info")
+    public Response listCtrlPropsInfo(
+        @Context Request request
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_PROPS_INFO, request,
+            () -> Response.status(Response.Status.OK)
+                .entity(
+                    objectMapper
+                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.CONTROLLER))
+                )
+                .build(),
+            false
+        );
+    }
+
+    @GET
+    @Path("properties/info/all")
+    public Response listFullPropsInfo(
+        @Context Request request
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_CTRL_PROPS, request,
+            () -> Response.status(Response.Status.OK)
+                .entity(objectMapper.writeValueAsString(ctrlPropsInfoApiCallHandler.listAllProps()))
+                .build(),
+            false
+        );
     }
 
     @GET

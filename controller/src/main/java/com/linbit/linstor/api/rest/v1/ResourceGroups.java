@@ -7,12 +7,14 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceGroup;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
@@ -56,17 +58,20 @@ public class ResourceGroups
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlRscGrpApiCallHandler ctrlRscGrpApiCallHandler;
     private final ObjectMapper objectMapper;
+    private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
     @Inject
     public ResourceGroups(
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
-        CtrlRscGrpApiCallHandler ctrlRscGrpApiCallHandlerRef
+        CtrlRscGrpApiCallHandler ctrlRscGrpApiCallHandlerRef,
+        CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlRscGrpApiCallHandler = ctrlRscGrpApiCallHandlerRef;
+        ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -320,6 +325,26 @@ public class ResourceGroups
             }).next();
 
         requestHelper.doFlux(asyncResponse, flux);
+    }
+
+    @GET
+    @Path("properties/info")
+    public Response listCtrlPropsInfo(
+        @Context Request request
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_PROPS_INFO, request,
+            () -> Response.status(Response.Status.OK)
+                .entity(
+                    objectMapper
+                        .writeValueAsString(
+                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.RESOURCE_DEFINITION)
+                        )
+                )
+                .build(),
+            false
+        );
     }
 
 }

@@ -2,13 +2,16 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyDisableApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyEnableApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlDrbdProxyModifyApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 
 import javax.inject.Inject;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -19,7 +22,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
@@ -33,19 +38,22 @@ public class DrbdProxy
     private final CtrlDrbdProxyEnableApiCallHandler ctrlDrbdProxyEnableApiCallHandler;
     private final CtrlDrbdProxyDisableApiCallHandler ctrlDrbdProxyDisableApiCallHandler;
     private final CtrlDrbdProxyModifyApiCallHandler ctrlDrbdProxyModifyApiCallHandler;
+    private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
     @Inject
     public DrbdProxy(
         RequestHelper requestHelperRef,
         CtrlDrbdProxyEnableApiCallHandler ctrlDrbdProxyEnableApiCallHandlerRef,
         CtrlDrbdProxyDisableApiCallHandler ctrlDrbdProxyDisableApiCallHandlerRef,
-        CtrlDrbdProxyModifyApiCallHandler ctrlDrbdProxyModifyApiCallHandlerRef
+        CtrlDrbdProxyModifyApiCallHandler ctrlDrbdProxyModifyApiCallHandlerRef,
+        CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlDrbdProxyEnableApiCallHandler = ctrlDrbdProxyEnableApiCallHandlerRef;
         ctrlDrbdProxyDisableApiCallHandler = ctrlDrbdProxyDisableApiCallHandlerRef;
         ctrlDrbdProxyModifyApiCallHandler = ctrlDrbdProxyModifyApiCallHandlerRef;
+        ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
     }
@@ -124,5 +132,31 @@ public class DrbdProxy
 
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
+    }
+
+    @GET
+    @Path("properties/info")
+    public Response listCtrlPropsInfo(
+        @Context Request request
+    )
+    {
+        Map<String, Map<String, JsonGenTypes.PropsInfo>> props = new HashMap<>();
+        LinStorObject[] types =
+        {
+            LinStorObject.DRBD_PROXY, LinStorObject.DRBD_PROXY_LZMA,
+            LinStorObject.DRBD_PROXY_ZLIB, LinStorObject.DRBD_PROXY_ZSTD, LinStorObject.DRBD_PROXY_LZ4
+        };
+        for (LinStorObject obj : types)
+        {
+            props.put(obj.name(), ctrlPropsInfoApiCallHandler.listFilteredProps(obj));
+        }
+
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_PROPS_INFO, request,
+            () -> Response.status(Response.Status.OK)
+                .entity(objectMapper.writeValueAsString(props))
+                .build(),
+            false
+        );
     }
 }

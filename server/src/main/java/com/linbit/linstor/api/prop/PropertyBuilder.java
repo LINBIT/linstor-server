@@ -57,7 +57,7 @@ public class PropertyBuilder
                 prop = new NumericOrSymbolProperty(name, key, min, max, buildValuesEnumRegex(), internal, info, unit, dflt);
                 break;
             case LONG:
-                prop = new RangeProperty(name, key, Long.MIN_VALUE, Long.MAX_VALUE, internal, info, unit, dflt);
+                prop = new LongProperty(name, key, internal, info, unit, dflt);
                 break;
             default:
                 throw new ImplementationError("Unknown property type: " + type, null);

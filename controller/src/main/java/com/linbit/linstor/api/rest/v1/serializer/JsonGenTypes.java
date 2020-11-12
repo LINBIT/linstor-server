@@ -882,6 +882,16 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class PropsInfo
+    {
+        public String info;
+        public String prop_type;
+        public String value;
+        public String dflt;
+        public String unit;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ErrorReport
     {
         public String node_name;

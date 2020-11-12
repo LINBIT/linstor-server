@@ -86,4 +86,10 @@ public class BooleanTrueFalseProperty implements Property
     {
         return dflt;
     }
+
+    @Override
+    public PropertyType getType()
+    {
+        return Property.PropertyType.BOOLEAN_TRUE_FALSE;
+    }
 }

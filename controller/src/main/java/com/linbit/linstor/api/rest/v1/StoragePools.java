@@ -4,10 +4,12 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
@@ -61,6 +63,7 @@ public class StoragePools
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final LockGuardFactory lockGuardFactory;
     private final ObjectMapper objectMapper;
+    private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
     @Inject
     StoragePools(
@@ -69,7 +72,8 @@ public class StoragePools
         CtrlStorPoolApiCallHandler ctrlStorPoolApiCallHandlerRef,
         CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtApiCallHandlerRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
@@ -78,6 +82,7 @@ public class StoragePools
         ctrlStorPoolCrtApiCallHandler = ctrlStorPoolCrtApiCallHandlerRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         lockGuardFactory = lockGuardFactoryRef;
+        ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -321,5 +326,23 @@ public class StoragePools
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_STOR_POOL, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+    }
+
+    @GET
+    @Path("properties/info")
+    public Response listCtrlPropsInfo(
+        @Context Request request
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_PROPS_INFO, request,
+            () -> Response.status(Response.Status.OK)
+                .entity(
+                    objectMapper
+                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.STORAGEPOOL))
+                )
+                .build(),
+            false
+        );
     }
 }

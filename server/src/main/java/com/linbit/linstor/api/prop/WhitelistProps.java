@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
@@ -294,6 +295,10 @@ public class WhitelistProps
         return rules.get(linstorObj).get(key) != null;
     }
 
+    public Map<LinStorObject, Map<String, Property>> getRules()
+    {
+        return Collections.unmodifiableMap(rules);
+    }
 
     private String[] extractEnumValues(Element option, String tag)
     {

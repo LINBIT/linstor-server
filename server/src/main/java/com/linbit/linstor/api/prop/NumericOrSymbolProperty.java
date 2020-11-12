@@ -52,7 +52,7 @@ public class NumericOrSymbolProperty implements Property
     @Override
     public String getValue()
     {
-        return "(" + min + "-" + max + ") or " + regex.pattern();
+        return "(" + min + " - " + max + ") or " + regex.pattern();
     }
 
     @Override
@@ -93,6 +93,12 @@ public class NumericOrSymbolProperty implements Property
     public String getDflt()
     {
         return dflt;
+    }
+
+    @Override
+    public PropertyType getType()
+    {
+        return Property.PropertyType.NUMERIC_OR_SYMBOL;
     }
 
 }

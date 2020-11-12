@@ -2,10 +2,12 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
@@ -47,19 +49,22 @@ public class VolumeDefinitions
     private final CtrlVlmDfnModifyApiCallHandler ctrlVlmDfnModifyApiCallHandler;
     private final CtrlVlmDfnDeleteApiCallHandler ctrlVlmDfnDeleteApiCallHandler;
     private final ObjectMapper objectMapper;
+    private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
     @Inject
     VolumeDefinitions(
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlVlmDfnModifyApiCallHandler ctrlVlmDfnModifyApiCallHandlerRef,
-        CtrlVlmDfnDeleteApiCallHandler ctrlVlmDfnDeleteApiCallHandlerRef
+        CtrlVlmDfnDeleteApiCallHandler ctrlVlmDfnDeleteApiCallHandlerRef,
+        CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlVlmDfnModifyApiCallHandler = ctrlVlmDfnModifyApiCallHandlerRef;
         ctrlVlmDfnDeleteApiCallHandler = ctrlVlmDfnDeleteApiCallHandlerRef;
+        ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -222,5 +227,25 @@ public class VolumeDefinitions
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_VLM_DFN, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+    }
+
+    @GET
+    @Path("properties/info")
+    public Response listCtrlPropsInfo(
+        @Context Request request
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_PROPS_INFO, request,
+            () -> Response.status(Response.Status.OK)
+                .entity(
+                    objectMapper
+                        .writeValueAsString(
+                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.VOLUME_DEFINITION)
+                        )
+                )
+                .build(),
+            false
+        );
     }
 }

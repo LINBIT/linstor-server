@@ -2,10 +2,12 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 
 import javax.inject.Inject;
@@ -41,15 +43,18 @@ public class StoragePoolDefinitions
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final ObjectMapper objectMapper;
+    private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
     @Inject
     public StoragePoolDefinitions(
         RequestHelper requestHelperRef,
-        CtrlApiCallHandler ctrlApiCallHandlerRef
+        CtrlApiCallHandler ctrlApiCallHandlerRef,
+        CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
+        ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
     }
@@ -155,5 +160,25 @@ public class StoragePoolDefinitions
                 Response.Status.OK
             );
         }, true);
+    }
+
+    @GET
+    @Path("properties/info")
+    public Response listCtrlPropsInfo(
+        @Context Request request
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_PROPS_INFO, request,
+            () -> Response.status(Response.Status.OK)
+                .entity(
+                    objectMapper
+                        .writeValueAsString(
+                            ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.STORAGEPOOL_DEFINITION)
+                        )
+                )
+                .build(),
+            false
+        );
     }
 }

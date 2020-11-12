@@ -47,7 +47,7 @@ public class RangeProperty implements Property
     @Override
     public String getValue()
     {
-        return "(" + min + "-" + max + ")";
+        return "(" + min + " - " + max + ")";
     }
 
     @Override
@@ -87,6 +87,12 @@ public class RangeProperty implements Property
     public String getDflt()
     {
         return dflt;
+    }
+
+    @Override
+    public PropertyType getType()
+    {
+        return Property.PropertyType.RANGE;
     }
 
 }

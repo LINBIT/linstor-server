@@ -4,6 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.Node;
@@ -13,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeLostApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
@@ -64,6 +66,7 @@ public class Nodes
     private final CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandler;
     private final ObjectMapper objectMapper;
     private final ErrorReporter errorReporter;
+    private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
     @Inject
     Nodes(
@@ -73,7 +76,8 @@ public class Nodes
         CtrlNodeCrtApiCallHandler ctrlNodeCrtApiCallHandlerRef,
         CtrlNodeDeleteApiCallHandler ctrlNodeDeleteApiCallHandlerRef,
         CtrlNodeLostApiCallHandler ctrlNodeLostApiCallHandlerRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
@@ -83,6 +87,7 @@ public class Nodes
         ctrlNodeDeleteApiCallHandler = ctrlNodeDeleteApiCallHandlerRef;
         ctrlNodeLostApiCallHandler = ctrlNodeLostApiCallHandlerRef;
         errorReporter = errorReporterRef;
+        ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -527,5 +532,23 @@ public class Nodes
                 .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.UNAUTHORIZED));
         }
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+    }
+
+    @GET
+    @Path("properties/info")
+    public Response listCtrlPropsInfo(
+        @Context Request request
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_PROPS_INFO, request,
+            () -> Response.status(Response.Status.OK)
+                .entity(
+                    objectMapper
+                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.NODE))
+                )
+                .build(),
+            false
+        );
     }
 }

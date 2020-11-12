@@ -2,10 +2,12 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscActivateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
@@ -54,6 +56,7 @@ public class Resources
     private final CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandler;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
     private final ObjectMapper objectMapper;
+    private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
     @Inject
     public Resources(
@@ -62,7 +65,8 @@ public class Resources
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandlerRef,
         CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandlerRef,
-        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
+        CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
@@ -71,6 +75,7 @@ public class Resources
         ctrlRscDeleteApiCallHandler = ctrlRscDeleteApiCallHandlerRef;
         ctrlRscToggleDiskApiCallHandler = ctrlRscToggleDiskApiCallHandlerRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
+        ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
     }
@@ -403,5 +408,23 @@ public class Resources
             );
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+    }
+
+    @GET
+    @Path("properties/info")
+    public Response listCtrlPropsInfo(
+        @Context Request request
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_PROPS_INFO, request,
+            () -> Response.status(Response.Status.OK)
+                .entity(
+                    objectMapper
+                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.RESOURCE))
+                )
+                .build(),
+            false
+        );
     }
 }

@@ -21,6 +21,21 @@ info:
 
     Changelog:
 
+    * unreleased
+       - Added PropsInfoAll, PropsInfo and PropsInfoDetails as well as these entrypoints:
+          - /v1/controller/properties/info
+          - /v1/controller/properties/info/all
+          - /v1/nodes/properties/info
+          - /v1/storage-pool-definitions/properties/info
+          - /v1/nodes/{node}/storage-pools/properties/info
+          - /v1/resource-definitions/properties/info
+          - /v1/resource-definitions/{resource}/resources/properties/info
+          - /v1/resource-definitions/{resource}/volume-definitions/properties/info
+          - /v1/resource-definitions/{resource}/resources/{node}/volumes/properties/info
+          - /v1/resource-definitions/{resource}/resource-connections/properties/info
+          - /v1/resource-groups/properties/info
+          - /v1/resource-groups/{resource_group}/volume-groups/properties/info
+          - /v1/resource-definitions/{resource}/drbd-proxy/properties/info
     * 1.5.0
        - Added etcd.prefix to ControllerConfigDbEtcd parameters
     * 1.4.0
@@ -221,6 +236,19 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/storage-pool-definitions/properties/info:
+    get:
+      summary: list all storage-pool-definition properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/nodes:
     get:
       tags:
@@ -487,6 +515,19 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/properties/info:
+    get:
+      summary: list all node properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/nodes/{node}/lost:
     parameters:
       - $ref: '#/components/parameters/Node'
@@ -809,6 +850,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+  /v1/nodes/{node}/storage-pools/properties/info:
+    get:
+      summary: list all storage-pool properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/nodes/{node}/config:
     parameters:
       - $ref: '#/components/parameters/Node'
@@ -1320,6 +1374,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-definitions/properties/info:
+    get:
+      summary: list all resource-definition properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/resource-definitions/{resource}/volume-definitions:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -1590,6 +1657,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-definitions/{resource}/volume-definitions/properties/info:
+    get:
+      summary: list all volume-definition properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/resource-definitions/{resource}/resources:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -1778,6 +1858,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-definitions/{resource}/resources/properties/info:
+    get:
+      summary: list all resource properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/resource-definitions/{resource}/resources/{node}/volumes:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -1840,7 +1933,19 @@ paths:
                 Aux/testprop: '1'
               delete_props:
                 - Aux/deleteprop
-
+  /v1/resource-definitions/{resource}/resources/{node}/volumes/properties/info:
+    get:
+      summary: list all volume properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -2184,7 +2289,19 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ResourceConnectionModify'
-
+  /v1/resource-definitions/{resource}/resource-connections/properties/info:
+    get:
+      summary: list all resource-connection properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/resource-definitions/{resource}/snapshots:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -2646,6 +2763,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-groups/properties/info:
+    get:
+      summary: list all resource-group properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/resource-groups/{resource_group}/spawn:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
@@ -2735,7 +2865,7 @@ paths:
     put:
       tags:
         - developers
-      summary: modify a resource-group
+      summary: modify a volume-group
       operationId: volumeGroupModify
       description: |
         Sets or modifies properties
@@ -2837,6 +2967,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRc'
+  /v1/resource-groups/{resource_group}/volume-groups/properties/info:
+    get:
+      summary: list all volume-group properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/resource-groups/{resource_group}/query-max-volume-size:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
@@ -3300,6 +3443,35 @@ paths:
                 $ref: '#/components/schemas/ApiCallRc'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/controller/properties/info:
+    get:
+      summary: list all controller properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
+
+  /v1/controller/properties/info/all:
+    get:
+      summary: list all properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  additionalProperties:
+                    $ref: '#/components/schemas/PropsInfo'
   /v1/controller/config:
     get:
       tags:
@@ -3421,6 +3593,19 @@ paths:
             example:
               override_props:
                 compression_type: lz4
+  /v1/resource-definitions/{resource}/drbd-proxy/properties/info:
+    get:
+      summary: list all drbd-proxy properties
+      description: list all property-names and their descriptions
+      responses:
+        '200':
+          description: list of property-names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/PropsInfo'
   /v1/resource-definitions/{resource}/drbd-proxy/enable/{node_a}/{node_b}:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -5368,6 +5553,19 @@ components:
           type: integer
           format: int32
         com_type:
+          type: string
+    PropsInfo:
+      type: object
+      properties:
+        info:
+          type: string
+        prop_type:
+          type: string
+        value:
+          type: string
+        dflt:
+          type: string
+        unit:
           type: string
     ErrorReport:
       type: object

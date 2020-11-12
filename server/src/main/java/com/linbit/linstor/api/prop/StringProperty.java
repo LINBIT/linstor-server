@@ -74,4 +74,10 @@ public class StringProperty implements Property
         return dflt;
     }
 
+    @Override
+    public PropertyType getType()
+    {
+        return Property.PropertyType.STRING;
+    }
+
 }

@@ -83,4 +83,10 @@ public class BooleanProperty implements Property
     {
         return dflt;
     }
+
+    @Override
+    public PropertyType getType()
+    {
+        return Property.PropertyType.BOOLEAN;
+    }
 }
