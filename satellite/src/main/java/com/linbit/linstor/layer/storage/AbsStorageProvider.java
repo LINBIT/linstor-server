@@ -37,6 +37,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands;
 import com.linbit.linstor.layer.storage.utils.DmStatCommands;
+import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
 import com.linbit.linstor.layer.storage.utils.StltProviderUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -260,12 +261,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 errorReporter.logTrace("Lv %s found", lvId);
                 if (!vlmShouldExist)
                 {
-                    errorReporter.logTrace("Lv %s will be deleted", lvId);
-                    vlmsToDelete.add(vlmData);
+                    if (SharedStorageUtils.isNeededBySharedResource(storDriverAccCtx, vlmData))
+                    {
+                        errorReporter.logTrace("Lv %s will not be deleted as it is needed by shared resource", lvId);
+                    }
+                    else
+                    {
+                        errorReporter.logTrace("Lv %s will be deleted", lvId);
+                        vlmsToDelete.add(vlmData);
+                    }
                 }
                 else if (!vlmShouldBeActive)
                 {
-                    if (vlmData.isActive())
+                    if (vlmData.isActive(storDriverAccCtx))
                     {
                         errorReporter.logTrace("Lv %s will be deactivated", lvId);
                         vlmsToDeactivate.add(vlmData);
@@ -277,16 +285,20 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 }
                 else
                 {
-                    Size sizeState = vlmData.getSizeState();
-                    if (
-                        ((Volume) vlmData.getVolume()).getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
-                            (sizeState.equals(VlmProviderObject.Size.TOO_LARGE) || sizeState.equals(VlmProviderObject.Size.TOO_SMALL))
-                    )
+                    if (vlmData.isActive(storDriverAccCtx))
                     {
-                        errorReporter.logTrace("Lv %s will be resized", lvId);
-                        vlmsToResize.add(vlmData);
+                        Size sizeState = vlmData.getSizeState();
+                        if (
+                            ((Volume) vlmData.getVolume()).getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
+                                (sizeState.equals(VlmProviderObject.Size.TOO_LARGE) ||
+                                    sizeState.equals(VlmProviderObject.Size.TOO_SMALL))
+                        )
+                        {
+                            errorReporter.logTrace("Lv %s will be resized", lvId);
+                            vlmsToResize.add(vlmData);
+                        }
+                        vlmsToCheckForRollback.add(vlmData);
                     }
-                    vlmsToCheckForRollback.add(vlmData);
                 }
             }
             else

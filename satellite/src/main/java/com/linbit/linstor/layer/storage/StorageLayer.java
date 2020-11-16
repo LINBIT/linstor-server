@@ -18,6 +18,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -293,6 +294,7 @@ public class StorageLayer implements DeviceLayer
             {
                 if (
                     vlmData.exists() &&
+                    !SharedStorageUtils.isNeededBySharedResource(storDriverAccCtx, vlmData) &&
                     ((Volume) vlmData.getVolume()).getFlags().isSet(storDriverAccCtx, Volume.Flags.DELETE)
                 )
                 {

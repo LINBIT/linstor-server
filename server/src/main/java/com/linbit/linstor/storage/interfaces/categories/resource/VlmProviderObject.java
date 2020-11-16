@@ -6,6 +6,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
@@ -103,6 +104,23 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
 
     void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws DatabaseException, AccessDeniedException;
 
+
+    default void setActive(boolean activeRef)
+    {
+        // ignored (unless overridden) as this layer only considers Resource.Flags.INACTIVE, not per-vlmData
+    }
+
+    default boolean isActive(AccessContext accCtx) throws AccessDeniedException
+    {
+        boolean isActive = true; // snapshots are active by default
+        if (getVolume().getAbsResource() instanceof Resource)
+        {
+            isActive = !((Resource) getVolume().getAbsResource()).getStateFlags()
+                .isSet(accCtx, Resource.Flags.INACTIVE);
+        }
+        return isActive;
+    }
+
     default String getVolumeKey()
     {
         AbsVolume<RSC> volume = getVolume();
@@ -112,5 +130,4 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
         VolumeNumber volNr = getVlmNr();
         return "vlm: " + nodeName.value + "/" + rscName.value + rscNameSuffix + "/" + volNr.value;
     }
-
 }

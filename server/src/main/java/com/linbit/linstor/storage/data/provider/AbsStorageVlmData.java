@@ -269,12 +269,14 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         return expectedSize;
     }
 
+    @Override
     public void setActive(boolean activeRef)
     {
         active = activeRef;
     }
 
-    public boolean isActive()
+    @Override
+    public boolean isActive(AccessContext ignored)
     {
         return active;
     }
