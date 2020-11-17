@@ -450,12 +450,16 @@ public abstract class AbsRscLayerHelper<
     )
         throws AccessDeniedException, InvalidNameException
     {
-        Set<StorPool> storPools = new HashSet<>();
+        HashSet<StorPool> storPools = new HashSet<>();
         Iterator<VolumeDefinition> vlmDfnIt = rscRef.getResourceDefinition().iterateVolumeDfn(apiCtx);
         while (vlmDfnIt.hasNext())
         {
             VolumeDefinition vlmDfn = vlmDfnIt.next();
-            storPools.addAll(getNeededStoragePools(rscRef, vlmDfn, payloadRef, layerListRef));
+            Set<StorPool> neededStoragePools = getNeededStoragePools(rscRef, vlmDfn, payloadRef, layerListRef);
+            if (neededStoragePools != null)
+            {
+                storPools.addAll(neededStoragePools);
+            }
         }
         return storPools;
     }
