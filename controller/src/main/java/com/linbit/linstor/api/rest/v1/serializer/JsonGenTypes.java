@@ -156,9 +156,13 @@ public class JsonGenTypes
          */
         public Boolean supports_snapshots;
         /**
+         * Name of the shared space or null if none given
+         */
+        public String shared_space;
+        /**
          * true if a shared storage pool uses linstor-external locking, like cLVM
          */
-        public Boolean external_locking;
+        public boolean external_locking = false;
     }
 
 //    @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1211,7 +1215,7 @@ public class JsonGenTypes
         /**
          * true if a shared storage pool uses linstor-external locking, like cLVM
          */
-        public Boolean external_locking;
+        public boolean external_locking = false;
     }
 
     /**

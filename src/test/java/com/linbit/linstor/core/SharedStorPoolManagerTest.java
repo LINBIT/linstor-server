@@ -7,9 +7,6 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.TestAccessContextProvider;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
-
-import javax.inject.Provider;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -43,9 +40,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
 
         sharedStorPoolMgr = new SharedStorPoolManager(
             TestAccessContextProvider.SYS_CTX,
-            errorReporter,
-            transObjFactory,
-            (Provider<TransactionMgr>) ((Object) transMgrProvider)
+            errorReporter
         );
 
         resourceGroupTestFactory.initDfltRscGrp();

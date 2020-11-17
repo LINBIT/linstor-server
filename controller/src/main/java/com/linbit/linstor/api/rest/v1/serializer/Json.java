@@ -182,6 +182,7 @@ public class Json
         storPoolData.uuid = storPoolApi.getStorPoolUuid().toString();
         storPoolData.reports = apiCallRcToJson(storPoolApi.getReports());
         storPoolData.supports_snapshots = storPoolApi.supportsSnapshots();
+        storPoolData.external_locking = storPoolApi.isExternalLocking();
 
         return storPoolData;
     }

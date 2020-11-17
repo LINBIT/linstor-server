@@ -11,12 +11,9 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionObject;
-import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
@@ -43,23 +40,19 @@ public class SharedStorPoolManager
      * order of the variable declarations to prevent deadlocks
      */
     private final TreeMap<SharedStorPoolName, LinkedHashSet<Node>> queueByLock;
-    private final TreeMap<Node, ArrayList<SharedStorPoolName>> queueByNode;
     private final TreeMap<SharedStorPoolName, Node> activeLocksByLock;
     private final TreeMap<Node, ArrayList<SharedStorPoolName>> activeLocksByNode;
 
     @Inject
     public SharedStorPoolManager(
         @SystemContext AccessContext sysCtxRef,
-        ErrorReporter errorReporterRef,
-        TransactionObjectFactory transFactoryRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        ErrorReporter errorReporterRef
     )
     {
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
 
         queueByLock = new TreeMap<>();
-        queueByNode = new TreeMap<>();
         activeLocksByLock = new TreeMap<>();
         activeLocksByNode = new TreeMap<>();
     }
@@ -182,12 +175,6 @@ public class SharedStorPoolManager
                         queueByLock.put(spSharedName, sharedSpQueue);
                     }
 
-                    // we might want to throw an impl error if this put overrides any value (i.e. the key
-                    // already existed, which means that the given node already had some requests pending..)
-                    queueByNode.put(
-                        node,
-                        new ArrayList<>(locks)
-                    );
                     sharedSpQueue.add(node);
                 }
             }
@@ -222,7 +209,6 @@ public class SharedStorPoolManager
             {
                 queueValues.remove(node);
             }
-            queueByNode.remove(node);
         }
     }
 
@@ -248,89 +234,86 @@ public class SharedStorPoolManager
         List<SharedStorPoolName> locksToRelease = new ArrayList<>();
         synchronized (queueByLock)
         {
-            synchronized (queueByNode)
+            synchronized (activeLocksByLock)
             {
-                synchronized (activeLocksByLock)
+                synchronized (activeLocksByNode)
                 {
-                    synchronized (activeLocksByNode)
+                    ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(nodeReleasingLocks);
+                    if (activeLocks != null)
                     {
-                        ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(nodeReleasingLocks);
-                        if (activeLocks != null)
-                        {
-                            locksToRelease.addAll(activeLocks);
-                        }
+                        locksToRelease.addAll(activeLocks);
+                    }
 
-                        if (!locksToRelease.isEmpty())
+                    if (!locksToRelease.isEmpty())
+                    {
+                        // preserve order of next objects
+                        Set<Node> nextNodesToCheck = new LinkedHashSet<>();
+                        errorReporter.logTrace("Releasing shared storPool locks %s", locksToRelease);
+                        for (SharedStorPoolName lock : locksToRelease)
                         {
-                            // preserve order of next objects
-                            Set<Node> nextNodesToCheck = new LinkedHashSet<>();
-                            errorReporter.logTrace("Releasing shared storPool locks %s", locksToRelease);
-                            for (SharedStorPoolName lock : locksToRelease)
+                            // release the lock
+                            Node releasedLockFromNode = activeLocksByLock.remove(lock);
+                            if (releasedLockFromNode == null)
                             {
-                                // release the lock
-                                Node releasedLockFromNode = activeLocksByLock.remove(lock);
-                                if (releasedLockFromNode == null)
-                                {
-                                    throw new ImplementationError(
-                                        "Cannot release shared lock before lock was acquired"
-                                    );
-                                }
-                                if (!Objects.equals(nodeReleasingLocks, releasedLockFromNode))
-                                {
-                                    throw new ImplementationError(
-                                        "The shared lock can only be released by the original requester."
-                                    );
-                                }
+                                throw new ImplementationError(
+                                    "Cannot release shared lock before lock was acquired"
+                                );
+                            }
+                            if (!Objects.equals(nodeReleasingLocks, releasedLockFromNode))
+                            {
+                                throw new ImplementationError(
+                                    "The shared lock can only be released by the original requester."
+                                );
+                            }
 
-                                LinkedHashSet<Node> sharedSpQueue = queueByLock.get(lock);
-                                if (sharedSpQueue != null)
+                            LinkedHashSet<Node> sharedSpQueue = queueByLock.get(lock);
+                            if (sharedSpQueue != null)
+                            {
+                                // see if any of these waiting objects can now acquire all the required locks
+                                nextNodesToCheck.addAll(sharedSpQueue);
+                            }
+                        }
+                        activeLocksByNode.remove(nodeReleasingLocks); // all locks released
+
+                        Map<SharedStorPoolName, Node> currentlyAcquiredLockBy = new HashMap<>();
+
+                        for (Node currentNode : nextNodesToCheck)
+                        {
+                            Set<SharedStorPoolName> requiredLocks = getSharedSpNames(currentNode);
+
+                            boolean granted = true;
+                            for (SharedStorPoolName lock : requiredLocks)
+                            {
+                                // is the lock currently taken
+                                if (activeLocksByLock.containsKey(lock))
                                 {
-                                    // see if any of these waiting objects can now acquire all the required locks
-                                    nextNodesToCheck.addAll(sharedSpQueue);
+                                    // Objects.equals would return true if we took this lock just now
+                                    // (i.e. in a previous iteration of this for loop)
+                                    if (!Objects.equals(currentlyAcquiredLockBy.get(lock), currentNode))
+                                    {
+                                        granted = false;
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    Iterator<Node> queueIt = queueByLock.get(lock).iterator();
+                                    if (queueIt.hasNext() && !Objects.equals(getNode(queueIt.next()), currentNode))
+                                    {
+                                        granted = false;
+                                        break;
+                                    }
                                 }
                             }
-                            activeLocksByNode.remove(nodeReleasingLocks); // all locks released
-
-                            Map<SharedStorPoolName, Node> currentlyAcquiredLockBy = new HashMap<>();
-
-                            for (Node currentNode : nextNodesToCheck)
+                            if (granted)
                             {
-                                Set<SharedStorPoolName> requiredLocks = getSharedSpNames(currentNode);
-
-                                boolean granted = true;
+                                lock(currentNode, requiredLocks);
                                 for (SharedStorPoolName lock : requiredLocks)
                                 {
-                                    // is the lock currently taken
-                                    if (activeLocksByLock.containsKey(lock))
-                                    {
-                                        // Objects.equals would return true if we took this lock just now
-                                        // (i.e. in a previous iteration of this for loop)
-                                        if (!Objects.equals(currentlyAcquiredLockBy.get(lock), currentNode))
-                                        {
-                                            granted = false;
-                                            break;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Iterator<Node> queueIt = queueByLock.get(lock).iterator();
-                                        if (queueIt.hasNext() && !Objects.equals(getNode(queueIt.next()), currentNode))
-                                        {
-                                            granted = false;
-                                            break;
-                                        }
-                                    }
+                                    queueByLock.get(lock).remove(currentNode);
+                                    currentlyAcquiredLockBy.put(lock, currentNode);
                                 }
-                                if (granted)
-                                {
-                                    lock(currentNode, requiredLocks);
-                                    for (SharedStorPoolName lock : requiredLocks)
-                                    {
-                                        queueByLock.get(lock).remove(currentNode);
-                                        currentlyAcquiredLockBy.put(lock, currentNode);
-                                    }
-                                    ret.put(currentNode, requiredLocks);
-                                }
+                                ret.put(currentNode, requiredLocks);
                             }
                         }
                     }
