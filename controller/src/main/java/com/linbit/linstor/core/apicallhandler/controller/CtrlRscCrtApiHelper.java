@@ -330,6 +330,7 @@ public class CtrlRscCrtApiHelper
                 if (layerStack.isEmpty())
                 {
                     flags |= Resource.Flags.DRBD_DISKLESS.flagValue;
+                    responses.addEntry(makeFlaggedDrbdDisklessWarning(storPool));
                 }
                 else
                 {
