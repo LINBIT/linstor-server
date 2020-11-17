@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -60,6 +61,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final ResponseConverter responseConverter;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
+    private final SharedResourceManager sharedRscMgr;
 
     @Inject
     public CtrlRscDfnDeleteApiCallHandler(
@@ -71,7 +73,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        SharedResourceManager sharedRscMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -83,6 +86,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        sharedRscMgr = sharedRscMgrRef;
     }
 
     @Override
@@ -270,6 +274,32 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         {
             for (Resource rsc : getRscStreamPrivileged(rscDfn).collect(Collectors.toList()))
             {
+                if (isFlagSetPrivileged(rsc, Resource.Flags.INACTIVE))
+                {
+                    Resource rscToActivate = null;
+                    if (!isFlagSetPrivileged(rsc, Resource.Flags.INACTIVE_PERMANENTLY))
+                    {
+                        rscToActivate = rsc;
+                    }
+
+                    Resource activeRsc = null;
+                    for (Resource sharedRsc : sharedRscMgr.getSharedResources(rsc))
+                    {
+                        if(!isFlagSetPrivileged(sharedRsc, Resource.Flags.INACTIVE))
+                        {
+                            activeRsc = sharedRsc;
+                            break;
+                        }
+                        if(!isFlagSetPrivileged(sharedRsc, Resource.Flags.INACTIVE_PERMANENTLY))
+                        {
+                            rscToActivate = sharedRsc;
+                        }
+                    }
+                    if (activeRsc == null) {
+                        unsetFlagPrivleged(rscToActivate, Resource.Flags.INACTIVE);
+                    }
+                }
+
                 if (isDisklessPrivileged(rsc))
                 {
                     deletePrivileged(rsc);
@@ -293,6 +323,37 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
 
         return flux;
+    }
+
+    private boolean isFlagSetPrivileged(Resource rsc, Resource.Flags... flags)
+    {
+        boolean isSet;
+        try
+        {
+            isSet = rsc.getStateFlags().isSet(apiCtx, flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return isSet;
+    }
+
+    private void unsetFlagPrivleged(Resource rsc, Resource.Flags... flags)
+    {
+        try
+        {
+            rsc.getStateFlags().disableFlags(apiCtx, flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
     }
 
     private Flux<ApiCallRc> deleteData(ResourceName rscName)

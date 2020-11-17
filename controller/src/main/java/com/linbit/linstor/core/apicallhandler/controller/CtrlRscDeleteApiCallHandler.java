@@ -1,15 +1,18 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -23,6 +26,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
@@ -61,6 +65,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlRscAutoHelper autoHelper;
     private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
+    private final SharedResourceManager sharedRscMgr;
 
     @Inject
     public CtrlRscDeleteApiCallHandler(
@@ -74,7 +79,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscAutoHelper autoHelperRef,
-        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef
+        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
+        SharedResourceManager sharedRscMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -88,6 +94,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         peerAccCtx = peerAccCtxRef;
         autoHelper = autoHelperRef;
         snapShipAbortHandler = snapShipAbortHandlerRef;
+        sharedRscMgr = sharedRscMgrRef;
     }
 
     @Override
@@ -170,6 +177,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
         failIfDependentSnapshot(rsc);
 
+        activateIfLast(rsc);
+
         ctrlRscDeleteApiHelper.markDeletedWithVolumes(rsc);
         nodeNamesToDelete.add(nodeName);
 
@@ -217,6 +226,95 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             .concatWith(autoResult.getFlux());
 
         return flux;
+    }
+
+    private void activateIfLast(Resource rsc)
+    {
+        boolean found = false;
+        TreeSet<Resource> sharedResources = sharedRscMgr.getSharedResources(rsc);
+        for (Resource sharedRsc : sharedResources)
+        {
+            if (!isFlagSet(sharedRsc, Resource.Flags.INACTIVE_PERMANENTLY))
+            {
+                // at least one active or inactive resource exists.
+                found = true;
+                break;
+            }
+
+        }
+        if (!found)
+        {
+            // this is the last shared resource, we have to make it active so that the lowest
+            // layer can cleanup the volumes
+            if (isFlagSet(rsc, Resource.Flags.INACTIVE))
+            {
+                unsetFlag(rsc, Resource.Flags.INACTIVE);
+            }
+        }
+    }
+
+    private boolean isFlagSet(Resource rsc, Resource.Flags... flags)
+    {
+        boolean isSet;
+        try
+        {
+            isSet = rsc.getStateFlags().isSet(apiCtx, flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return isSet;
+    }
+
+    private void unsetFlag(Resource rsc, Resource.Flags... flags)
+    {
+        try
+        {
+            rsc.getStateFlags().disableFlags(apiCtx, flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
+    }
+
+    private void ensureNotLastDisk(ResourceName rscName, Resource rsc)
+    {
+        try
+        {
+            AccessContext accCtx = peerAccCtx.get();
+            boolean isDiskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx);
+            if (
+                !isDiskless &&
+                rsc.getDefinition().hasDisklessNotDeleting(accCtx) &&
+                rsc.getDefinition().diskfullCount(accCtx) == 1)
+            {
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_IN_USE,
+                        String.format(
+                            "Last resource of '%s' with disk still has diskless resources attached.", rscName)
+                    )
+                    .setCause("Resource still has diskless users.")
+                    .setCorrection("Before deleting this resource, delete the diskless resources attached to it.")
+                    .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check whether is last with disk " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
     }
 
     private void failIfDependentSnapshot(Resource rsc)

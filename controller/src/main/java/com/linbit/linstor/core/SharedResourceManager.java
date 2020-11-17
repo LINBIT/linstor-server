@@ -14,6 +14,7 @@ import javax.inject.Singleton;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.util.TreeSet;
 
 @Singleton
 public class SharedResourceManager
@@ -66,5 +67,40 @@ public class SharedResourceManager
         }
 
         return ret;
+    }
+
+    public TreeSet<Resource> getSharedResources(Resource rsc)
+    {
+        TreeSet<Resource> result = new TreeSet<>();
+
+        try
+        {
+            Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, sysCtx);
+            Set<SharedStorPoolName> sharedSpNames = SharedStorPoolManager.getSharedSpNames(storPools);
+
+            Iterator<Resource> rscIt = rsc.getDefinition().iterateResource(sysCtx);
+            while (rscIt.hasNext())
+            {
+                Resource tmpRsc = rscIt.next();
+                if (tmpRsc == rsc)
+                {
+                    continue;
+                }
+                Set<StorPool> tmpStorPools = LayerVlmUtils.getStorPools(tmpRsc, sysCtx);
+                Set<SharedStorPoolName> tmpSharedSpNames = SharedStorPoolManager.getSharedSpNames(tmpStorPools);
+
+                tmpSharedSpNames.retainAll(sharedSpNames);
+                if (!tmpSharedSpNames.isEmpty())
+                {
+                    result.add(tmpRsc);
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+
+        return result;
     }
 }
