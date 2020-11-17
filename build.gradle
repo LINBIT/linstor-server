@@ -399,14 +399,13 @@ distributions {
 
 task showMeCache {
     doLast {
-        configurations.compile.each { println it }
-        configurations.runtime.each { println it }
+        configurations.runtimeClasspath.each { println it }
     }
 }
 
 task showMeTestCache {
     doLast {
-        configurations.testCompile.each { println it }
+        configurations.testRuntimeClasspath.each { println it }
     }
 }
 

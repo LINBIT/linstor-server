@@ -47,6 +47,11 @@ public class JsonGenTypes
         public Map<String, String> obj_refs = Collections.emptyMap();
     }
 
+//    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+//    public static class ApiCallRcList
+//    {
+//    }
+
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class Node
     {
