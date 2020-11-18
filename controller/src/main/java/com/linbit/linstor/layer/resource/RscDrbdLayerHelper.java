@@ -250,7 +250,7 @@ public class RscDrbdLayerHelper extends
             .map(StorPool::getSharedStorPoolName)
             .collect(Collectors.toSet());
 
-        boolean isStoragePoolShared = isShared(allStorPools);
+        boolean isStoragePoolShared = areAllShared(allStorPools);
 
         if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator)
         {
@@ -317,33 +317,6 @@ public class RscDrbdLayerHelper extends
         );
         drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
         return drbdRscData;
-    }
-
-    private boolean isShared(Set<StorPool> storPools) throws AccessDeniedException
-    {
-        boolean shared = false;
-        boolean nonShared = false;
-        for (StorPool sp : storPools)
-        {
-            if (sp.isShared())
-            {
-                shared = true;
-            }
-            else
-            {
-                nonShared = true;
-            }
-        }
-        if (shared && nonShared)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_PROP,
-                    "All or none of the DRBD metadata must be in shared storage pools"
-                )
-            );
-        }
-        return shared;
     }
 
     @Override

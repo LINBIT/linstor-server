@@ -6,6 +6,9 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -396,6 +399,33 @@ public abstract class AbsRscLayerHelper<
         return null;
     }
 
+    protected boolean areAllShared(Set<StorPool> storPools) throws AccessDeniedException
+    {
+        boolean shared = false;
+        boolean nonShared = false;
+        for (StorPool sp : storPools)
+        {
+            if (sp.isShared())
+            {
+                shared = true;
+            }
+            else
+            {
+                nonShared = true;
+            }
+        }
+        if (shared && nonShared)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_PROP,
+                    "All or none of the DRBD metadata must be in shared storage pools"
+                )
+            );
+        }
+        return shared;
+    }
+
     protected abstract boolean isExpectedToProvideDevice(RSC_LO rsc) throws AccessDeniedException;
 
     protected abstract RSC_LO createRscData(
@@ -522,4 +552,5 @@ public abstract class AbsRscLayerHelper<
         VlmProviderObject<Snapshot> vlmProviderObjectRef
     )
         throws DatabaseException, AccessDeniedException;
+
 }

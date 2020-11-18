@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -71,21 +72,33 @@ public class SharedResourceManager
 
     public TreeSet<Resource> getSharedResources(Resource rsc)
     {
-        TreeSet<Resource> result = new TreeSet<>();
-
+        TreeSet<Resource> result;
         try
         {
             Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, sysCtx);
             Set<SharedStorPoolName> sharedSpNames = SharedStorPoolManager.getSharedSpNames(storPools);
 
-            Iterator<Resource> rscIt = rsc.getDefinition().iterateResource(sysCtx);
+            result = getSharedResources(sharedSpNames, rsc.getDefinition());
+            result.remove(rsc);
+        }
+        catch (AccessDeniedException exc) {
+            throw new ImplementationError(exc);
+        }
+
+        return result;
+    }
+
+    public TreeSet<Resource> getSharedResources(Set<SharedStorPoolName> sharedSpNames, ResourceDefinition rscDfn)
+    {
+        TreeSet<Resource> result = new TreeSet<>();
+
+        try
+        {
+
+            Iterator<Resource> rscIt = rscDfn.iterateResource(sysCtx);
             while (rscIt.hasNext())
             {
                 Resource tmpRsc = rscIt.next();
-                if (tmpRsc == rsc)
-                {
-                    continue;
-                }
                 Set<StorPool> tmpStorPools = LayerVlmUtils.getStorPools(tmpRsc, sysCtx);
                 Set<SharedStorPoolName> tmpSharedSpNames = SharedStorPoolManager.getSharedSpNames(tmpStorPools);
 

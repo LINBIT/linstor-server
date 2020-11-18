@@ -12,7 +12,9 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -35,6 +37,8 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
+import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -44,6 +48,7 @@ import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Singleton
 class RscLuksLayerHelper extends AbsRscLayerHelper<
@@ -55,6 +60,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
 
     private final CtrlSecurityObjects secObjs;
     private final LengthPadding cryptoLenPad;
+    private final Provider<RscNvmeLayerHelper> nvmeHelperProvider;
+    private final SharedResourceManager sharedRscMgr;
 
     @Inject
     RscLuksLayerHelper(
@@ -64,7 +71,9 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
         CtrlSecurityObjects secObjsRef,
         LengthPadding cryptoLenPadRef,
-        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory
+        Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
+        Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
+        SharedResourceManager sharedRscMgrRef
     )
     {
         super(
@@ -81,6 +90,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         );
         secObjs = secObjsRef;
         cryptoLenPad = cryptoLenPadRef;
+        nvmeHelperProvider = nvmeHelperProviderRef;
+        sharedRscMgr = sharedRscMgrRef;
     }
 
     @Override
@@ -170,31 +181,103 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException, LinStorException
+        ValueInUseException, LinStorException, InvalidNameException
     {
-        byte[] masterKey = secObjs.getCryptKey();
-        if (masterKey == null || masterKey.length == 0)
+        byte[] encryptedVlmKey = null;
+
+        Resource rsc = vlm.getAbsResource();
+        boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
+        boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
+        boolean isNvmeInitiator = rsc.getStateFlags()
+            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+
+        Set<StorPool> allStorPools = layerDataHelperProvider.get()
+            .getAllNeededStorPools(rsc, payload, layerListRef);
+
+        boolean isStoragePoolShared = areAllShared(allStorPools);
+
+        if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator)
         {
-            throw new ApiRcException(ApiCallRcImpl
-                .entryBuilder(ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
-                    "Unable to create an encrypted volume definition without having a master key")
-                .setCause("The masterkey was not initialized yet")
-                .setCorrection("Create or enter the master passphrase")
-                .build()
-            );
+            // we need to find our nvme-target resource and copy the node-id from that target-resource
+            errorReporter.logTrace("Nvme- / OpenFlex-initiator below us.. looking for target");
+            Resource targetRsc = nvmeHelperProvider.get().getTarget(rsc);
+            if (targetRsc != null)
+            {
+                AbsRscLayerObject<Resource> rootLayerData = targetRsc.getLayerData(apiCtx);
+                List<AbsRscLayerObject<Resource>> targetDrbdChildren = LayerUtils
+                    .getChildLayerDataByKind(rootLayerData, DeviceLayerKind.DRBD);
+                for (AbsRscLayerObject<Resource> targetRscData : targetDrbdChildren)
+                {
+                    if (targetRscData.getResourceNameSuffix().equals(luksRscData.getResourceNameSuffix()))
+                    {
+                        LuksRscData<Resource> targetLuksRscData = (LuksRscData<Resource>) targetRscData;
+                        LuksVlmData<Resource> targetLuksVlmData = targetLuksRscData.getVlmLayerObjects().get(vlm.getVolumeNumber());
+                        encryptedVlmKey = targetLuksVlmData.getEncryptedKey();
+                        errorReporter.logTrace("encryptedVlmKey found and copied from %s", targetRsc);
+                        break;
+                    }
+                }
+            }
         }
+        else if (isStoragePoolShared)
+        {
+            errorReporter.logTrace("searching for encryptedVlmKey in shared resources");
+            Set<SharedStorPoolName> sharedSpNames = allStorPools.stream().map(StorPool::getSharedStorPoolName)
+                .collect(Collectors.toSet());
+            for (Resource otherRsc : sharedRscMgr.getSharedResources(sharedSpNames, rsc.getDefinition()))
+            {
+                if (otherRsc != rsc)
+                {
+                    Set<AbsRscLayerObject<Resource>> otherRscLuksDataSet = LayerRscUtils.getRscDataByProvider(
+                        otherRsc.getLayerData(apiCtx),
+                        DeviceLayerKind.LUKS
+                    );
+                    for (AbsRscLayerObject<Resource> absOtherRscLayerObject : otherRscLuksDataSet)
+                    {
+                        LuksRscData<Resource> otherLuksRscData = (LuksRscData<Resource>) absOtherRscLayerObject;
+                        if (otherLuksRscData.getResourceNameSuffix().equals(luksRscData.getResourceNameSuffix()))
+                        {
+                            LuksVlmData<Resource> otherLuksVlmData = otherLuksRscData.getVlmLayerObjects()
+                                .get(vlm.getVolumeNumber());
+                            encryptedVlmKey = otherLuksVlmData.getEncryptedKey();
+                            errorReporter.logTrace("encryptedVlmKey found and copied from %s", otherRsc);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // encrypted key was not copied from *-target or sharedRsc.. create new one
+        if (encryptedVlmKey == null)
+        {
+            errorReporter.logTrace("creating new encryptedVlmKey");
+            byte[] masterKey = secObjs.getCryptKey();
+            if (masterKey == null || masterKey.length == 0)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                            "Unable to create an encrypted volume definition without having a master key"
+                        )
+                        .setCause("The masterkey was not initialized yet")
+                        .setCorrection("Create or enter the master passphrase")
+                        .build()
+                );
+            }
 
-        String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
-        SymmetricKeyCipher cipher;
-        cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
+            String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
+            SymmetricKeyCipher cipher;
+            cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
 
-        byte[] encodedData = cryptoLenPad.conceal(vlmDfnKeyPlain.getBytes());
-        byte[] encryptedVlmDfnKey = cipher.encrypt(encodedData);
+            byte[] encodedData = cryptoLenPad.conceal(vlmDfnKeyPlain.getBytes());
+            encryptedVlmKey = cipher.encrypt(encodedData);
+        }
 
         return layerDataFactory.createLuksVlmData(
             vlm,
             luksRscData,
-            encryptedVlmDfnKey
+            encryptedVlmKey
         );
     }
 
