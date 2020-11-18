@@ -146,7 +146,7 @@ public class CtrlRscActivateApiCallHandler
                         rsc.getResourceDefinition().getName(),
                         Collections.singleton(rsc.getNode().getName()),
                         "Reactivating resource on {0}",
-                        "Reactivating resource on {0}"
+                        "Resource updated on {0}"
                     ).concatWith(
                         completeActivation(
                             rsc.getNode().getName().displayValue,
