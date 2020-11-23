@@ -31,7 +31,7 @@ public class SharedStorageUtils
         while (rscIt.hasNext() && !neededBySharedResource)
         {
             Resource otherRsc = rscIt.next();
-            if (otherRsc != localRsc)
+            if (otherRsc != localRsc && !otherRsc.getStateFlags().isSet(accCtx, Resource.Flags.DELETE))
             {
                 Set<AbsRscLayerObject<Resource>> otherRscStorDataSet = LayerRscUtils.getRscDataByProvider(
                     otherRsc.getLayerData(accCtx),

@@ -263,7 +263,21 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 {
                     if (SharedStorageUtils.isNeededBySharedResource(storDriverAccCtx, vlmData))
                     {
-                        errorReporter.logTrace("Lv %s will not be deleted as it is needed by shared resource", lvId);
+                        if (vlmData.isActive(storDriverAccCtx))
+                        {
+                            vlmsToDeactivate.add(vlmData);
+                            errorReporter.logTrace(
+                                "Lv %s will not be deleted as it is needed by shared resource. Deactivating LV instead",
+                                lvId
+                            );
+                        }
+                        else
+                        {
+                            errorReporter.logTrace(
+                                "Lv %s will not be deleted as it is needed by shared resource. Already deactivated",
+                                lvId
+                            );
+                        }
                     }
                     else
                     {
