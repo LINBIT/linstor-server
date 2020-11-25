@@ -148,8 +148,7 @@ class Selector
         );
         final Integer replicaCount = selectionManger.rscCountToReach;
         errorReporter.logTrace(
-            "Autoplacer.Selector: Starting selection for %d (+%d) resources",
-            replicaCount,
+            "Autoplacer.Selector: Starting selection for %d additional resources",
             replicaCount - alreadyDeployedOnNodes.size()
         );
         do
@@ -318,7 +317,7 @@ class Selector
 
         private int getReplicaCount(AutoSelectFilterApi selectFilterRef, int alreadyExistingCount)
         {
-            Integer ret = alreadyExistingCount;
+            Integer ret = 0;
             Integer additional = null;
             if (
                 selectFilterRef.getAdditionalReplicaCount() != null &&
@@ -330,20 +329,20 @@ class Selector
 
             if (selectFilterRef.getReplicaCount() != null)
             {
-                if (selectFilterRef.getReplicaCount() > 0)
+                if (selectFilterRef.getReplicaCount() > alreadyExistingCount)
                 {
-                    ret = selectFilterRef.getReplicaCount();
+                    ret = selectFilterRef.getReplicaCount() - alreadyExistingCount;
                 }
                 else if (additional != null)
                 {
-                    ret = additional + alreadyExistingCount;
+                    ret = additional;
                 }
             }
             else
             {
                 if (additional != null)
                 {
-                    ret = additional + alreadyExistingCount;
+                    ret = additional;
                 }
             }
             return ret;

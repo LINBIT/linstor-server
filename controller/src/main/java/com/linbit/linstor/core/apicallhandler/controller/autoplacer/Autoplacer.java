@@ -62,8 +62,10 @@ public class Autoplacer
         Set<StorPool> selection = null;
         try
         {
+            Resource.Flags disklessType = Resource.Flags.valueOfOrNull(selectFilter.getDisklessType());
+
             long start = System.currentTimeMillis();
-            ArrayList<StorPool> availableStorPools = filter.listAvailableStorPools();
+            ArrayList<StorPool> availableStorPools = filter.listAvailableStorPools(disklessType == null);
 
             // 1: filter storage pools
             long startFilter = System.currentTimeMillis();
@@ -71,7 +73,8 @@ public class Autoplacer
                 selectFilter,
                 availableStorPools,
                 rscDfnRef,
-                rscSize
+                rscSize,
+                disklessType
             );
             errorReporter.logTrace(
                 "Autoplacer.Filter: Finished in %dms. %s StorPools remaining",

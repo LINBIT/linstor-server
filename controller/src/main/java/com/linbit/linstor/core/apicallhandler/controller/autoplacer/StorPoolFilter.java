@@ -27,6 +27,8 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -64,13 +66,13 @@ class StorPoolFilter
      * Returns a list of storage pools that are
      * <ul>
      * <li>accessible (via Peer's {@link AccessContext})</li>
-     * <li>diskful</li>
+     * <li>diskful if parameter is true, diskless otherwise</li>
      * <li>online</li>
      * </ul>
      *
      * @return
      */
-    public ArrayList<StorPool> listAvailableStorPools()
+    public ArrayList<StorPool> listAvailableStorPools(boolean diskful)
     {
         ArrayList<StorPool> ret = new ArrayList<>();
         try
@@ -87,7 +89,7 @@ class StorPoolFilter
                         StorPool storPool = storPoolsIt.next();
 
                         if (
-                            storPool.getDeviceProviderKind().hasBackingDevice() && // diskful
+                            storPool.getDeviceProviderKind().hasBackingDevice() == diskful &&
                                 storPool.getNode().getObjProt().queryAccess(peerCtx).hasAccess(AccessType.USE) && // access
                                 storPool.getNode().getPeer(apiAccCtx).isConnected() // online
                         )
@@ -122,6 +124,7 @@ class StorPoolFilter
      * @param selectFilter
      * @param availableStorPoolsRef
      * @param rscDfnRef
+     * @param disklessTypeRef
      * @param freeCapacitiesRef
      * @param rscDfn
      *
@@ -133,7 +136,8 @@ class StorPoolFilter
         AutoSelectFilterApi selectFilter,
         List<StorPool> availableStorPoolsRef,
         ResourceDefinition rscDfnRef,
-        long sizeInKib
+        long sizeInKib,
+        Resource.Flags disklessTypeRef
     )
         throws AccessDeniedException
     {
@@ -167,20 +171,69 @@ class StorPoolFilter
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
         List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilter.skipAlreadyPlacedOnNodeNamesCheck();
 
-        /*
-         * Special case for nvme layer:
-         * The autoplacer can safely ignore all layers "above" nvme, as the autoplacer will only place nvme-targets.
-         * A satellite acting as an nvme-target does not need to support any layers above nvme.
-         */
+        logIfNotEmpty("filter node names: %s", filterNodeNameList);
+        logIfNotEmpty("filter stor pool names: %s", filterStorPoolNameList);
+        logIfNotEmpty("filter do not place with rsc: %s", filterDoNotPlaceWithRscList);
+        logIfNotEmpty("filter do not place with rsc regex: %s", filterDoNotPlaceWithRscRegex);
+        logIfNotEmpty("filter node properties match: %s", filterNodePropsMatch);
+        logIfNotEmpty("filter node properties mismatch: %s", filterNodePropsMismatch);
+        logIfNotEmpty("filter layer list: %s", filterLayerList);
+        logIfNotEmpty("filter provider list: %s", filterProviderList);
 
-        if (filterLayerList != null && filterLayerList.contains(DeviceLayerKind.NVME))
+        if (disklessTypeRef != null)
         {
-            filterLayerList = new ArrayList<>(
-                filterLayerList.subList(
-                    filterLayerList.indexOf(DeviceLayerKind.NVME), // list will include NVMe
-                    filterLayerList.size() // and everything after NVMe
-                )
-            );
+            if (disklessTypeRef.equals(Resource.Flags.NVME_INITIATOR))
+            {
+                if (filterLayerList == null || !filterLayerList.contains(DeviceLayerKind.NVME))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_LAYER_STACK,
+                            "You have to specify a --layer-list containing at least 'nvme' when autoplacing an nvme-initiator"
+                        )
+                    );
+                }
+            }
+            else if (disklessTypeRef.equals(Resource.Flags.DRBD_DISKLESS))
+            {
+                if (filterLayerList == null || !filterLayerList.contains(DeviceLayerKind.DRBD))
+                {
+                    /*
+                     * other as in NVME, we can assume here that DRBD is the topmost layer, as nothing is allowed above
+                     * DRBD
+                     */
+                    if (filterLayerList == null)
+                    {
+                        filterLayerList = new ArrayList<>(Arrays.asList(DeviceLayerKind.DRBD));
+                    }
+                    else
+                    {
+                        ArrayList<DeviceLayerKind> tmpList = new ArrayList<>();
+                        tmpList.add(DeviceLayerKind.DRBD);
+                        tmpList.addAll(filterLayerList);
+
+                        filterLayerList = tmpList;
+                    }
+                }
+            }
+        }
+        else
+        {
+            /*
+             * Special case for diskful nvme layer:
+             * The autoplacer can safely ignore all layers "above" nvme, as the autoplacer will only place nvme-targets.
+             * A satellite acting as an nvme-target does not need to support any layers above nvme.
+             */
+
+            if (filterLayerList != null && filterLayerList.contains(DeviceLayerKind.NVME))
+            {
+                filterLayerList = new ArrayList<>(
+                    filterLayerList.subList(
+                        filterLayerList.indexOf(DeviceLayerKind.NVME), // list will include NVMe
+                        filterLayerList.size() // and everything after NVMe
+                    )
+                );
+            }
         }
 
         if (skipAlreadyPlacedOnNodeNamesCheck == null)
@@ -340,7 +393,7 @@ class StorPoolFilter
                         Iterator<Resource> iterateResources = node.iterateResources(apiAccCtx);
                         while (nodeMatches && iterateResources.hasNext())
                         {
-                            String rscName = iterateResources.next().getDefinition().getName().value;
+                            String rscName = iterateResources.next().getDefinition().getName().displayValue;
 
                             boolean hasRscDeployed = matchesRegex.test(rscName) || containedInList.test(rscName);
                             nodeMatches = !hasRscDeployed;
@@ -414,6 +467,31 @@ class StorPoolFilter
             }
         }
         return filteredList;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void logIfNotEmpty(String format, Object obj)
+    {
+        boolean log = false;
+        if (obj != null)
+        {
+            if (obj instanceof Collection)
+            {
+                log = !((Collection) obj).isEmpty();
+            }
+            else if (obj instanceof Map)
+            {
+                log = !((Map) obj).isEmpty();
+            }
+            else
+            {
+                log = true;
+            }
+        }
+        if (log)
+        {
+            errorReporter.logTrace("Autoplacer.Filter: " + format, obj);
+        }
     }
 
     /**

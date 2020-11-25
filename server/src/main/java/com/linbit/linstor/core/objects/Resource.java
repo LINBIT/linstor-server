@@ -532,6 +532,20 @@ public class Resource extends AbsResource<Resource>
         {
             return FlagsHelper.fromStringList(Flags.class, listFlags);
         }
+
+        public static Flags valueOfOrNull(String str)
+        {
+            Flags ret = null;
+            for (Flags flag : Flags.values())
+            {
+                if (flag.name().equalsIgnoreCase(str))
+                {
+                    ret = flag;
+                    break;
+                }
+            }
+            return ret;
+        }
     }
 
     @Override

@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -206,7 +205,7 @@ public class CtrlRscAutoPlaceApiCallHandler
             throw new ApiRcException(makePlaceCountTooLowResponse(rscNameStr, alreadyPlaced));
         }
 
-        List<String> storPoolNameList;
+        List<String> storPoolNameList = null;
         if (
             alreadyPlaced.isEmpty() ||
                 (mergedSelectFilter.getStorPoolNameList() != null &&
@@ -214,14 +213,6 @@ public class CtrlRscAutoPlaceApiCallHandler
         )
         {
             storPoolNameList = mergedSelectFilter.getStorPoolNameList();
-        }
-        else
-        {
-            String autoSelectedStorPoolName = ctrlPropsHelper.getProps(alreadyPlaced.get(0)).map()
-                .get(InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME);
-            storPoolNameList = autoSelectedStorPoolName != null && !autoSelectedStorPoolName.trim().isEmpty() ?
-                Collections.singletonList(autoSelectedStorPoolName) :
-                Collections.emptyList();
         }
 
         errorReporter.logDebug(
@@ -370,11 +361,6 @@ public class CtrlRscAutoPlaceApiCallHandler
             Resource rsc = createdRsc.objB.extractApiCallRc(responses);
             autoFlux.addAll(createdRsc.objA);
             deployedResources.add(rsc);
-            // bypass the whilteList
-            ctrlPropsHelper.getProps(rsc).map().put(
-                InternalApiConsts.RSC_PROP_KEY_AUTO_SELECTED_STOR_POOL_NAME,
-                storPoolDisplayName
-            );
         }
 
         if (disklessOnRemainingNodes != null && disklessOnRemainingNodes)
