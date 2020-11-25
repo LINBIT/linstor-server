@@ -9,6 +9,8 @@ public interface AutoSelectFilterApi
 {
     Integer getReplicaCount();
 
+    Integer getAdditionalReplicaCount();
+
     List<String> getNodeNameList();
 
     List<String> getStorPoolNameList();
@@ -28,4 +30,6 @@ public interface AutoSelectFilterApi
     Boolean getDisklessOnRemaining();
 
     List<String> skipAlreadyPlacedOnNodeNamesCheck();
+
+    String getDisklessType();
 }

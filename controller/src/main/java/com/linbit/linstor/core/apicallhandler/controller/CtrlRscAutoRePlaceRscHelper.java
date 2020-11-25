@@ -164,11 +164,13 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                 minReplicaCount - curReplicaCount,
                                 null,
                                 null,
+                                null,
                                 Collections.singletonList(rscDfn.getName().displayValue),
                                 null,
                                 null,
                                 null,
                                 Collections.singletonList(DeviceLayerKind.DRBD),
+                                null,
                                 null,
                                 null,
                                 null

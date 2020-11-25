@@ -312,7 +312,21 @@ public class ProtoDeserializationUtils
             rscGrpProto.getRscDfnPropsMap(),
             parseVlmGrpList(rscGrpProto.getVlmGrpList()),
             // satellite does not need the autoSelectFilter anyways
-            new AutoSelectFilterPojo(null, null, null, null, null, null, null, null, null, null, null)
+            new AutoSelectFilterPojo(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            )
         );
     }
 

@@ -93,7 +93,9 @@ public class CtrlQueryMaxVlmSizeHelper
                 new AutoSelectFilterPojo(
                     null,
                     null,
+                    null,
                     Collections.singletonList(storPoolNameStr), // only consider this one storpoolname
+                    null,
                     null,
                     null,
                     null,

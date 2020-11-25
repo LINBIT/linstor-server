@@ -165,15 +165,6 @@ public class CtrlRscAutoPlaceApiCallHandler
             rscGrpSelectConfig.getApiData()
         );
 
-        /*
-         * If the resource is already deployed on X nodes, and the placement count now is Y:
-         * case Y > X
-         * only deploy (Y-X) additional resources, but on the previously selected storPoolName.
-         * case Y == X
-         * either NOP or additionally deploy disklessly on new nodes.
-         * case Y < X
-         * error.
-         */
         List<Resource> alreadyPlaced = privilegedStreamResources(
             ctrlApiDataLoader.loadRscDfn(rscNameStr, true)
         )
@@ -186,10 +177,30 @@ public class CtrlRscAutoPlaceApiCallHandler
             .collect(Collectors.toList());
         alreadyPlacedDisklessNotDeleted.removeAll(alreadyDeleted);
 
-        int additionalPlaceCount = Optional.ofNullable(
-            mergedSelectFilter.getReplicaCount()
-        ).orElse(0) - (alreadyPlaced.size() - alreadyPlacedDisklessNotDeleted.size() - alreadyDeleted.size());
+        int additionalPlaceCount;
+        if (
+            mergedSelectFilter.getAdditionalReplicaCount() != null &&
+            mergedSelectFilter.getAdditionalReplicaCount() > 0
+        )
+        {
+            additionalPlaceCount = mergedSelectFilter.getAdditionalReplicaCount();
+        }
+        else
+        {
+            /*
+             * If the resource is already deployed on X nodes, and the placement count now is Y:
+             * case Y > X
+             * only deploy (Y-X) additional resources, but on the previously selected storPoolName.
+             * case Y == X
+             * either NOP or additionally deploy disklessly on new nodes.
+             * case Y < X
+             * error.
+             */
 
+            additionalPlaceCount = Optional.ofNullable(
+                mergedSelectFilter.getReplicaCount()
+            ).orElse(0) - (alreadyPlaced.size() - alreadyPlacedDisklessNotDeleted.size() - alreadyDeleted.size());
+        }
         if (additionalPlaceCount < 0)
         {
             throw new ApiRcException(makePlaceCountTooLowResponse(rscNameStr, alreadyPlaced));
@@ -242,6 +253,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 .map(rsc -> rsc.getNode().getName().displayValue).collect(Collectors.toList());
 
             AutoSelectFilterPojo autoStorConfig = new AutoSelectFilterPojo(
+                null,
                 additionalPlaceCount,
                 mergedSelectFilter.getNodeNameList(),
                 storPoolNameList,
@@ -258,7 +270,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                 mergedSelectFilter.getLayerStackList(),
                 mergedSelectFilter.getProviderList(),
                 mergedSelectFilter.getDisklessOnRemaining(), // should be ignored anyways
-                disklessNodeNames
+                disklessNodeNames,
+                mergedSelectFilter.getDisklessType()
             );
 
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);

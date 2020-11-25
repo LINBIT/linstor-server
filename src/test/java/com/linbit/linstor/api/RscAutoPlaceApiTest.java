@@ -1760,6 +1760,43 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         assertEquals(2, deployedRscs.size());
     }
 
+    @Test
+    public void autoPlaceAdditionalTest() throws Exception
+    {
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            null,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100 * GB)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("sp1", 90 * GB)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 50 * GB)
+                .build()
+            .addRsc(TEST_RSC_NAME, "sp1", "stlt1")
+            .setAdditionalPlaceCount(1);
+
+        evaluateTest(call);
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .map(rsc -> rsc.getNode())
+            .sorted()
+            .collect(Collectors.toList());
+
+        assertEquals(2, deployedNodes.size());
+    }
+
     private void expectDeployed(
         String storPoolNameStr,
         String rscNameStr,
@@ -1844,7 +1881,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private class RscAutoPlaceApiCall extends AbsApiCallTester
     {
         private final String rscNameStr;
-        private final int placeCount;
+        private Integer placeCount;
+        private Integer additionalPlaceCount;
 
         private final List<String> doNotPlaceWithRscList = new ArrayList<>();
         private final List<String> nodeNameList = new ArrayList<>();
@@ -1859,10 +1897,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final List<DeviceLayerKind> layerStack = new ArrayList<>(Arrays.asList(DRBD, STORAGE));
         private final List<DeviceProviderKind> providerList =
             new ArrayList<>(Arrays.asList(DeviceProviderKind.values()));
+        private String disklessType;
 
         RscAutoPlaceApiCall(
             String rscNameStrRef,
-            int placeCountRef,
+            Integer placeCountRef,
             boolean expectDeployment,
             long... expectedRetCodes
         )
@@ -1882,6 +1921,18 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             );
             rscNameStr = rscNameStrRef;
             placeCount = placeCountRef;
+        }
+
+        RscAutoPlaceApiCall setPlaceCount(Integer placeCountRef)
+        {
+            placeCount = placeCountRef;
+            return this;
+        }
+
+        RscAutoPlaceApiCall setAdditionalPlaceCount(Integer additionalPlaceCountRef)
+        {
+            additionalPlaceCount = additionalPlaceCountRef;
+            return this;
         }
 
         public RscAutoPlaceApiCall setProvider(DeviceProviderKind... kinds)
@@ -1946,6 +1997,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
+        RscAutoPlaceApiCall setDisklessType(String disklessTypeRef)
+        {
+            disklessType = disklessTypeRef;
+            return this;
+        }
+
         @Override
         public ApiCallRc executeApiCall()
             throws Exception
@@ -1955,7 +2012,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 rscNameStr,
                 new AutoSelectFilterApi()
                 {
-
                     @Override
                     public List<String> getNodeNameList()
                     {
@@ -1984,6 +2040,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     public Integer getReplicaCount()
                     {
                         return placeCount;
+                    }
+
+                    @Override
+                    public Integer getAdditionalReplicaCount()
+                    {
+                        return additionalPlaceCount;
                     }
 
                     @Override
@@ -2020,6 +2082,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     public List<String> skipAlreadyPlacedOnNodeNamesCheck()
                     {
                         return skipAlreadyPlacedOnNodeCheck;
+                    }
+
+                    @Override
+                    public String getDisklessType()
+                    {
+                        return disklessType;
                     }
                 }
             ).subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);

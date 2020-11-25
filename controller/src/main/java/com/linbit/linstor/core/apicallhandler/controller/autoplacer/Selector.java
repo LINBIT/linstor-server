@@ -139,13 +139,18 @@ class Selector
         Set<StorPoolWithScore> currentSelection;
         int startIdx = 0;
         double selectionScore = Double.NEGATIVE_INFINITY;
-        final Integer replicaCount = selectFilterRef.getReplicaCount();
         boolean keepSearchingForCandidates = true;
         SelectionManger selectionManger = new SelectionManger(
             selectFilterRef,
             alreadyDeployedOnNodes,
             alreadySelectedProviderKind,
             sortedStorPoolByScoreArr
+        );
+        final Integer replicaCount = selectionManger.rscCountToReach;
+        errorReporter.logTrace(
+            "Autoplacer.Selector: Starting selection for %d (+%d) resources",
+            replicaCount,
+            replicaCount - alreadyDeployedOnNodes.size()
         );
         do
         {
@@ -166,7 +171,7 @@ class Selector
                         .append(spWithScore.score)
                         .append(", ");
                 }
-                storPoolDescrForLog.setLength(storPoolDescrForLog.length()-2);
+                storPoolDescrForLog.setLength(storPoolDescrForLog.length() - 2);
 
                 if (currentScore > selectionScore)
                 {
@@ -279,6 +284,7 @@ class Selector
         private final Set<Node> selectedNodes;
         private final Set<StorPoolWithScore> selectedStorPoolWithScoreSet;
         private final StorPoolWithScore[] sortedStorPoolByScoreArr;
+        private final int rscCountToReach;
         private DeviceProviderKind selectedProviderKind;
 
         /*
@@ -302,10 +308,45 @@ class Selector
             selectedProviderKind = alreadySelectedProviderKindRef;
             sortedStorPoolByScoreArr = sortedStorPoolByScoreArrRef;
 
+            rscCountToReach = getReplicaCount(selectFilterRef, alreadyDeployedOnNodesRef.size());
+
             selectedNodes = new HashSet<>();
             selectedStorPoolWithScoreSet = new HashSet<>();
 
             clear();
+        }
+
+        private int getReplicaCount(AutoSelectFilterApi selectFilterRef, int alreadyExistingCount)
+        {
+            Integer ret = alreadyExistingCount;
+            Integer additional = null;
+            if (
+                selectFilterRef.getAdditionalReplicaCount() != null &&
+                    selectFilterRef.getAdditionalReplicaCount() > 0
+            )
+            {
+                additional = selectFilterRef.getAdditionalReplicaCount();
+            }
+
+            if (selectFilterRef.getReplicaCount() != null)
+            {
+                if (selectFilterRef.getReplicaCount() > 0)
+                {
+                    ret = selectFilterRef.getReplicaCount();
+                }
+                else if (additional != null)
+                {
+                    ret = additional + alreadyExistingCount;
+                }
+            }
+            else
+            {
+                if (additional != null)
+                {
+                    ret = additional + alreadyExistingCount;
+                }
+            }
+            return ret;
         }
 
         public HashSet<StorPoolWithScore> findSelection(int startIdxRef)
@@ -339,7 +380,7 @@ class Selector
 
         private boolean isComplete()
         {
-            return selectedStorPoolWithScoreSet.size() == selectFilter.getReplicaCount();
+            return selectedStorPoolWithScoreSet.size() == rscCountToReach;
         }
 
         private boolean chooseIfAllowed(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException

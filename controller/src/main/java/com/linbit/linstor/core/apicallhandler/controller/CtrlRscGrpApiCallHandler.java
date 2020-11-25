@@ -808,6 +808,7 @@ public class CtrlRscGrpApiCallHandler
             {
                 AutoSelectFilterApi autoSelectFilterPojo = new AutoSelectFilterPojo(
                     autoPlaceConfig.getReplicaCount(),
+                    autoPlaceConfig.getAdditionalReplicaCount(),
                     autoPlaceConfig.getNodeNameList(),
                     autoPlaceConfig.getStorPoolNameList(),
                     autoPlaceConfig.getDoNotPlaceWithRscList(),
@@ -817,7 +818,8 @@ public class CtrlRscGrpApiCallHandler
                     layerStackDevLayerKind,
                     autoPlaceConfig.getProviderList(),
                     autoPlaceConfig.getDisklessOnRemaining(),
-                    autoPlaceConfig.skipAlreadyPlacedOnNodeNamesCheck()
+                    autoPlaceConfig.skipAlreadyPlacedOnNodeNamesCheck(),
+                    autoPlaceConfig.getDisklessType()
                 );
                 deployedResources = ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
                     /*

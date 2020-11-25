@@ -175,6 +175,7 @@ public class ResourceGroups
             }
             autoSelectFilter = new AutoSelectFilterPojo(
                 select_filter.place_count,
+                select_filter.additional_place_count,
                 select_filter.node_name_list,
                 storPoolList,
                 select_filter.not_place_with_rsc,
@@ -186,7 +187,8 @@ public class ResourceGroups
                 select_filter.provider_list == null ? null :
                     LinstorParsingUtils.asProviderKind(select_filter.provider_list),
                 select_filter.diskless_on_remaining,
-                null
+                null,
+                null // no disklessType on rscGrp
             );
         }
 

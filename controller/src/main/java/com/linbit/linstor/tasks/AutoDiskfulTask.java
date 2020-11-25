@@ -330,6 +330,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                         AutoSelectFilterPojo.merge(
                             new AutoSelectFilterPojo(
                                 1,
+                                null,
                                 Collections.singletonList(rsc.getNode().getName().displayValue),
                                 null,
                                 null,
@@ -341,7 +342,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                                 null,
                                 rscDfn.streamResource(sysCtx)
                                     .map(tmpRsc -> tmpRsc.getNode().getName().displayValue)
-                                    .collect(Collectors.toList())
+                                    .collect(Collectors.toList()),
+                                null
                             ),
                             rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
                         ),

@@ -37,6 +37,7 @@ info:
           - /v1/resource-groups/{resource_group}/volume-groups/properties/info
           - /v1/resource-definitions/{resource}/drbd-proxy/properties/info
        - Added /v1/nodes/{node}/restore
+       - Added additional_place_count to AutoSelectFilter
     * 1.5.0
        - Added etcd.prefix to ControllerConfigDbEtcd parameters
     * 1.4.0
@@ -118,7 +119,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.5.0
+  version: 1.6.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -5325,6 +5326,9 @@ components:
         place_count:
           type: integer
           format: int32
+        additional_place_count:
+          type: integer
+          format: int32
         node_name_list:
           type: array
           items:
@@ -5365,6 +5369,8 @@ components:
             type: string
         diskless_on_remaining:
           type: boolean
+        diskless_type:
+          type: string
     Candidate:
       type: object
       properties:

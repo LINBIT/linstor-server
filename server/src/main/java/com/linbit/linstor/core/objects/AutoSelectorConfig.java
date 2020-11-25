@@ -242,6 +242,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     {
         return new AutoSelectFilterPojo(
             replicaCount.get(),
+            null, // no "additional" placeCounts for rscGrps
             Collections.unmodifiableList(nodeNameList),
             Collections.unmodifiableList(storPoolNameList),
             Collections.unmodifiableList(doNotPlaceWithRscList),
@@ -251,7 +252,8 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             Collections.unmodifiableList(layerStack),
             Collections.unmodifiableList(allowedProviderList),
             disklessOnRemaining.get(),
-            null
+            null,
+            null // no disklessType for rscGrps
         );
     }
 

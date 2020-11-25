@@ -11,6 +11,7 @@ import java.util.List;
 public class AutoSelectFilterPojo implements AutoSelectFilterApi
 {
     private final @Nullable Integer placeCount; // null only allowed for resource groupss
+    private final @Nullable Integer additionalPlaceCount;
     private final @Nullable List<String> nodeNameList;
     private final @Nullable List<String> storPoolNameList;
     private final @Nullable List<String> doNotPlaceWithRscList;
@@ -21,9 +22,11 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     private final @Nullable List<DeviceProviderKind> providerList;
     private final @Nullable Boolean disklessOnRemaining;
     private final @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheck;
+    private final @Nullable String disklessType;
 
     public AutoSelectFilterPojo(
         @Nullable Integer placeCountRef,
+        @Nullable Integer additionalPlaceCountRef,
         @Nullable List<String> nodeNameListRef,
         @Nullable List<String> storPoolNameListRef,
         @Nullable List<String> doNotPlaceWithRscListRef,
@@ -33,10 +36,12 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         @Nullable List<DeviceLayerKind> layerStackListRef,
         @Nullable List<DeviceProviderKind> deviceProviderKindsRef,
         @Nullable Boolean disklessOnRemainingRef,
-        @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheckRef
+        @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheckRef,
+        @Nullable String disklessTypeRef
     )
     {
         placeCount = placeCountRef;
+        additionalPlaceCount = additionalPlaceCountRef;
         nodeNameList = nodeNameListRef;
         storPoolNameList = storPoolNameListRef;
         doNotPlaceWithRscList = doNotPlaceWithRscListRef;
@@ -47,6 +52,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         layerStackList = layerStackListRef;
         providerList = deviceProviderKindsRef;
         skipAlreadyPlacedOnNodeNamesCheck = skipAlreadyPlacedOnNodeNamesCheckRef;
+        disklessType = disklessTypeRef;
     }
 
     public static AutoSelectFilterPojo merge(
@@ -54,6 +60,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     )
     {
         Integer placeCount = null;
+        Integer additionalPlaceCount = null;
         List<String> replicasOnDifferentList = null;
         List<String> replicasOnSameList = null;
         String notPlaceWithRscRegex = null;
@@ -64,6 +71,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         List<DeviceProviderKind> providerList = null;
         Boolean disklessOnRemaining = null;
         List<String> skipAlreadyPlacedOnNodeCheck = null;
+        String disklessType = null;
 
         for (AutoSelectFilterApi cfgApi : cfgArr)
         {
@@ -72,6 +80,10 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
                 if (placeCount == null)
                 {
                     placeCount = cfgApi.getReplicaCount();
+                }
+                if (additionalPlaceCount == null)
+                {
+                    additionalPlaceCount = cfgApi.getAdditionalReplicaCount();
                 }
                 if (replicasOnDifferentList == null)
                 {
@@ -113,11 +125,16 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
                 {
                     skipAlreadyPlacedOnNodeCheck = cfgApi.skipAlreadyPlacedOnNodeNamesCheck();
                 }
+                if (disklessType == null)
+                {
+                    disklessType = cfgApi.getDisklessType();
+                }
             }
         }
 
         return new AutoSelectFilterPojo(
             placeCount,
+            additionalPlaceCount,
             nodeNameList,
             storPoolNameList,
             notPlaceWithRscList,
@@ -127,7 +144,8 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             layerStack,
             providerList,
             disklessOnRemaining,
-            skipAlreadyPlacedOnNodeCheck
+            skipAlreadyPlacedOnNodeCheck,
+            disklessType
         );
     }
 
@@ -138,7 +156,13 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     }
 
     @Override
-    public List<String> getNodeNameList()
+    public @Nullable Integer getAdditionalReplicaCount()
+    {
+        return additionalPlaceCount;
+    }
+
+    @Override
+    public @Nullable List<String> getNodeNameList()
     {
         return nodeNameList;
     }
@@ -195,5 +219,11 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     public @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheck()
     {
         return skipAlreadyPlacedOnNodeNamesCheck;
+    }
+
+    @Override
+    public @Nullable String getDisklessType()
+    {
+        return disklessType;
     }
 }

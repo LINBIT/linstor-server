@@ -738,6 +738,12 @@ public class Json
         }
 
         @Override
+        public Integer getAdditionalReplicaCount()
+        {
+            return autoSelectFilter.additional_place_count;
+        }
+
+        @Override
         public List<String> getNodeNameList()
         {
             return autoSelectFilter.node_name_list;
@@ -797,6 +803,12 @@ public class Json
         public List<String> skipAlreadyPlacedOnNodeNamesCheck()
         {
             return null;
+        }
+
+        @Override
+        public String getDisklessType()
+        {
+            return autoSelectFilter.diskless_type;
         }
     }
 
