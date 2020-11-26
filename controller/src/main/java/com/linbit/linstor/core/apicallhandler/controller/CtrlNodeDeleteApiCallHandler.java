@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import static java.util.stream.Collectors.toList;
+
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -42,6 +44,7 @@ import static com.linbit.utils.StringUtils.firstLetterCaps;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,8 +56,6 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
-
-import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionListener
@@ -349,38 +350,56 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
     private boolean deleteNodeIfEmpty(Node node)
     {
-        boolean canDelete = node.getResourceCount() == 0;
-        if (canDelete)
+        try
         {
-            // If the node has no resources, then there should not be any volumes referenced
-            // by the storage pool -- double check
-            Iterator<StorPool> storPoolIterator = getStorPoolIteratorPrivileged(node);
-            while (storPoolIterator.hasNext())
+            if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
             {
-                StorPool storPool = storPoolIterator.next();
-                if (!hasVolumesPrivileged(storPool))
+                boolean canDelete = node.getResourceCount() == 0;
+                if (canDelete)
                 {
-                    deletePrivileged(storPool);
-                }
-                else
-                {
-                    throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_VLM,
-                        String.format(
-                            "Deletion of node '%s' failed because the storage pool '%s' references volumes " +
-                                "on this node, although the node does not reference any resources",
-                            node.getName(),
-                            storPool.getName()
-                        )
-                    ));
-                }
-            }
+                    // If the node has no resources, then there should not be any volumes referenced
+                    // by the storage pool -- double check
+                    Iterator<StorPool> storPoolIterator = getStorPoolIteratorPrivileged(node);
+                    while (storPoolIterator.hasNext())
+                    {
+                        StorPool storPool = storPoolIterator.next();
+                        if (!hasVolumesPrivileged(storPool))
+                        {
+                            deletePrivileged(storPool);
+                        }
+                        else
+                        {
+                            throw new ApiRcException(
+                                ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.FAIL_EXISTS_VLM,
+                                    String.format(
+                                        "Deletion of node '%s' failed because the storage pool '%s' references volumes " +
+                                            "on this node, although the node does not reference any resources",
+                                        node.getName(),
+                                        storPool.getName()
+                                    )
+                                )
+                            );
+                        }
+                    }
 
-            NodeName nodeName = node.getName();
-            deletePrivileged(node);
-            removeNodePrivileged(nodeName);
+                    NodeName nodeName = node.getName();
+
+                    // to avoid having to pass a parameter through several different methods
+                    // to distinguish whether this was triggered through the api or not,
+                    // it is always not allowed - get rid of an evicted node through node lost cmd
+
+                    deletePrivileged(node);
+                    removeNodePrivileged(nodeName);
+                }
+                return canDelete;
+            }
         }
-        return canDelete;
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return false;
     }
 
     private void requireNodesMapChangeAccess()
@@ -549,7 +568,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     {
         try
         {
-            node.delete(apiCtx);
+                node.delete(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

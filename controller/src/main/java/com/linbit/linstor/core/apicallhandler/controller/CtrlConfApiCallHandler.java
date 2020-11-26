@@ -459,7 +459,10 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM:
                             notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                             break;
-                        case ApiConsts.KEY_UPDATE_CACHE_INTERVAL:
+                        case ApiConsts.KEY_UPDATE_CACHE_INTERVAL: // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_AFTER_TIME: // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES: // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT:
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace); // no need to update stlts
                             break;
                         case ApiConsts.KEY_EXT_CMD_WAIT_TO:

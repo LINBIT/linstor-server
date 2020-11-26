@@ -178,16 +178,17 @@ public class CtrlRscAutoPlaceApiCallHandler
             ctrlApiDataLoader.loadRscDfn(rscNameStr, true)
         )
             .collect(Collectors.toList());
-        List<Resource> alreadyPlacedDiskless = alreadyPlaced.stream()
+        List<Resource> alreadyPlacedDisklessNotDeleted = alreadyPlaced.stream()
             .filter(rsc -> isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
             .collect(Collectors.toList());
         List<Resource> alreadyDeleted = alreadyPlaced.stream()
-            .filter(rsc -> isFlagSet(rsc, Resource.Flags.DELETE))
+            .filter(rsc -> isFlagSet(rsc, Resource.Flags.DELETE) || isNodeFlagSet(rsc, Node.Flags.EVICTED))
             .collect(Collectors.toList());
+        alreadyPlacedDisklessNotDeleted.removeAll(alreadyDeleted);
 
         int additionalPlaceCount = Optional.ofNullable(
             mergedSelectFilter.getReplicaCount()
-        ).orElse(0) - (alreadyPlaced.size() - alreadyPlacedDiskless.size() - alreadyDeleted.size());
+        ).orElse(0) - (alreadyPlaced.size() - alreadyPlacedDisklessNotDeleted.size() - alreadyDeleted.size());
 
         if (additionalPlaceCount < 0)
         {
@@ -237,7 +238,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         }
         else
         {
-            List<String> disklessNodeNames = alreadyPlacedDiskless.stream()
+            List<String> disklessNodeNames = alreadyPlacedDisklessNotDeleted.stream()
                 .map(rsc -> rsc.getNode().getName().displayValue).collect(Collectors.toList());
 
             AutoSelectFilterPojo autoStorConfig = new AutoSelectFilterPojo(
@@ -316,7 +317,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         return autoplacer.autoPlace(autoStorConfigRef, rscDfnRef, rscSize);
     }
 
-    private Pair<List<Flux<ApiCallRc>>, Set<Resource>> createResources(
+    public Pair<List<Flux<ApiCallRc>>, Set<Resource>> createResources(
         ResponseContext context,
         ApiCallRcImpl responses,
         String rscNameStr,
@@ -434,6 +435,24 @@ public class CtrlRscAutoPlaceApiCallHandler
         try
         {
             flagSet = rsc.getStateFlags().isSet(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + CtrlRscApiCallHandler.getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return flagSet;
+    }
+
+    private boolean isNodeFlagSet(Resource rsc, Node.Flags... flags)
+    {
+        boolean flagSet = false;
+        try
+        {
+            flagSet = rsc.getNode().getFlags().isSet(peerAccCtx.get(), flags);
         }
         catch (AccessDeniedException accDeniedExc)
         {

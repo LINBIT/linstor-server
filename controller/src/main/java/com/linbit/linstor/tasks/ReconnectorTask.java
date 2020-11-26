@@ -1,5 +1,6 @@
 package com.linbit.linstor.tasks;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -13,6 +14,8 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -42,7 +45,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 
 import reactor.util.context.Context;
 
@@ -269,8 +274,12 @@ public class ReconnectorTask implements Task
                             transMgr.commit();
                             synchronized (syncObj)
                             {
-                                reconnectorConfigSet.add(new ReconnectConfig(
-                                    config, config.peer.getConnector().reconnect(config.peer)));
+                                reconnectorConfigSet.add(
+                                    new ReconnectConfig(
+                                        config,
+                                        config.peer.getConnector().reconnect(config.peer)
+                                    )
+                                );
                                 reconnectorConfigSet.remove(config);
                             }
                         }
@@ -394,12 +403,12 @@ public class ReconnectorTask implements Task
                     systemConfRepo.getCtrlConfForView(config.peer.getAccessContext())
                 );
                 final long timeout = Long.parseLong(
-                        props.getProp(
-                            ApiConsts.KEY_AUTO_EVICT_AFTER_TIME,
-                            ApiConsts.NAMESPC_DRBD_OPTIONS,
-                            "60" // 1 hour
-                        )
-                    ) * 60 * 1000; // to milliseconds
+                    props.getProp(
+                        ApiConsts.KEY_AUTO_EVICT_AFTER_TIME,
+                        ApiConsts.NAMESPC_DRBD_OPTIONS,
+                        "60" // 1 hour
+                    )
+                ) * 60 * 1000; // to milliseconds
                 if (config.drbdOk != drbdOkNew)
                 {
                     config.drbdOk = drbdOkNew;
@@ -421,12 +430,26 @@ public class ReconnectorTask implements Task
                     );
                     int numNodes = nodeRepository.getMapForView(apiCtx).size();
                     int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
-                    if (numDiscon < maxDiscon && !config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
+                    if (numDiscon < maxDiscon)
                     {
-                        errorReporter.logTrace(
-                            config.peer + " has been offline for too long, relocation of resources started."
-                        );
-                        ctrlNodeApiCallHandler.get().declareEvicted(config.peer.getNode()).subscribe();
+                        if (!config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
+                        {
+                            errorReporter.logTrace(
+                                config.peer + " has been offline for too long, relocation of resources started."
+                            );
+                            ctrlNodeApiCallHandler.get().declareEvicted(config.peer.getNode())
+                                .subscriberContext(
+                                    Context.of(
+                                        ApiModule.API_CALL_NAME,
+                                        "Recon:AutoEvicting",
+                                        AccessContext.class,
+                                        config.peer.getAccessContext(),
+                                        Peer.class,
+                                        config.peer
+                                    )
+                                )
+                                .subscribe();
+                        }
                     }
                     else {
                         errorReporter.logTrace(
@@ -446,27 +469,81 @@ public class ReconnectorTask implements Task
 
     private boolean drbdConnectionsOk(Peer peer)
     {
-        Map<ResourceName, SatelliteResourceState> resStates = peer.getSatelliteState().getResourceStates();
-        if (resStates.isEmpty())
+        boolean drbdOk = false;
+
+        try
         {
-            return false;
-        }
-        boolean drbdOk = true;
-        for (SatelliteResourceState state : resStates.values())
-        {
-            for (Map<NodeName, String> conStates : state.getConnectionStates().values())
+            Node nodeToCheck = peer.getNode();
+            Set<Node> neighbors = getNeighbors(nodeToCheck);
+            for (Node neighbor : neighbors)
             {
-                for (String conVal : conStates.values())
+                if (neighbor.getPeer(apiCtx) != null)
                 {
-                    if (!conVal.equalsIgnoreCase(STATUS_CONNECTED))
+                    Map<ResourceName, SatelliteResourceState> neighborRscStates = neighbor.getPeer(apiCtx)
+                        .getSatelliteState().getResourceStates();
+
+                    for (SatelliteResourceState neighborRscState : neighborRscStates.values())
                     {
-                        drbdOk = false;
-                        break;
+                        for (
+                            Entry<NodeName, Map<NodeName, String>> conStateEntry : neighborRscState.getConnectionStates()
+                                .entrySet()
+                        )
+                        {
+                            if (conStateEntry.getKey().equals(nodeToCheck.getName()))
+                            {
+                                Map<NodeName, String> conStates = conStateEntry.getValue();
+                                for (Entry<NodeName, String> conEntry : conStates.entrySet())
+                                {
+                                    String conVal = conEntry.getValue();
+                                    if (conVal.equalsIgnoreCase(STATUS_CONNECTED))
+                                    {
+                                        drbdOk = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                String conValOrNull = conStateEntry.getValue().get(nodeToCheck.getName());
+                                if (conValOrNull != null && conValOrNull.equalsIgnoreCase(STATUS_CONNECTED))
+                                {
+                                    drbdOk = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
         return drbdOk;
+    }
+
+    private Set<Node> getNeighbors(Node nodeToCheck) throws AccessDeniedException
+    {
+        Set<Node> neighbors = new HashSet<>();
+        Iterator<Resource> localRscIt;
+        localRscIt = nodeToCheck.iterateResources(apiCtx);
+        while (localRscIt.hasNext())
+        {
+            Resource localRsc = localRscIt.next();
+            ResourceDefinition rscDfn = localRsc.getDefinition();
+            Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+            while (rscIt.hasNext())
+            {
+                Resource otherRsc = rscIt.next();
+                if (!otherRsc.equals(localRsc))
+                {
+                    neighbors.add(otherRsc.getNode());
+                }
+            }
+        }
+        return neighbors;
     }
 
     public void startReconnecting(Collection<Node> nodes, AccessContext initCtx)
@@ -509,11 +586,16 @@ public class ReconnectorTask implements Task
         }
 
         @Override
+        public String toString()
+        {
+            return "ReconnectConfig [peer=" + peer + ", offlineSince=" + offlineSince + ", drbdOk=" + drbdOk + "]";
+        }
+
+        @Override
         public int hashCode()
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + (int) (offlineSince ^ (offlineSince >>> 32));
             result = prime * result + ((peer == null) ? 0 : peer.hashCode());
             return result;
         }
@@ -528,8 +610,6 @@ public class ReconnectorTask implements Task
             if (getClass() != obj.getClass())
                 return false;
             ReconnectConfig other = (ReconnectConfig) obj;
-            if (offlineSince != other.offlineSince)
-                return false;
             return Objects.equals(peer, other.peer);
         }
     }

@@ -52,6 +52,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -219,6 +220,7 @@ class StltRscApiCallHandler
             Resource localRsc = null;
             if (rscDfn == null)
             {
+                errorReporter.logTrace("creating new rscDfn '%s'", rscName);
                 rscDfn = resourceDefinitionFactory.getInstanceSatellite(
                     apiCtx,
                     rscRawData.getRscDfnUuid(),
@@ -342,6 +344,11 @@ class StltRscApiCallHandler
                         otherRscRaw.getRscLayerDataPojo()
                     );
 
+                    errorReporter.logTrace(
+                        "%s created with flags %s",
+                        remoteRsc,
+                        FlagsHelper.toStringList(Resource.Flags.class, otherRscRaw.getRscFlags())
+                    );
                     layerRscDataMerger.mergeLayerData(remoteRsc, otherRscRaw.getRscLayerDataPojo(), true);
 
                     createdRscSet.add(new Resource.ResourceKey(remoteRsc));
@@ -519,6 +526,11 @@ class StltRscApiCallHandler
                         remoteRscProps.map().putAll(otherRsc.getRscProps());
                         remoteRscProps.keySet().retainAll(otherRsc.getRscProps().keySet());
 
+                        errorReporter.logTrace(
+                            "resetting flags of remote rsc (%s) to %s",
+                            remoteRsc,
+                            FlagsHelper.toStringList(Resource.Flags.class, otherRsc.getRscFlags())
+                        );
                         // update flags
                         remoteRsc.getStateFlags().resetFlagsTo(
                             apiCtx,

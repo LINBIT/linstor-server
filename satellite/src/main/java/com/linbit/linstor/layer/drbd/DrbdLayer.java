@@ -657,19 +657,24 @@ public class DrbdLayer implements DeviceLayer
                                         DrbdResource drbdRscState = drbdState.getDrbdResource(
                                             drbdRscData.getSuffixedResourceName()
                                         );
-                                        DrbdConnection peerConnection = drbdRscState.getConnection(
-                                            otherRsc.getAbsResource().getNode().getName().displayValue
-                                        );
-                                        if (peerConnection != null)
+                                        if (drbdRscState != null)
                                         {
-                                            throw delPeerExc != null ? delPeerExc : forgetPeerExc;
-                                        }
-                                        else
-                                        {
-                                            // ignore the exceptions, the peer does not seem to exist any more
-                                            errorReporter.logDebug(
-                                                "del-peer and forget-peer failed, but we also failed to find the specific peer. noop"
+                                            // we might not even have started this resource -> no peer we could forget
+                                            // about
+                                            DrbdConnection peerConnection = drbdRscState.getConnection(
+                                                otherRsc.getAbsResource().getNode().getName().displayValue
                                             );
+                                            if (peerConnection != null)
+                                            {
+                                                throw delPeerExc != null ? delPeerExc : forgetPeerExc;
+                                            }
+                                            else
+                                            {
+                                                // ignore the exceptions, the peer does not seem to exist any more
+                                                errorReporter.logDebug(
+                                                    "del-peer and forget-peer failed, but we also failed to find the specific peer. noop"
+                                                );
+                                            }
                                         }
                                     }
                                     catch (NoInitialStateException exc)

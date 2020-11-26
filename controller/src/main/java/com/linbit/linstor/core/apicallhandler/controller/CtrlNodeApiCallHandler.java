@@ -79,6 +79,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -977,12 +978,12 @@ public class CtrlNodeApiCallHandler
                 {
                     Node node = ctrlApiDataLoader.loadNode(nodeName, true);
                     node.unMarkEvicted(apiCtx);
+                    ctrlTransactionHelper.commit();
                     Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateFlux = ctrlSatelliteUpdateCaller.updateSatellites(
                         node.getUuid(),
                         node.getName(),
                         CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
                     );
-                    ctrlTransactionHelper.commit();
                     ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
                         ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
                         "Successfully restored node " + nodeName
@@ -1020,6 +1021,7 @@ public class CtrlNodeApiCallHandler
             () ->
             {
                 node.markEvicted(apiCtx);
+                ctrlTransactionHelper.commit();
                 Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlSatelliteUpdateCaller.updateSatellites(
                     node.getUuid(),
                     node.getName(),
@@ -1031,12 +1033,10 @@ public class CtrlNodeApiCallHandler
                 {
                     if (LayerRscUtils.getLayerStack(res, apiCtx).contains(DeviceLayerKind.DRBD))
                     {
-                        res.markDeleted(apiCtx);
                         autoRePlaceRscHelper.addNeedRePlaceRsc(res);
                         autoRePlaceRscHelper.manage(new ApiCallRcImpl(), res.getDefinition(), autoState);
                     }
                 }
-                ctrlTransactionHelper.commit();
                 return Flux.concat(autoState.additionalFluxList);
             }
         );

@@ -165,6 +165,7 @@ class StorPoolFilter
         );
         List<DeviceLayerKind> filterLayerList = selectFilter.getLayerStackList();
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
+        List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilter.skipAlreadyPlacedOnNodeNamesCheck();
 
         /*
          * Special case for nvme layer:
@@ -180,6 +181,12 @@ class StorPoolFilter
                     filterLayerList.size() // and everything after NVMe
                 )
             );
+        }
+
+        if (skipAlreadyPlacedOnNodeNamesCheck == null)
+        {
+            // just to prevent NPE
+            skipAlreadyPlacedOnNodeNamesCheck = new ArrayList<>();
         }
 
         for (StorPool sp : availableStorPoolsRef)
@@ -328,7 +335,7 @@ class StorPoolFilter
                         matchesRegex = ignored -> false;
                     }
 
-                    if (!selectFilter.skipAlreadyPlacedOnNodeNamesCheck().contains(nodeDisplayValue))
+                    if (!skipAlreadyPlacedOnNodeNamesCheck.contains(nodeDisplayValue))
                     {
                         Iterator<Resource> iterateResources = node.iterateResources(apiAccCtx);
                         while (nodeMatches && iterateResources.hasNext())
