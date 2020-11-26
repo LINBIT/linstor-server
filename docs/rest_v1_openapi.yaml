@@ -160,7 +160,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -210,7 +210,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -233,7 +233,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/storage-pool-definitions/properties/info:
@@ -290,7 +290,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -489,7 +489,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -512,7 +512,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/properties/info:
@@ -543,7 +543,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/{node}/reconnect:
@@ -561,7 +561,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/{node}/net-interfaces:
@@ -608,7 +608,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -634,7 +634,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -651,7 +651,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/{node}/storage-pools:
@@ -706,7 +706,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -826,7 +826,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -849,7 +849,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
   /v1/nodes/{node}/storage-pools/properties/info:
     get:
       summary: list all storage-pool properties
@@ -886,7 +886,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
         '503':
@@ -894,7 +894,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
     put:
       tags:
         - developers
@@ -906,7 +906,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '401':
@@ -914,7 +914,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -970,7 +970,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -1350,7 +1350,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -1373,7 +1373,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
   /v1/resource-definitions/properties/info:
     get:
       summary: list all resource-definition properties
@@ -1429,7 +1429,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -1633,7 +1633,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -1656,7 +1656,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
   /v1/resource-definitions/{resource}/volume-definitions/properties/info:
     get:
       summary: list all volume-definition properties
@@ -1711,7 +1711,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -1757,7 +1757,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -1834,7 +1834,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -1857,7 +1857,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
   /v1/resource-definitions/{resource}/resources/properties/info:
     get:
       summary: list all resource properties
@@ -1922,7 +1922,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -1963,7 +1963,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -1993,7 +1993,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2016,7 +2016,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2044,7 +2044,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2073,7 +2073,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2108,7 +2108,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2131,7 +2131,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2277,7 +2277,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '404':
@@ -2332,7 +2332,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2378,7 +2378,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/snapshot-restore-resource/{snapshot}:
@@ -2402,7 +2402,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2433,7 +2433,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2464,7 +2464,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/snapshot-shipping:
@@ -2482,7 +2482,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
       requestBody:
@@ -2540,7 +2540,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2739,7 +2739,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -2762,7 +2762,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
   /v1/resource-groups/properties/info:
     get:
       summary: list all resource-group properties
@@ -2793,7 +2793,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2848,7 +2848,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -2943,7 +2943,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -2966,7 +2966,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
   /v1/resource-groups/{resource_group}/volume-groups/properties/info:
     get:
       summary: list all volume-group properties
@@ -3407,7 +3407,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -3440,7 +3440,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/controller/properties/info:
@@ -3501,7 +3501,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '401':
@@ -3509,7 +3509,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -3580,7 +3580,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -3628,7 +3628,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/drbd-proxy/disable/{nodeA}/{nodeB}:
@@ -3658,7 +3658,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
 
@@ -3674,7 +3674,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -3695,7 +3695,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -3716,7 +3716,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -3785,7 +3785,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/error-reports/{reportid}:
@@ -3854,7 +3854,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
 
@@ -3913,7 +3913,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -3935,7 +3935,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
 
@@ -4135,7 +4135,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
       requestBody:
         content:
           application/json:
@@ -4162,7 +4162,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiCallRc'
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/sos-report/download:
@@ -4306,13 +4306,13 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiCallRc'
+            $ref: '#/components/schemas/ApiCallRcList'
     ObjectNotFound:
       description: object not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ApiCallRc'
+            $ref: '#/components/schemas/ApiCallRcList'
     OperationFailed:
       description: operation failed
       content:
@@ -4353,6 +4353,10 @@ components:
           description: Map of objection that have been involved by the operation.
           additionalProperties:
             type: string
+    ApiCallRcList:
+      type: array
+      items:
+        $ref: '#/components/schemas/ApiCallRc'
     Node:
       type: object
       required:
