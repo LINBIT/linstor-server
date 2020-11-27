@@ -171,6 +171,7 @@ class StorPoolFilter
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
         List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilter.skipAlreadyPlacedOnNodeNamesCheck();
 
+        logIfNotEmpty("filtering mode: %s", disklessTypeRef == null ? "diskful" : disklessTypeRef.name());
         logIfNotEmpty("filter node names: %s", filterNodeNameList);
         logIfNotEmpty("filter stor pool names: %s", filterStorPoolNameList);
         logIfNotEmpty("filter do not place with rsc: %s", filterDoNotPlaceWithRscList);
@@ -179,6 +180,7 @@ class StorPoolFilter
         logIfNotEmpty("filter node properties mismatch: %s", filterNodePropsMismatch);
         logIfNotEmpty("filter layer list: %s", filterLayerList);
         logIfNotEmpty("filter provider list: %s", filterProviderList);
+        logIfNotEmpty("skip already placed on node names %s", skipAlreadyPlacedOnNodeNamesCheck);
 
         if (disklessTypeRef != null)
         {

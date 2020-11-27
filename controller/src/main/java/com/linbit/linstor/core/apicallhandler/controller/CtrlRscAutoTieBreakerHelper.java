@@ -6,10 +6,11 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -19,6 +20,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
@@ -28,7 +30,6 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
@@ -51,8 +52,11 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -72,6 +76,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     private final ResponseConverter responseConverter;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlRscToggleDiskApiCallHandler rscToggleDiskHelper;
+    private final Autoplacer autoplacer;
 
     class AutoTiebreakerResult
     {
@@ -111,7 +116,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         CtrlRscCrtApiHelper rscCrtApiHelperRef,
         ResponseConverter responseConverterRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlRscToggleDiskApiCallHandler rscToggleDiskHelperRef
+        CtrlRscToggleDiskApiCallHandler rscToggleDiskHelperRef,
+        Autoplacer autoplacerRef
     )
     {
         systemConfRepository = systemConfRepositoryRef;
@@ -125,6 +131,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         responseConverter = responseConverterRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         rscToggleDiskHelper = rscToggleDiskHelperRef;
+        autoplacer = autoplacerRef;
     }
 
     @Override
@@ -164,8 +171,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         }
                         else
                         {
-                            Node node = getNodeForTieBreaker(ctx.rscDfn);
-                            if (node == null)
+                            StorPool storPool = getStorPoolForTieBreaker(ctx);
+                            if (storPool == null)
                             {
                                 ctx.responses.addEntries(
                                     ApiCallRcImpl.singleApiCallRc(
@@ -182,10 +189,13 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                 // we can ignore the .objA of the returned pair as we are just about to create
                                 // a tiebreaker
                                 tieBreaker = rscCrtApiHelper.createResourceDb(
-                                    node.getName().displayValue,
+                                    storPool.getNode().getName().displayValue,
                                     ctx.rscDfn.getName().displayValue,
                                     Resource.Flags.TIE_BREAKER.flagValue,
-                                    Collections.emptyMap(),
+                                    Collections.singletonMap(
+                                        ApiConsts.KEY_STOR_POOL_NAME,
+                                        storPool.getName().displayValue
+                                    ),
                                     Collections.emptyList(),
                                     null,
                                     Collections.emptyMap(),
@@ -197,7 +207,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                         ApiConsts.INFO_TIE_BREAKER_CREATED,
                                         String.format("Tie breaker resource '%s' created on %s",
                                             ctx.rscDfn.getName().displayValue,
-                                            node.getName().displayValue
+                                            storPool.getName().displayValue
                                         )
                                     )
                                 );
@@ -445,22 +455,55 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         );
     }
 
-    private Node getNodeForTieBreaker(ResourceDefinition rscDfnRef)
+    private StorPool getStorPoolForTieBreaker(AutoHelperContext ctx)
     {
-        Node tieBreakerNode = null;
+        StorPool storPool = null;
+
         try
         {
             AccessContext peerAccCtx = peerCtx.get();
-            NodesMap mapForView = nodeRepo.getMapForView(peerAccCtx);
-            for (Node node : mapForView.values())
+
+            List<String> filterNodeNamesList = new ArrayList<>();
+            while (storPool == null)
             {
-                if (
-                    node.getObjProt().queryAccess(peerAccCtx).hasAccess(AccessType.USE) &&
-                    rscDfnRef.getResource(peerAccCtx, node.getName()) == null &&
-                    supportsTieBreaker(peerAccCtx, node)
-                )
+                Optional<Set<StorPool>> autoplaceResult = autoplacer.autoPlace(
+                    AutoSelectFilterPojo.merge(
+                        new AutoSelectFilterPojo(
+                            0,
+                            1,
+                            filterNodeNamesList,
+                            null,
+                            Collections.singletonList(ctx.rscDfn.getName().displayValue),
+                            null,
+                            null,
+                            null,
+                            Collections.singletonList(DeviceLayerKind.DRBD),
+                            null,
+                            null,
+                            null,
+                            Resource.Flags.DRBD_DISKLESS.name()
+                        ),
+                        ctx.rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),
+                        ctx.selectFilter
+                    ),
+                    ctx.rscDfn,
+                    0 // doesn't matter as we are diskless
+                );
+
+                if (autoplaceResult.isPresent() && !autoplaceResult.get().isEmpty())
                 {
-                    tieBreakerNode = node;
+                    storPool = autoplaceResult.get().iterator().next();
+                    if (!supportsTieBreaker(peerAccCtx, storPool.getNode()))
+                    {
+                        /*
+                         * autoplacer only checks if DRBD >= 9 is supported, but we need >= 9.0.19
+                         */
+                        filterNodeNamesList.add(storPool.getNode().getName().displayValue);
+                        storPool = null;
+                    }
+                }
+                else
+                {
                     break;
                 }
             }
@@ -473,7 +516,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
-        return tieBreakerNode;
+        return storPool;
     }
 
     private boolean supportsTieBreaker(AccessContext peerAccCtx, Node node) throws AccessDeniedException

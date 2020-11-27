@@ -291,6 +291,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 autoFlux = autoHelperProvider.get()
                     .manage(
                         new AutoHelperContext(responses, context, rscDfn)
+                            .withSelectFilter(mergedSelectFilter)
                     )
                     .getFlux();
 
