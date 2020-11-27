@@ -9,7 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -128,23 +128,19 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     }
 
     @Override
-    public void manage(
-        ApiCallRcImpl apiCallRcImpl,
-        ResourceDefinition rscDfn,
-        AutoHelperInternalState autoHelperState
-    )
+    public void manage(AutoHelperContext ctx)
     {
         try
         {
-            if (isAutoTieBreakerEnabled(rscDfn))
+            if (isAutoTieBreakerEnabled(ctx.rscDfn))
             {
-                Resource tieBreaker = getTieBreaker(rscDfn);
-                if (shouldTieBreakerExist(rscDfn))
+                Resource tieBreaker = getTieBreaker(ctx.rscDfn);
+                if (shouldTieBreakerExist(ctx.rscDfn))
                 {
                     if (tieBreaker == null)
                     {
                         Resource takeover = null;
-                        Iterator<Resource> rscIt = rscDfn.iterateResource(peerCtx.get());
+                        Iterator<Resource> rscIt = ctx.rscDfn.iterateResource(peerCtx.get());
                         while (rscIt.hasNext())
                         {
                             Resource rsc = rscIt.next();
@@ -164,19 +160,19 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         }
                         if (takeover != null)
                         {
-                            takeover(takeover, autoHelperState, apiCallRcImpl);
+                            takeover(takeover, ctx);
                         }
                         else
                         {
-                            Node node = getNodeForTieBreaker(rscDfn);
+                            Node node = getNodeForTieBreaker(ctx.rscDfn);
                             if (node == null)
                             {
-                                apiCallRcImpl.addEntries(
+                                ctx.responses.addEntries(
                                     ApiCallRcImpl.singleApiCallRc(
                                         ApiConsts.WARN_NOT_ENOUGH_NODES_FOR_TIE_BREAKER,
                                         String.format(
                                             "Could not find suitable node to automatically create a tie breaking resource for '%s'.",
-                                            rscDfn.getName().displayValue
+                                            ctx.rscDfn.getName().displayValue
                                         )
                                     )
                                 );
@@ -187,27 +183,27 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                 // a tiebreaker
                                 tieBreaker = rscCrtApiHelper.createResourceDb(
                                     node.getName().displayValue,
-                                    rscDfn.getName().displayValue,
+                                    ctx.rscDfn.getName().displayValue,
                                     Resource.Flags.TIE_BREAKER.flagValue,
                                     Collections.emptyMap(),
                                     Collections.emptyList(),
                                     null,
                                     Collections.emptyMap(),
                                     Collections.emptyList()
-                                ).objB.extractApiCallRc(apiCallRcImpl);
+                                ).objB.extractApiCallRc(ctx.responses);
 
-                                apiCallRcImpl.addEntries(
+                                ctx.responses.addEntries(
                                     ApiCallRcImpl.singleApiCallRc(
                                         ApiConsts.INFO_TIE_BREAKER_CREATED,
                                         String.format("Tie breaker resource '%s' created on %s",
-                                            rscDfn.getName().displayValue,
+                                            ctx.rscDfn.getName().displayValue,
                                             node.getName().displayValue
                                         )
                                     )
                                 );
 
-                                autoHelperState.resourcesToCreate.add(tieBreaker);
-                                autoHelperState.requiresUpdateFlux = true;
+                                ctx.resourcesToCreate.add(tieBreaker);
+                                ctx.requiresUpdateFlux = true;
                             }
                         }
                     }
@@ -221,7 +217,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                 VAL_FALSE,
                                 NAMESPC_DRBD_OPTIONS
                             );
-                            apiCallRcImpl.addEntries(
+                            ctx.responses.addEntries(
                                 ApiCallRcImpl.singleApiCallRc(
                                     ApiConsts.INFO_PROP_SET,
                                     "Disabling auto-tiebreaker on resource-definition '"
@@ -237,15 +233,15 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                     if (tieBreaker != null)
                     {
                         tieBreaker.markDeleted(peerCtx.get());
-                        apiCallRcImpl.addEntries(
+                        ctx.responses.addEntries(
                             ApiCallRcImpl.singleApiCallRc(
                                 ApiConsts.INFO_TIE_BREAKER_DELETING,
                                 "Tie breaker marked for deletion"
                             )
                         );
 
-                        autoHelperState.nodeNamesForDelete.add(tieBreaker.getNode().getName());
-                        autoHelperState.requiresUpdateFlux = true;
+                        ctx.nodeNamesForDelete.add(tieBreaker.getNode().getName());
+                        ctx.requiresUpdateFlux = true;
                     }
                 }
             }
@@ -254,7 +250,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "managing auto-quorum feature " + getRscDfnDescriptionInline(rscDfn),
+                "managing auto-quorum feature " + getRscDfnDescriptionInline(ctx.rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
@@ -270,8 +266,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
     private void takeover(
         Resource rsc,
-        AutoHelperInternalState autoHelperState,
-        ApiCallRcImpl apiCallRcImpl
+        AutoHelperContext ctx
     )
     {
         StateFlags<Flags> flags = rsc.getStateFlags();
@@ -289,13 +284,13 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
             if (flags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS))
             {
-                autoHelperState.additionalFluxList.add(setTiebreakerFlag(rsc));
-                autoHelperState.requiresUpdateFlux = true;
-                autoHelperState.preventUpdateSatellitesForResourceDelete = true;
+                ctx.additionalFluxList.add(setTiebreakerFlag(rsc));
+                ctx.requiresUpdateFlux = true;
+                ctx.preventUpdateSatellitesForResourceDelete = true;
             }
             else
             {
-                autoHelperState.additionalFluxList.add(
+                ctx.additionalFluxList.add(
                     rscToggleDiskHelper.resourceToggleDisk(
                         rsc.getNode().getName().displayValue,
                         rsc.getDefinition().getName().displayValue,
@@ -305,10 +300,10 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                     ).concatWith(setTiebreakerFlag(rsc))
                 );
 
-                autoHelperState.preventUpdateSatellitesForResourceDelete = true;
-                autoHelperState.requiresUpdateFlux = false; // resourceToggleDisk already performs stltUpdate
+                ctx.preventUpdateSatellitesForResourceDelete = true;
+                ctx.requiresUpdateFlux = false; // resourceToggleDisk already performs stltUpdate
             }
-            apiCallRcImpl.addEntries(
+            ctx.responses.addEntries(
                 ApiCallRcImpl.singleApiCallRc(
                     ApiConsts.INFO_TIE_BREAKER_TAKEOVER,
                     "The given resource will not be deleted but will be taken over as a linstor managed tiebreaker resource."

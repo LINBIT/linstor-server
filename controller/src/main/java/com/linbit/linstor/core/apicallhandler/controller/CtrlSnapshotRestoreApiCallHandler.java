@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -215,7 +216,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 }
             }
 
-            autoFlux = autoHelper.manage(responses, context, toRscDfn).getFlux();
+            autoFlux = autoHelper.manage(new AutoHelperContext(responses, context, toRscDfn)).getFlux();
 
             ctrlTransactionHelper.commit();
 

@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -264,7 +265,7 @@ public class CtrlNodeCrtApiCallHandler
         {
             for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(peerAccCtx.get()).values())
             {
-                autoFluxes.add(autoHelper.manage(apiCallRcImpl, context, rscDfn).getFlux());
+                autoFluxes.add(autoHelper.manage(new AutoHelperContext(apiCallRcImpl, context, rscDfn)).getFlux());
             }
 
             ctrlTransactionHelper.commit();

@@ -4,6 +4,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -85,62 +86,57 @@ public class CtrlRscAutoHelper
 
     public AutoHelperResult manage(ApiCallRcImpl apiCallRcImplRef, ResponseContext context, String rscNameStrRef)
     {
-        return manage(apiCallRcImplRef, context, dataLoader.loadRscDfn(rscNameStrRef, true));
+        return manage(new AutoHelperContext(apiCallRcImplRef, context, dataLoader.loadRscDfn(rscNameStrRef, true)));
     }
 
-    public AutoHelperResult manage(
-        ApiCallRcImpl apiCallRcImpl,
-        ResponseContext context,
-        ResourceDefinition rscDfn
-    )
+    public AutoHelperResult manage(AutoHelperContext ctx)
     {
         AutoHelperResult result = new AutoHelperResult();
-        AutoHelperInternalState autoHelperInternalState = new AutoHelperInternalState();
         boolean fluxUpdateApplied = false;
 
         for (AutoHelper autohelper : autohelperList)
         {
-            autohelper.manage(apiCallRcImpl, rscDfn, autoHelperInternalState);
+            autohelper.manage(ctx);
         }
 
-        if (!autoHelperInternalState.resourcesToCreate.isEmpty())
+        if (!ctx.resourcesToCreate.isEmpty())
         {
-            autoHelperInternalState.additionalFluxList.add(
+            ctx.additionalFluxList.add(
                 rscCrtHelper.deployResources(
-                    context,
-                    autoHelperInternalState.resourcesToCreate
+                    ctx.responseContext,
+                    ctx.resourcesToCreate
                 )
             );
             fluxUpdateApplied = true;
         }
 
-        if (!autoHelperInternalState.nodeNamesForDelete.isEmpty())
+        if (!ctx.nodeNamesForDelete.isEmpty())
         {
-            autoHelperInternalState.additionalFluxList.add(
+            ctx.additionalFluxList.add(
                 rscDelHelper.updateSatellitesForResourceDelete(
-                    autoHelperInternalState.nodeNamesForDelete,
-                    rscDfn.getName()
+                    ctx.nodeNamesForDelete,
+                    ctx.rscDfn.getName()
                 )
             );
             fluxUpdateApplied = true;
         }
 
-        if (autoHelperInternalState.requiresUpdateFlux && !fluxUpdateApplied)
+        if (ctx.requiresUpdateFlux && !fluxUpdateApplied)
         {
-            autoHelperInternalState.additionalFluxList.add(
-                ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+            ctx.additionalFluxList.add(
+                ctrlSatelliteUpdateCaller.updateSatellites(ctx.rscDfn, Flux.empty())
                     .transform(
                         updateResponses -> CtrlResponseUtils.combineResponses(
                             updateResponses,
-                            rscDfn.getName(),
+                            ctx.rscDfn.getName(),
                             "Resource {1} updated on node {0}"
                         )
                     )
             );
         }
 
-        result.flux = Flux.merge(autoHelperInternalState.additionalFluxList);
-        result.preventUpdateSatellitesForResourceDelete = autoHelperInternalState.preventUpdateSatellitesForResourceDelete;
+        result.flux = Flux.merge(ctx.additionalFluxList);
+        result.preventUpdateSatellitesForResourceDelete = ctx.preventUpdateSatellitesForResourceDelete;
         return result;
     }
 
@@ -188,29 +184,44 @@ public class CtrlRscAutoHelper
         }
     }
 
-    public static class AutoHelperInternalState
+    public static class AutoHelperContext
     {
+        final ApiCallRcImpl responses;
+        final ResponseContext responseContext;
+        final ResourceDefinition rscDfn;
+
+        AutoSelectFilterApi selectFilter;
+
         TreeSet<Resource> resourcesToCreate = new TreeSet<>();
         TreeSet<NodeName> nodeNamesForDelete = new TreeSet<>();
 
-        public List<Flux<ApiCallRc>> additionalFluxList = new ArrayList<>();
+        List<Flux<ApiCallRc>> additionalFluxList = new ArrayList<>();
 
         boolean requiresUpdateFlux = false;
 
         boolean preventUpdateSatellitesForResourceDelete = false;
 
-        public AutoHelperInternalState()
+        public AutoHelperContext(
+            ApiCallRcImpl responsesRef,
+            ResponseContext contextRef,
+            ResourceDefinition definitionRef
+        )
         {
+            responses = responsesRef;
+            responseContext = contextRef;
+            rscDfn = definitionRef;
+        }
 
+        public AutoHelperContext withSelectFilter(AutoSelectFilterApi selectFilterRef)
+        {
+            selectFilter = selectFilterRef;
+            return this;
         }
     }
 
     interface AutoHelper
     {
-        void manage(
-            ApiCallRcImpl apiCallRcImpl,
-            ResourceDefinition rscDfn,
-            AutoHelperInternalState autoHelperInternalState
-        );
+        void manage(AutoHelperContext ctx);
     }
+
 }

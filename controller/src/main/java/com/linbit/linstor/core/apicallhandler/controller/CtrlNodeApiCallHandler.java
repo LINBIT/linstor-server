@@ -21,7 +21,7 @@ import com.linbit.linstor.core.OpenFlexTargetProcessManager;
 import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -1049,19 +1049,38 @@ public class CtrlNodeApiCallHandler
             {
                 node.markEvicted(apiCtx);
                 ctrlTransactionHelper.commit();
-                Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller.updateSatellites(
                     node.getUuid(),
                     node.getName(),
                     CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
-                );
-                CtrlRscAutoHelper.AutoHelperInternalState autoState = new AutoHelperInternalState();
-                autoState.additionalFluxList.add(flux.transform(tuple -> Flux.empty()));
+                )
+                    .transform(tuple -> Flux.empty());
                 for (Resource res : node.streamResources(apiCtx).collect(Collectors.toList()))
                 {
                     if (LayerRscUtils.getLayerStack(res, apiCtx).contains(DeviceLayerKind.DRBD))
                     {
+                        Map<String, String> objRefs = new TreeMap<>();
+                        objRefs.put(ApiConsts.KEY_RSC_DFN, res.getDefinition().getName().displayValue);
+                        objRefs.put(ApiConsts.KEY_NODE, res.getNode().getName().displayValue);
+
+                        ResponseContext context = new ResponseContext(
+                            ApiOperation.makeDeleteOperation(),
+                            "Auto-evicting resource: " + res.getDefinition().getName(),
+                            "auto-evicting resource: " + res.getDefinition().getName(),
+                            ApiConsts.MASK_DEL,
+                            objRefs
+                        );
+                        AutoHelperContext autoHelperCtx = new AutoHelperContext(
+                            new ApiCallRcImpl(),
+                            context,
+                            res.getDefinition()
+                        );
+
+                        res.markDeleted(apiCtx);
                         autoRePlaceRscHelper.addNeedRePlaceRsc(res);
-                        autoRePlaceRscHelper.manage(new ApiCallRcImpl(), res.getDefinition(), autoState);
+                        autoRePlaceRscHelper.manage(autoHelperCtx);
+
+                        flux = flux.concatWith(Flux.concat(autoHelperCtx.additionalFluxList));
                     }
                     else
                     {
@@ -1071,7 +1090,8 @@ public class CtrlNodeApiCallHandler
                         );
                     }
                 }
-                return Flux.concat(autoState.additionalFluxList);
+                ctrlTransactionHelper.commit();
+                return flux;
             }
         );
     }

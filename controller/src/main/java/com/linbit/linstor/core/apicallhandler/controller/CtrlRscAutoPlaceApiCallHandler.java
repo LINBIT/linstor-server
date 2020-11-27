@@ -13,6 +13,7 @@ import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -287,7 +288,11 @@ public class CtrlRscAutoPlaceApiCallHandler
                     mergedSelectFilter.getLayerStackList()
                 );
 
-                autoFlux = autoHelperProvider.get().manage(responses, context, rscNameStr).getFlux();
+                autoFlux = autoHelperProvider.get()
+                    .manage(
+                        new AutoHelperContext(responses, context, rscDfn)
+                    )
+                    .getFlux();
 
                 ctrlTransactionHelper.commit();
 

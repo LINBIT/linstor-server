@@ -13,6 +13,7 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -62,6 +63,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -598,7 +600,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             markDiskAdded(rsc);
         }
-        Flux<ApiCallRc> autoFlux = rscAutoHelper.get().manage(responses, context, rsc.getDefinition()).getFlux();
+        Flux<ApiCallRc> autoFlux = rscAutoHelper.get().manage(
+            new AutoHelperContext(responses, context, rsc.getDefinition())
+        ).getFlux();
 
         ctrlLayerStackHelper.resetStoragePools(rsc);
 

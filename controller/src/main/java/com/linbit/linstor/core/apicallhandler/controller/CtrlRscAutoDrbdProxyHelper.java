@@ -5,7 +5,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelper;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -43,15 +43,11 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
     }
 
     @Override
-    public void manage(
-        ApiCallRcImpl apiCallRcImplRef,
-        ResourceDefinition rscDfnRef,
-        AutoHelperInternalState autoHelperInternalStateRef
-    )
+    public void manage(AutoHelperContext ctx)
     {
         try
         {
-            Resource[] resources = getResourcesAsArray(rscDfnRef);
+            Resource[] resources = getResourcesAsArray(ctx.rscDfn);
 
             for (int firstIdx = 0; firstIdx < resources.length; firstIdx++)
             {
@@ -68,9 +64,9 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
 
                         if (siteB != null && !siteA.equals(siteB))
                         {
-                            if (isAutoDrbdProxyBeEnabled(firstRsc, secondRsc, apiCallRcImplRef))
+                            if (isAutoDrbdProxyBeEnabled(firstRsc, secondRsc, ctx.responses))
                             {
-                                enableDrbdProxyIfNotEnabledYet(firstRsc, secondRsc, apiCallRcImplRef);
+                                enableDrbdProxyIfNotEnabledYet(firstRsc, secondRsc, ctx.responses);
                                 // we do not disable proxy automatically. never.
                             }
                         }

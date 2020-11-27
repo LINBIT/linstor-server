@@ -10,7 +10,7 @@ import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelper;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperInternalState;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -96,12 +96,9 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
     }
 
     @Override
-    public void manage(
-        ApiCallRcImpl apiCallRcImpl,
-        ResourceDefinition rscDfn,
-        AutoHelperInternalState autoHelperInternalState
-    )
+    public void manage(AutoHelperContext ctx)
     {
+        ResourceDefinition rscDfn = ctx.rscDfn;
         if (needRePlaceRsc.contains(rscDfn))
         {
             if (countDiskfulRsc(rscDfn) == 0)
@@ -238,7 +235,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                         selectFilter.getLayerStackList()
                                     );
                                 ctrlTransactionHelper.commit();
-                                autoHelperInternalState.additionalFluxList
+                                ctx.additionalFluxList
                                     .add(Flux.merge(deployedResources.objA)
                                         .concatWith(flux)
                                         .doOnComplete(() ->
@@ -247,7 +244,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                             needDiskfulRsc.remove(rscDfn);
                                         })
                                     );
-                                autoHelperInternalState.requiresUpdateFlux = true;
+                                ctx.requiresUpdateFlux = true;
                             }
                             else
                             {
