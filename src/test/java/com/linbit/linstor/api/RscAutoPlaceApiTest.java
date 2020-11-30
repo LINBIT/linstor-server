@@ -40,6 +40,7 @@ import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
 
 import javax.inject.Inject;
 
@@ -1795,6 +1796,51 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .collect(Collectors.toList());
 
         assertEquals(2, deployedNodes.size());
+    }
+
+    @Test
+    public void doNotMixStorPoolsTesT() throws Exception
+    {
+        /*
+         * Scenario: We already have a diskful resource in an LVM pool, the
+         * autoplace should reject the "best candidate" if it is not an LVM pool.
+         */
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            2,
+            true,
+            ApiConsts.CREATED,
+            ApiConsts.CREATED
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100 * GB, LVM_THIN)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("sp1", 100 * GB, ZFS)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 100 * GB, ZFS_THIN)
+                .build()
+            .stltBuilder("stlt4")
+                .addStorPool("sp1", 10 * GB, LVM)
+                .build()
+            .stltBuilder("stlt5")
+                .addStorPool("sp1", 90 * GB, LVM)
+                .build()
+            .addRsc(TEST_RSC_NAME, "sp1", "stlt5");
+        evaluateTest(call);
+
+        List<Resource> deployedRscs = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .sorted()
+            .collect(Collectors.toList());
+        assertEquals(2, deployedRscs.size());
+        assertEquals("stlt4", deployedRscs.get(0).getNode().getName().displayValue);
+        assertEquals("stlt5", deployedRscs.get(1).getNode().getName().displayValue);
     }
 
     private void expectDeployed(

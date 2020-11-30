@@ -68,6 +68,8 @@ class Selector
         }
 
         List<Node> alreadyDeployedOnNodes = new ArrayList<>();
+        int alreadyDeployedDiskfulCount = 0;
+        int alreadyDeployedDisklessCount = 0;
         DeviceProviderKind alreadySelectedProviderKind = null;
         if (rscDfnRef != null)
         {
@@ -85,6 +87,14 @@ class Selector
                 )
                 {
                     alreadyDeployedOnNodes.add(node);
+                    if (rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS))
+                    {
+                        alreadyDeployedDisklessCount++;
+                    }
+                    else
+                    {
+                        alreadyDeployedDiskfulCount++;
+                    }
                 }
 
                 nodeStrList.add(node.getName().displayValue);
@@ -143,10 +153,12 @@ class Selector
         SelectionManger selectionManger = new SelectionManger(
             selectFilterRef,
             alreadyDeployedOnNodes,
+            alreadyDeployedDiskfulCount,
+            alreadyDeployedDisklessCount,
             alreadySelectedProviderKind,
             sortedStorPoolByScoreArr
         );
-        final Integer replicaCount = selectionManger.rscCountToReach;
+        final Integer replicaCount = selectionManger.additionalRscCountToSelect;
         errorReporter.logTrace(
             "Autoplacer.Selector: Starting selection for %d additional resources",
             replicaCount - alreadyDeployedOnNodes.size()
@@ -278,12 +290,13 @@ class Selector
     private class SelectionManger
     {
         private final List<Node> alreadyDeployedOnNodes;
+        private final DeviceProviderKind alreadySetProviderKind;
 
         private final AutoSelectFilterApi selectFilter;
         private final Set<Node> selectedNodes;
         private final Set<StorPoolWithScore> selectedStorPoolWithScoreSet;
         private final StorPoolWithScore[] sortedStorPoolByScoreArr;
-        private final int rscCountToReach;
+        private final int additionalRscCountToSelect;
         private DeviceProviderKind selectedProviderKind;
 
         /*
@@ -297,6 +310,8 @@ class Selector
         public SelectionManger(
             AutoSelectFilterApi selectFilterRef,
             List<Node> alreadyDeployedOnNodesRef,
+            int diskfulNodeCount,
+            int disklessNodeCount,
             DeviceProviderKind alreadySelectedProviderKindRef,
             StorPoolWithScore[] sortedStorPoolByScoreArrRef
         )
@@ -304,10 +319,18 @@ class Selector
         {
             selectFilter = selectFilterRef;
             alreadyDeployedOnNodes = alreadyDeployedOnNodesRef;
-            selectedProviderKind = alreadySelectedProviderKindRef;
             sortedStorPoolByScoreArr = sortedStorPoolByScoreArrRef;
 
-            rscCountToReach = getReplicaCount(selectFilterRef, alreadyDeployedOnNodesRef.size());
+            if (selectFilterRef.getDisklessType() == null)
+            {
+                additionalRscCountToSelect = getReplicaCount(selectFilterRef, diskfulNodeCount);
+                alreadySetProviderKind = alreadySelectedProviderKindRef;
+            }
+            else
+            {
+                additionalRscCountToSelect = getReplicaCount(selectFilterRef, disklessNodeCount);
+                alreadySetProviderKind = DeviceProviderKind.DISKLESS;
+            }
 
             selectedNodes = new HashSet<>();
             selectedStorPoolWithScoreSet = new HashSet<>();
@@ -379,7 +402,7 @@ class Selector
 
         private boolean isComplete()
         {
-            return selectedStorPoolWithScoreSet.size() == rscCountToReach;
+            return selectedStorPoolWithScoreSet.size() == additionalRscCountToSelect;
         }
 
         private boolean chooseIfAllowed(StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
@@ -622,7 +645,7 @@ class Selector
             selectedNodes.clear();
             selectedNodes.addAll(alreadyDeployedOnNodes);
 
-            selectedProviderKind = null;
+            selectedProviderKind = alreadySetProviderKind;
 
             selectedStorPoolWithScoreSet.clear();
             rebuildTemporaryMaps();
