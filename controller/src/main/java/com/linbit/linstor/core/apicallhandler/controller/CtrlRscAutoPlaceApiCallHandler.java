@@ -169,13 +169,25 @@ public class CtrlRscAutoPlaceApiCallHandler
             ctrlApiDataLoader.loadRscDfn(rscNameStr, true)
         )
             .collect(Collectors.toList());
-        List<Resource> alreadyPlacedDisklessNotDeleted = alreadyPlaced.stream()
-            .filter(rsc -> isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
-            .collect(Collectors.toList());
-        List<Resource> alreadyDeleted = alreadyPlaced.stream()
-            .filter(rsc -> isFlagSet(rsc, Resource.Flags.DELETE) || isNodeFlagSet(rsc, Node.Flags.EVICTED))
-            .collect(Collectors.toList());
-        alreadyPlacedDisklessNotDeleted.removeAll(alreadyDeleted);
+        List<Resource> alreadyPlacedDiskfulNotDeleting = new ArrayList<>();
+        List<Resource> alreadyPlacedDisklessNotDeleting = new ArrayList<>();
+        List<Resource> alreadyPlacedDeleting = new ArrayList<>();
+
+        for (Resource rsc : alreadyPlaced)
+        {
+            if (isFlagSet(rsc, Resource.Flags.DELETE))
+            {
+                alreadyPlacedDeleting.add(rsc);
+            }
+            else if (isFlagSet(rsc, Resource.Flags.DISKLESS))
+            {
+                alreadyPlacedDisklessNotDeleting.add(rsc);
+            }
+            else
+            {
+                alreadyPlacedDiskfulNotDeleting.add(rsc);
+            }
+        }
 
         int additionalPlaceCount;
         if (
@@ -200,13 +212,13 @@ public class CtrlRscAutoPlaceApiCallHandler
             {
                 additionalPlaceCount = Optional.ofNullable(
                     mergedSelectFilter.getReplicaCount()
-                ).orElse(0) - (alreadyPlaced.size() - alreadyPlacedDisklessNotDeleted.size() - alreadyDeleted.size());
+                ).orElse(0) - (alreadyPlacedDiskfulNotDeleting.size());
             }
             else
             {
                 additionalPlaceCount = Optional.ofNullable(
                     mergedSelectFilter.getReplicaCount()
-                ).orElse(0) - alreadyPlacedDisklessNotDeleted.size();
+                ).orElse(0) - alreadyPlacedDisklessNotDeleting.size();
             }
         }
         if (additionalPlaceCount < 0)
@@ -238,10 +250,19 @@ public class CtrlRscAutoPlaceApiCallHandler
                 (mergedSelectFilter.getDisklessOnRemaining() == null || !mergedSelectFilter.getDisklessOnRemaining())
         )
         {
+            List<Resource> listForResponse;
+            if (mergedSelectFilter.getDisklessType() == null || mergedSelectFilter.getDisklessType().isEmpty())
+            {
+                listForResponse = alreadyPlacedDiskfulNotDeleting;
+            }
+            else
+            {
+                listForResponse = alreadyPlacedDisklessNotDeleting;
+            }
             responseConverter.addWithDetail(responses, context,
                 makeAlreadyDeployedResponse(
                     rscNameStr,
-                    alreadyPlaced
+                    listForResponse
                 )
             );
 
@@ -249,7 +270,7 @@ public class CtrlRscAutoPlaceApiCallHandler
         }
         else
         {
-            List<String> disklessNodeNames = alreadyPlacedDisklessNotDeleted.stream()
+            List<String> disklessNodeNames = alreadyPlacedDisklessNotDeleting.stream()
                 .map(rsc -> rsc.getNode().getName().displayValue).collect(Collectors.toList());
 
             AutoSelectFilterPojo autoStorConfig = new AutoSelectFilterPojo(
