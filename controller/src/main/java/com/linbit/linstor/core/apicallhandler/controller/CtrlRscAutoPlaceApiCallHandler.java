@@ -196,10 +196,18 @@ public class CtrlRscAutoPlaceApiCallHandler
              * case Y < X
              * error.
              */
-
-            additionalPlaceCount = Optional.ofNullable(
-                mergedSelectFilter.getReplicaCount()
-            ).orElse(0) - (alreadyPlaced.size() - alreadyPlacedDisklessNotDeleted.size() - alreadyDeleted.size());
+            if (mergedSelectFilter.getDisklessType() == null || mergedSelectFilter.getDisklessType().isEmpty())
+            {
+                additionalPlaceCount = Optional.ofNullable(
+                    mergedSelectFilter.getReplicaCount()
+                ).orElse(0) - (alreadyPlaced.size() - alreadyPlacedDisklessNotDeleted.size() - alreadyDeleted.size());
+            }
+            else
+            {
+                additionalPlaceCount = Optional.ofNullable(
+                    mergedSelectFilter.getReplicaCount()
+                ).orElse(0) - alreadyPlacedDisklessNotDeleted.size();
+            }
         }
         if (additionalPlaceCount < 0)
         {
