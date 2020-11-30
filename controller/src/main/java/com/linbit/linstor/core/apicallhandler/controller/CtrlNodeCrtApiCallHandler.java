@@ -46,7 +46,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlNodeCrtApiCallHandler
 {
-    private static final int FIRST_CONNECT_TIMEOUT_MILLIS = 1_000;
+    public static final int FIRST_CONNECT_TIMEOUT_MILLIS = 1_000;
 
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;

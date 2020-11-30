@@ -979,6 +979,8 @@ public class CtrlNodeApiCallHandler
                     Node node = ctrlApiDataLoader.loadNode(nodeName, true);
                     node.unMarkEvicted(apiCtx);
                     ctrlTransactionHelper.commit();
+                    reconnectorTask
+                        .add(node.getPeer(apiCtx).getConnector().reconnect(node.getPeer(apiCtx)), false, false);
                     Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateFlux = ctrlSatelliteUpdateCaller.updateSatellites(
                         node.getUuid(),
                         node.getName(),
@@ -1035,6 +1037,13 @@ public class CtrlNodeApiCallHandler
                     {
                         autoRePlaceRscHelper.addNeedRePlaceRsc(res);
                         autoRePlaceRscHelper.manage(new ApiCallRcImpl(), res.getDefinition(), autoState);
+                    }
+                    else
+                    {
+                        errorReporter.logDebug(
+                            "Auto-evict: ignoring resource %s since it is a non-DRBD resource",
+                            res.getDefinition().getName()
+                        );
                     }
                 }
                 return Flux.concat(autoState.additionalFluxList);

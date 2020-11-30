@@ -182,7 +182,6 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                 lockGuardFactory.createDeferred().write(LockObj.RSC_DFN_MAP).build(),
                                 () ->
                                 {
-                                    System.out.println("autoplace successful " + rscDfn.getName().toString());
                                     Iterator<Resource> itr = rscDfn.iterateResource(accCtx.get());
                                     List<NodeName> nodeNameOfEvictedResources = new ArrayList<>();
                                     while (itr.hasNext())
@@ -296,7 +295,6 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
             int ct = 0;
             for (Resource rsc : rscDfn.streamResource(accCtx.get()).collect(Collectors.toList()))
             {
-                rsc.getNode().getPeer(accCtx.get()).isConnected();
                 if (rsc.getNode().getPeer(accCtx.get()).isConnected() &&
                     !rsc.getStateFlags().isSet(accCtx.get(), Resource.Flags.DRBD_DISKLESS))
                 {

@@ -393,7 +393,8 @@ public class ReconnectorTask implements Task
     private ArrayList<ReconnectConfig> getFailedPeers()
     {
         ArrayList<ReconnectConfig> retry = new ArrayList<>();
-        for (ReconnectConfig config : reconnectorConfigSet)
+        ArrayList<ReconnectConfig> copy = new ArrayList<>(reconnectorConfigSet);
+        for (ReconnectConfig config : copy)
         {
             try
             {
@@ -417,22 +418,22 @@ public class ReconnectorTask implements Task
                         config.offlineSince = System.currentTimeMillis();
                     }
                 }
-                retry.add(config);
-                if (!config.drbdOk && System.currentTimeMillis() >= config.offlineSince + timeout)
+                if (!config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                 {
-                    int numDiscon = reconnectorConfigSet.size();
-                    int maxPercentDiscon = Integer.parseInt(
-                        props.getProp(
-                            ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES,
-                            ApiConsts.NAMESPC_DRBD_OPTIONS,
-                            "20"
-                        )
-                    );
-                    int numNodes = nodeRepository.getMapForView(apiCtx).size();
-                    int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
-                    if (numDiscon < maxDiscon)
+                    retry.add(config);
+                    if (!config.drbdOk && System.currentTimeMillis() >= config.offlineSince + timeout)
                     {
-                        if (!config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
+                        int numDiscon = reconnectorConfigSet.size();
+                        int maxPercentDiscon = Integer.parseInt(
+                            props.getProp(
+                                ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES,
+                                ApiConsts.NAMESPC_DRBD_OPTIONS,
+                                "34"
+                            )
+                        );
+                        int numNodes = nodeRepository.getMapForView(apiCtx).size();
+                        int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
+                        if (numDiscon < maxDiscon)
                         {
                             errorReporter.logTrace(
                                 config.peer + " has been offline for too long, relocation of resources started."
@@ -449,13 +450,17 @@ public class ReconnectorTask implements Task
                                     )
                                 )
                                 .subscribe();
+                            // evicted, stop trying reconnect
+                            retry.remove(config);
+                            reconnectorConfigSet.remove(config);
                         }
-                    }
-                    else {
-                        errorReporter.logTrace(
-                            "Currently more than %d%% nodes are not connected to the controller. The controller might have a problem with it's connections, therefore no nodes will be declared as EVICTED",
-                            maxPercentDiscon
-                        );
+                        else
+                        {
+                            errorReporter.logTrace(
+                                "Currently more than %d%% nodes are not connected to the controller. The controller might have a problem with it's connections, therefore no nodes will be declared as EVICTED",
+                                maxPercentDiscon
+                            );
+                        }
                     }
                 }
             }
