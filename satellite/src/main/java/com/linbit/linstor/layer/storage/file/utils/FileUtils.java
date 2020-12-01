@@ -57,7 +57,7 @@ public class FileUtils
             directory = backingPathRef.getParent();
             identifier = backingPathRef.getFileName().toString();
 
-            size = allocatedSizeGetterRef.accept(backingPathRef.toString());
+            size = allocatedSizeGetterRef.accept(loPathRef.toString());
         }
     }
 
