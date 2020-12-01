@@ -562,7 +562,8 @@ public class StltApiCallHandler
                 {
                     ConfFileBuilder confFileBuilder = new ConfFileBuilder(
                         errorReporter,
-                        whitelistProps
+                        whitelistProps,
+                        stltConf
                     );
                     commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
                 }
@@ -592,6 +593,10 @@ public class StltApiCallHandler
                         null,
                         ioErrorMsg
                     );
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    throw new ImplementationError(accDeniedExc);
                 }
 
                 try

@@ -1,10 +1,5 @@
 package com.linbit.linstor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
@@ -86,6 +81,11 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
 @SuppressWarnings("checkstyle:magicnumber")
 public class ConfFileBuilderTest
 {
@@ -110,6 +110,7 @@ public class ConfFileBuilderTest
     private AtomicInteger idGenerator = new AtomicInteger(0);
     private DynamicNumberPool mockedTcpPool;
     private DynamicNumberPool mockedMinorPool;
+    private Props stltProps;
 
     @Before
     public void setUp() throws Exception
@@ -127,9 +128,9 @@ public class ConfFileBuilderTest
         TransactionMgr dummyTransMgr = new SatelliteTransactionMgr();
         transMgrProvider = () -> dummyTransMgr;
         transObjFactory = new TransactionObjectFactory(transMgrProvider);
-        props = new PropsContainerFactory(
-                new SatellitePropDriver(), transMgrProvider)
-            .getInstance("TESTINSTANCE");
+        PropsContainerFactory propsContainerFactory = new PropsContainerFactory(
+                new SatellitePropDriver(), transMgrProvider);
+        props = propsContainerFactory.getInstance("TESTINSTANCE");
 
         mockedTcpPool = Mockito.mock(DynamicNumberPool.class);
         mockedMinorPool = Mockito.mock(DynamicNumberPool.class);
@@ -152,6 +153,7 @@ public class ConfFileBuilderTest
         when(peerRscData.getAbsResource().getAbsResourceConnection(accessContext, localRscData.getAbsResource()))
             .thenReturn(rscConn);
 
+        stltProps = propsContainerFactory.getInstance("STLT_CFG");
     }
 
     private void setProps(String[] nodeNames, String... nicNames)
@@ -173,7 +175,8 @@ public class ConfFileBuilderTest
                 accessContext,
                 localRscData,
                 null,
-                whitelistProps
+            whitelistProps,
+            stltProps
         );
 
         confFileBuilder.build();
@@ -183,11 +186,12 @@ public class ConfFileBuilderTest
     public void testPeerRscsEmpty() throws Exception
     {
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.emptyList(),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.emptyList(),
+            whitelistProps,
+            stltProps
         );
 
         assertThat(confFileBuilder.build().contains("connection\n")).isFalse();
@@ -198,11 +202,12 @@ public class ConfFileBuilderTest
     {
         when(localRscData.getAbsResource().getDefinition()).thenReturn(null);
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
 
         confFileBuilder.build();
@@ -212,11 +217,12 @@ public class ConfFileBuilderTest
     public void testRscConnNull() throws Exception
     {
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
 
         String confFile = confFileBuilder.build();
@@ -229,11 +235,12 @@ public class ConfFileBuilderTest
     {
         setProps(new String[] {"alpha", "alpha"}, "eth0", "eth1", "eth2", "eth3");
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
 
         confFileBuilder.build();
@@ -244,11 +251,12 @@ public class ConfFileBuilderTest
     {
         setProps(new String[] {"charlie", "delta"}, "eth0", "eth1", "eth2", "eth3");
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
 
         confFileBuilder.build();
@@ -259,11 +267,12 @@ public class ConfFileBuilderTest
     {
         setProps(new String[] {"alpha", "bravo"}, "eth-1", "eth1", "eth2", "eth3");
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
 
         confFileBuilder.build();
@@ -271,14 +280,15 @@ public class ConfFileBuilderTest
 
     @Test(expected = StorageException.class)
     public void testInvalidName()
-            throws DatabaseException, InvalidKeyException, InvalidValueException, AccessDeniedException, StorageException
+        throws DatabaseException, InvalidKeyException, InvalidValueException, AccessDeniedException, StorageException
     {
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
         setProps(new String[] {"alpha", "bravo"}, "666", "666", "666", "666");
 
@@ -289,17 +299,18 @@ public class ConfFileBuilderTest
     public void testNewFormat() throws Exception
     {
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
         setProps(new String[] {"alpha", "bravo"}, "eth0", "eth1", "eth2", "eth3");
 
         String confFile = confFileBuilder.build();
         assertThat(confFile.contains("path\n") && confFile.contains("1.2.3.4") && confFile.contains("5.6.7.8"))
-                .isTrue();
+            .isTrue();
     }
 /*
     @Test(expected = ImplementationError.class)
@@ -540,7 +551,8 @@ public class ConfFileBuilderTest
             accessContext,
             localRscData,
             Collections.singletonList(peerRscData),
-            whitelistProps
+            whitelistProps,
+            stltProps
         );
         String confFile = confFileBuilder.build();
 
@@ -555,11 +567,12 @@ public class ConfFileBuilderTest
     public void testKeywordOccurrences() throws Exception
     {
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
         String confFile = confFileBuilder.build();
 
@@ -582,11 +595,12 @@ public class ConfFileBuilderTest
     public void testDeletedVolume() throws Exception
     {
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
         String confFileNormal = confFileBuilder.build();
 
@@ -595,7 +609,8 @@ public class ConfFileBuilderTest
             accessContext,
             makeMockResource(101, "testNode", "1.2.3.4", true, false, false),
             Collections.singletonList(makeMockResource(202, "testNode", "5.6.7.8", true, false, false)),
-            whitelistProps
+            whitelistProps,
+            stltProps
         ).build();
 
         assertThat(countOccurrences(confFileNormal, "^ *volume ")).isEqualTo(2);
@@ -607,11 +622,12 @@ public class ConfFileBuilderTest
     public void testDeletedPeerResource() throws Exception
     {
         confFileBuilder = new ConfFileBuilder(
-                errorReporter,
-                accessContext,
-                localRscData,
-                Collections.singletonList(peerRscData),
-                whitelistProps
+            errorReporter,
+            accessContext,
+            localRscData,
+            Collections.singletonList(peerRscData),
+            whitelistProps,
+            stltProps
         );
         String confFileNormal = confFileBuilder.build();
 
@@ -620,7 +636,8 @@ public class ConfFileBuilderTest
             accessContext,
             makeMockResource(101, "testNode", "1.2.3.4", false, false, false),
             Collections.singletonList(makeMockResource(202, "testNode", "5.6.7.8", false, true, false)),
-            whitelistProps
+            whitelistProps,
+            stltProps
         ).build();
 
         assertThat(countOccurrences(confFileNormal, "^ *on ")).isEqualTo(2);
@@ -641,7 +658,8 @@ public class ConfFileBuilderTest
                 accessContext,
                 makeMockResource(0, "localNode", "1.2.3.4", false, false, false),
                 peerRscs,
-                whitelistProps
+                whitelistProps,
+                stltProps
             ).build();
 
             assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(2);
@@ -656,7 +674,8 @@ public class ConfFileBuilderTest
                 accessContext,
                 makeMockResource(0, "localNode", "1.2.3.4", false, false, true),
                 peerRscs,
-                whitelistProps
+                whitelistProps,
+                stltProps
             ).build();
 
             assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(1);
@@ -671,7 +690,8 @@ public class ConfFileBuilderTest
                 accessContext,
                 makeMockResource(0, "localNode", "1.2.3.4", false, false, false),
                 peerRscs,
-                whitelistProps
+                whitelistProps,
+                stltProps
             ).build();
 
             assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(2);

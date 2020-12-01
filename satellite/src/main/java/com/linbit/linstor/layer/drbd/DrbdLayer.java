@@ -18,6 +18,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
@@ -97,6 +98,7 @@ public class DrbdLayer implements DeviceLayer
     private final ControllerPeerConnector controllerPeerConnector;
     private final Provider<DeviceHandler> resourceProcessorProvider;
     private final ExtCmdFactory extCmdFactory;
+    private final StltConfigAccessor stltCfgAccessor;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -117,7 +119,8 @@ public class DrbdLayer implements DeviceLayer
         CtrlStltSerializer interComSerializerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         Provider<DeviceHandler> resourceProcessorRef,
-        ExtCmdFactory extCmdFactoryRef
+        ExtCmdFactory extCmdFactoryRef,
+        StltConfigAccessor stltCfgAccessorRef
     )
     {
         workerCtx = workerCtxRef;
@@ -130,6 +133,7 @@ public class DrbdLayer implements DeviceLayer
         controllerPeerConnector = controllerPeerConnectorRef;
         resourceProcessorProvider = resourceProcessorRef;
         extCmdFactory = extCmdFactoryRef;
+        stltCfgAccessor = stltCfgAccessorRef;
     }
 
     @Override
@@ -1314,7 +1318,8 @@ public class DrbdLayer implements DeviceLayer
             workerCtx,
             drbdRscData,
             drbdPeerRscDataList,
-            whitelistProps
+            whitelistProps,
+            stltCfgAccessor.getReadonlyProps()
         ).build();
 
         try (FileOutputStream resFileOut = new FileOutputStream(tmpResFile.toFile()))
