@@ -118,18 +118,20 @@ public class StorageConfigReader
                 throw new StorageException("Mandatory property for storage directory missing");
             }
             path = Paths.get(dirStr);
+            if (!path.isAbsolute())
+            {
+                throw new StorageException(
+                    "Path for storage directory (FILE provider) has to be an absolute path.\n" +
+                        path
+                );
+            }
             if (!Files.exists(path))
             {
-                if (!Files.exists(path.getParent()))
+                if (path.getParent() == null || !Files.exists(path.getParent()))
                 {
                     throw new StorageException("Parent directory of '" + path + "' does not exist. ");
                 }
                 Files.createDirectory(path);
-            }
-            if (!path.isAbsolute())
-            {
-                throw new StorageException("Path for storage directory (FILE provider) has to be an absolute path.\n" +
-                    path);
             }
         }
         catch (InvalidKeyException exc)
