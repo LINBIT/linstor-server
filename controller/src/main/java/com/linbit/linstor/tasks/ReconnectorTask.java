@@ -410,6 +410,13 @@ public class ReconnectorTask implements Task
                         "60" // 1 hour
                     )
                 ) * 60 * 1000; // to milliseconds
+                final boolean ignoreNode = Boolean.parseBoolean(
+                    props.getProp(
+                        ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION,
+                        ApiConsts.NAMESPC_DRBD_OPTIONS,
+                        "false"
+                    )
+                );
                 if (config.drbdOk != drbdOkNew)
                 {
                     config.drbdOk = drbdOkNew;
@@ -421,7 +428,7 @@ public class ReconnectorTask implements Task
                 if (!config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                 {
                     retry.add(config);
-                    if (!config.drbdOk && System.currentTimeMillis() >= config.offlineSince + timeout)
+                    if (!config.drbdOk && System.currentTimeMillis() >= config.offlineSince + timeout && !ignoreNode)
                     {
                         int numDiscon = reconnectorConfigSet.size();
                         int maxPercentDiscon = Integer.parseInt(
