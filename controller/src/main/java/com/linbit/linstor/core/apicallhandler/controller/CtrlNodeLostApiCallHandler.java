@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -56,6 +54,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
+
+import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlNodeLostApiCallHandler
@@ -180,7 +180,13 @@ public class CtrlNodeLostApiCallHandler
         // set node mark deleted for updates to other satellites
         markDeleted(node);
 
-        // If the node has no resources, then there should not be any volumes referenced
+        Collection<Snapshot> snapshots = new ArrayList<>(getSnapshotsPrivileged(node));
+        for (Snapshot snapshot : snapshots)
+        {
+            deletePrivileged(snapshot);
+        }
+
+        // If the node has no resources or snapshots, then there should not be any volumes referenced
         // by the storage pool -- double check and delete storage pools
         Iterator<StorPool> storPoolIterator = getStorPoolIteratorPrivileged(node);
         while (storPoolIterator.hasNext())
@@ -202,12 +208,6 @@ public class CtrlNodeLostApiCallHandler
                     )
                 ));
             }
-        }
-
-        Collection<Snapshot> snapshots = new ArrayList<>(getSnapshotsPrivileged(node));
-        for (Snapshot snapshot : snapshots)
-        {
-            deletePrivileged(snapshot);
         }
 
         String successMessage = firstLetterCaps(getNodeDescriptionInline(nodeNameStr)) + " deleted.";
