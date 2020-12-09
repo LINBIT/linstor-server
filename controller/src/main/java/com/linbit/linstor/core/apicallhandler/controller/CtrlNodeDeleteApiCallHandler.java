@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -56,6 +54,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
+
+import static java.util.stream.Collectors.toList;
 
 @Singleton
 public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionListener
@@ -146,6 +146,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     }
 
     private Flux<ApiCallRc> deleteNodeInTransaction(ResponseContext context, String nodeNameStr)
+        throws AccessDeniedException
     {
         Flux<ApiCallRc> responseFlux;
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -162,6 +163,20 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                 )
                 .setCause("Node '" + nodeName + "' does not exist.")
                 .build()
+            );
+            responseFlux = Flux.just(responses);
+        }
+        else if (node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
+        {
+            responseConverter.addWithDetail(
+                responses, context, ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.WARN_NODE_EVICTED,
+                        "Deletion of node '" + nodeName + "' had no effect."
+                    )
+                    .setCause("Node '" + nodeName + "' has been evicted.")
+                    .setCorrection("Use node lost command to delete an evicted node.")
+                    .build()
             );
             responseFlux = Flux.just(responses);
         }
@@ -352,6 +367,10 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     {
         try
         {
+            // to avoid having to pass a parameter through several different methods
+            // to distinguish whether this was triggered through the api or not,
+            // it is always not allowed - get rid of an evicted node through node lost cmd
+
             if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
             {
                 boolean canDelete = node.getResourceCount() == 0;
@@ -384,10 +403,6 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                     }
 
                     NodeName nodeName = node.getName();
-
-                    // to avoid having to pass a parameter through several different methods
-                    // to distinguish whether this was triggered through the api or not,
-                    // it is always not allowed - get rid of an evicted node through node lost cmd
 
                     deletePrivileged(node);
                     removeNodePrivileged(nodeName);

@@ -497,6 +497,8 @@ public class CtrlNodeApiCallHandler
             ApiConsts.MASK_NODE,
             new HashMap<>()
         );
+        List<String> reconNodes = new ArrayList<>();
+        List<String> evictNodes = new ArrayList<>();
 
         try
         {
@@ -505,28 +507,51 @@ public class CtrlNodeApiCallHandler
                 Node node = ctrlApiDataLoader.loadNode(new NodeName(nodeStr), true);
                 Peer crtNodePeer = node.getPeer(apiCtx); // check for access
 
-                reconnectorTask.add(crtNodePeer, false);
-                // the close connection has to run in its own thread
-                // otherwise we will get re-entering scope problems (Error report)
-                scheduler.schedule(() ->
-                    {
+                if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
+                {
+                    reconnectorTask.add(crtNodePeer, false);
+                    // the close connection has to run in its own thread
+                    // otherwise we will get re-entering scope problems (Error report)
+                    scheduler.schedule(() ->
                         {
-                            try
                             {
-                                node.getPeer(apiCtx).closeConnection(true);
-                            }
-                            catch (Exception | ImplementationError ignored)
-                            {
+                                try
+                                {
+                                    node.getPeer(apiCtx).closeConnection(true);
+                                }
+                                catch (Exception | ImplementationError ignored)
+                                {
+                                }
                             }
                         }
-                    }
-                );
+                    );
+                    reconNodes.add(nodeStr);
+                }
+                else
+                {
+                    evictNodes.add(nodeStr);
+                }
             }
 
-            responses.addEntry(ApiCallRcImpl.simpleEntry(
-                ApiConsts.MASK_MOD | ApiConsts.MASK_NODE | ApiConsts.MASK_SUCCESS,
-                "Nodes [" + String.join(",", nodes) + "] will be reconnected."
-            ));
+            if (reconNodes.isEmpty())
+            {
+                responses.addEntry(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.MASK_MOD | ApiConsts.MASK_NODE | ApiConsts.MASK_SUCCESS,
+                        "Nodes [" + String.join(",", reconNodes) + "] will be reconnected."
+                    )
+                );
+            }
+            if (evictNodes.isEmpty())
+            {
+                responses.addEntry(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.MASK_MOD | ApiConsts.MASK_NODE | ApiConsts.WARN_NODE_EVICTED,
+                        "Nodes [" + String.join(",", evictNodes) + "] are evicted and will not be reconnected. " +
+                        "Use node restore <node-name> to reconnect."
+                    )
+                );
+            }
         }
         catch (Exception | ImplementationError exc)
         {

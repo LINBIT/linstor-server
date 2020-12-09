@@ -124,7 +124,22 @@ public class ReconnectorTask implements Task
             }
             else
             {
-                reconnectorConfigSet.add(new ReconnectConfig(peer, drbdConnectionsOk(peer)));
+                try
+                {
+                    if (!peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
+                    {
+                        reconnectorConfigSet.add(new ReconnectConfig(peer, drbdConnectionsOk(peer)));
+                    }
+                    else
+                    {
+                        errorReporter
+                            .logDebug("Node %s is evicted and will not be reconnected", peer.getNode().getName());
+                    }
+                }
+                catch (AccessDeniedException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
             }
         }
 
@@ -410,7 +425,7 @@ public class ReconnectorTask implements Task
                         "60" // 1 hour
                     )
                 ) * 60 * 1000; // to milliseconds
-                final boolean ignoreNode = Boolean.parseBoolean(
+                final boolean allowEviction = Boolean.parseBoolean(
                     props.getProp(
                         ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION,
                         ApiConsts.NAMESPC_DRBD_OPTIONS,
@@ -428,44 +443,54 @@ public class ReconnectorTask implements Task
                 if (!config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                 {
                     retry.add(config);
-                    if (!config.drbdOk && System.currentTimeMillis() >= config.offlineSince + timeout && !ignoreNode)
+                    if (!config.drbdOk && System.currentTimeMillis() >= config.offlineSince + timeout)
                     {
-                        int numDiscon = reconnectorConfigSet.size();
-                        int maxPercentDiscon = Integer.parseInt(
-                            props.getProp(
-                                ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES,
-                                ApiConsts.NAMESPC_DRBD_OPTIONS,
-                                "34"
-                            )
-                        );
-                        int numNodes = nodeRepository.getMapForView(apiCtx).size();
-                        int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
-                        if (numDiscon < maxDiscon)
+                        if (allowEviction)
                         {
-                            errorReporter.logTrace(
-                                config.peer + " has been offline for too long, relocation of resources started."
-                            );
-                            ctrlNodeApiCallHandler.get().declareEvicted(config.peer.getNode())
-                                .subscriberContext(
-                                    Context.of(
-                                        ApiModule.API_CALL_NAME,
-                                        "Recon:AutoEvicting",
-                                        AccessContext.class,
-                                        config.peer.getAccessContext(),
-                                        Peer.class,
-                                        config.peer
-                                    )
+                            int numDiscon = reconnectorConfigSet.size();
+                            int maxPercentDiscon = Integer.parseInt(
+                                props.getProp(
+                                    ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES,
+                                    ApiConsts.NAMESPC_DRBD_OPTIONS,
+                                    "34"
                                 )
-                                .subscribe();
-                            // evicted, stop trying reconnect
-                            retry.remove(config);
-                            reconnectorConfigSet.remove(config);
+                            );
+                            int numNodes = nodeRepository.getMapForView(apiCtx).size();
+                            int maxDiscon = Math.round(maxPercentDiscon * numNodes / 100.0f);
+                            if (numDiscon <= maxDiscon)
+                            {
+                                errorReporter.logTrace(
+                                    config.peer + " has been offline for too long, relocation of resources started."
+                                );
+                                ctrlNodeApiCallHandler.get().declareEvicted(config.peer.getNode())
+                                    .subscriberContext(
+                                        Context.of(
+                                            ApiModule.API_CALL_NAME,
+                                            "Recon:AutoEvicting",
+                                            AccessContext.class,
+                                            config.peer.getAccessContext(),
+                                            Peer.class,
+                                            config.peer
+                                        )
+                                    )
+                                    .subscribe();
+                                // evicted, stop trying reconnect
+                                retry.remove(config);
+                                reconnectorConfigSet.remove(config);
+                            }
+                            else
+                            {
+                                errorReporter.logTrace(
+                                    "Currently more than %d%% nodes are not connected to the controller. The controller might have a problem with it's connections, therefore no nodes will be declared as EVICTED",
+                                    maxPercentDiscon
+                                );
+                            }
                         }
                         else
                         {
-                            errorReporter.logTrace(
-                                "Currently more than %d%% nodes are not connected to the controller. The controller might have a problem with it's connections, therefore no nodes will be declared as EVICTED",
-                                maxPercentDiscon
+                            errorReporter.logDebug(
+                                "The node %s will not be evicted since the property AutoEvictAllowEviction is set to false.",
+                                config.peer.getNode().getName()
                             );
                         }
                     }

@@ -206,19 +206,9 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                                 nodeNameOfEvictedResources
                                         )
                                     );
-
-                                    // return Flux.empty();
-                                    }
-                            );
-                            long size = 0;
-                            {
-                                Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(accCtx.get());
-                                while (vlmDfnIt.hasNext())
-                                {
-                                    VolumeDefinition vlmDfn = vlmDfnIt.next();
-                                    size += vlmDfn.getVolumeSize(accCtx.get());
                                 }
-                            }
+                            );
+                            long size = getVlmSize(rscDfn);
                             errorReporter.logDebug(
                                 "Auto-evict: Auto-placing '%s' on %d additional nodes",
                                 rscDfn.getName(),
@@ -249,7 +239,6 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                 autoHelperInternalState.additionalFluxList
                                     .add(Flux.merge(deployedResources.objA)
                                         .concatWith(flux)
-                                        // TODO: updateSatellites
                                         .doOnComplete(() ->
                                         {
                                             needRePlaceRsc.remove(rscDfn);
@@ -307,6 +296,18 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private long getVlmSize(ResourceDefinition rscDfn) throws AccessDeniedException
+    {
+        long size = 0;
+        Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(accCtx.get());
+        while (vlmDfnIt.hasNext())
+        {
+            VolumeDefinition vlmDfn = vlmDfnIt.next();
+            size += vlmDfn.getVolumeSize(accCtx.get());
+        }
+        return size;
     }
 
     public void addNeedRePlaceRsc(Resource rsc)
