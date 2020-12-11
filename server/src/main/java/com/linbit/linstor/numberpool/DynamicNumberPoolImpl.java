@@ -1,7 +1,5 @@
 package com.linbit.linstor.numberpool;
 
-import java.util.regex.Matcher;
-
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
@@ -9,6 +7,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+
+import java.util.regex.Matcher;
 
 public class DynamicNumberPoolImpl implements DynamicNumberPool
 {
@@ -56,7 +56,15 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         String strRange;
         try
         {
-            strRange = ctrlConf.getProp(ctrlConfKeyRange);
+            // it's possible that there are only the default values, so check for that
+            if (ctrlConfKeyRange != null)
+            {
+                strRange = ctrlConf.getProp(ctrlConfKeyRange);
+            }
+            else
+            {
+                strRange = null;
+            }
             Matcher matcher;
             boolean useDefaults = true;
 

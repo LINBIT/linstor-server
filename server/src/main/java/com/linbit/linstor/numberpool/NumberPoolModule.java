@@ -129,7 +129,7 @@ public class NumberPoolModule extends AbstractModule
         return new DynamicNumberPoolImpl(
             errorReporter,
             ctrlConfRef,
-            LAYER_RSC_ID_MIN + "-" + LAYER_RSC_ID_MAX,
+            null,
             LAYER_RSC_ID_ELEMENT_NAME,
             rscId -> Checks.genericRangeCheck(
                 rscId,
