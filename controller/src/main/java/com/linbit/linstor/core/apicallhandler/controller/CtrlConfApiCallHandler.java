@@ -79,6 +79,7 @@ public class CtrlConfApiCallHandler
     private final SystemConfRepository systemConfRepository;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorNrPool;
+    private final DynamicNumberPool snapShipPortPool;
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<Peer> peerProvider;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -102,6 +103,9 @@ public class CtrlConfApiCallHandler
         SystemConfRepository systemConfRepositoryRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
+        @Named(
+            NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL
+        ) DynamicNumberPool snapShipPortPoolRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<Peer> peerProviderRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -121,6 +125,7 @@ public class CtrlConfApiCallHandler
         systemConfRepository = systemConfRepositoryRef;
         tcpPortPool = tcpPortPoolRef;
         minorNrPool = minorNrPoolRef;
+        snapShipPortPool = snapShipPortPoolRef;
         peerAccCtx = peerAccCtxRef;
         peerProvider = peerProviderRef;
         transMgrProvider = transMgrProviderRef;
@@ -449,10 +454,13 @@ public class CtrlConfApiCallHandler
                     switch (fullKey)
                     {
                         case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
-                            setTcpPort(key, namespace, normalized, apiCallRc);
+                            setTcpPort(key, namespace, normalized, tcpPortPool, apiCallRc);
                             break;
                         case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
                             setMinorNr(key, namespace, normalized, apiCallRc);
+                            break;
+                        case ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_TCP_PORT_RANGE:
+                            setTcpPort(key, namespace, normalized, snapShipPortPool, apiCallRc);
                             break;
                         case ApiConsts.KEY_SEARCH_DOMAIN: // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER: // fall-through
@@ -628,6 +636,9 @@ public class CtrlConfApiCallHandler
                             break;
                         case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
                             minorNrPool.reloadRange();
+                            break;
+                        case ApiConsts.KEY_TCP_PORT_RANGE:
+                            snapShipPortPool.reloadRange();
                             break;
                         // TODO: check for other properties
                         default:
@@ -998,6 +1009,7 @@ public class CtrlConfApiCallHandler
         String key,
         String namespace,
         String value,
+        DynamicNumberPool portPool,
         ApiCallRcImpl apiCallRc
     )
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException
@@ -1011,7 +1023,7 @@ public class CtrlConfApiCallHandler
             )
             {
                 systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
-                tcpPortPool.reloadRange();
+                portPool.reloadRange();
 
                 apiCallRc.addEntry(
                     "The TCP port range was successfully updated to: " + value,

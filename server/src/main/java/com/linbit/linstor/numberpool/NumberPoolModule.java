@@ -154,7 +154,7 @@ public class NumberPoolModule extends AbstractModule
         return new DynamicNumberPoolImpl(
             errorReporter,
             ctrlConfRef,
-            DEFAULT_SNAP_SHIP_PORT_MIN + "-" + DEFAULT_SNAP_SHIP_PORT_MAX,
+            ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_TCP_PORT_RANGE,
             SNAP_SHIP_PORT_ELEMENT_NAME,
             TcpPortNumber::tcpPortNrCheck,
             TcpPortNumber.PORT_NR_MAX,
