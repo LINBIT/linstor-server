@@ -3,6 +3,7 @@ package com.linbit.linstor.utils;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.numberpool.BitmapPool;
 import com.linbit.linstor.numberpool.NumberPool;
@@ -95,35 +96,45 @@ public class NameShortener
     public String shorten(ResourceDefinition rscDfn, String rscSuffix)
         throws AccessDeniedException, DatabaseException
     {
-        String shortName = null;
+        return shorten(rscDfn.getProps(accCtx), "", rscDfn.getName().displayValue + rscSuffix);
+    }
 
+    public String shorten(VolumeDefinition vlmDfn, String keyPrefix, String rscSuffix)
+        throws AccessDeniedException, DatabaseException
+    {
+        return shorten(vlmDfn.getProps(accCtx), key, vlmDfn.getResourceDefinition().getName().displayValue + rscSuffix);
+    }
+
+    private String shorten(Props props, String propKeyPrefix, String fullName)
+        throws AccessDeniedException, DatabaseException
+    {
+        String shortName = null;
         try
         {
-            Props rscDfnProps = rscDfn.getProps(accCtx);
-            String fullName = rscDfnProps.getProp(key);
-            if (fullName == null)
+            String ret = props.getProp(propKeyPrefix + key);
+            if (ret == null)
             {
                 // rscDfn does not have a property with the shortendName yet
 
-                fullName = rscDfn.getName().displayValue + rscSuffix;
+                ret = fullName;
                 if (invalidCharRegex != null)
                 {
-                    fullName = fullName.replaceAll(invalidCharRegex, "");
+                    ret = ret.replaceAll(invalidCharRegex, "");
                 }
 
-                if (fullName.length() > maxLen || existingNames.contains(fullName))
+                if (ret.length() > maxLen || existingNames.contains(ret))
                 {
                     // either too long or conflicting with existing / known names
 
                     int digitCount = 1;
-                    if (existingNames.contains(fullName))
+                    if (existingNames.contains(ret))
                     {
                         /*
                          * if the name is already reserved, we need to check if that name
                          * ends with our number pattern. This only helps to calculate a better
                          * starting digitCount, rather than starting with 1
                          */
-                        Matcher m = numberPattern.matcher(fullName);
+                        Matcher m = numberPattern.matcher(ret);
                         if (m.find())
                         {
                             digitCount = m.group(1).length();
@@ -132,7 +143,7 @@ public class NameShortener
                     boolean retry = true;
                     while (retry)
                     {
-                        NumberPool numberPool = getNumberPool(fullName, digitCount);
+                        NumberPool numberPool = getNumberPool(ret, digitCount);
 
                         int poolMin = base10pow(digitCount);
                         int poolMax = poolMin * 10;
@@ -143,10 +154,10 @@ public class NameShortener
                             int num = numberPool.autoAllocate(poolMin, poolMax - 1);
 
                             // if succeeded set property and reserve the name
-                            String baseName = getBaseName(fullName, digitCount);
+                            String baseName = getBaseName(ret, digitCount);
                             shortName = baseName + delimiter + num;
                             existingNames.add(shortName);
-                            rscDfnProps.setProp(key, shortName);
+                            props.setProp(key, shortName);
 
                             // we are done, we could basically return here
                             retry = false;
@@ -163,38 +174,38 @@ public class NameShortener
                     // fullName is short enough and is not already reserved
 
                     // reserve name
-                    existingNames.add(fullName);
-                    shortName = fullName;
+                    existingNames.add(ret);
+                    shortName = ret;
                     // make sure property is set
-                    rscDfnProps.setProp(key, shortName);
+                    props.setProp(key, shortName);
 
                     // allocate number in case it might conflict our numberPattern
-                    Matcher m = numberPattern.matcher(fullName);
+                    Matcher m = numberPattern.matcher(ret);
                     if (m.find())
                     {
                         int digitCount = m.group(1).length();
                         int num = Integer.parseInt(m.group(1));
 
-                        allocate(fullName, digitCount, num);
+                        allocate(ret, digitCount, num);
                     }
                 }
             }
             else
             {
                 // property is already set. mostly noop here
-                shortName = fullName;
+                shortName = ret;
 
                 // in case the property was set in a previous controller-session
                 existingNames.add(shortName);
 
                 // make sure the number is allocated
-                Matcher m = numberPattern.matcher(fullName);
+                Matcher m = numberPattern.matcher(ret);
                 if (m.find())
                 {
                     int digitCount = m.group(1).length();
                     int num = Integer.parseInt(m.group(1));
 
-                    allocate(fullName, digitCount, num);
+                    allocate(ret, digitCount, num);
                 }
             }
         }
