@@ -32,6 +32,7 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescription;
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
@@ -239,6 +240,40 @@ public class CtrlRscDeleteApiHelper
                 .setCause("Resource is mounted/in use.")
                 .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.", rscName, nodeName))
                 .build()
+            );
+        }
+    }
+
+    public void ensureNotLastDisk(Resource rsc)
+    {
+        try
+        {
+            AccessContext accCtx = peerAccCtx.get();
+            boolean isDiskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx);
+            if (
+                !isDiskless &&
+                    rsc.getDefinition().hasDisklessNotDeleting(accCtx) &&
+                    rsc.getDefinition().diskfullCount(accCtx) == 1)
+            {
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_IN_USE,
+                        String.format(
+                            "Last resource of '%s' with disk still has diskless resources attached.",
+                            rsc.getDefinition().getName())
+                    )
+                    .setCause("Resource still has diskless users.")
+                    .setCorrection("Before deleting this resource, delete the diskless resources attached to it.")
+                    .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check whether is last with disk " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
     }
