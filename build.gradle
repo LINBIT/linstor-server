@@ -7,7 +7,7 @@ apply plugin: 'application'
 
 sourceCompatibility = 1.8
 
-def protobufVersion = '3.8.0'
+def protobufVersion = '3.12.0'
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
 def logbackConfig = "logback.xml"
 def jvmOpts = ["-Xms32M", "-XX:MinHeapFreeRatio=40", "-XX:MaxHeapFreeRatio=70"]
@@ -47,18 +47,18 @@ subprojects {
             testCompile fileTree(dir: "libs/compileClasspath")
             testRuntime fileTree(dir: "libs/runtimeClasspath")
         } else {
-            implementation group: 'com.google.inject', name: 'guice', version: '4.2.2'
-            implementation group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.2'
+            implementation group: 'com.google.inject', name: 'guice', version: '4.2.3'
+            implementation group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.3'
 
 //            compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
             compileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
             implementation 'io.sentry:sentry:1.7.30'
             implementation 'info.picocli:picocli:3.9.5'
-            implementation group: 'io.projectreactor', name: 'reactor-core', version: '3.3.5.RELEASE'
-            compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
+            implementation group: 'io.projectreactor', name: 'reactor-core', version: '3.3.12.RELEASE'
+            compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
             implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-            implementation 'org.apache.httpcomponents:httpclient:4.5.12'
+            implementation 'org.apache.httpcomponents:httpclient:4.5.13'
             implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
             implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
 
@@ -70,7 +70,7 @@ subprojects {
             implementation group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
 
             // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
-            implementation group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.14'
+            implementation group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.18'
 
             testImplementation group: 'junit', name: 'junit', version: '4.+'
         }
@@ -277,7 +277,7 @@ project(':controller') {
             implementation group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
             implementation group: 'javax.activation', name: 'activation', version: '1.1.1'
 
-            implementation group: 'org.flywaydb', name: 'flyway-core', version: '6.3.2'
+            implementation group: 'org.flywaydb', name: 'flyway-core', version: '6.5.7'
 
             runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:2.6.0'
             runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.12'
@@ -360,19 +360,19 @@ dependencies {
 
     testCompileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
-    def powerMockVersion = '2.0.2'
+    def powerMockVersion = '2.0.9'
     testImplementation group: 'junit', name: 'junit', version: '4.+'
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.28.2'
     testImplementation group: 'org.powermock', name: 'powermock-core', version: powerMockVersion
     testImplementation group: 'org.powermock', name: 'powermock-api-mockito2', version: powerMockVersion
     testImplementation group: 'org.powermock', name: 'powermock-module-junit4', version: powerMockVersion
 
-    testCompileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
-    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.9.0'
+    testCompileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+    testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.18.+'
     testImplementation group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
 
-    testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.2.2'
-    testImplementation group: 'io.projectreactor', name: 'reactor-test', version: '3.2.9.RELEASE'
+    testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.2.3'
+    testImplementation group: 'io.projectreactor', name: 'reactor-test', version: '3.3.12.RELEASE'
 }
 
 /////////////////////////// Start scripts ///////////////////////////
