@@ -36,6 +36,7 @@ info:
           - /v1/resource-groups/properties/info
           - /v1/resource-groups/{resource_group}/volume-groups/properties/info
           - /v1/resource-definitions/{resource}/drbd-proxy/properties/info
+       - Added /v1/nodes/{node}/restore
     * 1.5.0
        - Added etcd.prefix to ControllerConfigDbEtcd parameters
     * 1.4.0
@@ -863,6 +864,18 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+  /v1/nodes/{node}/restore:
+    parameters: '#/components/parameters/Node'
+    put:
+      summary: restore node
+      description: restore an evicted node
+      responses:
+        '200':
+          description: node restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
   /v1/nodes/{node}/config:
     parameters:
       - $ref: '#/components/parameters/Node'
