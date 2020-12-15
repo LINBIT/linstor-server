@@ -729,6 +729,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 .getResource(storDriverAccCtx, new NodeName(snapTargetName)).getNode();
 
             PriorityProps targetNodePropProps = new PriorityProps(
+                snapDfn.getProps(storDriverAccCtx),
                 targetNode.getProps(storDriverAccCtx),
                 stltConfigAccessor.getReadonlyProps()
             );

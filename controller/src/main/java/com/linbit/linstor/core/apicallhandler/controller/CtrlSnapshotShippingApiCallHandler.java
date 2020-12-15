@@ -168,7 +168,7 @@ public class CtrlSnapshotShippingApiCallHandler
             {
                 sourceNodeName = getActiveResourceNodeName(rscDfn);
             }
-            flux = shipSnapshotInTransaction(rscNameRef, sourceNodeName, null, targetNodeName, null, true);
+            flux = shipSnapshotInTransaction(rscNameRef, sourceNodeName, targetNodeName, null);
         }
         return flux;
     }
@@ -215,8 +215,7 @@ public class CtrlSnapshotShippingApiCallHandler
         String fromNodeNameRef,
         String fromNicRef,
         String toNodeNameRef,
-        String toNicRef,
-        boolean suppressErrors
+        String toNicRef
     )
     {
         ResponseContext context = makeSnapshotContext(
@@ -236,10 +235,8 @@ public class CtrlSnapshotShippingApiCallHandler
                 () -> shipSnapshotInTransaction(
                     rscNameRef,
                     fromNodeNameRef,
-                    fromNicRef,
                     toNodeNameRef,
-                    toNicRef,
-                    suppressErrors
+                    toNicRef
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -248,10 +245,8 @@ public class CtrlSnapshotShippingApiCallHandler
     private Flux<ApiCallRc> shipSnapshotInTransaction(
         String rscNameRef,
         String fromNodeNameRef,
-        String fromNicRef,
         String toNodeNameRef,
-        String toNicRef,
-        boolean autoShipping
+        String toNicRef
     )
     {
         ResourceConnection rscConn = rscConnHelper.loadOrCreateRscConn(
@@ -293,7 +288,7 @@ public class CtrlSnapshotShippingApiCallHandler
         Snapshot snapCurrentSource = getSnapshot(snapDfn, fromNodeNameRef);
         Snapshot snapPreviousSource = getPrevious(snapCurrentSource);
         Snapshot snapTarget = getSnapshot(snapDfn, toNodeNameRef);
-        setShippingPropsAndFlags(snapPreviousSource, snapCurrentSource, snapTarget);
+        setShippingPropsAndFlags(snapPreviousSource, snapCurrentSource, snapTarget, toNicRef);
 
         enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
 
@@ -587,7 +582,12 @@ public class CtrlSnapshotShippingApiCallHandler
         return prevSourceSnapshot;
     }
 
-    private void setShippingPropsAndFlags(@Nullable Snapshot prevSnapSource, Snapshot snapSource, Snapshot snapTarget)
+    private void setShippingPropsAndFlags(
+        @Nullable Snapshot prevSnapSource,
+        Snapshot snapSource,
+        Snapshot snapTarget,
+        String toNicRef
+    )
     {
         try
         {
@@ -606,6 +606,10 @@ public class CtrlSnapshotShippingApiCallHandler
                 InternalApiConsts.KEY_SNAPSHOT_SHIPPING_SOURCE_NODE,
                 snapSource.getNode().getName().displayValue
             );
+            if (toNicRef != null)
+            {
+                snapDfnProps.setProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC, toNicRef);
+            }
 
             for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(apiCtx))
             {
