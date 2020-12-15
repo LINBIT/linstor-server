@@ -518,7 +518,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     @Override
-    public void applyChangedNodeProps(Props propsRef)
+    public void applyChangedNodeProps(Props propsRef) throws StorageException, AccessDeniedException
     {
         devHandler.localNodePropsChanged(propsRef);
     }

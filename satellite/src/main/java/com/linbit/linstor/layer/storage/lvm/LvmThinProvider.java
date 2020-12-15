@@ -104,7 +104,7 @@ public class LvmThinProvider extends LvmProvider
                 volumeGroup,
                 vlmData.getThinPool(),
                 lvId,
-                vlmData.getExepectedSize(),
+                vlmData.getExpectedSize(),
                 null, // config is contained in additionalOptions
                 additionalOptionsArr
             );
@@ -126,7 +126,7 @@ public class LvmThinProvider extends LvmProvider
                     volumeGroup,
                     vlmData.getThinPool(),
                     lvId,
-                    vlmData.getExepectedSize(),
+                    vlmData.getExpectedSize(),
                     config
                 )
             );

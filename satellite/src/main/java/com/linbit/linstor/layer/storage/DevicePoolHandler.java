@@ -111,6 +111,8 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(createSPDKPool(devicePaths, poolName));
                 break;
 
+            case EXOS: // for now, fall-through, might change in future
+
             // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
@@ -488,6 +490,8 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(deleteSPDKPool(devicePaths, poolName));
                 break;
 
+            case EXOS: // for now, fall-through, might change in future
+
             // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
@@ -531,6 +535,9 @@ public class DevicePoolHandler
                         apiCallRc.addEntry("Zpool name already used.", ApiConsts.FAIL_EXISTS_STOR_POOL);
                     }
                     break;
+
+                case EXOS: // for now, fall-through, might change in future
+
                 case SPDK: // fall-through for now
                 // the following cases make no sense, hence the fall-throughs
                 case OPENFLEX_TARGET: // fall-through

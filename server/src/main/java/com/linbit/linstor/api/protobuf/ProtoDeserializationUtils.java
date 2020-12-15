@@ -159,6 +159,9 @@ public class ProtoDeserializationUtils
                 case OPENFLEX_TARGET:
                     kind = DeviceProviderKind.OPENFLEX_TARGET;
                     break;
+                case EXOS:
+                    kind = DeviceProviderKind.EXOS;
+                    break;
                 case UNKNOWN_PROVIDER: // fall-through
                 case UNRECOGNIZED: // fall-through
                 default:

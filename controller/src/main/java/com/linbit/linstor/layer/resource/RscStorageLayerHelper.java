@@ -3,20 +3,25 @@ package com.linbit.linstor.layer.resource;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.NumberAlloc;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
@@ -25,9 +30,11 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
+import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -35,14 +42,18 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
+import com.linbit.linstor.utils.NameShortener;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -52,7 +63,10 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     RscDfnLayerObject, VlmDfnLayerObject
 >
 {
+    private static final int EXOS_MAX_LUN = 255;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
+    private final NameShortener exosNameShortener;
+    private final StorPoolDefinitionRepository storPoolDfnRepo;
 
     @Inject
     RscStorageLayerHelper(
@@ -61,7 +75,9 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL)  DynamicNumberPool layerRscIdPoolRef,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
-        CtrlStorPoolResolveHelper storPoolResolveHelperRef
+        CtrlStorPoolResolveHelper storPoolResolveHelperRef,
+        @Named(NameShortener.EXOS) NameShortener exosNameShortenerRef,
+        StorPoolDefinitionRepository storPoolDfnRepoRef
     )
     {
         super(
@@ -77,6 +93,8 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             rscLayerDataFactory
         );
         storPoolResolveHelper = storPoolResolveHelperRef;
+        exosNameShortener = exosNameShortenerRef;
+        storPoolDfnRepo = storPoolDfnRepoRef;
     }
 
     @Override
@@ -209,8 +227,9 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         StorPool storPool = layerDataHelperProvider.get().getStorPool(vlm, rscData, payload);
 
         DeviceProviderKind kind = storPool.getDeviceProviderKind();
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
         VlmProviderObject<Resource> vlmData = rscData.getVlmProviderObject(
-            vlm.getVolumeDefinition().getVolumeNumber()
+            vlmDfn.getVolumeNumber()
         );
         if (vlmData == null)
         {
@@ -219,7 +238,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                 case DISKLESS:
                     vlmData = layerDataFactory.createDisklessData(
                         vlm,
-                        vlm.getVolumeDefinition().getVolumeSize(apiCtx),
+                        vlmDfn.getVolumeSize(apiCtx),
                         rscData,
                         storPool
                     );
@@ -241,11 +260,28 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                 case SPDK:
                     vlmData = layerDataFactory.createSpdkData(vlm, rscData, storPool);
                     break;
+                case EXOS:
+                    exosNameShortener.shorten(
+                        vlmDfn,
+                        storPool.getSharedStorPoolName().displayValue,
+                        rscData.getResourceNameSuffix()
+                    );
+                    try
+                    {
+                        findFreeExosLun(storPool, vlm);
+                    }
+                    catch (InvalidKeyException | InvalidValueException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
+                    ExosData<Resource> exosData = layerDataFactory.createExosData(vlm, rscData, storPool);
+                    exosData.updateShortName(apiCtx);
+                    vlmData = exosData;
+                    break;
                 case OPENFLEX_TARGET:
                     throw new ImplementationError(
                         "Openflex volumes should be handled by openflex, not by storage helper"
                     );
-
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
                 default:
                     throw new ImplementationError("Unexpected kind: " + kind);
@@ -253,6 +289,66 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             storPool.putVolume(apiCtx, vlmData);
         }
         return vlmData;
+    }
+
+    private int findFreeExosLun(StorPool storPoolRef, Volume vlmRef)
+        throws ExhaustedPoolException, InvalidKeyException, NumberFormatException, AccessDeniedException,
+        DatabaseException, InvalidValueException
+    {
+        Integer lun = null;
+        List<Integer> occupiedLuns = new ArrayList<>();
+        for (StorPoolDefinition storPoolDfn : storPoolDfnRepo.getMapForView(apiCtx).values())
+        {
+            Iterator<StorPool> iterateStorPools = storPoolDfn.iterateStorPools(apiCtx);
+            while (iterateStorPools.hasNext())
+            {
+                StorPool sp = iterateStorPools.next();
+                if (sp.getSharedStorPoolName().equals(storPoolRef.getSharedStorPoolName()) && sp != storPoolRef)
+                {
+                    // find the lun of an already existing volume in the same shared SP
+                    for (VlmProviderObject<Resource> otherVlmData : sp.getVolumes(apiCtx))
+                    {
+                        AbsVolume<Resource> otherVlm = otherVlmData.getVolume();
+                        if (otherVlmData instanceof ExosData)
+                        {
+                            String prop = otherVlm.getProps(apiCtx).getProp(InternalApiConsts.EXOS_LUN);
+                            if (prop != null)
+                            {
+                                int otherLun = Integer.parseInt(prop);
+                                if (otherVlm.getVolumeDefinition().equals(vlmRef.getVolumeDefinition()))
+                                {
+                                    lun = otherLun;
+                                    break;
+                                }
+                                else
+                                {
+                                    occupiedLuns.add(otherLun);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (lun != null)
+                {
+                    break;
+                }
+            }
+            if (lun != null)
+            {
+                break;
+            }
+        }
+        if (lun == null)
+        {
+            int[] occupied = occupiedLuns.stream()
+                .mapToInt(Integer::intValue)
+                .toArray();
+            Arrays.sort(occupied);
+            lun = NumberAlloc.getFreeNumber(occupied, 1, EXOS_MAX_LUN);
+        }
+
+        vlmRef.getProps(apiCtx).setProp(InternalApiConsts.EXOS_LUN, Integer.toString(lun));
+        return lun;
     }
 
     @Override
@@ -396,6 +492,16 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                 break;
             case SPDK:
                 vlmData = layerDataFactory.createSpdkData(vlmRef, storRscData, storPool);
+                break;
+            case EXOS:
+                exosNameShortener.shorten(
+                    vlmRef.getVolumeDefinition(),
+                    storPool.getSharedStorPoolName().displayValue,
+                    storRscData.getResourceNameSuffix()
+                );
+                ExosData<Resource> exosData = layerDataFactory.createExosData(vlmRef, storRscData, storPool);
+                exosData.updateShortName(apiCtx);
+                vlmData = exosData;
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:

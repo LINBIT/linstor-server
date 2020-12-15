@@ -949,7 +949,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.FILE,
                 DeviceProviderKind.FILE_THIN,
                 DeviceProviderKind.SPDK,
-                DeviceProviderKind.OPENFLEX_TARGET
+                DeviceProviderKind.OPENFLEX_TARGET,
+                DeviceProviderKind.EXOS
             )
         ),
         COMBINED(
@@ -963,7 +964,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.FILE,
                 DeviceProviderKind.FILE_THIN,
                 DeviceProviderKind.SPDK,
-                DeviceProviderKind.OPENFLEX_TARGET
+                DeviceProviderKind.OPENFLEX_TARGET,
+                DeviceProviderKind.EXOS
             )
         ),
         AUXILIARY(

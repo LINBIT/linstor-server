@@ -60,7 +60,7 @@ public interface DeviceProvider
      */
     void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
 
-    void setLocalNodeProps(Props localNodePropsRef);
+    void setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException;
 
     Collection<StorPool> getChangedStorPools();
 

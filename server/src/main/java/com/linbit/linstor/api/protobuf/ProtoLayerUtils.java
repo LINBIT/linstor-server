@@ -22,6 +22,7 @@ import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.ExosVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
@@ -536,6 +537,9 @@ public class ProtoLayerUtils
             case SPDK:
                 ret = new SpdkVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
+            case EXOS:
+                ret = new ExosVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                break;
             case OPENFLEX_TARGET:
                 throw new ImplementationError(
                     "Openflex volumes should be deserialized by openflex, not by storage deserializer"
@@ -564,7 +568,8 @@ public class ProtoLayerUtils
             case ZFS_THIN: // fall-trough
             case FILE: // fall-through
             case FILE_THIN: // fall-through
-            case OPENFLEX_TARGET:
+            case OPENFLEX_TARGET: // fall-through
+            case EXOS:
                 vlmDfnApi = null;
                 break;
             case UNKNOWN_PROVIDER: // fall-through

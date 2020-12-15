@@ -60,6 +60,7 @@ import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
+import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -548,6 +549,29 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
 
     @Override
     protected void mergeFileData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
+    {
+        // ignoring allocatedSize
+        // ignoring devicePath
+        // ignoring usableSize
+    }
+
+    @Override
+    protected VlmProviderObject<Resource> createExosData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        ExosData<Resource> exosData = layerDataFactory.createExosData(vlmRef, storRscDataRef, storPoolRef);
+        exosData.updateShortName(apiCtx);
+        return exosData;
+    }
+
+    @Override
+    protected void mergeExosData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
         throws DatabaseException
     {
         // ignoring allocatedSize

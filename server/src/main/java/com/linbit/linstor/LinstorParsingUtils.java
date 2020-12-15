@@ -6,12 +6,12 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -413,6 +413,10 @@ public class LinstorParsingUtils
             case "OPENFLEX":
             case "OPENFLEX_TARGET":
                 kind = DeviceProviderKind.OPENFLEX_TARGET;
+                break;
+            case "EXOS":
+            case "EXOS_TARGET":
+                kind = DeviceProviderKind.EXOS;
                 break;
             default:
                 throw new ApiRcException(

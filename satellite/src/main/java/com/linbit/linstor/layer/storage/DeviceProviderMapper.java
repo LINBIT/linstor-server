@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.layer.storage.diskless.DisklessProvider;
+import com.linbit.linstor.layer.storage.exos.ExosProvider;
 import com.linbit.linstor.layer.storage.file.FileProvider;
 import com.linbit.linstor.layer.storage.file.FileThinProvider;
 import com.linbit.linstor.layer.storage.lvm.LvmProvider;
@@ -29,6 +30,7 @@ public class DeviceProviderMapper
     private final FileProvider fileProvider;
     private final FileThinProvider fileThinProvider;
     private final SpdkProvider spdkProvider;
+    private final ExosProvider exosProvider;
     private final List<DeviceProvider> driverList;
 
     @Inject
@@ -40,7 +42,8 @@ public class DeviceProviderMapper
         DisklessProvider disklessProviderRef,
         FileProvider fileProviderRef,
         FileThinProvider fileThinProviderRef,
-        SpdkProvider spdkProviderRef
+        SpdkProvider spdkProviderRef,
+        ExosProvider exosProviderRef
     )
     {
         lvmProvider = lvmProviderRef;
@@ -51,6 +54,7 @@ public class DeviceProviderMapper
         fileProvider = fileProviderRef;
         fileThinProvider = fileThinProviderRef;
         spdkProvider = spdkProviderRef;
+        exosProvider = exosProviderRef;
 
         driverList = Arrays.asList(
             lvmProvider,
@@ -60,7 +64,8 @@ public class DeviceProviderMapper
             disklessProvider,
             fileProvider,
             fileThinProvider,
-            spdkProvider
+            spdkProvider,
+            exosProvider
         );
     }
 
@@ -102,6 +107,9 @@ public class DeviceProviderMapper
                 break;
             case SPDK:
                 devProvider = spdkProvider;
+                break;
+            case EXOS:
+                devProvider = exosProvider;
                 break;
             case OPENFLEX_TARGET:
                 throw new ImplementationError("Openflex does not have a deviceProvider, but is a layer instead");

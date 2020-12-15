@@ -64,7 +64,7 @@ public interface DeviceHandler
 
     void sendResourceDeletedEvent(AbsRscLayerObject<Resource> layerDataRef);
 
-    void localNodePropsChanged(Props propsRef);
+    void localNodePropsChanged(Props propsRef) throws StorageException, AccessDeniedException;
 
     void fullSyncApplied(Node localNodeRef) throws StorageException;
 

@@ -12,6 +12,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void markResourceForDispatch(ResourceName name);
     void markMultipleResourcesForDispatch(Set<ResourceName> rscSet);
 
-    void applyChangedNodeProps(Props propsRef);
+    void applyChangedNodeProps(Props propsRef) throws StorageException, AccessDeniedException;
     void fullSyncApplied(Node localNode) throws StorageException;
 
     void abortDeviceHandlers();

@@ -11,7 +11,7 @@ public class SharedStorPoolName extends GenericName
 {
     private static final String RESERVED_CONNECTOR = ":";
 
-    public static final int MIN_LENGTH = 3;
+    public static final int MIN_LENGTH = 1;
     public static final int MAX_LENGTH = 48;
 
     public static final byte[] VALID_CHARS = {'_'};

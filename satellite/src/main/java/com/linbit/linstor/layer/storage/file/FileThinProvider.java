@@ -66,7 +66,7 @@ public class FileThinProvider extends FileProvider
         FileCommands.createThin(
             extCmdFactory.create(),
             backingFile,
-            fileData.getExepectedSize()
+            fileData.getExpectedSize()
         );
         createLoopDevice(fileData, backingFile);
     }
@@ -79,7 +79,7 @@ public class FileThinProvider extends FileProvider
         FileCommands.createThin(
             extCmdFactory.create(),
             fileData.getStorageDirectory().resolve(fileData.getIdentifier()),
-            fileData.getExepectedSize()
+            fileData.getExpectedSize()
         );
         LosetupCommands.resize(
             extCmdFactory.create(),

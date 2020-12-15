@@ -96,7 +96,7 @@ public interface DeviceLayer
 
     void clearCache() throws StorageException;
 
-    void setLocalNodeProps(Props localNodeProps);
+    void setLocalNodeProps(Props localNodeProps) throws StorageException, AccessDeniedException;
 
     boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
 

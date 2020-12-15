@@ -215,7 +215,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             extCmdFactory.create(),
             vlmData.getZPool(),
             asLvIdentifier(vlmData),
-            vlmData.getExepectedSize(),
+            vlmData.getExpectedSize(),
             false,
             getZfscreateOptions(vlmData)
         );
@@ -349,7 +349,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             extCmdFactory.create(),
             vlmData.getZPool(),
             asLvIdentifier(vlmData),
-            vlmData.getExepectedSize()
+            vlmData.getExpectedSize()
         );
     }
 
@@ -649,7 +649,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             {
                 updateInfo(vlmData, info);
 
-                final long expectedSize = vlmData.getExepectedSize();
+                final long expectedSize = vlmData.getExpectedSize();
                 final long actualSize = info.usableSize;
                 if (actualSize != expectedSize && vlmData.getRscLayerObject().getAbsResource() instanceof Resource)
                 {

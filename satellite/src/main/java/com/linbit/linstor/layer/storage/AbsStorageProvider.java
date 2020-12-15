@@ -381,7 +381,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @Override
-    public void setLocalNodeProps(Props localNodePropsRef)
+    public void setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException
     {
         localNodeProps = localNodePropsRef;
     }
@@ -461,7 +461,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
 
             long allocatedSize = getAllocatedSize(vlmData);
-            long minSize = kind.usesThinProvisioning() ? 0 : vlmData.getExepectedSize();
+            long minSize = kind.usesThinProvisioning() ? 0 : vlmData.getExpectedSize();
             if (allocatedSize < minSize)
             {
                 throw new StorageException("Size of create volume is too low. Expected " +
@@ -1331,7 +1331,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     protected abstract String getDevicePath(String storageName, String lvId);
 
-    protected abstract String getStorageName(LAYER_DATA vlmData) throws DatabaseException;
+    protected abstract String getStorageName(LAYER_DATA vlmData) throws DatabaseException, AccessDeniedException;
 
     protected abstract void setDevicePath(LAYER_DATA vlmData, String devicePath) throws DatabaseException;
 

@@ -835,16 +835,16 @@ public class CtrlNodeApiCallHandler
                         );
                     }
                 }
-            }
-            else
-            {
-                if (!isDrbd9Supported)
+                else
                 {
-                    apiCallRcsRef.addEntry(
-                        "The property '" + entry.getKey() + "' has no effect since the node '" +
-                            node.getName().displayValue + "' does not support DRBD 9",
-                        ApiConsts.WARN_UNEFFECTIVE_PROP
-                    );
+                    if (!isDrbd9Supported)
+                    {
+                        apiCallRcsRef.addEntry(
+                            "The property '" + entry.getKey() + "' has no effect since the node '" +
+                                node.getName().displayValue + "' does not support DRBD 9",
+                            ApiConsts.WARN_UNEFFECTIVE_PROP
+                        );
+                    }
                 }
             }
         }

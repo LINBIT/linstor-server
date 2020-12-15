@@ -59,6 +59,7 @@ subprojects {
             compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
             implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
             implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+            implementation 'javax.xml.bind:jaxb-api:2.3.0'   // needed as this package was deprecated in java 9 and removed in 11
             implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
             implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
 

@@ -79,7 +79,7 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void setLocalNodeProps(Props localNodeProps)
+    public void setLocalNodeProps(Props localNodeProps) throws StorageException, AccessDeniedException
     {
         for (DeviceProvider devProvider : deviceProviderMapper.getDriverList())
         {

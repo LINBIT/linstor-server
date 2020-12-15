@@ -33,7 +33,7 @@ public class NameShortenerTest
     public void simpleTest() throws Throwable
     {
         String key = "key";
-        NameShortener shorter = new NameShortener(key, 5, TestAccessContextProvider.SYS_CTX, "_", null);
+        NameShortener shorter = new NameShortener("", key, 5, TestAccessContextProvider.SYS_CTX, "_", null);
 
         addAndAssert(shorter, "rsc", "", key, "rsc"); // < limit
         addAndAssert(shorter, "rscTooLong", "", key, "rsc_1");
@@ -78,7 +78,7 @@ public class NameShortenerTest
     public void sharedBaseTest() throws Throwable
     {
         String key = "key";
-        NameShortener shorter = new NameShortener(key, 5, TestAccessContextProvider.SYS_CTX, "_", null);
+        NameShortener shorter = new NameShortener("", key, 5, TestAccessContextProvider.SYS_CTX, "_", null);
 
         addAndAssert(shorter, "abbxx1", "", key, "abb_1");
         addAndAssert(shorter, "abbxx2", "", key, "abb_2");
@@ -110,7 +110,7 @@ public class NameShortenerTest
     public void invalidCharsTest() throws Throwable
     {
         String key = "key";
-        NameShortener shorter = new NameShortener(key, 5, TestAccessContextProvider.SYS_CTX, "_", "a-zA-Z");
+        NameShortener shorter = new NameShortener("", key, 5, TestAccessContextProvider.SYS_CTX, "_", "a-zA-Z");
 
         addAndAssert(shorter, "abc123", "", key, "abc");
         addAndAssert(shorter, "abc124", "", key, "abc_1");

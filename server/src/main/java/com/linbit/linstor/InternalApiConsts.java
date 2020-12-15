@@ -102,6 +102,11 @@ public class InternalApiConsts
     public static final String KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC = "Shipping/PrefTargetNic";
     public static final String KEY_SNAPSHOT_SHIPPING_NEXT_ID = "SnapshotShippingNextId";
 
+    /*
+     * Exos
+     */
+    public static final String EXOS_LUN = "Exos/Lun";
+
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;
 

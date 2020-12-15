@@ -16,4 +16,5 @@ enum ProviderType
     FILE_THIN = 9;
     SPDK = 10;
     OPENFLEX_TARGET = 11;
+    EXOS = 12;
 }

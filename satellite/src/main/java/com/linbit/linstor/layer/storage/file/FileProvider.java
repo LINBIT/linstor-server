@@ -147,7 +147,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
 
             if (fileInfo != null)
             {
-                final long expectedSize = fileData.getExepectedSize();
+                final long expectedSize = fileData.getExpectedSize();
                 final long actualSize = fileInfo.size;
                 if (actualSize != expectedSize)
                 {
@@ -246,7 +246,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         FileCommands.createFat(
             extCmdFactory.create(),
             backingFile,
-            fileData.getExepectedSize()
+            fileData.getExpectedSize()
         );
         createLoopDevice(fileData, backingFile);
     }
@@ -273,7 +273,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         FileCommands.createFat(
             extCmdFactory.create(),
             fileData.getStorageDirectory().resolve(fileData.getIdentifier()),
-            fileData.getExepectedSize()
+            fileData.getExpectedSize()
         );
         LosetupCommands.resize(
             extCmdFactory.create(),

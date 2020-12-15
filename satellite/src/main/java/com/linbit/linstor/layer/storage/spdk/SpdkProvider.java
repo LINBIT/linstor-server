@@ -145,7 +145,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
 
             if (info != null)
             {
-                final long expectedSize = vlmData.getExepectedSize();
+                final long expectedSize = vlmData.getExpectedSize();
                 final long actualSize = info.size;
                 if (actualSize != expectedSize)
                 {
@@ -239,7 +239,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             extCmdFactory.create(),
             vlmData.getVolumeGroup(),
             asLvIdentifier(vlmData),
-            vlmData.getExepectedSize(),
+            vlmData.getExpectedSize(),
             "--type=" + getLvCreateType(vlmData)
         );
     }
@@ -282,7 +282,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             extCmdFactory.create(),
             vlmData.getVolumeGroup(),
             asLvIdentifier(vlmData),
-            vlmData.getExepectedSize()
+            vlmData.getExpectedSize()
         );
     }
 

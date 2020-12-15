@@ -8,6 +8,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.CacheRscPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
@@ -19,8 +21,6 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
-import com.linbit.linstor.api.pojo.CacheRscPojo;
-import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -32,6 +32,8 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
@@ -43,12 +45,11 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
-import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
-import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
@@ -355,6 +356,28 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         fileData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         fileData.setDevicePath(vlmPojoRef.getDevicePath());
         fileData.setUsableSize(vlmPojoRef.getUsableSize());
+    }
+
+    @Override
+    protected VlmProviderObject<Resource> createExosData(
+        AbsVolume<Resource> vlm,
+        StorageRscData<Resource> storRscData,
+        VlmLayerDataApi vlmDataApi,
+        StorPool storPoolRef
+    )
+        throws DatabaseException
+    {
+        throw new ImplementationError("Received unknown Exos storage volume from satellite");
+    }
+
+    @Override
+    protected void mergeExosData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
+    {
+        ExosData<Resource> exosData = (ExosData<Resource>) vlmDataRef;
+        exosData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
+        exosData.setDevicePath(vlmPojoRef.getDevicePath());
+        exosData.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override

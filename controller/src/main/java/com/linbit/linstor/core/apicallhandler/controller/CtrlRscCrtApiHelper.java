@@ -489,7 +489,8 @@ public class CtrlRscCrtApiHelper
                                     break;
                                 case LVM: // fall-through
                                 case SPDK: // fall-through
-                                case ZFS:
+                                case ZFS: // fall-through
+                                case EXOS:
                                     hasFatStorPool = true;
                                     break;
                                 case FILE:

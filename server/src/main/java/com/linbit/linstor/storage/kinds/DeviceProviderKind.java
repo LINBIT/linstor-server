@@ -1,6 +1,7 @@
 package com.linbit.linstor.storage.kinds;
 
 import com.linbit.linstor.storage.DisklessDriverKind;
+import com.linbit.linstor.storage.ExosDriverKind;
 import com.linbit.linstor.storage.FileDriverKind;
 import com.linbit.linstor.storage.FileThinDriverKind;
 import com.linbit.linstor.storage.LvmDriverKind;
@@ -101,6 +102,16 @@ public enum DeviceProviderKind
         false,
         new SpdkDriverKind(),
         ExtTools.SPDK
+    ),
+    EXOS(
+        true,
+        false,
+        false,
+        true,
+        true,
+        false,
+        true,
+        new ExosDriverKind()
     ),
     OPENFLEX_TARGET(
         false,
@@ -229,6 +240,9 @@ public enum DeviceProviderKind
             case ZFS:
             case ZFS_THIN:
                 allowed = kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
+                break;
+            case EXOS:
+                allowed = kind2.equals(EXOS);
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:

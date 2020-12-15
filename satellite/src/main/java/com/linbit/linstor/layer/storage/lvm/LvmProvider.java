@@ -149,7 +149,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
 
             if (info != null)
             {
-                final long expectedSize = vlmData.getExepectedSize();
+                final long expectedSize = vlmData.getExpectedSize();
                 final long actualSize = info.size;
                 if (actualSize != expectedSize)
                 {
@@ -278,7 +278,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 extCmdFactory.create(),
                 vlmData.getVolumeGroup(),
                 asLvIdentifier(vlmData),
-                vlmData.getExepectedSize(),
+                vlmData.getExpectedSize(),
                 null, // config is contained in additionalOptions
                 additionalOptionsArr
             );
@@ -292,7 +292,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                     extCmdFactory.create(),
                     vlmData.getVolumeGroup(),
                     asLvIdentifier(vlmData),
-                    vlmData.getExepectedSize(),
+                    vlmData.getExpectedSize(),
                     config,
                     additionalOptionsArr
                 )
@@ -368,7 +368,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 extCmdFactory.create(),
                 vlmData.getVolumeGroup(),
                 asLvIdentifier(vlmData),
-                vlmData.getExepectedSize(),
+                vlmData.getExpectedSize(),
                 config
             )
         );

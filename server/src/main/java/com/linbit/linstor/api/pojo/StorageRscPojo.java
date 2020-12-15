@@ -8,6 +8,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.DISKLESS;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.EXOS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
@@ -273,6 +274,21 @@ public class StorageRscPojo implements RscLayerDataApi
         )
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, FILE_THIN);
+        }
+    }
+
+    public static class ExosVlmPojo extends AbsVlmProviderPojo
+    {
+        public ExosVlmPojo(
+            int vlmNrRef,
+            String devicePathRef,
+            long allocatedSizeRef,
+            long usableSizeRef,
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
+        )
+        {
+            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, EXOS);
         }
     }
 }

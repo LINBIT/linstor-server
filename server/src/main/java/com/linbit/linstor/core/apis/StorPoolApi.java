@@ -40,6 +40,7 @@ public interface StorPoolApi
             case ZFS_THIN:
             case FILE_THIN:
             case FILE:
+            case EXOS:
             case LVM: return getStorPoolProps().get(StorageConstants.NAMESPACE_STOR_DRIVER +
                     "/" + ApiConsts.KEY_STOR_POOL_NAME);
             case SPDK:

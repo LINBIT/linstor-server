@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jr.ob.JSON;
 import org.apache.http.Header;
@@ -139,7 +140,16 @@ public class RestHttpClient implements RestClient
                 T respObj;
                 if (jsonData.length > 0 && request.responseClass != null)
                 {
-                    respObj = OBJECT_MAPPER.readValue(jsonData, request.responseClass);
+                    /*
+                     * Technically JSON allows duplicate keys, even with different value types.
+                     * In some cases we need to get rid of this. (sorry for this ugly hack)
+                     */
+                    Map<String, Object> obj = OBJECT_MAPPER.readValue(
+                        jsonData,
+                        new TypeReference<Map<String, Object>>()
+                        {}
+                    );
+                    respObj = OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
                 }
                 else
                 {

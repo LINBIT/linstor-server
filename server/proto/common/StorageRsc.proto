@@ -29,6 +29,7 @@ message StorageVlm
     optional FileVlm             file = 14;
     optional FileThinVlm         file_thin = 15;
     optional SpdkVlm             spdk = 16;
+    optional ExosVlm             exos = 17;
 }
 
 message StorageVlmDfn
@@ -72,6 +73,11 @@ message FileVlm
 }
 
 message FileThinVlm
+{
+    // currently no special payload
+}
+
+message ExosVlm
 {
     // currently no special payload
 }

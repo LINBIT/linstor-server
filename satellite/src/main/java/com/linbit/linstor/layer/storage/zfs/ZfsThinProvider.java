@@ -72,7 +72,7 @@ public class ZfsThinProvider extends ZfsProvider
             extCmdFactory.create(),
             vlmData.getZPool(),
             asLvIdentifier(vlmData),
-            vlmData.getExepectedSize(),
+            vlmData.getExpectedSize(),
             true,
             getZfscreateOptions(vlmData)
         );

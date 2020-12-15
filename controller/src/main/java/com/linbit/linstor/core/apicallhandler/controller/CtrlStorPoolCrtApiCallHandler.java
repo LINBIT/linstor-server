@@ -134,6 +134,14 @@ public class CtrlStorPoolCrtApiCallHandler
             // Therefore we need to be able to modify apiCtrlAccessors.storPoolDfnMap
             requireStorPoolDfnMapChangeAccess();
 
+            if (deviceProviderKindRef == DeviceProviderKind.EXOS)
+            {
+                // exos always needs this
+                sharedStorPoolNameStr = storPoolPropsMap.get(
+                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME
+                );
+            }
+
             StorPool storPool = storPoolHelper.createStorPool(
                 nodeNameStr,
                 storPoolNameStr,

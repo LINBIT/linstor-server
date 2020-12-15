@@ -18,6 +18,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
+import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -130,6 +131,11 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
                 break;
             case SPDK:
                 snapVlmData = layerDataFactory.createSpdkData(snapVlmRef, snapDataRef, storPool);
+                break;
+            case EXOS:
+                ExosData<Snapshot> exosSnapData = layerDataFactory.createExosData(snapVlmRef, snapDataRef, storPool);
+                exosSnapData.updateShortName(apiCtx);
+                snapVlmData = exosSnapData;
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:

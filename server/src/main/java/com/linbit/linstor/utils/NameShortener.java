@@ -34,11 +34,16 @@ import java.util.regex.Pattern;
 public class NameShortener
 {
     public static final String OPENFLEX = "OpenFlex";
+    public static final String EXOS = "Exos";
 
+    /**
+     * The property namespace used for lookup of already shortened name
+     */
+    private final String propNamespace;
     /**
      * The property key used for lookup of already shortened name
      */
-    private final String key;
+    private final String propKey;
     /**
      * Maximal length of shortened (result) String
      */
@@ -73,14 +78,16 @@ public class NameShortener
     private final String invalidCharRegex;
 
     public NameShortener(
-        String keyRef,
+        String propNamespaceRef,
+        String propKeyRef,
         int maxLenRef,
         AccessContext accCtxRef,
         String delimiterRef,
         String validCharacters
     )
     {
-        key = keyRef;
+        propNamespace = propNamespaceRef;
+        propKey = propKeyRef;
         maxLen = maxLenRef;
         accCtx = accCtxRef;
         delimiter = delimiterRef;
@@ -102,7 +109,12 @@ public class NameShortener
     public String shorten(VolumeDefinition vlmDfn, String keyPrefix, String rscSuffix)
         throws AccessDeniedException, DatabaseException
     {
-        return shorten(vlmDfn.getProps(accCtx), key, vlmDfn.getResourceDefinition().getName().displayValue + rscSuffix);
+        return shorten(
+            vlmDfn.getProps(accCtx),
+            keyPrefix,
+            vlmDfn.getResourceDefinition().getName().displayValue + rscSuffix +
+                String.format("_%05d", vlmDfn.getVolumeNumber().value)
+        );
     }
 
     private String shorten(Props props, String propKeyPrefix, String fullName)
@@ -111,7 +123,8 @@ public class NameShortener
         String shortName = null;
         try
         {
-            String ret = props.getProp(propKeyPrefix + key);
+            String localPropKey = propNamespace + "/" + propKeyPrefix + propKey;
+            String ret = props.getProp(localPropKey);
             if (ret == null)
             {
                 // rscDfn does not have a property with the shortendName yet
@@ -157,7 +170,7 @@ public class NameShortener
                             String baseName = getBaseName(ret, digitCount);
                             shortName = baseName + delimiter + num;
                             existingNames.add(shortName);
-                            props.setProp(key, shortName);
+                            props.setProp(localPropKey, shortName);
 
                             // we are done, we could basically return here
                             retry = false;
@@ -177,7 +190,7 @@ public class NameShortener
                     existingNames.add(ret);
                     shortName = ret;
                     // make sure property is set
-                    props.setProp(key, shortName);
+                    props.setProp(localPropKey, shortName);
 
                     // allocate number in case it might conflict our numberPattern
                     Matcher m = numberPattern.matcher(ret);
@@ -298,7 +311,7 @@ public class NameShortener
     public void remove(ResourceDefinition rscDfn, String rscSuffix) throws AccessDeniedException
     {
         Props rscDfnProps = rscDfn.getProps(accCtx);
-        String shortName = rscDfnProps.getProp(key);
+        String shortName = rscDfnProps.getProp(propKey);
         if (shortName != null)
         {
             Matcher m = numberPattern.matcher(shortName);

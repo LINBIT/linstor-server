@@ -893,11 +893,14 @@ public class DeviceHandlerImpl implements DeviceHandler
     // FIXME: this method also needs to be called when the localnode's properties change, not just
     // (as currently) when a fullSync was applied
     @Override
-    public void localNodePropsChanged(Props localNodeProps)
+    public void localNodePropsChanged(Props localNodeProps) throws StorageException, AccessDeniedException
     {
-        layerFactory.streamDeviceHandlers().forEach(
-            rscLayer ->
-                rscLayer.setLocalNodeProps(localNodeProps));
+        Iterator<DeviceLayer> devHandlerIt = layerFactory.iterateDeviceHandlers();
+        while (devHandlerIt.hasNext())
+        {
+            DeviceLayer deviceLayer = devHandlerIt.next();
+            deviceLayer.setLocalNodeProps(localNodeProps);
+        }
     }
 
     @Override
@@ -919,7 +922,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                 case LVM_THIN: // fall-through
                 case SPDK: // fall-through
                 case ZFS: // fall-through
-                case ZFS_THIN:
+                case ZFS_THIN: // fall-through
+                case EXOS:
                     layer = storageLayer;
                     break;
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:

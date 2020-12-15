@@ -7,6 +7,8 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.CacheRscPojo;
+import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
@@ -18,8 +20,6 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
-import com.linbit.linstor.api.pojo.CacheRscPojo;
-import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -32,6 +32,8 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
+import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
@@ -41,12 +43,11 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
-import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
-import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
@@ -406,6 +407,20 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
                 else
                 {
                     mergeSpdkVlmData(vlmPojo, vlmData);
+                }
+                break;
+            case EXOS:
+                if (vlmData == null || !(vlmData instanceof ExosData))
+                {
+                    if (vlmData != null)
+                    {
+                        removeStorageVlm(storRscData, vlmNr);
+                    }
+                    vlmData = createExosData(vlm, storRscData, vlmPojo, storPool);
+                }
+                else
+                {
+                    mergeExosData(vlmPojo, vlmData);
                 }
                 break;
             case OPENFLEX_TARGET:
@@ -866,6 +881,16 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
 
     protected abstract void putVlmData(StorageRscData<RSC> storRscDataRef, VlmProviderObject<RSC> vlmDataRef);
 
+    protected abstract VlmProviderObject<RSC> createExosData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> storRscData,
+        VlmLayerDataApi vlmPojo,
+        StorPool storPool
+    )
+        throws DatabaseException, AccessDeniedException;
+
+    protected abstract void mergeExosData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)
+        throws DatabaseException;
 
     /*
      * NVME layer methods

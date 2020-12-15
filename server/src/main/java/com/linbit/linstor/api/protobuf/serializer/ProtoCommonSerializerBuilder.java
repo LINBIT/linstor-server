@@ -90,6 +90,7 @@ import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.DisklessVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.ExosVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmThinVlm;
@@ -1080,6 +1081,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case OPENFLEX_TARGET:
                 type = ProviderType.OPENFLEX_TARGET;
                 break;
+            case EXOS:
+                type = ProviderType.EXOS;
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unknown storage driver: " + deviceProviderKindRef);
@@ -1701,6 +1705,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case SPDK:
                     builder.setSpdk(SpdkVlm.newBuilder().build());
+                    break;
+                case EXOS:
+                    builder.setExos(ExosVlm.newBuilder().build());
                     break;
                 case OPENFLEX_TARGET:
                     throw new ImplementationError(

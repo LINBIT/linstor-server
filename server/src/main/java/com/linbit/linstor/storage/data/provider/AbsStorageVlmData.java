@@ -264,7 +264,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         expectedSize = size;
     }
 
-    public long getExepectedSize()
+    public long getExpectedSize()
     {
         return expectedSize;
     }
