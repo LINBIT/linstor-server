@@ -37,7 +37,8 @@ public class NotifySnapshotShippingReceived implements ApiCallReactive
         return snapShipIntCallHandler.shippingReceived(
             ship.getRscName(),
             ship.getSnapName(),
-            ship.getSuccess()
+            ship.getSuccess(),
+            ship.getVlmNrsWithBlockedPortList()
         ).thenMany(Flux.<byte[]>empty());
     }
 }

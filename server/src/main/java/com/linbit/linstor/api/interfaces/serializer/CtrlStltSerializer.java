@@ -91,7 +91,11 @@ public interface CtrlStltSerializer extends CommonSerializer
             ApiCallRc apiCallRc
         );
 
-        CtrlStltSerializerBuilder notifySnapshotShipped(Snapshot snap, boolean successRef);
+        CtrlStltSerializerBuilder notifySnapshotShipped(
+            Snapshot snap,
+            boolean successRef,
+            Set<Integer> vlmNrsWithBlockedPort
+        );
 
         CtrlStltSerializerBuilder requestControllerUpdate();
         CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);

@@ -26,11 +26,12 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 @Singleton
 public class SnapshotShippingService implements SystemService
@@ -161,8 +162,9 @@ public class SnapshotShippingService implements SystemService
                 String.format(CMD_FORMAT_RECEIVING, port, snapshotShippingReceivingCommandRef)
             },
             shippingDescr,
-            success -> postShipping(
+            (success, alreadyInUse) -> postShipping(
                 success,
+                alreadyInUse,
                 snapVlmData,
                 InternalApiConsts.API_NOTIFY_SNAPSHOT_SHIPPING_RECEIVED,
                 true
@@ -193,8 +195,9 @@ public class SnapshotShippingService implements SystemService
                 )
             },
             shippingDescr,
-            success -> postShipping(
+            (success, alreadyInUse) -> postShipping(
                 success,
+                alreadyInUse,
                 snapVlmData,
                 null,
                 false
@@ -207,7 +210,7 @@ public class SnapshotShippingService implements SystemService
         String sendRecvCommand,
         String[] fullCommand,
         String shippingDescr,
-        Consumer<Boolean> postAction,
+        BiConsumer<Boolean, Boolean> postAction,
         AbsStorageVlmData<Snapshot> snapVlmData
     )
         throws StorageException
@@ -243,6 +246,7 @@ public class SnapshotShippingService implements SystemService
 
     private void postShipping(
         boolean successRef,
+        boolean alreadyInUseRef,
         AbsStorageVlmData<Snapshot> snapVlmData,
         String internalApiName,
         boolean updateCtrlRef
@@ -264,13 +268,17 @@ public class SnapshotShippingService implements SystemService
                 {
                     shippingInfo.snapVlmDataFinishedSuccessfully++;
                 }
+                else if (alreadyInUseRef)
+                {
+                    shippingInfo.vlmNrsWithBlockedPort.add(snapVlmData.getVlmNr().getValue());
+                }
                 if (shippingInfo.snapVlmDataFinishedShipping == shippingInfo.snapVlmDataInfoMap.size())
                 {
                     if (updateCtrlRef)
                     {
                         boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
                         controllerPeerConnector.getControllerPeer().sendMessage(
-                            interComSerializer.onewayBuilder(internalApiName).notifySnapshotShipped(snap, success).build()
+                            interComSerializer.onewayBuilder(internalApiName).notifySnapshotShipped(snap, success, shippingInfo.vlmNrsWithBlockedPort).build()
                         );
                     }
 
@@ -420,6 +428,7 @@ public class SnapshotShippingService implements SystemService
 
         private int snapVlmDataFinishedShipping = 0;
         private int snapVlmDataFinishedSuccessfully = 0;
+        private Set<Integer> vlmNrsWithBlockedPort = new HashSet<>();
     }
 
     private static class SnapVlmDataInfo

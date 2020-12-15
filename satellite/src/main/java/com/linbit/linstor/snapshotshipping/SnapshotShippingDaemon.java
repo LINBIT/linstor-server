@@ -13,11 +13,12 @@ import com.linbit.linstor.logging.ErrorReporter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public class SnapshotShippingDaemon implements Runnable
 {
     private static final int DFLT_DEQUE_CAPACITY = 100;
+    private static final String ALREADY_IN_USE = "Address already in use";
 
     private final ErrorReporter errorReporter;
     private final Thread thread;
@@ -27,15 +28,16 @@ public class SnapshotShippingDaemon implements Runnable
     private final DaemonHandler handler;
 
     private boolean started = false;
+    private boolean alreadyInUse = false;
 
-    private final Consumer<Boolean> afterTermination;
+    private final BiConsumer<Boolean, Boolean> afterTermination;
 
     public SnapshotShippingDaemon(
         ErrorReporter errorReporterRef,
         ThreadGroup threadGroupRef,
         String threadName,
         String[] commandRef,
-        Consumer<Boolean> afterTerminationRef
+        BiConsumer<Boolean, Boolean> afterTerminationRef
     )
     {
         errorReporter = errorReporterRef;
@@ -90,7 +92,12 @@ public class SnapshotShippingDaemon implements Runnable
                 else
                 if (event instanceof StdErrEvent)
                 {
-                    errorReporter.logWarning("stdErr: %s", new String(((StdErrEvent) event).data));
+                    String stdErr = new String(((StdErrEvent) event).data);
+                    errorReporter.logWarning("stdErr: %s", stdErr);
+                    if (stdErr.contains(ALREADY_IN_USE))
+                    {
+                        alreadyInUse = true;
+                    }
                 }
                 else
                 if (event instanceof ExceptionEvent)
@@ -110,7 +117,7 @@ public class SnapshotShippingDaemon implements Runnable
                 {
                     int exitCode = handler.getExitCode();
                     errorReporter.logTrace("EOF. Exit code: " + exitCode);
-                    afterTermination.accept(exitCode == 0);
+                    afterTermination.accept(exitCode == 0, alreadyInUse);
                 }
             }
             catch (InterruptedException exc)

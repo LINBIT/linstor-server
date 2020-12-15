@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
@@ -84,6 +82,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.ByteString;
+
+import static java.util.stream.Collectors.toList;
 
 public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     implements CtrlStltSerializer.CtrlStltSerializerBuilder
@@ -574,7 +574,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public CtrlStltSerializerBuilder notifySnapshotShipped(Snapshot snapRef, boolean success)
+    public CtrlStltSerializerBuilder notifySnapshotShipped(
+        Snapshot snapRef,
+        boolean success,
+        Set<Integer> vlmNrsWithBlockedPort
+    )
     {
         try
         {
@@ -582,6 +586,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setRscName(snapRef.getResourceName().displayValue)
                 .setSnapName(snapRef.getSnapshotName().displayValue)
                 .setSuccess(success)
+                .addAllVlmNrsWithBlockedPort(vlmNrsWithBlockedPort)
                 .build()
                 .writeDelimitedTo(baos);
         }

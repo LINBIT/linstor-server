@@ -46,6 +46,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -64,6 +65,7 @@ public class SnapshotShippingInternalApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final DynamicNumberPool snapshotShippingPortPool;
     private final CtrlSnapshotDeleteApiCallHandler snapshotDeleteApiCallHandler;
+    private final List<Integer> blacklistPorts = new ArrayList<>();
 
     @Inject
     public SnapshotShippingInternalApiCallHandler(
@@ -131,7 +133,12 @@ public class SnapshotShippingInternalApiCallHandler
         return updateSatellite;
     }
 
-    public Flux<ApiCallRc> shippingReceived(String rscNameRef, String snapNameRef, boolean successRef)
+    public Flux<ApiCallRc> shippingReceived(
+        String rscNameRef,
+        String snapNameRef,
+        boolean successRef,
+        List<Integer> vlmNrsWithBlockedPort
+    )
     {
         return scopeRunner
             .fluxInTransactionalScope(
@@ -139,11 +146,16 @@ public class SnapshotShippingInternalApiCallHandler
                 lockGuardFactory.create()
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP).buildDeferred(),
-                () -> shippingReceivedInTransaction(rscNameRef, snapNameRef, successRef)
+                () -> shippingReceivedInTransaction(rscNameRef, snapNameRef, successRef, vlmNrsWithBlockedPort)
             );
     }
 
-    private Flux<ApiCallRc> shippingReceivedInTransaction(String rscNameRef, String snapNameRef, boolean successRef)
+    private Flux<ApiCallRc> shippingReceivedInTransaction(
+        String rscNameRef,
+        String snapNameRef,
+        boolean successRef,
+        List<Integer> vlmNrsWithBlockedPort
+    )
     {
         Peer stltPeer = peerProvider.get();
         SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true);
@@ -165,6 +177,11 @@ public class SnapshotShippingInternalApiCallHandler
                 "Snapshot-shipping failed. Removing %s",
                 CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline(snapDfn)
             );
+
+            for (Integer port : getPorts(snapDfn, vlmNrsWithBlockedPort))
+            {
+                snapshotShippingPortPool.deallocate(port);
+            }
 
             // deletes the whole snapshotDfn
             flux = snapshotDeleteApiCallHandler.deleteSnapshot(rscNameRef, snapNameRef);
@@ -213,7 +230,7 @@ public class SnapshotShippingInternalApiCallHandler
 
         updateRscConPropsAfterReceived(snapSource, snapTarget, successRef);
 
-        for (Integer port : getPorts(snapDfn))
+        for (Integer port : getPorts(snapDfn, new ArrayList<>()))
         {
             snapshotShippingPortPool.deallocate(port);
         }
@@ -388,16 +405,25 @@ public class SnapshotShippingInternalApiCallHandler
     }
 
     @SuppressWarnings("boxing")
-    private ArrayList<Integer> getPorts(SnapshotDefinition snapDfn)
+    private ArrayList<Integer> getPorts(SnapshotDefinition snapDfn, List<Integer> vlmNrsWithBlockedPort)
     {
         ArrayList<Integer> ports = new ArrayList<>();
         try
         {
             for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(apiCtx))
             {
-                ports.add(
-                    Integer.parseInt(snapVlmDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT))
-                );
+                if (vlmNrsWithBlockedPort.contains(snapVlmDfn.getVolumeNumber().value))
+                {
+                    blacklistPorts.add(
+                        Integer.parseInt(snapVlmDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT))
+                    );
+                }
+                else
+                {
+                    ports.add(
+                        Integer.parseInt(snapVlmDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT))
+                    );
+                }
             }
         }
         catch (NumberFormatException | InvalidKeyException | AccessDeniedException exc)
@@ -513,5 +539,14 @@ public class SnapshotShippingInternalApiCallHandler
                 errorMessage
             );
         }
+    }
+
+    public void cleanBlacklistPorts()
+    {
+        for (Integer port : blacklistPorts)
+        {
+            snapshotShippingPortPool.deallocate(port);
+        }
+        blacklistPorts.clear();
     }
 }
