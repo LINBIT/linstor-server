@@ -579,7 +579,18 @@ public class CtrlRscAutoPlaceApiCallHandler
     )
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("  Place Count: " + config.getReplicaCount() + "\n");
+        if (config.getReplicaCount() != null)
+        {
+            sb.append("  Place Count: " + config.getReplicaCount() + "\n");
+        }
+        else if (config.getAdditionalReplicaCount() != null)
+        {
+            sb.append("  Additional place count: " + config.getAdditionalReplicaCount() + "\n");
+        }
+        else
+        {
+            throw new ImplementationError("Placecount AND additional place count were empty!");
+        }
         if (!config.getReplicasOnDifferentList().isEmpty())
         {
             sb.append("  Replicas on different nodes: " + config.getReplicasOnDifferentList() + "\n");
@@ -631,6 +642,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                         " * the node is online\n\n" +
                         "Auto-place configuration details:\n" + sb.toString()
             )
+            .setSkipErrorReport(true)
             .build()
         );
     }
