@@ -49,7 +49,14 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     @Override
     public boolean isDirty()
     {
-        return !oldValues.equals(backingSet);
+        /*
+         * DO NOT use
+         * return !oldValues.equals(backingSet);
+         * or similar, as the oldValues is only populated when markDirty is called.
+         * markDirty HAS to be called to activate the transaction manager, which means it is also
+         * not necessary to add "oldValues.addAll(backingSet);" in the method commitImpl().
+         */
+        return isDirty;
     }
 
     @Override
