@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
@@ -65,6 +66,7 @@ public class SnapshotShippingInternalApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final DynamicNumberPool snapshotShippingPortPool;
     private final CtrlSnapshotDeleteApiCallHandler snapshotDeleteApiCallHandler;
+    private final CtrlSnapshotShippingApiCallHandler snapshotShippingApiCallHandler;
     private final List<Integer> blacklistPorts = new ArrayList<>();
 
     @Inject
@@ -78,7 +80,8 @@ public class SnapshotShippingInternalApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
-        CtrlSnapshotDeleteApiCallHandler snapshotDeleteApiCallHandlerRef
+        CtrlSnapshotDeleteApiCallHandler snapshotDeleteApiCallHandlerRef,
+        CtrlSnapshotShippingApiCallHandler snapshotShippingApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -91,6 +94,7 @@ public class SnapshotShippingInternalApiCallHandler
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         snapshotShippingPortPool = snapshotShippingPortPoolRef;
         snapshotDeleteApiCallHandler = snapshotDeleteApiCallHandlerRef;
+        snapshotShippingApiCallHandler = snapshotShippingApiCallHandlerRef;
     }
 
     public boolean startShipping(Snapshot targetSnapRef)
@@ -185,6 +189,25 @@ public class SnapshotShippingInternalApiCallHandler
 
             // deletes the whole snapshotDfn
             flux = snapshotDeleteApiCallHandler.deleteSnapshot(rscNameRef, snapNameRef);
+            if (vlmNrsWithBlockedPort.size() > 0)
+            {
+                try
+                {
+                    flux = flux.concatWith(
+                        snapshotShippingApiCallHandler.shipSnapshot(
+                            rscNameRef,
+                            snapSource.getNodeName().toString(),
+                            null,
+                            stltPeer.getNode().getName().toString(),
+                            snapDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC)
+                        )
+                    );
+                }
+                catch (AccessDeniedException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+            }
         }
         else
         {
