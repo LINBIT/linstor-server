@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
@@ -71,6 +72,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandler;
+    private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
 
     @Inject
     public CtrlNodeDeleteApiCallHandler(
@@ -84,7 +86,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef,
+        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -98,6 +101,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         ctrlSnapshotDeleteApiCallHandler = ctrlSnapshotDeleteApiCallHandlerRef;
+        ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
     }
 
     @Override
@@ -145,6 +149,26 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
+    private boolean canNodeBeDeleted(Node node, ApiCallRcImpl resp) throws AccessDeniedException
+    {
+        boolean res = true;
+        for (Resource rsc : node.streamResources(peerAccCtx.get()).collect(Collectors.toList()))
+        {
+            ApiCallRc rcResult = ctrlRscDeleteApiHelper.ensureNotInUse(rsc, false);
+            if (!rcResult.isEmpty()) {
+                res = false;
+                resp.addEntries(rcResult);
+            }
+
+            rcResult = ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc, false);
+            if (!rcResult.isEmpty()) {
+                res = false;
+                resp.addEntries(rcResult);
+            }
+        }
+        return res;
+    }
+
     private Flux<ApiCallRc> deleteNodeInTransaction(ResponseContext context, String nodeNameStr)
         throws AccessDeniedException
     {
@@ -154,6 +178,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         requireNodesMapChangeAccess();
         NodeName nodeName = LinstorParsingUtils.asNodeName(nodeNameStr);
         Node node = ctrlApiDataLoader.loadNode(nodeName, false);
+
+        // Checks
         if (node == null)
         {
             responseConverter.addWithDetail(responses, context, ApiCallRcImpl
@@ -180,8 +206,22 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             );
             responseFlux = Flux.just(responses);
         }
+        else if (!canNodeBeDeleted(node, responses))
+        {
+            responseConverter.addWithDetail(responses, context, ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.FAIL_NODE_HAS_USED_RSC,
+                    "Cannot delete node, because it has in use or last diskful resources."
+                )
+                .setCause("Node '" + nodeName + "' cannot be deleted.")
+                .build()
+            );
+            responseFlux = Flux.just(responses);
+        }
+        // End checks
         else
         {
+
             // store to avoid deleted node access
             UUID nodeUuid = node.getUuid();
             String nodeDescription = firstLetterCaps(getNodeDescriptionInline(node));
@@ -338,7 +378,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
                 responseFlux = Flux
                     .<ApiCallRc>just(ApiCallRcImpl.singletonApiCallRc(response))
-                    .concatWith(operationContinuation.thenMany(Flux.<ApiCallRc>empty()));
+                    .concatWith(operationContinuation.thenMany(Flux.empty()));
             }
             else
             {

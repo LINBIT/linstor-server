@@ -57,7 +57,7 @@ public class CtrlRscDeleteApiHelper
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final Provider<AccessContext> peerAccCtx;
-    private LockGuardFactory lockGuardFactory;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     public CtrlRscDeleteApiHelper(
@@ -217,8 +217,14 @@ public class CtrlRscDeleteApiHelper
         return flux;
     }
 
-    public void ensureNotInUse(Resource rsc)
+    public ApiCallRc ensureNotInUse(Resource rsc)
     {
+        return ensureNotInUse(rsc, true);
+    }
+
+    public ApiCallRc ensureNotInUse(Resource rsc, boolean throwApiExc)
+    {
+        ApiCallRcImpl resp = new ApiCallRcImpl();
         ResourceName rscName = rsc.getDefinition().getName();
         NodeName nodeName = rsc.getNode().getName();
 
@@ -232,20 +238,31 @@ public class CtrlRscDeleteApiHelper
 
         if (inUse != null && inUse)
         {
-            throw new ApiRcException(ApiCallRcImpl
+            ApiCallRcImpl.ApiCallRcEntry err = ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.FAIL_IN_USE,
                     String.format("Resource '%s' is still in use.", rscName)
                 )
                 .setCause("Resource is mounted/in use.")
                 .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.", rscName, nodeName))
-                .build()
-            );
+                .build();
+            resp.addEntry(err);
+            if (throwApiExc) {
+                throw new ApiRcException(err);
+            }
         }
+
+        return resp;
     }
 
-    public void ensureNotLastDisk(Resource rsc)
+    public ApiCallRc ensureNotLastDisk(Resource rsc)
     {
+        return ensureNotLastDisk(rsc, true);
+    }
+
+    public ApiCallRc ensureNotLastDisk(Resource rsc, boolean throwApiExc)
+    {
+        ApiCallRcImpl resp = new ApiCallRcImpl();
         try
         {
             AccessContext accCtx = peerAccCtx.get();
@@ -255,7 +272,7 @@ public class CtrlRscDeleteApiHelper
                     rsc.getDefinition().hasDisklessNotDeleting(accCtx) &&
                     rsc.getDefinition().diskfullCount(accCtx) == 1)
             {
-                throw new ApiRcException(ApiCallRcImpl
+                ApiCallRcImpl.ApiCallRcEntry err = ApiCallRcImpl
                     .entryBuilder(
                         ApiConsts.FAIL_IN_USE,
                         String.format(
@@ -264,18 +281,24 @@ public class CtrlRscDeleteApiHelper
                     )
                     .setCause("Resource still has diskless users.")
                     .setCorrection("Before deleting this resource, delete the diskless resources attached to it.")
-                    .build()
-                );
+                    .build();
+
+                resp.addEntry(err);
+                if (throwApiExc) {
+                    throw new ApiRcException(err);
+                }
             }
         }
         catch (AccessDeniedException accDeniedExc)
         {
+            resp.addEntry(ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_ACC_DENIED_RSC, accDeniedExc));
             throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "check whether is last with disk " + getRscDescriptionInline(rsc),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
+        return resp;
     }
 
     private Peer getPeerPrivileged(Node node)
