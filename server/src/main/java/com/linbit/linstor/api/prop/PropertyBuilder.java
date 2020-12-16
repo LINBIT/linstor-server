@@ -173,4 +173,10 @@ public class PropertyBuilder
         unit = unitRef;
         return this;
     }
+
+    public PropertyBuilder drbd_res_file_section(String section)
+    {
+        // TODO ignore for now, rework of properties needed: see #610
+        return this;
+    }
 }
