@@ -2,16 +2,9 @@ package com.linbit.linstor.api.prop;
 
 import java.util.regex.Pattern;
 
-public class BooleanTrueFalseProperty implements Property
+public class BooleanTrueFalseProperty extends GenericProperty implements Property
 {
     private static final Pattern PATTERN = Pattern.compile("(?i)(?:true|false|yes|no)");
-
-    private final String name;
-    private final String key;
-    private boolean internal;
-    private String info;
-    private String unit;
-    private String dflt;
 
     public BooleanTrueFalseProperty(
         String nameRef,
@@ -22,12 +15,7 @@ public class BooleanTrueFalseProperty implements Property
         String dfltRef
     )
     {
-        name = nameRef;
-        key = keyRef;
-        info = infoRef;
-        internal = internalRef;
-        unit = unitRef;
-        dflt = dfltRef;
+        super(nameRef, keyRef, internalRef, infoRef, unitRef, dfltRef);
     }
 
     @Override
@@ -46,45 +34,9 @@ public class BooleanTrueFalseProperty implements Property
     }
 
     @Override
-    public String getName()
-    {
-        return name;
-    }
-
-    @Override
-    public String getKey()
-    {
-        return key;
-    }
-
-    @Override
     public String getValue()
     {
         return PATTERN.pattern();
-    }
-
-    @Override
-    public boolean isInternal()
-    {
-        return internal;
-    }
-
-    @Override
-    public String getInfo()
-    {
-        return info;
-    }
-
-    @Override
-    public String getUnit()
-    {
-        return unit;
-    }
-
-    @Override
-    public String getDflt()
-    {
-        return dflt;
     }
 
     @Override
