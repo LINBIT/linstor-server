@@ -34,4 +34,17 @@ public class LongProperty extends GenericProperty implements Property
     {
         return Property.PropertyType.LONG;
     }
+
+    @Override
+    public String getErrorMsg()
+    {
+        if (super.getUnit() == null)
+        {
+            return "This value has to be of type Long.";
+        }
+        else
+        {
+            return "This value contains " + getUnit() + " and has to be of type Long.";
+        }
+    }
 }

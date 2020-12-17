@@ -41,4 +41,10 @@ public class BooleanProperty extends GenericProperty implements Property
     {
         return Property.PropertyType.BOOLEAN;
     }
+
+    @Override
+    public String getErrorMsg()
+    {
+        return "This value must be either 'yes' or 'no'.";
+    }
 }

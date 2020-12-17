@@ -97,6 +97,12 @@ public interface Property
     PropertyType getType();
 
     /**
+     * Returns a message that describes what kind of input this property expects
+     * e.g. "The value must match (0-60) minutes."
+     */
+    String getErrorMsg();
+
+    /**
      * Converts the value to its canonical form
      */
     default String normalize(String value)

@@ -80,4 +80,10 @@ public class GenericProperty implements Property
         return null;
     }
 
+    @Override
+    public String getErrorMsg()
+    {
+        return "This value has no restrictions.";
+    }
+
 }

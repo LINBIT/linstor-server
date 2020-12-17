@@ -521,8 +521,8 @@ public class CtrlConfApiCallHandler
                 if (whitelistProps.isKeyKnown(LinStorObject.CONTROLLER, fullKey))
                 {
                     entry.setMessage("The value '" + value + "' is not valid.");
-                    entry.setDetails("The value must match: " +
-                        whitelistProps.getRuleValue(LinStorObject.CONTROLLER, fullKey)
+                    entry.setDetails(
+                        whitelistProps.getErrMsg(LinStorObject.CONTROLLER, fullKey)
                     );
                 }
                 else

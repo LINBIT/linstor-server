@@ -510,7 +510,7 @@ public class CtrlPropsHelper
                 throw new ApiRcException(ApiCallRcImpl
                     .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property value")
                     .setCause("The value '" + value + "' is not valid for the key '" + key + "'")
-                    .setDetails("The value must match '" + propsWhiteList.getRuleValue(linstorObj, key) + "'")
+                    .setDetails(propsWhiteList.getErrMsg(linstorObj, key))
                     .build()
                 );
             }

@@ -37,4 +37,17 @@ public class RegexProperty extends GenericProperty implements Property
     {
         return Property.PropertyType.REGEX;
     }
+
+    @Override
+    public String getErrorMsg()
+    {
+        if (super.getUnit() == null)
+        {
+            return "This value has to match " + getValue() + ".";
+        }
+        else
+        {
+            return "This value  has to match " + getValue() + " " + getUnit() + ".";
+        }
+    }
 }

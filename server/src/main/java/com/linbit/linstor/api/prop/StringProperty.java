@@ -27,4 +27,12 @@ public class StringProperty extends GenericProperty implements Property
         return Property.PropertyType.STRING;
     }
 
+    @Override
+    public String getErrorMsg()
+    {
+        return "Congratulations, you found an easter-egg. " +
+            "Now please report to the deveolpers how you actually got here, " +
+            "or did you cheat and just read the source-code?";
+    }
+
 }

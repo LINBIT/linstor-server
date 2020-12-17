@@ -290,6 +290,11 @@ public class WhitelistProps
         return rules.get(linstorObj).get(key).getValue();
     }
 
+    public String getErrMsg(LinStorObject linstorObj, String key)
+    {
+        return rules.get(linstorObj).get(key).getErrorMsg();
+    }
+
     public boolean isKeyKnown(LinStorObject linstorObj, String key)
     {
         return rules.get(linstorObj).get(key) != null;

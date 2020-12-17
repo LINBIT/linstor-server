@@ -44,4 +44,10 @@ public class BooleanTrueFalseProperty extends GenericProperty implements Propert
     {
         return Property.PropertyType.BOOLEAN_TRUE_FALSE;
     }
+
+    @Override
+    public String getErrorMsg()
+    {
+        return "This value must be either 'yes', 'no', 'true' or 'false'.";
+    }
 }
