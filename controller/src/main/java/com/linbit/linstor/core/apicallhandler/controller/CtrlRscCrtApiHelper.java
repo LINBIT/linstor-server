@@ -692,7 +692,7 @@ public class CtrlRscCrtApiHelper
         catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_EXISTS_RSC,
+                ApiConsts.INFO_RSC_ALREADY_EXISTS,
                 "A " + getRscDescriptionInline(node, rscDfn) + " already exists.",
                 true
             ), dataAlreadyExistsExc);
