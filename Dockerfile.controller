@@ -1,6 +1,6 @@
 FROM centos:centos7 as builder
 
-ENV LINSTOR_VERSION 1.10.0
+ENV LINSTOR_VERSION 1.11.0
 
 ENV LINSTOR_TGZNAME linstor-server
 ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
@@ -47,7 +47,7 @@ FROM registry.access.redhat.com/ubi7/ubi
 MAINTAINER Roland Kammerer <roland.kammerer@linbit.com>
 
 # ENV can not be shared between builder and "main"
-ENV LINSTOR_VERSION 1.10.0
+ENV LINSTOR_VERSION 1.11.0
 ARG release=1
 
 LABEL name="linstor-controller" \

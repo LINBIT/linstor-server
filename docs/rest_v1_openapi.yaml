@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.6.0
        - Added PropsInfoAll, PropsInfo and PropsInfoDetails as well as these entrypoints:
           - /v1/controller/properties/info
           - /v1/controller/properties/info/all

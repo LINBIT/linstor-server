@@ -1,3 +1,53 @@
+linstor-server (1.11.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gradle: update dependency keyword usage
+  * docker: use gradle-wrapper on non lbbuild runs
+  * makefile: use gradlew for all non lbbuild tasks
+  * debian/control: remove gradle build dep
+  * doc/rest-api: fix incorrect ApiCall answer type
+  * gitlab: use internal docker registry
+  * gradle: update 3rd party libs
+  * ctrlrscdeleteapi: move ensureNotLastDisk to helper class
+  * node-delete: Check that node delete wouldn't fail because of resources
+  * PropertyBuilder: fix build
+  * rsc-create: do not report an error if resource already exists
+  * node-restore: use apiconsts instead of internal
+  * rest-api-doc: update rest property docu
+
+  [ Johanna Kucera ]
+  * props-info: add unit and dflt to property info
+  * props-info: add api-entrypoints to get the property info, add seperate [...]
+  * slight code cleanup
+  * fix auto-evict
+  * auto-evict: don't try reconnect to evicted nodes
+  * auto-evict: add AUTO_EVICT_ALLOW_EVICTION
+  * auto-evict: do not allow evicted nodes to reconnect
+  * rest-api-doc: added node restore endpoint documentation
+  * SnapshotShipping: allow configuration of used port range
+  * LayerRscIdPool: Fix ctrl-prop
+  * SnapshotShipping: blacklist already in use ports
+  * SnapshotShipping: retry immediately if port already in use
+  * SnapshotShipping: allow setting PREF_TARGET_NIC
+
+  [ Gabor Hernadi ]
+  * build.gradle: Fixed showMe*Cache tasks
+  * StorConfReader: Fixed NPE
+  * FileProvider: Fixed getSize bug
+  * ConfFileBuilder: Extend prioprops
+  * NodeLost: Fixes DB-Ref violation with snapshots
+  * TxSet: Fixed incorrect dirty-check
+  * Autoplace: Allow additionalPlaceCount
+  * Autoplacer: Allow placing diskless resources
+  * Auto*: Added AutoHelperContext
+  * AutoTiebreaker: use autoplacer for selection
+  * Autoplacer: only count diskless if placing diskless
+  * Autoplace: Fix incorrectly logged rsc-count
+  * Autoplacer: Do not mix storage pool kinds
+  * Autoplace: include additionalPlaceCount in response
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 18 Dec 2020 08:39:38 +0000
+
 linstor-server (1.10.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
