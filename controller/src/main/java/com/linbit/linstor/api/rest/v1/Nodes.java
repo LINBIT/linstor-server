@@ -257,9 +257,8 @@ public class Nodes
         @PathParam("nodeName") String nodeName
     )
     {
-        Flux<ApiCallRc> flux = Flux.empty();
-        flux = ctrlNodeApiCallHandler.restoreNode(nodeName)
-            .subscriberContext(requestHelper.createContext(InternalApiConsts.API_NODE_RESTORE, request));
+        final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.restoreNode(nodeName)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_NODE_RESTORE, request));
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
@@ -479,7 +478,7 @@ public class Nodes
         }, false);
     }
 
-    private class SatelliteConfigPojo implements SatelliteConfigApi
+    private static class SatelliteConfigPojo implements SatelliteConfigApi
     {
         private final JsonGenTypes.SatelliteConfig config;
 
