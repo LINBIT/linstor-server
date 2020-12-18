@@ -22,6 +22,21 @@ stages:
   - deploy
   - test-e2e
 
+check-openapi:
+  stage: build
+  image:
+    name: jamescooke/openapi-validator
+    entrypoint: [""] # force empty entrypoint to workaround a gitlab issue
+  rules:
+    - changes:
+        - docs/rest_v1_openapi.yaml
+  before_script:
+    - echo default before disabled
+  script:
+    # openapi-validator currently can't disable the null property check, so sed them out
+    - "sed 's/default: null//g' docs/rest_v1_openapi.yaml > /tmp/openapi_null_fixed.yaml"
+    - lint-openapi -e /tmp/openapi_null_fixed.yaml -c docs/.validaterc
+
 build:
   stage: build
   rules:
