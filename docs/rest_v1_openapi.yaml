@@ -356,6 +356,10 @@ paths:
 
             Time a node can be offline before it is declared EVICTED in minutes
 
+        - `DrbdOptions/AutoEvictAllowEviction` - boolean_true_false
+
+            If set to true on a node, it cannot be evicted anymore
+
         - `Writecache/PoolName` - regex[`^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$`]
 
             Linstor storage pool name for writecache
@@ -3069,6 +3073,10 @@ paths:
 
             The minimum amount of replicas that should be present for a resource at all times.
 
+        - `DrbdOptions/AutoEvictAllowEviction` - boolean_true_false
+
+            If set to true on a node, it cannot be evicted anymore
+
         - `NVMe/TRType` - enum
 
             NVMe transportion type
@@ -3273,6 +3281,10 @@ paths:
         - `UpdateCacheInterval` - long
 
             Interval for space cache background updates in seconds
+
+        - `SnapshotShipping/TcpPortRange` - regex[`[0-9]+-[0-9]+`]
+
+            Range for allocation of snapshot shipping TCP ports
 
         - `DrbdOptions/Disk/on-io-error` - enum
             * pass_on
