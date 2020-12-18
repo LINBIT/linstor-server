@@ -857,6 +857,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
   /v1/nodes/{node}/storage-pools/properties/info:
+    parameters:
+      - $ref: '#/components/parameters/Node'
     get:
       summary: list all storage-pool properties
       description: list all property-names and their descriptions
@@ -870,7 +872,8 @@ paths:
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
   /v1/nodes/{node}/restore:
-    parameters: '#/components/parameters/Node'
+    parameters:
+      - $ref: '#/components/parameters/Node'
     put:
       summary: restore node
       description: restore an evicted node
@@ -1676,6 +1679,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
   /v1/resource-definitions/{resource}/volume-definitions/properties/info:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
     get:
       summary: list all volume-definition properties
       description: list all property-names and their descriptions
@@ -1877,6 +1882,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
   /v1/resource-definitions/{resource}/resources/properties/info:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
     get:
       summary: list all resource properties
       description: list all property-names and their descriptions
@@ -1952,6 +1959,9 @@ paths:
               delete_props:
                 - Aux/deleteprop
   /v1/resource-definitions/{resource}/resources/{node}/volumes/properties/info:
+    parameters:
+      - $ref: '#/components/parameters/Node'
+      - $ref: '#/components/parameters/Resource'
     get:
       summary: list all volume properties
       description: list all property-names and their descriptions
@@ -2308,6 +2318,8 @@ paths:
             schema:
               $ref: '#/components/schemas/ResourceConnectionModify'
   /v1/resource-definitions/{resource}/resource-connections/properties/info:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
     get:
       summary: list all resource-connection properties
       description: list all property-names and their descriptions
@@ -2986,6 +2998,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
   /v1/resource-groups/{resource_group}/volume-groups/properties/info:
+    parameters:
+      - $ref: '#/components/parameters/ResourceGroupName'
     get:
       summary: list all volume-group properties
       description: list all property-names and their descriptions
@@ -3620,6 +3634,8 @@ paths:
               override_props:
                 compression_type: lz4
   /v1/resource-definitions/{resource}/drbd-proxy/properties/info:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
     get:
       summary: list all drbd-proxy properties
       description: list all property-names and their descriptions
