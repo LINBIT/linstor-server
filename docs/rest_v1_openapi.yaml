@@ -177,12 +177,7 @@ paths:
         description: Storage pool definition to add
   /v1/storage-pool-definitions/{storagepool}:
     parameters:
-      - name: storagepool
-        in: path
-        required: true
-        schema:
-          type: string
-          description: Storage pool definition to use
+      - $ref: '#/components/parameters/StoragePool'
     get:
       tags:
         - developers
@@ -727,12 +722,7 @@ paths:
   /v1/nodes/{node}/storage-pools/{storagepool}:
     parameters:
       - $ref: '#/components/parameters/Node'
-      - name: storagepool
-        in: path
-        required: true
-        schema:
-          type: string
-          description: Storage pool to use
+      - $ref: '#/components/parameters/StoragePool'
     put:
       tags:
         - developers
@@ -2004,9 +1994,9 @@ paths:
       - name: disklesspool
         in: path
         required: true
+        description: diskless pool to use.
         schema:
           type: string
-          description: diskless pool to use.
     put:
       tags:
         - developers
@@ -2053,12 +2043,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Resource'
       - $ref: '#/components/parameters/Node'
-      - name: storagepool
-        in: path
-        required: true
-        schema:
-          type: string
-          description: storage pool to use.
+      - $ref: '#/components/parameters/StoragePool'
     put:
       tags:
         - developers
@@ -2084,9 +2069,9 @@ paths:
       - name: fromnode
         in: path
         required: true
+        description: node that should be deleted after the successful migrate
         schema:
           type: string
-          description: node that should be deleted after the successful migrate
     put:
       tags:
         - developers
@@ -2113,15 +2098,10 @@ paths:
       - name: fromnode
         in: path
         required: true
+        description: node that should be deleted after the successful migrate
         schema:
           type: string
-          description: node that should be deleted after the successful migrate
-      - name: storagepool
-        in: path
-        required: true
-        schema:
-          type: string
-          description: storage pool to use.
+      - $ref: '#/components/parameters/StoragePool'
     put:
       tags:
         - developers
@@ -2380,9 +2360,9 @@ paths:
       - name: snapshot
         in: path
         required: true
+        description: Snapshot name to use
         schema:
           type: string
-          description: Snapshot name to use
     get:
       tags:
         - developers
@@ -3465,9 +3445,9 @@ paths:
       - name: key
         in: path
         required: true
+        description: Controller property key to delete
         schema:
           type: string
-          description: Controller property key to delete
     delete:
       tags:
         - developers
@@ -3673,21 +3653,11 @@ paths:
                 $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
-  /v1/resource-definitions/{resource}/drbd-proxy/disable/{nodeA}/{nodeB}:
+  /v1/resource-definitions/{resource}/drbd-proxy/disable/{node_a}/{node_b}:
     parameters:
       - $ref: '#/components/parameters/Resource'
-      - name: nodeA
-        in: path
-        required: true
-        schema:
-          type: string
-          description: source node of the connection
-      - name: nodeB
-        in: path
-        required: true
-        schema:
-          type: string
-          description: target node of the connection
+      - $ref: '#/components/parameters/NodeA'
+      - $ref: '#/components/parameters/NodeB'
     post:
       tags:
         - developers
@@ -3923,9 +3893,9 @@ paths:
       - name: instance
         in: path
         required: true
+        description: name of the key value store
         schema:
           type: string
-          description: name of the key value store
     get:
       tags:
         - developers
@@ -4196,7 +4166,11 @@ paths:
       operationId: createSOSReport
       summary: creates a SOS report in the log directory of the controller
       parameters:
-        - $ref: '#/components/parameters/Node'
+        - name: node
+          in: query
+          description: node to use
+          schema:
+            type: string
         - $ref: '#/components/parameters/Since'
       responses:
         '201':
@@ -4214,7 +4188,11 @@ paths:
       operationId: downloadSOSReport
       summary: request sos report to download
       parameters:
-        - $ref: '#/components/parameters/Node'
+        - name: node
+          in: query
+          description: node to use
+          schema:
+            type: string
         - $ref: '#/components/parameters/Since'
       responses:
         '200':
@@ -4288,6 +4266,13 @@ components:
       description: netinterface name to use
       schema:
         type: string
+    StoragePool:
+      name: storagepool
+      in: path
+      required: true
+      description: Storage pool to use
+      schema:
+        type: string
     Offset:
       name: offset
       in: query
@@ -4331,10 +4316,10 @@ components:
       name: volume_number
       in: path
       required: true
+      description: Volume number of the definition
       schema:
         type: integer
         format: int32
-        description: Volume number of the definition
     Since:
       name: since
       in: query
@@ -5970,11 +5955,11 @@ components:
           type: boolean
         vdo_slab_size_kib:
           type: integer
-          format: uint64
+          format: int64
           default: 0
         vdo_logical_size_kib:
           type: integer
-          format: uint64
+          format: int64
           default: 0
         with_storage_pool:
           $ref: '#/components/schemas/PhysicalStorageStoragePoolCreate'
