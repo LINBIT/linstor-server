@@ -338,6 +338,11 @@ public class Resource extends AbsResource<Resource>
         return getStateFlags().isSet(accCtx, Flags.NVME_INITIATOR);
     }
 
+    public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
+    {
+        return isDrbdDiskless(accCtx) || isNvmeInitiator(accCtx);
+    }
+
     public ResourceApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
