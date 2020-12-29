@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -9,11 +10,12 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -28,7 +30,9 @@ import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -37,20 +41,17 @@ public class CtrlStorPoolResolveHelper
     private final AccessContext apiCtx;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final Provider<AccessContext> peerCtxProvider;
-    private final Provider<CtrlRscLayerDataFactory> layerStackHelper;
 
     @Inject
     public CtrlStorPoolResolveHelper(
         @ApiContext AccessContext apiCtxRef,
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
-        CtrlPropsHelper ctrlPropsHelperRef,
-        Provider<CtrlRscLayerDataFactory> layerStackHelperRef
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         apiCtx = apiCtxRef;
         peerCtxProvider = peerCtxProviderRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
-        layerStackHelper = layerStackHelperRef;
     }
 
     /**
@@ -91,7 +92,7 @@ public class CtrlStorPoolResolveHelper
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        StorPool storPool;
+        StorPool storPool = null;
         try
         {
             Props rscProps = ctrlPropsHelper.getProps(accCtx, rsc);
@@ -125,27 +126,26 @@ public class CtrlStorPoolResolveHelper
             }
             else
             {
-                if (storPoolNameStr == null || "".equals(storPoolNameStr))
-                {
-                    storPoolNameStr = InternalApiConsts.DEFAULT_STOR_POOL_NAME;
-                }
-                storPool = rsc.getNode().getStorPool(
-                    apiCtx,
-                    LinstorParsingUtils.asStorPoolName(storPoolNameStr)
-                );
+                List<StorPoolName> possibleStorPools = storPoolNameStr == null || "".equals(storPoolNameStr) ?
+                    resolveNeighbourDiskfulStorPool(rsc) :
+                    Collections.singletonList(LinstorParsingUtils.asStorPoolName(storPoolNameStr));
 
-                if (storPool != null)
-                {
-                    if (storPool.getDeviceProviderKind().hasBackingDevice())
-                    {
-                        // If the storage pool has backing storage, check that it is of the same kind as the peers
-                        checkSameKindAsPeers(vlmDfn, rsc.getNode().getName(), storPool);
+                for (StorPoolName storPoolName : possibleStorPools) {
+                    storPool = rsc.getNode().getStorPool(apiCtx, storPoolName);
+                    if (storPool != null) {
+                        if (storPool.getDeviceProviderKind().hasBackingDevice())
+                        {
+                            // If the storage pool has backing storage, check that it is of the same kind as the peers
+                            checkSameKindAsPeers(vlmDfn, rsc.getNode().getName(), storPool);
+                        }
+                        break;
                     }
                 }
             }
 
             if (throwExcIfStorPoolIsNull)
             {
+                // TODO rather than throwing an error, we could try to let the auto-placer decide what storpool to take
                 checkStorPoolLoaded(rsc, storPool, storPoolNameStr, vlmDfn);
             }
         }
@@ -164,8 +164,7 @@ public class CtrlStorPoolResolveHelper
 
         for (Resource peerRsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
         {
-            boolean isDiskless = peerRsc.isDrbdDiskless(apiCtx) || peerRsc.isNvmeInitiator(apiCtx);
-            if (!isDiskless && !peerRsc.getNode().getName().equals(nodeName))
+            if (!peerRsc.isDiskless(apiCtx) && !peerRsc.getNode().getName().equals(nodeName))
             {
                 Volume peerVlm = peerRsc.getVolume(vlmDfn.getVolumeNumber());
                 if (peerVlm != null)
@@ -181,6 +180,37 @@ public class CtrlStorPoolResolveHelper
                 }
             }
         }
+    }
+
+    private List<StorPoolName> resolveNeighbourDiskfulStorPool(final Resource rsc)
+        throws AccessDeniedException
+    {
+        ArrayList<StorPoolName> storpools = new ArrayList<>();
+        try
+        {
+            final VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(0));
+            for (Resource peerRsc : rsc.getDefinition().streamResource(apiCtx).collect(Collectors.toList()))
+            {
+                if (!peerRsc.isDiskless(apiCtx) && !peerRsc.getNode().getName().equals(rsc.getNode().getName()))
+                {
+                    Volume peerVlm = peerRsc.getVolume(vlmDfn.getVolumeNumber());
+                    if (peerVlm != null)
+                    {
+                        for (StorPool peerStorPool : LayerVlmUtils.getStorPoolSet(peerVlm, apiCtx, false))
+                        {
+                            if (peerStorPool.getDeviceProviderKind().hasBackingDevice())
+                            {
+                                storpools.add(peerStorPool.getName());
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (ValueOutOfRangeException ignored) {}
+
+        storpools.add(LinstorParsingUtils.asStorPoolName(InternalApiConsts.DEFAULT_STOR_POOL_NAME));
+
+        return storpools;
     }
 
     private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
