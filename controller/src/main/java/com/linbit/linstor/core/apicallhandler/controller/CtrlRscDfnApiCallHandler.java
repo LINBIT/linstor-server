@@ -175,7 +175,8 @@ public class CtrlRscDfnApiCallHandler
         Short peerSlotsRef,
         String rscGrpNameStr,
         boolean throwOnError,
-        ApiCallRcImpl apiCallRc
+        ApiCallRcImpl apiCallRc,
+        boolean commit
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -228,7 +229,10 @@ public class CtrlRscDfnApiCallHandler
 
             resourceDefinitionRepository.put(apiCtx, rscDfn);
 
-            ctrlTransactionHelper.commit();
+            if (commit)
+            {
+                ctrlTransactionHelper.commit();
+            }
 
             for (VolumeDefinition vlmDfn : createdVlmDfns)
             {

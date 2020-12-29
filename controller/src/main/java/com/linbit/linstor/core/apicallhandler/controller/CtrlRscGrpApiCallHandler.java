@@ -801,7 +801,8 @@ public class CtrlRscGrpApiCallHandler
                 null,
                 rscGrpNameRef,
                 true,
-                apiCallRc
+                apiCallRc,
+                definitionsOnlyRef
             );
 
             if (autoPlaceConfig != null && autoPlaceConfig.getReplicaCount() != null && !definitionsOnlyRef)

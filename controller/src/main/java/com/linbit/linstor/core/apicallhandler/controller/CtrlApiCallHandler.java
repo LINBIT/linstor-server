@@ -227,7 +227,8 @@ public class CtrlApiCallHandler
                 peerSlotsRef,
                 rscGrpNameRef,
                 false,
-                apiCallRc
+                apiCallRc,
+                true
             );
         }
         return apiCallRc;
