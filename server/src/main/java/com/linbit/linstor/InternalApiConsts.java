@@ -133,6 +133,9 @@ public class InternalApiConsts
     public static final String NODE_UNAME = "NodeUname";
     public static final String DEFAULT_AUTO_SNAPSHOT_PREFIX = "autoSnap";
 
+    // drbd option consts
+    public static final String DRBD_VERIFY_ALGO = "verify-alg";
+
     private InternalApiConsts()
     {
     }

@@ -67,6 +67,7 @@ public class CtrlRscAutoHelper
         CtrlRscAutoTieBreakerHelper autoTieBreakerRef,
         CtrlRscAutoDrbdProxyHelper autoDrbdProxyHelperRef,
         CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef,
+        CtrlRscDfnAutoVerfiyAlgoHelper autoVerfiyAlgoHelperRef,
         CtrlApiDataLoader dataLoaderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscCrtApiHelper rscCrtHelperRef,
@@ -75,7 +76,12 @@ public class CtrlRscAutoHelper
     )
     {
         autohelperList = Arrays
-            .asList(autoTieBreakerRef, autoQuorumHelperRef, autoDrbdProxyHelperRef, autoRePlaceRscHelperRef);
+            .asList(
+                autoTieBreakerRef,
+                autoQuorumHelperRef,
+                autoDrbdProxyHelperRef,
+                autoRePlaceRscHelperRef,
+                autoVerfiyAlgoHelperRef);
 
         dataLoader = dataLoaderRef;
         peerAccCtx = peerAccCtxRef;

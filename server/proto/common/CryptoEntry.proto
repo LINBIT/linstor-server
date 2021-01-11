@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.common;
+
+message CryptoEntry
+{
+    required string name = 1;
+    required string driver = 2;
+    required string type = 3;
+    required uint32 priority = 4;
+}

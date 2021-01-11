@@ -13,6 +13,7 @@ import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.layer.storage.utils.ProcCryptoUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
@@ -22,6 +23,7 @@ import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass.MsgIntFullSyncResponse;
+import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
 
@@ -105,6 +107,12 @@ public class FullSync implements ApiCall
         builder.setSuccess(success);
         if (success)
         {
+            List<ProcCryptoEntry> cryptoEntries = ProcCryptoUtils.parseProcCrypto();
+            for (ProcCryptoEntry procCryptoEntry : cryptoEntries)
+            {
+                builder.addCryptoEntries(ProtoCtrlStltSerializerBuilder.buildCryptoEntry(procCryptoEntry));
+            }
+
             Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
                 apiCallHandlerUtils.getAllSpaceInfo(false);
 

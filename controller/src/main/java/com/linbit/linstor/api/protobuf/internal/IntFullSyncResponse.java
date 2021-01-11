@@ -15,6 +15,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass.MsgIntFullSyncResponse;
+import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.locks.LockGuard;
 
 import javax.inject.Inject;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
 
@@ -104,6 +106,15 @@ public class IntFullSyncResponse implements ApiCallReactive
                     )
                 );
             }
+
+            List<ProcCryptoEntry> cryptoEntries = msgIntFullSyncResponse.getCryptoEntriesList().stream()
+                .map(ce -> new ProcCryptoEntry(
+                    ce.getName(),
+                    ce.getDriver(),
+                    ProcCryptoEntry.CryptoType.fromString(ce.getType()),
+                    ce.getPriority()))
+                .collect(Collectors.toList());
+            satellitePeerRef.getNode().setCryptoEntries(cryptoEntries);
 
             flux = scopeRunner
                 .fluxInTransactionalScope(

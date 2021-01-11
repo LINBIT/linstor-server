@@ -34,6 +34,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -123,6 +124,8 @@ public class Node extends BaseTransactionObject
     private final TransactionSimpleObject<Node, Boolean> deleted;
 
     private FluxSink<Boolean> initialConnectSink;
+
+    private final ArrayList<ProcCryptoEntry> supportedCryptos;
 
     Node(
         UUID uuidRef,
@@ -223,6 +226,7 @@ public class Node extends BaseTransactionObject
             activeStltConn
         );
 
+        supportedCryptos = new ArrayList<>();
     }
 
 
@@ -820,6 +824,15 @@ public class Node extends BaseTransactionObject
         );
     }
 
+    public void setCryptoEntries(Collection<ProcCryptoEntry> procCryptoEntries) {
+        supportedCryptos.clear();
+        supportedCryptos.addAll(procCryptoEntries);
+    }
+
+    public ArrayList<ProcCryptoEntry> getSupportedCryptos()
+    {
+        return supportedCryptos;
+    }
 
     @Override
     public String toString()

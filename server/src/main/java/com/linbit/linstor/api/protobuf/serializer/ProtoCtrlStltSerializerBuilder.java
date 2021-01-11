@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.proto.common.CryptoEntryOuterClass;
 import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
@@ -64,6 +65,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgRscFailedOuterClass.MsgRscFa
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LsBlkEntry;
+import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.utils.Base64;
@@ -1138,6 +1140,14 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         );
 
         return freeSpaceBuilder;
+    }
+
+    public static CryptoEntryOuterClass.CryptoEntry.Builder buildCryptoEntry(ProcCryptoEntry entry) {
+        return CryptoEntryOuterClass.CryptoEntry.newBuilder()
+            .setName(entry.getName())
+            .setDriver(entry.getDriver())
+            .setPriority(entry.getPriority())
+            .setType(entry.getType().getName());
     }
 
 }
