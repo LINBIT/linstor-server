@@ -462,40 +462,55 @@ public class RscDrbdLayerHelper extends
         List<DeviceLayerKind> layerListRef
     ) throws AccessDeniedException
     {
-        boolean allVlmsUseInternalMetaData = true;
-        Resource rsc = rscDataRef.getAbsResource();
-        ResourceDefinition rscDfn = rsc.getDefinition();
+        boolean ret;
 
-        Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
-        Props rscProps = rsc.getProps(apiCtx);
-        Props rscDfnProps = rscDfn.getProps(apiCtx);
-        Props rscGrpProps = rscDfn.getResourceGroup().getProps(apiCtx);
-        Props nodeProps = rsc.getNode().getProps(apiCtx);
-
-        while (iterateVolumeDfn.hasNext())
+        if (loadingFromDatabase)
         {
-            String metaPool = new PriorityProps(
-                iterateVolumeDfn.next().getProps(apiCtx),
-                rscProps,
-                rscDfnProps,
-                rscGrpProps,
-                nodeProps
-            ).getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
-            if (isExternalMetaDataPool(metaPool))
-            {
-                allVlmsUseInternalMetaData = false;
-                break;
-            }
+            /*
+             * ignore properties when loading from DB.
+             * in this case we already have loaded all resource-layer-trees, therefore we can simply
+             * lookup if we have a direct meta-child
+             */
+            ret = rscDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META) != null;
         }
+        else
+        {
+            boolean allVlmsUseInternalMetaData = true;
+            Resource rsc = rscDataRef.getAbsResource();
+            ResourceDefinition rscDfn = rsc.getDefinition();
 
-        boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
-        boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
-        boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
-            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-        boolean isDrbdDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
+            Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
+            Props rscProps = rsc.getProps(apiCtx);
+            Props rscDfnProps = rscDfn.getProps(apiCtx);
+            Props rscGrpProps = rscDfn.getResourceGroup().getProps(apiCtx);
+            Props nodeProps = rsc.getNode().getProps(apiCtx);
 
-        return !allVlmsUseInternalMetaData && !isDrbdDiskless &&
-            (!(isNvmeBelow || isOpenflexBelow) || isNvmeInitiator);
+            while (iterateVolumeDfn.hasNext())
+            {
+                String metaPool = new PriorityProps(
+                    iterateVolumeDfn.next().getProps(apiCtx),
+                    rscProps,
+                    rscDfnProps,
+                    rscGrpProps,
+                    nodeProps
+                ).getProp(ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
+                if (isExternalMetaDataPool(metaPool))
+                {
+                    allVlmsUseInternalMetaData = false;
+                    break;
+                }
+            }
+
+            boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
+            boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
+            boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
+                .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+            boolean isDrbdDiskless = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
+
+            ret = !allVlmsUseInternalMetaData && !isDrbdDiskless &&
+                (!(isNvmeBelow || isOpenflexBelow) || isNvmeInitiator);
+        }
+        return ret;
     }
 
     @Override

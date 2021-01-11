@@ -63,6 +63,7 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.AbsRscLayerHelper;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.layer.snapshot.CtrlSnapLayerDataFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -551,6 +552,8 @@ public class DatabaseLoader implements DatabaseDriver
                     }
                 }
             }
+
+            AbsRscLayerHelper.databaseLoadingFinished();
         }
         catch (AccessDeniedException exc)
         {

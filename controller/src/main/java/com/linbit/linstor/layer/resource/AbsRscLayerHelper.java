@@ -14,6 +14,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.LayerResult;
@@ -44,6 +45,8 @@ public abstract class AbsRscLayerHelper<
     VLM_DFN_LO extends VlmDfnLayerObject
 >
 {
+    protected static boolean loadingFromDatabase = true;
+
     protected final ErrorReporter errorReporter;
     protected final AccessContext apiCtx;
     protected final LayerDataFactory layerDataFactory;
@@ -69,6 +72,19 @@ public abstract class AbsRscLayerHelper<
         rscClass = rscClassRef;
         kind = kindRef;
         layerDataHelperProvider = layerDataHelperProviderRef;
+    }
+
+    /**
+     * Called after {@link DatabaseLoader} has finished loading objects.
+     * The boolean set by this method can be used by all Rsc*LayerHelper to distinguish between initial loading
+     * and later creation of new objects.
+     *
+     * This is needed as i.e. the property "StorPoolNameDrbdMeta" could be set on RD / RG level whereas
+     * some resources were created before that property was set and therefore should NOT get an external metadata
+     */
+    public static void databaseLoadingFinished()
+    {
+        loadingFromDatabase = false;
     }
 
     /**
