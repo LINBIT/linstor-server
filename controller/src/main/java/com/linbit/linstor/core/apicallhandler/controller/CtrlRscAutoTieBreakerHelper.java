@@ -469,28 +469,40 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
             AccessContext peerAccCtx = peerCtx.get();
 
             List<String> filterNodeNamesList = new ArrayList<>();
+            for (Node node : this.nodeRepo.getMapForView(peerAccCtx).values())
+            {
+                filterNodeNamesList.add(node.getName().displayValue);
+            }
+
             while (storPool == null)
             {
-                Optional<Set<StorPool>> autoplaceResult = autoplacer.autoPlace(
-                    AutoSelectFilterPojo.merge(
-                        new AutoSelectFilterPojo(
-                            0,
-                            1,
-                            filterNodeNamesList,
-                            null,
-                            Collections.singletonList(ctx.rscDfn.getName().displayValue),
-                            null,
-                            null,
-                            null,
-                            Collections.singletonList(DeviceLayerKind.DRBD),
-                            null,
-                            null,
-                            null,
-                            Resource.Flags.DRBD_DISKLESS.name()
-                        ),
-                        ctx.rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),
-                        ctx.selectFilter
+                AutoSelectFilterPojo rgAutoPlaceCfg = AutoSelectFilterPojo.copy(
+                    ctx.rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+                );
+                rgAutoPlaceCfg.setStorPoolNameList(null); // ignore what RG has configured for storage pool list as we
+                // want to only consider diskless storage pools now, which are generally a bad idea to define in RG.
+
+                AutoSelectFilterPojo mergedAutoSelectFilterPojo = AutoSelectFilterPojo.merge(
+                    new AutoSelectFilterPojo(
+                        0,
+                        1,
+                        filterNodeNamesList,
+                        null,
+                        Collections.singletonList(ctx.rscDfn.getName().displayValue),
+                        null,
+                        null,
+                        null,
+                        Collections.singletonList(DeviceLayerKind.DRBD),
+                        null,
+                        null,
+                        null,
+                        Resource.Flags.DRBD_DISKLESS.name()
                     ),
+                    rgAutoPlaceCfg,
+                    ctx.selectFilter
+                );
+                Optional<Set<StorPool>> autoplaceResult = autoplacer.autoPlace(
+                    mergedAutoSelectFilterPojo,
                     ctx.rscDfn,
                     0 // doesn't matter as we are diskless
                 );
@@ -503,7 +515,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         /*
                          * autoplacer only checks if DRBD >= 9 is supported, but we need >= 9.0.19
                          */
-                        filterNodeNamesList.add(storPool.getNode().getName().displayValue);
+                        filterNodeNamesList.remove(storPool.getNode().getName().displayValue);
                         storPool = null;
                     }
                 }

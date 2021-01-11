@@ -10,19 +10,19 @@ import java.util.List;
 
 public class AutoSelectFilterPojo implements AutoSelectFilterApi
 {
-    private final @Nullable Integer placeCount; // null only allowed for resource groupss
-    private final @Nullable Integer additionalPlaceCount;
-    private final @Nullable List<String> nodeNameList;
-    private final @Nullable List<String> storPoolNameList;
-    private final @Nullable List<String> doNotPlaceWithRscList;
-    private final @Nullable String doNotPlaceWithRegex;
-    private final @Nullable List<String> replicasOnSameList;
-    private final @Nullable List<String> replicasOnDifferentList;
-    private final @Nullable List<DeviceLayerKind> layerStackList;
-    private final @Nullable List<DeviceProviderKind> providerList;
-    private final @Nullable Boolean disklessOnRemaining;
-    private final @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheck;
-    private final @Nullable String disklessType;
+    private @Nullable Integer placeCount; // null only allowed for resource groups
+    private @Nullable Integer additionalPlaceCount;
+    private @Nullable List<String> nodeNameList;
+    private @Nullable List<String> storPoolNameList;
+    private @Nullable List<String> doNotPlaceWithRscList;
+    private @Nullable String doNotPlaceWithRegex;
+    private @Nullable List<String> replicasOnSameList;
+    private @Nullable List<String> replicasOnDifferentList;
+    private @Nullable List<DeviceLayerKind> layerStackList;
+    private @Nullable List<DeviceProviderKind> providerList;
+    private @Nullable Boolean disklessOnRemaining;
+    private @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheck;
+    private @Nullable String disklessType;
 
     public AutoSelectFilterPojo(
         @Nullable Integer placeCountRef,
@@ -53,6 +53,24 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         providerList = deviceProviderKindsRef;
         skipAlreadyPlacedOnNodeNamesCheck = skipAlreadyPlacedOnNodeNamesCheckRef;
         disklessType = disklessTypeRef;
+    }
+
+    public static AutoSelectFilterPojo copy(AutoSelectFilterApi api) {
+        return new AutoSelectFilterPojo(
+            api.getReplicaCount(),
+            api.getAdditionalReplicaCount(),
+            api.getNodeNameList(),
+            api.getStorPoolNameList(),
+            api.getDoNotPlaceWithRscList(),
+            api.getDoNotPlaceWithRscRegex(),
+            api.getReplicasOnSameList(),
+            api.getReplicasOnDifferentList(),
+            api.getLayerStackList(),
+            api.getProviderList(),
+            api.getDisklessOnRemaining(),
+            api.skipAlreadyPlacedOnNodeNamesCheck(),
+            api.getDisklessType()
+        );
     }
 
     public static AutoSelectFilterPojo merge(
@@ -225,5 +243,70 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     public @Nullable String getDisklessType()
     {
         return disklessType;
+    }
+
+    public void setPlaceCount(@Nullable Integer placeCountRef)
+    {
+        placeCount = placeCountRef;
+    }
+
+    public void setAdditionalPlaceCount(@Nullable Integer additionalPlaceCountRef)
+    {
+        additionalPlaceCount = additionalPlaceCountRef;
+    }
+
+    public void setNodeNameList(@Nullable List<String> nodeNameListRef)
+    {
+        nodeNameList = nodeNameListRef;
+    }
+
+    public void setStorPoolNameList(@Nullable List<String> storPoolNameListRef)
+    {
+        storPoolNameList = storPoolNameListRef;
+    }
+
+    public void setDoNotPlaceWithRscList(@Nullable List<String> doNotPlaceWithRscListRef)
+    {
+        doNotPlaceWithRscList = doNotPlaceWithRscListRef;
+    }
+
+    public void setDoNotPlaceWithRegex(@Nullable String doNotPlaceWithRegexRef)
+    {
+        doNotPlaceWithRegex = doNotPlaceWithRegexRef;
+    }
+
+    public void setReplicasOnSameList(@Nullable List<String> replicasOnSameListRef)
+    {
+        replicasOnSameList = replicasOnSameListRef;
+    }
+
+    public void setReplicasOnDifferentList(@Nullable List<String> replicasOnDifferentListRef)
+    {
+        replicasOnDifferentList = replicasOnDifferentListRef;
+    }
+
+    public void setLayerStackList(@Nullable List<DeviceLayerKind> layerStackListRef)
+    {
+        layerStackList = layerStackListRef;
+    }
+
+    public void setProviderList(@Nullable List<DeviceProviderKind> providerListRef)
+    {
+        providerList = providerListRef;
+    }
+
+    public void setDisklessOnRemaining(@Nullable Boolean disklessOnRemainingRef)
+    {
+        disklessOnRemaining = disklessOnRemainingRef;
+    }
+
+    public void setSkipAlreadyPlacedOnNodeNamesCheck(@Nullable List<String> skipAlreadyPlacedOnNodeNamesCheckRef)
+    {
+        skipAlreadyPlacedOnNodeNamesCheck = skipAlreadyPlacedOnNodeNamesCheckRef;
+    }
+
+    public void setDisklessType(@Nullable String disklessTypeRef)
+    {
+        disklessType = disklessTypeRef;
     }
 }
