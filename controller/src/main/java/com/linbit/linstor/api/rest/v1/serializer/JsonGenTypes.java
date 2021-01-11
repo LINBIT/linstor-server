@@ -1205,8 +1205,8 @@ public class JsonGenTypes
         public String raid_level = "JBOD";
         public String pool_name;
         public boolean vdo_enable = false;
-        public int vdo_slab_size_kib = 0;
-        public int vdo_logical_size_kib = 0;
+        public long vdo_slab_size_kib = 0;
+        public long vdo_logical_size_kib = 0;
         public PhysicalStorageStoragePoolCreate with_storage_pool;
     }
 
