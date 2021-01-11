@@ -418,7 +418,12 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 {
                     if (rscFlags.isSet(peerAccCtx, Resource.Flags.DRBD_DISKLESS))
                     {
-                        disklessDrbdCount++;
+                        if (!rscFlags.isSet(peerAccCtx, Resource.Flags.TIE_BREAKER))
+                        {
+                            // do not count tiebreaker here as this method should determine if the tiebreaker should
+                            // exist or not
+                            disklessDrbdCount++;
+                        }
                     }
                     else
                     {
