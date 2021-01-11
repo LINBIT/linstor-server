@@ -21,6 +21,7 @@ import java.util.TreeMap;
 public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDatabaseDriver
 {
     private final ErrorReporter errorReporter;
+    private final int emptyNamespaceLength;
 
     @Inject
     public PropsConETCDDriver(
@@ -30,6 +31,8 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
     {
         super(transMgrProviderRef);
         errorReporter = errorReporterRef;
+
+        emptyNamespaceLength = getEtcdKey("", null).length();
     }
 
     @Override
@@ -41,13 +44,30 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
 
         final int propsKeyStart = etcdNamespace.length() + EtcdUtils.PK_DELIMITER.length();
 
+        /*
+         * NOTE: the ETCD keys for props is a combination of the instance name and the actual property key.
+         * however, if one instance name (for example "a") is a substring of another instance name (i.e. "ab")
+         * the above gathered `etcdMap` for "a" will also contain all keys of "ab".
+         * Therefore we need an additional check while iterating over the properties if the current composed
+         * key really corresponds to our instanceName
+         */
+
         Map<String, String> propsMap = new TreeMap<>();
         for (Entry<String, String> entry : etcdMap.entrySet())
         {
-            propsMap.put(
-                entry.getKey().substring(propsKeyStart),
-                entry.getValue()
+            String composedKey = entry.getKey();
+            String instName = composedKey.substring(
+                emptyNamespaceLength,
+                composedKey.lastIndexOf(EtcdUtils.PK_DELIMITER)
             );
+
+            if (instName.equals(instanceName)) {
+                String propsKey = composedKey.substring(propsKeyStart);
+                propsMap.put(
+                    propsKey,
+                    entry.getValue()
+                );
+            }
         }
         return propsMap;
     }
