@@ -476,12 +476,6 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
             while (storPool == null)
             {
-                AutoSelectFilterPojo rgAutoPlaceCfg = AutoSelectFilterPojo.copy(
-                    ctx.rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
-                );
-                rgAutoPlaceCfg.setStorPoolNameList(null); // ignore what RG has configured for storage pool list as we
-                // want to only consider diskless storage pools now, which are generally a bad idea to define in RG.
-
                 AutoSelectFilterPojo mergedAutoSelectFilterPojo = AutoSelectFilterPojo.merge(
                     new AutoSelectFilterPojo(
                         0,
@@ -498,9 +492,23 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         null,
                         Resource.Flags.DRBD_DISKLESS.name()
                     ),
-                    rgAutoPlaceCfg,
+                    ctx.rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),
                     ctx.selectFilter
                 );
+                /*
+                 * There are two possibilities:
+                 * 1) we just autoplaced at least 1 diskful resource so we reached the 2 diskful + 0 diskless condition
+                 * that we now place a tiebreaker. That means that if the ctx.selectFilter.getStorPoolNamesList is not
+                 * null it will contain the name(s) of disk*ful* storage pool(s). We need to ignore those as otherwise
+                 * we will not be able to find a diskless storage pool for our tiebreaker
+                 * 2) we just autoplaced at least 1 diskless resource. In this case, the condition of 2 diskful and
+                 * *0* diskless cannot be fulfilled, so we cannot be here :)
+                 *
+                 * That means, it should be always safe to also ignore the storPoolNameList of the ctx.selectFilter as
+                 * well as from the resourcegroup (i.e. the merged result)
+                 */
+                mergedAutoSelectFilterPojo.setStorPoolNameList(null);
+
                 Optional<Set<StorPool>> autoplaceResult = autoplacer.autoPlace(
                     mergedAutoSelectFilterPojo,
                     ctx.rscDfn,
