@@ -1,3 +1,32 @@
+linstor-server (1.11.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rest-api-doc: fix openapi errors
+  * gitlab-ci: check rest-api-doc
+  * rest-api-doc: fix openapi errors
+  * rest-jsontypes: update after doku fixes
+  * resource: add isDiskless method
+  * toggle-disk: get storage pool if not set, from another resource
+  * rscgrp-spawn: prevent spawn from committing rscdef/voldef
+  * Revert "debian/control: remove gradle build dep"
+  * debian: minimal gradle version should be 4.4.1
+
+  [ Johanna Kucera ]
+  * properties: add common base class GenericProperty
+  * properties: add better error messages
+
+  [ Gabor Hernadi ]
+  * AutoTiebreaker: Fixed "shouldExist" check
+  * AutoTiebreaker: ignore RG's storpoollist
+  * DBLoad,DrbdExtMd: ignore extMdProp when loading from DB
+  * Etcd,Props-Keys: Fixed loading bug
+  * Autoplace+Tiebreaker: Fixed incorrect storpoolFilter
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * Update k8s-await-election to fix golang crashes
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 13 Jan 2021 08:34:16 +0000
+
 linstor-server (1.11.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
