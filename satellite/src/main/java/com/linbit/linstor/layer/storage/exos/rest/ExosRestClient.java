@@ -206,13 +206,14 @@ public class ExosRestClient
         );
     }
 
-    public void expandVolume(StorPool storPool, String vlmName, long newSizeInKib)
+    public void expandVolume(StorPool storPool, String vlmName, long additionalSizeInKib)
         throws AccessDeniedException, StorageException
     {
         PriorityProps prioProps = getprioProps(storPool);
 
         StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append("/expand/volume/size/").append(newSizeInKib).append("KiB/")
+        urlBuilder.append("/expand/volume/size/")
+            .append(additionalSizeInKib).append("KiB/")
             .append(vlmName);
 
         simpleGetRequest(urlBuilder.toString(), prioProps, ExosRestBaseResponse.class);

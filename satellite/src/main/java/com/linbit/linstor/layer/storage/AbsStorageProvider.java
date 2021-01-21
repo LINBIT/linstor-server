@@ -308,7 +308,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                                     sizeState.equals(VlmProviderObject.Size.TOO_SMALL))
                         )
                         {
-                            errorReporter.logTrace("Lv %s will be resized", lvId);
+                            errorReporter.logTrace(
+                                "Lv %s will be resized. Expected size: %dkb, actual size: %dkb",
+                                lvId,
+                                vlmData.getExpectedSize(),
+                                vlmData.getAllocatedSize()
+                            );
                             vlmsToResize.add(vlmData);
                         }
                         vlmsToCheckForRollback.add(vlmData);

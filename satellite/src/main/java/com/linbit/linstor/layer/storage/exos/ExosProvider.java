@@ -465,7 +465,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     protected void resizeLvImpl(ExosData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
-        restClient.expandVolume(vlmData.getStorPool(), vlmData.getShortName(), vlmData.getExpectedSize());
+        final long additionalSizeInKib = vlmData.getExpectedSize() - vlmData.getAllocatedSize();
+        restClient.expandVolume(vlmData.getStorPool(), vlmData.getShortName(), additionalSizeInKib);
     }
 
     @Override
