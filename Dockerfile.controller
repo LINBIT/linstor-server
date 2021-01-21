@@ -73,7 +73,7 @@ RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Cri
   rm /tmp/*.rpm && yum clean all -y
 
 ARG ARCH=amd64
-ARG K8S_AWAIT_ELECTION_VERSION=v0.2.2
+ARG K8S_AWAIT_ELECTION_VERSION=v0.2.3
 RUN curl --fail --location "https://github.com/LINBIT/k8s-await-election/releases/download/${K8S_AWAIT_ELECTION_VERSION}/k8s-await-election-${K8S_AWAIT_ELECTION_VERSION}-linux-${ARCH}.tar.gz" | tar -xvz -C /usr/local/bin/
 
 RUN groupadd linstor
