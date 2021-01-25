@@ -294,6 +294,7 @@ public class ExosRestClient
         }
         String url = getBaseUrl(prioProps) + relativeUrl;
         errorReporter.logTrace("Sending GET request: %s", url);
+        Map<String, String> headers = getHeaders(prioProps);
         RestResponse<T> response;
         try
         {
@@ -301,7 +302,7 @@ public class ExosRestClient
                 null,
                 RestOp.GET,
                 url,
-                getHeaders(prioProps),
+                headers,
                 null,
                 Arrays.asList(HttpHeader.HTTP_OK, HttpHeader.HTTP_FORBIDDEN),
                 responseClass
@@ -314,7 +315,7 @@ public class ExosRestClient
                     null,
                     RestOp.GET,
                     url,
-                    getHeaders(prioProps),
+                    headers,
                     null,
                     Arrays.asList(HttpHeader.HTTP_OK),
                     responseClass
@@ -323,7 +324,14 @@ public class ExosRestClient
         }
         catch (IOException exc)
         {
-            throw new StorageException("GET request failed: " + url, exc);
+            throw new StorageException(
+                "GET request failed: " + url,
+                null,
+                null,
+                null,
+                getDetails(headers),
+                exc
+            );
         }
 
         T data = response.getData();
@@ -331,11 +339,28 @@ public class ExosRestClient
         {
             if (status.responseTypeNumeric == ExosStatus.STATUS_ERROR)
             {
-                throw new StorageException("Get request failed: " + url + "\nResponse: " + status.response);
+                throw new StorageException(
+                    "GET request failed: " + url + "\nResponse: " + status.response,
+                    null,
+                    null,
+                    null,
+                    getDetails(headers)
+                );
             }
         }
 
         return response;
+    }
+
+    private String getDetails(Map<String, String> headersRef)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Headers:");
+        for (Entry<String, String> entry : headersRef.entrySet())
+        {
+            sb.append("  ").append(entry.getKey()).append(":").append(entry.getValue()).append("\n");
+        }
+        return sb.toString();
     }
 
     private String getBaseUrl(PriorityProps prioPropsRef)
