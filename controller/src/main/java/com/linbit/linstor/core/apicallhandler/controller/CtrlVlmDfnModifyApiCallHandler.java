@@ -22,7 +22,9 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
@@ -32,7 +34,10 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Pair;
 
@@ -47,6 +52,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +60,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
@@ -220,6 +227,10 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         else
         if (shouldGrossFlagBeEnabled)
         {
+            if (hasDeployedVolumes(vlmDfn))
+            {
+                ensureShrinkingIsSupported(vlmDfn);
+            }
             setFlag(vlmDfn, VolumeDefinition.Flags.GROSS_SIZE);
             updateForResize = true;
         }
@@ -227,6 +238,11 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         boolean sizeChanges = size != null;
         if (sizeChanges)
         {
+            if (size < getVlmDfnSize(vlmDfn))
+            {
+                ensureShrinkingIsSupported(vlmDfn);
+            }
+
             updateForResize = true;
             notifyStlts = true;
             setVlmDfnSize(vlmDfn, size);
@@ -259,6 +275,55 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         return Flux
             .just((ApiCallRc) responses)
             .concatWith(updateResponses);
+    }
+
+    /**
+     * All participating layers & providers (including providers for metadata) must support shrinking, or an Exception
+     * is thrown
+     */
+    private void ensureShrinkingIsSupported(VolumeDefinition vlmDfnRef)
+    {
+        try
+        {
+            Iterator<Resource> rscIt = vlmDfnRef.getResourceDefinition().iterateResource(apiCtx);
+            Set<DeviceLayerKind> layerKindSet = new HashSet<>();
+            Set<DeviceProviderKind> providerKindSet = new HashSet<>();
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                layerKindSet.addAll(LayerRscUtils.getLayerStack(rsc, apiCtx));
+                Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, apiCtx, true);
+                for (StorPool sp : storPools) {
+                    providerKindSet.add(sp.getDeviceProviderKind());
+                }
+            }
+
+            Supplier<ApiRcException> createExc = () -> new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_VLM_SIZE,
+                    "Deployed volumes can only grow in size, not shrink. Changing volume's size from " +
+                        "usable (net) to allocated (gross) could require the volume to shrink"
+                )
+            );
+            for (DeviceLayerKind kind : layerKindSet)
+            {
+                if (!kind.isShrinkingSupported())
+                {
+                    throw createExc.get();
+                }
+            }
+            for (DeviceProviderKind kind : providerKindSet)
+            {
+                if (!kind.isShrinkingSupported())
+                {
+                    throw createExc.get();
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     // Restart from here when connection established and RESIZE flag set

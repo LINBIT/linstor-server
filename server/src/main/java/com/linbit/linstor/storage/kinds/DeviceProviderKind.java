@@ -21,6 +21,7 @@ public enum DeviceProviderKind
         false,
         false,
         true,
+        true,
         false,
         true, // very thin :)
         true, // no disk, nothing to worry about
@@ -30,6 +31,7 @@ public enum DeviceProviderKind
         false,
         false,
         false,
+        true,
         true,
         true,
         false,
@@ -44,11 +46,13 @@ public enum DeviceProviderKind
         true,
         true,
         true,
+        true,
         false,
         new LvmThinDriverKind(),
         ExtTools.LVM_THIN
     ),
     ZFS(
+        true,
         true,
         true,
         true,
@@ -66,6 +70,7 @@ public enum DeviceProviderKind
         true,
         true,
         true,
+        true,
         false,
         new ZfsThinDriverKind(),
         ExtTools.ZFS
@@ -74,6 +79,7 @@ public enum DeviceProviderKind
         true,
         false,
         false,
+        true,
         true,
         true,
         false,
@@ -88,6 +94,7 @@ public enum DeviceProviderKind
         true,
         true,
         true,
+        true,
         false,
         new FileThinDriverKind(),
         ExtTools.LOSETUP
@@ -96,6 +103,7 @@ public enum DeviceProviderKind
         false,
         false,
         false,
+        true,
         true,
         true,
         false,
@@ -108,6 +116,7 @@ public enum DeviceProviderKind
         false,
         false,
         true,
+        false,
         true,
         false,
         true,
@@ -119,11 +128,14 @@ public enum DeviceProviderKind
         false,
         false,
         true,
+
+        true,
         false,
         true, // OpenFlex provides nvmeTarget, nothing to worry about
         new OpenflexTargetDriverKind()
     ),
     FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER(
+        false,
         false,
         false,
         false,
@@ -139,6 +151,7 @@ public enum DeviceProviderKind
     private final boolean isSnapshotDependent;
     private final boolean isSnapshotShippingSupported;
     private final boolean isResizeSupported;
+    private final boolean isShrinkingSupported;
     private final boolean hasBackingDevice;
     private final boolean usesThinProvisioning;
     private final boolean isSharedVolumeSupported;
@@ -151,6 +164,7 @@ public enum DeviceProviderKind
         boolean isSnapshotDependentRef,
         boolean isSnapshotShippingSupportedRef,
         boolean isResizeSupportedRef,
+        boolean isShrinkingSupportedRef,
         boolean hasBackingDeviceRef,
         boolean usesThinProvisioningRef,
         boolean isSharedVolumeSupportedRef,
@@ -162,6 +176,7 @@ public enum DeviceProviderKind
         isSnapshotDependent = isSnapshotDependentRef;
         isSnapshotShippingSupported = isSnapshotShippingSupportedRef;
         isResizeSupported = isResizeSupportedRef;
+        isShrinkingSupported = isShrinkingSupportedRef;
         hasBackingDevice = hasBackingDeviceRef;
         usesThinProvisioning = usesThinProvisioningRef;
         isSharedVolumeSupported = isSharedVolumeSupportedRef;
@@ -250,5 +265,10 @@ public enum DeviceProviderKind
         }
 
         return allowed;
+    }
+
+    public boolean isShrinkingSupported()
+    {
+        return isShrinkingSupported;
     }
 }
