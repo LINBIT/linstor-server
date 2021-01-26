@@ -1,8 +1,11 @@
 package com.linbit.linstor.utils;
 
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.SatellitePropDriver;
+import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.TestAccessContextProvider;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
@@ -22,9 +25,10 @@ public class NameShortenerTest
 
     public NameShortenerTest()
     {
+        final SatelliteTransactionMgr satelliteTransactionMgr = new SatelliteTransactionMgr();
         propsContainerFactory = new PropsContainerFactory(
             new SatellitePropDriver(),
-            () -> new SatelliteTransactionMgr()
+            () -> satelliteTransactionMgr
         );
         rscDfnMap = new TreeMap<>();
     }
@@ -117,6 +121,24 @@ public class NameShortenerTest
         addAndAssert(shorter, "abc125", "", key, "abc_2");
     }
 
+    @Test
+    public void notTooLongTest() throws Throwable
+    {
+        String key = "key";
+        NameShortener shorter = new NameShortener("", key, 5, TestAccessContextProvider.SYS_CTX, "_", "a-zA-Z");
+        addAndAssert(shorter, "ab", "", key, "ab");
+        addAndAssert(shorter, "abc", "", key, "abc");
+    }
+
+    @Test
+    public void namespaceTest() throws Throwable
+    {
+        String key = "key";
+        NameShortener shorter = new NameShortener("", key, 5, TestAccessContextProvider.SYS_CTX, "_", "a-zA-Z");
+        addAndAssert(shorter, "ab", 0, "", "ns1", key, "ab");
+        addAndAssert(shorter, "ab", 0, "", "ns2", key, "ab_1");
+    }
+
     private ResourceDefinition addAndAssert(
         NameShortener nameShortener,
         String rscName,
@@ -144,11 +166,59 @@ public class NameShortenerTest
         return rscDfn;
     }
 
+    private VolumeDefinition addAndAssert(
+        NameShortener nameShortener,
+        String rscName,
+        int vlmNr,
+        String rscSuffix,
+        String propKeyPrefix,
+        String propKey,
+        String expectedShortenedRscName
+    )
+        throws Throwable
+    {
+        ResourceDefinition rscDfn = rscDfnMap.get(rscName);
+        if (rscDfn == null)
+        {
+            rscDfn = mock(rscName);
+            rscDfnMap.put(rscName, rscDfn);
+        }
+        VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(TestAccessContextProvider.SYS_CTX, new VolumeNumber(0));
+        if (vlmDfn == null) {
+            vlmDfn = mock(rscDfn, vlmNr);
+        }
+
+        String shortenedName = nameShortener.shorten(vlmDfn, propKeyPrefix, rscSuffix);
+
+        assertEquals(expectedShortenedRscName, shortenedName);
+        assertEquals(
+            vlmDfn.getProps(TestAccessContextProvider.SYS_CTX).getProp(propKeyPrefix + propKey),
+            shortenedName
+        );
+
+        return vlmDfn;
+    }
+
     private ResourceDefinition mock(String rscNameRef) throws Throwable
     {
         ResourceDefinition mockedRscDfn = Mockito.mock(ResourceDefinition.class);
-        Mockito.when(mockedRscDfn.getName()).thenReturn(new ResourceName(rscNameRef));
-        Mockito.when(mockedRscDfn.getProps(Mockito.any())).thenReturn(propsContainerFactory.create(rscNameRef));
+        ResourceName resName = new ResourceName(rscNameRef);
+        Mockito.when(mockedRscDfn.getName()).thenReturn(resName);
+        String propsPath = PropsContainer.buildPath(resName);
+        Mockito.when(mockedRscDfn.getProps(Mockito.any())).thenReturn(propsContainerFactory.create(propsPath));
         return mockedRscDfn;
+    }
+
+    private VolumeDefinition mock(ResourceDefinition rscDfnRef, int vlmNrInt) throws Throwable
+    {
+        VolumeDefinition mockedVlmDfn = Mockito.mock(VolumeDefinition.class);
+        Mockito.when(mockedVlmDfn.getResourceDefinition()).thenReturn(rscDfnRef);
+        VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
+        Mockito.when(mockedVlmDfn.getVolumeNumber()).thenReturn(vlmNr);
+        String propsPath = PropsContainer.buildPath(rscDfnRef.getName(), vlmNr);
+        Mockito.when(mockedVlmDfn.getProps(Mockito.any())).thenReturn(propsContainerFactory.create(propsPath));
+        Mockito.when(rscDfnRef.getVolumeDfnCount(Mockito.any())).thenReturn(1);
+        Mockito.when(rscDfnRef.getVolumeDfn(Mockito.any(), Mockito.eq(vlmNr))).thenReturn(mockedVlmDfn);
+        return mockedVlmDfn;
     }
 }
