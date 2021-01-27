@@ -25,6 +25,8 @@ import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.exos.rest.ExosRestClient;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers.ExosRestPort;
+import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestInitiators;
+import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestInitiators.ExosRestInitiator;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps.ExosVolumeView;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps.ExosVolumeViewMapping;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPoolCollection.ExosRestPool;
@@ -34,6 +36,7 @@ import com.linbit.linstor.layer.storage.utils.FsUtils;
 import com.linbit.linstor.layer.storage.utils.LsscsiUtils;
 import com.linbit.linstor.layer.storage.utils.LsscsiUtils.LsscsiRow;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
+import com.linbit.linstor.layer.storage.utils.SysClassUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -59,13 +62,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Singleton
 public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Resource>, ExosData<Snapshot>>
@@ -87,12 +92,14 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     public static final String FORMAT_RSC_TO_LVM_ID = "%s%s_%05d";
     public static final String FORMAT_SNAP_TO_LVM_ID = "%s%s_%s_%05d";
 
+    private static final Pattern HCTL_PATTERN = Pattern.compile("\\[([0-9]+):([0-9]+):([0-9]+):([0-9]+)\\]");
 
     private final ExosRestClient restClient;
 
-    private List<String> exosInitiatorIds;
+    private Set<String> exosInitiatorIds;
     // private Map<String, String> exosCtrlMacAddrMapById;
     private Map<String, String> exosCtrlNameMapByTargetId;
+    private Set<String> enclosureHostIds;
     /**
      * Stores the exos-internal pool name (usually "A" or "B").
      * The exos pool is found by the linstor-property exos_pool_sn (serial number)
@@ -128,7 +135,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         );
         restClient = restClientRef;
 
-        exosInitiatorIds = new ArrayList<>();
+        exosInitiatorIds = new HashSet<>();
         // exosCtrlMacAddrMapById = new HashMap<>();
         exosCtrlNameMapByTargetId = new HashMap<>();
     }
@@ -408,7 +415,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         int retry = 0;
         while (retry++ < MAX_LSSCSI_RETRY_COUNT)
         {
-            LsscsiUtils.rescan(extCmdFactory, errorReporter, null);
+            LsscsiUtils.rescan(extCmdFactory, errorReporter, enclosureHostIds);
             List<LsscsiRow> newLsscsiRowEntries = LsscsiUtils.getAll(extCmdFactory);
             if (lsscsiRowsToIgnore != null)
             {
@@ -677,6 +684,66 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
+    public void setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException
+    {
+        Set<String> newEnclosureHostIds = new HashSet<>();
+        List<LsscsiRow> allRows = LsscsiUtils.getAll(extCmdFactory);
+        for (LsscsiRow row : allRows)
+        {
+            if (row.type.equalsIgnoreCase("enclosu"))
+            {
+                Matcher matcher = HCTL_PATTERN.matcher(row.hctl);
+                if (!matcher.find())
+                {
+                    throw new StorageException("Failed to parse HCTL: " + row.hctl);
+                }
+                newEnclosureHostIds.add(matcher.group(1));
+            }
+        }
+        enclosureHostIds = newEnclosureHostIds;
+
+        // update initiator-ids...
+        Set<String> localScsiInitiatorIds = SysClassUtils.getScsiInitiatorIds(extCmdFactory);
+
+        // filter localScsi*Ids for ids that Exos also knows
+        ExosRestInitiators exosInitiators = restClient.showInitiators();
+
+        Set<String> exosScsiInitiatorIds = new HashSet<>();
+        for (ExosRestInitiator exosInitiator : exosInitiators.initiator)
+        {
+            exosScsiInitiatorIds.add(exosInitiator.id);
+        }
+        localScsiInitiatorIds.retainAll(exosScsiInitiatorIds);
+        exosInitiatorIds = localScsiInitiatorIds;
+
+
+        // recache controller[].port[].target-id -> controller map
+        Set<String> localScsiTargetIds = SysClassUtils.getScsiTargetIds(extCmdFactory);
+        Map<String, String> exosCtrlNameMapByTargetIdNew = new HashMap<>();
+        ExosRestPorts exosRestPorts = restClient.showPorts();
+        for (ExosRestPort exosRestPort : exosRestPorts.port)
+        {
+            if (localScsiTargetIds.contains(exosRestPort.targetId))
+            {
+                localNodePropsRef.setProp(
+                    ApiConsts.NAMESPC_EXOS + "/" + enclosureName + "/" + ctrlName + "/Ports/" + ep.id,
+                    ExosMappingManager.CONNECTED
+                );
+                exosCtrlNameMapByTargetIdNew.put(exosRestPort.targetId, exosRestPort.controller);
+            }
+        }
+        exosCtrlNameMapByTargetId = exosCtrlNameMapByTargetIdNew;
+
+        Set<String> exosScsiTargetIds = new HashSet<>();
+        for (ExosRestPort exosPort : exosPorts.port)
+        {
+            exosScsiTargetIds.add(exosPort.targetId);
+        }
+        localScsiTargetIds.retainAll(exosScsiTargetIds);
+        exosTargetIds = localScsiTargetIds;
+    }
+
+    @Override
     public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
@@ -686,6 +753,28 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         {
             throw new StorageException("Pool name must be set!");
         }
+
+        String ids = localNodeProps.getProp(
+            ApiConsts.KEY_STOR_POOL_EXOS_INITIATOR_IDS,
+            ApiConsts.NAMESPC_STORAGE_DRIVER
+        );
+        if (ids == null)
+        {
+            throw new StorageException(
+                ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_EXOS_INITIATOR_IDS + " must be set"
+            );
+        }
+        PriorityProps prioProps = new PriorityProps(localNodeProps, stltConfigAccessor.getReadonlyProps());
+        ExceptionThrowingConsumer<String, StorageException> throwIfPropMissing = key ->
+        {
+            if (prioProps.getProp(key, ApiConsts.NAMESPC_STORAGE_DRIVER) == null)
+            {
+                throw new StorageException(key + " must be set");
+            }
+        };
+        throwIfPropMissing.accept(ApiConsts.KEY_STOR_POOL_EXOS_API_HOST);
+        throwIfPropMissing.accept(ApiConsts.KEY_STOR_POOL_EXOS_API_PASSWORD);
+        throwIfPropMissing.accept(ApiConsts.KEY_STOR_POOL_EXOS_API_USER);
     }
 
     @Override
@@ -732,53 +821,6 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             ApiConsts.KEY_STOR_POOL_NAME,
             ApiConsts.NAMESPC_STORAGE_DRIVER
         );
-    }
-
-    @Override
-    public void setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException
-    {
-        super.setLocalNodeProps(localNodePropsRef);
-        String ids = localNodePropsRef.getProp(
-            ApiConsts.KEY_STOR_POOL_EXOS_INITIATOR_IDS,
-            ApiConsts.NAMESPC_STORAGE_DRIVER
-        );
-        if (ids == null)
-        {
-            throw new StorageException(
-                ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_EXOS_INITIATOR_IDS + " must be set"
-            );
-        }
-        PriorityProps prioProps = new PriorityProps(localNodePropsRef, stltConfigAccessor.getReadonlyProps());
-        ExceptionThrowingConsumer<String, StorageException> throwIfPropMissing = key ->
-        {
-            if (prioProps.getProp(key, ApiConsts.NAMESPC_STORAGE_DRIVER) == null)
-            {
-                throw new StorageException(key + " must be set");
-            }
-        };
-        throwIfPropMissing.accept(ApiConsts.KEY_STOR_POOL_EXOS_API_HOST);
-        throwIfPropMissing.accept(ApiConsts.KEY_STOR_POOL_EXOS_API_PASSWORD);
-        throwIfPropMissing.accept(ApiConsts.KEY_STOR_POOL_EXOS_API_USER);
-
-        // recache controller[].port[].target-id -> controller map
-        Map<String, String> exosCtrlNameMapByTargetIdNew = new HashMap<>();
-        ExosRestPorts exosRestPorts = restClient.showPorts();
-        for (ExosRestPort exosRestPort : exosRestPorts.port)
-        {
-            exosCtrlNameMapByTargetIdNew.put(exosRestPort.targetId, exosRestPort.controller);
-        }
-        exosCtrlNameMapByTargetId = exosCtrlNameMapByTargetIdNew;
-        //
-        // // recache controllerMac
-        // ExosRestControllers controllers = restClient.showControllers();
-        // Map<String, String> exosCtrlMacAddrMapByIdNew = new HashMap<>();
-        // for (ExosRestController exosCtrl : controllers.controllers)
-        // {
-        // exosCtrlMacAddrMapByIdNew.put(exosCtrl.controllerId, exosCtrl.macAddress);
-        // }
-        // exosCtrlMacAddrMapById = exosCtrlMacAddrMapByIdNew;
-
-        exosInitiatorIds = new ArrayList<>(Arrays.asList(ids.split(",")));
     }
 
     private HashSet<StorPool> getAffectedStorPools(

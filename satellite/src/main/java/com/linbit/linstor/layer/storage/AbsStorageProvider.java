@@ -463,6 +463,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
             StorPool storPool = vlmData.getStorPool();
             long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
+
+            if (devicePath == null)
+            {
+                throw new StorageException(
+                    getClass().getSimpleName() + " failed to create local device for volume: " + vlmData.getVolume()
+                );
+            }
+
             waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
 
             long allocatedSize = getAllocatedSize(vlmData);

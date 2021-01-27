@@ -38,6 +38,7 @@ import java.util.Optional;
 @Singleton
 public class ExosMappingManager
 {
+    public static final String CONNECTED = "Connected";
     private static final int EXOS_MIN_LUN = 1;
     private static final int EXOS_MAX_LUN = 1023;
 
@@ -125,7 +126,6 @@ public class ExosMappingManager
         }
     }
 
-
     public void findFreeExosPortAndLun(StorPool storPoolRef, Volume vlmRef)
         throws InvalidKeyException, InvalidValueException, LinStorException, ExhaustedPoolException
     {
@@ -165,7 +165,7 @@ public class ExosMappingManager
             {
                 String portVal = nodeProps
                     .getProp(ApiConsts.NAMESPC_EXOS + "/" + enclosureName + "/" + ctrlName + "/Ports/" + ep.id);
-                if ("connected".equalsIgnoreCase(portVal) && ep.usedLunCount < lowestLunCount)
+                if (CONNECTED.equalsIgnoreCase(portVal) && ep.usedLunCount < lowestLunCount)
                 {
                     exosPort = ep;
                     lowestLunCount = ep.usedLunCount;

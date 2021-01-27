@@ -10,6 +10,7 @@ import com.linbit.linstor.layer.storage.exos.ExosProvider;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse.ExosStatus;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers;
+import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestInitiators;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps.ExosVolumeView;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPoolCollection;
@@ -261,6 +262,11 @@ public class ExosRestClient
     public ExosRestPorts showPorts() throws StorageException, AccessDeniedException
     {
         return simpleGetRequest("/show/ports", getprioProps(), ExosRestPorts.class).getData();
+    }
+
+    public ExosRestInitiators showInitiators() throws StorageException, AccessDeniedException
+    {
+        return simpleGetRequest("/show/initiator", getprioProps(), ExosRestInitiators.class).getData();
     }
 
     private <T extends ExosRestBaseResponse> RestResponse<T> simpleGetRequest(

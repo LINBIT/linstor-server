@@ -7,30 +7,30 @@ import com.linbit.linstor.storage.StorageException;
 
 import static com.linbit.linstor.layer.storage.utils.Commands.genericExecutor;
 
-import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class LsscsiUtils
 {
     private static final Object SYNC_OBJ = new Object();
-    private static final Path RESCAN_PATH = Paths.get("/sys/class/scsi_host/host0/scan");
+    private static final String RESCAN_PATH_FORMAT = "/sys/class/scsi_host/host%s/scan";
 
     private static List<LsscsiRow> cachedLsscsiRows;
 
     public static class LsscsiRow
     {
         public final String hctl;
+        public final String type;
         public final String devPath;
 
-        public LsscsiRow(String hctlRef, String devPathRef)
+        public LsscsiRow(String hctlRef, String typeRef, String devPathRef)
         {
             hctl = hctlRef;
+            type = typeRef;
             devPath = devPathRef;
         }
     }
@@ -60,28 +60,40 @@ public class LsscsiUtils
         return ret;
     }
 
-    public static void rescan(ExtCmdFactory extCmdFactory, ErrorReporter errReporter, @Nullable Integer lun)
+    /**
+     * Basically does
+     *
+     * <pre>
+     * echo "- - -" > /sys/class/scsi_host/host${host}/scan
+     * </pre>
+     *
+     * for every host of the given set
+     *
+     * @param extCmdFactory
+     * @param errReporter
+     * @param hostLunMap
+     *
+     * @throws StorageException
+     */
+    public static void rescan(ExtCmdFactory extCmdFactory, ErrorReporter errReporter, Set<String> hostSet)
         throws StorageException
     {
         synchronized (SYNC_OBJ)
         {
+            String filter = "- - -";
+            String rescanPath = null;
             try
             {
-                String filter = "- - ";
-                if (lun == null)
+                for (String host : hostSet)
                 {
-                    filter += "-";
+                    rescanPath = String.format(RESCAN_PATH_FORMAT, host);
+                    errReporter.logTrace("rescanning %s using filter: %s", rescanPath, filter);
+                    Files.write(Paths.get(rescanPath), filter.getBytes());
                 }
-                else
-                {
-                    filter += Integer.toString(lun);
-                }
-                errReporter.logTrace("rescanning %s using filter: %s", RESCAN_PATH, filter);
-                Files.write(RESCAN_PATH, filter.getBytes());
             }
             catch (IOException exc)
             {
-                throw new StorageException("Failed to rescan " + RESCAN_PATH, exc);
+                throw new StorageException("Failed to rescan " + rescanPath, exc);
             }
             cachedLsscsiRows = null;
             recacheIfNeeded(extCmdFactory);
@@ -125,6 +137,7 @@ public class LsscsiUtils
                             new LsscsiRow(
                                 // cut the leading+trailing '[', ']'
                                 columns[0].substring(1, columns[0].length() - 1),
+                                columns[1],
                                 columns[5]
                             )
                         );
