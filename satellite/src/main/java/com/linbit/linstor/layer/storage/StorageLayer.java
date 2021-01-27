@@ -404,7 +404,7 @@ public class StorageLayer implements DeviceLayer
     {
         DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
         deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
-        deviceProvider.checkConfig(storPool);
         deviceProvider.update(storPool);
+        deviceProvider.checkConfig(storPool);
     }
 }

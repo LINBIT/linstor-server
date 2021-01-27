@@ -3,15 +3,16 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -72,6 +73,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
@@ -155,6 +157,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMap;
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
     private final VolumeGroupCtrlDatabaseDriver vlmGrpDriver;
+    private final ExosMappingManager exosMappingMgr;
 
     @Inject
     public DatabaseLoader(
@@ -193,7 +196,8 @@ public class DatabaseLoader implements DatabaseDriver
         CoreModule.ResourceDefinitionMapExtName rscDfnMapExtNameRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
-        CoreModule.KeyValueStoreMap keyValueStoreMapRef
+        CoreModule.KeyValueStoreMap keyValueStoreMapRef,
+        ExosMappingManager exosMappingMgrRef
     )
     {
         dbCtx = privCtx;
@@ -233,6 +237,7 @@ public class DatabaseLoader implements DatabaseDriver
         storPoolDfnMap = storPoolDfnMapRef;
         freeSpaceMgrMap = freeSpaceMgrMapRef;
         keyValueStoreMap = keyValueStoreMapRef;
+        exosMappingMgr = exosMappingMgrRef;
     }
 
     /**
@@ -554,6 +559,7 @@ public class DatabaseLoader implements DatabaseDriver
             }
 
             AbsRscLayerHelper.databaseLoadingFinished();
+            exosMappingMgr.allocateAfterDbLoad();
         }
         catch (AccessDeniedException exc)
         {
@@ -562,6 +568,10 @@ public class DatabaseLoader implements DatabaseDriver
         catch (InvalidKeyException exc)
         {
             throw new ImplementationError("Invalid hardcoded props key", exc);
+        }
+        catch (LinStorException exc)
+        {
+            throw new ImplementationError("Unknown error during loading data from DB", exc);
         }
     }
 

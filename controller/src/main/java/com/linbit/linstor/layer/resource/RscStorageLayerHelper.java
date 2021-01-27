@@ -3,25 +3,20 @@ package com.linbit.linstor.layer.resource;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.NumberAlloc;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
-import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
@@ -41,6 +36,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 import com.linbit.linstor.utils.NameShortener;
 
@@ -49,11 +45,8 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -63,10 +56,9 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     RscDfnLayerObject, VlmDfnLayerObject
 >
 {
-    private static final int EXOS_MAX_LUN = 255;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
     private final NameShortener exosNameShortener;
-    private final StorPoolDefinitionRepository storPoolDfnRepo;
+    private final ExosMappingManager exosMapMgr;
 
     @Inject
     RscStorageLayerHelper(
@@ -77,7 +69,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
         @Named(NameShortener.EXOS) NameShortener exosNameShortenerRef,
-        StorPoolDefinitionRepository storPoolDfnRepoRef
+        ExosMappingManager exosMapMgrRef
     )
     {
         super(
@@ -94,7 +86,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         );
         storPoolResolveHelper = storPoolResolveHelperRef;
         exosNameShortener = exosNameShortenerRef;
-        storPoolDfnRepo = storPoolDfnRepoRef;
+        exosMapMgr = exosMapMgrRef;
     }
 
     @Override
@@ -262,18 +254,20 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                     break;
                 case EXOS:
                     exosNameShortener.shorten(
-                        vlmDfn,
+                        vlmDfn.getProps(apiCtx),
                         storPool.getSharedStorPoolName().displayValue,
-                        rscData.getResourceNameSuffix()
+                        // do not append "_00000" to vlmName
+                        vlmDfn.getResourceDefinition().getName().displayValue + rscData.getResourceNameSuffix()
                     );
                     try
                     {
-                        findFreeExosLun(storPool, vlm);
+                        exosMapMgr.findFreeExosPortAndLun(storPool, vlm);
                     }
                     catch (InvalidKeyException | InvalidValueException exc)
                     {
                         throw new ImplementationError(exc);
                     }
+
                     ExosData<Resource> exosData = layerDataFactory.createExosData(vlm, rscData, storPool);
                     exosData.updateShortName(apiCtx);
                     vlmData = exosData;
@@ -289,66 +283,6 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             storPool.putVolume(apiCtx, vlmData);
         }
         return vlmData;
-    }
-
-    private int findFreeExosLun(StorPool storPoolRef, Volume vlmRef)
-        throws ExhaustedPoolException, InvalidKeyException, NumberFormatException, AccessDeniedException,
-        DatabaseException, InvalidValueException
-    {
-        Integer lun = null;
-        List<Integer> occupiedLuns = new ArrayList<>();
-        for (StorPoolDefinition storPoolDfn : storPoolDfnRepo.getMapForView(apiCtx).values())
-        {
-            Iterator<StorPool> iterateStorPools = storPoolDfn.iterateStorPools(apiCtx);
-            while (iterateStorPools.hasNext())
-            {
-                StorPool sp = iterateStorPools.next();
-                if (sp.getSharedStorPoolName().equals(storPoolRef.getSharedStorPoolName()) && sp != storPoolRef)
-                {
-                    // find the lun of an already existing volume in the same shared SP
-                    for (VlmProviderObject<Resource> otherVlmData : sp.getVolumes(apiCtx))
-                    {
-                        AbsVolume<Resource> otherVlm = otherVlmData.getVolume();
-                        if (otherVlmData instanceof ExosData)
-                        {
-                            String prop = otherVlm.getProps(apiCtx).getProp(InternalApiConsts.EXOS_LUN);
-                            if (prop != null)
-                            {
-                                int otherLun = Integer.parseInt(prop);
-                                if (otherVlm.getVolumeDefinition().equals(vlmRef.getVolumeDefinition()))
-                                {
-                                    lun = otherLun;
-                                    break;
-                                }
-                                else
-                                {
-                                    occupiedLuns.add(otherLun);
-                                }
-                            }
-                        }
-                    }
-                }
-                if (lun != null)
-                {
-                    break;
-                }
-            }
-            if (lun != null)
-            {
-                break;
-            }
-        }
-        if (lun == null)
-        {
-            int[] occupied = occupiedLuns.stream()
-                .mapToInt(Integer::intValue)
-                .toArray();
-            Arrays.sort(occupied);
-            lun = NumberAlloc.getFreeNumber(occupied, 1, EXOS_MAX_LUN);
-        }
-
-        vlmRef.getProps(apiCtx).setProp(InternalApiConsts.EXOS_LUN, Integer.toString(lun));
-        return lun;
     }
 
     @Override

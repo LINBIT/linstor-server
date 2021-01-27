@@ -436,7 +436,7 @@ public class CtrlPropsHelper
         Map<String, String> sourceProps,
         Props targetProps,
         long failAccDeniedRc,
-        List<String> ignoredKeys
+        List<String> ignoredKeysRef
     )
     {
         boolean propsModified = false;
@@ -445,6 +445,7 @@ public class CtrlPropsHelper
             String key = entry.getKey();
             String value = entry.getValue();
 
+            ArrayList<String> ignoredKeys = new ArrayList<>(ignoredKeysRef);
             ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
             boolean isPropAllowed = propsWhiteList.isAllowed(linstorObj, ignoredKeys, key, value, true);
             if (isPropAllowed)

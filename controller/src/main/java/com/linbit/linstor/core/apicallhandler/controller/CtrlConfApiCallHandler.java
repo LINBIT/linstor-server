@@ -441,6 +441,12 @@ public class CtrlConfApiCallHandler
             }
             List<String> ignoredKeys = new ArrayList<>();
             ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
+            /*
+             * StorDriver/Exos/<EnclosureName>/<ExosCtrlName>/ ... must be ignored.
+             * on ctrl level only.
+             * on other levels whitelisting is active
+             */
+            ignoredKeys.add(ApiConsts.NAMESPC_EXOS + "/");
             if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
             {
                 boolean notifyStlts = false;

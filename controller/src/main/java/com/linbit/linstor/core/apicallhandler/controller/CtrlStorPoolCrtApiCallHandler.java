@@ -137,9 +137,13 @@ public class CtrlStorPoolCrtApiCallHandler
             if (deviceProviderKindRef == DeviceProviderKind.EXOS)
             {
                 // exos always needs this
-                sharedStorPoolNameStr = storPoolPropsMap.get(
-                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME
+                String enclosureName = storPoolPropsMap.get(
+                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_EXOS_ENCLOSURE
                 );
+                String poolSn = storPoolPropsMap.get(
+                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_EXOS_POOL_SN
+                );
+                sharedStorPoolNameStr = enclosureName + "_" + poolSn;
             }
 
             StorPool storPool = storPoolHelper.createStorPool(

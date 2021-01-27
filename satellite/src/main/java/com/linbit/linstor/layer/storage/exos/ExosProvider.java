@@ -24,17 +24,16 @@ import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.exos.rest.ExosRestClient;
-import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers;
-import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers.ExosRestController;
+import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers.ExosRestPort;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps.ExosVolumeView;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps.ExosVolumeViewMapping;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPoolCollection.ExosRestPool;
+import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPorts;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestVolumesCollection.ExosRestVolume;
 import com.linbit.linstor.layer.storage.utils.FsUtils;
 import com.linbit.linstor.layer.storage.utils.LsscsiUtils;
 import com.linbit.linstor.layer.storage.utils.LsscsiUtils.LsscsiRow;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
-import com.linbit.linstor.layer.storage.utils.SdparmUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -45,9 +44,11 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Align;
 import com.linbit.utils.ExceptionThrowingConsumer;
+import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -55,17 +56,24 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 @Singleton
 public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Resource>, ExosData<Snapshot>>
 {
+    public static final String EXOS_POOL_NAME = InternalApiConsts.NAMESPC_EXOS + "/PoolName";
+    public static final String EXOS_POOL_SERIAL_NUMBER =
+        ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_EXOS_POOL_SN;
+
     private static final int MAX_LSSCSI_RETRY_COUNT = 50;
 
     private static final String ALL_OTHER_INITIATORS = "all other initiators";
@@ -79,10 +87,17 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     public static final String FORMAT_RSC_TO_LVM_ID = "%s%s_%05d";
     public static final String FORMAT_SNAP_TO_LVM_ID = "%s%s_%s_%05d";
 
+
     private final ExosRestClient restClient;
 
     private List<String> exosInitiatorIds;
-    private Map<String, String> exosCtrlMacAddrMapById;
+    // private Map<String, String> exosCtrlMacAddrMapById;
+    private Map<String, String> exosCtrlNameMapByTargetId;
+    /**
+     * Stores the exos-internal pool name (usually "A" or "B").
+     * The exos pool is found by the linstor-property exos_pool_sn (serial number)
+     */
+    private final Map<StorPool, String> exosPoolNameMap = new HashMap<>();
 
     @Inject
     public ExosProvider(
@@ -114,7 +129,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         restClient = restClientRef;
 
         exosInitiatorIds = new ArrayList<>();
-        exosCtrlMacAddrMapById = new HashMap<>();
+        // exosCtrlMacAddrMapById = new HashMap<>();
+        exosCtrlNameMapByTargetId = new HashMap<>();
     }
 
     @Override
@@ -131,9 +147,15 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     )
         throws StorageException, AccessDeniedException
     {
+        HashMap<StorPool, String> storPoolWithNames = new HashMap<>();
+        HashSet<StorPool> affectedStorPools = getAffectedStorPools(vlmDataList, snapVlms);
+        for (StorPool sp : affectedStorPools)
+        {
+            storPoolWithNames.put(sp, getExosPoolName(sp));
+        }
         return restClient.getVlmInfo(
             this::asIdentifier,
-            getAffectedStorPools(vlmDataList, snapVlms)
+            storPoolWithNames
         );
     }
 
@@ -210,7 +232,6 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         else
         {
             vlmDataRef.setExists(true);
-            handleMapping(exosVlm, vlmDataRef.getIdentifier(), getLun(vlmDataRef));
             updateFromLsscsi(vlmDataRef, exosVlm, null);
         }
     }
@@ -225,17 +246,14 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         String[] additionalOptionsArr = new String[additionalOptions.size()];
         additionalOptions.toArray(additionalOptionsArr);
 
-        String exosVlmName = vlmData.getShortName();
-
+        StorPool storPool = vlmData.getStorPool();
         ExosRestVolume exosVlm = restClient.createVolume(
-            vlmData.getStorPool(),
-            exosVlmName,
+            storPool,
+            getExosPoolName(storPool),
+            vlmData.getShortName(),
             ALIGN_TO_NEXT_4MB.ceiling(vlmData.getExpectedSize()),
             additionalOptions
         );
-
-        handleMapping(exosVlm, exosVlmName, getLun(vlmData));
-
         // only look for lsscsi devices AFTER the mapping is done
         updateFromLsscsi(vlmData, exosVlm, allLssciRowsPreCreate);
     }
@@ -244,51 +262,122 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
      * Exos default mapping is not good, so we need to unmap (only the default)
      * and afterwards map us (as in Exos initiator) to the just created volume (maybe "additionally")
      *
+     * @param vlmDataRef
+     *
      * @throws AccessDeniedException
      * @throws StorageException
      */
-    private void handleMapping(ExosRestVolume exosVlmRef, String exosVlmNameRef, int lun)
+    private void handleMapping(ExosRestVolume exosVlmRef, ExosData<?> vlmDataRef)
         throws StorageException, AccessDeniedException
     {
+        String exosVlmName = vlmDataRef.getShortName();
+
         // first, check the mapping to see if we need to unmap the default
-        ExosVolumeView exosVolumeView = restClient.showMaps(exosVlmNameRef);
+        ExosVolumeView exosVolumeView = restClient.showMaps(exosVlmName);
 
         if (exosVolumeView == null) {
-            throw new StorageException("'show maps " + exosVlmNameRef + "' returned no result");
+            throw new StorageException("'show maps " + exosVlmName + "' returned no result");
         }
 
-        boolean hasDefaultMapping = false;
-        String lunFromSpecialMapping = null;
+        final List<Triple<String, String, String>> expectedMappingListOrig = Collections.unmodifiableList(
+            ExosMappingManager.getCtrlnamePortLunList(
+                vlmDataRef.getVolume().getProps(storDriverAccCtx)
+            )
+        );
+
         if (exosVolumeView.volumeViewMappings != null)
         {
             for (ExosVolumeViewMapping mapping : exosVolumeView.volumeViewMappings)
             {
-                if (mapping.identifier.equals(ALL_OTHER_INITIATORS))
+                if (mapping.identifier.equals(ALL_OTHER_INITIATORS) && mapping.accessNumeric != 0)
                 {
-                    if (mapping.accessNumeric != 0)
-                    {
-                        hasDefaultMapping = true;
-                    }
-                }
-                else if (exosInitiatorIds.contains(mapping.identifier))
-                {
-                    if (mapping.accessNumeric != 0)
-                    {
-                        lunFromSpecialMapping = mapping.lun;
-                        break;
-                    }
+                    // release default mapping
+                    restClient.unmap(exosVlmName, null);
+                    break;
                 }
             }
         }
 
-        if (hasDefaultMapping)
+        // ensure exosInitiators are mapped as expected.
+        // release unexpected mappings and
+        // create expected mappings if the not already exist.
+        for (String exosInitiatorId : exosInitiatorIds)
         {
-            restClient.unmap(exosVlmNameRef, null);
+            List<Triple<String, String, String>> expectedMappingListCopy = new ArrayList<>(expectedMappingListOrig);
+            boolean hasUnexpectedMapping = false;
+            if (exosVolumeView.volumeViewMappings != null)
+            {
+                for (ExosVolumeViewMapping mapping : exosVolumeView.volumeViewMappings)
+                {
+                    if (exosInitiatorId.equals(mapping.identifier))
+                    {
+                        if (mapping.accessNumeric != 0)
+                        {
+                            String lun = mapping.lun;
+                            String portsRaw = mapping.ports;
+                            for (String ctrlPort : portsRaw.split(","))
+                            {
+                                String ctrlName = ctrlPort.substring(0, ctrlPort.length() - 1);
+                                String port = ctrlPort.substring(ctrlPort.length() - 1);
+
+                                Triple<String, String, String> cpl = new Triple<>(ctrlName, port, lun);
+                                if (!expectedMappingListCopy.remove(cpl))
+                                {
+                                    hasUnexpectedMapping = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (hasUnexpectedMapping || !expectedMappingListCopy.isEmpty())
+            {
+                // do not use the *Copy list for the next call as we want to include ALL mappings, not just the missing
+                Map<String, String> mappingPairMap = groupCtrlPortPairsByLun(expectedMappingListOrig);
+                for (Entry<String, String> mappingPair : mappingPairMap.entrySet())
+                {
+                    restClient.map(
+                        exosVlmName,
+                        mappingPair.getKey(),
+                        mappingPair.getValue(),
+                        Collections.singletonList(exosInitiatorId)
+                    );
+                }
+            }
         }
-        if (lunFromSpecialMapping == null)
+    }
+
+
+    /**
+     * Pairs port with same lun.
+     * Example:
+     * input <"A", "0", "1">, <"A", "1", "1">, <"A", "2", "2">, <"B", "0", "1">
+     * output: <"A0,A1,B0", "1">, <"A2", "2">
+     *
+     * @param expectedMappingListCopyRef
+     *
+     * @return
+     */
+    private static Map<String, String> groupCtrlPortPairsByLun(
+        List<Triple<String, String, String>> expectedMappingListCopyRef
+    )
+    {
+        Map<String, String> ctrlPortsByLun = new HashMap<>();
+        for (Triple<String, String, String> entry : expectedMappingListCopyRef)
         {
-            restClient.map(exosVlmNameRef, lun, exosInitiatorIds);
+            String ctrlPorts = ctrlPortsByLun.get(entry.objC);
+            if (ctrlPorts == null)
+            {
+                ctrlPorts = entry.objA + entry.objB;
+            }
+            else
+            {
+                ctrlPorts += "," + entry.objA + entry.objB;
+            }
+            ctrlPortsByLun.put(entry.objC, ctrlPorts);
         }
+        return ctrlPortsByLun;
     }
 
     /**
@@ -311,21 +400,22 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     )
         throws StorageException, InvalidKeyException, AccessDeniedException, DatabaseException
     {
+        handleMapping(exosVlm, vlmData);
+
         String devicePathToUse = null;
         ArrayList<String> hctlList = null;
 
         int retry = 0;
         while (retry++ < MAX_LSSCSI_RETRY_COUNT)
         {
-
-            LsscsiUtils.rescan(extCmdFactory, errorReporter, getLun(vlmData));
+            LsscsiUtils.rescan(extCmdFactory, errorReporter, null);
             List<LsscsiRow> newLsscsiRowEntries = LsscsiUtils.getAll(extCmdFactory);
             if (lsscsiRowsToIgnore != null)
             {
                 newLsscsiRowEntries.removeAll(lsscsiRowsToIgnore);
             }
             String wwn = exosVlm.wwn.toUpperCase();
-            String preferredMac = exosCtrlMacAddrMapById.get(exosVlm.owner);
+            // String preferredMac = exosCtrlMacAddrMapById.get(exosVlm.owner);
 
             boolean allGood = true;
             hctlList = new ArrayList<>();
@@ -338,9 +428,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                  * whereas wwn is only
                  * 600C0FF00029A5F56E7BFE5F01000000
                  */
-                String scsiIdentSerial = FsUtils.readAllBytes(
-                    Paths.get("/sys/class/scsi_device/" + lsscsiRow.hctl + "/device/wwid")
-                ).trim();
+                Path scsiDevicePath = Paths.get("/sys/class/scsi_device/").resolve(lsscsiRow.hctl).resolve("device");
+                String scsiIdentSerial = FsUtils.readAllBytes(scsiDevicePath.resolve("wwid")).trim();
 
                 if (scsiIdentSerial.toUpperCase().endsWith(wwn))
                 {
@@ -358,12 +447,6 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                     else
                     {
                         errorReporter.logTrace("Device %s matches WWN for newly created device", devPath);
-
-                        if (devicePathToUse == null && devPath != null)
-                        {
-                            devicePathToUse = devPath; // use the first if preferredMac was not found
-                        }
-
                         errorReporter.logTrace(
                             "Adding HCTL [%s] to volume %s",
                             lsscsiRow.hctl,
@@ -371,11 +454,19 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                         );
                         hctlList.add(lsscsiRow.hctl);
 
-                        String mac = SdparmUtils.getMac(extCmdFactory, devPath).replaceAll(" ", ":");
-                        if (mac.equalsIgnoreCase(preferredMac))
+                        if (devicePathToUse == null && devPath != null)
+                        {
+                            devicePathToUse = devPath; // use the first if the preferred controller was not found
+                        }
+
+                        String sasAddress = FsUtils.readAllBytes(scsiDevicePath.resolve("sas_address")).trim();
+
+                        // String mac = SdparmUtils.getMac(extCmdFactory, devPath).replaceAll(" ", ":");
+                        // if (mac.equalsIgnoreCase(preferredMac))
+                        if (exosVlm.owner.equals(exosCtrlNameMapByTargetId.get(sasAddress)))
                         {
                             devicePathToUse = devPath;
-                            errorReporter.logTrace("Device %s matches preferred MAC address. Choosing", devPath);
+                            errorReporter.logTrace("Device %s matches preferred controller. Choosing.", devPath);
                         }
                     }
                 }
@@ -400,27 +491,6 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         vlmData.setDevicePath(devicePathToUse);
         vlmData.setAllocatedSize(exosVlm.sizeNumeric / SECTORS_PER_KIB);
         vlmData.setUsableSize(exosVlm.sizeNumeric / SECTORS_PER_KIB);
-    }
-
-    private List<String> getHCTL(ExosData<Resource> vlmData)
-        throws StorageException, InvalidKeyException, AccessDeniedException
-    {
-        List<LsscsiRow> lsscsiRowByLun = LsscsiUtils.getLsscsiRowByLun(extCmdFactory, getLun(vlmData));
-        List<String> hctlList = new ArrayList<>();
-        for (LsscsiRow row : lsscsiRowByLun)
-        {
-            hctlList.add(row.hctl);
-        }
-        return hctlList;
-    }
-
-    private int getLun(ExosData<?> vlmDataRef)
-        throws InvalidKeyException, AccessDeniedException
-    {
-        // TODO the LUN should be in a dedicated ExosVlmData
-        return Integer.parseInt(
-            vlmDataRef.getVolume().getProps(storDriverAccCtx).getProp(InternalApiConsts.EXOS_LUN)
-        );
     }
 
     protected PriorityProps getPrioProps(ExosData<Resource> vlmDataRef) throws AccessDeniedException
@@ -578,6 +648,18 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         return poolName;
     }
 
+    private String getExosPoolName(StorPool storPoolRef)
+        throws InvalidKeyException, StorageException, AccessDeniedException
+    {
+        String exosPoolName = exosPoolNameMap.get(storPoolRef);
+        if (exosPoolName == null)
+        {
+            exosPoolName = restClient.getPool(storPoolRef).name;
+            exosPoolNameMap.put(storPoolRef, exosPoolName);
+        }
+        return exosPoolName;
+    }
+
     @Override
     protected boolean updateDmStats()
     {
@@ -678,14 +760,23 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         throwIfPropMissing.accept(ApiConsts.KEY_STOR_POOL_EXOS_API_PASSWORD);
         throwIfPropMissing.accept(ApiConsts.KEY_STOR_POOL_EXOS_API_USER);
 
-        // recache controllerMac
-        Map<String, String> exosCtrlMacAddrMapByIdNew = new HashMap<>();
-        ExosRestControllers controllers = restClient.showControllers();
-        for (ExosRestController exosCtrl : controllers.controllers)
+        // recache controller[].port[].target-id -> controller map
+        Map<String, String> exosCtrlNameMapByTargetIdNew = new HashMap<>();
+        ExosRestPorts exosRestPorts = restClient.showPorts();
+        for (ExosRestPort exosRestPort : exosRestPorts.port)
         {
-            exosCtrlMacAddrMapByIdNew.put(exosCtrl.controllerId, exosCtrl.macAddress);
+            exosCtrlNameMapByTargetIdNew.put(exosRestPort.targetId, exosRestPort.controller);
         }
-        exosCtrlMacAddrMapById = exosCtrlMacAddrMapByIdNew;
+        exosCtrlNameMapByTargetId = exosCtrlNameMapByTargetIdNew;
+        //
+        // // recache controllerMac
+        // ExosRestControllers controllers = restClient.showControllers();
+        // Map<String, String> exosCtrlMacAddrMapByIdNew = new HashMap<>();
+        // for (ExosRestController exosCtrl : controllers.controllers)
+        // {
+        // exosCtrlMacAddrMapByIdNew.put(exosCtrl.controllerId, exosCtrl.macAddress);
+        // }
+        // exosCtrlMacAddrMapById = exosCtrlMacAddrMapByIdNew;
 
         exosInitiatorIds = new ArrayList<>(Arrays.asList(ids.split(",")));
     }

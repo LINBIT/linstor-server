@@ -18,8 +18,8 @@ public class NameShortenerModule extends AbstractModule
     private static final String OPENFLEX_VALID_CHARS_REGEX = "a-zA-Z0-9_";
 
     public static final String EXOS_PROP_NAMESPACE = "Exos";
-    public static final String EXOS_PROP_KEY = "_shortName";
-    private static final int EXOS_MAX_LEN = 26; // 32 max, - "_00000" for volumes
+    public static final String EXOS_PROP_KEY = "shortName";
+    private static final int EXOS_MAX_LEN = 32;
     private static final String EXOS_DELIMITER = "_";
     private static final String EXOS_VALID_CHARS_REGEX = "a-zA-Z0-9_";
 

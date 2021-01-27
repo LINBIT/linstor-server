@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.layer.storage.exos.ExosProvider;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse.ExosStatus;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers;
@@ -13,6 +14,7 @@ import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps.ExosVolumeView;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPoolCollection;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPoolCollection.ExosRestPool;
+import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPorts;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestVolumesCollection;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestVolumesCollection.ExosRestVolume;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -37,11 +39,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
@@ -106,12 +106,12 @@ public class ExosRestClient
 
     public Map<String, ExosRestVolume> getVlmInfo(
         BiFunction<StorPool, ExosRestVolume, String> toStringFunc,
-        HashSet<StorPool> storPools
+        HashMap<StorPool, String> storPoolsWithNames
     )
         throws InvalidKeyException, AccessDeniedException, StorageException
     {
         HashMap<String, ExosRestVolume> ret = new HashMap<>();
-        HashMap<StorPool, ExosRestVolumesCollection> volumes = getVolumes(storPools);
+        HashMap<StorPool, ExosRestVolumesCollection> volumes = getVolumes(storPoolsWithNames);
         for (Entry<StorPool, ExosRestVolumesCollection> entry : volumes.entrySet())
         {
             StorPool storPool = entry.getKey();
@@ -123,14 +123,16 @@ public class ExosRestClient
         return ret;
     }
 
-    public HashMap<StorPool, ExosRestVolumesCollection> getVolumes(Set<StorPool> storPoolSet)
+    public HashMap<StorPool, ExosRestVolumesCollection> getVolumes(HashMap<StorPool, String> storPoolsWithNamesRef)
         throws AccessDeniedException, InvalidKeyException, StorageException
     {
         HashMap<StorPool, ExosRestVolumesCollection> ret = new HashMap<>();
-        for (StorPool sp : storPoolSet) {
+        for (Entry<StorPool, String> entry : storPoolsWithNamesRef.entrySet())
+        {
+            StorPool sp = entry.getKey();
             PriorityProps prioProps = getprioProps(sp);
             RestResponse<ExosRestVolumesCollection> simpleGetRequest = simpleGetRequest(
-                "/show/volumes/pool/" + getProp(prioProps, ApiConsts.KEY_STOR_POOL_NAME),
+                "/show/volumes/pool/" + entry.getValue(),
                 prioProps,
                 ExosRestVolumesCollection.class
             );
@@ -143,23 +145,24 @@ public class ExosRestClient
         throws InvalidKeyException, StorageException, AccessDeniedException
     {
         PriorityProps prioProps = getprioProps(storPoolRef);
-        String poolName = getProp(prioProps, ApiConsts.KEY_STOR_POOL_NAME);
+        String poolSn = storPoolRef.getProps(sysCtx).getProp(ExosProvider.EXOS_POOL_SERIAL_NUMBER);
 
         ExosRestPoolCollection poolsCollection = simpleGetRequest(
-            "/show/pools/" + poolName,
+            "/show/pools",
             prioProps,
             ExosRestPoolCollection.class
         ).getData();
 
         return find(
             poolsCollection.pools,
-            pool -> pool.name.equals(poolName),
-            "DiskGroup with pool name '" + poolName + "' not found"
+            pool -> pool.serialNumber.equals(poolSn),
+            "Pool with serial number '" + poolSn + "' not found"
         );
     }
 
     public ExosRestVolume createVolume(
         StorPool storPoolRef,
+        String poolName,
         String nameRef,
         long sizeInKib,
         List<String> additionalOptionsList
@@ -167,7 +170,6 @@ public class ExosRestClient
         throws AccessDeniedException, StorageException
     {
         PriorityProps prioProps = getprioProps(storPoolRef);
-        String poolName = getProp(prioProps, ApiConsts.KEY_STOR_POOL_NAME);
 
         StringBuilder urlBuilder = new StringBuilder();
         urlBuilder.append("/create/volume/pool/").append(poolName)
@@ -182,22 +184,11 @@ public class ExosRestClient
             urlBuilder.setLength(urlBuilder.length() - 1);
         }
 
-        try
-        {
-            simpleGetRequest(
-                urlBuilder.toString(),
-                prioProps,
-                ExosRestBaseResponse.class
-            );
-        }
-        catch (StorageException exc)
-        {
-            if (exc.getMessage().contains("The volume was not mapped"))
-            {
-                deleteVolume(storPoolRef, nameRef);
-                throw exc;
-            }
-        }
+        simpleGetRequest(
+            urlBuilder.toString(),
+            prioProps,
+            ExosRestBaseResponse.class
+        );
 
         return find(
             simpleGetRequest("/show/volumes/" + nameRef, prioProps, ExosRestVolumesCollection.class).getData().volumes,
@@ -249,13 +240,14 @@ public class ExosRestClient
         simpleGetRequest(url.toString(), getprioProps(), ExosRestBaseResponse.class);
     }
 
-    public void map(String exosVlmNameRef, int lunRef, List<String> initiatorIdsRef)
+    public void map(String exosVlmNameRef, String lunRef, String portRef, List<String> initiatorIdsRef)
         throws StorageException, AccessDeniedException
     {
         StringBuilder url = new StringBuilder("/map/volume/")
             .append("access/rw/")
             .append("initiator/").append(String.join(",", initiatorIdsRef))
             .append("/lun/").append(lunRef)
+            .append("/port/").append(portRef)
             .append("/").append(exosVlmNameRef);
 
         simpleGetRequest(url.toString(), getprioProps(), ExosRestBaseResponse.class);
@@ -264,6 +256,11 @@ public class ExosRestClient
     public ExosRestControllers showControllers() throws StorageException, AccessDeniedException
     {
         return simpleGetRequest("/show/controllers", getprioProps(), ExosRestControllers.class).getData();
+    }
+
+    public ExosRestPorts showPorts() throws StorageException, AccessDeniedException
+    {
+        return simpleGetRequest("/show/ports", getprioProps(), ExosRestPorts.class).getData();
     }
 
     private <T extends ExosRestBaseResponse> RestResponse<T> simpleGetRequest(
@@ -355,7 +352,7 @@ public class ExosRestClient
     private String getDetails(Map<String, String> headersRef)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("Headers:");
+        sb.append("Headers:\n");
         for (Entry<String, String> entry : headersRef.entrySet())
         {
             sb.append("  ").append(entry.getKey()).append(":").append(entry.getValue()).append("\n");

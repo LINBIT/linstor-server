@@ -7,6 +7,8 @@ import com.linbit.linstor.storage.StorageException;
 
 import static com.linbit.linstor.layer.storage.utils.Commands.genericExecutor;
 
+import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,7 +60,7 @@ public class LsscsiUtils
         return ret;
     }
 
-    public static void rescan(ExtCmdFactory extCmdFactory, ErrorReporter errReporter, Integer lun)
+    public static void rescan(ExtCmdFactory extCmdFactory, ErrorReporter errReporter, @Nullable Integer lun)
         throws StorageException
     {
         synchronized (SYNC_OBJ)

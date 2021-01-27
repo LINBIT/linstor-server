@@ -82,6 +82,7 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -459,7 +460,13 @@ public class CtrlNodeApiCallHandler
 
             Props props = ctrlPropsHelper.getProps(node);
             notifyStlts = ctrlPropsHelper.fillProperties(
-                apiCallRcs, LinStorObject.NODE, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE) || notifyStlts;
+                apiCallRcs,
+                LinStorObject.NODE,
+                overrideProps,
+                props,
+                ApiConsts.FAIL_ACC_DENIED_NODE,
+                Arrays.asList(ApiConsts.NAMESPC_EXOS)
+            ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs, LinStorObject.NODE, props, deletePropKeys, deleteNamespaces) || notifyStlts;
 

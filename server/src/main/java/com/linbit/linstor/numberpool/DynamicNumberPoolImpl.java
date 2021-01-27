@@ -47,6 +47,9 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         defaultMin = defaultMinRef;
         defaultMax = defaultMaxRef;
 
+        rangeMin = defaultMinRef;
+        rangeMax = defaultMaxRef;
+
         numberPool = new BitmapPool(hardMax + 1);
     }
 

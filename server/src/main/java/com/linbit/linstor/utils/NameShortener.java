@@ -117,7 +117,7 @@ public class NameShortener
         );
     }
 
-    private String shorten(Props props, String propKeyPrefix, String fullName)
+    public String shorten(Props props, String propKeyPrefix, String fullName)
         throws AccessDeniedException, DatabaseException
     {
         String shortName = null;
