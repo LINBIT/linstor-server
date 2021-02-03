@@ -232,7 +232,7 @@ public class ExosMappingManager
     private String getEnclosureName(StorPool storPool) throws AccessDeniedException
     {
         return storPool.getProps(apiCtx) // DO NOT USE PRIOPROPS
-            .getProp(ApiConsts.KEY_STOR_POOL_EXOS_ENCLOSURE, ApiConsts.NAMESPC_STORAGE_DRIVER);
+            .getProp(ApiConsts.KEY_STOR_POOL_EXOS_ENCLOSURE, ApiConsts.NAMESPC_EXOS);
     }
 
     public static List<Triple<String, String, String>> getCtrlnamePortLunList(Props vlmProps)

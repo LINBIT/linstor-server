@@ -2,7 +2,6 @@ package com.linbit.linstor.layer.storage.exos.rest;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.StorPool;
@@ -31,7 +30,6 @@ import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import javax.xml.bind.DatatypeConverter;
 
 import java.io.IOException;
@@ -43,8 +41,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
 import java.util.function.Predicate;
+
+import io.sentry.util.Objects;
 
 public class ExosRestClient
 {
@@ -57,19 +56,11 @@ public class ExosRestClient
 
     private static final long LOGIN_TIMEOUT = 29 * 60 * 1000; // 29 min in ms
 
-    static final String KEY_API_HOST = ApiConsts.KEY_STOR_POOL_EXOS_API_HOST;
+    static final String KEY_API_IP = ApiConsts.KEY_STOR_POOL_EXOS_API_IP;
     static final String KEY_API_PORT = ApiConsts.KEY_STOR_POOL_EXOS_API_PORT;
     static final String KEY_API_USER = ApiConsts.KEY_STOR_POOL_EXOS_API_USER;
     static final String KEY_API_PASS = ApiConsts.KEY_STOR_POOL_EXOS_API_PASSWORD;
     static final String VLM_TYPE = ApiConsts.KEY_STOR_POOL_EXOS_VLM_TYPE;
-
-
-    private final RestHttpClient restClient;
-    private final AccessContext sysCtx;
-    private final StltConfigAccessor stltConfigAccessor;
-    private final ErrorReporter errorReporter;
-
-    private String currentSessionKey = null;
 
     static
     {
@@ -83,21 +74,35 @@ public class ExosRestClient
         }
     }
 
+    private final RestHttpClient restClient;
+    private final AccessContext sysCtx;
+    private final StltConfigAccessor stltConfigAccessor;
+    private final ErrorReporter errorReporter;
+    private final String enclosureName;
+    private final Map<String, Long> lastLoginTimestamp = new HashMap<>();
+    private final Map<String, String> currentSessionKey = new HashMap<>();
+
     private Props localNodeProps;
 
-    private long lastLoginTimestamp = -1;
+    private final String baseEnclosureKey;
 
-    @Inject
     public ExosRestClient(
-        @SystemContext AccessContext sysCtxRef,
+        AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
-        StltConfigAccessor stltConfigAccessorRef
+        StltConfigAccessor stltConfigAccessorRef,
+        String enclosureNameRef
     )
     {
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
         stltConfigAccessor = stltConfigAccessorRef;
+        Objects.requireNonNull(enclosureNameRef);
+        enclosureName = enclosureNameRef;
         restClient = new RestHttpClient(errorReporterRef);
+
+        baseEnclosureKey = ApiConsts.NAMESPC_EXOS + "/" + enclosureName + "/";
+        lastLoginTimestamp.put("A", -1L);
+        lastLoginTimestamp.put("B", -1L);
     }
 
     public void setLocalNodeProps(Props localNodePropsRef)
@@ -105,24 +110,29 @@ public class ExosRestClient
         localNodeProps = localNodePropsRef;
     }
 
-    public Map<String, ExosRestVolume> getVlmInfo(
-        BiFunction<StorPool, ExosRestVolume, String> toStringFunc,
-        HashMap<StorPool, String> storPoolsWithNames
-    )
-        throws InvalidKeyException, AccessDeniedException, StorageException
+    public String getEnclosureName()
     {
-        HashMap<String, ExosRestVolume> ret = new HashMap<>();
-        HashMap<StorPool, ExosRestVolumesCollection> volumes = getVolumes(storPoolsWithNames);
-        for (Entry<StorPool, ExosRestVolumesCollection> entry : volumes.entrySet())
-        {
-            StorPool storPool = entry.getKey();
-            for (ExosRestVolume exosVlm : entry.getValue().volumes)
-            {
-                ret.put(toStringFunc.apply(storPool, exosVlm), exosVlm);
-            }
-        }
-        return ret;
+        return enclosureName;
     }
+
+    // public Map<String, ExosRestVolume> getVlmInfo(
+    // BiFunction<StorPool, ExosRestVolume, String> toStringFunc,
+    // HashMap<StorPool, String> storPoolsWithNames
+    // )
+    // throws InvalidKeyException, AccessDeniedException, StorageException
+    // {
+    // HashMap<String, ExosRestVolume> ret = new HashMap<>();
+    // HashMap<StorPool, ExosRestVolumesCollection> volumes = getVolumes(storPoolsWithNames);
+    // for (Entry<StorPool, ExosRestVolumesCollection> entry : volumes.entrySet())
+    // {
+    // StorPool storPool = entry.getKey();
+    // for (ExosRestVolume exosVlm : entry.getValue().volumes)
+    // {
+    // ret.put(toStringFunc.apply(storPool, exosVlm), exosVlm);
+    // }
+    // }
+    // return ret;
+    // }
 
     public HashMap<StorPool, ExosRestVolumesCollection> getVolumes(HashMap<StorPool, String> storPoolsWithNamesRef)
         throws AccessDeniedException, InvalidKeyException, StorageException
@@ -287,53 +297,93 @@ public class ExosRestClient
     )
         throws StorageException
     {
-        if (!inLogin)
-        {
-            ensureLoggedIn(prioProps);
-        }
         if (!relativeUrl.startsWith("/"))
         {
             relativeUrl = "/" + relativeUrl;
         }
-        String url = getBaseUrl(prioProps) + relativeUrl;
-        errorReporter.logTrace("Sending GET request: %s", url);
-        Map<String, String> headers = getHeaders(prioProps);
-        RestResponse<T> response;
-        try
+
+        StorageException exc = null;
+        RestResponse<T> response = null;
+        String url = null;
+        Map<String, String> headers = null;
+        for (String ctrl : new String[] { "A", "B" })
         {
-            response = restClient.execute(
-                null,
-                RestOp.GET,
-                url,
-                headers,
-                null,
-                Arrays.asList(HttpHeader.HTTP_OK, HttpHeader.HTTP_FORBIDDEN),
-                responseClass
-            );
-            if (response.getStatusCode() == HttpHeader.HTTP_FORBIDDEN)
+            if (!inLogin)
             {
-                lastLoginTimestamp = -1;
-                ensureLoggedIn(prioProps);
-                response = restClient.execute(
-                    null,
-                    RestOp.GET,
-                    url,
-                    headers,
-                    null,
-                    Arrays.asList(HttpHeader.HTTP_OK),
-                    responseClass
+                ensureLoggedIn(prioProps, ctrl);
+            }
+            headers = getHeaders(prioProps, ctrl);
+
+            String baseUrl = getBaseUrl(prioProps, ctrl);
+            if (baseUrl != null)
+            {
+                url = baseUrl + relativeUrl;
+                errorReporter.logTrace("Sending GET request: %s", url);
+                try
+                {
+                    response = restClient.execute(
+                        null,
+                        RestOp.GET,
+                        url,
+                        headers,
+                        null,
+                        Arrays.asList(HttpHeader.HTTP_OK, HttpHeader.HTTP_FORBIDDEN),
+                        responseClass
+                    );
+                    if (!inLogin && response.getStatusCode() == HttpHeader.HTTP_FORBIDDEN)
+                    {
+                        errorReporter.logTrace("Received FORBIDDEN (403) response, trying to re-login...");
+                        lastLoginTimestamp.put(ctrl, -1L);
+                        ensureLoggedIn(prioProps, ctrl);
+                        response = restClient.execute(
+                            null,
+                            RestOp.GET,
+                            url,
+                            headers,
+                            null,
+                            Arrays.asList(HttpHeader.HTTP_OK),
+                            responseClass
+                        );
+                    }
+                    exc = null;
+                    break;
+                }
+                catch (IOException ioExc)
+                {
+                    if (exc != null)
+                    {
+                        errorReporter.reportError(exc); // report both errors
+                    }
+                    exc = new StorageException(
+                        "GET request failed: " + url,
+                        null,
+                        null,
+                        null,
+                        getDetails(headers),
+                        ioExc
+                    );
+                }
+            }
+            else
+            {
+                errorReporter.logTrace(
+                    "URL for controller %s in enclosure %s was not set via properties. skipping.",
+                    ctrl,
+                    enclosureName
                 );
             }
         }
-        catch (IOException exc)
+        if (exc != null)
         {
+            throw exc;
+        }
+
+        if (response == null) {
             throw new StorageException(
-                "GET request failed: " + url,
-                null,
-                null,
-                null,
-                getDetails(headers),
-                exc
+                String.format(
+                    "Neither controller A nor controller B was configured for enclosure %s!",
+                    enclosureName
+                )
             );
         }
 
@@ -366,42 +416,59 @@ public class ExosRestClient
         return sb.toString();
     }
 
-    private String getBaseUrl(PriorityProps prioPropsRef)
+    private String getBaseUrl(PriorityProps prioPropsRef, String ctrlName)
     {
-        StringBuilder sb = new StringBuilder();
-        String host = getProp(prioPropsRef, KEY_API_HOST);
-        if (!host.startsWith("http"))
+        String ret = null;
+        String baseKey = baseEnclosureKey + ctrlName + "/";
+        String host = getProp(prioPropsRef, baseKey + KEY_API_IP);
+        if (host != null)
         {
-            sb.append("http://");
+            StringBuilder sb = new StringBuilder();
+            if (!host.startsWith("http"))
+            {
+                sb.append("http://");
+            }
+            sb.append(host);
+            sb.append(":").append(getProp(prioPropsRef, baseKey + KEY_API_PORT, "80"));
+            sb.append("/api");
+            ret = sb.toString();
         }
-        sb.append(host);
-        sb.append(":").append(getProp(prioPropsRef, KEY_API_PORT, "80"));
-        sb.append("/api");
-        return sb.toString();
+        return ret;
     }
 
-    private void ensureLoggedIn(PriorityProps prioProps) throws StorageException
+    private void ensureLoggedIn(PriorityProps prioProps, String ctrlName) throws StorageException
     {
         long now = System.currentTimeMillis();
-        if (lastLoginTimestamp + LOGIN_TIMEOUT < now)
+        if (lastLoginTimestamp.get(ctrlName) + LOGIN_TIMEOUT < now)
         {
-            currentSessionKey = null;
-            String url = API_LOGIN + "/" + getLoginCredentials(prioProps);
+            currentSessionKey.remove(ctrlName);
+            String url = API_LOGIN + "/" + getLoginCredentials(prioProps, ctrlName);
             RestResponse<ExosRestBaseResponse> loginResponse = simpleGetRequest(
                 url,
                 prioProps,
                 ExosRestBaseResponse.class,
                 true
             );
-            currentSessionKey = loginResponse.getData().status[0].response;
+            currentSessionKey.put(ctrlName, loginResponse.getData().status[0].response);
         }
-        lastLoginTimestamp = now;
+        lastLoginTimestamp.put(ctrlName, now);
     }
 
-    private String getLoginCredentials(PriorityProps prioPropsRef)
+    private String getLoginCredentials(PriorityProps prioPropsRef, String ctrlName) throws StorageException
     {
-        String username = prioPropsRef.getProp(KEY_API_USER, ApiConsts.NAMESPC_STORAGE_DRIVER);
-        String password = prioPropsRef.getProp(KEY_API_PASS, ApiConsts.NAMESPC_STORAGE_DRIVER);
+        String baseCtrlKey = baseEnclosureKey;
+
+        String username = prioPropsRef.getProp(baseCtrlKey + KEY_API_USER);
+        if (username == null)
+        {
+            throw new StorageException("No username defined for enclosure " + enclosureName);
+        }
+
+        String password = prioPropsRef.getProp(baseCtrlKey + KEY_API_PASS);
+        if (password == null)
+        {
+            throw new StorageException("No password defined for enclosure " + enclosureName);
+        }
 
         SHA_256.reset();
         byte[] encodedhash = SHA_256.digest((username + "_" + password).getBytes(StandardCharsets.UTF_8));
@@ -409,13 +476,13 @@ public class ExosRestClient
         return sha256.toLowerCase(); // Exos expects login string lower-case
     }
 
-    private Map<String, String> getHeaders(PriorityProps prioPropsRef)
+    private Map<String, String> getHeaders(PriorityProps prioPropsRef, String ctrl)
     {
         Builder builder = HttpHeader.newBuilder()
             .setJsonContentType();
         if (currentSessionKey != null)
         {
-            builder.put(HEADER_SESSION_KEY, currentSessionKey);
+            builder.put(HEADER_SESSION_KEY, currentSessionKey.get(ctrl));
         }
         builder.put(HEADER_DATATYPE, HEADER_DATATYPE_VAL_JSON);
         return builder.build();
@@ -438,7 +505,7 @@ public class ExosRestClient
 
     private String getProp(PriorityProps prioProps, String key, String dflt)
     {
-        return prioProps.getProp(key, ApiConsts.NAMESPC_STORAGE_DRIVER, dflt);
+        return prioProps.getProp(key, "", dflt);
     }
 
     private <T> T find(T[] array, Predicate<T> predicate, String errorMsg) throws StorageException
@@ -459,4 +526,5 @@ public class ExosRestClient
 
         return foundElement;
     }
+
 }
