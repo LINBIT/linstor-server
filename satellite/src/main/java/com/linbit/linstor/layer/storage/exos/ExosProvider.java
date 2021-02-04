@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
@@ -40,7 +41,6 @@ import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.layer.storage.utils.SysClassUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -76,6 +76,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.google.common.base.Objects;
 
 @Singleton
 public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Resource>, ExosData<Snapshot>>
@@ -715,9 +717,11 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
-    public void setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException
+    public LocalNodePropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+        throws StorageException, AccessDeniedException
     {
         super.setLocalNodeProps(localNodePropsRef);
+        LocalNodePropsChangePojo ret = null;
 
         ExtToolsInfo lsscsiInfo = extToolsChecker.getExternalTools(false).get(ExtTools.LSSCSI);
         if (lsscsiInfo != null && lsscsiInfo.isSupported())
@@ -733,8 +737,9 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             reinitEnclosureHostIds();
 
             reinitInitiatorIds();
-            reinitTargetIds(localNodePropsRef);
+            ret = reinitTargetIds(localNodePropsRef);
         }
+        return ret;
     }
 
     private void initNewExosRestClients(Props props)
@@ -816,14 +821,15 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
      * @throws AccessDeniedException
      * @throws DatabaseException
      */
-    private void reinitTargetIds(Props localNodePropsRef) throws StorageException, AccessDeniedException
+    private LocalNodePropsChangePojo reinitTargetIds(Props localNodePropsRef)
+        throws StorageException, AccessDeniedException
     {
+        HashMap<String, String> localNodePropsChanges = new HashMap<>();
+        HashSet<String> localNodePropsToDelete = new HashSet<>();
+
         // recache controller[].port[].target-id -> controller map
         Set<String> localScsiTargetIds = SysClassUtils.getScsiTargetIds(extCmdFactory);
         Map<String, String> exosCtrlNameMapByTargetIdNew = new HashMap<>();
-
-        HashMap<String, String> localNodePropsToSet = new HashMap<>();
-        HashSet<String> localNodePropsToDelete = new HashSet<>();
 
         Optional<Props> optExosNamespace = localNodePropsRef.getNamespace(ApiConsts.NAMESPC_EXOS);
         if (optExosNamespace.isPresent())
@@ -848,14 +854,20 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                     if (localScsiTargetIds.contains(exosRestPort.targetId))
                     {
                         String enclosureName = restClient.getEnclosureName();
-                        localNodePropsRef.setProp(
-                            ApiConsts.NAMESPC_EXOS + "/" +
-                                enclosureName + "/" +
-                                exosRestPort.controller +
-                                "/Ports/" +
-                                exosRestPort.port.substring(1), // "A0" -> "0"
-                            ExosMappingManager.CONNECTED
-                        );
+                        String propKey = ApiConsts.NAMESPC_EXOS + "/" +
+                            enclosureName + "/" +
+                            exosRestPort.controller +
+                            "/Ports/" +
+                            exosRestPort.port.substring(1);// "A0" -> "0"
+
+                        String currentValue = localNodePropsRef.getProp(propKey);
+                        if (!Objects.equal(currentValue, ExosMappingManager.CONNECTED))
+                        {
+                            localNodePropsChanges.put(propKey, ExosMappingManager.CONNECTED);
+                        }
+
+                        localNodePropsToDelete.remove(propKey);
+
                         errorReporter.logDebug(
                             "Found connected port to enclosure: %s, port: %s",
                             enclosureName,
@@ -866,11 +878,13 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                 }
             }
         }
-        catch (InvalidKeyException | InvalidValueException | DatabaseException exc)
+        catch (InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }
         exosCtrlNameMapByTargetId = exosCtrlNameMapByTargetIdNew;
+
+        return new LocalNodePropsChangePojo(localNodePropsChanges, localNodePropsToDelete);
     }
 
     @Override

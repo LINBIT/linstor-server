@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
+import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -79,12 +80,30 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void setLocalNodeProps(Props localNodeProps) throws StorageException, AccessDeniedException
+    public LocalNodePropsChangePojo setLocalNodeProps(Props localNodeProps)
+        throws StorageException, AccessDeniedException
     {
+        Map<String, String> changedProps = new HashMap<>();
+        Set<String> deletedProps = new HashSet<>();
         for (DeviceProvider devProvider : deviceProviderMapper.getDriverList())
         {
-            devProvider.setLocalNodeProps(localNodeProps);
+            LocalNodePropsChangePojo pojo = devProvider.setLocalNodeProps(localNodeProps);
+            if (pojo != null)
+            {
+                // TODO we could implement a safeguard here such that a layer can only change/delete properties
+                // from its own namespace.
+
+                changedProps.putAll(pojo.changedProps);
+                deletedProps.addAll(pojo.deletedProps);
+            }
         }
+
+        LocalNodePropsChangePojo ret = null;
+        if (!changedProps.isEmpty() || !deletedProps.isEmpty())
+        {
+            ret = new LocalNodePropsChangePojo(changedProps, deletedProps);
+        }
+        return ret;
     }
 
     @Override

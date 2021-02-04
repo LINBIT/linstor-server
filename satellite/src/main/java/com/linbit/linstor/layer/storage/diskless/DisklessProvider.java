@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.diskless;
 
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
@@ -81,9 +82,10 @@ public class DisklessProvider implements DeviceProvider
     }
 
     @Override
-    public void setLocalNodeProps(Props localNodePropsRef)
+    public LocalNodePropsChangePojo setLocalNodeProps(Props localNodePropsRef)
     {
         // no-op
+        return null;
     }
 
     @Override

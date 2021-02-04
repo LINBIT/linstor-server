@@ -16,6 +16,7 @@ import com.linbit.linstor.core.UdevHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
+import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -895,11 +896,33 @@ public class DeviceHandlerImpl implements DeviceHandler
     @Override
     public void localNodePropsChanged(Props localNodeProps) throws StorageException, AccessDeniedException
     {
+        Map<String, String> changedLocalNodeProps = new HashMap<>();
+        Set<String> deletedLocalNodeProps = new HashSet<>();
+
         Iterator<DeviceLayer> devHandlerIt = layerFactory.iterateDeviceHandlers();
         while (devHandlerIt.hasNext())
         {
             DeviceLayer deviceLayer = devHandlerIt.next();
-            deviceLayer.setLocalNodeProps(localNodeProps);
+            LocalNodePropsChangePojo pojo = deviceLayer.setLocalNodeProps(localNodeProps);
+
+            // TODO we could implement a safeguard here such that a layer can only change/delete properties
+            // from its own namespace.
+
+            if (pojo != null)
+            {
+                changedLocalNodeProps.putAll(pojo.changedProps);
+                deletedLocalNodeProps.addAll(pojo.deletedProps);
+            }
+        }
+
+        if (!changedLocalNodeProps.isEmpty() || !deletedLocalNodeProps.isEmpty())
+        {
+            controllerPeerConnector.getControllerPeer().sendMessage(
+                interComSerializer
+                    .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_NODE_PROPS_FROM_STLT)
+                    .updateLocalNodeProps(changedLocalNodeProps, deletedLocalNodeProps)
+                    .build()
+            );
         }
     }
 

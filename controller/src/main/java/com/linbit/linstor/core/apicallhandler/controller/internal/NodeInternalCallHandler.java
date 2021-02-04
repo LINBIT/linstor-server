@@ -8,12 +8,17 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SharedStorPoolManager;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -32,6 +37,8 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import com.google.common.base.Objects;
+
 import static java.util.stream.Collectors.toList;
 
 public class NodeInternalCallHandler
@@ -43,6 +50,8 @@ public class NodeInternalCallHandler
     private final ReadWriteLock nodesMapLock;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final SharedStorPoolManager sharedStorPoolManager;
+    private final CtrlSatelliteUpdater stltUpdater;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
 
     @Inject
     public NodeInternalCallHandler(
@@ -52,7 +61,9 @@ public class NodeInternalCallHandler
         Provider<Peer> peerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        SharedStorPoolManager sharedStorPoolManagerRef
+        SharedStorPoolManager sharedStorPoolManagerRef,
+        CtrlSatelliteUpdater stltUpdaterRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -62,6 +73,8 @@ public class NodeInternalCallHandler
         nodesMapLock = nodesMapLockRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         sharedStorPoolManager = sharedStorPoolManagerRef;
+        stltUpdater = stltUpdaterRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
     }
 
     public void handleNodeRequest(UUID nodeUuid, String nodeNameStr)
@@ -200,6 +213,45 @@ public class NodeInternalCallHandler
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
+        }
+    }
+
+    public void handleNodeUpdate(Map<String, String> changedPropsRef, List<String> deletedPropsListRef)
+    {
+        Node node = peer.get().getNode();
+
+        try (
+            LockGuard ls = LockGuard.createLocked(
+                nodesMapLock.writeLock(),
+                peer.get().getSerializerLock().readLock()
+            )
+        )
+        {
+            Props props = node.getProps(apiCtx);
+            boolean changed = false;
+            for (String key : deletedPropsListRef)
+            {
+                changed |= props.removeProp(key) != null;
+            }
+            for (Entry<String, String> entry : changedPropsRef.entrySet())
+            {
+                String value = entry.getValue();
+                changed |= !Objects.equal(value, props.setProp(entry.getKey(), value));
+            }
+
+            if (changed)
+            {
+                ctrlTransactionHelper.commit();
+                stltUpdater.updateSatellites(node);
+            }
+        }
+        catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            errorReporter.reportError(exc);
         }
     }
 }

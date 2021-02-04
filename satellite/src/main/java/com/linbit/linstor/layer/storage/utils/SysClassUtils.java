@@ -4,7 +4,6 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.storage.StorageException;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,7 +26,10 @@ public class SysClassUtils
         );
 
         String out = new String(outputData.stdoutData);
-        ret.addAll(Arrays.asList(out.split("\n")));
+        for (String line : out.split("\n"))
+        {
+            ret.add(line.substring(2)); // cut the leading "0x"
+        }
         return ret;
     }
 
@@ -48,7 +50,11 @@ public class SysClassUtils
         );
 
         String out = new String(outputData.stdoutData);
-        ret.addAll(Arrays.asList(out.split("\n")));
+
+        for (String line : out.split("\n"))
+        {
+            ret.add(line.substring(2)); // cut the leading "0x"
+        }
         return ret;
     }
 }

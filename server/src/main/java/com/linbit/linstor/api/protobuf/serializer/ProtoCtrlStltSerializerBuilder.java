@@ -64,6 +64,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntSnapshotShippedOuterClass.MsgIntSnapshotShipped;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateLocalNodeChangeOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass.MsgPhysicalDevices;
 import com.linbit.linstor.proto.javainternal.s2c.MsgRscFailedOuterClass.MsgRscFailed;
@@ -558,6 +559,27 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setName(node.getName().displayValue)
                         .build()
                 )
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder updateLocalNodeProps(
+        Map<String, String> changedLocalNodePropsRef,
+        Set<String> deletedLocalNodePropsRef
+    )
+    {
+        try
+        {
+            MsgIntUpdateLocalNodeChangeOuterClass.MsgIntUpdateLocalNodeChange.newBuilder()
+                .putAllChangedProps(changedLocalNodePropsRef)
+                .addAllDeletedProps(deletedLocalNodePropsRef)
                 .build()
                 .writeDelimitedTo(baos);
         }

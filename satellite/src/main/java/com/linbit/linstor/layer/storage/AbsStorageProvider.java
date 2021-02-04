@@ -15,6 +15,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -386,9 +387,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @Override
-    public void setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException
+    public LocalNodePropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+        throws StorageException, AccessDeniedException
     {
         localNodeProps = localNodePropsRef;
+        return null;
     }
 
     protected Optional<String> getMigrationId(VolumeDefinition vlmDfn)

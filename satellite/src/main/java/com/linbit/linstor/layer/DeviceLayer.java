@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
+import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -96,7 +97,7 @@ public interface DeviceLayer
 
     void clearCache() throws StorageException;
 
-    void setLocalNodeProps(Props localNodeProps) throws StorageException, AccessDeniedException;
+    LocalNodePropsChangePojo setLocalNodeProps(Props localNodeProps) throws StorageException, AccessDeniedException;
 
     boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
 

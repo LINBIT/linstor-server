@@ -86,6 +86,11 @@ public interface CtrlStltSerializer extends CommonSerializer
          * Satellite -> Controller
          */
         CtrlStltSerializerBuilder notifyNodeApplied(Node node);
+        CtrlStltSerializerBuilder updateLocalNodeProps(
+            Map<String, String> changedLocalNodePropsRef,
+            Set<String> deletedLocalNodePropsRef
+        );
+
         CtrlStltSerializerBuilder notifyResourceApplied(
             Resource resource,
             Map<StorPool, SpaceInfo> freeSpaceMap

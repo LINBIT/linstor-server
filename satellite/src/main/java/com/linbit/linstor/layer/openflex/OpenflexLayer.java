@@ -7,6 +7,7 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
+import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -326,9 +327,10 @@ public class OpenflexLayer implements DeviceLayer
     }
 
     @Override
-    public void setLocalNodeProps(Props localNodePropsRef)
+    public LocalNodePropsChangePojo setLocalNodeProps(Props localNodePropsRef)
     {
         restClient.setLocalNodeProps(localNodePropsRef);
+        return null;
     }
 
     @Override
