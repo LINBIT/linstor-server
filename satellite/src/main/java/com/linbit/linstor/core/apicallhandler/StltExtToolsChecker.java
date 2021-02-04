@@ -64,6 +64,7 @@ public class StltExtToolsChecker
     private static final Pattern SOCAT_VERSION_PATTERN = Pattern.compile("version (\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern UTIL_LINUX_VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)");
     private static final Pattern UDEVADM_VERSION_PATTERN = Pattern.compile("(\\d+)");
+    private static final Pattern LSSCSI_VERSION_PATTERN = Pattern.compile("(?:version: )?(\\d+)\\.(\\d+)");
 
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
@@ -108,7 +109,8 @@ public class StltExtToolsChecker
                 getZstdInfo(),
                 getSocatInfo(),
                 getUtilLinuxInfo(),
-                getUdevadmInfo()
+                getUdevadmInfo(),
+                getLsscsiInfo()
             );
 
             Map<ExtTools, ExtToolsInfo> extTools = new HashMap<>();
@@ -256,12 +258,33 @@ public class StltExtToolsChecker
 
     private ExtToolsInfo getUdevadmInfo()
     {
-        return infoBy3MatchGroupPattern(UDEVADM_VERSION_PATTERN, ExtTools.UDEVADM, false, false, "udevadm", "version");
+        return infoBy3MatchGroupPattern(
+            UDEVADM_VERSION_PATTERN,
+            ExtTools.UDEVADM,
+            false,
+            false,
+            true,
+            "udevadm",
+            "version"
+        );
+    }
+
+    private ExtToolsInfo getLsscsiInfo()
+    {
+        return infoBy3MatchGroupPattern(
+            LSSCSI_VERSION_PATTERN,
+            ExtTools.LSSCSI,
+            true,
+            false,
+            false,
+            "lsscsi",
+            "--version"
+        );
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)
     {
-        return infoBy3MatchGroupPattern(pattern, tool, true, cmd);
+        return infoBy3MatchGroupPattern(pattern, tool, true, true, true, cmd);
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(
@@ -271,7 +294,7 @@ public class StltExtToolsChecker
         String... cmd
     )
     {
-        return infoBy3MatchGroupPattern(pattern, tool, true, hasPatchVersion, cmd);
+        return infoBy3MatchGroupPattern(pattern, tool, true, hasPatchVersion, true, cmd);
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(
@@ -279,6 +302,7 @@ public class StltExtToolsChecker
         ExtTools tool,
         boolean hasMinorVersion,
         boolean hasPatchVersion,
+        boolean parseStdOut,
         String... cmd
     )
     {
@@ -286,7 +310,15 @@ public class StltExtToolsChecker
             pair ->
             {
                 ExtToolsInfo ret;
-                Matcher match = pattern.matcher(pair.objA);
+                Matcher match;
+                if (parseStdOut)
+                {
+                    match = pattern.matcher(pair.objA);
+                }
+                else
+                {
+                    match = pattern.matcher(pair.objB);
+                }
                 if (match.find())
                 {
                     ret = new ExtToolsInfo(
@@ -294,7 +326,7 @@ public class StltExtToolsChecker
                         true,
                         Integer.parseInt(match.group(1)),
                         hasMinorVersion ? Integer.parseInt(match.group(2)) : null,
-                        hasPatchVersion ? Integer.parseInt(match.group(3)) : null,
+                        hasMinorVersion && hasPatchVersion ? Integer.parseInt(match.group(3)) : null,
                         Collections.emptyList()
                     );
                 }

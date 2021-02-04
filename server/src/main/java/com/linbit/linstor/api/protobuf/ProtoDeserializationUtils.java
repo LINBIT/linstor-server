@@ -408,6 +408,9 @@ public class ProtoDeserializationUtils
             case UDEVADM:
                 tool = ExtTools.UDEVADM;
                 break;
+            case LSSCSI:
+                tool = ExtTools.LSSCSI;
+                break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through
             default:

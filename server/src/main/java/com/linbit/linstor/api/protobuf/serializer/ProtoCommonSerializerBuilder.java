@@ -1314,6 +1314,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case UDEVADM:
                 ret = ExternalTools.UDEVADM;
                 break;
+            case LSSCSI:
+                ret = ExternalTools.LSSCSI;
+                break;
             default:
                 throw new RuntimeException("Not implemented.");
         }

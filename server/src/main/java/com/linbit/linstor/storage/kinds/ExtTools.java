@@ -14,5 +14,6 @@ public enum ExtTools
     ZSTD,
     SOCAT,
     UTIL_LINUX,
-    UDEVADM
+    UDEVADM,
+    LSSCSI
 }

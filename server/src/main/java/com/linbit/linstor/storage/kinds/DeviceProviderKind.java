@@ -120,7 +120,8 @@ public enum DeviceProviderKind
         true,
         false,
         true,
-        new ExosDriverKind()
+        new ExosDriverKind(),
+        ExtTools.LSSCSI
     ),
     OPENFLEX_TARGET(
         false,

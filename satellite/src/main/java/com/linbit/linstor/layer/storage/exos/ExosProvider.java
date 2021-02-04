@@ -49,6 +49,8 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Align;
@@ -717,18 +719,22 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     {
         super.setLocalNodeProps(localNodePropsRef);
 
-        initNewExosRestClients(stltConfigAccessor.getReadonlyProps());
-        initNewExosRestClients(localNodePropsRef);
-
-        for (ExosRestClient exosRestClient : restClientMap.values())
+        ExtToolsInfo lsscsiInfo = extToolsChecker.getExternalTools(false).get(ExtTools.LSSCSI);
+        if (lsscsiInfo != null && lsscsiInfo.isSupported())
         {
-            exosRestClient.setLocalNodeProps(localNodePropsRef);
+            initNewExosRestClients(stltConfigAccessor.getReadonlyProps());
+            initNewExosRestClients(localNodePropsRef);
+
+            for (ExosRestClient exosRestClient : restClientMap.values())
+            {
+                exosRestClient.setLocalNodeProps(localNodePropsRef);
+            }
+
+            reinitEnclosureHostIds();
+
+            reinitInitiatorIds();
+            reinitTargetIds(localNodePropsRef);
         }
-
-        reinitEnclosureHostIds();
-
-        reinitInitiatorIds();
-        reinitTargetIds(localNodePropsRef);
     }
 
     private void initNewExosRestClients(Props props)
@@ -815,6 +821,22 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         // recache controller[].port[].target-id -> controller map
         Set<String> localScsiTargetIds = SysClassUtils.getScsiTargetIds(extCmdFactory);
         Map<String, String> exosCtrlNameMapByTargetIdNew = new HashMap<>();
+
+        HashMap<String, String> localNodePropsToSet = new HashMap<>();
+        HashSet<String> localNodePropsToDelete = new HashSet<>();
+
+        Optional<Props> optExosNamespace = localNodePropsRef.getNamespace(ApiConsts.NAMESPC_EXOS);
+        if (optExosNamespace.isPresent())
+        {
+            Props exosNamespace = optExosNamespace.get();
+            for (String propKey : exosNamespace.map().keySet())
+            {
+                if (propKey.contains("/Ports/"))
+                {
+                    localNodePropsToDelete.add(propKey);
+                }
+            }
+        }
 
         try
         {

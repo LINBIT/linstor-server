@@ -56,6 +56,7 @@ public class ExosRestClient
 
     private static final long LOGIN_TIMEOUT = 29 * 60 * 1000; // 29 min in ms
 
+    private static final String[] CONTROLLERS = new String[] { "A", "B" };
     static final String KEY_API_IP = ApiConsts.KEY_STOR_POOL_EXOS_API_IP;
     static final String KEY_API_PORT = ApiConsts.KEY_STOR_POOL_EXOS_API_PORT;
     static final String KEY_API_USER = ApiConsts.KEY_STOR_POOL_EXOS_API_USER;
@@ -86,6 +87,7 @@ public class ExosRestClient
 
     private final String baseEnclosureKey;
 
+
     public ExosRestClient(
         AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
@@ -101,8 +103,11 @@ public class ExosRestClient
         restClient = new RestHttpClient(errorReporterRef);
 
         baseEnclosureKey = ApiConsts.NAMESPC_EXOS + "/" + enclosureName + "/";
-        lastLoginTimestamp.put("A", -1L);
-        lastLoginTimestamp.put("B", -1L);
+
+        for (String ctrl : CONTROLLERS)
+        {
+            lastLoginTimestamp.put(ctrl, -1L);
+        }
     }
 
     public void setLocalNodeProps(Props localNodePropsRef)
@@ -306,7 +311,7 @@ public class ExosRestClient
         RestResponse<T> response = null;
         String url = null;
         Map<String, String> headers = null;
-        for (String ctrl : new String[] { "A", "B" })
+        for (String ctrl : CONTROLLERS)
         {
             if (!inLogin)
             {
@@ -449,7 +454,9 @@ public class ExosRestClient
                 ExosRestBaseResponse.class,
                 true
             );
-            currentSessionKey.put(ctrlName, loginResponse.getData().status[0].response);
+            String loginToken = loginResponse.getData().status[0].response;
+            errorReporter.logTrace("Received login token: %s", loginToken);
+            currentSessionKey.put(ctrlName, loginToken);
         }
         lastLoginTimestamp.put(ctrlName, now);
     }
