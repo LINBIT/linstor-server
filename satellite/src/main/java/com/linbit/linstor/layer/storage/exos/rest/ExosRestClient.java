@@ -486,7 +486,8 @@ public class ExosRestClient
     private Map<String, String> getHeaders(PriorityProps prioPropsRef, String ctrl)
     {
         Builder builder = HttpHeader.newBuilder()
-            .setJsonContentType();
+            .setJsonContentType()
+            .setAcceptsJson();
         if (currentSessionKey != null)
         {
             builder.put(HEADER_SESSION_KEY, currentSessionKey.get(ctrl));

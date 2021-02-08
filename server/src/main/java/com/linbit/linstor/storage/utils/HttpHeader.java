@@ -25,8 +25,9 @@ public class HttpHeader
 
     public static final String LOCATION_KEY = "Location";
     public static final String CONTENT_TYPE_KEY = "Content-Type";
-    public static final String CONTENT_TYPE_APP_JSON = "application/json";
-    public static final String CONTENT_TYPE_APP_TEXT = "application/text";
+    public static final String ACCEPT_KEY = "Accept";
+    public static final String APPLICATION_JSON = "application/json";
+    public static final String APPLICATION_TEXT = "application/text";
     public static final String AUTH_KEY = "Authorization";
 
     public static final String ETAG_KEY = "Etag";
@@ -66,13 +67,13 @@ public class HttpHeader
 
         public Builder setJsonContentType()
         {
-            map.put(CONTENT_TYPE_KEY, CONTENT_TYPE_APP_JSON);
+            map.put(CONTENT_TYPE_KEY, APPLICATION_JSON);
             return this;
         }
 
         public Builder setPlainContentType()
         {
-            map.put(CONTENT_TYPE_KEY, CONTENT_TYPE_APP_TEXT);
+            map.put(CONTENT_TYPE_KEY, APPLICATION_TEXT);
             return this;
         }
 
@@ -88,6 +89,18 @@ public class HttpHeader
                 AUTH_KEY,
                 "Basic " + Base64.encode((userName + ":" + userPw).getBytes())
             );
+            return this;
+        }
+
+        public Builder setAcceptsJson()
+        {
+            map.put(ACCEPT_KEY, APPLICATION_JSON);
+            return this;
+        }
+
+        public Builder setAcceptsText()
+        {
+            map.put(ACCEPT_KEY, APPLICATION_TEXT);
             return this;
         }
     }
