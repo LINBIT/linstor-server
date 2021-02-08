@@ -744,6 +744,32 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             finally
             {
                 errLog.logDebug("End DeviceManager cycle %d", cycleNr);
+
+                Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+                synchronized (sched)
+                {
+                    if (ctrlPeer != null)
+                    {
+                        errLog.logDebug("Notifying ctrl DeviceManager cycle ended %d", cycleNr);
+                        ctrlPeer.sendMessage(
+                            interComSerializer
+                                .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
+                                .build()
+                        );
+                    }
+                    else
+                    {
+                        errLog.logDebug(
+                            "No controller peer found. Cannot notify about DeviceManager cycle ending. Skipping."
+                        );
+                    }
+
+                    // ctrlPeer.sendMessage might return false if controller is offline - bad luck, but still just
+                    // give up our local locks
+                    grantedLocks = null; // notifying ctrl about devMgrRunCompleted also releases our share-SP-locks
+                    requiredLocks = null;
+                }
+
                 ++cycleNr;
             }
         }
@@ -1012,22 +1038,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 rscDfnWrLock.unlock();
                 nodesWrLock.unlock();
                 reconfWrLock.unlock();
-
-                Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
-                synchronized (sched)
-                {
-                    ctrlPeer.sendMessage(
-                        interComSerializer
-                            .onewayBuilder(InternalApiConsts.API_NOTIFY_DEV_MGR_RUN_COMPLETED)
-                            .build()
-                    );
-
-                    // ctrlPeer.sendMessage might return false if controller is offline - bad luck, but still just
-                    // give
-                    // up our local locks
-                    grantedLocks = null; // notifying ctrl about devMgrRunCompleted also releases our share-SP-locks
-                    requiredLocks = null;
-                }
             }
         }
     }
