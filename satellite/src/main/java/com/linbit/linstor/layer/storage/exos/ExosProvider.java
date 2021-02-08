@@ -102,6 +102,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     public static final String FORMAT_SNAP_TO_LVM_ID = "%s%s_%s_%05d";
 
     private static final Pattern HCTL_PATTERN = Pattern.compile("\\[?([0-9]+):([0-9]+):([0-9]+):([0-9]+)\\]?");
+    private static final long MASK_LSB_4 = 0xFFFFFFFFFFFFFFF0L; // ~15L
 
     private final Map<String, ExosRestClient> restClientMap;
 
@@ -867,20 +868,38 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         // update initiator-ids...
         Set<String> localScsiInitiatorIds = SysClassUtils.getScsiInitiatorIds(extCmdFactory);
 
-        Set<String> exosScsiInitiatorIds = new HashSet<>();
+        Set<Long> maskedLocalScsiInitiatorIds = new HashSet<>();
+        // see workaround-comment below
+        for (String localScsiInitiatorIdStr : localScsiInitiatorIds)
+        {
+            maskedLocalScsiInitiatorIds.add(Long.parseLong(localScsiInitiatorIdStr, 16) & MASK_LSB_4);
+        }
 
-        // filter localScsi*Ids for ids that Exos also knows
+        HashSet<String> initiatorIds = new HashSet<>();
+
+        // filter local scsi initiator ids for ids that Exos also knows
         for (ExosRestClient restClient : restClientMap.values())
         {
             ExosRestInitiators exosInitiators = restClient.showInitiators();
 
             for (ExosRestInitiator exosInitiator : exosInitiators.initiator)
             {
-                exosScsiInitiatorIds.add(exosInitiator.id);
+                /*
+                 * Workaround:
+                 * The local .../sas_address only includes the first (or one of) the Exos initiator ids.
+                 * However, as Exos enumerates the initiator ids incrementally for all hosts, we simply mask the 4 least
+                 * significant bits when filtering
+                 */
+                long maskedExosInitId = Long.parseLong(exosInitiator.id, 16) & MASK_LSB_4;
+                if (maskedLocalScsiInitiatorIds.contains(maskedExosInitId))
+                {
+                    initiatorIds.add(exosInitiator.id);
+                }
             }
         }
-        localScsiInitiatorIds.retainAll(exosScsiInitiatorIds);
-        exosInitiatorIds = localScsiInitiatorIds;
+
+        errorReporter.logTrace("Using initiator ids: %s", initiatorIds);
+        exosInitiatorIds = initiatorIds;
     }
 
     /**
