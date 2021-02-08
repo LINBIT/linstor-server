@@ -297,11 +297,15 @@ public class SharedStorPoolManager
                                 }
                                 else
                                 {
-                                    Iterator<Node> queueIt = queueByLock.get(lock).iterator();
-                                    if (queueIt.hasNext() && !Objects.equals(getNode(queueIt.next()), currentNode))
+                                    LinkedHashSet<Node> queue = queueByLock.get(lock);
+                                    if (queue != null)
                                     {
-                                        granted = false;
-                                        break;
+                                        Iterator<Node> queueIt = queue.iterator();
+                                        if (queueIt.hasNext() && !Objects.equals(getNode(queueIt.next()), currentNode))
+                                        {
+                                            granted = false;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -310,7 +314,11 @@ public class SharedStorPoolManager
                                 lock(currentNode, requiredLocks);
                                 for (SharedStorPoolName lock : requiredLocks)
                                 {
-                                    queueByLock.get(lock).remove(currentNode);
+                                    LinkedHashSet<Node> queue = queueByLock.get(lock);
+                                    if (queue != null)
+                                    {
+                                        queue.remove(currentNode);
+                                    }
                                     currentlyAcquiredLockBy.put(lock, currentNode);
                                 }
                                 ret.put(currentNode, requiredLocks);
