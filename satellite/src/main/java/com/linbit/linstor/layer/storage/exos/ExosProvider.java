@@ -38,6 +38,8 @@ import com.linbit.linstor.layer.storage.utils.FsUtils;
 import com.linbit.linstor.layer.storage.utils.LsscsiUtils;
 import com.linbit.linstor.layer.storage.utils.LsscsiUtils.LsscsiRow;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
+import com.linbit.linstor.layer.storage.utils.MultipathUtils;
+import com.linbit.linstor.layer.storage.utils.MultipathUtils.MultipathRow;
 import com.linbit.linstor.layer.storage.utils.SysClassUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -492,25 +494,50 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                         );
                         hctlList.add(lsscsiRow.hctl);
 
-                        if (devicePathToUse == null && devPath != null)
-                        {
-                            devicePathToUse = devPath; // use the first if the preferred controller was not found
-                        }
-
-                        String sasAddress = FsUtils.readAllBytes(scsiDevicePath.resolve("sas_address")).trim();
-
-                        // String mac = SdparmUtils.getMac(extCmdFactory, devPath).replaceAll(" ", ":");
-                        // if (mac.equalsIgnoreCase(preferredMac))
-                        if (exosVlm.owner.equals(exosCtrlNameMapByTargetId.get(sasAddress)))
-                        {
-                            devicePathToUse = devPath;
-                            errorReporter.logTrace("Device %s matches preferred controller. Choosing.", devPath);
-                        }
+                        // if (devicePathToUse == null && devPath != null)
+                        // {
+                        // devicePathToUse = devPath; // use the first if the preferred controller was not found
+                        // }
+                        //
+                        // String sasAddress = FsUtils.readAllBytes(scsiDevicePath.resolve("sas_address")).trim();
+                        //
+                        // // String mac = SdparmUtils.getMac(extCmdFactory, devPath).replaceAll(" ", ":");
+                        // // if (mac.equalsIgnoreCase(preferredMac))
+                        // if (exosVlm.owner.equals(exosCtrlNameMapByTargetId.get(sasAddress)))
+                        // {
+                        // devicePathToUse = devPath;
+                        // errorReporter.logTrace("Device %s matches preferred controller. Choosing.", devPath);
+                        // }
                     }
                 }
             }
             if (allGood)
             {
+                List<MultipathRow> rows = MultipathUtils.getRowsByHCIL(extCmdFactory, hctlList);
+                String multiPathDevSuffix = null;
+                if (rows.isEmpty())
+                {
+                    throw new StorageException("Multipathd did not find given hctl: " + hctlList);
+                }
+                for (MultipathRow row : rows)
+                {
+                    if (multiPathDevSuffix == null)
+                    {
+                        multiPathDevSuffix = row.multipathDev;
+                    }
+                    else
+                    {
+                        if (!multiPathDevSuffix.equals(row.multipathDev))
+                        {
+                            throw new StorageException(
+                                "Multiple multipath-paths found: " + multiPathDevSuffix + ", " + row.multipathDev
+                            );
+                        }
+                    }
+                }
+
+                devicePathToUse = "/dev/mapper/" + multiPathDevSuffix;
+                errorReporter.logDebug("Found multipath device: %s", devicePathToUse);
                 break;
             }
             else
@@ -524,6 +551,11 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                 // and retry
             }
         }
+        if (devicePathToUse == null)
+        {
+            throw new StorageException("Failed to determine devicePath");
+        }
+
         vlmData.setHCTL(hctlList);
 
         vlmData.setDevicePath(devicePathToUse);
