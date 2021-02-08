@@ -21,13 +21,14 @@ import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ExosData<RSC extends AbsResource<RSC>>
     extends AbsStorageVlmData<RSC> implements LvmProviderObject<RSC>
 {
     private String shortName;
-    private List<String> hctlList = new ArrayList<>();
+    private Set<String> hctlSet = new HashSet<>();
 
     public ExosData(
         AbsVolume<RSC> vlmRef,
@@ -69,14 +70,14 @@ public class ExosData<RSC extends AbsResource<RSC>>
         return shortName;
     }
 
-    public void setHCTL(List<String> hctlRef)
+    public void setHCTL(Set<String> hctlRef)
     {
-        hctlList = hctlRef;
+        hctlSet = hctlRef;
     }
 
-    public List<String> getHCTLList()
+    public Set<String> getHCTLSet()
     {
-        return hctlList;
+        return hctlSet;
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.linbit.linstor.storage.StorageException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class MultipathUtils
@@ -26,19 +27,19 @@ public class MultipathUtils
         }
     }
 
-    public static List<MultipathRow> getRowsByHCIL(ExtCmdFactoryStlt extCmdFactoryRef, ArrayList<String> hctlListRef)
+    public static List<MultipathRow> getRowsByHCIL(ExtCmdFactoryStlt extCmdFactoryRef, Set<String> hctlSetRef)
         throws StorageException
     {
         List<MultipathRow> ret = new ArrayList<>();
 
         Predicate<String> includeToRet;
-        if (hctlListRef == null || hctlListRef.isEmpty())
+        if (hctlSetRef == null || hctlSetRef.isEmpty())
         {
             includeToRet = ignored -> true;
         }
         else
         {
-            includeToRet = hctlListRef::contains;
+            includeToRet = hctlSetRef::contains;
         }
 
         OutputData outputData = Commands.genericExecutor(

@@ -270,7 +270,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         else
         {
             vlmDataRef.setExists(true);
-            updateFromLsscsi(vlmDataRef, exosVlm, null);
+            updateFromLsscsi(vlmDataRef, exosVlm);
         }
     }
 
@@ -278,8 +278,6 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     protected void createLvImpl(ExosData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        List<LsscsiRow> allLssciRowsPreCreate = LsscsiUtils.getAll(extCmdFactory);
-
         List<String> additionalOptions = MkfsUtils.shellSplit(getCreateVlmOptions(vlmData));
         String[] additionalOptionsArr = new String[additionalOptions.size()];
         additionalOptions.toArray(additionalOptionsArr);
@@ -293,7 +291,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             additionalOptions
         );
         // only look for lsscsi devices AFTER the mapping is done
-        updateFromLsscsi(vlmData, exosVlm, allLssciRowsPreCreate);
+        updateFromLsscsi(vlmData, exosVlm);
     }
 
     /**
@@ -435,32 +433,43 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
      */
     private void updateFromLsscsi(
         ExosData<?> vlmData,
-        ExosRestVolume exosVlm,
-        List<LsscsiRow> lsscsiRowsToIgnore
+        ExosRestVolume exosVlm
     )
         throws StorageException, InvalidKeyException, AccessDeniedException, DatabaseException
     {
         handleMapping(exosVlm, vlmData);
 
+        Set<String> lunsToInspect = getLunsToInspect(vlmData);
+
         String devicePathToUse = null;
-        ArrayList<String> hctlList = null;
+        Set<String> hctlSet = null;
 
         int retry = 0;
         while (retry++ < MAX_LSSCSI_RETRY_COUNT)
         {
             LsscsiUtils.rescan(extCmdFactory, errorReporter, enclosureHostIds);
             List<LsscsiRow> newLsscsiRowEntries = LsscsiUtils.getAll(extCmdFactory);
-            if (lsscsiRowsToIgnore != null)
-            {
-                newLsscsiRowEntries.removeAll(lsscsiRowsToIgnore);
-            }
             String wwn = exosVlm.wwn.toUpperCase();
             // String preferredMac = exosCtrlMacAddrMapById.get(exosVlm.owner);
 
             boolean allGood = true;
-            hctlList = new ArrayList<>();
+            hctlSet = new HashSet<>();
             for (LsscsiRow lsscsiRow : newLsscsiRowEntries)
             {
+                boolean inspect = false;
+                for (String lunToInspect : lunsToInspect)
+                {
+                    if (lsscsiRow.hctl.endsWith(":" + lunToInspect))
+                    {
+                        inspect = true;
+                        break;
+                    }
+                }
+                if (!inspect)
+                {
+                    continue;
+                }
+
                 /*
                  * scsiIdentSerial will be something like
                  * naa.600c0ff00029a5f56e7bfe5f01000000
@@ -492,7 +501,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                             lsscsiRow.hctl,
                             vlmData.getIdentifier()
                         );
-                        hctlList.add(lsscsiRow.hctl);
+                        hctlSet.add(lsscsiRow.hctl);
 
                         // if (devicePathToUse == null && devPath != null)
                         // {
@@ -511,33 +520,45 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                     }
                 }
             }
+
+            List<MultipathRow> rows = MultipathUtils.getRowsByHCIL(extCmdFactory, hctlSet);
+            String multiPathDevSuffix = null;
+            if (rows.isEmpty())
+            {
+                allGood = false;
+                if (retry != MAX_LSSCSI_RETRY_COUNT)
+                {
+                    // this is the NOT last run before "giving up" and fallback to "best effort"
+                    break;
+                }
+                else
+                {
+                    throw new StorageException("Multipathd did not find given hctl: " + hctlSet);
+                }
+            }
+            for (MultipathRow row : rows)
+            {
+                if (multiPathDevSuffix == null)
+                {
+                    multiPathDevSuffix = row.multipathDev;
+                }
+                else
+                {
+                    if (!multiPathDevSuffix.equals(row.multipathDev))
+                    {
+                        throw new StorageException(
+                            "Multiple multipath-paths found: " + multiPathDevSuffix + ", " + row.multipathDev +
+                                ". Used HCTL list: " + hctlSet
+                        );
+                    }
+                }
+            }
+
+            devicePathToUse = "/dev/mapper/" + multiPathDevSuffix;
+            errorReporter.logDebug("Found multipath device: %s", devicePathToUse);
+
             if (allGood)
             {
-                List<MultipathRow> rows = MultipathUtils.getRowsByHCIL(extCmdFactory, hctlList);
-                String multiPathDevSuffix = null;
-                if (rows.isEmpty())
-                {
-                    throw new StorageException("Multipathd did not find given hctl: " + hctlList);
-                }
-                for (MultipathRow row : rows)
-                {
-                    if (multiPathDevSuffix == null)
-                    {
-                        multiPathDevSuffix = row.multipathDev;
-                    }
-                    else
-                    {
-                        if (!multiPathDevSuffix.equals(row.multipathDev))
-                        {
-                            throw new StorageException(
-                                "Multiple multipath-paths found: " + multiPathDevSuffix + ", " + row.multipathDev
-                            );
-                        }
-                    }
-                }
-
-                devicePathToUse = "/dev/mapper/" + multiPathDevSuffix;
-                errorReporter.logDebug("Found multipath device: %s", devicePathToUse);
                 break;
             }
             else
@@ -556,11 +577,30 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             throw new StorageException("Failed to determine devicePath");
         }
 
-        vlmData.setHCTL(hctlList);
+        if (hctlSet != null && !hctlSet.isEmpty())
+        {
+            vlmData.setHCTL(hctlSet);
+        }
 
         vlmData.setDevicePath(devicePathToUse);
         vlmData.setAllocatedSize(exosVlm.sizeNumeric / SECTORS_PER_KIB);
         vlmData.setUsableSize(exosVlm.sizeNumeric / SECTORS_PER_KIB);
+    }
+
+    private Set<String> getLunsToInspect(ExosData<?> vlmDataRef) throws AccessDeniedException
+    {
+        HashSet<String> ret = new HashSet<>();
+
+        List<Triple<String, String, String>> ctrlnamePortLunList = ExosMappingManager.getCtrlnamePortLunList(
+            vlmDataRef.getVolume().getProps(storDriverAccCtx)
+        );
+
+        for (Triple<String, String, String> triple : ctrlnamePortLunList)
+        {
+            ret.add(triple.objC);
+        }
+
+        return ret;
     }
 
     protected PriorityProps getPrioProps(ExosData<Resource> vlmDataRef) throws AccessDeniedException
@@ -624,7 +664,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         getClient(storPool).deleteVolume(storPool, vlmData.getShortName());
         try
         {
-            for (String hctl : vlmData.getHCTLList())
+            for (String hctl : vlmData.getHCTLSet())
             {
                 errorReporter.logTrace("Deleting HCTL %s", hctl);
                 Files.write(Paths.get("/sys/class/scsi_device/" + hctl + "/device/delete"), "1".getBytes());
@@ -632,7 +672,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         }
         catch (IOException exc)
         {
-            throw new StorageException("Failed to delete scsi_device. List of HCTLs: " + vlmData.getHCTLList(), exc);
+            throw new StorageException("Failed to delete scsi_device. List of HCTLs: " + vlmData.getHCTLSet(), exc);
         }
         vlmData.setExists(false);
     }
