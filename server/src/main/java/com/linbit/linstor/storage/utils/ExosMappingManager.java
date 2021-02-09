@@ -22,6 +22,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.Triple;
 
@@ -83,38 +84,41 @@ public class ExosMappingManager
 
                         StorPool storPool = LayerVlmUtils.getStorPoolMap(vlm, apiCtx).get(RscLayerSuffixes.SUFFIX_DATA);
 
-                        String enclosureName = getEnclosureName(storPool);
-                        ExosEnclosure enclosure = enclosureMap.get(enclosureName);
-                        if (enclosure == null)
+                        if (storPool.getDeviceProviderKind().equals(DeviceProviderKind.EXOS))
                         {
-                            enclosure = new ExosEnclosure(enclosureName);
-                            enclosureMap.put(enclosureName, enclosure);
-                        }
-
-                        String enclosurePropKey = ApiConsts.NAMESPC_EXOS + "/" + enclosureName;
-                        Optional<Props> enclosureNamespace = stltConfAccessor.getReadonlyProps()
-                            .getNamespace(enclosurePropKey);
-                        if (!enclosureNamespace.isPresent())
-                        {
-                            throw new LinStorException("No enclosures defined in '" + enclosurePropKey + "'");
-                        }
-                        Iterator<String> controllersIt = enclosureNamespace.get().iterateNamespaces();
-                        while (controllersIt.hasNext())
-                        {
-                            String ctrlName = controllersIt.next();
-                            ExosCtrl exosCtrl = enclosure.controllerMap.get(ctrlName);
-                            if (exosCtrl == null)
+                            String enclosureName = getEnclosureName(storPool);
+                            ExosEnclosure enclosure = enclosureMap.get(enclosureName);
+                            if (enclosure == null)
                             {
-                                exosCtrl = new ExosCtrl();
-                                enclosure.controllerMap.put(ctrlName, exosCtrl);
+                                enclosure = new ExosEnclosure(enclosureName);
+                                enclosureMap.put(enclosureName, enclosure);
                             }
 
-                            int lun = Integer.parseInt(props.getProp(getLunKey(ctrlName)));
-                            String portStr = props.getProp(getPortKey(ctrlName));
+                            String enclosurePropKey = ApiConsts.NAMESPC_EXOS + "/" + enclosureName;
+                            Optional<Props> enclosureNamespace = stltConfAccessor.getReadonlyProps()
+                                .getNamespace(enclosurePropKey);
+                            if (!enclosureNamespace.isPresent())
+                            {
+                                throw new LinStorException("No enclosures defined in '" + enclosurePropKey + "'");
+                            }
+                            Iterator<String> controllersIt = enclosureNamespace.get().iterateNamespaces();
+                            while (controllersIt.hasNext())
+                            {
+                                String ctrlName = controllersIt.next();
+                                ExosCtrl exosCtrl = enclosure.controllerMap.get(ctrlName);
+                                if (exosCtrl == null)
+                                {
+                                    exosCtrl = new ExosCtrl();
+                                    enclosure.controllerMap.put(ctrlName, exosCtrl);
+                                }
 
-                            ExosPort exosPort = exosCtrl.ports.get(portStr);
-                            exosPort.lunPool.allocate(lun);
-                            exosPort.usedLunCount++;
+                                int lun = Integer.parseInt(props.getProp(getLunKey(ctrlName)));
+                                String portStr = props.getProp(getPortKey(ctrlName));
+
+                                ExosPort exosPort = exosCtrl.ports.get(portStr);
+                                exosPort.lunPool.allocate(lun);
+                                exosPort.usedLunCount++;
+                            }
                         }
                     }
                 }
