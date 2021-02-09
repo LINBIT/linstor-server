@@ -5,6 +5,7 @@ import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.core.cfg.StltConfig;
+import com.linbit.linstor.layer.storage.utils.SysClassUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -110,7 +111,9 @@ public class StltExtToolsChecker
                 getSocatInfo(),
                 getUtilLinuxInfo(),
                 getUdevadmInfo(),
-                getLsscsiInfo()
+                getLsscsiInfo(),
+                getSasPhyInfo(),
+                getSasDeviceInfo()
             );
 
             Map<ExtTools, ExtToolsInfo> extTools = new HashMap<>();
@@ -122,6 +125,20 @@ public class StltExtToolsChecker
             cache = Collections.unmodifiableMap(extTools);
         }
         return cache;
+    }
+
+    public boolean areSupported(boolean recache, ExtTools... tools)
+    {
+        Map<ExtTools, ExtToolsInfo> extTools = getExternalTools(recache);
+        for (ExtTools tool : tools)
+        {
+            ExtToolsInfo extToolsInfo = extTools.get(tool);
+            if (extToolsInfo == null || !extToolsInfo.isSupported())
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private ExtToolsInfo getDrbd9Info()
@@ -280,6 +297,20 @@ public class StltExtToolsChecker
             "lsscsi",
             "--version"
         );
+    }
+
+    private ExtToolsInfo getSasPhyInfo()
+    {
+        List<String> errorList = new ArrayList<>();
+        check(errorList, SysClassUtils.CMD_CAT_SAS_PHY);
+        return new ExtToolsInfo(ExtTools.SAS_PHY, errorList.isEmpty(), null, null, null, errorList);
+    }
+
+    private ExtToolsInfo getSasDeviceInfo()
+    {
+        List<String> errorList = new ArrayList<>();
+        check(errorList, SysClassUtils.CMD_CAT_SAS_DEVICE);
+        return new ExtToolsInfo(ExtTools.SAS_DEVICE, errorList.isEmpty(), null, null, null, errorList);
     }
 
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)

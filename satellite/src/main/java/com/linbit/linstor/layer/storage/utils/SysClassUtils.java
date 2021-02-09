@@ -9,6 +9,13 @@ import java.util.Set;
 
 public class SysClassUtils
 {
+    public static final String[] CMD_CAT_SAS_PHY = new String[]{
+        "/bin/bash", "-c", "cat /sys/class/sas_phy/*/sas_address"
+    };
+    public static final String[] CMD_CAT_SAS_DEVICE = new String[] {
+        "/bin/bash", "-c", "cat /sys/class/sas_device/end_device-*/sas_address"
+    };
+
     public static Set<String> getScsiInitiatorIds(ExtCmdFactory extCmdFactoryRef)
         throws StorageException
     {
@@ -16,11 +23,7 @@ public class SysClassUtils
 
         OutputData outputData = Commands.genericExecutor(
             extCmdFactoryRef.create().setSaveWithoutSharedLocks(true),
-            new String[] {
-                "/bin/bash",
-                "-c",
-                "cat /sys/class/sas_phy/*/sas_address"
-            },
+            CMD_CAT_SAS_PHY,
             "Failed to query local sas_address",
             "Failed to query local sas_address"
         );
@@ -40,11 +43,7 @@ public class SysClassUtils
 
         OutputData outputData = Commands.genericExecutor(
             extCmdFactoryRef.create().setSaveWithoutSharedLocks(true),
-            new String[] {
-                "/bin/bash",
-                "-c",
-                "cat /sys/class/sas_device/end_device-*/sas_address"
-            },
+            CMD_CAT_SAS_DEVICE,
             "Failed to query target sas_address",
             "Failed to query target sas_address"
         );

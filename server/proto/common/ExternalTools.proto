@@ -25,6 +25,8 @@ message ExternalToolsInfo
         UTIL_LINUX = 15;
         UDEVADM = 16;
         LSSCSI = 17;
+        SAS_PHY = 18;
+        SAS_DEVICE = 19;
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

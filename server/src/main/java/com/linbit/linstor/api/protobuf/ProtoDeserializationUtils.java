@@ -411,6 +411,12 @@ public class ProtoDeserializationUtils
             case LSSCSI:
                 tool = ExtTools.LSSCSI;
                 break;
+            case SAS_PHY:
+                tool = ExtTools.SAS_PHY;
+                break;
+            case SAS_DEVICE:
+                tool = ExtTools.SAS_DEVICE;
+                break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through
             default:

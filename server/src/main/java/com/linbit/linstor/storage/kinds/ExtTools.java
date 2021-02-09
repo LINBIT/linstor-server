@@ -15,5 +15,5 @@ public enum ExtTools
     SOCAT,
     UTIL_LINUX,
     UDEVADM,
-    LSSCSI
+    LSSCSI, SAS_PHY, SAS_DEVICE
 }

@@ -1317,6 +1317,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case LSSCSI:
                 ret = ExternalTools.LSSCSI;
                 break;
+            case SAS_DEVICE:
+                ret = ExternalTools.SAS_DEVICE;
+                break;
+            case SAS_PHY:
+                ret = ExternalTools.SAS_PHY;
+                break;
             default:
                 throw new RuntimeException("Not implemented.");
         }

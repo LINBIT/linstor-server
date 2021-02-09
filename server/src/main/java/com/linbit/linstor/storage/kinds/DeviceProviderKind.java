@@ -121,7 +121,7 @@ public enum DeviceProviderKind
         false,
         true,
         new ExosDriverKind(),
-        ExtTools.LSSCSI
+        ExtTools.LSSCSI, ExtTools.SAS_PHY, ExtTools.SAS_DEVICE
     ),
     OPENFLEX_TARGET(
         false,
