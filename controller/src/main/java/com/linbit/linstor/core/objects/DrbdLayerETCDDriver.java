@@ -88,6 +88,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
     private final DynamicNumberPool minorPool;
 
     private final StateFlagsPersistence<DrbdRscData<?>> rscFlagsDriver;
+    private final SingleColumnDatabaseDriver<DrbdRscData<?>, NodeId> rscNodeIdDriver;
     private final SingleColumnDatabaseDriver<DrbdVlmData<?>, StorPool> vlmExtStorPoolDriver;
     private final SingleColumnDatabaseDriver<DrbdRscDfnData<?>, String> rscDfnSecretDriver;
     private final SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TcpPortNumber> rscDfnTcpPortDriver;
@@ -119,6 +120,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
         minorPool = minorPoolRef;
 
         rscFlagsDriver = new RscFlagsDriver();
+        rscNodeIdDriver = new RscNodeIdDriver();
         vlmExtStorPoolDriver = new VlmExtStorPoolDriver();
         rscDfnSecretDriver = new RscDfnSecretDriver();
         rscDfnTcpPortDriver = new RscDfnTcpPortDriver();
@@ -275,7 +277,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                     String minorStr = get(allDrbdVlmDfnMap, LayerDrbdVolumeDefinitions.VLM_MINOR_NR, pks);
                     Integer minor = minorStr == null ? null : Integer.parseInt(minorStr);
 
-                    DrbdVlmDfnData<Resource> drbdVlmDfnData = new DrbdVlmDfnData<Resource>(
+                    DrbdVlmDfnData<Resource> drbdVlmDfnData = new DrbdVlmDfnData<>(
                         vlmDfn,
                         rscDfn.getName(),
                         null,
@@ -313,7 +315,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                                 rscName + "', '" + snapDfnStr + "', vlmNr: " + vlmNr
                         );
                     }
-                    DrbdVlmDfnData<Snapshot> drbdSnapVlmDfnData = new DrbdVlmDfnData<Snapshot>(
+                    DrbdVlmDfnData<Snapshot> drbdSnapVlmDfnData = new DrbdVlmDfnData<>(
                         snapVlmDfn.getVolumeDefinition(),
                         snapDfn.getResourceName(),
                         snapVlmDfn.getSnapshotName(),
@@ -538,7 +540,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
 
                 Map<VolumeNumber, DrbdVlmData<Resource>> vlmMap = new TreeMap<>();
 
-                DrbdRscData<Resource> drbdRscData = new DrbdRscData<Resource>(
+                DrbdRscData<Resource> drbdRscData = new DrbdRscData<>(
                     id,
                     rsc,
                     (AbsRscLayerObject<Resource>) absParent,
@@ -555,7 +557,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                     transObjFactory,
                     transMgrProvider
                 );
-                ret = new Pair<DrbdRscData<RSC>, Set<AbsRscLayerObject<RSC>>>(
+                ret = new Pair<>(
                     (DrbdRscData<RSC>) drbdRscData,
                     children
                 );
@@ -571,7 +573,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                 );
 
                 Map<VolumeNumber, DrbdVlmData<Snapshot>> vlmMap = new TreeMap<>();
-                DrbdRscData<Snapshot> drbdSnapData = new DrbdRscData<Snapshot>(
+                DrbdRscData<Snapshot> drbdSnapData = new DrbdRscData<>(
                     id,
                     snap,
                     (AbsRscLayerObject<Snapshot>) absParent,
@@ -588,7 +590,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                     transObjFactory,
                     transMgrProvider
                 );
-                ret = new Pair<DrbdRscData<RSC>, Set<AbsRscLayerObject<RSC>>>(
+                ret = new Pair<>(
                     (DrbdRscData<RSC>) drbdSnapData,
                     children
                 );
@@ -662,7 +664,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                     {
                         vlmMap.put(
                             vlmDfn.getVolumeNumber(),
-                            (DrbdVlmData<RSC>) new DrbdVlmData<Resource>(
+                            (DrbdVlmData<RSC>) new DrbdVlmData<>(
                                 vlm,
                                 (DrbdRscData<Resource>) rscData,
                                 drbdVlmDfnData,
@@ -694,7 +696,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                     {
                         vlmMap.put(
                             snapVlmDfn.getVolumeNumber(),
-                            (DrbdVlmData<RSC>) new DrbdVlmData<Snapshot>(
+                            (DrbdVlmData<RSC>) new DrbdVlmData<>(
                                 snapVlm,
                                 (DrbdRscData<Snapshot>) rscData,
                                 drbdSnapVlmDfnData,
@@ -766,6 +768,12 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
     public StateFlagsPersistence<DrbdRscData<?>> getRscStateFlagPersistence()
     {
         return rscFlagsDriver;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<DrbdRscData<?>, NodeId> getNodeIdDriver()
+    {
+        return rscNodeIdDriver;
     }
 
     @Override
@@ -957,7 +965,6 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
 
     private class RscFlagsDriver implements StateFlagsPersistence<DrbdRscData<?>>
     {
-
         @Override
         public void persist(DrbdRscData<?> drbdRscData, long flags) throws DatabaseException
         {
@@ -991,6 +998,25 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                 DatabaseLoader.handleAccessDeniedException(exc);
 
             }
+        }
+    }
+
+    private class RscNodeIdDriver implements SingleColumnDatabaseDriver<DrbdRscData<?>, NodeId>
+    {
+        @Override
+        public void update(DrbdRscData<?> drbdRscData, NodeId newNodeId) throws DatabaseException
+        {
+            String fromStr = Integer.toString(drbdRscData.getNodeId().value);
+            String toStr = Integer.toString(newNodeId.value);
+
+            errorReporter.logTrace(
+                "Updating DrbdRscData's node id from [%s] to [%s] %s",
+                fromStr,
+                toStr,
+                getId(drbdRscData)
+            );
+            getNamespace(drbdRscData)
+                .put(LayerDrbdResources.NODE_ID, toStr);
         }
     }
 

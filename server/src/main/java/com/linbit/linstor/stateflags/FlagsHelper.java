@@ -109,6 +109,17 @@ public class FlagsHelper
         return ret;
     }
 
+    @SafeVarargs
+    public static <E extends Enum<E> & Flags> long getBits(E... flags)
+    {
+        long bits = 0;
+        for (E flag : flags)
+        {
+            bits |= flag.getFlagValue();
+        }
+        return bits;
+    }
+
     private FlagsHelper()
     {
     }

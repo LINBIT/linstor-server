@@ -16,6 +16,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nonnull;
@@ -34,7 +35,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
 {
     // unmodifiable data, once initialized
     private final DrbdRscDfnData<RSC> drbdRscDfnData;
-    private final NodeId nodeId;
+    private final TransactionSimpleObject<DrbdRscData<?>, NodeId> nodeId;
     private final short peerSlots;
     private final int alStripes;
     private final long alStripeSize;
@@ -85,7 +86,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             transMgrProvider
         );
 
-        nodeId = nodeIdRef;
+        nodeId = transObjFactory.createTransactionSimpleObject(this, nodeIdRef, dbDriverRef.getNodeIdDriver());
         drbdDbDriver = dbDriverRef;
 
         flags = transObjFactory.createStateFlagsImpl(
@@ -139,7 +140,13 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     @Override
     public NodeId getNodeId()
     {
-        return nodeId;
+        return nodeId.get();
+    }
+
+    @Override
+    public void setNodeId(NodeId nodeIdRef) throws DatabaseException
+    {
+        nodeId.set(nodeIdRef);
     }
 
     // no setNodeId - unmodifiable after initialized
@@ -300,7 +307,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             getChildrenPojos(accCtx),
             getResourceNameSuffix(),
             drbdRscDfnData.getApiData(accCtx),
-            nodeId.value,
+            nodeId.get().value,
             peerSlots,
             alStripes,
             alStripeSize,

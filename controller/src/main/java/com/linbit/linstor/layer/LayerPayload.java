@@ -39,6 +39,7 @@ public class LayerPayload
         public Short peerSlots;
         public Integer alStripes;
         public Long alStripeSize;
+        public boolean needsNewNodeId = false;
     }
 
     public class DrbdRscDfnPayload

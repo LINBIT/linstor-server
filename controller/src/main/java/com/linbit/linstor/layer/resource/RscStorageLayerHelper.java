@@ -175,7 +175,6 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         throws AccessDeniedException, InvalidNameException
     {
         Set<StorPool> neededStorPools = new HashSet<>();
-        boolean resolveSpNeeded = false;
         for (StorageVlmPayload storageVlmPayload : payloadRef.storagePayload.values())
         {
             StorPool storPool = rsc.getNode().getStorPool(apiCtx, new StorPoolName(storageVlmPayload.storPoolName));
@@ -183,24 +182,18 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             {
                 neededStorPools.add(storPool);
             }
-            else
-            {
-                resolveSpNeeded = true;
-            }
         }
-        if (resolveSpNeeded)
+
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
+        StorPool resolvedStorPool = storPoolResolveHelper.resolveStorPool(
+            rsc,
+            vlmDfn,
+            ctrlRscLayerDataFactory.isDiskless(rsc) && !ctrlRscLayerDataFactory.isDiskAddRequested(rsc),
+            ctrlRscLayerDataFactory.isDiskRemoving(rsc)
+        ).extractApiCallRc(new ApiCallRcImpl());
+        if (resolvedStorPool != null)
         {
-            CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
-            StorPool resolvedStorPool = storPoolResolveHelper.resolveStorPool(
-                rsc,
-                vlmDfn,
-                ctrlRscLayerDataFactory.isDiskless(rsc) && !ctrlRscLayerDataFactory.isDiskAddRequested(rsc),
-                ctrlRscLayerDataFactory.isDiskRemoving(rsc)
-            ).extractApiCallRc(new ApiCallRcImpl());
-            if (resolvedStorPool != null)
-            {
-                neededStorPools.add(resolvedStorPool);
-            }
+            neededStorPools.add(resolvedStorPool);
         }
 
         return neededStorPools;

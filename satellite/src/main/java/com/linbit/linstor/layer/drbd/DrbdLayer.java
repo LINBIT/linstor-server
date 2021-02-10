@@ -1337,7 +1337,7 @@ public class DrbdLayer implements DeviceLayer
             .filter(otherRscData -> !otherRscData.equals(drbdRscData) &&
                 AccessUtils.execPrivileged(() -> DrbdLayerUtils.isDrbdResourceExpected(workerCtx, otherRscData)) &&
                 AccessUtils.execPrivileged(
-                    () -> !drbdRscData.getAbsResource().getStateFlags().isSet(workerCtx, Resource.Flags.INACTIVE)
+                    () -> !otherRscData.getAbsResource().getStateFlags().isSet(workerCtx, Resource.Flags.INACTIVE)
                 )
             )
             .collect(Collectors.toList());

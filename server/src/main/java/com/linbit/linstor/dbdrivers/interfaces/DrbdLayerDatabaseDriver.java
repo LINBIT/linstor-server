@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
@@ -19,6 +20,7 @@ public interface DrbdLayerDatabaseDriver
     void create(DrbdRscData<?> drbdRscData) throws DatabaseException;
     void delete(DrbdRscData<?> drbdRscData) throws DatabaseException;
     StateFlagsPersistence<DrbdRscData<?>> getRscStateFlagPersistence();
+    SingleColumnDatabaseDriver<DrbdRscData<?>, NodeId> getNodeIdDriver();
 
     // DrbdRscDfnData methods
     void persist(DrbdRscDfnData<?> drbdRscDfnData) throws DatabaseException;
@@ -36,4 +38,5 @@ public interface DrbdLayerDatabaseDriver
     // DrbdVlmDfnData
     void persist(DrbdVlmDfnData<?> drbdVlmDfnData) throws DatabaseException;
     void delete(DrbdVlmDfnData<?> drbdVlmDfnData) throws DatabaseException;
+
 }

@@ -234,7 +234,14 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         {
             vlmDataRef.setExists(true);
             vlmDataRef.setVolumeGroup(info.volumeGroup);
-            vlmDataRef.setDevicePath(info.path);
+            if (isAbsRscActive)
+            {
+                vlmDataRef.setDevicePath(info.path);
+            }
+            else
+            {
+                vlmDataRef.setDevicePath(null);
+            }
             vlmDataRef.setIdentifier(info.identifier);
             vlmDataRef.setAllocatedSize(info.size);
             vlmDataRef.setUsableSize(info.size);

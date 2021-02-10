@@ -237,7 +237,36 @@ public class RscDrbdLayerHelper extends
             payloadRef
         );
 
-        NodeId nodeId = null;
+        NodeId nodeId = getNodeId(rscRef, payloadRef, rscNameSuffixRef, layerListRef, drbdRscDfnData, null);
+
+        DrbdRscData<Resource> drbdRscData = layerDataFactory.createDrbdRscData(
+            layerRscIdPool.autoAllocate(),
+            rscRef,
+            rscNameSuffixRef,
+            parentObjectRef,
+            drbdRscDfnData,
+            nodeId,
+            null,
+            null,
+            null,
+            rscRef.getStateFlags().getFlagsBits(apiCtx)
+        );
+        drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
+        return drbdRscData;
+    }
+
+    private NodeId getNodeId(
+        Resource rscRef,
+        LayerPayload payloadRef,
+        String rscNameSuffixRef,
+        List<DeviceLayerKind> layerListRef,
+        DrbdRscDfnData<Resource> drbdRscDfnData,
+        NodeId oldNodeIdRef
+    )
+        throws AccessDeniedException, InvalidNameException, DatabaseException, ImplementationError,
+        ExhaustedPoolException, ValueOutOfRangeException
+    {
+        NodeId nodeId = oldNodeIdRef;
 
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
         boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
@@ -302,33 +331,33 @@ public class RscDrbdLayerHelper extends
         {
             nodeId = getNodeId(payloadRef.drbdRsc.nodeId, drbdRscDfnData);
         }
-
-        DrbdRscData<Resource> drbdRscData = layerDataFactory.createDrbdRscData(
-            layerRscIdPool.autoAllocate(),
-            rscRef,
-            rscNameSuffixRef,
-            parentObjectRef,
-            drbdRscDfnData,
-            nodeId,
-            null,
-            null,
-            null,
-            rscRef.getStateFlags().getFlagsBits(apiCtx)
-        );
-        drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
-        return drbdRscData;
+        return nodeId;
     }
 
     @Override
     protected void mergeRscData(DrbdRscData<Resource> drbdRscData, LayerPayload payloadRef)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InvalidNameException, ImplementationError,
+        ExhaustedPoolException, ValueOutOfRangeException
     {
+        Resource rsc = drbdRscData.getAbsResource();
+        StateFlags<Flags> rscFlags = rsc.getStateFlags();
         drbdRscData.getFlags().resetFlagsTo(
             apiCtx,
             DrbdRscFlags.restoreFlags(
-                drbdRscData.getAbsResource().getStateFlags().getFlagsBits(apiCtx)
+                rscFlags.getFlagsBits(apiCtx)
             )
         );
+
+        NodeId oldNodeId = drbdRscData.getNodeId();
+        NodeId newNodeId = getNodeId(
+            rsc,
+            payloadRef,
+            drbdRscData.getResourceNameSuffix(),
+            LayerRscUtils.getLayerStack(rsc, apiCtx),
+            drbdRscData.getRscDfnLayerObject(),
+            payloadRef.drbdRsc.needsNewNodeId ? null : oldNodeId
+        );
+        drbdRscData.setNodeId(newNodeId);
     }
 
     @Override

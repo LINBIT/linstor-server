@@ -179,6 +179,10 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
         " UPDATE " + TBL_LAYER_DRBD_RESOURCES +
         " SET " + FLAGS + " = ? " +
         " WHERE " + LAYER_RESOURCE_ID + " = ?";
+    private static final String UPDATE_RSC_NODE_ID =
+        " UPDATE " + TBL_LAYER_DRBD_RESOURCES +
+        " SET " + NODE_ID + " = ? " +
+        " WHERE " + LAYER_RESOURCE_ID + " = ?";
     private static final String UPDATE_VLM_EXT_STOR_POOL =
         " UPDATE " + TBL_LAYER_DRBD_VOLUMES +
         " SET " + NODE_NAME + " = ?, " +
@@ -218,6 +222,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
     private final RscFlagsDriver rscStatePersistence;
+    private final RscNodeIdDriver rscNodeIdDriver;
     private final VlmExtStorPoolDriver vlmExtStorPoolDriver;
     private final RscDfnSecretDriver rscDfnSecretDriver;
     private final RscDfnTcpPortDriver rscDfnTcpPortDriver;
@@ -251,6 +256,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
         minorPool = minorPoolRef;
 
         rscStatePersistence = new RscFlagsDriver();
+        rscNodeIdDriver = new RscNodeIdDriver();
         vlmExtStorPoolDriver = new VlmExtStorPoolDriver();
         rscDfnSecretDriver = new RscDfnSecretDriver();
         rscDfnTcpPortDriver = new RscDfnTcpPortDriver();
@@ -642,7 +648,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
                             transObjFactory,
                             transMgrProvider
                         );
-                        ret = new Pair<DrbdRscData<RSC>, Set<AbsRscLayerObject<RSC>>>(
+                        ret = new Pair<>(
                             (DrbdRscData<RSC>) drbdRscData,
                             children
                         );
@@ -658,7 +664,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
                         );
 
                         Map<VolumeNumber, DrbdVlmData<Snapshot>> vlmMap = new TreeMap<>();
-                        DrbdRscData<Snapshot> drbdSnapData = new DrbdRscData<Snapshot>(
+                        DrbdRscData<Snapshot> drbdSnapData = new DrbdRscData<>(
                             id,
                             snap,
                             (AbsRscLayerObject<Snapshot>) absParent,
@@ -675,7 +681,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
                             transObjFactory,
                             transMgrProvider
                         );
-                        ret = new Pair<DrbdRscData<RSC>, Set<AbsRscLayerObject<RSC>>>(
+                        ret = new Pair<>(
                             (DrbdRscData<RSC>) drbdSnapData,
                             children
                         );
@@ -745,7 +751,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
                         {
                             vlmMap.put(
                                 vlm.getVolumeDefinition().getVolumeNumber(),
-                                (DrbdVlmData<RSC>) new DrbdVlmData<Resource>(
+                                (DrbdVlmData<RSC>) new DrbdVlmData<>(
                                     vlm,
                                     (DrbdRscData<Resource>) rscData,
                                     drbdVlmDfnData,
@@ -778,7 +784,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
                         {
                             vlmMap.put(
                                 vlm.getVolumeNumber(),
-                                (DrbdVlmData<RSC>) new DrbdVlmData<Snapshot>(
+                                (DrbdVlmData<RSC>) new DrbdVlmData<>(
                                     vlm,
                                     (DrbdRscData<Snapshot>) rscData,
                                     drbdsnapVlmDfnData,
@@ -1070,6 +1076,12 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
     }
 
     @Override
+    public SingleColumnDatabaseDriver<DrbdRscData<?>, NodeId> getNodeIdDriver()
+    {
+        return rscNodeIdDriver;
+    }
+
+    @Override
     public SingleColumnDatabaseDriver<DrbdVlmData<?>, StorPool> getExtStorPoolDriver()
     {
         return vlmExtStorPoolDriver;
@@ -1178,6 +1190,41 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
             {
                 DatabaseLoader.handleAccessDeniedException(accDeniedExc);
             }
+        }
+    }
+
+    private class RscNodeIdDriver implements SingleColumnDatabaseDriver<DrbdRscData<?>, NodeId>
+    {
+
+        @Override
+        public void update(DrbdRscData<?> drbdRscData, NodeId newNodeId) throws DatabaseException
+        {
+            String fromStr = Integer.toString(drbdRscData.getNodeId().value);
+            String toStr = Integer.toString(newNodeId.value);
+
+            errorReporter.logTrace(
+                "Updating DrbdRscData's node id from [%s] to [%s] %s",
+                fromStr,
+                toStr,
+                getId(drbdRscData)
+            );
+            try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_RSC_NODE_ID))
+            {
+                stmt.setInt(1, newNodeId.value);
+                stmt.setLong(2, drbdRscData.getRscLayerId());
+
+                stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
+            errorReporter.logTrace(
+                "DrbdVlmData's external storage pool updated from [%s] to [%s] %s",
+                fromStr,
+                toStr,
+                getId(drbdRscData)
+            );
         }
     }
 

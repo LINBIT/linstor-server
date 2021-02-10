@@ -25,6 +25,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -44,12 +45,14 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -327,6 +330,12 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             );
         }
 
+        /*
+         * If any of the targeted storage pools is shared and already actively used by a shared resource,
+         * we must set the INACTIVE flag for the current rsc.
+         */
+        boolean needsDeactivate = false;
+
         // Resolve storage pool now so that nothing is committed if the storage pool configuration is invalid
         Iterator<Volume> vlmIter = rsc.iterateVolumes();
         while (vlmIter.hasNext())
@@ -334,9 +343,16 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             Volume vlm = vlmIter.next();
             VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
 
-            ctrlStorPoolResolveHelper.resolveStorPool(rsc, vlmDfn, removeDisk).extractApiCallRc(responses);
+            StorPool sp = ctrlStorPoolResolveHelper
+                .resolveStorPool(rsc, vlmDfn, removeDisk)
+                .extractApiCallRc(responses);
+            if (isSharedSpAlreadyUsed(rsc, sp))
+            {
+                needsDeactivate = true;
+            }
         }
 
+        LayerPayload payload = new LayerPayload();
         if (removeDisk)
         {
             // diskful -> diskless
@@ -345,6 +361,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             // before we can update the layerData we first have to remove the actual disk.
             // that means we can only update the storage layer if the deviceManager already got rid
             // of the actual volume(s)
+
+            if (isSharedSourceStorPool(rsc))
+            {
+                payload.drbdRsc.needsNewNodeId = true;
+            }
         }
         else
         {
@@ -363,8 +384,27 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
                 ctrlRscDeleteApiHelper.ensureNotInUse(migrateFromRsc);
             }
-            ctrlLayerStackHelper.ensureStackDataExists(rsc, null, new LayerPayload());
+
+            // List<DeviceLayerKind> layerList = null;
+            if (needsDeactivate)
+            {
+                responses.addEntries(
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.WARN_RSC_DEACTIVATED,
+                        "Resource got deactivated as target shared storage pool is already used by a shared resource"
+                        )
+                    );
+                setFlags(rsc, Resource.Flags.INACTIVE);
+
+                /*
+                 * We also have to remove the currently diskless DrbdRscData and free up the node-id as now we must
+                 * use the shared resource's node-id
+                 */
+                // layerList = removeLayerData(rsc);
+            }
+            // rebuilds the layerdata in case we just removed it..
         }
+        ctrlLayerStackHelper.ensureStackDataExists(rsc, null, payload);
 
         ctrlTransactionHelper.commit();
 
@@ -378,6 +418,70 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, context));
+    }
+
+    private List<DeviceLayerKind> removeLayerData(Resource rscRef)
+    {
+        List<DeviceLayerKind> layerList;
+        try
+        {
+            layerList = LayerRscUtils.getLayerStack(rscRef, apiCtx);
+            AbsRscLayerObject<Resource> layerData = rscRef.getLayerData(apiCtx);
+            Collection<? extends VlmProviderObject<Resource>> vlmDataCollection = layerData.getVlmLayerObjects()
+                .values();
+            for (VlmProviderObject<Resource> vlmData : vlmDataCollection)
+            {
+                layerData.remove(apiCtx, vlmData.getVlmNr());
+            }
+            layerData.delete();
+            rscRef.setLayerData(apiCtx, null);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        return layerList;
+    }
+
+    private boolean isSharedSpAlreadyUsed(Resource rscRef, StorPool sp)
+    {
+        boolean sharedSPAlreadyInUse = false;
+        try
+        {
+            if (sp.isShared())
+            {
+                SharedStorPoolName sharedStorPoolName = sp.getSharedStorPoolName();
+                ResourceDefinition rscDfn = rscRef.getDefinition();
+                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+                while (rscIt.hasNext())
+                {
+                    Resource otherRsc = rscIt.next();
+                    if (otherRsc.equals(rscRef))
+                    {
+                        continue;
+                    }
+
+                    Set<StorPool> otherStorPools = LayerVlmUtils.getStorPools(otherRsc, apiCtx);
+                    for (StorPool otherStorPool : otherStorPools)
+                    {
+                        if (otherStorPool.getSharedStorPoolName().equals(sharedStorPoolName))
+                        {
+                            sharedSPAlreadyInUse = true;
+                        }
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        return sharedSPAlreadyInUse;
     }
 
     private Set<AbsRscLayerObject<Resource>> getResourceLayerDataPriveleged(Resource rsc, DeviceLayerKind kind)
@@ -605,6 +709,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ).getFlux();
 
         ctrlLayerStackHelper.resetStoragePools(rsc);
+        ctrlLayerStackHelper.ensureStackDataExists(rsc, null, new LayerPayload());
 
         ctrlTransactionHelper.commit();
 
@@ -639,6 +744,28 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 )))
             .concatWith(migrationFlux)
             .concatWith(autoFlux);
+    }
+
+    private boolean isSharedSourceStorPool(Resource rsc)
+    {
+        boolean ret = false;
+        try
+        {
+            Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, apiCtx);
+            for (StorPool sp : storPools)
+            {
+                if (isSharedSpAlreadyUsed(rsc, sp))
+                {
+                    ret = true;
+                    break;
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
     }
 
     private Publisher<ApiCallRc> waitForMigration(
@@ -853,6 +980,26 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 "set migration source for " + getRscDescription(rsc),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
+        }
+    }
+
+    private void setFlags(Resource rsc, Resource.Flags... flags)
+    {
+        try
+        {
+            rsc.getStateFlags().enableFlags(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "setting flags " + FlagsHelper.toStringList(Resource.Flags.class, FlagsHelper.getBits(flags)),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
         }
     }
 

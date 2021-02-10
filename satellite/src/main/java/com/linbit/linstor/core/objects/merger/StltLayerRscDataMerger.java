@@ -190,6 +190,17 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             apiCtx,
             DrbdRscFlags.restoreFlags(drbdRscPojoRef.getFlags())
         );
+        if (drbdRscPojoRef.getNodeId() != drbdRscDataRef.getNodeId().value)
+        {
+            try
+            {
+                drbdRscDataRef.setNodeId(new NodeId(drbdRscPojoRef.getNodeId()));
+            }
+            catch (DatabaseException | ValueOutOfRangeException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
         updateParent(drbdRscDataRef, parentRef);
         drbdRscDataRef.setSuspendIo(drbdRscPojoRef.getSuspend());
     }

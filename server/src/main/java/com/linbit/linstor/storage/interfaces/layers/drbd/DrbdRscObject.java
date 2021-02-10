@@ -2,6 +2,7 @@ package com.linbit.linstor.storage.interfaces.layers.drbd;
 
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.types.NodeId;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -15,6 +16,8 @@ public interface DrbdRscObject<RSC extends AbsResource<RSC>>
     extends AbsRscLayerObject<RSC>
 {
     NodeId getNodeId();
+
+    void setNodeId(NodeId nodeIdRef) throws DatabaseException;
 
     boolean isDiskless(AccessContext accCtx) throws AccessDeniedException;
 

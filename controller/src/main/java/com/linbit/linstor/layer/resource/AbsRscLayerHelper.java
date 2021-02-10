@@ -442,7 +442,8 @@ public abstract class AbsRscLayerHelper<
         RSC_LO rscDataRef,
         LayerPayload payload
     )
-        throws AccessDeniedException, DatabaseException;
+        throws AccessDeniedException, DatabaseException, InvalidNameException, ImplementationError,
+        ExhaustedPoolException, ValueOutOfRangeException;
 
 
     protected abstract RSC_DFN_LO createRscDfnData(
