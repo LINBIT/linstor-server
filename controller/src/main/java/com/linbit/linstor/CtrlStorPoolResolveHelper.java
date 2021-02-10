@@ -1,7 +1,6 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
-import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -11,7 +10,6 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -187,27 +185,22 @@ public class CtrlStorPoolResolveHelper
         throws AccessDeniedException
     {
         ArrayList<StorPoolName> storpools = new ArrayList<>();
-        try
+        for (Resource peerRsc : rsc.getDefinition().streamResource(apiCtx).collect(Collectors.toList()))
         {
-            final VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(0));
-            for (Resource peerRsc : rsc.getDefinition().streamResource(apiCtx).collect(Collectors.toList()))
+            if (!peerRsc.isDiskless(apiCtx) && !peerRsc.getNode().getName().equals(rsc.getNode().getName()))
             {
-                if (!peerRsc.isDiskless(apiCtx) && !peerRsc.getNode().getName().equals(rsc.getNode().getName()))
+                for (Volume peerVlm : peerRsc.streamVolumes().collect(Collectors.toList()))
                 {
-                    Volume peerVlm = peerRsc.getVolume(vlmDfn.getVolumeNumber());
-                    if (peerVlm != null)
+                    for (StorPool peerStorPool : LayerVlmUtils.getStorPoolSet(peerVlm, apiCtx, false))
                     {
-                        for (StorPool peerStorPool : LayerVlmUtils.getStorPoolSet(peerVlm, apiCtx, false))
+                        if (peerStorPool.getDeviceProviderKind().hasBackingDevice())
                         {
-                            if (peerStorPool.getDeviceProviderKind().hasBackingDevice())
-                            {
-                                storpools.add(peerStorPool.getName());
-                            }
+                            storpools.add(peerStorPool.getName());
                         }
                     }
                 }
             }
-        } catch (ValueOutOfRangeException ignored) {}
+        }
 
         storpools.add(LinstorParsingUtils.asStorPoolName(InternalApiConsts.DEFAULT_STOR_POOL_NAME));
 
