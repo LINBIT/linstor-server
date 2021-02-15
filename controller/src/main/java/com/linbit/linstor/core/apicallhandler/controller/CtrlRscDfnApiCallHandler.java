@@ -110,6 +110,7 @@ public class CtrlRscDfnApiCallHandler
     private final AutoSnapshotTask autoSnapshotTask;
     private final AutoDiskfulTask autoDiskfulTask;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
+    private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -135,7 +136,8 @@ public class CtrlRscDfnApiCallHandler
         EncryptionHelper encHelperRef,
         AutoSnapshotTask autoSnapshotTaskRef,
         AutoDiskfulTask autoDiskfulTaskRef,
-        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
+        CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -161,6 +163,7 @@ public class CtrlRscDfnApiCallHandler
         autoSnapshotTask = autoSnapshotTaskRef;
         autoDiskfulTask = autoDiskfulTaskRef;
         ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
+        ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
     }
 
     public ResourceDefinition createResourceDefinition(
@@ -430,7 +433,9 @@ public class CtrlRscDfnApiCallHandler
                     deletePropNamespaces
                 ) || notifyStlts;
 
-                autoFlux = handleChangedProperties(rscDfn, overrideProps, deletePropKeys, deletePropNamespaces);
+                autoFlux = autoFlux.concatWith(
+                    handleChangedProperties(rscDfn, overrideProps, deletePropKeys, deletePropNamespaces)
+                );
 
             }
 
@@ -456,6 +461,20 @@ public class CtrlRscDfnApiCallHandler
                 !rscDfn.getResourceGroup().getName().getName().equalsIgnoreCase(rscGroupName))
             {
                 ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGroupName, true);
+
+                int curRscCount = rscDfn.getResourceCount();
+                int newReplCount = getReplicaCount(rscGrp);
+
+                if (curRscCount < newReplCount)
+                {
+                    autoFlux = autoFlux.concatWith(
+                        ctrlRscAutoPlaceApiCallHandler.autoPlace(
+                            rscDfn.getName().displayValue,
+                            rscGrp.getAutoPlaceConfig().getApiData()
+                        )
+                    );
+                }
+
                 rscDfn.setResourceGroup(peerAccCtx.get(), rscGrp);
                 notifyStlts = true;
             }
@@ -466,10 +485,11 @@ public class CtrlRscDfnApiCallHandler
                 rscDfn.getUuid(), getRscDfnDescriptionInline(rscDfn)));
 
             if (notifyStlts) {
-                flux = ctrlSatelliteUpdateCaller
-                    .updateSatellites(rscDfn, Flux.empty())
-                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
-                    .concatWith(autoFlux);
+                flux = flux.concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+                        .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                        .concatWith(autoFlux)
+                );
             }
         }
         catch (Exception | ImplementationError exc)
@@ -478,6 +498,18 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
+    }
+
+    private int getReplicaCount(ResourceGroup rscGrp)
+    {
+        try
+        {
+            return rscGrp.getAutoPlaceConfig().getReplicaCount(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private Flux<ApiCallRc> handleChangedProperties(
