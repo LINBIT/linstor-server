@@ -694,11 +694,21 @@ public class DrbdLayer implements DeviceLayer
                     );
                     drbdRscData.setAdjustRequired(false);
 
+                    boolean isDiskless = drbdRscData.getAbsResource().isDrbdDiskless(workerCtx);
                     // set device paths
                     for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                     {
-                        drbdVlmData.setDevicePath(generateDevicePath(drbdVlmData));
-                        drbdVlmData.setSizeState(Size.AS_EXPECTED);
+                        StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
+                        if (isDiskless && vlmFlags.isSet(workerCtx, Volume.Flags.DELETE))
+                        {
+                            // `drbdadm adjust` just deleted that volume or an exception was thrown.
+                            drbdVlmData.setExists(false);
+                        }
+                        else
+                        {
+                            drbdVlmData.setDevicePath(generateDevicePath(drbdVlmData));
+                            drbdVlmData.setSizeState(Size.AS_EXPECTED);
+                        }
                     }
                     condInitialOrSkipSync(drbdRscData);
                 }
