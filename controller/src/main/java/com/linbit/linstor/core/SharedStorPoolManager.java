@@ -20,10 +20,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
@@ -279,7 +281,7 @@ public class SharedStorPoolManager
 
                         for (Node currentNode : nextNodesToCheck)
                         {
-                            Set<SharedStorPoolName> requiredLocks = getSharedSpNames(currentNode);
+                            Set<SharedStorPoolName> requiredLocks = getRequestedLocks(currentNode);
 
                             boolean granted = true;
                             for (SharedStorPoolName lock : requiredLocks)
@@ -325,6 +327,22 @@ public class SharedStorPoolManager
                             }
                         }
                     }
+                }
+            }
+        }
+        return ret;
+    }
+
+    private Set<SharedStorPoolName> getRequestedLocks(Node currentNodeRef)
+    {
+        Set<SharedStorPoolName> ret = new HashSet<>();
+        synchronized (queueByLock)
+        {
+            for (Entry<SharedStorPoolName, LinkedHashSet<Node>> entry : queueByLock.entrySet())
+            {
+                if (entry.getValue().contains(currentNodeRef))
+                {
+                    ret.add(entry.getKey());
                 }
             }
         }

@@ -735,6 +735,74 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertInactiveExcept(allStorPools);
     }
 
+    /*
+     * This testcase recreates a bug where the second node requested 1 shared lock but received 2.
+     */
+    @Test
+    public void multipleSharedPoolsTest() throws Exception
+    {
+        StorPool sp11 = storPoolTestFactory.builder("node1", "sp1")
+            .setFreeSpaceMgrName("shared1")
+            .build();
+        StorPool sp21 = storPoolTestFactory.builder("node2", "sp1")
+            .setFreeSpaceMgrName("shared1")
+            .build();
+        StorPool sp12 = storPoolTestFactory.builder("node1", "sp2")
+            .setFreeSpaceMgrName("shared2")
+            .build();
+        StorPool sp22 = storPoolTestFactory.builder("node2", "sp2")
+            .setFreeSpaceMgrName("shared2")
+            .build();
+
+        Resource rsc11 = volumeTestFactory.builder("node1", "rsc1")
+            .setStorPoolData(sp11)
+            .build().getAbsResource();
+        Resource rsc12 = volumeTestFactory.builder("node1", "rsc2")
+            .setStorPoolData(sp11)
+            .build().getAbsResource();
+        Resource rsc21 = volumeTestFactory.builder("node2", "rsc1")
+            .setStorPoolData(sp21)
+            .build().getAbsResource();
+        Resource rsc22 = volumeTestFactory.builder("node2", "rsc2")
+            .setStorPoolData(sp22)
+            .build().getAbsResource();
+
+        Node node1 = sp11.getNode();
+        Node node2 = sp21.getNode();
+
+        SharedStorPoolName sharedName1 = sp11.getSharedStorPoolName();
+        SharedStorPoolName sharedName2 = sp12.getSharedStorPoolName();
+
+        List<StorPool> allStorPools = java.util.Arrays.asList(sp11, sp12, sp21, sp22);
+        assertInactiveExcept(allStorPools);
+
+        // rsc11 can start
+        assertTrue(sharedStorPoolMgr.requestSharedLocks(node1, Arrays.asList(sharedName1)));
+        assertInactiveExcept(allStorPools, sp11);
+
+        // rsc11 finished, nothing to start
+        assertNextNodes(sharedStorPoolMgr.releaseLocks(node1));
+        assertInactiveExcept(allStorPools);
+
+        // rsc11 needs to be run again
+        assertTrue(sharedStorPoolMgr.requestSharedLocks(node1, Arrays.asList(sharedName1)));
+        assertInactiveExcept(allStorPools, sp11);
+
+        // rsc21 starts, but is blocked
+        assertFalse(sharedStorPoolMgr.requestSharedLocks(node2, Arrays.asList(sharedName1)));
+        assertInactiveExcept(allStorPools, sp11);
+
+        // rsc11 finishes, rsc21 can start
+        assertNextNodes(
+            sharedStorPoolMgr.releaseLocks(node1),
+            new ExpectedPair(
+                node2,
+                sharedName1 // bug: node2 receives also sharedName2 lock, which was never requested
+            )
+        );
+        assertInactiveExcept(allStorPools, sp21);
+    }
+
     private void assertInactiveExcept(List<StorPool> allSps, StorPool... activeSps)
     {
         List<StorPool> activeSpList = Arrays.asList(activeSps);
