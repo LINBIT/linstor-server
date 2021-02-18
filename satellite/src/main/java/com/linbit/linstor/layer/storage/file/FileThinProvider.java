@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.file;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -25,6 +26,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.nio.file.Path;
 
 @Singleton
@@ -41,7 +43,8 @@ public class FileThinProvider extends FileProvider
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -56,7 +59,8 @@ public class FileThinProvider extends FileProvider
             DeviceProviderKind.FILE_THIN,
             snapShipMrgRef,
             extToolsCheckerRef,
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
     }
 

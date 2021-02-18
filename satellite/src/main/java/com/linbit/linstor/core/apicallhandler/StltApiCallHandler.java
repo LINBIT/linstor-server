@@ -295,7 +295,10 @@ public class StltApiCallHandler
         Set<SnapshotPojo> snapshots,
         Set<ExternalFilePojo> extFilesRef,
         long fullSyncId,
-        byte[] cryptKey
+        byte[] cryptKey,
+        byte[] cryptHash,
+        byte[] cryptSalt,
+        byte[] encCryptKey
     )
     {
         boolean success = false;
@@ -408,7 +411,7 @@ public class StltApiCallHandler
 
                 if (cryptKey != null && cryptKey.length > 0)
                 {
-                    stltSecObj.setCryptKey(cryptKey);
+                    stltSecObj.setCryptKey(cryptKey, cryptHash, cryptSalt, encCryptKey);
 
                     vlmDfnHandler.decryptAllNewLuksVlmKeys(true);
                 }
@@ -648,9 +651,10 @@ public class StltApiCallHandler
         applyChangedData(new ApplyExternalFile(extFilePojoRef, true));
 
     }
-    public void setCryptKey(byte[] key, long fullSyncId, long updateId)
+
+    public void setCryptKey(byte[] key, byte[] hash, byte[] salt, byte[] encKey, long fullSyncId, long updateId)
     {
-        applyChangedData(new ApplyCryptKey(key, fullSyncId, updateId));
+        applyChangedData(new ApplyCryptKey(key, hash, salt, encKey, fullSyncId, updateId));
     }
 
     private void applyChangedData(ApplyData data)
@@ -1345,12 +1349,25 @@ public class StltApiCallHandler
     private class ApplyCryptKey implements ApplyData
     {
         private final byte[] cryptKey;
+        private final byte[] hash;
+        private final byte[] salt;
+        private final byte[] encKey;
         private final long fullSyncId;
         private final long updateId;
 
-        ApplyCryptKey(byte[] cryptKeyRef, long fullSyncIdRef, long updateIdRef)
+        ApplyCryptKey(
+            byte[] cryptKeyRef,
+            byte[] hashRef,
+            byte[] saltRef,
+            byte[] encKeyRef,
+            long fullSyncIdRef,
+            long updateIdRef
+        )
         {
             cryptKey = cryptKeyRef;
+            hash = hashRef;
+            salt = saltRef;
+            encKey = encKeyRef;
             fullSyncId = fullSyncIdRef;
             updateId = updateIdRef;
         }
@@ -1378,7 +1395,7 @@ public class StltApiCallHandler
                 )
             )
             {
-                stltSecObj.setCryptKey(cryptKey);
+                stltSecObj.setCryptKey(cryptKey, hash, salt, encKey);
 
                 vlmDfnHandler.decryptAllNewLuksVlmKeys(true);
             }

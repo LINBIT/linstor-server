@@ -6,6 +6,9 @@ package com.linbit.linstor.proto.javainternal.c2s;
 message MsgIntCryptKey
 {
     bytes  crypt_key = 1;
+    bytes  crypt_hash = 4;
+    bytes  crypt_salt = 5;
+    bytes  enc_crypt_key = 6;
     sint64 full_sync_id = 2;
     sint64 update_id = 3;
 }

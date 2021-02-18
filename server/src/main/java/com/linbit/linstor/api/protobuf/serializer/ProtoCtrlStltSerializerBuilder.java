@@ -64,10 +64,11 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyNodeSuccessOuterClas
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippedOuterClass.MsgIntBackupShipped;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntCloneUpdateOuterClass.MsgIntCloneUpdate;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntSnapshotShippedOuterClass.MsgIntSnapshotShipped;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntCloneUpdateOuterClass.MsgIntCloneUpdate;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateLocalNodeChangeOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass;
@@ -746,6 +747,28 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setRscName(rscName)
                 .setVlmNr(vlmNr)
                 .setSuccess(successRef)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder notifyBackupShipped(
+        Snapshot snapRef,
+        boolean success
+    )
+    {
+        try
+        {
+            MsgIntBackupShipped.newBuilder()
+                .setRscName(snapRef.getResourceName().displayValue)
+                .setSnapName(snapRef.getSnapshotName().displayValue)
+                .setSuccess(success)
                 .build()
                 .writeDelimitedTo(baos);
         }

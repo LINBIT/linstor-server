@@ -31,7 +31,10 @@ public class ApiCallRcImpl implements ApiCallRc
 
     public void addEntry(RcEntry entry)
     {
-        entries.add(entry);
+        if (entry != null)
+        {
+            entries.add(entry);
+        }
     }
 
     public void addEntry(String message, long returnCode)

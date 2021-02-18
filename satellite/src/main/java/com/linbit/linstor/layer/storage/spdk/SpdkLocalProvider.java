@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.spdk;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -33,7 +34,8 @@ public class SpdkLocalProvider extends AbsSpdkProvider<OutputData>
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -49,7 +51,8 @@ public class SpdkLocalProvider extends AbsSpdkProvider<OutputData>
             snapShipMrgRef,
             extToolsCheckerRef,
             new SpdkLocalCommands(extCmdFactory),
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
     }
 }

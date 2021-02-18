@@ -22,32 +22,46 @@ public class DaemonHandler
     private OutputProxy outProxy;
 
     private final BlockingDeque<Event> deque;
+    private boolean stdOut;
 
     public DaemonHandler(final BlockingDeque<Event> dequeRef, final String... command)
     {
         deque = dequeRef;
         processBuilder = new ProcessBuilder(command);
         processBuilder.redirectError(Redirect.PIPE);
+        stdOut = true;
     }
 
-    public void start() throws IOException
+    public void setStdOutListener(boolean stdOutRef)
+    {
+        stdOut = stdOutRef;
+    }
+
+    public Process start() throws IOException
     {
         stop(true);
 
         process = processBuilder.start();
-        outProxy = new OutputProxy(process.getInputStream(), deque, DELIMITER, true);
         errProxy = new OutputProxy(process.getErrorStream(), deque, DELIMITER, false);
-        outThread = new Thread(outProxy);
         errThread = new Thread(errProxy);
-        outThread.start();
+        if (stdOut)
+        {
+            outProxy = new OutputProxy(process.getInputStream(), deque, DELIMITER, true);
+            outThread = new Thread(outProxy);
+            outThread.start();
+        }
         errThread.start();
+        return process;
     }
 
     public void stop(boolean force)
     {
         if (process != null)
         {
-            outProxy.expectShutdown();
+            if (outProxy != null)
+            {
+                outProxy.expectShutdown();
+            }
             errProxy.expectShutdown();
             if (force)
             {
@@ -57,7 +71,10 @@ public class DaemonHandler
             {
                 process.destroy();
             }
-            outThread.interrupt();
+            if (outThread != null)
+            {
+                outThread.interrupt();
+            }
             errThread.interrupt();
             process = null;
         }

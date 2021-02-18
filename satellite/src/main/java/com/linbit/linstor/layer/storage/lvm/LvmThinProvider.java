@@ -2,9 +2,9 @@ package com.linbit.linstor.layer.storage.lvm;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -20,7 +20,6 @@ import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -34,6 +33,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -52,7 +52,8 @@ public class LvmThinProvider extends LvmProvider
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -67,7 +68,8 @@ public class LvmThinProvider extends LvmProvider
             DeviceProviderKind.LVM_THIN,
             snapShipMrgRef,
             extToolsCheckerRef,
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
     }
 

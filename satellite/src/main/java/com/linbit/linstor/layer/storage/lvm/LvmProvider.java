@@ -2,11 +2,11 @@ package com.linbit.linstor.layer.storage.lvm;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -85,7 +85,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         DeviceProviderKind subTypeKind,
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -100,7 +101,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             subTypeKind,
             snapShipMrgRef,
             extToolsCheckerRef,
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
     }
 
@@ -115,7 +117,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -130,7 +133,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             DeviceProviderKind.LVM,
             snapShipMrgRef,
             extToolsCheckerRef,
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
     }
 

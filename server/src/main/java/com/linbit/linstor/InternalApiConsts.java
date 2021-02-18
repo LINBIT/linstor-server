@@ -116,6 +116,12 @@ public class InternalApiConsts
     public static final String EXOS_LUN = "Lun";
     public static final String EXOS_PORT = "Port";
 
+    /*
+     * Backup shipping
+     */
+    public static final String API_NOTIFY_BACKUP_SHIPPING_RECEIVED = "BackupShippingReceived";
+    public static final String KEY_LAST_FULL_BACKUP_TIMESTAMP = "LastFullBackupTimestamp";
+
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;
 

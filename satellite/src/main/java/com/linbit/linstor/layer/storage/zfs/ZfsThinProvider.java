@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -31,6 +32,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -48,7 +50,8 @@ public class ZfsThinProvider extends ZfsProvider
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -63,7 +66,8 @@ public class ZfsThinProvider extends ZfsProvider
             DeviceProviderKind.ZFS_THIN,
             snapShipMrgRef,
             extToolsCheckerRef,
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
     }
 

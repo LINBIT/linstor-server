@@ -67,6 +67,9 @@ subprojects {
             implementation group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
             implementation group: 'com.h2database', name: 'h2', version: '1.4.197'
 
+            implementation platform('com.amazonaws:aws-java-sdk-bom:1.11.932')
+            implementation 'com.amazonaws:aws-java-sdk-s3'
+
             // toml parsing library
             implementation group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
 

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+// Internal message that a backup was shipped
+message MsgIntBackupShipped
+{
+    string rsc_name = 1;
+    string snap_name = 2;
+    bool success = 3;
+}

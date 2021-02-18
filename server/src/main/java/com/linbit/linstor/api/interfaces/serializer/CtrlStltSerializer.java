@@ -124,6 +124,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             int vlmNr,
             boolean successRef
         );
+        CtrlStltSerializerBuilder notifyBackupShipped(Snapshot snap, boolean successRef);
 
         CtrlStltSerializerBuilder requestControllerUpdate();
         CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);

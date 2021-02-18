@@ -16,6 +16,7 @@ import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.StltConfig;
@@ -108,9 +109,12 @@ public final class Satellite
     private final SnapshotShippingService snapShipSvc;
     private final CloneService cloneService;
 
+    private BackupShippingService backShipSvc;
+
     private final SatelliteNetComInitializer satelliteNetComInitializer;
     private final StltCoreObjProtInitializer stltCoreObjProtInitializer;
     private final StltConfig stltCfg;
+
 
 
     @Inject
@@ -129,6 +133,7 @@ public final class Satellite
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
         SnapshotShippingService snapShipSvcRef,
+        BackupShippingService backShipSvcRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
         StltCoreObjProtInitializer stltCoreObjProtInitializerRef,
         StltConfig stltCfgRef,
@@ -147,6 +152,7 @@ public final class Satellite
         fsWatchSvc = fsWatchSvcRef;
         drbdEventSvc = drbdEventSvcRef;
         snapShipSvc = snapShipSvcRef;
+        backShipSvc = backShipSvcRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
         stltCoreObjProtInitializer = stltCoreObjProtInitializerRef;
         stltCfg = stltCfgRef;
@@ -228,6 +234,7 @@ public final class Satellite
                 startOrderlist.add(new ServiceStarter(drbdEventPublisher));
             }
             startOrderlist.add(new ServiceStarter(snapShipSvc));
+            startOrderlist.add(new ServiceStarter(backShipSvc));
             startOrderlist.add(new ServiceStarter(devMgrService));
             startOrderlist.add(new ServiceStarter(cloneService));
             startOrderlist.add(stltCoreObjProtInitializer);

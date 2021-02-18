@@ -336,7 +336,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         SHIPPING_SOURCE_DONE(SHIPPING_SOURCE.flagValue | 1L << 3),
         SHIPPING_TARGET(1L << 4),
         SHIPPING_TARGET_CLEANING_UP(SHIPPING_TARGET.flagValue | 1L << 5),
-        SHIPPING_TARGET_DONE(SHIPPING_TARGET.flagValue | 1L << 6);
+        SHIPPING_TARGET_DONE(SHIPPING_TARGET.flagValue | 1L << 6),
+        BACKUP_SOURCE(1L << 7);
 
         public final long flagValue;
 

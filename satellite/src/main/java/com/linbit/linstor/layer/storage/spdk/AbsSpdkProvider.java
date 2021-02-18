@@ -7,6 +7,7 @@ import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -45,6 +46,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import javax.inject.Provider;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -79,7 +81,8 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
         SpdkCommands<T> spdkCommandsRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -94,7 +97,8 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
             subTypeKind,
             snapShipMrgRef,
             extToolsCheckerRef,
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
         spdkCommands = spdkCommandsRef;
         isDevPathExpectedToBeNull = true;

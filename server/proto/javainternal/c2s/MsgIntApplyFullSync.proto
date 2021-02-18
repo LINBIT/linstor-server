@@ -31,4 +31,8 @@ message MsgIntApplyFullSync
 
     // External files (all of them, not just the one needed by the satellite)
     repeated IntExternalFile external_files = 8;
+
+    bytes                    crypt_hash = 9;
+    bytes                    crypt_salt = 10;
+    bytes                    enc_crypt_key = 11;
 }

@@ -13,6 +13,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -65,6 +66,7 @@ import com.linbit.utils.Pair;
 
 import javax.annotation.Nonnull;
 import javax.inject.Provider;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -96,6 +98,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private final SnapshotShippingService snapShipMgr;
     protected final CloneService cloneService;
     protected final StltExtToolsChecker extToolsChecker;
+    private BackupShippingService backupShipMgr;
 
     protected final HashMap<String, INFO> infoListCache;
     protected final List<Consumer<Map<String, Long>>> postRunVolumeNotifications = new ArrayList<>();
@@ -120,7 +123,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         DeviceProviderKind kindRef,
         SnapshotShippingService snapShipMgrRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -135,6 +139,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         snapShipMgr = snapShipMgrRef;
         extToolsChecker = extToolsCheckerRef;
         cloneService = cloneServiceRef;
+        backupShipMgr = backupShipMgrRef;
 
         infoListCache = new HashMap<>();
         try
@@ -748,6 +753,21 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         }
                         startReceiving(vlmData, snapVlm);
                     }
+                    if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE))
+                    {
+                        if (waitForSnapshotDevice())
+                        {
+                            StorPool storPool = vlmData.getStorPool();
+                            long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
+
+                            String snapId = asSnapLvIdentifier(snapVlm);
+                            String storageName = getStorageName(vlmData);
+                            String devicePath = getDevicePath(storageName, snapId);
+
+                            waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
+                        }
+                        startBackupShipping(snapVlm);
+                    }
                 }
                 else
                 {
@@ -873,6 +893,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             targetNetIf,
             socatPort,
             curSnapVlmData
+        );
+    }
+
+    protected void startBackupShipping(LAYER_SNAP_DATA snapVlmData) throws StorageException, AccessDeniedException
+    {
+        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
+        backupShipMgr.sendBackup(
+            snapVlm.getSnapshotName().displayValue,
+            snapVlm.getResourceName().displayValue,
+            snapVlmData.getRscLayerObject().getResourceNameSuffix(),
+            snapVlm.getVolumeNumber().value,
+            getSnapshotShippingSendingCommandImpl(null, snapVlmData),
+            snapVlmData
         );
     }
 

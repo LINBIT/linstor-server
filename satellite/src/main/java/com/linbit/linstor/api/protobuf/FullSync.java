@@ -110,7 +110,10 @@ public class FullSync implements ApiCall
             snapshots,
             extFiles,
             applyFullSync.getFullSyncTimestamp(),
-            Base64.decode(applyFullSync.getMasterKey())
+            Base64.decode(applyFullSync.getMasterKey()),
+            applyFullSync.getCryptHash().toByteArray(),
+            applyFullSync.getCryptSalt().toByteArray(),
+            applyFullSync.getEncCryptKey().toByteArray()
         );
 
         MsgIntFullSyncResponse.Builder builder = MsgIntFullSyncResponse.newBuilder();

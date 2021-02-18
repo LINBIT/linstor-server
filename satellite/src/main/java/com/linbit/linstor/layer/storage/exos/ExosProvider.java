@@ -6,6 +6,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -61,6 +62,7 @@ import com.linbit.utils.Triple;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -122,7 +124,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -137,7 +140,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             DeviceProviderKind.EXOS,
             snapShipMrgRef,
             extToolsCheckerRef,
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
         restClientMap = new HashMap<>();
 

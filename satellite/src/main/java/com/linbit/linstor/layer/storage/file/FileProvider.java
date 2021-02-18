@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -45,6 +46,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -89,7 +91,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         DeviceProviderKind subTypeKind,
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -104,7 +107,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             subTypeKind,
             snapShipMrgRef,
             extToolsCheckerRef,
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
     }
 
@@ -119,7 +123,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        BackupShippingService backupShipMgrRef
     )
     {
         super(
@@ -134,7 +139,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             DeviceProviderKind.FILE,
             snapShipMrgRef,
             extToolsCheckerRef,
-            cloneServiceRef
+            cloneServiceRef,
+            backupShipMgrRef
         );
     }
 

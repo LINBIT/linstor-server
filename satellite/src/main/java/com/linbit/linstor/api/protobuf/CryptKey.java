@@ -34,6 +34,9 @@ public class CryptKey implements ApiCall
 
         apiCallHandler.setCryptKey(
             protoMsg.getCryptKey().toByteArray(),
+            protoMsg.getCryptHash().toByteArray(),
+            protoMsg.getCryptSalt().toByteArray(),
+            protoMsg.getEncCryptKey().toByteArray(),
             protoMsg.getFullSyncId(),
             protoMsg.getUpdateId()
         );
