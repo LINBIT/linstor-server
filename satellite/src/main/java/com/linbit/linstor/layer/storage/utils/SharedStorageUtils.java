@@ -3,8 +3,10 @@ package com.linbit.linstor.layer.storage.utils;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -31,7 +33,12 @@ public class SharedStorageUtils
         while (rscIt.hasNext() && !neededBySharedResource)
         {
             Resource otherRsc = rscIt.next();
-            if (otherRsc != localRsc && !otherRsc.getStateFlags().isSet(accCtx, Resource.Flags.DELETE))
+            StateFlags<Flags> otherRscFlags = otherRsc.getStateFlags();
+            if (
+                otherRsc != localRsc &&
+                    (!otherRscFlags.isSet(accCtx, Resource.Flags.DELETE) ||
+                        !otherRscFlags.isSet(accCtx, Resource.Flags.INACTIVE))
+            )
             {
                 Set<AbsRscLayerObject<Resource>> otherRscStorDataSet = LayerRscUtils.getRscDataByProvider(
                     otherRsc.getLayerData(accCtx),

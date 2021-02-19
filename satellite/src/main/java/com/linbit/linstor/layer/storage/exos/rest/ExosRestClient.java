@@ -37,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -250,20 +251,20 @@ public class ExosRestClient
             .getData().volumeView[0];
     }
 
-    public void unmap(String exosVlmNameRef, @Nullable List<String> initiatorIds)
+    public void unmap(String exosVlmNameRef, @Nullable Collection<String> initiatorIds)
         throws StorageException, AccessDeniedException
     {
         StringBuilder url = new StringBuilder("/unmap/volume/");
         if (initiatorIds != null)
         {
-            url.append(String.join(",", initiatorIds)).append("/");
+            url.append("initiator/" + String.join(",", initiatorIds)).append("/");
         }
         url.append(exosVlmNameRef);
 
         simpleGetRequest(url.toString(), getprioProps(), ExosRestBaseResponse.class);
     }
 
-    public void map(String exosVlmNameRef, String lunRef, String portRef, List<String> initiatorIdsRef)
+    public void map(String exosVlmNameRef, String lunRef, String portRef, Collection<String> initiatorIdsRef)
         throws StorageException, AccessDeniedException
     {
         StringBuilder url = new StringBuilder("/map/volume/")
@@ -324,7 +325,6 @@ public class ExosRestClient
             {
                 ensureLoggedIn(prioProps, ctrl);
             }
-            headers = getHeaders(prioProps, ctrl);
 
             String baseUrl = getBaseUrl(prioProps, ctrl);
             if (baseUrl != null)
@@ -333,6 +333,7 @@ public class ExosRestClient
                 errorReporter.logTrace("Sending GET request: %s", url);
                 try
                 {
+                    headers = getHeaders(prioProps, ctrl);
                     response = restClient.execute(
                         null,
                         RestOp.GET,
@@ -347,6 +348,7 @@ public class ExosRestClient
                         errorReporter.logTrace("Received FORBIDDEN (403) response, trying to re-login...");
                         lastLoginTimestamp.put(ctrl, -1L);
                         ensureLoggedIn(prioProps, ctrl);
+                        headers = getHeaders(prioProps, ctrl); // refresh headers
                         response = restClient.execute(
                             null,
                             RestOp.GET,
@@ -454,7 +456,7 @@ public class ExosRestClient
         if (lastLoginTimestamp.get(ctrlName) + LOGIN_TIMEOUT < now)
         {
             currentSessionKey.remove(ctrlName);
-            String url = API_LOGIN + "/" + getLoginCredentials(prioProps, ctrlName);
+            String url = API_LOGIN + "/" + getLoginCredentials(prioProps);
             RestResponse<ExosRestBaseResponse> loginResponse = simpleGetRequest(
                 url,
                 prioProps,
@@ -462,13 +464,13 @@ public class ExosRestClient
                 true
             );
             String loginToken = loginResponse.getData().status[0].response;
-            errorReporter.logTrace("Received login token: %s", loginToken);
+            errorReporter.logTrace("Received login token %s for ctrl %s", loginToken, ctrlName);
             currentSessionKey.put(ctrlName, loginToken);
         }
         lastLoginTimestamp.put(ctrlName, now);
     }
 
-    private String getLoginCredentials(PriorityProps prioPropsRef, String ctrlName) throws StorageException
+    private String getLoginCredentials(PriorityProps prioPropsRef) throws StorageException
     {
         String baseCtrlKey = baseEnclosureKey;
 
