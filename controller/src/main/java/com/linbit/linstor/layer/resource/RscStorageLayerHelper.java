@@ -186,10 +186,12 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
 
         CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
         StorPool resolvedStorPool = storPoolResolveHelper.resolveStorPool(
+            apiCtx,
             rsc,
             vlmDfn,
             ctrlRscLayerDataFactory.isDiskless(rsc) && !ctrlRscLayerDataFactory.isDiskAddRequested(rsc),
-            ctrlRscLayerDataFactory.isDiskRemoving(rsc)
+            ctrlRscLayerDataFactory.isDiskRemoving(rsc),
+            false
         ).extractApiCallRc(new ApiCallRcImpl());
         if (resolvedStorPool != null)
         {

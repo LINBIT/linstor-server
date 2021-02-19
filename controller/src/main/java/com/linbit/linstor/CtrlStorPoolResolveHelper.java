@@ -62,7 +62,7 @@ public class CtrlStorPoolResolveHelper
         boolean isRscDiskless
     )
     {
-        return resolveStorPool(peerCtxProvider.get(), rsc, vlmDfn, isRscDiskless, true);
+        return resolveStorPool(peerCtxProvider.get(), rsc, vlmDfn, isRscDiskless, true, true);
     }
 
     /**
@@ -75,7 +75,14 @@ public class CtrlStorPoolResolveHelper
         boolean throwExcIfStorPoolIsNull
     )
     {
-        return resolveStorPool(peerCtxProvider.get(), rsc, vlmDfn, isRscDiskless, throwExcIfStorPoolIsNull);
+        return resolveStorPool(
+            peerCtxProvider.get(),
+            rsc,
+            vlmDfn,
+            isRscDiskless,
+            throwExcIfStorPoolIsNull,
+            true
+        );
     }
 
     /**
@@ -86,7 +93,8 @@ public class CtrlStorPoolResolveHelper
         Resource rsc,
         VolumeDefinition vlmDfn,
         boolean isRscDiskless,
-        boolean throwExcIfStorPoolIsNull
+        boolean throwExcIfStorPoolIsNull,
+        boolean searchForAlternatives
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -125,9 +133,22 @@ public class CtrlStorPoolResolveHelper
             }
             else
             {
-                List<StorPoolName> possibleStorPools = storPoolNameStr == null || "".equals(storPoolNameStr) ?
-                    resolveNeighbourDiskfulStorPool(rsc) :
-                    Collections.singletonList(LinstorParsingUtils.asStorPoolName(storPoolNameStr));
+                List<StorPoolName> possibleStorPools;
+                if (storPoolNameStr == null || storPoolNameStr.isEmpty())
+                {
+                    if (searchForAlternatives)
+                    {
+                        possibleStorPools = resolveNeighbourDiskfulStorPool(rsc);
+                    }
+                    else
+                    {
+                        possibleStorPools = new ArrayList<>();
+                    }
+                }
+                else
+                {
+                    possibleStorPools = Collections.singletonList(LinstorParsingUtils.asStorPoolName(storPoolNameStr));
+                }
 
                 for (StorPoolName storPoolName : possibleStorPools) {
                     storPool = rsc.getNode().getStorPool(apiCtx, storPoolName);
