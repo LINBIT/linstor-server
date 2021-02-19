@@ -56,10 +56,12 @@ public interface DeviceProvider
      *
      * @param config
      *
+     * @return
+     *
      * @throws StorageException
      * @throws AccessDeniedException
      */
-    void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
+    LocalNodePropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
 
     LocalNodePropsChangePojo setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException;
 

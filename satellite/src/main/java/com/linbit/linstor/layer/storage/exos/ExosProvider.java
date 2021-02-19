@@ -793,22 +793,28 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         throws StorageException, AccessDeniedException
     {
         super.setLocalNodeProps(localNodePropsRef);
-        LocalNodePropsChangePojo ret = null;
 
+        return reinit();
+    }
+
+    private LocalNodePropsChangePojo reinit() throws StorageException, AccessDeniedException
+    {
+        LocalNodePropsChangePojo ret = null;
         if (extToolsChecker.areSupported(false, ExtTools.LSSCSI, ExtTools.SAS_PHY, ExtTools.SAS_DEVICE))
         {
+
             initNewExosRestClients(stltConfigAccessor.getReadonlyProps());
-            initNewExosRestClients(localNodePropsRef);
+            initNewExosRestClients(localNodeProps);
 
             for (ExosRestClient exosRestClient : restClientMap.values())
             {
-                exosRestClient.setLocalNodeProps(localNodePropsRef);
+                exosRestClient.setLocalNodeProps(localNodeProps);
             }
 
             reinitEnclosureHostIds();
 
             reinitInitiatorIds();
-            ret = reinitTargetIds(localNodePropsRef);
+            ret = reinitTargetIds(localNodeProps);
         }
         return ret;
     }
@@ -878,20 +884,24 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         // filter local scsi initiator ids for ids that Exos also knows
         for (ExosRestClient restClient : restClientMap.values())
         {
-            ExosRestInitiators exosInitiators = restClient.showInitiators();
-
-            for (ExosRestInitiator exosInitiator : exosInitiators.initiator)
+            if (restClient.hasAllRequiredPropsSet())
             {
-                /*
-                 * Workaround:
-                 * The local .../sas_address only includes the first (or one of) the Exos initiator ids.
-                 * However, as Exos enumerates the initiator ids incrementally for all hosts, we simply mask the 4 least
-                 * significant bits when filtering
-                 */
-                long maskedExosInitId = Long.parseLong(exosInitiator.id, 16) & MASK_LSB_4;
-                if (maskedLocalScsiInitiatorIds.contains(maskedExosInitId))
+                ExosRestInitiators exosInitiators = restClient.showInitiators();
+
+                for (ExosRestInitiator exosInitiator : exosInitiators.initiator)
                 {
-                    initiatorIds.add(exosInitiator.id);
+                    /*
+                     * Workaround:
+                     * The local .../sas_address only includes the first (or one of) the Exos initiator ids.
+                     * However, as Exos enumerates the initiator ids incrementally for all hosts, we simply mask the 4
+                     * least
+                     * significant bits when filtering
+                     */
+                    long maskedExosInitId = Long.parseLong(exosInitiator.id, 16) & MASK_LSB_4;
+                    if (maskedLocalScsiInitiatorIds.contains(maskedExosInitId))
+                    {
+                        initiatorIds.add(exosInitiator.id);
+                    }
                 }
             }
         }
@@ -937,32 +947,35 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         {
             for (ExosRestClient restClient : restClientMap.values())
             {
-                ExosRestPorts exosRestPorts = restClient.showPorts();
-                for (ExosRestPort exosRestPort : exosRestPorts.port)
+                if (restClient.hasAllRequiredPropsSet())
                 {
-                    if (localScsiTargetIds.contains(exosRestPort.targetId))
+                    ExosRestPorts exosRestPorts = restClient.showPorts();
+                    for (ExosRestPort exosRestPort : exosRestPorts.port)
                     {
-                        String enclosureName = restClient.getEnclosureName();
-                        String propKey = ApiConsts.NAMESPC_EXOS + "/" +
-                            enclosureName + "/" +
-                            exosRestPort.controller +
-                            "/Ports/" +
-                            exosRestPort.port.substring(1);// "A0" -> "0"
-
-                        String currentValue = localNodePropsRef.getProp(propKey);
-                        if (!Objects.equal(currentValue, ExosMappingManager.CONNECTED))
+                        if (localScsiTargetIds.contains(exosRestPort.targetId))
                         {
-                            localNodePropsChanges.put(propKey, ExosMappingManager.CONNECTED);
+                            String enclosureName = restClient.getEnclosureName();
+                            String propKey = ApiConsts.NAMESPC_EXOS + "/" +
+                                enclosureName + "/" +
+                                exosRestPort.controller +
+                                "/Ports/" +
+                                exosRestPort.port.substring(1);// "A0" -> "0"
+
+                            String currentValue = localNodePropsRef.getProp(propKey);
+                            if (!Objects.equal(currentValue, ExosMappingManager.CONNECTED))
+                            {
+                                localNodePropsChanges.put(propKey, ExosMappingManager.CONNECTED);
+                            }
+
+                            localNodePropsToDelete.remove(propKey);
+
+                            errorReporter.logDebug(
+                                "Found connected port to enclosure: %s, port: %s",
+                                enclosureName,
+                                exosRestPort.port
+                            );
+                            exosCtrlNameMapByTargetIdNew.put(exosRestPort.targetId, exosRestPort.controller);
                         }
-
-                        localNodePropsToDelete.remove(propKey);
-
-                        errorReporter.logDebug(
-                            "Found connected port to enclosure: %s, port: %s",
-                            enclosureName,
-                            exosRestPort.port
-                        );
-                        exosCtrlNameMapByTargetIdNew.put(exosRestPort.targetId, exosRestPort.controller);
                     }
                 }
             }
@@ -977,7 +990,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
-    public void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public LocalNodePropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
@@ -986,6 +999,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         {
             throw new StorageException("Pool name must be set!");
         }
+
+        return reinit();
 
         // String ids = localNodeProps.getProp(
         // ApiConsts.KEY_STOR_POOL_EXOS_INITIATOR_IDS,

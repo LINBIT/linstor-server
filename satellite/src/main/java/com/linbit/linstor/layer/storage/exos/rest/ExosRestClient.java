@@ -63,6 +63,13 @@ public class ExosRestClient
     static final String KEY_API_PASS = ApiConsts.KEY_STOR_POOL_EXOS_API_PASSWORD;
     static final String VLM_TYPE = ApiConsts.KEY_STOR_POOL_EXOS_VLM_TYPE;
 
+    private static final String[] REQ_KEY_SUFFIXES = new String[] {
+        CONTROLLERS[0] + "/" + KEY_API_IP,
+        CONTROLLERS[1] + "/" + KEY_API_IP,
+        KEY_API_USER,
+        KEY_API_PASS
+    };
+
     static
     {
         try
@@ -533,6 +540,21 @@ public class ExosRestClient
         }
 
         return foundElement;
+    }
+
+    public boolean hasAllRequiredPropsSet() throws AccessDeniedException
+    {
+        boolean ret = true;
+        PriorityProps prioProps = getprioProps();
+        for (String keySuffix : REQ_KEY_SUFFIXES)
+        {
+            if (prioProps.getProp(baseEnclosureKey + keySuffix) == null)
+            {
+                errorReporter.logTrace("ExosRestClient: Missing prop %s", baseEnclosureKey + keySuffix);
+                ret = false;
+            }
+        }
+        return ret;
     }
 
 }

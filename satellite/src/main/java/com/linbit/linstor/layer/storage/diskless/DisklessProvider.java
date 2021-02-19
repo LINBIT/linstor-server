@@ -76,9 +76,10 @@ public class DisklessProvider implements DeviceProvider
     }
 
     @Override
-    public void checkConfig(StorPool storPool)
+    public LocalNodePropsChangePojo checkConfig(StorPool storPool)
     {
         // no-op
+        return null;
     }
 
     @Override

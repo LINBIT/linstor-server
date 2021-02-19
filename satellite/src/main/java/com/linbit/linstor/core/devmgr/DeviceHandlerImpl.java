@@ -954,8 +954,18 @@ public class DeviceHandlerImpl implements DeviceHandler
                     throw new ImplementationError("Unknown provider kind: " + storPool.getDeviceProviderKind());
             }
 
-            layer.checkStorPool(storPool);
+            LocalNodePropsChangePojo pojo = layer.checkStorPool(storPool);
             spaceInfo = layer.getStoragePoolSpaceInfo(storPool);
+
+            if (pojo != null)
+            {
+                controllerPeerConnector.getControllerPeer().sendMessage(
+                    interComSerializer
+                        .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_NODE_PROPS_FROM_STLT)
+                        .updateLocalNodeProps(pojo.changedProps, pojo.deletedProps)
+                        .build()
+                );
+            }
         }
         catch (AccessDeniedException | DatabaseException exc)
         {

@@ -1185,7 +1185,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @Override
-    public abstract void checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
+    public abstract LocalNodePropsChangePojo checkConfig(StorPool storPool)
+        throws StorageException, AccessDeniedException;
 
     @Override
     public abstract SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException;
