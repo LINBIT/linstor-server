@@ -13,6 +13,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.layer.storage.utils.Commands;
+import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -400,7 +401,28 @@ public class SysFsHandler
                     devicePath
                 },
                 "Failed to find major:minor of device " + devicePath,
-                "Failed to find major:minor of device " + devicePath
+                "Failed to find major:minor of device " + devicePath,
+                new RetryHandler()
+                {
+                    int count = 3;
+                    @Override
+                    public boolean skip(OutputData outDataRef)
+                    {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean retry(OutputData outputDataRef)
+                    {
+                        try
+                        {
+                            Thread.sleep(100);
+                        }
+                        catch (InterruptedException exc)
+                        {}
+                        return count-- > 0;
+                    }
+                }
             );
             majMin = new String(outputData.stdoutData).trim();
             String[] split = majMin.split(":");
