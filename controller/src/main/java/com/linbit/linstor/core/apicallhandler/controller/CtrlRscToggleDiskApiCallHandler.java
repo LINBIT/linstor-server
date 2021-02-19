@@ -336,6 +336,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
          */
         boolean needsDeactivate = false;
 
+        LayerPayload payload = new LayerPayload();
+        if (isSharedSourceStorPool(rsc))
+        {
+            payload.drbdRsc.needsNewNodeId = true;
+        }
         // Resolve storage pool now so that nothing is committed if the storage pool configuration is invalid
         Iterator<Volume> vlmIter = rsc.iterateVolumes();
         while (vlmIter.hasNext())
@@ -349,10 +354,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             if (isSharedSpAlreadyUsed(rsc, sp))
             {
                 needsDeactivate = true;
+                payload.drbdRsc.needsNewNodeId = true;
             }
         }
 
-        LayerPayload payload = new LayerPayload();
         if (removeDisk)
         {
             // diskful -> diskless
@@ -362,10 +367,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             // that means we can only update the storage layer if the deviceManager already got rid
             // of the actual volume(s)
 
-            if (isSharedSourceStorPool(rsc))
-            {
-                payload.drbdRsc.needsNewNodeId = true;
-            }
         }
         else
         {
