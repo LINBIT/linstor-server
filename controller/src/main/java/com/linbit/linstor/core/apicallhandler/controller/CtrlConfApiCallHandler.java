@@ -56,7 +56,6 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -619,9 +618,17 @@ public class CtrlConfApiCallHandler
             {
                 fullKey = key;
             }
+            List<String> ignoredKeys = new ArrayList<>();
+            ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
+            /*
+             * StorDriver/Exos/<EnclosureName>/<ExosCtrlName>/ ... must be ignored.
+             * on ctrl level only.
+             * on other levels whitelisting is active
+             */
+            ignoredKeys.add(ApiConsts.NAMESPC_EXOS + "/");
             boolean isPropWhitelisted = whitelistProps.isAllowed(
                 LinStorObject.CONTROLLER,
-                Collections.singletonList(ApiConsts.NAMESPC_AUXILIARY + "/"),
+                ignoredKeys,
                 fullKey,
                 null,
                 false
