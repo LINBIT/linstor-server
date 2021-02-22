@@ -892,7 +892,6 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         LocalNodePropsChangePojo ret = null;
         if (extToolsChecker.areSupported(false, ExtTools.LSSCSI, ExtTools.SAS_PHY, ExtTools.SAS_DEVICE))
         {
-
             initNewExosRestClients(stltConfigAccessor.getReadonlyProps());
             initNewExosRestClients(localNodeProps);
 

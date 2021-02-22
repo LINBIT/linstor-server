@@ -28,6 +28,8 @@ import com.linbit.linstor.storage.utils.HttpHeader.Builder;
 import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
+import com.linbit.linstor.utils.PropsUtils;
+import com.linbit.utils.Pair;
 
 import javax.annotation.Nullable;
 import javax.xml.bind.DatatypeConverter;
@@ -59,16 +61,20 @@ public class ExosRestClient
 
     private static final String[] CONTROLLERS = new String[] { "A", "B" };
     static final String KEY_API_IP = ApiConsts.KEY_STOR_POOL_EXOS_API_IP;
+    static final String KEY_API_IP_ENV = ApiConsts.KEY_STOR_POOL_EXOS_API_IP_ENV;
     static final String KEY_API_PORT = ApiConsts.KEY_STOR_POOL_EXOS_API_PORT;
     static final String KEY_API_USER = ApiConsts.KEY_STOR_POOL_EXOS_API_USER;
+    static final String KEY_API_USER_ENV = ApiConsts.KEY_STOR_POOL_EXOS_API_USER_ENV;
     static final String KEY_API_PASS = ApiConsts.KEY_STOR_POOL_EXOS_API_PASSWORD;
+    static final String KEY_API_PASS_ENV = ApiConsts.KEY_STOR_POOL_EXOS_API_PASSWORD_ENV;
     static final String VLM_TYPE = ApiConsts.KEY_STOR_POOL_EXOS_VLM_TYPE;
 
-    private static final String[] REQ_KEY_SUFFIXES = new String[] {
-        CONTROLLERS[0] + "/" + KEY_API_IP,
-        CONTROLLERS[1] + "/" + KEY_API_IP,
-        KEY_API_USER,
-        KEY_API_PASS
+
+    private static final Pair<String, String>[] REQ_KEY_SUFFIXES = new Pair[] {
+        new Pair<>(CONTROLLERS[0] + "/" + KEY_API_IP, CONTROLLERS[0] + "/" + KEY_API_IP_ENV),
+        new Pair<>(CONTROLLERS[1] + "/" + KEY_API_IP, CONTROLLERS[1] + "/" + KEY_API_IP_ENV),
+        new Pair<>(KEY_API_USER, KEY_API_USER_ENV),
+        new Pair<>(KEY_API_PASS, KEY_API_PASS_ENV)
     };
 
     static
@@ -94,6 +100,8 @@ public class ExosRestClient
     private Props localNodeProps;
 
     private final String baseEnclosureKey;
+    private final String[] baseNamespace;
+    private final String[] baseAndCtrlNamespace;
 
 
     public ExosRestClient(
@@ -111,6 +119,8 @@ public class ExosRestClient
         restClient = new RestHttpClient(errorReporterRef);
 
         baseEnclosureKey = ApiConsts.NAMESPC_EXOS + "/" + enclosureName + "/";
+        baseNamespace = new String[] { baseEnclosureKey };
+        baseAndCtrlNamespace = new String[] { baseEnclosureKey, ApiConsts.NAMESPC_EXOS };
 
         for (String ctrl : CONTROLLERS)
         {
@@ -434,7 +444,7 @@ public class ExosRestClient
     {
         String ret = null;
         String baseKey = baseEnclosureKey + ctrlName + "/";
-        String host = getProp(prioPropsRef, baseKey + KEY_API_IP);
+        String host = PropsUtils.getPropOrEnv(prioPropsRef, baseKey + KEY_API_IP, baseKey + KEY_API_IP_ENV);
         if (host != null)
         {
             StringBuilder sb = new StringBuilder();
@@ -472,15 +482,34 @@ public class ExosRestClient
 
     private String getLoginCredentials(PriorityProps prioPropsRef) throws StorageException
     {
-        String baseCtrlKey = baseEnclosureKey;
+        String baseCtrlNamespace = baseEnclosureKey;
 
-        String username = prioPropsRef.getProp(baseCtrlKey + KEY_API_USER);
+        String username = PropsUtils.getPropOrEnv(
+            prioPropsRef,
+            new String[] {
+                baseCtrlNamespace + "/" + KEY_API_USER,
+                ApiConsts.NAMESPC_EXOS + "/" + KEY_API_USER
+            },
+            new String[] {
+                baseCtrlNamespace + "/" + KEY_API_USER_ENV,
+                ApiConsts.NAMESPC_EXOS + "/" + KEY_API_USER_ENV
+            }
+        );
         if (username == null)
         {
             throw new StorageException("No username defined for enclosure " + enclosureName);
         }
-
-        String password = prioPropsRef.getProp(baseCtrlKey + KEY_API_PASS);
+        String password = PropsUtils.getPropOrEnv(
+            prioPropsRef,
+            new String[] {
+                baseCtrlNamespace + "/" + KEY_API_PASS,
+                ApiConsts.NAMESPC_EXOS + "/" + KEY_API_PASS
+            },
+            new String[] {
+                baseCtrlNamespace + "/" + KEY_API_PASS_ENV,
+                ApiConsts.NAMESPC_EXOS + "/" + KEY_API_PASS_ENV
+            }
+        );
         if (password == null)
         {
             throw new StorageException("No password defined for enclosure " + enclosureName);
@@ -548,15 +577,66 @@ public class ExosRestClient
     {
         boolean ret = true;
         PriorityProps prioProps = getprioProps();
-        for (String keySuffix : REQ_KEY_SUFFIXES)
+
+        ret &= hasProp(
+            prioProps,
+            baseNamespace,
+            CONTROLLERS[0] + "/" + KEY_API_IP,
+            CONTROLLERS[0] + "/" + KEY_API_IP_ENV,
+            "Ctrl_A IP"
+        );
+
+        ret &= hasProp(
+            prioProps,
+            baseNamespace,
+            CONTROLLERS[1] + "/" + KEY_API_IP,
+            CONTROLLERS[1] + "/" + KEY_API_IP_ENV,
+            "Ctrl_B IP"
+        );
+
+        ret &= hasProp(
+            prioProps,
+            baseAndCtrlNamespace,
+            KEY_API_USER,
+            KEY_API_USER_ENV,
+            "Username"
+        );
+
+        ret &= hasProp(
+            prioProps,
+            baseAndCtrlNamespace,
+            KEY_API_PASS,
+            KEY_API_PASS_ENV,
+            "Password"
+        );
+
+        return ret;
+    }
+
+    private boolean hasProp(PriorityProps prioPropsRef, String[] namespacesRef, String propKeyRef, String propKeyEnvRef, String descr)
+    {
+        boolean hasProp = false;
+        for (String namespace : namespacesRef)
         {
-            if (prioProps.getProp(baseEnclosureKey + keySuffix) == null)
+            if (
+                PropsUtils.getPropOrEnv(
+                    prioPropsRef,
+                    propKeyRef,
+                    namespace,
+                    propKeyEnvRef,
+                    namespace
+                ) != null
+            )
             {
-                errorReporter.logTrace("ExosRestClient: Missing prop %s", baseEnclosureKey + keySuffix);
-                ret = false;
+                hasProp = true;
+                break;
             }
         }
-        return ret;
+        if (!hasProp)
+        {
+            errorReporter.logTrace("ExosRestClient: Missing property for %s", descr);
+        }
+        return hasProp;
     }
 
 }
