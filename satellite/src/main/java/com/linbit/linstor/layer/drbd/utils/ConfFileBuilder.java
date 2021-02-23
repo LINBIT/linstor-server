@@ -176,8 +176,7 @@ public class ConfFileBuilder
                     appendConflictingDrbdOptions(
                         LinStorObject.CONTROLLER,
                         ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS,
-                        prioProps,
-                        true
+                        prioProps
                     );
                 }
             }
@@ -586,8 +585,7 @@ public class ConfFileBuilder
                     appendDrbdOptions(
                         LinStorObject.CONTROLLER,
                         satelliteProps,
-                        ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS,
-                        true
+                        ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS
                     );
                 }
             }
@@ -686,16 +684,6 @@ public class ConfFileBuilder
         final PriorityProps prioProps
     )
     {
-        appendConflictingDrbdOptions(lsObj, namespace, prioProps, false);
-    }
-
-    private void appendConflictingDrbdOptions(
-        final LinStorObject lsObj,
-        final String namespace,
-        final PriorityProps prioProps,
-        final boolean quoteValue
-    )
-    {
         Map<String, MultiResult> map = prioProps.renderConflictingMap(namespace, true);
         int substrFrom = namespace.length() + 1;
 
@@ -713,6 +701,7 @@ public class ConfFileBuilder
 
             if (checkValidDrbdOption(lsObj, keyWithNamespace, value))
             {
+                final boolean quoteValue = whitelistProps.needsQuoting(lsObj, keyWithNamespace);
                 confLine.append(
                     String.format(
                         quoteValue ? "%s \"%s\";" : "%s %s;",
@@ -754,27 +743,18 @@ public class ConfFileBuilder
         final String namespace
     )
     {
-        appendDrbdOptions(lsObj, props, namespace, false);
-    }
-
-    private void appendDrbdOptions(
-        final LinStorObject lsObj,
-        final Props props,
-        final String namespace,
-        final boolean quote
-    )
-    {
         Map<String, String> drbdProps = props.getNamespace(namespace)
             .map(Props::map).orElse(Collections.emptyMap());
         int substrFrom = namespace.length() + 1;
 
-        String sFormat = quote ? "%s \"%s\";" : "%s %s;";
         for (Map.Entry<String, String> entry : drbdProps.entrySet())
         {
             String keyWithNamespace = entry.getKey();
             String value = entry.getValue();
             if (checkValidDrbdOption(lsObj, keyWithNamespace, value))
             {
+                final boolean quote = whitelistProps.needsQuoting(lsObj, keyWithNamespace);
+                String sFormat = quote ? "%s \"%s\";" : "%s %s;";
                 appendLine(
                     sFormat,
                     keyWithNamespace.substring(substrFrom),

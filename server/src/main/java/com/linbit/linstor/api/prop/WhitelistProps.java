@@ -240,6 +240,21 @@ public class WhitelistProps
         }
     }
 
+    /**
+     * Returns which drbd options need quoting.
+     * @param lsObj
+     * @param key
+     * @return true if value should be quoted, otherwise false.
+     */
+    public boolean needsQuoting(LinStorObject lsObj, String key)
+    {
+        Property rule = rules.getOrDefault(lsObj, Collections.emptyMap()).get(key);
+        if (rule == null) {
+            return false;
+        }
+        return rule.getType() == Property.PropertyType.STRING || rule.getType() == Property.PropertyType.SYMBOL;
+    }
+
     public boolean isAllowed(LinStorObject lsObj, List<String> ignoredKeys, String key, String value, boolean log)
     {
         boolean validProp = ignoredKeys.stream().anyMatch(ignoredKey -> key.startsWith(ignoredKey));
