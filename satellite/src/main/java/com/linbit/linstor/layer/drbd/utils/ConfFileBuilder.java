@@ -67,7 +67,7 @@ public class ConfFileBuilder
     private final WhitelistProps whitelistProps;
     private final Props stltProps;
 
-    private StringBuilder stringBuilder;
+    private final StringBuilder stringBuilder;
     private int indentDepth;
 
     public ConfFileBuilder(
@@ -120,11 +120,10 @@ public class ConfFileBuilder
 
         if (localRscData != null)
         {
-            sb.append("\n# Local node: " + localRscData.getAbsResource().getNode().getName().displayValue)
-                .append(
-                    "\n# Host name : " +
-                        localRscData.getAbsResource().getNode().getProps(accCtx).getProp(InternalApiConsts.NODE_UNAME)
-                );
+            sb.append("\n# Local node: ")
+                .append(localRscData.getAbsResource().getNode().getName().displayValue)
+                .append("\n# Host name : ")
+                .append(localRscData.getAbsResource().getNode().getProps(accCtx).getProp(InternalApiConsts.NODE_UNAME));
         }
 
         return sb.toString();
