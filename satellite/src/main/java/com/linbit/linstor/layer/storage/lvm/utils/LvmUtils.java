@@ -372,7 +372,11 @@ public class LvmUtils
         return result;
     }
 
-    public static boolean checkVgExistsBool(ExtCmdFactory extCmdFactory, String volumeGroup) throws StorageException
+    public static boolean checkVgExistsBool(
+        final ExtCmdFactory extCmdFactory,
+        final String volumeGroup
+    )
+        throws StorageException
     {
         OutputData output = execWithRetry(
             extCmdFactory,
@@ -380,15 +384,18 @@ public class LvmUtils
             config -> LvmCommands.listExistingVolumeGroups(extCmdFactory.create(), config)
         );
         final String stdOut = new String(output.stdoutData);
-        final String[] volumeGroups = stdOut.split("\n");
-        for (String vg : volumeGroups)
+        final String[] volumeGroupList = stdOut.split("\n");
+        final String specVlmGrp = volumeGroup.trim();
+        boolean matchFlag = false;
+        for (String curVlmGrp : volumeGroupList)
         {
-            if (vg.trim().equals(volumeGroup.trim()))
+            if (curVlmGrp.trim().equals(specVlmGrp))
             {
-                return true;
+                matchFlag = true;
+                break;
             }
         }
-        return false;
+        return matchFlag;
     }
 
     public static void checkVgExists(ExtCmdFactory extCmdFactory, String volumeGroup) throws StorageException
