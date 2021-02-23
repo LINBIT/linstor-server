@@ -47,23 +47,26 @@ public class CtrlSnapshotApiCallHandler
     }
 
     private boolean shouldIncludeSnapshot(
-        final SnapshotDefinitionListItemApi snapItem, final List<String> nodeNameFilter)
+        final SnapshotDefinitionListItemApi snapItem,
+        final List<String> nodeNameFilter
+    )
     {
-        if (!nodeNameFilter.isEmpty())
+        boolean includeFlag = nodeNameFilter.isEmpty();
+        if (!includeFlag)
         {
-            for(final String node : nodeNameFilter)
+            for (final String node : nodeNameFilter)
             {
-                for(final String snapNode : snapItem.getNodeNames())
+                for (final String snapNode : snapItem.getNodeNames())
                 {
                     if (node.equalsIgnoreCase(snapNode))
                     {
-                        return true;
+                        includeFlag = true;
+                        break;
                     }
                 }
             }
-            return false;
         }
-        return true;
+        return includeFlag;
     }
 
     ArrayList<SnapshotDefinitionListItemApi> listSnapshotDefinitions(List<String> nodeNames, List<String> resourceNames)

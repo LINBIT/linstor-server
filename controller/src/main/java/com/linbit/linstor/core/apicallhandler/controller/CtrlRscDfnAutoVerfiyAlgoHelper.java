@@ -75,17 +75,27 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
             {
                 final Map<String, List<ProcCryptoEntry>> nodeCryptos = new HashMap<>();
                 rscDfn.streamResource(peerCtxProvider.get())
-                    .filter(rsc -> {
-                        try {
-                            if (!rsc.getNode().isDeleted())
+                    .filter(
+                        rsc ->
+                        {
+                            boolean result = false;
+                            try
                             {
-                                return !rsc.isDrbdDiskless(peerCtxProvider.get()) &&
-                                    LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).contains(DeviceLayerKind.DRBD);
+                                if (!rsc.getNode().isDeleted())
+                                {
+                                    result = !rsc.isDrbdDiskless(peerCtxProvider.get()) &&
+                                        LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).contains(DeviceLayerKind.DRBD);
+                                }
                             }
-                        } catch (AccessDeniedException ignored) {}
-                        return false;
-                    }).forEach(rsc ->
-                        nodeCryptos.put(rsc.getNode().getName().displayValue, rsc.getNode().getSupportedCryptos()));
+                            catch (AccessDeniedException ignored)
+                            {
+                            }
+                            return result;
+                        }
+                    )
+                    .forEach(rsc ->
+                        nodeCryptos.put(rsc.getNode().getName().displayValue, rsc.getNode().getSupportedCryptos())
+                    );
 
                 final ProcCryptoEntry commonHashAlgo = ProcCryptoUtils.commonCryptoType(
                     nodeCryptos, ProcCryptoEntry.CryptoType.SHASH);
@@ -106,17 +116,20 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                     }
                 }
             }
-        } catch (AccessDeniedException accDeniedExc)
+        }
+        catch (AccessDeniedException accDeniedExc)
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "setting verify algorithm",
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
-        } catch (DatabaseException exc)
+        }
+        catch (DatabaseException exc)
         {
             throw new ApiDatabaseException(exc);
-        } catch (InvalidValueException invValExc)
+        }
+        catch (InvalidValueException invValExc)
         {
             throw new ApiException(invValExc);
         }

@@ -848,17 +848,18 @@ public class StltApiCallHandler
         String logLevelLinstor = stltConfRef.getLogLevelLinstor();
         stltCfg.setLogLevel(logLevel);
         stltCfg.setLogLevelLinstor(logLevelLinstor);
+        boolean successFlag = false;
         try
         {
             errorReporter.setLogLevel(
                 apiCtx, Level.valueOf(logLevel.toUpperCase()), Level.valueOf(logLevelLinstor.toUpperCase())
             );
+            successFlag = true;
         }
-        catch (AccessDeniedException e)
+        catch (AccessDeniedException ignored)
         {
-            return false;
         }
-        return true;
+        return successFlag;
     }
 
     public byte[] listSosReport(Date since)
