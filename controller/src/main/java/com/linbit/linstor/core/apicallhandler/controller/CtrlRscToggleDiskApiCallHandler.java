@@ -28,6 +28,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -46,6 +47,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -700,6 +702,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         if (removeDisk)
         {
             markDiskRemoved(rsc);
+
+            activateIfPossible(rsc);
         }
         else
         {
@@ -745,6 +749,32 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 )))
             .concatWith(migrationFlux)
             .concatWith(autoFlux);
+    }
+
+    private void activateIfPossible(Resource rsc)
+    {
+        StateFlags<Flags> rscFlags = rsc.getStateFlags();
+        try
+        {
+            if (
+                rscFlags.isSet(apiCtx, Resource.Flags.INACTIVE) &&
+                !rscFlags.isSet(apiCtx, Resource.Flags.INACTIVE_PERMANENTLY)
+            )
+            {
+                // an inactive diskless does not make sense.
+                rsc.getStateFlags().disableFlags(apiCtx, Resource.Flags.INACTIVE);
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+
     }
 
     private boolean isSharedSourceStorPool(Resource rsc)
