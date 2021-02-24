@@ -27,6 +27,7 @@ info:
          - GET /v1/resource-definitions/{rscname}/clone/{clonedrsc}
        - Added /v1/resource-groups/{resource_group}/adjust
        - Added /v1/resource-groups/adjustall
+       - Added Backup and BackupList, as well as the entrypoint /v1/backups
     * 1.9.0
        - Extended SatelliteConfig with remote_spdk boolean
     * 1.8.1
@@ -4700,7 +4701,47 @@ paths:
                 format: binary
         '500':
           $ref: '#/components/responses/OperationFailed'
-
+  /v1/backups:
+    get:
+      tags:
+        - developers
+      summary: list all backups
+      description: list all backups in a single bucket
+      parameters:
+        - name: rscName
+          in: query
+          description: Only show backups of this resource
+          schema:
+            type: string
+        - name: bucketName
+          in: query
+          description: The bucket to list the backups from, uses the bucket set in the properties if not given here
+          schema:
+            type: string
+      responses:
+        '200':
+          description: list of backups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Backup'
+  /v1/backups/{resource}:
+    post:
+      tags:
+        - developers
+      summary: create a full backup
+      description: create and ship a full backup to the target system
+      parameters:
+        - $ref: '#/components/parameters/Resource'
+      responses:
+        '200':
+           description: backup created and shipping started
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/ApiCallRcList'
   /v1/events/drbd/promotion:
     get:
       tags:
@@ -6657,6 +6698,45 @@ components:
         to_nic:
           type: string
           description: NetInterface of the destination node
+    Backup:
+      type: object
+      properties:
+        linstor:
+          description: A list containing all entries found that are or could be from linstor
+          type: array
+          items:
+            $ref: '#/components/schemas/BackupList'
+        other:
+          description: A list containing all other entries found that have no relation to linstor
+          type: array
+          items:
+            type: string
+    BackupList:
+      type: object
+      properties:
+        snap_key:
+          type: string
+        meta_name:
+          type: string
+        finished_time:
+          type: string
+        finished_timestamp:
+          type: integer
+          format: int64
+        node:
+          type: string
+        shipping:
+          type: boolean
+        success:
+          type: boolean
+        vlms:
+          type: object
+          additionalProperties:
+            type: string
+        inc:
+          type: array
+          items:
+            $ref: '#/components/schemas/BackupList'
     PassPhraseCreate:
       type: object
       properties:

@@ -2,7 +2,9 @@ package com.linbit.linstor.api.pojo.backups;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class LuksLayerMetaPojo
@@ -12,11 +14,12 @@ public class LuksLayerMetaPojo
     private final String masterCryptSalt;
     private final Map<Integer, String> volumePasswords;
 
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public LuksLayerMetaPojo(
-        String masterPasswordRef,
-        String masterCryptHashRef,
-        String masterCryptSaltRef,
-        Map<Integer, String> volumePasswordsRef
+        @JsonProperty("masterPassword") String masterPasswordRef,
+        @JsonProperty("masterCryptHash") String masterCryptHashRef,
+        @JsonProperty("masterCryptSalt") String masterCryptSaltRef,
+        @JsonProperty("volumePasswords") Map<Integer, String> volumePasswordsRef
     )
     {
         masterPassword = masterPasswordRef;

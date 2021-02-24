@@ -2,7 +2,9 @@ package com.linbit.linstor.api.pojo.backups;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class RscMetaPojo
@@ -11,7 +13,12 @@ public class RscMetaPojo
     private final long flags;
     private final Map<Integer, VlmMetaPojo> vlms;
 
-    public RscMetaPojo(Map<String, String> propsRef, long flagsRef, Map<Integer, VlmMetaPojo> vlmsRef)
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public RscMetaPojo(
+        @JsonProperty("props") Map<String, String> propsRef,
+        @JsonProperty("flags") long flagsRef,
+        @JsonProperty("vlms") Map<Integer, VlmMetaPojo> vlmsRef
+    )
     {
         props = propsRef;
         flags = flagsRef;

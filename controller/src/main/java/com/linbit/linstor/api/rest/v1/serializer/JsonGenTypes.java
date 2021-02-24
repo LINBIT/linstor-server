@@ -1167,6 +1167,33 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class Backup
+    {
+        /**
+         * A list containing all entries found that are or could be from linstor
+         */
+        public List<BackupList> linstor = Collections.emptyList();
+        /**
+         * A list containing all other entries found that have no relation to linstor
+         */
+        public List<String> other = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupList
+    {
+        public String snap_key;
+        public String meta_name;
+        public String finished_time;
+        public Long finished_timestamp;
+        public String node;
+        public Boolean shipping;
+        public Boolean success;
+        public Map<String, String> vlms = Collections.emptyMap();
+        public List<BackupList> inc = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PassPhraseCreate
     {
         public String new_passphrase;

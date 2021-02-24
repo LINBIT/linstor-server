@@ -1,8 +1,12 @@
 package com.linbit.linstor.api.pojo.backups;
 
+import javax.annotation.Nullable;
+
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class LayerMetaPojo
@@ -17,16 +21,17 @@ public class LayerMetaPojo
     private final LayerMetaPojo nvme;
     private final List<LayerMetaPojo> children;
 
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public LayerMetaPojo(
-        String typeRef,
-        String rscNameSuffixRef,
-        DrbdLayerMetaPojo drbdRef,
-        LuksLayerMetaPojo luksRef,
-        LayerMetaPojo cacheRef,
-        LayerMetaPojo writecacheRef,
-        StorageLayerMetaPojo storageRef,
-        LayerMetaPojo nvmeRef,
-        List<LayerMetaPojo> childrenRef
+        @JsonProperty("type") String typeRef,
+        @JsonProperty("rscNameSuffix") String rscNameSuffixRef,
+        @JsonProperty("drbd") @Nullable DrbdLayerMetaPojo drbdRef,
+        @JsonProperty("luks") @Nullable LuksLayerMetaPojo luksRef,
+        @JsonProperty("cache") @Nullable LayerMetaPojo cacheRef,
+        @JsonProperty("writecache") @Nullable LayerMetaPojo writecacheRef,
+        @JsonProperty("storage") @Nullable StorageLayerMetaPojo storageRef,
+        @JsonProperty("nvme") @Nullable LayerMetaPojo nvmeRef,
+        @JsonProperty("children") @Nullable List<LayerMetaPojo> childrenRef
     )
     {
         type = typeRef;

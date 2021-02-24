@@ -2,7 +2,9 @@ package com.linbit.linstor.api.pojo.backups;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class VlmDfnMetaPojo
@@ -11,7 +13,12 @@ public class VlmDfnMetaPojo
     private final long flags;
     private final long size;
 
-    public VlmDfnMetaPojo(Map<String, String> propsRef, long flagsRef, long sizeRef)
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public VlmDfnMetaPojo(
+        @JsonProperty("props") Map<String, String> propsRef,
+        @JsonProperty("flags") long flagsRef,
+        @JsonProperty("size") long sizeRef
+    )
     {
         props = propsRef;
         flags = flagsRef;

@@ -2,7 +2,9 @@ package com.linbit.linstor.api.pojo.backups;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class DrbdLayerMetaPojo
@@ -17,16 +19,17 @@ public class DrbdLayerMetaPojo
     private final long rscFlags;
     private final Map<Integer, DrbdLayerVlmMetaPojo> vlmsMap;
 
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DrbdLayerMetaPojo(
-        short rdPeerSlotsRef,
-        int rdAlStripesRef,
-        long rdAlStripeSizeRef,
-        short rscPeerSlotsRef,
-        int rscAlStripesRef,
-        long rscAlStripeSizeRef,
-        int rscNodeIdRef,
-        long rscFlagsRef,
-        Map<Integer, DrbdLayerVlmMetaPojo> vlmsMapRef
+        @JsonProperty("rdPeerSlots") short rdPeerSlotsRef,
+        @JsonProperty("rdAlStripes") int rdAlStripesRef,
+        @JsonProperty("rdAlStripeSize") long rdAlStripeSizeRef,
+        @JsonProperty("rscPeerSlots") short rscPeerSlotsRef,
+        @JsonProperty("rscAlStripes") int rscAlStripesRef,
+        @JsonProperty("rscAlStripeSize") long rscAlStripeSizeRef,
+        @JsonProperty("rscNodeId") int rscNodeIdRef,
+        @JsonProperty("rscFlags") long rscFlagsRef,
+        @JsonProperty("vlmsMap") Map<Integer, DrbdLayerVlmMetaPojo> vlmsMapRef
     )
     {
         rdPeerSlots = rdPeerSlotsRef;
@@ -91,7 +94,11 @@ public class DrbdLayerMetaPojo
         private final int vlmNr;
         private final String extStorPoolName;
 
-        public DrbdLayerVlmMetaPojo(int vlmNrRef, String extStorPoolNameRef)
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public DrbdLayerVlmMetaPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("extStorPoolName") String extStorPoolNameRef
+        )
         {
             vlmNr = vlmNrRef;
             extStorPoolName = extStorPoolNameRef;

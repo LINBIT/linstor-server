@@ -14,6 +14,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.api.pojo.backups.DrbdLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.DrbdLayerMetaPojo.DrbdLayerVlmMetaPojo;
@@ -56,9 +57,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -78,6 +82,8 @@ public class BackupShippingService implements SystemService
 {
     public static final ServiceName SERVICE_NAME;
     public static final String SERVICE_INFO = "BackupShippingService";
+    private static final DateFormat SDF = new SimpleDateFormat("yyyyMMdd_HHmmss");
+    private static final String BACKUP_KEY_FORMAT = "%s%s_%05d_%s";
     private static final String CMD_FORMAT_SENDING =
         "trap 'kill -HUP 0' SIGTERM; " +
         "(" +
@@ -203,7 +209,7 @@ public class BackupShippingService implements SystemService
     ) throws StorageException
     {
 
-        String backupName = rscNameRef + rscNameSuffixRef + "_" + vlmNrRef + "_" + snapNameRef;
+        String backupName = String.format(BACKUP_KEY_FORMAT, rscNameRef, rscNameSuffixRef, vlmNrRef, snapNameRef);
         startDaemon(
             cmdRef,
             new String[]
@@ -328,7 +334,7 @@ public class BackupShippingService implements SystemService
                                     .getProp(
                                         InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
                                         ApiConsts.NAMESPC_BACKUP_SHIPPING
-                                    );
+                                    ) + ".meta";
                                 backupHandler.putObject(key, fillPojo(snap));
                             }
                             catch (InvalidKeyException | AccessDeniedException | JsonProcessingException exc)
@@ -423,10 +429,16 @@ public class BackupShippingService implements SystemService
         RscMetaPojo rscRef = new RscMetaPojo(rscPropsRef, rscFlagsRef, vlmsRef);
 
         // TODO: for inc, get backups from old meta file
-        List<List<String>> backupsRef = new ArrayList<>();
+        List<List<BackupInfoPojo>> backupsRef = new ArrayList<>();
+        String finishedTime = SDF.format(new Date());
         for (SnapVlmDataInfo snapInfo : shippingInfoMap.get(snap).snapVlmDataInfoMap.values())
         {
-            backupsRef.add(Arrays.asList(snapInfo.backupName));
+            BackupInfoPojo backInfo = new BackupInfoPojo(
+                snapInfo.backupName,
+                finishedTime,
+                snap.getNodeName().displayValue
+            );
+            backupsRef.add(Arrays.asList(backInfo));
         }
 
         LayerMetaPojo layersRef = createLayerPojo(rsc.getLayerData(accCtx));

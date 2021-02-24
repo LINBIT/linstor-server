@@ -2,14 +2,17 @@ package com.linbit.linstor.api.pojo.backups;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class StorageLayerMetaPojo
 {
     private final Map<Integer, StorageLayerVlmMetaPojo> vlmsMap;
 
-    public StorageLayerMetaPojo(Map<Integer, StorageLayerVlmMetaPojo> vlmsMapRef)
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public StorageLayerMetaPojo(@JsonProperty("vlmsMap") Map<Integer, StorageLayerVlmMetaPojo> vlmsMapRef)
     {
         vlmsMap = vlmsMapRef;
     }
@@ -27,7 +30,12 @@ public class StorageLayerMetaPojo
         private final String storPoolName;
         private final String storType;
 
-        public StorageLayerVlmMetaPojo(int vlmNrRef, String storPoolNameRef, String storTypeRef)
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public StorageLayerVlmMetaPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolName") String storPoolNameRef,
+            @JsonProperty("storType") String storTypeRef
+        )
         {
             vlmNr = vlmNrRef;
             storPoolName = storPoolNameRef;
