@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -81,7 +82,8 @@ public class ProcCryptoUtilsTest extends TestCase {
         cryptoNode3.add(new ProcCryptoEntry("lzo-rle", "lzo-rle-scomp", ProcCryptoEntry.CryptoType.SCOMP, 0));
         cryptoNode3.add(new ProcCryptoEntry("crc32", "crc32-pclmul", ProcCryptoEntry.CryptoType.SHASH, 200));
 
-        ProcCryptoEntry pce = ProcCryptoUtils.commonCryptoType(Collections.emptyMap(), ProcCryptoEntry.CryptoType.AEAD);
+        ProcCryptoEntry pce = ProcCryptoUtils.commonCryptoType(
+            Collections.emptyMap(), ProcCryptoEntry.CryptoType.AEAD, Collections.emptyList());
         assertNull(pce);
 
         Map<String, List<ProcCryptoEntry>> cryptoMap = new HashMap<>();
@@ -89,7 +91,7 @@ public class ProcCryptoUtilsTest extends TestCase {
         cryptoMap.put("linstor2", cryptoNode2);
         cryptoMap.put("linstor3", cryptoNode3);
 
-        pce = ProcCryptoUtils.commonCryptoType(cryptoMap, ProcCryptoEntry.CryptoType.SHASH);
+        pce = ProcCryptoUtils.commonCryptoType(cryptoMap, ProcCryptoEntry.CryptoType.SHASH, Collections.emptyList());
 
         assertNotNull(pce);
         assertEquals("poly1305-simd", pce.getDriver());
@@ -123,7 +125,8 @@ public class ProcCryptoUtilsTest extends TestCase {
         cryptoMap.put("linstor2", cryptoNode2);
         cryptoMap.put("linstor3", cryptoNode3);
 
-        ProcCryptoEntry pce = ProcCryptoUtils.commonCryptoType(cryptoMap, ProcCryptoEntry.CryptoType.SHASH);
+        ProcCryptoEntry pce = ProcCryptoUtils.commonCryptoType(
+            cryptoMap, ProcCryptoEntry.CryptoType.SHASH, Collections.emptyList());
 
         assertNotNull(pce);
         assertEquals("blake2s-256-x86", pce.getDriver());
@@ -141,7 +144,8 @@ public class ProcCryptoUtilsTest extends TestCase {
         Map<String, List<ProcCryptoEntry>> cryptoMap = new HashMap<>();
         cryptoMap.put("linstor1", cryptoNode1);
 
-        ProcCryptoEntry pce = ProcCryptoUtils.commonCryptoType(cryptoMap, ProcCryptoEntry.CryptoType.SHASH);
+        ProcCryptoEntry pce = ProcCryptoUtils.commonCryptoType(
+            cryptoMap, ProcCryptoEntry.CryptoType.SHASH, Collections.emptyList());
 
         assertNotNull(pce);
         assertEquals("poly1305-simd", pce.getDriver());
@@ -173,8 +177,52 @@ public class ProcCryptoUtilsTest extends TestCase {
         cryptoMap.put("linstor2", cryptoNode2);
         cryptoMap.put("linstor3", cryptoNode3);
 
-        ProcCryptoEntry pce = ProcCryptoUtils.commonCryptoType(cryptoMap, ProcCryptoEntry.CryptoType.SHASH);
+        ProcCryptoEntry pce = ProcCryptoUtils.commonCryptoType(
+            cryptoMap, ProcCryptoEntry.CryptoType.SHASH, Collections.emptyList());
 
         assertNull(pce);
+    }
+
+    public void testFindCommonAllowed()
+    {
+        ArrayList<ProcCryptoEntry> cryptoNode1 = new ArrayList<>();
+        cryptoNode1.add(new ProcCryptoEntry("curve25519", "curve25519-x86", ProcCryptoEntry.CryptoType.KPP, 200));
+        cryptoNode1.add(new ProcCryptoEntry("xchacha12", "xchacha12-simd", ProcCryptoEntry.CryptoType.SKCIPHER, 300));
+        cryptoNode1.add(new ProcCryptoEntry("poly1305", "poly1305-simd", ProcCryptoEntry.CryptoType.SHASH, 100));
+        cryptoNode1.add(new ProcCryptoEntry("blake2s-256", "blake2s-256-x86", ProcCryptoEntry.CryptoType.SHASH, 200));
+        cryptoNode1.add(new ProcCryptoEntry("lzo-rle", "lzo-rle-scomp", ProcCryptoEntry.CryptoType.SCOMP, 0));
+        cryptoNode1.add(new ProcCryptoEntry("crc32", "crc32-pclmul", ProcCryptoEntry.CryptoType.SHASH, 200));
+
+        ArrayList<ProcCryptoEntry> cryptoNode2 = new ArrayList<>();
+        cryptoNode2.add(new ProcCryptoEntry("curve25519", "curve25519-x86", ProcCryptoEntry.CryptoType.KPP, 200));
+        cryptoNode2.add(new ProcCryptoEntry("poly1305", "poly1305-simd", ProcCryptoEntry.CryptoType.SHASH, 100));
+        cryptoNode2.add(new ProcCryptoEntry("blake2s-256", "blake2s-256-x86", ProcCryptoEntry.CryptoType.SHASH, 200));
+        cryptoNode2.add(new ProcCryptoEntry("lzo-rle", "lzo-rle-scomp", ProcCryptoEntry.CryptoType.SCOMP, 0));
+        cryptoNode2.add(new ProcCryptoEntry("crc32", "crc32-pclmul", ProcCryptoEntry.CryptoType.SHASH, 200));
+
+        ArrayList<ProcCryptoEntry> cryptoNode3 = new ArrayList<>();
+        cryptoNode3.add(new ProcCryptoEntry("curve25519", "curve25519-x86", ProcCryptoEntry.CryptoType.KPP, 200));
+        cryptoNode3.add(new ProcCryptoEntry("xchacha12", "xchacha12-simd", ProcCryptoEntry.CryptoType.SKCIPHER, 300));
+        cryptoNode3.add(new ProcCryptoEntry("poly1305", "poly1305-simd", ProcCryptoEntry.CryptoType.SHASH, 100));
+        cryptoNode3.add(new ProcCryptoEntry("blake2s-256", "blake2s-256-x86", ProcCryptoEntry.CryptoType.SHASH, 200));
+        cryptoNode3.add(new ProcCryptoEntry("lzo-rle", "lzo-rle-scomp", ProcCryptoEntry.CryptoType.SCOMP, 0));
+        cryptoNode3.add(new ProcCryptoEntry("crc32", "crc32-pclmul", ProcCryptoEntry.CryptoType.SHASH, 200));
+
+        Map<String, List<ProcCryptoEntry>> cryptoMap = new HashMap<>();
+        cryptoMap.put("linstor1", cryptoNode1);
+        cryptoMap.put("linstor2", cryptoNode2);
+        cryptoMap.put("linstor3", cryptoNode3);
+
+        ProcCryptoEntry pce = ProcCryptoUtils.commonCryptoType(
+            cryptoMap, ProcCryptoEntry.CryptoType.SHASH, Collections.singletonList("poly1305-simd"));
+
+        assertNotNull(pce);
+        assertEquals("poly1305-simd", pce.getDriver());
+
+        pce = ProcCryptoUtils.commonCryptoType(
+            cryptoMap, ProcCryptoEntry.CryptoType.SHASH, Arrays.asList("poly1305-simd", "crc32-pclmul"));
+
+        assertNotNull(pce);
+        assertEquals("crc32-pclmul", pce.getDriver());
     }
 }

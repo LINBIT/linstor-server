@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.utils;
 
 import com.linbit.linstor.storage.ProcCryptoEntry;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -91,15 +92,16 @@ public class ProcCryptoUtils {
             .collect(Collectors.toList());
     }
 
-    public static ProcCryptoEntry commonCryptoType(
+    public static @Nullable ProcCryptoEntry commonCryptoType(
             Map<String, List<ProcCryptoEntry>> nodeCryptoMap,
-            ProcCryptoEntry.CryptoType type) {
+            ProcCryptoEntry.CryptoType type,
+            List<String> allowedDrivers) {
         List<ProcCryptoEntry> commons = new ArrayList<>();
 
         if (nodeCryptoMap.values().stream().findFirst().isPresent()) {
             List<ProcCryptoEntry> firstNode = nodeCryptoMap.values().stream().findFirst().get();
             commons = firstNode.stream()
-                .filter(pce -> pce.getType() == type)
+                .filter(pce -> pce.getType() == type && (allowedDrivers.isEmpty() || allowedDrivers.contains(pce.getDriver().toLowerCase())))
                 .collect(Collectors.toList());
 
             for (List<ProcCryptoEntry> nodeCryptos : nodeCryptoMap.values().stream()

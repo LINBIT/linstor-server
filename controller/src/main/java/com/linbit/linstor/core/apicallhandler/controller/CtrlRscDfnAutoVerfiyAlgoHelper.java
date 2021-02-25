@@ -13,6 +13,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.utils.ProcCryptoUtils;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -23,20 +24,25 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Singleton
 public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHelper {
+    private final ErrorReporter errorReporter;
     private final Provider<AccessContext> peerCtxProvider;
     private final SystemConfRepository sysCfgRepo;
 
     @Inject
     public CtrlRscDfnAutoVerfiyAlgoHelper(
+        ErrorReporter errorReporterRef,
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
         SystemConfRepository systemConfRepositoryRef)
     {
+        errorReporter = errorReporterRef;
         this.peerCtxProvider = peerCtxProviderRef;
         sysCfgRepo = systemConfRepositoryRef;
     }
@@ -97,8 +103,20 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                         nodeCryptos.put(rsc.getNode().getName().displayValue, rsc.getNode().getSupportedCryptos())
                     );
 
+                final String allowedAutoAlgosString = sysCfgRepo.getCtrlConfForView(peerCtxProvider.get())
+                        .getPropWithDefault(
+                            InternalApiConsts.KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_LIST,
+                            ApiConsts.NAMESPC_DRBD_OPTIONS,
+                            "");
+                ArrayList<String> allowedAlgos = new ArrayList<>(
+                    Arrays.asList(allowedAutoAlgosString.trim().split(";")));
+
+                final String allowedAutoAlgosUserString = rscDfn.getProps(peerCtxProvider.get()).getPropWithDefault(
+                    ApiConsts.KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_USER, ApiConsts.NAMESPC_DRBD_OPTIONS, "");
+                allowedAlgos.addAll(Arrays.asList(allowedAutoAlgosUserString.trim().split(";")));
+
                 final ProcCryptoEntry commonHashAlgo = ProcCryptoUtils.commonCryptoType(
-                    nodeCryptos, ProcCryptoEntry.CryptoType.SHASH);
+                    nodeCryptos, ProcCryptoEntry.CryptoType.SHASH, allowedAlgos);
 
                 final String verifyAlgo = rscDfn.getProps(peerCtxProvider.get()).getProp(
                     InternalApiConsts.DRBD_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
@@ -106,6 +124,10 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                 {
                     if (!commonHashAlgo.getDriver().equals(verifyAlgo))
                     {
+                        errorReporter.logInfo(
+                            "Drbd-verify-Algo for %s automatically set to %s",
+                            rscDfn.getName(),
+                            commonHashAlgo.getDriver());
                         rscDfn.getProps(peerCtxProvider.get()).setProp(
                             InternalApiConsts.DRBD_VERIFY_ALGO,
                             commonHashAlgo.getDriver(),

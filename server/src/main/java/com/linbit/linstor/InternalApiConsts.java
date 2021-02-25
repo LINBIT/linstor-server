@@ -135,6 +135,7 @@ public class InternalApiConsts
 
     // drbd option consts
     public static final String DRBD_VERIFY_ALGO = "verify-alg";
+    public static final String KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_LIST = "auto-verify-algo-allowed-list";
 
     private InternalApiConsts()
     {
