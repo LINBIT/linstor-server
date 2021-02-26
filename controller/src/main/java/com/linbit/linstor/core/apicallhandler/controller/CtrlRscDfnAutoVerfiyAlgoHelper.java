@@ -118,24 +118,31 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                 final ProcCryptoEntry commonHashAlgo = ProcCryptoUtils.commonCryptoType(
                     nodeCryptos, ProcCryptoEntry.CryptoType.SHASH, allowedAlgos);
 
-                final String verifyAlgo = rscDfn.getProps(peerCtxProvider.get()).getProp(
-                    InternalApiConsts.DRBD_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
                 if (commonHashAlgo != null)
                 {
-                    if (!commonHashAlgo.getDriver().equals(verifyAlgo))
+                    final String autoVerifyAlgo = rscDfn.getProps(peerCtxProvider.get()).getProp(
+                        InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
+
+                    if (!commonHashAlgo.getDriver().equalsIgnoreCase(autoVerifyAlgo))
                     {
                         errorReporter.logInfo(
-                            "Drbd-verify-Algo for %s automatically set to %s",
+                            "Drbd-auto-verify-Algo for %s automatically set to %s",
                             rscDfn.getName(),
                             commonHashAlgo.getDriver());
                         rscDfn.getProps(peerCtxProvider.get()).setProp(
-                            InternalApiConsts.DRBD_VERIFY_ALGO,
+                            InternalApiConsts.DRBD_AUTO_VERIFY_ALGO,
                             commonHashAlgo.getDriver(),
-                            ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+                            ApiConsts.NAMESPC_DRBD_OPTIONS);
                         rc.addEntry(
-                            String.format("Updated DRBD verify algorithm to '%s'", commonHashAlgo.getDriver()),
+                            String.format("Updated DRBD auto verify algorithm to '%s'", commonHashAlgo.getDriver()),
                             ApiConsts.MASK_INFO);
                     }
+                } else {
+                    errorReporter.logInfo(
+                        "No common DRBD verify algorithm found for '%s'",
+                        rscDfn.getName());
+                    rscDfn.getProps(peerCtxProvider.get()).removeProp(
+                        InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
                 }
             }
         }

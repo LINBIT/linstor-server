@@ -7,7 +7,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.PriorityProps.MultiResult;
-import com.linbit.linstor.PriorityProps.ValueWithDescirption;
+import com.linbit.linstor.PriorityProps.ValueWithDescription;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
@@ -25,8 +25,10 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -45,6 +47,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -166,6 +169,18 @@ public class ConfFileBuilder
                 .addProps(rscGrpProps, "RG (" + rscGrp.getName() + ")")
                 .addProps(localRsc.getNode().getProps(accCtx), "N (" + localNodeName + ")")
                 .addProps(stltProps, "C");
+
+            // set auto verify algorithm if none is set yet by the user
+            final String verifyAlgo = prioProps.getProp(
+                InternalApiConsts.DRBD_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+            final String autoVerifyAlgo = prioProps.getProp(
+                InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
+            if (verifyAlgo == null && autoVerifyAlgo != null) {
+                prioProps.setFallbackProp(
+                    InternalApiConsts.DRBD_VERIFY_ALGO,
+                    autoVerifyAlgo,
+                    ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+            }
 
             if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS))
             {
@@ -720,12 +735,12 @@ public class ConfFileBuilder
                     Arrays.fill(spacesChar, ' ');
                     String spaces = new String(spacesChar);
 
-                    for (ValueWithDescirption valueWithDescirption : multiResult.conflictingList)
+                    for (ValueWithDescription valueWithDescription : multiResult.conflictingList)
                     {
                         append("%s# overrides value '%s' from %s%n",
                             spaces,
-                            valueWithDescirption.value,
-                            valueWithDescirption.propsDescription
+                            valueWithDescription.value,
+                            valueWithDescription.propsDescription
                         );
                     }
                 }

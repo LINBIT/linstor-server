@@ -21,7 +21,10 @@ import java.util.TreeMap;
 
 public class PriorityProps
 {
+    public static final String FALLBACKMAP_NAME = "Fallback";
+
     private final List<Pair<Props, String>> propList = new ArrayList<>();
+    private final HashMap<String, String> fallbackMap = new HashMap<>();
 
     public PriorityProps(
         AccessContext accCtx,
@@ -87,6 +90,10 @@ public class PriorityProps
                 break;
             }
         }
+        if (value == null) {
+            final String fullKey = namespace != null? namespace + Props.PATH_SEPARATOR + key : key;
+            value = fallbackMap.get(prepStoreKey(fullKey));
+        }
         return value;
     }
 
@@ -99,6 +106,25 @@ public class PriorityProps
     public String getProp(String key) throws InvalidKeyException
     {
         return getProp(key, null);
+    }
+
+    private String prepStoreKey(String key)
+    {
+        return key
+            .replaceAll(Props.PATH_SEPARATOR + "+", Props.PATH_SEPARATOR)
+            .replaceAll("^" + Props.PATH_SEPARATOR + "*", "");
+    }
+
+    public void setFallbackProp(String key, String value)
+    {
+        fallbackMap.put(prepStoreKey(key), value);
+    }
+
+    public void setFallbackProp(String key, String value, String namespace)
+    {
+        final String fullKey = namespace.endsWith(Props.PATH_SEPARATOR) ?
+            namespace + key : namespace + Props.PATH_SEPARATOR + key;
+        fallbackMap.put(prepStoreKey(fullKey), value);
     }
 
     public Map<String, String> renderRelativeMap(String namespace)
@@ -125,6 +151,13 @@ public class PriorityProps
                 }
             }
         }
+        for (Entry<String, String> entry : fallbackMap.entrySet())
+        {
+            if (namespace != null && entry.getKey().startsWith(namespace))
+            {
+                ret.putIfAbsent(entry.getKey().substring(nsLen), entry.getValue());
+            }
+        }
         return ret;
     }
 
@@ -139,6 +172,14 @@ public class PriorityProps
         for (Pair<Props, String> entry : propList)
         {
             if (entry.objA.getNamespace(namespcDrbdHandlerOptionsRef).isPresent())
+            {
+                ret = true;
+                break;
+            }
+        }
+        for (Entry<String, String> entry : fallbackMap.entrySet())
+        {
+            if (entry.getKey().startsWith(namespcDrbdHandlerOptionsRef))
             {
                 ret = true;
                 break;
@@ -172,6 +213,19 @@ public class PriorityProps
                 }
             }
         }
+        final String fullKey = namespace != null? namespace + Props.PATH_SEPARATOR + key : key;
+        String value = fallbackMap.get(prepStoreKey(fullKey));
+        if (value != null)
+        {
+            if (ret == null)
+            {
+                ret = new MultiResult(value, FALLBACKMAP_NAME);
+            }
+            else
+            {
+                ret.addResult(value, FALLBACKMAP_NAME);
+            }
+        }
 
         return ret;
     }
@@ -193,16 +247,8 @@ public class PriorityProps
             {
                 for (Entry<String, String> entry : optNs.get().map().entrySet())
                 {
-                    String key;
-                    String absKey = entry.getKey();
-                    if (absoluteKey)
-                    {
-                        key = absKey;
-                    }
-                    else
-                    {
-                        key = absKey.substring(nsLen);
-                    }
+                    final String absKey = entry.getKey();
+                    final String key = absoluteKey ? absKey : absKey.substring(nsLen);
                     MultiResult result = ret.get(key);
                     if (result == null)
                     {
@@ -216,34 +262,50 @@ public class PriorityProps
                 }
             }
         }
-
+        for (Entry<String, String> entry : fallbackMap.entrySet())
+        {
+            if (entry.getKey().startsWith(namespace))
+            {
+                final String absKey = entry.getKey();
+                final String key = absoluteKey ? absKey : absKey.substring(nsLen);
+                MultiResult result = ret.get(key);
+                if (result == null)
+                {
+                    result = new MultiResult(entry.getValue(), FALLBACKMAP_NAME);
+                    ret.put(key, result);
+                } else
+                {
+                    result.addResult(entry.getValue(), FALLBACKMAP_NAME);
+                }
+            }
+        }
         return ret;
     }
 
     public static class MultiResult
     {
-        public final ValueWithDescirption first;
-        public final List<ValueWithDescirption> conflictingList;
-        private final List<ValueWithDescirption> modifiableList = new ArrayList<>();
+        public final ValueWithDescription first;
+        public final List<ValueWithDescription> conflictingList;
+        private final List<ValueWithDescription> modifiableList = new ArrayList<>();
 
         public MultiResult(String valueRef, String propDescr)
         {
-            first = new ValueWithDescirption(valueRef, propDescr);
+            first = new ValueWithDescription(valueRef, propDescr);
             conflictingList = Collections.unmodifiableList(modifiableList);
         }
 
         private void addResult(String valueRef, String propDescr)
         {
-            modifiableList.add(new ValueWithDescirption(valueRef, propDescr));
+            modifiableList.add(new ValueWithDescription(valueRef, propDescr));
         }
     }
 
-    public static class ValueWithDescirption
+    public static class ValueWithDescription
     {
         public final String value;
         public final String propsDescription;
 
-        private ValueWithDescirption(String valueRef, String propsDescriptionRef)
+        private ValueWithDescription(String valueRef, String propsDescriptionRef)
         {
             value = valueRef;
             propsDescription = propsDescriptionRef;

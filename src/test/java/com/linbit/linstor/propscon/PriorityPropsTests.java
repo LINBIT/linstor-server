@@ -9,6 +9,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class PriorityPropsTests extends GenericDbBase
 {
@@ -69,5 +71,28 @@ public class PriorityPropsTests extends GenericDbBase
         assertEquals("7", map.get("3"));
         assertEquals("8", map.get("a/1"));
         assertEquals(4, map.size());
+    }
+
+    @Test
+    public void fallbackMapTest()
+    {
+        assertNull(prioProps.getProp("foo"));
+
+        prioProps.setFallbackProp("foo", "10");
+        prioProps.setFallbackProp("foo", "11", "fb");
+        prioProps.setFallbackProp("foo2", "12", "/fb");
+        prioProps.setFallbackProp("foo3", "4", "/fb/");
+        prioProps.setFallbackProp("foo3", "43", "/fb/");
+
+        prioProps.setFallbackProp("/a/1", "394");
+
+        assertEquals("10", prioProps.getProp("foo"));
+        assertEquals("11", prioProps.getProp("foo", "fb"));
+        assertEquals("12", prioProps.getProp("foo2", "fb"));
+        assertEquals("43", prioProps.getProp("foo3", "fb"));
+
+        assertEquals("1", prioProps.getProp("1", "a"));
+
+        assertTrue(prioProps.anyPropsHasNamespace("fb"));
     }
 }
