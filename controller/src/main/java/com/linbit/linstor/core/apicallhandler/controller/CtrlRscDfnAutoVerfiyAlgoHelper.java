@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -26,9 +27,9 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHelper {
@@ -50,7 +51,69 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
     @Override
     public void manage(CtrlRscAutoHelper.AutoHelperContext ctx)
     {
+        ctx.responses.addEntries(checkVerifyAlgorithm(ctx.rscDfn));
         ctx.responses.addEntries(updateVerifyAlgorithm(ctx.rscDfn));
+    }
+
+    private Map<String, List<ProcCryptoEntry>> getCryptoEntryMap(ResourceDefinition rscDfn)
+            throws AccessDeniedException {
+        return rscDfn.streamResource(peerCtxProvider.get())
+            .filter(
+                rsc ->
+                {
+                    boolean result = false;
+                    try
+                    {
+                        if (!rsc.getNode().isDeleted())
+                        {
+                            result = !rsc.isDrbdDiskless(peerCtxProvider.get()) &&
+                                LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).contains(DeviceLayerKind.DRBD);
+                        }
+                    }
+                    catch (AccessDeniedException ignored)
+                    {
+                    }
+                    return result;
+                }
+            )
+            .collect(Collectors.toMap(
+                rsc -> rsc.getNode().getName().displayValue,
+                rsc -> rsc.getNode().getSupportedCryptos()));
+    }
+
+    private ApiCallRc checkVerifyAlgorithm(ResourceDefinition rscDfn) {
+        final ApiCallRcImpl rc = new ApiCallRcImpl();
+
+        try
+        {
+            PriorityProps prioProps = new PriorityProps()
+                .addProps(rscDfn.getProps(peerCtxProvider.get()), "RD (" + rscDfn.getName() + ")")
+                .addProps(
+                    rscDfn.getResourceGroup().getProps(peerCtxProvider.get()),
+                    "RG (" + rscDfn.getResourceGroup().getName() + ")")
+                .addProps(sysCfgRepo.getCtrlConfForView(peerCtxProvider.get()), "C");
+
+            final String verifyAlgo = prioProps.getProp(
+                InternalApiConsts.DRBD_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+
+            if (verifyAlgo != null && rscDfn.getLayerStack(peerCtxProvider.get()).contains(DeviceLayerKind.DRBD)) {
+                final Map<String, List<ProcCryptoEntry>> nodeCryptos = getCryptoEntryMap(rscDfn);
+
+                if (!ProcCryptoUtils.cryptoDriverSupported(nodeCryptos, ProcCryptoEntry.CryptoType.SHASH, verifyAlgo)) {
+                    throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_INVLD_PROP,
+                        String.format("Verify algorithm '%s' not supported on all nodes.", verifyAlgo)));
+                }
+            }
+        } catch (AccessDeniedException accDeniedExc) {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "reading verify algorithm",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+
+        return rc;
     }
 
     /**
@@ -79,29 +142,7 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                 ApiConsts.NAMESPC_DRBD_OPTIONS);
             if (disableAuto == null && rscDfn.getLayerStack(peerCtxProvider.get()).contains(DeviceLayerKind.DRBD))
             {
-                final Map<String, List<ProcCryptoEntry>> nodeCryptos = new HashMap<>();
-                rscDfn.streamResource(peerCtxProvider.get())
-                    .filter(
-                        rsc ->
-                        {
-                            boolean result = false;
-                            try
-                            {
-                                if (!rsc.getNode().isDeleted())
-                                {
-                                    result = !rsc.isDrbdDiskless(peerCtxProvider.get()) &&
-                                        LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).contains(DeviceLayerKind.DRBD);
-                                }
-                            }
-                            catch (AccessDeniedException ignored)
-                            {
-                            }
-                            return result;
-                        }
-                    )
-                    .forEach(rsc ->
-                        nodeCryptos.put(rsc.getNode().getName().displayValue, rsc.getNode().getSupportedCryptos())
-                    );
+                final Map<String, List<ProcCryptoEntry>> nodeCryptos = getCryptoEntryMap(rscDfn);
 
                 final String allowedAutoAlgosString = sysCfgRepo.getCtrlConfForView(peerCtxProvider.get())
                         .getPropWithDefault(

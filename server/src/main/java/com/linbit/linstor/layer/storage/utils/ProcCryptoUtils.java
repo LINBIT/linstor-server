@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -92,12 +93,11 @@ public class ProcCryptoUtils {
             .collect(Collectors.toList());
     }
 
-    public static @Nullable ProcCryptoEntry commonCryptoType(
+    private static List<ProcCryptoEntry> commonCryptos(
             Map<String, List<ProcCryptoEntry>> nodeCryptoMap,
             ProcCryptoEntry.CryptoType type,
             List<String> allowedDrivers) {
         List<ProcCryptoEntry> commons = new ArrayList<>();
-
         if (nodeCryptoMap.values().stream().findFirst().isPresent()) {
             List<ProcCryptoEntry> firstNode = nodeCryptoMap.values().stream().findFirst().get();
             commons = firstNode.stream()
@@ -105,12 +105,31 @@ public class ProcCryptoUtils {
                 .collect(Collectors.toList());
 
             for (List<ProcCryptoEntry> nodeCryptos : nodeCryptoMap.values().stream()
-                    .skip(1)
-                    .collect(Collectors.toList()))
+                .skip(1)
+                .collect(Collectors.toList()))
             {
                 commons.retainAll(nodeCryptos);
             }
         }
+        return commons;
+    }
+
+    public static boolean cryptoDriverSupported(
+        Map<String, List<ProcCryptoEntry>> nodeCryptoMap,
+        ProcCryptoEntry.CryptoType type,
+        String algoName
+    )
+    {
+        return commonCryptos(nodeCryptoMap, type, Collections.emptyList())
+            .stream()
+            .anyMatch(pce -> pce.getName().equalsIgnoreCase(algoName) || pce.getDriver().equalsIgnoreCase(algoName));
+    }
+
+    public static @Nullable ProcCryptoEntry commonCryptoType(
+            Map<String, List<ProcCryptoEntry>> nodeCryptoMap,
+            ProcCryptoEntry.CryptoType type,
+            List<String> allowedDrivers) {
+        List<ProcCryptoEntry> commons = commonCryptos(nodeCryptoMap, type, allowedDrivers);
 
         return commons.stream()
             .min((e1, e2) -> Integer.compare(e2.getPriority(), e1.getPriority()))
