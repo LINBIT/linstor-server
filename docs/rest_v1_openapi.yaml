@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+       - Added makeResourceAvailable API
     * 1.6.0
        - Added PropsInfoAll, PropsInfo and PropsInfoDetails as well as these entrypoints:
           - /v1/controller/properties/info
@@ -1871,6 +1873,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
+  /v1/resource-definitions/{resource}/resources/{node}/make-available:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/Node'
+    post:
+      tags:
+        - developers
+      summary: creates the resource if not already deployed
+      operationId: resourceMakeAvailableOnNode
+      description: |
+        Adds a resource on a node if not already deployed.
+
+        To use a specific storage pool add the `StorPoolName` property
+        and use the storage pool name as value.
+        If the `StorPoolName` property is not set, a storage pool will be chosen automatically
+        using the auto-placer.
+
+        To create a diskless resource you have to set the "DISKLESS" flag in the flags list.
+        ```
+        {
+          "resource": {
+            "flags": ["DISKLESS"]
+          }
+        }
+        ```
+      responses:
+        '200':
+          description: resource is either created or ensured to be available
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+          description: A resource could not be made available. See error message for more details
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceMakeAvailable'
   /v1/resource-definitions/{resource}/resources/properties/info:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -4960,6 +4998,16 @@ components:
         drbd_node_id:
           type: integer
           format: int32
+    ResourceMakeAvailable:
+      type: object
+      properties:
+        layer_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'
+        diskful:
+          type: boolean
+          description: if true resource will be created as diskful even if diskless would be possible
     ResourceModify:
       type: object
       properties:

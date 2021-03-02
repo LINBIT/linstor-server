@@ -501,26 +501,31 @@ public class CtrlRscAutoPlaceApiCallHandler
 
     private long calculateResourceDefinitionSize(String rscNameStr)
     {
+        return calculateResourceDefinitionSize(ctrlApiDataLoader.loadRscDfn(rscNameStr, true), peerAccCtx.get());
+    }
+
+    static long calculateResourceDefinitionSize(ResourceDefinition rscDfn, AccessContext accCtx)
+    {
         long size = 0;
         try
         {
-            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
-            Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(peerAccCtx.get());
+            Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(accCtx);
             while (vlmDfnIt.hasNext())
             {
                 VolumeDefinition vlmDfn = vlmDfnIt.next();
-                size += vlmDfn.getVolumeSize(peerAccCtx.get());
+                size += vlmDfn.getVolumeSize(accCtx);
             }
         }
         catch (AccessDeniedException accDeniedExc)
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access " + CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline(rscNameStr),
+                "access " + CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline(rscDfn.getName().displayValue),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
         return size;
+
     }
 
     private Stream<Resource> privilegedStreamResources(ResourceDefinition rscDfn)

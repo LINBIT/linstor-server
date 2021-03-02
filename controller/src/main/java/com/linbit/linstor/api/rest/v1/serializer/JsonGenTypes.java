@@ -432,6 +432,16 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceMakeAvailable
+    {
+        public List<String> layer_list = Collections.emptyList();
+        /**
+         * if true resource will be created as diskful even if diskless would be possible
+         */
+        public Boolean diskful;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ResourceModify
     {
         public Map<String, String> override_props = Collections.emptyMap();

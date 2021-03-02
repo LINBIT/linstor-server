@@ -11,6 +11,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHan
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscActivateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscMakeAvailableApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.ResourceApi;
@@ -55,6 +56,7 @@ public class Resources
     private final CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandler;
     private final CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandler;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
+    private final CtrlRscMakeAvailableApiCallHandler ctrlRscMakeAvailableApiCallHandler;
     private final ObjectMapper objectMapper;
     private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
@@ -66,6 +68,7 @@ public class Resources
         CtrlRscDeleteApiCallHandler ctrlRscDeleteApiCallHandlerRef,
         CtrlRscToggleDiskApiCallHandler ctrlRscToggleDiskApiCallHandlerRef,
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
+        CtrlRscMakeAvailableApiCallHandler ctrlRscMakeAvailableApiCallHandlerRef,
         CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
     {
@@ -75,6 +78,7 @@ public class Resources
         ctrlRscDeleteApiCallHandler = ctrlRscDeleteApiCallHandlerRef;
         ctrlRscToggleDiskApiCallHandler = ctrlRscToggleDiskApiCallHandlerRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
+        ctrlRscMakeAvailableApiCallHandler = ctrlRscMakeAvailableApiCallHandlerRef;
         ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
 
         objectMapper = new ObjectMapper();
@@ -271,6 +275,39 @@ public class Resources
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_RSC, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+    }
+
+    @POST
+    @Path("{nodeName}/make-available")
+    public void makeResourceAvailable(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeNameRef,
+        @PathParam("rscName") String rscNameRef,
+        String jsonData
+    )
+    {
+        // due to lazyness we simply reuse the ResourceCreate class
+        JsonGenTypes.ResourceMakeAvailable rscData;
+        try
+        {
+            rscData = objectMapper.readValue(jsonData, JsonGenTypes.ResourceMakeAvailable.class);
+
+            Flux<ApiCallRc> flux = ctrlRscMakeAvailableApiCallHandler
+                .makeResourceAvailable(
+                    nodeNameRef,
+                    rscNameRef,
+                    rscData.layer_list,
+                    rscData.diskful
+                )
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_MAKE_RSC_AVAIL, request));
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 
     @PUT
