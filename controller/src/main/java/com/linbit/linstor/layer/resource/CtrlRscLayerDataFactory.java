@@ -11,7 +11,6 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
@@ -409,10 +408,7 @@ public class CtrlRscLayerDataFactory
         );
         if (storageVlmPayload != null)
         {
-            storPool = vlmRef.getAbsResource().getNode().getStorPool(
-                apiCtx,
-                new StorPoolName(storageVlmPayload.storPoolName)
-            );
+            storPool = storageVlmPayload.storPool;
         }
 
         AbsRscLayerObject<Resource> child = rscDataRef;

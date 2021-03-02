@@ -94,6 +94,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -885,8 +886,18 @@ public class CtrlRscDfnApiCallHandler
                     Volume srcVlm = rsc.getVolume(volumeNumber);
 
                     Map<String, StorPool> storPool = LayerVlmUtils.getStorPoolMap(rsc, volumeNumber, peerAccCtx.get());
+                    LayerPayload vlmDfnPayload = new LayerPayload();
+                    for (Entry<String, StorPool> entry : storPool.entrySet())
+                    {
+                        payload.putStorageVlmPayload(
+                            entry.getKey(),
+                            toVlmDfn.getVolumeNumber().value,
+                            entry.getValue()
+                        );
+                    }
+
                     Volume cloneVlm = ctrlVlmCrtApiHelper
-                        .createVolumeFromAbsVolume(newRsc, toVlmDfn, storPool, thinFreeCapacities, srcVlm);
+                        .createVolumeFromAbsVolume(newRsc, toVlmDfn, vlmDfnPayload, thinFreeCapacities, srcVlm);
 
                     ctrlPropsHelper.copy(
                         ctrlPropsHelper.getProps(srcVlm),

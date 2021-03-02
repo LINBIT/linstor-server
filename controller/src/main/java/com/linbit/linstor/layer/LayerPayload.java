@@ -3,6 +3,7 @@ package com.linbit.linstor.layer;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -77,11 +78,11 @@ public class LayerPayload
 
     public class StorageVlmPayload
     {
-        public String storPoolName;
+        public StorPool storPool;
 
-        public StorageVlmPayload(String storPoolNameRef)
+        public StorageVlmPayload(StorPool storPoolRef)
         {
-            storPoolName = storPoolNameRef;
+            storPool = storPoolRef;
         }
     }
 
@@ -90,9 +91,9 @@ public class LayerPayload
         return storagePayload.get(new Pair<>(rscNameSuffix, vlmNr));
     }
 
-    public LayerPayload putStorageVlmPayload(String rscNameSuffix, int vlmNr, String storPoolName)
+    public LayerPayload putStorageVlmPayload(String rscNameSuffix, int vlmNr, StorPool storPool)
     {
-        storagePayload.put(new Pair<>(rscNameSuffix, vlmNr), new StorageVlmPayload(storPoolName));
+        storagePayload.put(new Pair<>(rscNameSuffix, vlmNr), new StorageVlmPayload(storPool));
         return this;
     }
 

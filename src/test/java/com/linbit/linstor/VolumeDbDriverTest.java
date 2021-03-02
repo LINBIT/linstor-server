@@ -186,12 +186,14 @@ public class VolumeDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
+        LayerPayload payload = new LayerPayload();
+        payload.putStorageVlmPayload("", volDfn.getVolumeNumber().value, storPool);
         Volume volData = volumeFactory.create(
             SYS_CTX,
             res,
             volDfn,
             new Volume.Flags[] {Volume.Flags.DELETE},
-            Collections.singletonMap("", storPool),
+            payload,
             null
         );
         commit();
@@ -275,12 +277,14 @@ public class VolumeDbDriverTest extends GenericDbBase
     @Test
     public void testCache() throws Exception
     {
+        LayerPayload payload = new LayerPayload();
+        payload.putStorageVlmPayload("", volDfn.getVolumeNumber().value, storPool);
         Volume storedInstance = volumeFactory.create(
             SYS_CTX,
             res,
             volDfn,
             null,
-            Collections.singletonMap("", storPool),
+            payload,
             null
         );
 
@@ -427,7 +431,7 @@ public class VolumeDbDriverTest extends GenericDbBase
             res,
             volDfn,
             null,
-            Collections.emptyMap(),
+            new LayerPayload(),
             null
         );
     }

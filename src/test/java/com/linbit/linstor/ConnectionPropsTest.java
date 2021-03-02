@@ -141,20 +141,22 @@ public class ConnectionPropsTest extends GenericDbBase
 
         volDfn = volumeDefinitionFactory.create(SYS_CTX, resDfn, volNr, minor, volSize, null);
 
+        payload1.putStorageVlmPayload("", volDfn.getVolumeNumber().value, storPool1);
         vol1 = volumeFactory.create(
             SYS_CTX,
             res1,
             volDfn,
             null,
-            Collections.singletonMap("", storPool1),
+            payload1,
             null
         );
+        payload2.putStorageVlmPayload("", volDfn.getVolumeNumber().value, storPool2);
         vol2 = volumeFactory.create(
             SYS_CTX,
             res2,
             volDfn,
             null,
-            Collections.singletonMap("", storPool2),
+            payload2,
             null
         );
 

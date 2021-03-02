@@ -16,13 +16,12 @@ import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
-import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeControllerFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -41,7 +40,7 @@ import javax.inject.Singleton;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Singleton
 public class CtrlVlmCrtApiHelper
@@ -75,47 +74,52 @@ public class CtrlVlmCrtApiHelper
         boolean isDiskless = isDiskless(rsc);
         StorPool storPool = storPoolResolveHelper.resolveStorPool(rsc, vlmDfn, isDiskless).extractApiCallRc(apiCallRc);
 
-        Map<String, StorPool> storPoolMap = new TreeMap<>();
-        storPoolMap.put("", storPool);
+        LayerPayload payload = new LayerPayload();
+        payload.putStorageVlmPayload("", vlmDfn.getVolumeNumber().value, storPool);
 
-        return new ApiCallRcWith<>(apiCallRc, createVolume(
-            rsc,
-            vlmDfn,
-            storPoolMap,
-            thinFreeCapacities
-        ));
+        return new ApiCallRcWith<>(
+            apiCallRc,
+            createVolume(
+                rsc,
+                vlmDfn,
+                payload,
+                thinFreeCapacities
+            )
+        );
     }
 
     public Volume createVolume(
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Map<String, StorPool> storPoolMapRef,
+        LayerPayload payload,
         Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
-        return createVlmImpl(rsc, vlmDfn, storPoolMapRef, thinFreeCapacities, null);
+        return createVlmImpl(rsc, vlmDfn, payload, thinFreeCapacities, null);
     }
 
     public <RSC extends AbsResource<RSC>> Volume createVolumeFromAbsVolume(
         Resource rscRef,
         VolumeDefinition toVlmDfnRef,
-        Map<String, StorPool> storPoolRef,
+        LayerPayload payload,
         Map<StorPool.Key, Long> thinFreeCapacities,
         AbsVolume<RSC> fromAbsVolumeRef
     )
     {
-        return createVlmImpl(rscRef, toVlmDfnRef, storPoolRef, thinFreeCapacities, fromAbsVolumeRef);
+        return createVlmImpl(rscRef, toVlmDfnRef, payload, thinFreeCapacities, fromAbsVolumeRef);
     }
 
     private <RSC extends AbsResource<RSC>> Volume createVlmImpl(
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Map<String, StorPool> storPoolMapRef,
+        LayerPayload payload,
         Map<StorPool.Key, Long> thinFreeCapacities,
         AbsVolume<RSC> snapVlmRef
     )
     {
-        checkIfStorPoolsAreUsable(rsc, vlmDfn, storPoolMapRef, thinFreeCapacities);
+        Set<StorPool> storPoolSet = payload.storagePayload.values().stream().map(vlmPayload -> vlmPayload.storPool)
+            .collect(Collectors.toSet());
+        checkIfStorPoolsAreUsable(rsc, vlmDfn, storPoolSet, thinFreeCapacities);
 
         Volume vlm;
         try
@@ -127,7 +131,7 @@ public class CtrlVlmCrtApiHelper
                     rsc,
                     vlmDfn,
                     null, // flags
-                    storPoolMapRef,
+                    payload,
                     null
                 );
             }
@@ -138,7 +142,7 @@ public class CtrlVlmCrtApiHelper
                     rsc,
                     vlmDfn,
                     null, // flags
-                    storPoolMapRef,
+                    payload,
                     snapVlmRef.getAbsResource().getLayerData(peerAccCtx.get())
                 );
             }
@@ -170,7 +174,7 @@ public class CtrlVlmCrtApiHelper
     private void checkIfStorPoolsAreUsable(
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Map<String, StorPool> storPoolMapRef,
+        Set<StorPool> storPoolSetRef,
         Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
@@ -187,7 +191,7 @@ public class CtrlVlmCrtApiHelper
         Set<StorPool> thinPools = new HashSet<>();
         Set<StorPool> poolsToCheck = new HashSet<>();
 
-        for (StorPool storPool : storPoolMapRef.values())
+        for (StorPool storPool : storPoolSetRef)
         {
             DeviceProviderKind devProviderKind = storPool.getDeviceProviderKind();
             if (devProviderKind.hasBackingDevice())

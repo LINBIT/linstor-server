@@ -163,20 +163,24 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
             false
         );
 
+        LayerPayload payload1 = new LayerPayload();
+        payload1.putStorageVlmPayload("", volDfn.getVolumeNumber().value, storPool1);
         volSrc = volumeFactory.create(
             SYS_CTX,
             resSrc,
             volDfn,
             null,
-            Collections.singletonMap("", storPool1),
+            payload1,
             null
         );
+        LayerPayload payload2 = new LayerPayload();
+        payload2.putStorageVlmPayload("", volDfn.getVolumeNumber().value, storPool2);
         volDst = volumeFactory.create(
             SYS_CTX,
             resDst,
             volDfn,
             null,
-            Collections.singletonMap("", storPool2),
+            payload2,
             null
         );
     }

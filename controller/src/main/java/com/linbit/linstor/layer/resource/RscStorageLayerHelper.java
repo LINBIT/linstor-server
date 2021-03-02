@@ -11,7 +11,6 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
@@ -195,7 +194,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
 
         for (StorageVlmPayload storageVlmPayload : payloadRef.storagePayload.values())
         {
-            StorPool storPool = rsc.getNode().getStorPool(apiCtx, new StorPoolName(storageVlmPayload.storPoolName));
+            StorPool storPool = storageVlmPayload.storPool;
             if (storPool != null)
             {
                 neededStorPools.add(storPool);

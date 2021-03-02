@@ -31,6 +31,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -51,6 +52,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -446,8 +448,13 @@ public class CtrlSnapshotRestoreApiCallHandler
             }
 
             Map<String, StorPool> storPool = LayerVlmUtils.getStorPoolMap(snapshot, volumeNumber, peerAccCtx.get());
+            LayerPayload payload = new LayerPayload();
+            for (Entry<String, StorPool> storPoolEntry : storPool.entrySet())
+            {
+                payload.putStorageVlmPayload(storPoolEntry.getKey(), volumeNumber.value, storPoolEntry.getValue());
+            }
             Volume toVlm = ctrlVlmCrtApiHelper
-                .createVolumeFromAbsVolume(rsc, toVlmDfn, storPool, null, fromSnapshotVolume);
+                .createVolumeFromAbsVolume(rsc, toVlmDfn, payload, null, fromSnapshotVolume);
 
             Props vlmProps = ctrlPropsHelper.getProps(toVlm);
             ctrlPropsHelper.copy(

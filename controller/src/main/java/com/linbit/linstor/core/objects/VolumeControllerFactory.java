@@ -18,8 +18,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -52,7 +50,7 @@ public class VolumeControllerFactory
         Resource rsc,
         VolumeDefinition vlmDfn,
         Volume.Flags[] flags,
-        Map<String, StorPool> storPoolMapRef,
+        LayerPayload payload,
         @Nullable AbsRscLayerObject<RSC> absLayerData
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
@@ -83,12 +81,6 @@ public class VolumeControllerFactory
         rsc.putVolume(accCtx, volData);
         vlmDfn.putVolume(accCtx, volData);
 
-        LayerPayload payload = new LayerPayload();
-        int vlmNr = vlmDfn.getVolumeNumber().value;
-        for (Entry<String, StorPool> entry : storPoolMapRef.entrySet())
-        {
-            payload.putStorageVlmPayload(entry.getKey(), vlmNr, entry.getValue().getName().displayValue);
-        }
         if (absLayerData == null)
         {
             layerStackHelper.ensureStackDataExists(rsc, null, payload);

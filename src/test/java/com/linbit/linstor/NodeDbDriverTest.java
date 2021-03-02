@@ -437,13 +437,14 @@ public class NodeDbDriverTest extends GenericDbBase
             res1Uuid = res1.getUuid();
 
             // node1 vol
+            payload1.putStorageVlmPayload("", volDfn.getVolumeNumber().value, storPool1);
             Volume vol1 = volumeFactory.create(
                 SYS_CTX,
                 res1,
                 volDfn,
                 new Volume.Flags[]
                 {},
-                Collections.singletonMap("", storPool1),
+                payload1,
                 null
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
@@ -467,13 +468,14 @@ public class NodeDbDriverTest extends GenericDbBase
             res2Uuid = res2.getUuid();
 
             // node2 vol
+            payload2.putStorageVlmPayload("", volDfn.getVolumeNumber().value, storPool2);
             Volume vol2 = volumeFactory.create(
                 SYS_CTX,
                 res2,
                 volDfn,
                 new Volume.Flags[]
                 {},
-                Collections.singletonMap("", storPool2),
+                payload2,
                 null
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);

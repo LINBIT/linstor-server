@@ -17,8 +17,7 @@ import com.linbit.linstor.core.objects.Volume.Flags;
 import com.linbit.linstor.core.objects.VolumeControllerFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.TestAccessContextProvider;
@@ -30,7 +29,6 @@ import javax.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 
 @Singleton
@@ -47,6 +45,7 @@ public class VolumeTestFactory
     private AccessContext dfltAccCtx = TestAccessContextProvider.PUBLIC_CTX;
     private Flags[] dfltFlags = new Flags[0];
     private Map<String, String> dfltStorPoolMap = new TreeMap<>();
+    private LayerPayload dfltPayload = new LayerPayload();
     private Long dfltVlmSize = null;
 
     @Inject
@@ -182,7 +181,7 @@ public class VolumeTestFactory
 
         private AccessContext accCtx;
         private Flags[] flags;
-        private Map<String, StorPool> storPoolMap;
+        private LayerPayload payload;
         private Long vlmSize;
 
         public VolumeBuilder(String nodeNameRef, String rscNameRef, int vlmNrRef) throws AccessDeniedException,
@@ -196,14 +195,7 @@ public class VolumeTestFactory
             accCtx = dfltAccCtx;
             flags = dfltFlags;
 
-            storPoolMap = new TreeMap<>();
-            for (Entry<String, String> dfltStorPoolEntry : dfltStorPoolMap.entrySet())
-            {
-                storPoolMap.put(
-                    dfltStorPoolEntry.getKey(),
-                    spFact.get(nodeName, dfltStorPoolEntry.getValue(), true)
-                );
-            }
+            payload = ResourceDefinitionTestFactory.createCopy(dfltPayload);
             vlmSize = dfltVlmSize;
         }
 
@@ -237,9 +229,9 @@ public class VolumeTestFactory
             return this;
         }
 
-        public VolumeBuilder setStorPoolMap(Map<String, StorPool> storPoolMapRef)
+        public VolumeBuilder setLayerPayload(LayerPayload layerPayload)
         {
-            storPoolMap = storPoolMapRef;
+            payload = layerPayload;
             return this;
         }
 
@@ -252,9 +244,9 @@ public class VolumeTestFactory
         public VolumeBuilder putStorPool(String key, StorPool sp)
             throws LinStorException
         {
-            if (storPoolMap == null)
+            if (payload == null)
             {
-                storPoolMap = new TreeMap<>();
+                payload = new LayerPayload();
             }
             if (key.equals(RscLayerSuffixes.SUFFIX_DRBD_META))
             {
@@ -273,7 +265,7 @@ public class VolumeTestFactory
                 }
             }
 
-            storPoolMap.put(key, sp);
+            payload.putStorageVlmPayload(key, vlmNr, sp);
             return this;
         }
 
@@ -288,7 +280,7 @@ public class VolumeTestFactory
                 rscFact.get(nodeName, rscName, true),
                 vlmDfnFact.get(rscName, vlmNr, vlmSize, true),
                 flags,
-                storPoolMap,
+                payload,
                 null
             );
             vlmMap.put(new Triple<>(nodeName.toUpperCase(), rscName.toUpperCase(), vlmNr), vlm);

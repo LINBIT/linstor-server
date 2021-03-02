@@ -237,6 +237,9 @@ public class CtrlRscCrtApiHelper
             payload.getDrbdRsc().nodeId = nodeIdInt;
             if (storPoolName != null)
             {// null if resource is created with "-d"
+
+                StorPool storPool = ctrlApiDataLoader.loadStorPool(storPoolName, nodeNameStr, true);
+
                 Iterator<VolumeDefinition> vlmDfnIt = getVlmDfnIterator(rscDfn);
                 while (vlmDfnIt.hasNext())
                 {
@@ -253,7 +256,7 @@ public class CtrlRscCrtApiHelper
                     payload.putStorageVlmPayload(
                         RscLayerSuffixes.SUFFIX_DATA,
                         vlmDfn.getVolumeNumber().value,
-                        storPoolName
+                        storPool
                     );
                 }
             }
