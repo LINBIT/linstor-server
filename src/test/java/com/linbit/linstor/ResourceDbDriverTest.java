@@ -11,6 +11,7 @@ import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlagsBits;
@@ -79,16 +80,18 @@ public class ResourceDbDriverTest extends GenericDbBase
         );
 
         node = nodeFactory.create(SYS_CTX, nodeName, null, null);
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = resPort;
+        drbdRscDfn.sharedSecret = "secret";
+        drbdRscDfn.transportType = TransportType.IP;
         resDfn = resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,
-            resPort,
             null,
-            "secret",
-            TransportType.IP,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null,
+            payload,
             createDefaultResourceGroup(SYS_CTX)
         );
 

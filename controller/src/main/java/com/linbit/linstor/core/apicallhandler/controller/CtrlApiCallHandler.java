@@ -6,7 +6,6 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
-import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.ControllerConfigApi;
@@ -21,11 +20,10 @@ import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
-import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceConnection;
-import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -48,9 +46,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -207,18 +203,14 @@ public class CtrlApiCallHandler
     public ApiCallRc createResourceDefinition(
         String resourceName,
         byte[] extName,
-        Integer port,
-        String secretRef,
-        String transportType,
         Map<String, String> propsRef,
         List<VolumeDefinitionWtihCreationPayload> vlmDescrMapRef,
         List<String> layerStackRef,
-        Short peerSlotsRef,
+        LayerPayload payloadRef,
         String rscGrpNameRef
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        String secret = secretRef;
         Map<String, String> props = propsRef;
         if (props == null)
         {
@@ -234,13 +226,10 @@ public class CtrlApiCallHandler
             rscDfnApiCallHandler.createResourceDefinition(
                 resourceName,
                 extName,
-                port,
-                secret,
-                transportType,
                 props,
                 vlmDescrMapRef,
                 layerStackRef,
-                peerSlotsRef,
+                payloadRef,
                 rscGrpNameRef,
                 false,
                 apiCallRc,

@@ -17,6 +17,7 @@ import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -115,16 +116,18 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
         nodeDst = nodeFactory.create(SYS_CTX, targetName, Node.Type.SATELLITE, null);
         nodesMap.put(nodeDst.getName(), nodeDst);
 
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = resPort;
+        drbdRscDfn.sharedSecret = "secret";
+        drbdRscDfn.transportType = TransportType.IP;
         resDfn = resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,
-            resPort,
             null,
-            "secret",
-            TransportType.IP,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null,
+            payload,
             createDefaultResourceGroup(SYS_CTX)
         );
         rscDfnMap.put(resDfn.getName(), resDfn);

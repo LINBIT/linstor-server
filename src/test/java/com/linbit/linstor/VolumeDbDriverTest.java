@@ -14,6 +14,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
@@ -93,21 +94,22 @@ public class VolumeDbDriverTest extends GenericDbBase
 
         resName = new ResourceName("TestResName");
         resPort = 9001;
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = resPort;
+        drbdRscDfn.sharedSecret = "secret";
+        drbdRscDfn.transportType = TransportType.IP;
         resDfn = resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,
-            resPort,
             null,
-            "secret",
-            TransportType.IP,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null,
+            payload,
             createDefaultResourceGroup(SYS_CTX)
         );
 
         nodeId = 7;
-        LayerPayload payload = new LayerPayload();
         payload.getDrbdRsc().nodeId = nodeId;
         res = resourceFactory.create(
             SYS_CTX,

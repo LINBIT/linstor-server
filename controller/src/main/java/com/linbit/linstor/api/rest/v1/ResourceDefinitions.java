@@ -14,6 +14,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHan
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
+import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -44,6 +46,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonParseException;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -151,17 +154,33 @@ public class ResourceDefinitions
             byte[] externalNameBytes = rscDfnCreate.resource_definition.external_name != null ?
                 rscDfnCreate.resource_definition.external_name.getBytes(StandardCharsets.UTF_8) : null;
 
+            LayerPayload payload = new LayerPayload();
+            payload.drbdRscDfn.peerSlotsNewResource = rscDfnCreate.drbd_peer_slots == null ? null
+                : rscDfnCreate.drbd_peer_slots.shortValue();
+            payload.drbdRscDfn.tcpPort = rscDfnCreate.drbd_port;
+            if (rscDfnCreate.drbd_transport_type != null && !rscDfnCreate.drbd_transport_type.trim().isEmpty())
+            {
+                try
+                {
+                    payload.drbdRscDfn.transportType = TransportType.byValue(rscDfnCreate.drbd_transport_type);
+                }
+                catch (IllegalArgumentException unknownValueExc)
+                {
+                    throw new JsonParseException(
+                        "The given transport type '" + rscDfnCreate.drbd_transport_type + "' is invalid.",
+                        unknownValueExc
+                    );
+                }
+            }
+            payload.drbdRscDfn.sharedSecret = rscDfnCreate.drbd_secret;
 
             ApiCallRc apiCallRc = ctrlApiCallHandler.createResourceDefinition(
                 rscDfnCreate.resource_definition.name,
                 externalNameBytes,
-                rscDfnCreate.drbd_port,
-                rscDfnCreate.drbd_secret,
-                rscDfnCreate.drbd_transport_type,
                 rscDfnCreate.resource_definition.props,
                 new ArrayList<>(), // do not allow volume definition creations
                 layerDataList.stream().map(rscDfnData -> rscDfnData.type).collect(Collectors.toList()),
-                rscDfnCreate.drbd_peer_slots == null ? null : rscDfnCreate.drbd_peer_slots.shortValue(),
+                payload,
                 rscDfnCreate.resource_definition.resource_group_name
             );
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);

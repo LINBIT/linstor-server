@@ -1,10 +1,5 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -15,6 +10,7 @@ import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -34,6 +30,11 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ResourceConnectionDbDriverTest extends GenericDbBase
 {
@@ -86,16 +87,18 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
 
         uuid = randomUUID();
 
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = resPort;
+        drbdRscDfn.sharedSecret = "secret";
+        drbdRscDfn.transportType = TransportType.IP;
         resDfn = resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,
-            resPort,
             null,
-            "secret",
-            TransportType.IP,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null,
+            payload,
             createDefaultResourceGroup(SYS_CTX)
         );
         rscDfnMap.put(resDfn.getName(), resDfn);

@@ -1,12 +1,5 @@
 package com.linbit.linstor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -17,6 +10,8 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.SQLUtils;
+import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
@@ -38,6 +33,13 @@ import java.util.TreeMap;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ResourceDefinitionDbDriverTest extends GenericDbBase
 {
@@ -145,19 +147,21 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
     @Test
     public void testPersistGetInstance() throws Exception
     {
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = port;
+        drbdRscDfn.sharedSecret = secret;
+        drbdRscDfn.transportType = transportType;
         resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,
-            port,
             new ResourceDefinition.Flags[]
             {
                 ResourceDefinition.Flags.DELETE
             },
-            secret,
-            transportType,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null,
+            payload,
             dfltRscGrp
         );
 
@@ -258,16 +262,18 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
     {
         driver.create(resDfn);
         ResourceName resName2 = new ResourceName("ResName2");
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = port + 1; // prevent tcp-port-conflict
+        drbdRscDfn.sharedSecret = secret;
+        drbdRscDfn.transportType = transportType;
         resourceDefinitionFactory.create(
             SYS_CTX,
             resName2,
             null,
-            port + 1, // prevent tcp-port-conflict
             null,
-            "secret",
-            transportType,
             new ArrayList<>(),
-            null,
+            payload,
             dfltRscGrp
         );
         objProtDriver.insertOp(rscDfnObjProt);
@@ -290,8 +296,13 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
         objProtDriver.insertOp(rscDfnObjProt);
         rscDfnMap.put(resName, resDfn);
 
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = port;
+        drbdRscDfn.sharedSecret = secret;
+        drbdRscDfn.transportType = transportType;
         resourceDefinitionFactory.create(
-            SYS_CTX, resName, null, port, null, "secret", transportType, new ArrayList<>(), null, dfltRscGrp
+            SYS_CTX, resName, null, null, new ArrayList<>(), payload, dfltRscGrp
         );
     }
 }

@@ -12,6 +12,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinition.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.TestAccessContextProvider;
@@ -52,6 +53,7 @@ public class ResourceDefinitionTestFactory
     private Supplier<String> dfltSecret = () -> String.format(dfltSecretPattern, nextSecret.incrementAndGet());
     private TransportType dfltTransType = TransportType.IP;
     private List<DeviceLayerKind> dfltLayerStack = Collections.emptyList();
+    private LayerPayload dfltPayload = new LayerPayload();
     private Short dfltPeerSlots = null;
 
     @Inject
@@ -179,12 +181,9 @@ public class ResourceDefinitionTestFactory
         private String rscName;
         private AccessContext accCtx;
         private byte[] extName;
-        private Integer port;
         private Flags[] flags;
-        private String secret;
-        private TransportType transType;
         private List<DeviceLayerKind> layerStack;
-        private Short peerSlots;
+        private LayerPayload payload;
         private String rscGroupName;
 
         public ResourceDefinitionBuilder(String rscNameRef)
@@ -193,13 +192,15 @@ public class ResourceDefinitionTestFactory
             rscName = rscNameRef;
             accCtx = dfltAccCtx;
             extName = dfltExtName;
-            port = dfltPort.getAndIncrement();
             flags = dfltFlags;
-            secret = dfltSecret.get();
-            transType = dfltTransType;
+            payload = createCopy(dfltPayload);
             layerStack = copyOrNull(dfltLayerStack);
-            peerSlots = dfltPeerSlots;
             rscGroupName = dfltRscGroupName;
+
+            payload.drbdRscDfn.tcpPort = dfltPort.getAndIncrement();
+            payload.drbdRscDfn.sharedSecret = dfltSecret.get();
+            payload.drbdRscDfn.transportType = dfltTransType;
+            payload.drbdRscDfn.peerSlotsNewResource = dfltPeerSlots;
         }
 
         public ResourceDefinitionBuilder setRscName(String rscNameRef)
@@ -222,7 +223,7 @@ public class ResourceDefinitionTestFactory
 
         public ResourceDefinitionBuilder setPort(Integer portRef)
         {
-            port = portRef;
+            payload.drbdRscDfn.tcpPort = portRef;
             return this;
         }
 
@@ -234,13 +235,13 @@ public class ResourceDefinitionTestFactory
 
         public ResourceDefinitionBuilder setSecret(String secretRef)
         {
-            secret = secretRef;
+            payload.drbdRscDfn.sharedSecret = secretRef;
             return this;
         }
 
         public ResourceDefinitionBuilder setTransType(TransportType transTypeRef)
         {
-            transType = transTypeRef;
+            payload.drbdRscDfn.transportType = transTypeRef;
             return this;
         }
 
@@ -252,7 +253,7 @@ public class ResourceDefinitionTestFactory
 
         public ResourceDefinitionBuilder setPeerSlotsRef(Short peerSlotsRefRef)
         {
-            peerSlots = peerSlotsRefRef;
+            payload.drbdRscDfn.peerSlotsNewResource = peerSlotsRefRef;
             return this;
         }
 
@@ -271,17 +272,38 @@ public class ResourceDefinitionTestFactory
                 accCtx,
                 new ResourceName(rscName),
                 extName,
-                port,
                 flags,
-                secret,
-                transType,
                 layerStack,
-                peerSlots,
+                payload,
                 rscGrpFact.get(rscGroupName, true)
             );
             rscDfnMap.put(rscName.toUpperCase(), rscDfn);
             return rscDfn;
         }
+    }
 
+    public static LayerPayload createCopy(LayerPayload copyFrom)
+    {
+        LayerPayload ret = new LayerPayload();
+        if (copyFrom != null)
+        {
+            ret.drbdRsc.alStripes = copyFrom.drbdRsc.alStripes;
+            ret.drbdRsc.alStripeSize = copyFrom.drbdRsc.alStripeSize;
+            ret.drbdRsc.needsNewNodeId = copyFrom.drbdRsc.needsNewNodeId;
+            ret.drbdRsc.nodeId = copyFrom.drbdRsc.nodeId;
+            ret.drbdRsc.peerSlots = copyFrom.drbdRsc.peerSlots;
+
+            ret.drbdRscDfn.peerSlotsNewResource = copyFrom.drbdRscDfn.peerSlotsNewResource;
+            ret.drbdRscDfn.sharedSecret = copyFrom.drbdRscDfn.sharedSecret;
+            ret.drbdRscDfn.tcpPort = copyFrom.drbdRscDfn.tcpPort;
+            ret.drbdRscDfn.transportType = copyFrom.drbdRscDfn.transportType;
+
+            ret.drbdVlmDfn.minorNr = copyFrom.drbdVlmDfn.minorNr;
+
+            ret.ofRscDfn.nqn = copyFrom.ofRscDfn.nqn;
+
+            ret.storagePayload = new HashMap<>(copyFrom.storagePayload);
+        }
+        return ret;
     }
 }

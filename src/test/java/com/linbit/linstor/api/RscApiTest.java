@@ -1,8 +1,5 @@
 package com.linbit.linstor.api;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
@@ -14,6 +11,8 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.apidata.RscApiData;
 import com.linbit.linstor.proto.apidata.VlmApiData;
@@ -48,6 +47,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @RunWith(JUnitParamsRunner.class)
 public class RscApiTest extends ApiTestBase
@@ -124,16 +126,18 @@ public class RscApiTest extends ApiTestBase
 
         Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
 
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = testRscDfnPort;
+        drbdRscDfn.sharedSecret = testRscDfnSecret;
+        drbdRscDfn.transportType = tesTRscDfnTransportType;
         testRscDfn = resourceDefinitionFactory.create(
             ApiTestBase.BOB_ACC_CTX,
             testRscName,
             null,
-            testRscDfnPort,
             testRscDfnFlags,
-            testRscDfnSecret,
-            tesTRscDfnTransportType,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null,
+            payload,
             createDefaultResourceGroup(BOB_ACC_CTX)
         );
         rscDfnMap.put(testRscName, testRscDfn);

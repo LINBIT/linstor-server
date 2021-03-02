@@ -907,9 +907,6 @@ public class CtrlRscGrpApiCallHandler
             ResourceDefinition rscDfn = ctrlRscDfnApiCallHandler.createResourceDefinition(
                 rscDfnNameRef,
                 rscDfnExtNameRef,
-                null,
-                null,
-                null,
                 Collections.emptyMap(),
                 vlmDfnCrtList,
                 layerStackStr,

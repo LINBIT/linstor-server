@@ -23,6 +23,8 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -1892,16 +1894,18 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private ResourceDefinition createRscDfn(String rscNameStr, int tcpPort)
         throws Exception
     {
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = tcpPort;
+        drbdRscDfn.sharedSecret = "NotTellingYou";
+        drbdRscDfn.transportType = TransportType.IP;
         ResourceDefinition rscDfn = resourceDefinitionFactory.create(
             BOB_ACC_CTX,
             new ResourceName(rscNameStr),
             null,
-            tcpPort,
             null,
-            "NotTellingYou",
-            TransportType.IP,
             Arrays.asList(DRBD, STORAGE),
-            null,
+            payload,
             dfltRscGrp
         );
 

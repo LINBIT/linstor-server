@@ -66,7 +66,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
@@ -88,6 +87,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -200,13 +200,10 @@ public class CtrlRscDfnApiCallHandler
     public ResourceDefinition createResourceDefinition(
         String rscNameStr,
         byte[] extName,
-        Integer portInt,
-        String secret,
-        String transportTypeStr,
         Map<String, String> props,
         List<VolumeDefinitionWtihCreationPayload> volDescrMap,
         List<String> layerStackStrList,
-        Short peerSlotsRef,
+        LayerPayload payload,
         String rscGrpNameStr,
         boolean throwOnError,
         ApiCallRcImpl apiCallRc,
@@ -219,6 +216,11 @@ public class CtrlRscDfnApiCallHandler
             rscNameStr
         );
         ResourceDefinition rscDfn = null;
+
+        if (payload == null)
+        {
+            payload = new LayerPayload();
+        }
 
         try
         {
@@ -241,11 +243,8 @@ public class CtrlRscDfnApiCallHandler
             rscDfn = createRscDfn(
                 rscNameStr,
                 extName,
-                transportTypeStr,
-                portInt,
-                secret,
                 layerStack,
-                peerSlotsRef,
+                payload,
                 rscGrpNameStr
             );
 
@@ -840,14 +839,12 @@ public class CtrlRscDfnApiCallHandler
 
             final ResourceDefinition srcRscDfn = ctrlApiDataLoader.loadRscDfn(srcRscName, true);
 
+            final LayerPayload payload = new LayerPayload();
             final ResourceDefinition clonedRscDfn = createRscDfn(
                 clonedRscName,
                 clonedExtName,
-                null,
-                null,
-                null,
                 srcRscDfn.getLayerStack(peerAccCtx.get()),
-                null,
+                payload,
                 srcRscDfn.getResourceGroup().getName().displayValue);
 
             Map<String, String> clonedRscDfnProps = clonedRscDfn.getProps(peerAccCtx.get()).map();
@@ -993,11 +990,8 @@ public class CtrlRscDfnApiCallHandler
     private ResourceDefinition createRscDfn(
         String rscNameStr,
         byte[] extNamePrm,
-        String transportTypeStr,
-        Integer portInt,
-        String secret,
         List<DeviceLayerKind> layerStack,
-        Short peerSlotsRef,
+        LayerPayload payload,
         String rscGrpNameStrPrm
     )
         throws InvalidNameException
@@ -1005,24 +999,6 @@ public class CtrlRscDfnApiCallHandler
         if (rscNameStr == null)
         {
             throw new ImplementationError("Resource name must not be null!");
-        }
-
-        TransportType transportType = null;
-        if (transportTypeStr != null && !transportTypeStr.trim().isEmpty())
-        {
-            try
-            {
-                transportType = TransportType.byValue(transportTypeStr); // TODO needs exception
-                                                                         // handling
-            }
-            catch (IllegalArgumentException unknownValueExc)
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_TRANSPORT_TYPE,
-                    "The given transport type '" + transportTypeStr + "' is invalid.",
-                    true
-                ), unknownValueExc);
-            }
         }
 
         boolean generatedRscName = false;
@@ -1152,12 +1128,9 @@ public class CtrlRscDfnApiCallHandler
                 peerAccCtx.get(),
                 rscName,
                 extName,
-                portInt,
                 null, // RscDfnFlags
-                secret,
-                transportType,
                 layerStack,
-                peerSlotsRef,
+                payload,
                 rscGrp
             );
         }
@@ -1167,7 +1140,9 @@ public class CtrlRscDfnApiCallHandler
                 ApiConsts.FAIL_INVLD_RSC_PORT,
                 "The creation of a new resource definition failed due to an invalid TCP port number"
             );
-            rcEntry.setCause(String.format("The specified number %d is not a valid TCP port number", portInt));
+            rcEntry.setCause(
+                String.format("The specified number %d is not a valid TCP port number", payload.drbdRscDfn.tcpPort)
+            );
             rcEntry.setDetails(getCrtRscDfnName(rscName, generatedRscName));
             throw new ApiRcException(rcEntry.build(), exc);
         }

@@ -25,6 +25,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
@@ -353,19 +354,21 @@ public class NodeDbDriverTest extends GenericDbBase
             nodesMap.put(node2.getName(), node2);
 
             // resDfn
+            LayerPayload payload = new LayerPayload();
+            DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+            drbdRscDfn.tcpPort = resPort;
+            drbdRscDfn.sharedSecret = "secret";
+            drbdRscDfn.transportType = transportType;
             ResourceDefinition resDfn = resourceDefinitionFactory.create(
                 SYS_CTX,
                 resName,
                 null,
-                resPort,
                 new ResourceDefinition.Flags[]
                 {
                     ResourceDefinition.Flags.DELETE
                 },
-                "secret",
-                transportType,
                 Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-                null,
+                payload,
                 dfltRscGrp
             );
             resDfn.getProps(SYS_CTX).setProp(resDfnTestKey, resDfnTestValue);

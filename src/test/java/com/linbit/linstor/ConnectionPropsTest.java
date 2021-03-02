@@ -17,6 +17,7 @@ import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -96,16 +97,18 @@ public class ConnectionPropsTest extends GenericDbBase
 
         dfltRscGrp = createDefaultResourceGroup(SYS_CTX);
 
+        LayerPayload payload = new LayerPayload();
+        DrbdRscDfnPayload drbdRscDfn = payload.getDrbdRscDfn();
+        drbdRscDfn.tcpPort = resDfnPort;
+        drbdRscDfn.sharedSecret = "secret";
+        drbdRscDfn.transportType = resDfnTransportType;
         resDfn = resourceDefinitionFactory.create(
             SYS_CTX,
             resName,
             null,
-            resDfnPort,
             null,
-            "secret",
-            resDfnTransportType,
             Arrays.asList(DeviceLayerKind.DRBD, DeviceLayerKind.STORAGE),
-            null,
+            payload,
             dfltRscGrp
         );
 
