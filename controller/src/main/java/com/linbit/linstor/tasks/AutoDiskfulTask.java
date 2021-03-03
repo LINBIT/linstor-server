@@ -47,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
@@ -326,7 +325,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                     linstorScope.enter();
                     linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
 
-                    Optional<Set<StorPool>> autoPlace = autoplacer.autoPlace(
+                    Set<StorPool> autoPlace = autoplacer.autoPlace(
                         AutoSelectFilterPojo.merge(
                             new AutoSelectFilterPojo(
                                 1,
@@ -352,7 +351,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                     );
                     linstorScope.exit();
 
-                    if (!autoPlace.isPresent() || autoPlace.get().isEmpty())
+                    if (autoPlace == null || autoPlace.isEmpty())
                     {
                         errorReporter.logError(
                             "Failed to automatically make %s diskful as autoplacer failed to find suitable storage pool",
@@ -361,7 +360,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                     }
                     else
                     {
-                        String storPoolNameStr = autoPlace.get().iterator().next().getName().displayValue;
+                        String storPoolNameStr = autoPlace.iterator().next().getName().displayValue;
                         toggleDisklHandler.resourceToggleDisk(
                             rsc.getNode().getName().displayValue,
                             rsc.getDefinition().getName().displayValue,

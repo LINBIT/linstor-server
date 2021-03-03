@@ -297,16 +297,14 @@ public class CtrlRscAutoPlaceApiCallHandler
 
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);
 
-            Optional<Set<StorPool>> bestCandidate = findBestCandidate(
+            Set<StorPool> candidate = findBestCandidate(
                 autoStorConfig,
                 rscDfn,
                 rscSize
             );
 
-            if (bestCandidate.isPresent())
+            if (candidate != null)
             {
-                Set<StorPool> candidate = bestCandidate.get();
-
                 Pair<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = createResources(
                     context,
                     responses,
@@ -347,7 +345,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
     }
 
-    private Optional<Set<StorPool>> findBestCandidate(
+    private Set<StorPool> findBestCandidate(
         AutoSelectFilterPojo autoStorConfigRef,
         @Nullable ResourceDefinition rscDfnRef,
         long rscSize

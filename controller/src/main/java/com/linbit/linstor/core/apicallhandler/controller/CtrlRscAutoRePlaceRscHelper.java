@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -213,11 +212,9 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                 rscDfn.getName(),
                                 minReplicaCount - curReplicaCount
                             );
-                            Optional<Set<StorPool>> bestCandidate = autoplacer.autoPlace(selectFilter, rscDfn, size);
-                            if (bestCandidate.isPresent())
+                            Set<StorPool> candidate = autoplacer.autoPlace(selectFilter, rscDfn, size);
+                            if (candidate != null)
                             {
-                                Set<StorPool> candidate = bestCandidate.get();
-
                                 Pair<List<Flux<ApiCallRc>>, Set<Resource>> deployedResources = autoPlaceHandler
                                     .createResources(
                                         new ResponseContext(

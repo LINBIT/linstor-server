@@ -108,11 +108,9 @@ public class CtrlQueryMaxVlmSizeHelper
                 selectFilter // copy the rest from selectFilter
             );
 
-            Optional<Set<StorPool>> autoplacement = autoplacer.autoPlace(currentFilter, rscDfnRef, placeCount);
-            if (autoplacement.isPresent())
+            Set<StorPool> selectedStorPoolSet = autoplacer.autoPlace(currentFilter, rscDfnRef, placeCount);
+            if (selectedStorPoolSet != null)
             {
-                Set<StorPool> selectedStorPoolSet = autoplacement.get();
-
                 Set<StorPoolDefinition> spDfnSet = new HashSet<>();
                 boolean allThin = true;
                 List<String> nodeNameList = new ArrayList<>();

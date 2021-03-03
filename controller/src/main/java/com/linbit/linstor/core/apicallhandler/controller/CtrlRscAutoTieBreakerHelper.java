@@ -56,7 +56,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -509,15 +508,15 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                  */
                 mergedAutoSelectFilterPojo.setStorPoolNameList(null);
 
-                Optional<Set<StorPool>> autoplaceResult = autoplacer.autoPlace(
+                Set<StorPool> autoplaceResult = autoplacer.autoPlace(
                     mergedAutoSelectFilterPojo,
                     ctx.rscDfn,
                     0 // doesn't matter as we are diskless
                 );
 
-                if (autoplaceResult.isPresent() && !autoplaceResult.get().isEmpty())
+                if (autoplaceResult != null && !autoplaceResult.isEmpty())
                 {
-                    storPool = autoplaceResult.get().iterator().next();
+                    storPool = autoplaceResult.iterator().next();
                     if (!supportsTieBreaker(peerAccCtx, storPool.getNode()))
                     {
                         /*

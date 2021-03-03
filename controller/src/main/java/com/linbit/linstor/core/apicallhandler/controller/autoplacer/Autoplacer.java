@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -53,7 +52,14 @@ public class Autoplacer
         errorReporter = errorReporterRef;
     }
 
-    public Optional<Set<StorPool>> autoPlace(
+    /**
+     * @param selectFilter
+     * @param rscDfnRef
+     * @param rscSize
+     *
+     * @return Null if no selection could be made of a non-empty Set of selected StorPools
+     */
+    public @Nullable Set<StorPool> autoPlace(
         AutoSelectFilterApi selectFilter,
         @Nullable ResourceDefinition rscDfnRef,
         long rscSize
@@ -132,7 +138,7 @@ public class Autoplacer
         {
             throw new ImplementationError(exc);
         }
-        return Optional.ofNullable(selection);
+        return selection;
     }
 
     /**

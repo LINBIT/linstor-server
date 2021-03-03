@@ -37,7 +37,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -209,7 +208,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                 disklessForErrorMsg = false;
             }
 
-            Optional<Set<StorPool>> optStorPool = autoplacer.autoPlace(
+            Set<StorPool> storPoolSet = autoplacer.autoPlace(
                 AutoSelectFilterPojo.merge(
                     autoSelect,
                     rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
@@ -218,7 +217,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                 CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerCtxProvider.get())
             );
 
-            StorPool sp = getStorPoolOrFail(optStorPool, nodeNameRef, disklessForErrorMsg);
+            StorPool sp = getStorPoolOrFail(storPoolSet, nodeNameRef, disklessForErrorMsg);
             ResourceWithPayloadApi createRscPojo = new ResourceWithPayloadPojo(
                 new RscPojo(
                     rscNameRef,
@@ -288,24 +287,23 @@ public class CtrlRscMakeAvailableApiCallHandler
         );
     }
 
-    private StorPool getStorPoolOrFail(Optional<Set<StorPool>> optStorPoolRef, String nodeNameRef, boolean disklessRef)
+    private StorPool getStorPoolOrFail(Set<StorPool> storPoolSetRef, String nodeNameRef, boolean disklessRef)
     {
-        if (!optStorPoolRef.isPresent())
+        if (storPoolSetRef == null)
         {
             throw failNoStorPoolFound(nodeNameRef, disklessRef);
         }
-        Set<StorPool> storPoolSet = optStorPoolRef.get();
-        if (storPoolSet.isEmpty())
+        if (storPoolSetRef.isEmpty())
         {
             throw failNoStorPoolFound(nodeNameRef, disklessRef);
         }
-        if (storPoolSet.size() != 1)
+        if (storPoolSetRef.size() != 1)
         {
             throw new ImplementationError(
-                "Only one storPool expected. got: " + storPoolSet.size() + ". " + storPoolSet
+                "Only one storPool expected. got: " + storPoolSetRef.size() + ". " + storPoolSetRef
             );
         }
-        return storPoolSet.iterator().next();
+        return storPoolSetRef.iterator().next();
     }
 
     private ApiRcException failNoStorPoolFound(String nodeName, boolean diskless)
