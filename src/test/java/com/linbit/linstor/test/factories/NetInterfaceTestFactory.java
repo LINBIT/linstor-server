@@ -36,31 +36,44 @@ public class NetInterfaceTestFactory
     private final AtomicInteger nextPort = new AtomicInteger(19000);
 
     public AccessContext dfltAccCtx = TestAccessContextProvider.PUBLIC_CTX;
-    public Supplier<LsIpAddress> dfltAddrSupplier = () ->
-    {
-        int ip = nextIp.getAndIncrement();
-        int third = ip / 255;
-        int fourth = (ip + third) % 255; // avoid ".0" addresses
-        try
+    public Supplier<LsIpAddress> dfltAddrSupplier =
+        () ->
         {
-            return new LsIpAddress("10.0." + third + "." + fourth);
-        }
-        catch (InvalidIpAddressException exc)
+            LsIpAddress ipObj = null;
+            try
+            {
+                do
+                {
+                    final int ipOffset = nextIp.getAndIncrement();
+                    final int fourth = ipOffset % 256;
+                    if (fourth != 0 && fourth != 255)
+                    {
+                        final int third = ipOffset / 256;
+                        ipObj = new LsIpAddress("10.0." + third + "." + fourth);
+                    }
+                }
+                while (ipObj == null);
+            }
+            catch (InvalidIpAddressException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            return ipObj;
+        };
+
+    public Supplier<TcpPortNumber> dfltPortSupplier =
+        () ->
         {
-            throw new ImplementationError(exc);
-        }
-    };
-    public Supplier<TcpPortNumber> dfltPortSupplier = () ->
-    {
-        try
-        {
-            return new TcpPortNumber(nextPort.getAndIncrement());
-        }
-        catch (ValueOutOfRangeException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    };
+            try
+            {
+                return new TcpPortNumber(nextPort.getAndIncrement());
+            }
+            catch (ValueOutOfRangeException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        };
+
     public EncryptionType dfltEncrType = EncryptionType.PLAIN;
 
     @Inject
