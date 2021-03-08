@@ -1,11 +1,11 @@
 package com.linbit.linstor.core.apicallhandler;
 
+import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
@@ -74,6 +74,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -913,7 +914,7 @@ public class StltApiCallHandler
                     StltConfig.LINSTOR_STLT_CONFIG,
                     new String[]
                     {"cat", stltCfg.getConfigDir() + StltConfig.LINSTOR_STLT_CONFIG},
-                    this::makeFileFromCmdNoErrRep
+                    this::makeFileFromCmd
                 ),
                 new CommandHelper(
                     "dmesg",
@@ -943,19 +944,19 @@ public class StltApiCallHandler
                     "log-syslog",
                     new String[]
                     {"cat", "/var/log/syslog"},
-                    this::makeFileFromCmdNoErrRep
+                    this::makeFileFromCmd
                 ),
                 new CommandHelper(
                     "log-kern.log",
                     new String[]
                     {"cat", "/var/log/kern.log"},
-                    this::makeFileFromCmdNoErrRep
+                    this::makeFileFromCmd
                 ),
                 new CommandHelper(
                     "log-messages",
                     new String[]
                     {"cat", "/var/log/messages"},
-                    this::makeFileFromCmdNoErrRep
+                    this::makeFileFromCmd
                 ),
                 new CommandHelper(
                     "release",
@@ -994,13 +995,12 @@ public class StltApiCallHandler
                     }
                     catch (IOException exc)
                     {
-                        String errReportName = errorReporter.reportError(exc);
                         reports.add(
                             new LinstorFile(
                                 nodeName,
                                 file.getFileName().toString() + ".failed",
                                 new Date(System.currentTimeMillis()),
-                                errReportName
+                                exc.getClass().getCanonicalName() + ": " + exc.getMessage()
                             )
                         );
                     }
@@ -1017,42 +1017,7 @@ public class StltApiCallHandler
             .build();
     }
 
-    private LinstorFile makeFileFromCmd(String nodeName, String[] command, String fileName) {
-        try
-        {
-            OutputData output = extCmdFactory.create().exec(command);
-            if (output.exitCode != 0)
-            {
-                String errReportName = errorReporter.reportError(new ExtCmdFailedException(command, output));
-                return new LinstorFile(
-                    nodeName,
-                    fileName + ".failed",
-                    new Date(System.currentTimeMillis()),
-                    "ErrorReport-" + errReportName
-                );
-            }
-            else
-            {
-                return new LinstorFile(
-                    nodeName,
-                    fileName,
-                    new Date(System.currentTimeMillis()),
-                    new String(output.stdoutData)
-                );
-            }
-        }
-        catch (Exception exc)
-        {
-            String errReportName = errorReporter.reportError(exc);
-            return new LinstorFile(
-                nodeName,
-                fileName + ".failed",
-                new Date(System.currentTimeMillis()),
-                errReportName
-            );
-        }
-    }
-
+    // write stdout & stderr in file if failed, but don't mark as failed, write stdout if successful
     private LinstorFile makeFileFromCmdNoFailed(String nodeName, String[] command, String fileName)
     {
         try
@@ -1077,19 +1042,19 @@ public class StltApiCallHandler
                 );
             }
         }
-        catch (Exception exc)
+        catch (IOException | ChildProcessTimeoutException exc)
         {
-            String errReportName = errorReporter.reportError(exc);
             return new LinstorFile(
                 nodeName,
                 fileName + ".failed",
                 new Date(System.currentTimeMillis()),
-                errReportName
+                exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " + Arrays.toString(command)
             );
         }
     }
 
-    private LinstorFile makeFileFromCmdNoErrRep(String nodeName, String[] command, String fileName)
+    // write stderr & stdout in file if failed, write stdout if successful
+    private LinstorFile makeFileFromCmd(String nodeName, String[] command, String fileName)
     {
         try
         {
@@ -1100,7 +1065,7 @@ public class StltApiCallHandler
                     nodeName,
                     fileName + ".failed",
                     new Date(System.currentTimeMillis()),
-                    new String(output.stderrData)
+                    new String(output.stdoutData) + "\n\n" + new String(output.stderrData)
                 );
             }
             else
@@ -1113,14 +1078,13 @@ public class StltApiCallHandler
                 );
             }
         }
-        catch (Exception exc)
+        catch (IOException | ChildProcessTimeoutException exc)
         {
-            String errReportName = errorReporter.reportError(exc);
             return new LinstorFile(
                 nodeName,
                 fileName + ".failed",
                 new Date(System.currentTimeMillis()),
-                errReportName
+                exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " + Arrays.toString(command)
             );
         }
     }

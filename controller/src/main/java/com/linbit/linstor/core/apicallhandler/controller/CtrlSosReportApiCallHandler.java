@@ -46,6 +46,7 @@ import java.nio.file.attribute.FileTime;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -287,7 +288,7 @@ public class CtrlSosReportApiCallHandler
                 {
                     "cp", "-p", tomlPath, sosDir.toString()
                 },
-                this::makeFileFromCmdErrOnly
+                this::makeFileFromCmdIfFailed
             ),
             new CommandHelper(
                 sosDir.resolve("journalctl"),
@@ -344,16 +345,13 @@ public class CtrlSosReportApiCallHandler
             {
                 cmd.handleExitCode.accept(cmd.file, cmd.cmd);
             }
-            catch (ChildProcessTimeoutException exc)
+            catch (IOException | ChildProcessTimeoutException exc)
             {
-                String reportName = errorReporter.reportError(exc);
                 makeFile(
-                    Paths.get(cmd.file.toString() + ".failed"), "ErrorReport-" + reportName, System.currentTimeMillis()
+                    Paths.get(cmd.file.toString() + ".failed"),
+                    exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " + Arrays.toString(cmd.cmd),
+                    System.currentTimeMillis()
                 );
-            }
-            catch (IOException exc)
-            {
-                errorReporter.reportError(exc);
             }
         }
 
@@ -362,7 +360,9 @@ public class CtrlSosReportApiCallHandler
         Set<LinstorFile> errorReports = collector.getFiles();
         for (LinstorFile err : errorReports)
         {
-            makeFile(sosDir.resolve(err.getFileName()), err.getText().orElse(""), err.getDateTime().getTime());
+            makeFile(
+                sosDir.resolve(err.getFileName()), err.getText().orElse("No content found"), err.getDateTime().getTime()
+            );
         }
     }
 
@@ -390,6 +390,10 @@ public class CtrlSosReportApiCallHandler
 
     private void makeFile(Path filePath, String text, long time) throws IOException
     {
+        if (text == null || text.isEmpty())
+        {
+            text = "No content found";
+        }
         Files.createDirectories(filePath.getParent());
         Files.write(
             filePath,
@@ -402,30 +406,16 @@ public class CtrlSosReportApiCallHandler
         );
     }
 
-    // make error report and write it in file if failed, no action if successful
-    private void makeFileFromCmdErrOnly(Path filePath, String[] command)
-        throws ChildProcessTimeoutException, IOException
-    {
-        OutputData output;
-        output = extCmdFactory.create().exec(command);
-        if (output.exitCode != 0)
-        {
-            String reportName = errorReporter.reportError(new ExtCmdFailedException(command, output));
-            makeFile(
-                Paths.get(filePath.toString() + ".failed"), "ErrorReport-" + reportName, System.currentTimeMillis()
-            );
-        }
-    }
-
-    // make error report and write it in file if failed, make file with stdout if successful
+    // make file with stderr & stdout if failed, make file with stdout if successful
     private void makeFileFromCmd(Path filePath, String[] command) throws ChildProcessTimeoutException, IOException
     {
         OutputData output = extCmdFactory.create().exec(command);
         if (output.exitCode != 0)
         {
-            String reportName = errorReporter.reportError(new ExtCmdFailedException(command, output));
             makeFile(
-                Paths.get(filePath.toString() + ".failed"), "ErrorReport-" + reportName, System.currentTimeMillis()
+                Paths.get(filePath.toString() + ".failed"),
+                new String(output.stdoutData) + "\n\n" + new String(output.stderrData),
+                System.currentTimeMillis()
             );
         }
         else
