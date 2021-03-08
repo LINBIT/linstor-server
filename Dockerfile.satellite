@@ -95,6 +95,8 @@ RUN yum install -y cryptsetup nvme-cli epel-release && \
 
 RUN sed -i 's/udev_rules.*=.*/udev_rules=0/' /etc/lvm/lvm.conf
 RUN sed -i '/^devices {/a global_filter = [ "r|^/dev/drbd|" ]' /etc/lvm/lvm.conf
+# Ensure we log to files in containers, otherwise SOS reports won't show any logs at all
+RUN sed -i 's#<!-- <appender-ref ref="FILE" /> -->#<appender-ref ref="FILE" />#' /usr/share/linstor-server/lib/conf/logback.xml
 
 EXPOSE 3366/tcp 3367/tcp
 

@@ -82,6 +82,9 @@ RUN mkdir /var/log/linstor-controller
 RUN chown -R root:linstor /etc/linstor /var/lib/linstor /var/log/linstor-controller
 RUN chmod g+w /etc/linstor /var/lib/linstor /var/log/linstor-controller
 
+# Ensure we log to files in containers, otherwise SOS reports won't show any logs at all
+RUN sed -i 's#<!-- <appender-ref ref="FILE" /> -->#<appender-ref ref="FILE" />#' /usr/share/linstor-server/lib/conf/logback.xml
+
 EXPOSE 3376/tcp 3377/tcp 3370/tcp 3371/tcp
 
 COPY scripts/entry.sh /
