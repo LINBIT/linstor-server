@@ -351,11 +351,13 @@ public class SharedStorPoolManager
 
     public boolean hasNodeActiveLocks(Node node)
     {
+        boolean hasLocks;
         synchronized (activeLocksByNode)
         {
             ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(node);
-            return activeLocks != null && !activeLocks.isEmpty();
+            hasLocks = activeLocks != null && !activeLocks.isEmpty();
         }
+        return hasLocks;
     }
     private Node getNode(TransactionObject txObj)
     {
