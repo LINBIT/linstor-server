@@ -359,6 +359,7 @@ public class SharedStorPoolManager
         }
         return hasLocks;
     }
+
     private Node getNode(TransactionObject txObj)
     {
         Node ret;
@@ -366,15 +367,18 @@ public class SharedStorPoolManager
         {
             ret = ((Resource) txObj).getNode();
         }
-        else if (txObj instanceof Snapshot)
+        else
+        if (txObj instanceof Snapshot)
         {
             ret = ((Snapshot) txObj).getNode();
         }
-        else if (txObj instanceof Node)
+        else
+        if (txObj instanceof Node)
         {
             ret = (Node) txObj;
         }
-        else if (txObj instanceof StorPool)
+        else
+        if (txObj instanceof StorPool)
         {
             ret = ((StorPool) txObj).getNode();
         }
@@ -394,18 +398,21 @@ public class SharedStorPoolManager
             {
                 ret = getSharedSpNames(LayerVlmUtils.getStorPools((Resource) txObj, sysCtx));
             }
-            else if (txObj instanceof Snapshot)
+            else
+            if (txObj instanceof Snapshot)
             {
                 ret = getSharedSpNames(LayerVlmUtils.getStorPools((Snapshot) txObj, sysCtx));
             }
-            else if (txObj instanceof Node)
+            else
+            if (txObj instanceof Node)
             {
                 ret = getSharedSpNames(
                     ((Node) txObj).streamStorPools(sysCtx)
                         .collect(Collectors.toList())
                 );
             }
-            else if (txObj instanceof StorPool)
+            else
+            if (txObj instanceof StorPool)
             {
                 ret = getSharedSpNames(Collections.singleton((StorPool) txObj));
             }

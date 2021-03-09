@@ -295,7 +295,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                             rscToActivate = sharedRsc;
                         }
                     }
-                    if (activeRsc == null) {
+                    if (activeRsc == null)
+                    {
                         unsetFlagPrivleged(rscToActivate, Resource.Flags.INACTIVE);
                     }
                 }
