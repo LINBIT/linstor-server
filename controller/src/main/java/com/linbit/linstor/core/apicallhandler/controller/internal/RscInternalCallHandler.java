@@ -31,6 +31,7 @@ import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
@@ -194,6 +195,8 @@ public class RscInternalCallHandler
     public void updateVolume(
         String resourceName,
         RscLayerDataApi rscLayerDataPojoRef,
+        Map<String, String> rscPropsRef,
+        Map<Integer, Map<String, String>> vlmPropsRef,
         List<CapacityInfoPojo> capacityInfos
     )
     {
@@ -226,6 +229,7 @@ public class RscInternalCallHandler
             }
 
             layerRscDataMerger.mergeLayerData(rsc, rscLayerDataPojoRef, false);
+            mergeProps(rscPropsRef, rsc.getProps(apiCtx));
 
             Set<AbsRscLayerObject<Resource>> storageResources = LayerRscUtils.getRscDataByProvider(
                 rsc.getLayerData(apiCtx),
@@ -239,6 +243,8 @@ public class RscInternalCallHandler
                 VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
 
                 VlmLayerDataApi vlmLayerDataPojo = rscLayerDataPojoRef.getVolumeMap().get(vlmNr.value);
+
+                mergeProps(vlmPropsRef.get(vlmNr.value), vlm.getProps(apiCtx));
 
                 if (vlmLayerDataPojo != null)
                 {
@@ -321,6 +327,7 @@ public class RscInternalCallHandler
         }
     }
 
+
     public void handleResourceFailed(String nodeName, String rscName, ApiCallRc apiCallRc)
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.readLock()))
@@ -332,5 +339,11 @@ public class RscInternalCallHandler
             );
             retryResourceTask.add(rsc, null);
         }
+    }
+
+    private void mergeProps(Map<String, String> srcPropsMap, Props targetProps)
+    {
+        targetProps.keySet().retainAll(srcPropsMap.keySet());
+        targetProps.map().putAll(srcPropsMap);
     }
 }

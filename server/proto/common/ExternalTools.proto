@@ -23,6 +23,7 @@ message ExternalToolsInfo
         ZSTD = 13;
         SOCAT = 14;
         UTIL_LINUX = 15;
+        UDEVADM = 16;
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

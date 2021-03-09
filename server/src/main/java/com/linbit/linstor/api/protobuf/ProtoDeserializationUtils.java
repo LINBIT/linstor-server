@@ -400,6 +400,9 @@ public class ProtoDeserializationUtils
             case UTIL_LINUX:
                 tool = ExtTools.UTIL_LINUX;
                 break;
+            case UDEVADM:
+                tool = ExtTools.UDEVADM;
+                break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through
             default:

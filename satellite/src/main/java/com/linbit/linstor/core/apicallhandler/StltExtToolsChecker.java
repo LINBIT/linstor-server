@@ -63,6 +63,7 @@ public class StltExtToolsChecker
     private static final Pattern ZSTD_VERSION_PATTERN = Pattern.compile("v(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern SOCAT_VERSION_PATTERN = Pattern.compile("version (\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern UTIL_LINUX_VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)");
+    private static final Pattern UDEVADM_VERSION_PATTERN = Pattern.compile("(\\d+)");
 
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
@@ -106,7 +107,8 @@ public class StltExtToolsChecker
                 getLosetupInfo(),
                 getZstdInfo(),
                 getSocatInfo(),
-                getUtilLinuxInfo()
+                getUtilLinuxInfo(),
+                getUdevadmInfo()
             );
 
             Map<ExtTools, ExtToolsInfo> extTools = new HashMap<>();
@@ -252,6 +254,11 @@ public class StltExtToolsChecker
         return infoBy3MatchGroupPattern(UTIL_LINUX_VERSION_PATTERN, ExtTools.UTIL_LINUX, false, "setsid", "-V");
     }
 
+    private ExtToolsInfo getUdevadmInfo()
+    {
+        return infoBy3MatchGroupPattern(UDEVADM_VERSION_PATTERN, ExtTools.UDEVADM, false, false, "udevadm", "version");
+    }
+
     private ExtToolsInfo infoBy3MatchGroupPattern(Pattern pattern, ExtTools tool, String... cmd)
     {
         return infoBy3MatchGroupPattern(pattern, tool, true, cmd);
@@ -260,6 +267,17 @@ public class StltExtToolsChecker
     private ExtToolsInfo infoBy3MatchGroupPattern(
         Pattern pattern,
         ExtTools tool,
+        boolean hasPatchVersion,
+        String... cmd
+    )
+    {
+        return infoBy3MatchGroupPattern(pattern, tool, true, hasPatchVersion, cmd);
+    }
+
+    private ExtToolsInfo infoBy3MatchGroupPattern(
+        Pattern pattern,
+        ExtTools tool,
+        boolean hasMinorVersion,
         boolean hasPatchVersion,
         String... cmd
     )
@@ -275,7 +293,7 @@ public class StltExtToolsChecker
                         tool,
                         true,
                         Integer.parseInt(match.group(1)),
-                        Integer.parseInt(match.group(2)),
+                        hasMinorVersion ? Integer.parseInt(match.group(2)) : null,
                         hasPatchVersion ? Integer.parseInt(match.group(3)) : null,
                         Collections.emptyList()
                     );

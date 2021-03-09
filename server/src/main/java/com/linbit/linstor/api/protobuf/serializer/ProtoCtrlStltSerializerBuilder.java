@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.common.CryptoEntryOuterClass;
@@ -55,6 +56,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgReqPhysicalDevicesOuterClass
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyConfigResponseOuterClass.MsgIntApplyConfigResponse;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyNodeSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntSnapshotShippedOuterClass.MsgIntSnapshotShipped;
@@ -374,7 +376,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     @Override
     public ProtoCtrlStltSerializerBuilder snapshot(
-        Snapshot snapshot, long fullSyncId, long updateId
+        Snapshot snapshot,
+        long fullSyncId,
+        long updateId
     )
     {
         try
@@ -399,7 +403,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     @Override
     public ProtoCtrlStltSerializerBuilder endedSnapshot(
-        String resourceNameStr, String snapshotNameStr, long fullSyncId, long updateId
+        String resourceNameStr,
+        String snapshotNameStr,
+        long fullSyncId,
+        long updateId
     )
     {
         try
@@ -545,7 +552,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess.newBuilder()
+            MsgIntApplyRscSuccess.Builder builder = MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess.newBuilder()
                 .setRscId(
                     IntObjectId.newBuilder()
                         .setUuid(resource.getUuid().toString())
@@ -561,6 +568,19 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         serializerCtx
                     )
                 )
+                .putAllRscProps(resource.getProps(serializerCtx).map());
+
+            for (Volume vlm : resource.streamVolumes().collect(Collectors.toList()))
+            {
+                builder.putVlmProps(
+                    vlm.getVolumeNumber().value,
+                    MsgIntApplyRscSuccessOuterClass.VlmProps.newBuilder()
+                        .putAllVlmProp(vlm.getProps(serializerCtx).map())
+                        .build()
+                );
+            }
+
+            builder
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -651,7 +671,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     @Override
     public ProtoCtrlStltSerializerBuilder requestSnapshotUpdate(
-        String rscName, UUID snapshotUuid, String snapshotName
+        String rscName,
+        UUID snapshotUuid,
+        String snapshotName
     )
     {
         appendObjectId(null, rscName);
@@ -680,7 +702,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .build()
                 );
             }
-
 
             MsgIntUpdateFreeSpace.newBuilder()
                 .addAllFreeSpace(freeSpaces)
@@ -712,7 +733,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .setFreeCapacity(spaceInfo.freeCapacity)
                         .setTotalCapacity(spaceInfo.totalCapacity)
                         .build()
-                    )
+                )
                 .setSupportsSnapshots(supportsSnapshotsRef)
                 .setIsPmem(storPool.isPmem())
                 .setIsVdo(storPool.isVDO())
@@ -757,8 +778,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            MsgCreateDevicePool.Builder msgCreateDevicePoolBuilder =
-            MsgCreateDevicePool.newBuilder()
+            MsgCreateDevicePool.Builder msgCreateDevicePoolBuilder = MsgCreateDevicePool.newBuilder()
                 .addAllDevicePaths(devicePaths)
                 .setProviderKind(asProviderType(providerKindRef))
                 .setRaidLevel(MsgCreateDevicePool.RaidLevel.valueOf(raidLevel.name()))
@@ -794,11 +814,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            MsgDeleteDevicePool.Builder msgDeleteDevicePoolBuilder =
-                MsgDeleteDevicePool.newBuilder()
-                    .addAllDevicePaths(devicePaths)
-                    .setProviderKind(asProviderType(providerKindRef))
-                    .setPoolName(poolName);
+            MsgDeleteDevicePool.Builder msgDeleteDevicePoolBuilder = MsgDeleteDevicePool.newBuilder()
+                .addAllDevicePaths(devicePaths)
+                .setProviderKind(asProviderType(providerKindRef))
+                .setPoolName(poolName);
 
             msgDeleteDevicePoolBuilder
                 .build()
@@ -817,16 +836,19 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         try
         {
             MsgPhysicalDevices.newBuilder()
-                .addAllDevices(entries.stream().map(lsBlkEntry ->
-                    MsgPhysicalDevicesOuterClass.LsBlkEntry.newBuilder()
-                        .setName(lsBlkEntry.getName())
-                        .setSize(lsBlkEntry.getSize())
-                        .setRotational(lsBlkEntry.isRotational())
-                        .setKernelName(lsBlkEntry.getKernelName())
-                        .setParentName(lsBlkEntry.getParentName())
-                        .setMajor(lsBlkEntry.getMajor())
-                        .setMinor(lsBlkEntry.getMinor())
-                        .build()).collect(Collectors.toList()))
+                .addAllDevices(
+                    entries.stream().map(
+                        lsBlkEntry -> MsgPhysicalDevicesOuterClass.LsBlkEntry.newBuilder()
+                            .setName(lsBlkEntry.getName())
+                            .setSize(lsBlkEntry.getSize())
+                            .setRotational(lsBlkEntry.isRotational())
+                            .setKernelName(lsBlkEntry.getKernelName())
+                            .setParentName(lsBlkEntry.getParentName())
+                            .setMajor(lsBlkEntry.getMajor())
+                            .setMinor(lsBlkEntry.getMinor())
+                            .build()
+                    ).collect(Collectors.toList())
+                )
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -872,11 +894,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             msgBuilder
                 .setName(objName)
                 .build()
-            .writeDelimitedTo(baos);
+                .writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {
-             handleIOException(exc);
+            handleIOException(exc);
         }
     }
 
@@ -1029,7 +1051,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .build();
         }
 
-
         private List<IntOtherRsc> buildOtherResources(List<Resource> otherResources)
             throws AccessDeniedException
         {
@@ -1039,9 +1060,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 list.add(
                     IntOtherRsc.newBuilder()
-                        .setNode(ProtoCommonSerializerBuilder.serializeNode(
-                            serializerCtx,
-                            rsc.getNode())
+                        .setNode(
+                            ProtoCommonSerializerBuilder.serializeNode(
+                                serializerCtx,
+                                rsc.getNode()
+                            )
                         )
                         .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, rsc))
                         .build()
@@ -1061,8 +1084,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
             List<IntSnapshotOuterClass.SnapshotVlmDfn> snapshotVlmDfns = new ArrayList<>();
-            for (SnapshotVolumeDefinition snapshotVolumeDefinition :
-                snapshotDfn.getAllSnapshotVolumeDefinitions(serializerCtx))
+            for (
+                SnapshotVolumeDefinition snapshotVolumeDefinition : snapshotDfn
+                    .getAllSnapshotVolumeDefinitions(serializerCtx)
+            )
             {
                 snapshotVlmDfns.add(
                     IntSnapshotOuterClass.SnapshotVlmDfn.newBuilder()
@@ -1142,7 +1167,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         return freeSpaceBuilder;
     }
 
-    public static CryptoEntryOuterClass.CryptoEntry.Builder buildCryptoEntry(ProcCryptoEntry entry) {
+    public static CryptoEntryOuterClass.CryptoEntry.Builder buildCryptoEntry(ProcCryptoEntry entry)
+    {
         return CryptoEntryOuterClass.CryptoEntry.newBuilder()
             .setName(entry.getName())
             .setDriver(entry.getDriver())

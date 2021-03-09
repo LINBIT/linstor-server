@@ -13,5 +13,6 @@ public enum ExtTools
     LOSETUP,
     ZSTD,
     SOCAT,
-    UTIL_LINUX
+    UTIL_LINUX,
+    UDEVADM
 }

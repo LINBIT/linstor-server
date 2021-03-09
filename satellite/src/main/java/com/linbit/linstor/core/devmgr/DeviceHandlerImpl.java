@@ -12,6 +12,7 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.SysFsHandler;
+import com.linbit.linstor.core.UdevHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
@@ -27,8 +28,8 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
-import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.ResourceState;
+import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.AbortLayerProcessingException;
 import com.linbit.linstor.layer.DeviceLayer.LayerProcessResult;
@@ -39,6 +40,8 @@ import com.linbit.linstor.layer.storage.StorageLayer;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -65,6 +68,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -89,6 +93,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final SnapshotShippingService snapshotShippingManager;
 
     private final SysFsHandler sysFsHandler;
+    private final UdevHandler udevHandler;
 
     @Inject
     public DeviceHandlerImpl(
@@ -103,6 +108,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         ResourceStateEvent resourceStateEventRef,
         ExtCmdFactory extCmdFactoryRef,
         SysFsHandler sysFsHandlerRef,
+        UdevHandler udevHandlerRef,
         SnapshotShippingService snapshotShippingManagerRef
     )
     {
@@ -118,6 +124,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         resourceStateEvent = resourceStateEventRef;
         extCmdFactory = extCmdFactoryRef;
         sysFsHandler = sysFsHandlerRef;
+        udevHandler = udevHandlerRef;
         snapshotShippingManager = snapshotShippingManagerRef;
 
         fullSyncApplied = new AtomicBoolean(false);
@@ -383,6 +390,10 @@ public class DeviceHandlerImpl implements DeviceHandler
                             // verify if all VlmProviderObject were deleted correctly
                             ensureAllVlmDataDeleted(rscLayerObject, vlm.getVolumeDefinition().getVolumeNumber());
                             vlmListNotifyDelete.add(vlm);
+                        }
+                        else
+                        {
+                            updateDeviceSymlinks(vlm);
                         }
                     }
                     rscListNotifyApplied.add(rsc);
@@ -942,5 +953,50 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
         }
         notificationListener.get().notifyFreeSpacesChanged(freeSpaces);
+    }
+
+    private void updateDeviceSymlinks(Volume vlmRef)
+        throws AccessDeniedException, StorageException, DatabaseException, InvalidKeyException, InvalidValueException
+    {
+        List<String> prefixedList = new ArrayList<>();
+
+        if (vlmRef.getAbsResource().getStateFlags().isSet(wrkCtx, Resource.Flags.INACTIVE))
+        {
+            // if resource is inactive, prefixedList stays empty. this will effectively clear the volume props-namespace
+            // of the symlinks
+
+            VlmProviderObject<Resource> vlmProviderObject = vlmRef.getAbsResource()
+                .getLayerData(wrkCtx)
+                .getVlmProviderObject(vlmRef.getVolumeNumber());
+
+            List<String> symlinks = udevHandler.getSymlinks(vlmProviderObject.getDevicePath());
+            if (symlinks != null)
+            {
+                // elements of symlinks usually do not start with "/dev/"
+                for (String entry : symlinks)
+                {
+                    if (!entry.startsWith("/dev/"))
+                    {
+                        prefixedList.add("/dev/" + entry);
+                    }
+                    else
+                    {
+                        prefixedList.add(entry);
+                    }
+                }
+            }
+        }
+
+        Props vlmProps = vlmRef.getProps(wrkCtx);
+        Optional<Props> symlinkProps = vlmProps.getNamespace(ApiConsts.NAMESPC_DEV_SYMLINKS);
+        if (symlinkProps.isPresent())
+        {
+            symlinkProps.get().clear();
+        }
+        for (int i = 0; i < prefixedList.size(); i++)
+        {
+            String symlink = prefixedList.get(i);
+            vlmProps.setProp(Integer.toString(i), symlink, ApiConsts.NAMESPC_DEV_SYMLINKS);
+        }
     }
 }

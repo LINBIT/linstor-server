@@ -7,12 +7,16 @@ import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.RscInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.VlmProps;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_NOTIFY_RSC_APPLIED,
@@ -42,6 +46,13 @@ public class NotifyResourceApplied implements ApiCall
         // If so, we could display to the client if a resource-adjustment is pending or if the
         // satellite is basically idle
 
+        Map<Integer, VlmProps> vlmPropsMap = msgIntAppliedRsc.getVlmPropsMap();
+        Map<Integer, Map<String, String>> vlmProps = new HashMap<>();
+        for (Entry<Integer, VlmProps> entry : vlmPropsMap.entrySet())
+        {
+            vlmProps.put(entry.getKey(), entry.getValue().getVlmPropMap());
+        }
+
         rscInternalCallHandler.updateVolume(
             msgIntAppliedRsc.getRscId().getName(),
             ProtoLayerUtils.extractRscLayerData(
@@ -49,6 +60,8 @@ public class NotifyResourceApplied implements ApiCall
                 -1, // we are on the controller now, so we do not care about fullSyncdId
                 -1  // we are on the controller now, so we do not care about updateId
             ),
+            msgIntAppliedRsc.getRscPropsMap(),
+            vlmProps,
             ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
                 msgIntAppliedRsc.getFreeSpaceList()
             )
