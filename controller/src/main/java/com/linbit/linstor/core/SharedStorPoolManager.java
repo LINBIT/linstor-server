@@ -354,7 +354,7 @@ public class SharedStorPoolManager
         synchronized (activeLocksByNode)
         {
             ArrayList<SharedStorPoolName> activeLocks = activeLocksByNode.get(node);
-            return activeLocks == null || !activeLocks.isEmpty();
+            return activeLocks != null && !activeLocks.isEmpty();
         }
     }
     private Node getNode(TransactionObject txObj)
