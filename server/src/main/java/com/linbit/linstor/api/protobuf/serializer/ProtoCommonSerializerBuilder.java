@@ -285,7 +285,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         long expectedFullSyncIdRef,
         int[] stltVersionRef,
         String uname,
-        List<ExtToolsInfo> extToolsList,
+        Collection<ExtToolsInfo> extToolsList,
         ApiCallRc responses,
         String configDir,
         boolean debugConsoleEnabled,
@@ -350,7 +350,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return this;
     }
 
-    private ArrayList<ExternalToolsInfo> asExternalToolsList(List<ExtToolsInfo> layerInfoListRef)
+    private ArrayList<ExternalToolsInfo> asExternalToolsList(Collection<ExtToolsInfo> layerInfoListRef)
     {
         ArrayList<ExternalToolsInfo> ret = new ArrayList<>();
         for (ExtToolsInfo info : layerInfoListRef)

@@ -263,7 +263,7 @@ public class StltApiCallHandler
             transMgrProvider.get().commit();
 
             authResult = new AuthenticationResult(
-                deviceLayerChecker.getExternalTools(),
+                deviceLayerChecker.getExternalTools(true).values(),
                 ApiCallRcImpl.singletonApiCallRc(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.CREATED | ApiConsts.MASK_NODE,

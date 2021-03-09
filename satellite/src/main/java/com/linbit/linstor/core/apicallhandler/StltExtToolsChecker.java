@@ -24,7 +24,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,6 +69,8 @@ public class StltExtToolsChecker
     private final ExtCmdFactory extCmdFactory;
     private final StltConfig stltCfg;
 
+    private Map<ExtTools, ExtToolsInfo> cache = null;
+
     @Inject
     public StltExtToolsChecker(
         ErrorReporter errorReporterRef,
@@ -81,27 +85,39 @@ public class StltExtToolsChecker
         stltCfg = stltCfgRef;
     }
 
-    public List<ExtToolsInfo> getExternalTools()
+    public Map<ExtTools, ExtToolsInfo> getExternalTools(boolean recache)
     {
-        List<String> loadedModules = getLoadedModules();
+        if (recache || cache == null)
+        {
+            List<String> loadedModules = getLoadedModules();
 
-        return Arrays.asList(
-            getDrbd9Info(),
-            getDrbdProxyInfo(),
-            getCryptSetupInfo(),
-            getLvmInfo(),
-            getLvmThinInfo(),
-            getThinSendRecvInfo(),
-            getZfsInfo(),
-            getNvmeInfo(loadedModules),
-            getSpdkInfo(),
-            getWritecacheInfo(loadedModules),
-            getCacheInfo(loadedModules),
-            getLosetupInfo(),
-            getZstdInfo(),
-            getSocatInfo(),
-            getUtilLinuxInfo()
-        );
+            List<ExtToolsInfo> list = Arrays.asList(
+                getDrbd9Info(),
+                getDrbdProxyInfo(),
+                getCryptSetupInfo(),
+                getLvmInfo(),
+                getLvmThinInfo(),
+                getThinSendRecvInfo(),
+                getZfsInfo(),
+                getNvmeInfo(loadedModules),
+                getSpdkInfo(),
+                getWritecacheInfo(loadedModules),
+                getCacheInfo(loadedModules),
+                getLosetupInfo(),
+                getZstdInfo(),
+                getSocatInfo(),
+                getUtilLinuxInfo()
+            );
+
+            Map<ExtTools, ExtToolsInfo> extTools = new HashMap<>();
+            for (ExtToolsInfo info : list)
+            {
+                extTools.put(info.getTool(), info);
+            }
+
+            cache = Collections.unmodifiableMap(extTools);
+        }
+        return cache;
     }
 
     private ExtToolsInfo getDrbd9Info()

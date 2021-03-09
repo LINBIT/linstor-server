@@ -12,6 +12,8 @@ import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import javax.annotation.Nullable;
+
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -38,7 +40,7 @@ public interface CommonSerializer
             long expectedFullSyncId,
             int[] stltVersion,
             String nodeUname,
-            List<ExtToolsInfo> layerInfoListRef,
+            Collection<ExtToolsInfo> layerInfoListRef,
             ApiCallRc responses,
             String configDir,
             boolean debugConsoleEnabled,
