@@ -188,10 +188,11 @@ public class DrbdAdm
                 public boolean retry(OutputData outputDataRef)
                 {
                     String errStr = new String(outputDataRef.stderrData);
-                    boolean retry = errStr.contains("Concurrent state changes detected and aborted") &&
-                        retryCount-- > 0;
-                    if (retry)
+                    boolean retryFlag = errStr.contains("Concurrent state changes detected and aborted") &&
+                        retryCount > 0;
+                    if (retryFlag)
                     {
+                        --retryCount;
                         try
                         {
                             Thread.sleep(500);
@@ -200,7 +201,7 @@ public class DrbdAdm
                         {
                         }
                     }
-                    return retry;
+                    return retryFlag;
                 }
             }
         );

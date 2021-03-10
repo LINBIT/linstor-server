@@ -404,7 +404,7 @@ public class SysFsHandler
                 "Failed to find major:minor of device " + devicePath,
                 new RetryHandler()
                 {
-                    int count = 3;
+                    int retryCount = 3;
                     @Override
                     public boolean skip(OutputData outDataRef)
                     {
@@ -414,13 +414,19 @@ public class SysFsHandler
                     @Override
                     public boolean retry(OutputData outputDataRef)
                     {
-                        try
+                        final boolean retryFlag = retryCount > 0;
+                        if (retryFlag)
                         {
-                            Thread.sleep(100);
+                            --retryCount;
+                            try
+                            {
+                                Thread.sleep(100);
+                            }
+                            catch (InterruptedException exc)
+                            {
+                            }
                         }
-                        catch (InterruptedException exc)
-                        {}
-                        return count-- > 0;
+                        return retryFlag;
                     }
                 }
             );
