@@ -94,7 +94,8 @@ public class StltExtToolsChecker
         {
             List<String> loadedModules = getLoadedModules();
 
-            List<ExtToolsInfo> list = Arrays.asList(
+            ExtToolsInfo[] infoArray =
+            {
                 getDrbd9Info(),
                 getDrbdProxyInfo(),
                 getCryptSetupInfo(),
@@ -114,10 +115,10 @@ public class StltExtToolsChecker
                 getLsscsiInfo(),
                 getSasPhyInfo(),
                 getSasDeviceInfo()
-            );
+            };
 
             Map<ExtTools, ExtToolsInfo> extTools = new HashMap<>();
-            for (ExtToolsInfo info : list)
+            for (ExtToolsInfo info : infoArray)
             {
                 extTools.put(info.getTool(), info);
             }
