@@ -3,6 +3,7 @@ package com.linbit.linstor.api.pojo;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -20,11 +21,17 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class StorageRscPojo implements RscLayerDataApi
 {
+    @JsonIgnore
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
+    @JsonIgnore
     private final boolean suspend;
 
     private final List<VlmLayerDataApi> vlms;
@@ -42,6 +49,20 @@ public class StorageRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = suspendRef;
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public StorageRscPojo(
+        @JsonProperty("children") List<RscLayerDataApi> childrenRef,
+        @JsonProperty("rscNameSuffix") String rscNameSuffixRef,
+        @JsonProperty("volumeList") List<VlmLayerDataApi> vlmsRef
+    )
+    {
+        id = BACK_DFLT_ID;
+        children = childrenRef;
+        rscNameSuffix = rscNameSuffixRef;
+        vlms = vlmsRef;
+        suspend = false;
     }
 
     @Override
@@ -83,10 +104,14 @@ public class StorageRscPojo implements RscLayerDataApi
     private abstract static class AbsVlmProviderPojo implements VlmLayerDataApi
     {
         private final int vlmNr;
+        @JsonIgnore
         private final String devicePath;
+        @JsonIgnore
         private final long allocatedSize;
         private final long usableSize;
+        @JsonIgnore
         private final String diskState;
+        @JsonIgnore
         private final DeviceProviderKind kind;
         private final StorPoolApi storPoolApi;
 
@@ -127,6 +152,7 @@ public class StorageRscPojo implements RscLayerDataApi
             return allocatedSize;
         }
 
+        @JsonIgnore(false)
         @Override
         public long getUsableSize()
         {
@@ -171,6 +197,19 @@ public class StorageRscPojo implements RscLayerDataApi
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, DISKLESS);
         }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public DisklessVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef
+        )
+        {
+            super(
+                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                storPoolApiRef, DISKLESS
+            );
+        }
     }
 
     public static class LvmVlmPojo extends AbsVlmProviderPojo
@@ -186,6 +225,19 @@ public class StorageRscPojo implements RscLayerDataApi
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, LVM);
         }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public LvmVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef
+        )
+        {
+            super(
+                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                storPoolApiRef, LVM
+            );
+        }
     }
 
     public static class SpdkVlmPojo extends AbsVlmProviderPojo
@@ -200,6 +252,19 @@ public class StorageRscPojo implements RscLayerDataApi
         )
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, SPDK);
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public SpdkVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef
+        )
+        {
+            super(
+                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                storPoolApiRef, SPDK
+            );
         }
     }
 
@@ -231,6 +296,19 @@ public class StorageRscPojo implements RscLayerDataApi
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, LVM_THIN);
         }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public LvmThinVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef
+        )
+        {
+            super(
+                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                storPoolApiRef, LVM_THIN
+            );
+        }
     }
 
     public static class ZfsVlmPojo extends AbsVlmProviderPojo
@@ -245,6 +323,19 @@ public class StorageRscPojo implements RscLayerDataApi
         )
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, ZFS);
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public ZfsVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef
+        )
+        {
+            super(
+                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                storPoolApiRef, ZFS
+            );
         }
     }
 
@@ -261,6 +352,19 @@ public class StorageRscPojo implements RscLayerDataApi
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, ZFS_THIN);
         }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public ZfsThinVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef
+        )
+        {
+            super(
+                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                storPoolApiRef, ZFS_THIN
+            );
+        }
     }
 
     public static class FileVlmPojo extends AbsVlmProviderPojo
@@ -276,6 +380,19 @@ public class StorageRscPojo implements RscLayerDataApi
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, FILE);
         }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public FileVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef
+        )
+        {
+            super(
+                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                storPoolApiRef, FILE
+            );
+        }
     }
 
     public static class FileThinVlmPojo extends AbsVlmProviderPojo
@@ -290,6 +407,19 @@ public class StorageRscPojo implements RscLayerDataApi
         )
         {
             super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, FILE_THIN);
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public FileThinVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef
+        )
+        {
+            super(
+                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                storPoolApiRef, FILE_THIN
+            );
         }
     }
 

@@ -2,16 +2,23 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class LuksRscPojo implements RscLayerDataApi
 {
+    @JsonIgnore
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
+    @JsonIgnore
     private final boolean suspend;
 
     private final List<LuksVlmPojo> vlms;
@@ -29,6 +36,20 @@ public class LuksRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = suspendRef;
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public LuksRscPojo(
+        @JsonProperty("children") List<RscLayerDataApi> childrenRef,
+        @JsonProperty("rscNameSuffix") String rscNameSuffixRef,
+        @JsonProperty("volumeList") List<LuksVlmPojo> vlmsRef
+    )
+    {
+        id = BACK_DFLT_ID;
+        children = childrenRef;
+        rscNameSuffix = rscNameSuffixRef;
+        vlms = vlmsRef;
+        suspend = false;
     }
 
     @Override
@@ -71,11 +92,17 @@ public class LuksRscPojo implements RscLayerDataApi
     {
         private final int vlmNr;
         private final byte[] encryptedPassword;
+        @JsonIgnore
         private final String devicePath;
+        @JsonIgnore
         private final String backingDevice;
+        @JsonIgnore
         private final long allocatedSize;
+        @JsonIgnore
         private final long usableSize;
+        @JsonIgnore
         private final boolean isOpen;
+        @JsonIgnore
         private final String diskState;
 
         public LuksVlmPojo(
@@ -97,6 +124,22 @@ public class LuksRscPojo implements RscLayerDataApi
             usableSize = usableSizeRef;
             isOpen = isOpenRef;
             diskState = diskStateRef;
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public LuksVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("encryptedPassword") byte[] encryptedPasswordRef
+        )
+        {
+            vlmNr = vlmNrRef;
+            encryptedPassword = encryptedPasswordRef;
+            devicePath = null;
+            backingDevice = null;
+            allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
+            usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
+            isOpen = false;
+            diskState = null;
         }
 
         @Override

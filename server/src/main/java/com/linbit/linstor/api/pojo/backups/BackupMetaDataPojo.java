@@ -1,34 +1,39 @@
 package com.linbit.linstor.api.pojo.backups;
 
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BackupMetaDataPojo
 {
-    private final LayerMetaPojo layerData;
+    private final RscLayerDataApi layerData;
     private final RscDfnMetaPojo rscDfn;
     private final RscMetaPojo rsc;
+    private final LuksLayerMetaPojo luksInfo;
     private final List<List<BackupInfoPojo>> backups;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public BackupMetaDataPojo(
-        @JsonProperty("layerData") LayerMetaPojo layerDataRef,
+        @JsonProperty("layerData") RscLayerDataApi layerDataRef,
         @JsonProperty("rscDfn") RscDfnMetaPojo rscDfnRef,
         @JsonProperty("rsc") RscMetaPojo rscRef,
+        @JsonProperty("luksInfo") LuksLayerMetaPojo luksInfoRef,
         @JsonProperty("backups") List<List<BackupInfoPojo>> backupsRef
     )
     {
         layerData = layerDataRef;
         rscDfn = rscDfnRef;
         rsc = rscRef;
+        luksInfo = luksInfoRef;
         backups = backupsRef;
     }
 
-    public LayerMetaPojo getLayerData()
+    public RscLayerDataApi getLayerData()
     {
         return layerData;
     }
@@ -41,6 +46,11 @@ public class BackupMetaDataPojo
     public RscMetaPojo getRsc()
     {
         return rsc;
+    }
+
+    public LuksLayerMetaPojo getLuksInfo()
+    {
+        return luksInfo;
     }
 
     public List<List<BackupInfoPojo>> getBackups()

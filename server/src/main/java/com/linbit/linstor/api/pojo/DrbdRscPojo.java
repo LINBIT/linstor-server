@@ -4,14 +4,21 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DrbdRscPojo implements RscLayerDataApi
 {
+    @JsonIgnore
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
@@ -23,8 +30,11 @@ public class DrbdRscPojo implements RscLayerDataApi
     private final long alStripeSize;
     private final long flags;
     private final List<DrbdVlmPojo> vlms;
+    @JsonIgnore
     private final boolean suspend;
+    @JsonIgnore
     private final @Nullable Integer promotionScore;
+    @JsonIgnore
     private final @Nullable Boolean mayPromote;
 
     public DrbdRscPojo(
@@ -56,6 +66,34 @@ public class DrbdRscPojo implements RscLayerDataApi
         suspend = suspendRef;
         promotionScore = promotionScoreRef;
         mayPromote = mayPromoteRef;
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public DrbdRscPojo(
+        @JsonProperty("children") List<RscLayerDataApi> childrenRef,
+        @JsonProperty("rscNameSuffix") String rscNameSuffixRef,
+        @JsonProperty("drbdRscDfn") DrbdRscDfnPojo drbdRscDfnRef,
+        @JsonProperty("nodeId") int nodeIdRef,
+        @JsonProperty("peerSlots") short peerSlotsRef,
+        @JsonProperty("alStripes") int alStripesRef,
+        @JsonProperty("alStripeSize") long alStripeSizeRef,
+        @JsonProperty("flags") long flagsRef,
+        @JsonProperty("volumeList") List<DrbdVlmPojo> vlmsRef
+    )
+    {
+        id = BACK_DFLT_ID;
+        children = childrenRef;
+        rscNameSuffix = rscNameSuffixRef;
+        drbdRscDfn = drbdRscDfnRef;
+        nodeId = nodeIdRef;
+        peerSlots = peerSlotsRef;
+        alStripes = alStripesRef;
+        alStripeSize = alStripeSizeRef;
+        flags = flagsRef;
+        vlms = vlmsRef;
+        suspend = false;
+        promotionScore = null;
+        mayPromote = null;
     }
 
     @Override
@@ -141,9 +179,12 @@ public class DrbdRscPojo implements RscLayerDataApi
         private final short peerSlots;
         private final int alStripes;
         private final long alStripeSize;
+        @JsonIgnore
         private final Integer port;
         private final String transportType;
+        @JsonIgnore
         private final String secret;
+        @JsonIgnore
         private final boolean down;
 
         public DrbdRscDfnPojo(
@@ -165,6 +206,25 @@ public class DrbdRscPojo implements RscLayerDataApi
             transportType = transportTypeRef;
             secret = secretRef;
             down = downRef;
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public DrbdRscDfnPojo(
+            @JsonProperty("rscNameSuffix") String rscNameSuffixRef,
+            @JsonProperty("peerSlots") short peerSlotsRef,
+            @JsonProperty("alStripes") int alStripesRef,
+            @JsonProperty("alStripeSize") long alStripeSizeRef,
+            @JsonProperty("transportType") String transportTypeRef
+        )
+        {
+            rscNameSuffix = rscNameSuffixRef;
+            peerSlots = peerSlotsRef;
+            alStripes = alStripesRef;
+            alStripeSize = alStripeSizeRef;
+            port = null;
+            transportType = transportTypeRef;
+            secret = null;
+            down = false;
         }
 
         @Override
@@ -218,12 +278,18 @@ public class DrbdRscPojo implements RscLayerDataApi
     public static class DrbdVlmPojo implements VlmLayerDataApi
     {
         private final DrbdVlmDfnPojo drbdVlmDfn;
+        @JsonIgnore
         private final String devicePath;
+        @JsonIgnore
         private final String backingDisk;
         private final String externalMetaDataStorPool;
+        @JsonIgnore
         private final String metaDisk;
+        @JsonIgnore
         private final long allocatedSize;
+        @JsonIgnore
         private final long usableSize;
+        @JsonIgnore
         private final String diskState;
 
         public DrbdVlmPojo(
@@ -245,6 +311,23 @@ public class DrbdRscPojo implements RscLayerDataApi
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             diskState = diskStateRef;
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public DrbdVlmPojo(
+            @JsonProperty("vlmNr") int ignoredVlmNrRef,
+            @JsonProperty("drbdVlmDfn") DrbdVlmDfnPojo drbdVlmDfnRef,
+            @JsonProperty("externalMetaDataStorPool") String externalMetaDataStorPoolRef
+        )
+        {
+            drbdVlmDfn = drbdVlmDfnRef;
+            devicePath = null;
+            backingDisk = null;
+            externalMetaDataStorPool = externalMetaDataStorPoolRef;
+            metaDisk = null;
+            allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
+            usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
+            diskState = null;
         }
 
         public DrbdVlmDfnPojo getDrbdVlmDfn()
@@ -313,6 +396,7 @@ public class DrbdRscPojo implements RscLayerDataApi
     {
         private final String rscNameSuffix;
         private final int vlmNr;
+        @JsonIgnore
         private final Integer minorNr;
 
         public DrbdVlmDfnPojo(
@@ -324,6 +408,17 @@ public class DrbdRscPojo implements RscLayerDataApi
             rscNameSuffix = rscNameSuffixRef;
             vlmNr = vlmNrRef;
             minorNr = minorNrRef;
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public DrbdVlmDfnPojo(
+            @JsonProperty("rscNameSuffix") String rscNameSuffixRef,
+            @JsonProperty("vlmNr") int vlmNrRef
+        )
+        {
+            rscNameSuffix = rscNameSuffixRef;
+            vlmNr = vlmNrRef;
+            minorNr = null;
         }
 
         public String getRscNameSuffix()

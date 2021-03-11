@@ -8,25 +8,45 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
 {
+    @JsonIgnore
     private final UUID storPoolUuid;
+    @JsonIgnore
     private final UUID nodeUuid;
+    @JsonIgnore
     private final String nodeName;
     private final String storPoolName;
+    @JsonIgnore
     private final UUID storPoolDfnUuid;
     private final DeviceProviderKind deviceProviderKind;
+    @JsonIgnore
     private final Map<String, String> storPoolProps;
+    @JsonIgnore
     private final Map<String, String> storPoolDfnProps;
+    @JsonIgnore
     private final Map<String, String> storPoolStaticTraits;
+    @JsonIgnore
     private final Long fullSyncId;
+    @JsonIgnore
     private final Long updateId;
+    @JsonIgnore
     private final String freeSpaceManagerName;
+    @JsonIgnore
     private final Optional<Long> freeSpace;
+    @JsonIgnore
     private final Optional<Long> totalSpace;
+    @JsonIgnore
     private final ApiCallRc reports;
+    @JsonIgnore
     private final Boolean supportsSnapshots;
+    @JsonIgnore
     private final Boolean isPmem;
+    @JsonIgnore
     private final Boolean isVDO;
     private final Boolean externalLocking;
 
@@ -71,6 +91,33 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         isPmem = isPmemRef;
         isVDO = isVDORef;
         externalLocking = isExternalLockingRef;
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public StorPoolPojo(
+        @JsonProperty("storPoolName") final String storPoolNameRef,
+        @JsonProperty("deviceProviderKind") final DeviceProviderKind deviceProviderKindRef
+    )
+    {
+        storPoolUuid = null;
+        nodeUuid = null;
+        nodeName = null;
+        storPoolName = storPoolNameRef;
+        storPoolDfnUuid = null;
+        deviceProviderKind = deviceProviderKindRef;
+        storPoolProps = null;
+        storPoolDfnProps = null;
+        storPoolStaticTraits = null;
+        fullSyncId = null;
+        updateId = null;
+        freeSpaceManagerName = null;
+        freeSpace = null;
+        totalSpace = null;
+        reports = null;
+        supportsSnapshots = null;
+        isPmem = null;
+        isVDO = null;
+        externalLocking = null;
     }
 
     @Override

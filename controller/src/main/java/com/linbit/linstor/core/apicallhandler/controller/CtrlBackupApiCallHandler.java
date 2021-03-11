@@ -460,6 +460,7 @@ public class CtrlBackupApiCallHandler
                         firstBackInfo.getNode(),
                         false,
                         true,
+                        restoreable,
                         vlms,
                         null
                     );
@@ -616,6 +617,7 @@ public class CtrlBackupApiCallHandler
             null,
             shipping,
             success,
+            false,
             vlms,
             null
         );

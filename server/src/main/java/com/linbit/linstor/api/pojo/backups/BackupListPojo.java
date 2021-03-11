@@ -48,6 +48,10 @@ public class BackupListPojo implements BackupListApi
      */
     private final Boolean success;
     /**
+     * is true if the meta-file exists and all entries in its backup-list are available in the same bucket
+     */
+    private final Boolean restoreable;
+    /**
      * maps vlmNr to full backup name as saved in s3 ({rscName}_{vlmNr}_back_{timestampFullBackup}_{timestampIncBackup})
      * should always contain at least 1 entry
      */
@@ -65,6 +69,7 @@ public class BackupListPojo implements BackupListApi
         @Nullable String nodeRef,
         @Nullable Boolean shippingRef,
         @Nullable Boolean successRef,
+        @Nullable Boolean restoreableRef,
         Map<String, String> vlmsRef,
         @Nullable List<BackupListApi> incRef
     )
@@ -76,6 +81,7 @@ public class BackupListPojo implements BackupListApi
         node = nodeRef;
         shipping = shippingRef;
         success = successRef;
+        this.restoreable = restoreableRef;
         vlms = vlmsRef;
         inc = incRef;
     }
@@ -120,6 +126,12 @@ public class BackupListPojo implements BackupListApi
     public Boolean successful()
     {
         return success;
+    }
+
+    @Override
+    public Boolean isRestoreable()
+    {
+        return restoreable;
     }
 
     @Override

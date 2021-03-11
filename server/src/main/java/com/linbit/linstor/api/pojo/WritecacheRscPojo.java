@@ -2,16 +2,23 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class WritecacheRscPojo implements RscLayerDataApi
 {
+    @JsonIgnore
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
+    @JsonIgnore
     private final boolean suspend;
 
     private final List<WritecacheVlmPojo> vlms;
@@ -30,6 +37,21 @@ public class WritecacheRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = suspendRef;
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public WritecacheRscPojo(
+        @JsonProperty("children") List<RscLayerDataApi> childrenRef,
+        @JsonProperty("rscNameSuffix") String rscNameSuffixRef,
+        @JsonProperty("volumeList") List<WritecacheVlmPojo> vlmsRef
+    )
+    {
+        super();
+        id = BACK_DFLT_ID;
+        children = childrenRef;
+        rscNameSuffix = rscNameSuffixRef;
+        vlms = vlmsRef;
+        suspend = false;
     }
 
     @Override
@@ -71,11 +93,16 @@ public class WritecacheRscPojo implements RscLayerDataApi
     public static class WritecacheVlmPojo implements VlmLayerDataApi
     {
         private final int vlmNr;
+        @JsonIgnore
         private final String devicePathData;
+        @JsonIgnore
         private final String devicePathCache;
         private final String cacheStorPoolName;
+        @JsonIgnore
         private final long allocatedSize;
+        @JsonIgnore
         private final long usableSize;
+        @JsonIgnore
         private final String diskState;
 
         public WritecacheVlmPojo(
@@ -96,6 +123,22 @@ public class WritecacheRscPojo implements RscLayerDataApi
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             diskState = diskStateRef;
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public WritecacheVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("cacheStorPoolName") String cacheStorPoolNameRef
+        )
+        {
+            super();
+            vlmNr = vlmNrRef;
+            devicePathData = null;
+            devicePathCache = null;
+            cacheStorPoolName = cacheStorPoolNameRef;
+            allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
+            usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
+            diskState = null;
         }
 
         @Override

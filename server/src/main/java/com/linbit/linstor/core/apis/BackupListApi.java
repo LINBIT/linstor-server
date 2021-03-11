@@ -19,6 +19,8 @@ public interface BackupListApi
 
     Boolean successful();
 
+    Boolean isRestoreable();
+
     Map<String, String> getVlms();
 
     List<BackupListApi> getInc();
