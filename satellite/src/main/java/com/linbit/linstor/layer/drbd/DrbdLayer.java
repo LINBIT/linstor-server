@@ -504,6 +504,9 @@ public class DrbdLayer implements DeviceLayer
             {
                 drbdVlmData.setExists(false);
                 drbdVlmData.setDevicePath(null);
+
+                // in case we want to undelete this resource... but the metadata got already wiped
+                drbdVlmData.setCheckMetaData(true);
             }
         }
         catch (ExtCmdFailedException cmdExc)
