@@ -12,6 +12,7 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -20,6 +21,8 @@ import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -138,6 +141,15 @@ public class CtrlRscMakeAvailableApiCallHandler
                 );
             }
 
+            if (isFlagSet(rsc, Resource.Flags.DELETE))
+            {
+                unsetFlag(rsc, Resource.Flags.DELETE);
+                for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
+                {
+                    unsetFlag(vlm, Volume.Flags.DELETE);
+                }
+            }
+
             /*
              * TODO: if this gets rebased with shared SP, activate the resource if inactive and is allowed to be
              * activated
@@ -150,6 +162,7 @@ public class CtrlRscMakeAvailableApiCallHandler
             flux = Flux.just(
                 ApiCallRcImpl.singleApiCallRc(ApiConsts.MASK_SUCCESS, "Resource already deployed as requested")
             );
+            ctrlTransactionHelper.commit();
         }
         else
         {
@@ -396,6 +409,39 @@ public class CtrlRscMakeAvailableApiCallHandler
             throw new ApiAccessDeniedException(exc, "checking resource flags", ApiConsts.FAIL_ACC_DENIED_RSC);
         }
         return isSet;
+    }
+
+    private void unsetFlag(Resource rsc, Resource.Flags... flags)
+    {
+        try
+        {
+            rsc.getStateFlags().disableFlags(peerCtxProvider.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(exc, "disabling resource flags", ApiConsts.FAIL_ACC_DENIED_RSC);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+
+    }
+
+    private void unsetFlag(Volume vlm, Volume.Flags... flags)
+    {
+        try
+        {
+            vlm.getFlags().disableFlags(peerCtxProvider.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(exc, "disabling volume flags", ApiConsts.FAIL_ACC_DENIED_VLM);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
     }
 
     private ResponseContext makeContext(String nodeName, String rscName)
