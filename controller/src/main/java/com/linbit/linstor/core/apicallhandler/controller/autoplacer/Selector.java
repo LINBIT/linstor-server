@@ -78,49 +78,51 @@ class Selector
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                Node node = rsc.getNode();
+                if (!rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DELETE)) {
+                    Node node = rsc.getNode();
 
-                List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilterRef.skipAlreadyPlacedOnNodeNamesCheck();
-                if (
-                    skipAlreadyPlacedOnNodeNamesCheck == null ||
-                        !skipAlreadyPlacedOnNodeNamesCheck.contains(node.getName().displayValue)
-                )
-                {
-                    alreadyDeployedOnNodes.add(node);
-                    if (rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS))
+                    List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilterRef.skipAlreadyPlacedOnNodeNamesCheck();
+                    if (
+                        skipAlreadyPlacedOnNodeNamesCheck == null ||
+                            !skipAlreadyPlacedOnNodeNamesCheck.contains(node.getName().displayValue)
+                    )
                     {
-                        alreadyDeployedDisklessCount++;
-                    }
-                    else
-                    {
-                        alreadyDeployedDiskfulCount++;
-                    }
-                }
-
-                nodeStrList.add(node.getName().displayValue);
-
-                // determine already selected provider kind
-                List<AbsRscLayerObject<Resource>> storageRscDataList = LayerUtils.getChildLayerDataByKind(
-                    rsc.getLayerData(apiCtx),
-                    DeviceLayerKind.STORAGE
-                );
-                for (AbsRscLayerObject<Resource> storageRscData : storageRscDataList)
-                {
-                    if (storageRscData.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
-                    {
-                        for (VlmProviderObject<Resource> storageVlmData : storageRscData.getVlmLayerObjects().values())
+                        alreadyDeployedOnNodes.add(node);
+                        if (rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS))
                         {
-                            DeviceProviderKind storageVlmProviderKind = storageVlmData.getStorPool().getDeviceProviderKind();
-                            if (!storageVlmProviderKind.equals(DeviceProviderKind.DISKLESS))
+                            alreadyDeployedDisklessCount++;
+                        }
+                        else
+                        {
+                            alreadyDeployedDiskfulCount++;
+                        }
+                    }
+
+                    nodeStrList.add(node.getName().displayValue);
+
+                    // determine already selected provider kind
+                    List<AbsRscLayerObject<Resource>> storageRscDataList = LayerUtils.getChildLayerDataByKind(
+                        rsc.getLayerData(apiCtx),
+                        DeviceLayerKind.STORAGE
+                    );
+                    for (AbsRscLayerObject<Resource> storageRscData : storageRscDataList)
+                    {
+                        if (storageRscData.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
+                        {
+                            for (VlmProviderObject<Resource> storageVlmData : storageRscData.getVlmLayerObjects().values())
                             {
-                                if (alreadySelectedProviderKind == null)
+                                DeviceProviderKind storageVlmProviderKind = storageVlmData.getStorPool().getDeviceProviderKind();
+                                if (!storageVlmProviderKind.equals(DeviceProviderKind.DISKLESS))
                                 {
-                                    alreadySelectedProviderKind = storageVlmProviderKind;
-                                }
-                                else
-                                if (!alreadySelectedProviderKind.equals(storageVlmProviderKind))
-                                {
-                                    throw new ImplementationError("Multiple deployed provider kinds found for: " + rsc);
+                                    if (alreadySelectedProviderKind == null)
+                                    {
+                                        alreadySelectedProviderKind = storageVlmProviderKind;
+                                    }
+                                    else
+                                    if (!alreadySelectedProviderKind.equals(storageVlmProviderKind))
+                                    {
+                                        throw new ImplementationError("Multiple deployed provider kinds found for: " + rsc);
+                                    }
                                 }
                             }
                         }

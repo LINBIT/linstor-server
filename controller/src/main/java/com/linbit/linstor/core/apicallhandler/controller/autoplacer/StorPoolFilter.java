@@ -395,17 +395,21 @@ class StorPoolFilter
                         Iterator<Resource> iterateResources = node.iterateResources(apiAccCtx);
                         while (nodeMatches && iterateResources.hasNext())
                         {
-                            String rscName = iterateResources.next().getDefinition().getName().displayValue;
-
-                            boolean hasRscDeployed = matchesRegex.test(rscName) || containedInList.test(rscName);
-                            nodeMatches = !hasRscDeployed;
-                            if (hasRscDeployed)
+                            Resource rsc = iterateResources.next();
+                            if (!rsc.getStateFlags().isSet(apiAccCtx, Resource.Flags.DELETE))
                             {
-                                errorReporter.logTrace(
-                                    "Autoplacer.Filter: Disqualifying node '%s' as it has resource '%s' deployed",
-                                    nodeDisplayValue,
-                                    rscName
-                                );
+                                String rscName = rsc.getDefinition().getName().displayValue;
+
+                                boolean hasRscDeployed = matchesRegex.test(rscName) || containedInList.test(rscName);
+                                nodeMatches = !hasRscDeployed;
+                                if (hasRscDeployed)
+                                {
+                                    errorReporter.logTrace(
+                                        "Autoplacer.Filter: Disqualifying node '%s' as it has resource '%s' deployed",
+                                        nodeDisplayValue,
+                                        rscName
+                                    );
+                                }
                             }
                         }
                     }
