@@ -200,11 +200,11 @@ public class CtrlRscDfnApiCallHandler
 
     public ResourceDefinition createResourceDefinition(
         String rscNameStr,
-        byte[] extName,
+        @Nullable byte[] extName,
         Map<String, String> props,
         List<VolumeDefinitionWtihCreationPayload> volDescrMap,
         List<String> layerStackStrList,
-        LayerPayload payload,
+        @Nullable LayerPayload payload,
         String rscGrpNameStr,
         boolean throwOnError,
         ApiCallRcImpl apiCallRc,

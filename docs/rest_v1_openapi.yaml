@@ -4727,6 +4727,23 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Backup'
+    delete:
+      tags:
+        - developers
+      summary: delete backups
+      description: delete the specified backups
+      responses:
+        '200':
+          description: backups deleted or error messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupDelete'
   /v1/backups/{resource}:
     post:
       tags:
@@ -4742,6 +4759,36 @@ paths:
              application/json:
                schema:
                  $ref: '#/components/schemas/ApiCallRcList'
+    delete:
+      tags:
+        - developers
+      summary: delete backups
+      description: delete either the specified backup, or all backups before the specified timestamp, or all backups of the given resource
+      parameters:
+        - $ref: '#/components/parameters/Resource'
+        - name: snapName
+          in: query
+          description: delete this specific backup
+          schema:
+            type: string
+        - name: timestamp
+          in: query
+          description: format of the timestamp is yyyyMMdd_HHmmss, delete all backups before this timestamp (not inclusive)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: backups deleted or error messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+        '400':
+          description: too many parameters given, this request needs either snapName, or timestamp, or neither of them
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
   /v1/events/drbd/promotion:
     get:
       tags:
@@ -6708,9 +6755,7 @@ components:
             $ref: '#/components/schemas/BackupList'
         other:
           description: A list containing all other entries found that have no relation to linstor
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/BackupOther'
     BackupList:
       type: object
       properties:
@@ -6737,6 +6782,22 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BackupList'
+    BackupOther:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+    BackupDelete:
+      type: object
+      properties:
+        external:
+          type: boolean
+        s3keys:
+          type: array
+          items:
+            type: string
     PassPhraseCreate:
       type: object
       properties:

@@ -10,6 +10,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Set;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
@@ -18,6 +19,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -76,6 +78,47 @@ public class BackupToS3
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
         s3.putObject(backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET), key, content);
+    }
+
+    public void deleteObject(String key) throws SdkClientException, AmazonServiceException
+    {
+        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+        );
+
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
+            new EndpointConfiguration(
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+            )
+        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+            .build();
+        s3.deleteObject(backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET), key);
+    }
+
+    public void deleteObjects(Set<String> keys)
+    {
+        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+        );
+
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
+            new EndpointConfiguration(
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+            )
+        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+            .build();
+        DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET)
+        );
+        String[] helper = new String[keys.size()];
+        deleteObjectsRequest.withKeys(keys.toArray(helper));
+        s3.deleteObjects(deleteObjectsRequest);
     }
 
     public BackupMetaDataPojo getMetaFile(String key, String bucket)

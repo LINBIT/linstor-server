@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
@@ -11,6 +12,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -26,9 +28,11 @@ import javax.ws.rs.core.Response;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
@@ -77,6 +81,73 @@ public class Backups
         }
     }
 
+    @DELETE
+    @Path("/{rscName}")
+    public void deleteBackups(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("rscName") String rscName,
+        @DefaultValue("") @QueryParam("snapName") String snapName,
+        @DefaultValue("") @QueryParam("timestamp") String timestamp
+    )
+    {
+        if (snapName.length() != 0 && timestamp.length() != 0)
+        {
+            // CONFUSION!!!!!
+            requestHelper
+                .doFlux(
+                    asyncResponse,
+                    ApiCallRcRestUtils.mapToMonoResponse(
+                        Flux.just(
+                            ApiCallRcImpl.singleApiCallRc(
+                                ApiConsts.FAIL_INVLD_REQUEST,
+                                "Too many parameters given. Please use either snapName or timestamp or none of them, but not both!"
+                            )
+                        ), Response.Status.BAD_REQUEST
+                    )
+                );
+        }
+        else
+        {
+            Flux<ApiCallRc> deleteFlux = backupApiCallHandler.deleteBackup(
+                rscName, snapName, timestamp, Collections.emptyList(), false
+            ).subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
+            requestHelper.doFlux(
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(
+                    deleteFlux,
+                    Response.Status.OK
+                )
+            );
+        }
+    }
+
+    @DELETE
+    public void deleteBackup(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        JsonGenTypes.BackupDelete data;
+        try
+        {
+            data = objectMapper.readValue(jsonData, JsonGenTypes.BackupDelete.class);
+            requestHelper.doFlux(
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(
+                    backupApiCallHandler.deleteBackup("", "", "", data.s3keys, data.external)
+                        .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request)),
+                    Response.Status.OK
+                )
+            );
+        }
+        catch (JsonProcessingException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
+    }
+
     @GET
     public Response listBackups(
         @Context Request request,
@@ -93,7 +164,8 @@ public class Backups
                 JsonGenTypes.Backup backupList = new JsonGenTypes.Backup();
                 List<JsonGenTypes.BackupList> jsonBackups = fillJson(backups.objA);
                 backupList.linstor = jsonBackups;
-                backupList.other = new ArrayList<>(backups.objB);
+                backupList.other = new JsonGenTypes.BackupOther();
+                backupList.other.files = new ArrayList<>(backups.objB);
                 return Response.status(Response.Status.OK)
                     .entity(objectMapper.writeValueAsString(backupList))
                     .build();

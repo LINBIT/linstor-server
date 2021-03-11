@@ -62,7 +62,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             .setFreeSpaceMgrName("shared")
             .build();
 
-        Volume vlm = volumeTestFactory.builder("node", "rsc").build();
+        Volume vlm = volumeTestFactory.builder("node", "rsc").setStorPoolData(sp).build();
         Resource rsc = vlm.getAbsResource();
 
         assertFalse(sharedStorPoolMgr.isActive(sp));
@@ -91,7 +91,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             .setFreeSpaceMgrName("shared")
             .build();
 
-        Volume vlm = volumeTestFactory.builder("node", "rsc").build();
+        Volume vlm = volumeTestFactory.builder("node", "rsc").setStorPoolData(sp).build();
         Resource rsc = vlm.getAbsResource();
 
         assertFalse(sharedStorPoolMgr.isActive(sp));
@@ -137,7 +137,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             .setFreeSpaceMgrName("shared")
             .build();
 
-        Volume vlm = volumeTestFactory.builder("node", "rsc").build();
+        Volume vlm = volumeTestFactory.builder("node", "rsc").setStorPoolData(sp).build();
         Resource rsc = vlm.getAbsResource();
 
         assertFalse(sharedStorPoolMgr.isActive(sp));
@@ -190,7 +190,8 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         StorPool simpleSp = storPoolTestFactory.builder("node2", "spSimple")
             .build();
 
-        Volume sharedVlm = volumeTestFactory.builder("node", "rsc").build();
+        Volume sharedVlm = volumeTestFactory.builder("node", "rsc")
+            .setStorPoolData(sharedSp).build();
         Resource sharedRsc = sharedVlm.getAbsResource();
 
         Volume simpleVlm = volumeTestFactory.builder("node2", "rsc2")
@@ -261,7 +262,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             .setFreeSpaceMgrName("shared")
             .build();
 
-        Resource rsc1 = volumeTestFactory.builder("node", "rsc1").build().getAbsResource();
+        Resource rsc1 = volumeTestFactory.builder("node", "rsc1").setStorPoolData(sharedSp).build().getAbsResource();
 
         assertFalse(sharedStorPoolMgr.isActive(sharedSp));
 
@@ -270,9 +271,9 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertTrue(sharedStorPoolMgr.isActive(sharedSp));
 
         // rsc1 still in progress
-        Resource rsc2 = volumeTestFactory.builder("node", "rsc2").build().getAbsResource();
-        Resource rsc3 = volumeTestFactory.builder("node", "rsc3").build().getAbsResource();
-        Resource rsc4 = volumeTestFactory.builder("node", "rsc4").build().getAbsResource();
+        Resource rsc2 = volumeTestFactory.builder("node", "rsc2").setStorPoolData(sharedSp).build().getAbsResource();
+        Resource rsc3 = volumeTestFactory.builder("node", "rsc3").setStorPoolData(sharedSp).build().getAbsResource();
+        Resource rsc4 = volumeTestFactory.builder("node", "rsc4").setStorPoolData(sharedSp).build().getAbsResource();
 
         assertFalse(sharedStorPoolMgr.requestSharedLock(rsc2));
         assertFalse(sharedStorPoolMgr.requestSharedLock(rsc3));
@@ -316,7 +317,7 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             .setFreeSpaceMgrName("shared")
             .build();
 
-        Resource rsc11 = volumeTestFactory.builder("n1", "rsc1").build().getAbsResource();
+        Resource rsc11 = volumeTestFactory.builder("n1", "rsc1").setStorPoolData(sharedSpN1).build().getAbsResource();
 
         assertFalse(sharedStorPoolMgr.isActive(sharedSpN1));
         assertFalse(sharedStorPoolMgr.isActive(sharedSpN2));
@@ -327,9 +328,9 @@ public class SharedStorPoolManagerTest extends GenericDbBase
         assertFalse(sharedStorPoolMgr.isActive(sharedSpN2));
 
         // n1/rsc1 still in progress
-        Resource rsc21 = volumeTestFactory.builder("n2", "rsc1").build().getAbsResource();
-        Resource rsc12 = volumeTestFactory.builder("n1", "rsc2").build().getAbsResource();
-        Resource rsc22 = volumeTestFactory.builder("n2", "rsc2").build().getAbsResource();
+        Resource rsc21 = volumeTestFactory.builder("n2", "rsc1").setStorPoolData(sharedSpN2).build().getAbsResource();
+        Resource rsc12 = volumeTestFactory.builder("n1", "rsc2").setStorPoolData(sharedSpN1).build().getAbsResource();
+        Resource rsc22 = volumeTestFactory.builder("n2", "rsc2").setStorPoolData(sharedSpN2).build().getAbsResource();
 
         assertFalse(sharedStorPoolMgr.requestSharedLock(rsc21));
         assertFalse(sharedStorPoolMgr.requestSharedLock(rsc12));
@@ -391,7 +392,9 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             .build();
 
         // in spShared
-        Resource rsc1 = volumeTestFactory.builder("node1", "rsc1").build().getAbsResource();
+        Resource rsc1 = volumeTestFactory.builder("node1", "rsc1")
+            .setStorPoolData(sharedSp1)
+            .build().getAbsResource();
         // in spShared2
         Resource rsc2 = volumeTestFactory.builder("node2", "rsc2")
             .setStorPoolData(sharedSp2)
@@ -471,7 +474,9 @@ public class SharedStorPoolManagerTest extends GenericDbBase
             .build();
 
         // in spShared
-        Resource rsc1 = volumeTestFactory.builder("node", "rsc1").build().getAbsResource();
+        Resource rsc1 = volumeTestFactory.builder("node", "rsc1")
+            .setStorPoolData(sharedSp1)
+            .build().getAbsResource();
         // in spShared2
         Resource rsc2 = volumeTestFactory.builder("node2", "rsc2")
             .setStorPoolData(sharedSp2)

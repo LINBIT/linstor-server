@@ -105,7 +105,6 @@ public class ResourceDefinitionControllerFactory
 
         driver.create(rscDfn);
 
-        // TODO: might be a good idea to create this object earlier
         layerStackHelper.ensureRequiredRscDfnLayerDataExits(rscDfn, "", payload);
 
         return rscDfn;

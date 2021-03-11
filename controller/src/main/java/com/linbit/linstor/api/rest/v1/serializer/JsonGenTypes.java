@@ -1176,7 +1176,7 @@ public class JsonGenTypes
         /**
          * A list containing all other entries found that have no relation to linstor
          */
-        public List<String> other = Collections.emptyList();
+        public BackupOther other;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1191,6 +1191,19 @@ public class JsonGenTypes
         public Boolean success;
         public Map<String, String> vlms = Collections.emptyMap();
         public List<BackupList> inc = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupOther
+    {
+        public List<String> files = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupDelete
+    {
+        public Boolean external;
+        public List<String> s3keys = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
