@@ -296,6 +296,32 @@ public class TransactionList<PARENT, VALUE>
         return immutableBackingList.subList(fromIndex, toIndex);
     }
 
+    @SuppressWarnings("null")
+    @Override
+    public boolean equals(Object objRef)
+    {
+        boolean eq = objRef != null;
+        if (eq)
+        {
+            if (objRef instanceof TransactionObject)
+            {
+                eq = objRef == this; // do not compare values, just by instance
+            }
+            else
+            {
+                eq = objRef.equals(backingList);
+            }
+        }
+
+        return eq;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return backingList.hashCode();
+    }
+
     private void markDirty()
     {
         if (!isDirty)

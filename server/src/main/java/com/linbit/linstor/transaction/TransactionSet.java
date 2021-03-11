@@ -251,6 +251,31 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     }
 
     @Override
+    public boolean equals(Object objRef)
+    {
+        boolean eq = objRef != null;
+        if (eq)
+        {
+            if (objRef instanceof TransactionObject)
+            {
+                eq = objRef == this; // do not compare values, just by instance
+            }
+            else
+            {
+                eq = objRef.equals(backingSet);
+            }
+        }
+
+        return eq;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return backingSet.hashCode();
+    }
+
+    @Override
     public String toString()
     {
         return "TransactionSet " + backingSet.toString();
