@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.layer.snapshot.CtrlSnapLayerDataFactory;
@@ -16,6 +17,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -80,6 +82,46 @@ public class SnapshotControllerFactory
         node.addSnapshot(accCtx, snapshot);
 
         snapLayerFactory.copyLayerData(rsc, snapshot);
+
+        return snapshot;
+    }
+
+    public Snapshot restore(
+        AccessContext accCtx,
+        RscLayerDataApi layerData,
+        Node node,
+        SnapshotDefinition snapDfn,
+        Snapshot.Flags[] initFlags,
+        Map<String, String> renameStorPoolMap
+    ) throws LinStorDataAlreadyExistsException, DatabaseException, AccessDeniedException
+    {
+        snapDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
+
+        Snapshot snapshot = snapDfn.getSnapshot(accCtx, node.getName());
+
+        if (snapshot != null)
+        {
+            throw new LinStorDataAlreadyExistsException("The Snapshot already exists");
+        }
+
+        snapshot = new Snapshot(
+            UUID.randomUUID(),
+            snapDfn,
+            node,
+            StateFlagsBits.getMask(initFlags),
+            driver,
+            propsConFactory,
+            transObjFactory,
+            transMgrProvider,
+            new TreeMap<>(),
+            null
+        );
+
+        driver.create(snapshot);
+        snapDfn.addSnapshot(accCtx, snapshot);
+        node.addSnapshot(accCtx, snapshot);
+
+        snapLayerFactory.restoreLayerData(layerData, snapshot, renameStorPoolMap);
 
         return snapshot;
     }

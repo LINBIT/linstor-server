@@ -721,7 +721,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             );
             if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
             {
-                if (vlmData == null)
+                Snapshot snap = snapVlm.getVolume().getAbsResource();
+                if (vlmData == null && !snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
                 {
                     throw new StorageException(
                         String.format(
@@ -733,47 +734,34 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 if (!snapshotExists(snapVlm))
                 {
                     errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
-                    createSnapshot(vlmData, snapVlm);
-
-                    addSnapCreatedMsg(snapVlm, apiCallRc);
-
-                    Snapshot snap = snapVlm.getVolume().getAbsResource();
-                    if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET))
+                    if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
                     {
-                        if (waitForSnapshotDevice())
-                        {
-                            StorPool storPool = vlmData.getStorPool();
-                            long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
-
-                            String snapId = asSnapLvIdentifier(snapVlm);
-                            String storageName = getStorageName(vlmData);
-                            String devicePath = getDevicePath(storageName, snapId);
-
-                            waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
-                        }
-                        startReceiving(vlmData, snapVlm);
+                        createLvForBackupIfNeeded(snapVlm);
+                        waitForSnapIfNeeded(snapVlm);
+                        startBackupRestore(snapVlm);
                     }
-                    if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE))
+                    else
                     {
-                        if (waitForSnapshotDevice())
+                        createSnapshot(vlmData, snapVlm);
+
+                        addSnapCreatedMsg(snapVlm, apiCallRc);
+
+                        if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET))
                         {
-                            StorPool storPool = vlmData.getStorPool();
-                            long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
-
-                            String snapId = asSnapLvIdentifier(snapVlm);
-                            String storageName = getStorageName(vlmData);
-                            String devicePath = getDevicePath(storageName, snapId);
-
-                            waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
+                            waitForSnapIfNeeded(snapVlm);
+                            startReceiving(vlmData, snapVlm);
                         }
-                        startBackupShipping(snapVlm);
+                        else if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE))
+                        {
+                            waitForSnapIfNeeded(snapVlm);
+                            startBackupShipping(snapVlm);
+                        }
                     }
                 }
                 else
                 {
                     try
                     {
-                        Snapshot snap = snapVlm.getVolume().getAbsResource();
                         if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_SOURCE_START))
                         {
                             startSending(snapVlm);
@@ -798,6 +786,27 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     finishShipReceiving(vlmData, snapVlm);
                 }
             }
+        }
+    }
+
+    protected void createLvForBackupIfNeeded(LAYER_SNAP_DATA snapVlm) throws StorageException
+    {
+        // do nothing, override if needed
+    }
+
+    private void waitForSnapIfNeeded(LAYER_SNAP_DATA snapVlm)
+        throws AccessDeniedException, DatabaseException, StorageException
+    {
+        if (waitForSnapshotDevice())
+        {
+            StorPool storPool = snapVlm.getStorPool();
+            long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
+
+            String snapId = asSnapLvIdentifier(snapVlm);
+            String storageName = getStorageName(storPool);
+            String devicePath = getDevicePath(storageName, snapId);
+
+            waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
         }
     }
 
@@ -1170,6 +1179,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             throw new ImplementationError(exc);
         }
         return restoreSnapshotName;
+    }
+
+    private void startBackupRestore(LAYER_SNAP_DATA snapVlmData) throws StorageException, AccessDeniedException
+    {
+        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
+        backupShipMgr.restoreBackup(
+            snapVlm.getSnapshotName().displayValue,
+            snapVlm.getResourceName().displayValue,
+            snapVlmData.getRscLayerObject().getResourceNameSuffix(),
+            snapVlm.getVolumeNumber().value,
+            getSnapshotShippingReceivingCommandImpl(snapVlmData),
+            snapVlmData
+        );
     }
 
     private void waitUntilDeviceCreated(String devicePath, long waitTimeoutAfterCreateMillis)

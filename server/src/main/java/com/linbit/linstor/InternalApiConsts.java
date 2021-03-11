@@ -120,7 +120,11 @@ public class InternalApiConsts
      * Backup shipping
      */
     public static final String API_NOTIFY_BACKUP_SHIPPING_RECEIVED = "BackupShippingReceived";
+    public static final String API_NOTIFY_BACKUP_SHIPPING_SENT = "BackupShippingSent";
     public static final String KEY_LAST_FULL_BACKUP_TIMESTAMP = "LastFullBackupTimestamp";
+    public static final String KEY_BACKUP_META_TO_RESTORE = "BackupMetaToRestore";
+    public static final String KEY_BACKUP_BUCKET_TO_RESTORE = "BackupBucketToRestore";
+    public static final String KEY_BACKUP_NODE_IDS_TO_RESET = "BackupNodeIdsToReset";
 
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;

@@ -430,21 +430,31 @@ public class DrbdAdm
 
     public void deletePeer(DrbdRscData<Resource> peerRscData) throws ExtCmdFailedException
     {
+        deletePeer(peerRscData.getSuffixedResourceName(), peerRscData.getNodeId().value);
+    }
+
+    public void deletePeer(String suffixedRscName, int nodeId) throws ExtCmdFailedException
+    {
         execute(
             DRBDSETUP_UTIL,
             "del-peer",
-            peerRscData.getSuffixedResourceName(),
-            Integer.toString(peerRscData.getNodeId().value)
+            suffixedRscName,
+            Integer.toString(nodeId)
         );
     }
 
     public void forgetPeer(DrbdRscData<Resource> rscData) throws ExtCmdFailedException
     {
+        forgetPeer(rscData.getSuffixedResourceName(), rscData.getNodeId().value);
+    }
+
+    public void forgetPeer(String suffixedRscName, int nodeId) throws ExtCmdFailedException
+    {
         execute(
             DRBDSETUP_UTIL,
             "forget-peer",
-            rscData.getSuffixedResourceName(),
-            Integer.toString(rscData.getNodeId().value)
+            suffixedRscName,
+            Integer.toString(nodeId)
         );
     }
 

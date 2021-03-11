@@ -21,6 +21,8 @@ public class LayerPayload
 
     public OpenflexRscDfnPayload ofRscDfn;
 
+    public Map<Integer, String> volumePasswords;
+
     public Map<Pair<String, Integer>, StorageVlmPayload> storagePayload;
 
     public LayerPayload()
@@ -30,6 +32,8 @@ public class LayerPayload
         drbdVlmDfn = new DrbdVlmDfnPayload();
 
         ofRscDfn = new OpenflexRscDfnPayload();
+
+        volumePasswords = new TreeMap<>();
 
         storagePayload = new TreeMap<>();
     }
@@ -41,6 +45,7 @@ public class LayerPayload
         public Integer alStripes;
         public Long alStripeSize;
         public boolean needsNewNodeId = false;
+        public Long rscFlags;
     }
 
     public class DrbdRscDfnPayload
@@ -49,6 +54,8 @@ public class LayerPayload
         public TransportType transportType;
         public String sharedSecret;
         public Short peerSlotsNewResource;
+        public Integer alStripes;
+        public Long alStripeSize;
     }
 
     public class DrbdVlmDfnPayload

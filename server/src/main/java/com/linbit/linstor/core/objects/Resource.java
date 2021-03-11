@@ -500,7 +500,8 @@ public class Resource extends AbsResource<Resource>
 
         INACTIVE(1L << 10),
         REACTIVATE(1L << 11),
-        INACTIVE_PERMANENTLY(INACTIVE.flagValue | 1L << 12)
+        INACTIVE_PERMANENTLY(INACTIVE.flagValue | 1L << 12),
+        BACKUP_RESTORE(1L << 13)
         ;
 
         public final long flagValue;

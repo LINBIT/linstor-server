@@ -1207,6 +1207,15 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupRestore
+    {
+        public String src_rsc_name;
+        public String stor_pool_name;
+        public String bucket_name;
+        public String passphrase;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PassPhraseCreate
     {
         public String new_passphrase;

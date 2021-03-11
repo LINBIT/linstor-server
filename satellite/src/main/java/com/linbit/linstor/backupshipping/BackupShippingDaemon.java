@@ -12,6 +12,8 @@ import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Consumer;
@@ -22,19 +24,21 @@ public class BackupShippingDaemon implements Runnable
 {
     private static final int DFLT_DEQUE_CAPACITY = 100;
     private final ErrorReporter errorReporter;
-    private final Thread thread;
-    private final Thread shippingThread;
+    private final Thread cmdThread;
+    private final Thread s3Thread;
     private final String[] command;
     private final BackupToS3 backupHandler;
     private final String backupName;
+    private final String bucketName;
 
     private final LinkedBlockingDeque<Event> deque;
     private final DaemonHandler handler;
     private final Object syncObj = new Object();
 
     private boolean started = false;
-    private Process sendingProcess;
-    private boolean finished = false;
+    private Process cmdProcess;
+    private int unfinished = 0;
+    private boolean success = true;
 
     private final Consumer<Boolean> afterTermination;
 
@@ -44,32 +48,45 @@ public class BackupShippingDaemon implements Runnable
         String threadName,
         String[] commandRef,
         String backupNameRef,
+        String bucketNameRef,
         BackupToS3 backupHandlerRef,
+        boolean restore,
         Consumer<Boolean> afterTerminationRef
     )
     {
         errorReporter = errorReporterRef;
         command = commandRef;
+        bucketName = bucketNameRef;
         afterTermination = afterTerminationRef;
         backupName = backupNameRef;
         backupHandler = backupHandlerRef;
 
         deque = new LinkedBlockingDeque<>(DFLT_DEQUE_CAPACITY);
         handler = new DaemonHandler(deque, command);
-        handler.setStdOutListener(false);
 
-        thread = new Thread(threadGroupRef, this, threadName);
-        shippingThread = new Thread(threadGroupRef, this::runShipping, "backup_" + threadName);
+        cmdThread = new Thread(threadGroupRef, this, threadName);
+
+        if (restore)
+        {
+            unfinished = 3;
+            s3Thread = new Thread(threadGroupRef, this::runRestoring, "backup_" + threadName);
+        }
+        else
+        {
+            unfinished = 2;
+            handler.setStdOutListener(false);
+            s3Thread = new Thread(threadGroupRef, this::runShipping, "backup_" + threadName);
+        }
     }
 
     public void start()
     {
         started = true;
-        thread.start();
+        cmdThread.start();
         try
         {
-            sendingProcess = handler.start();
-            shippingThread.start();
+            cmdProcess = handler.start();
+            s3Thread.start();
         }
         catch (IOException exc)
         {
@@ -91,27 +108,99 @@ public class BackupShippingDaemon implements Runnable
     {
         try
         {
-            backupHandler.putObject(backupName, sendingProcess.getInputStream(), null);
+            backupHandler.putObject(backupName, cmdProcess.getInputStream(), null);
             synchronized (syncObj)
             {
-                if (!finished)
+                unfinished--;
+                // success is true, no need to set again
+                if (unfinished == 0)
                 {
-                    finished = true;
-                    afterTermination.accept(true);
+                    afterTermination.accept(success);
                 }
             }
         }
         catch (SdkClientException exc)
         {
-            errorReporter.reportError(exc);
             synchronized (syncObj)
             {
-                if (!finished)
+                unfinished--;
+                success = false;
+                if (unfinished == 0)
                 {
-                    finished = true;
-                    afterTermination.accept(false);
+                    afterTermination.accept(success);
+                }
+                else if (unfinished > 0)
+                {
+                    // closing the stream might throw exceptions, which do not need to be reported if we already
+                    // finished previously
+                    errorReporter.reportError(exc);
                 }
             }
+        }
+    }
+
+    private void runRestoring()
+    {
+        try (
+            InputStream is = backupHandler.getObject(backupName, bucketName);
+            OutputStream os = cmdProcess.getOutputStream();
+        )
+        {
+            byte[] read_buf = new byte[1 << 20];
+            int read_len = 0;
+            while ((read_len = is.read(read_buf)) != -1)
+            {
+                if (read_len == 0)
+                {
+                    try
+                    {
+                        do
+                        {
+                            Thread.sleep(10);
+                        }
+                        while (is.available() == 0);
+                    }
+                    catch (InterruptedException ignored)
+                    {
+                    }
+                }
+                else
+                {
+                    os.write(read_buf, 0, read_len);
+                }
+            }
+            os.flush();
+            Thread.sleep(500);
+            synchronized (syncObj)
+            {
+                unfinished--;
+                // success is true, no need to set again
+                if (unfinished == 0)
+                {
+                    afterTermination.accept(success);
+                }
+            }
+        }
+        catch (SdkClientException | IOException exc)
+        {
+            synchronized (syncObj)
+            {
+                unfinished--;
+                success = false;
+                if (unfinished == 0)
+                {
+                    afterTermination.accept(success);
+                }
+                else if (unfinished > 0)
+                {
+                    // closing the streams might throw exceptions, which do not need to be reported if we already
+                    // finished previously
+                    errorReporter.reportError(exc);
+                }
+            }
+        }
+        catch (InterruptedException ignored)
+        {
         }
     }
 
@@ -128,7 +217,7 @@ public class BackupShippingDaemon implements Runnable
                 if (event instanceof StdOutEvent)
                 {
                     errorReporter.logTrace("stdOut: %s", new String(((StdOutEvent) event).data));
-                    // ignore for now...
+                    // should not exist when sending due to handler.setStdOutListener(false)
                 }
                 else if (event instanceof StdErrEvent)
                 {
@@ -150,15 +239,13 @@ public class BackupShippingDaemon implements Runnable
                 {
                     int exitCode = handler.getExitCode();
                     errorReporter.logTrace("EOF. Exit code: " + exitCode);
-                    if (exitCode != 0)
+                    synchronized (syncObj)
                     {
-                        synchronized (syncObj)
+                        success &= exitCode == 0;
+                        unfinished--;
+                        if (unfinished == 0)
                         {
-                            if (!finished)
-                            {
-                                finished = true;
-                                afterTermination.accept(false);
-                            }
+                            afterTermination.accept(success);
                         }
                     }
                 }
@@ -191,28 +278,29 @@ public class BackupShippingDaemon implements Runnable
 
     public void shutdown()
     {
+        new Exception(Thread.currentThread().getName()).printStackTrace();
         started = false;
         handler.stop(false);
-        if (thread != null)
+        if (cmdThread != null)
         {
-            thread.interrupt();
+            cmdThread.interrupt();
         }
-        if (shippingThread != null)
+        if (s3Thread != null)
         {
-            shippingThread.interrupt();
+            s3Thread.interrupt();
         }
         deque.addFirst(new PoisonEvent());
     }
 
     public void awaitShutdown(long timeoutRef) throws InterruptedException
     {
-        if (thread != null)
+        if (cmdThread != null)
         {
-            thread.join(timeoutRef);
+            cmdThread.join(timeoutRef);
         }
-        if (shippingThread != null)
+        if (s3Thread != null)
         {
-            shippingThread.join(timeoutRef);
+            s3Thread.join(timeoutRef);
         }
     }
 }

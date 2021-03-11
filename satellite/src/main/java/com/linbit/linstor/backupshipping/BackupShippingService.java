@@ -56,6 +56,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.amazonaws.SdkClientException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -212,9 +214,62 @@ public class BackupShippingService implements SystemService
             success -> postShipping(
                 success,
                 snapVlmData,
-                InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_RECEIVED,
+                InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_SENT,
                 true,
                 false
+            ),
+            snapVlmData
+        );
+    }
+
+    public void restoreBackup(
+        String snapNameRef,
+        String rscNameRef,
+        String rscNameSuffixRef,
+        int vlmNrRef,
+        String cmdRef,
+        AbsStorageVlmData<Snapshot> snapVlmData
+    ) throws StorageException, AccessDeniedException
+    {
+        String backupName = "";
+        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
+        String metaName = snapVlm.getSnapshot().getProps(accCtx)
+            .getProp(InternalApiConsts.KEY_BACKUP_META_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        Pattern metaPattern = Pattern.compile("^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})\\.meta$");
+        Matcher m = metaPattern.matcher(metaName);
+        if (m.matches())
+        {
+            backupName = String.format(BACKUP_KEY_FORMAT, m.group(1), rscNameSuffixRef, vlmNrRef, m.group(2));
+        }
+        else
+        {
+            throw new ImplementationError("Not a meta file: " + metaName);
+        }
+        String bucketName = snapVlm.getSnapshot().getProps(accCtx)
+            .getProp(InternalApiConsts.KEY_BACKUP_BUCKET_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        startDaemon(
+            cmdRef,
+            new String[]
+            {
+                "setsid",
+                "-w",
+                "bash",
+                "-c",
+                String.format(
+                    CMD_FORMAT_RECEIVING,
+                    cmdRef
+                )
+            },
+            snapNameRef,
+            backupName,
+            bucketName,
+            true,
+            success -> postShipping(
+                success,
+                snapVlmData,
+                InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_RECEIVED,
+                true,
+                true
             ),
             snapVlmData
         );
@@ -267,7 +322,9 @@ public class BackupShippingService implements SystemService
                     "shipping_" + shippingDescr,
                     fullCommand,
                     backupNameRef,
+                    bucketNameRef,
                     backupHandler,
+                    restore,
                     postAction
                 );
                 Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();

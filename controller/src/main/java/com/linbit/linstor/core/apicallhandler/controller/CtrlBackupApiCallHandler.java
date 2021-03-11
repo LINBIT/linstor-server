@@ -10,36 +10,53 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupListPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
+import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
+import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apis.BackupListApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -57,6 +74,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -90,6 +108,10 @@ public class CtrlBackupApiCallHandler
     private CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private BackupToS3 backupHandler;
     private CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandler;
+    private CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
+    private CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
+    private FreeCapacityFetcher freeCapacityFetcher;
+    private CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandler;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -103,7 +125,11 @@ public class CtrlBackupApiCallHandler
         ErrorReporter errorReporterRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         BackupToS3 backupHandlerRef,
-        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandlerRef
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandlerRef,
+        CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandlerRef,
+        CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
+        FreeCapacityFetcher freeCapacityFetcherRef,
+        CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandlerRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -117,6 +143,10 @@ public class CtrlBackupApiCallHandler
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         backupHandler = backupHandlerRef;
         ctrlSnapDeleteApiCallHandler = ctrlSnapDeleteApiCallHandlerRef;
+        ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
+        ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
+        freeCapacityFetcher = freeCapacityFetcherRef;
+        ctrlSnapRestoreApiCallHandler = ctrlSnapRestoreApiCallHandlerRef;
     }
 
     public Flux<ApiCallRc> createFullBackup(String rscNameRef) throws AccessDeniedException
@@ -181,7 +211,9 @@ public class CtrlBackupApiCallHandler
                     )
                 );
             }
+            // TODO: actually choose node
             NodeName chosenNode = new NodeName(nodes.get(0));
+            // TODO: check if node/rsc has luks & keys
             ApiCallRcImpl responses = new ApiCallRcImpl();
             SnapshotDefinition snapDfn = snapshotCrtHelper
                 .createSnapshots(nodes, rscDfn.getName().displayValue, snapName, responses);
@@ -190,8 +222,30 @@ public class CtrlBackupApiCallHandler
             snapDfn.getProps(peerAccCtx.get())
                 .setProp(InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP, snapName, ApiConsts.NAMESPC_BACKUP_SHIPPING);
 
+            Resource rsc = rscDfn.getResource(peerAccCtx.get(), chosenNode);
+            List<Integer> nodeIds = new ArrayList<>();
+            Set<AbsRscLayerObject<Resource>> drbdLayers = LayerRscUtils
+                .getRscDataByProvider(rsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
+            if (drbdLayers.size() > 1)
+            {
+                throw new ImplementationError("Only one instance of DRBD-layer supported");
+            }
+            for (AbsRscLayerObject<Resource> layer : drbdLayers)
+            {
+                DrbdRscData<Resource> drbdLayer = (DrbdRscData<Resource>) layer;
+                for (DrbdRscData<Resource> rscData : drbdLayer.getRscDfnLayerObject().getDrbdRscDataList())
+                {
+                    nodeIds.add(rscData.getNodeId().value);
+                }
+            }
+
             snapDfn.getSnapshot(peerAccCtx.get(), chosenNode).getFlags()
                 .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+            snapDfn.getSnapshot(peerAccCtx.get(), chosenNode).getProps(peerAccCtx.get()).setProp(
+                InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
+                StringUtils.join(nodeIds, ","),
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
             ctrlTransactionHelper.commit();
             return snapshotCrtHandler.postCreateSnapshot(snapDfn);
         }
@@ -413,6 +467,284 @@ public class CtrlBackupApiCallHandler
         );
     }
 
+    public Flux<ApiCallRc> restoreBackup(
+        String srcRscName,
+        String storPoolName,
+        String nodeName,
+        String targetRscName,
+        String bucketName,
+        String passphrase
+    )
+    {
+        return freeCapacityFetcher
+            .fetchThinFreeCapacities(
+                Collections.singleton(LinstorParsingUtils.asNodeName(nodeName))
+            ).flatMapMany(
+                thinFreeCapacities -> scopeRunner.fluxInTransactionalScope(
+                    "restore backup", lockGuardFactory.buildDeferred(
+                        LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP
+                    ),
+                    () -> restoreBackupInTransaction(
+                        srcRscName, storPoolName, nodeName, thinFreeCapacities, targetRscName, bucketName, passphrase
+                    )
+                )
+            );
+    }
+
+    private Flux<ApiCallRc> restoreBackupInTransaction(
+        String srcRscName,
+        String storPoolName,
+        String nodeName,
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        String targetRscName,
+        String bucketName,
+        String passphrase
+    )
+    {
+        // 1. list srcRscName*
+        Set<String> s3keys = backupHandler.listObjects(srcRscName, bucketName).stream().map(S3ObjectSummary::getKey)
+            .collect(Collectors.toCollection(TreeSet::new));
+        // 2. find meta-file
+        Date latestBackTs = null;
+        for (String s3key : s3keys)
+        {
+            Matcher m = META_FILE_PATTERN.matcher(s3key);
+            if (m.matches())
+            {
+                try
+                {
+                    // remove "back_" prefix
+                    String ts = m.group(2).substring(5);
+                    Date curTs = SDF.parse(ts);
+                    if (latestBackTs == null || latestBackTs.before(curTs))
+                    {
+                        latestBackTs = curTs;
+                    }
+                }
+                catch (ParseException exc)
+                {
+                    errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + s3key);
+                }
+            }
+        }
+        String metaName = srcRscName + "_back_" + SDF.format(latestBackTs) + ".meta";
+        // 3. get meta-file
+        try
+        {
+            BackupMetaDataPojo metadata = backupHandler.getMetaFile(metaName, bucketName);
+            // 4. meta ok?
+            for (List<BackupInfoPojo> backupList : metadata.getBackups())
+            {
+                for (BackupInfoPojo backup : backupList)
+                {
+                    if (!s3keys.contains(backup.getName()))
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_NOT_FOUND_SNAPSHOT | ApiConsts.MASK_BACKUP,
+                                "Failed to find backup " + backup.getName()
+                            )
+                        );
+                    }
+                }
+            }
+            // 7. create layerPayload
+            RscLayerDataApi layers = metadata.getLayerData();
+            Node node = ctrlApiDataLoader.loadNode(nodeName, true);
+            if (!node.getPeer(peerAccCtx.get()).isConnected())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_NOT_CONNECTED,
+                            "No active connection to satellite '" + node.getName() + "'."
+                        )
+                        .setDetails("Backups cannot be restored when the corresponding satellite is not connected.")
+                        .build()
+                );
+            }
+            /*
+             * RestoreLayerHelper helper = getLayerData(layers, new RestoreLayerHelper(), storPool, node);
+             * if (!helper.apiCallRcErrors.isEmpty())
+             * {
+             * throw new ApiRcException(helper.apiCallRcErrors);
+             * }
+             */
+            // 8. create rscDfn
+            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(targetRscName, false);
+            ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+            SnapshotName snapName = LinstorParsingUtils.asSnapshotName("back_" + SDF.format(latestBackTs));
+            if (rscDfn == null)
+            {
+                rscDfn = ctrlRscDfnApiCallHandler.createResourceDefinition(
+                    targetRscName,
+                    null,
+                    Collections.emptyMap(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    null,
+                    null,
+                    true,
+                    apiCallRcs,
+                    false
+                );
+                rscDfn.getFlags()
+                    .resetFlagsTo(
+                        peerAccCtx.get(), ResourceDefinition.Flags.restoreFlags(metadata.getRscDfn().getFlags())
+                    );
+                rscDfn.getProps(peerAccCtx.get()).clear();
+                rscDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
+            }
+            else if (rscDfn.getResourceCount() != 0)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_RSC | ApiConsts.MASK_BACKUP,
+                        "Cannot restore to resource definition which already has resources"
+                    )
+                );
+            }
+            else if (rscDfn.getSnapshotDfn(peerAccCtx.get(), snapName) != null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
+                        "Snapshot " + snapName.displayValue + " already exists, please use snapshot restore instead."
+                    )
+                );
+            }
+            // 9. create snapDfn
+            SnapshotDefinition snapDfn = snapshotCrtHelper.createSnapshotDfnData(
+                rscDfn,
+                snapName,
+                new SnapshotDefinition.Flags[] {}
+            );
+            snapDfn.getProps(peerAccCtx.get()).clear();
+            snapDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
+            snapDfn.getFlags().enableFlags(
+                peerAccCtx.get(),
+                SnapshotDefinition.Flags.SHIPPING,
+                SnapshotDefinition.Flags.BACKUP
+            );
+            // 10. create vlmDfn(s)
+            // 11. create snapVlmDfn(s)
+            Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
+            long totalSize = 0;
+            for (Entry<Integer, VlmDfnMetaPojo> vlmDfnMetaEntry : metadata.getRscDfn().getVlmDfns().entrySet())
+            {
+                VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(targetRscName, vlmDfnMetaEntry.getKey(), false);
+                if (vlmDfn == null)
+                {
+                    vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
+                        peerAccCtx.get(),
+                        rscDfn,
+                        LinstorParsingUtils.asVlmNr(vlmDfnMetaEntry.getKey()),
+                        null,
+                        vlmDfnMetaEntry.getValue().getSize(),
+                        VolumeDefinition.Flags.restoreFlags(vlmDfnMetaEntry.getValue().getFlags())
+                    );
+                    vlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
+                }
+                totalSize += vlmDfnMetaEntry.getValue().getSize();
+                SnapshotVolumeDefinition snapVlmDfn = snapshotCrtHelper.createSnapshotVlmDfnData(snapDfn, vlmDfn);
+                snapVlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
+                snapVlmDfns.put(vlmDfnMetaEntry.getKey(), snapVlmDfn);
+            }
+            StorPool storPool = ctrlApiDataLoader.loadStorPool(storPoolName, nodeName, true);
+            boolean storPoolUsable = FreeCapacityAutoPoolSelectorUtils.isStorPoolUsable(
+                totalSize,
+                thinFreeCapacities,
+                storPool.getDeviceProviderKind().usesThinProvisioning(),
+                storPool.getName(),
+                node,
+                peerAccCtx.get()
+            ).orElse(true);
+            if (!storPoolUsable)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_VLM_SIZE,
+                        "Not enough space in storage pool " + storPoolName + " to restore the backup."
+                    )
+                );
+            }
+            // 12. create snapshot
+            Map<String, String> renameMap = createRenameMap(layers, storPoolName);
+            Snapshot snap = snapshotCrtHelper
+                .restoreSnapshot(snapDfn, node, layers, renameMap);
+            Props snapProps = snap.getProps(peerAccCtx.get());
+            snapProps.map().putAll(metadata.getRsc().getProps());
+            snapProps.setProp(
+                InternalApiConsts.KEY_BACKUP_META_TO_RESTORE,
+                metaName,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            snapProps.setProp(
+                InternalApiConsts.KEY_BACKUP_BUCKET_TO_RESTORE,
+                bucketName,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            snap.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
+            // 13. create snapshotVlm(s)
+            for (Entry<Integer, VlmMetaPojo> vlmMetaEntry : metadata.getRsc().getVlms().entrySet())
+            {
+                SnapshotVolume snapVlm = snapshotCrtHelper
+                    .restoreSnapshotVolume(layers, snap, snapVlmDfns.get(vlmMetaEntry.getKey()), renameMap);
+                snapVlm.getProps(peerAccCtx.get()).map()
+                    .putAll(metadata.getRsc().getVlms().get(vlmMetaEntry.getKey()).getProps());
+            }
+            // update stlts
+            ctrlTransactionHelper.commit();
+
+            return snapshotCrtHandler.postCreateSnapshot(snapDfn);
+        }
+        catch (IOException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP, "Failed to parse meta file " + metaName
+                )
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "restore backup",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN | ApiConsts.MASK_BACKUP
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private Map<String, String> createRenameMap(RscLayerDataApi layers, String targetStorPool)
+    {
+        Map<String, String> renameMap = new TreeMap<>();
+        if (layers.getLayerKind().equals(DeviceLayerKind.STORAGE))
+        {
+            for (VlmLayerDataApi vlm : layers.getVolumeList())
+            {
+                renameMap.put(vlm.getStorPoolApi().getStorPoolName(), targetStorPool);
+            }
+        }
+
+        for (RscLayerDataApi child : layers.getChildren())
+        {
+            if (child.getRscNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
+            {
+                renameMap.putAll(createRenameMap(child, targetStorPool));
+            }
+        }
+        return renameMap;
+    }
+
     public Pair<Collection<BackupListApi>, Set<String>> listBackups(String rscNameRef, String bucketNameRef)
     {
         List<S3ObjectSummary> objects = backupHandler.listObjects(rscNameRef, bucketNameRef);
@@ -629,7 +961,7 @@ public class CtrlBackupApiCallHandler
     {
         return scopeRunner
             .fluxInTransactionalScope(
-                "Finish received snapshot-shipping",
+                "Finish receiving backup",
                 lockGuardFactory.create()
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP).buildDeferred(),
@@ -638,6 +970,104 @@ public class CtrlBackupApiCallHandler
     }
 
     private Flux<ApiCallRc> shippingReceivedInTransaction(String rscNameRef, String snapNameRef, boolean successRef)
+    {
+        errorReporter.logInfo(
+            "Backup receiving for snapshot %s of resource %s %s", snapNameRef, rscNameRef,
+            successRef ? "finished successfully" : "failed"
+        );
+        SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true);
+        try
+        {
+            // set/unset flags
+            snapDfn.getFlags().disableFlags(
+                peerAccCtx.get(),
+                SnapshotDefinition.Flags.SHIPPING
+            );
+            if (successRef)
+            {
+                // start snap-restore
+                snapDfn.getFlags().enableFlags(
+                    peerAccCtx.get(),
+                    SnapshotDefinition.Flags.SHIPPED
+                );
+                ctrlTransactionHelper.commit();
+
+                return ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
+                    Collections.emptyList(),
+                    snapNameRef,
+                    rscNameRef
+                ).concatWith(postRestore(rscNameRef));
+            }
+            else
+            {
+                ctrlTransactionHelper.commit();
+                return ctrlSatelliteUpdateCaller.updateSatellites(
+                    snapDfn,
+                    CtrlSatelliteUpdateCaller.notConnectedWarn()
+                ).transform(
+                    responses -> CtrlResponseUtils.combineResponses(
+                        responses,
+                        LinstorParsingUtils.asRscName(rscNameRef),
+                        "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
+                    )
+                );
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private Flux<ApiCallRc> postRestore(String rscNameRef)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "post backup restore",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            () -> postRestoreInTransaction(rscNameRef)
+        );
+    }
+
+    private Flux<ApiCallRc> postRestoreInTransaction(String rscNameRef) throws AccessDeniedException, DatabaseException
+    {
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, false);
+        Iterator<Resource> itRsc = rscDfn.iterateResource(peerAccCtx.get());
+        while (itRsc.hasNext())
+        {
+            Resource rsc = itRsc.next();
+            rsc.getStateFlags().disableFlags(peerAccCtx.get(), Resource.Flags.BACKUP_RESTORE);
+            rsc.getProps(peerAccCtx.get())
+                .removeProp(InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        }
+        ctrlTransactionHelper.commit();
+        return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty()).transform(
+            responses -> CtrlResponseUtils.combineResponses(
+                responses,
+                LinstorParsingUtils.asRscName(rscNameRef),
+                "Finished post restore backup on " + rscNameRef
+            )
+        );
+    }
+
+    public Flux<ApiCallRc> shippingSent(String rscNameRef, String snapNameRef, boolean successRef)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Finish sending backup",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP).buildDeferred(),
+                () -> shippingSentInTransaction(rscNameRef, snapNameRef, successRef)
+            );
+    }
+
+    private Flux<ApiCallRc> shippingSentInTransaction(String rscNameRef, String snapNameRef, boolean successRef)
     {
         errorReporter.logInfo(
             "Backup shipping for snapshot %s of resource %s %s", snapNameRef, rscNameRef,

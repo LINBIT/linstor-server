@@ -132,6 +132,8 @@ public class RscDrbdLayerHelper extends
         String secret = drbdRscDfnPayload.sharedSecret;
         Short peerSlots = drbdRscDfnPayload.peerSlotsNewResource;
         Integer tcpPort = drbdRscDfnPayload.tcpPort;
+        Integer alStripes = drbdRscDfnPayload.alStripes;
+        Long alStripeSize = drbdRscDfnPayload.alStripeSize;
         if (secret == null)
         {
             secret = SecretGenerator.generateSharedSecret();
@@ -144,6 +146,14 @@ public class RscDrbdLayerHelper extends
         {
             peerSlots = getAndCheckPeerSlotsForNewResource(rscDfn, payload);
         }
+        if (alStripes == null)
+        {
+            alStripes = InternalApiConsts.DEFAULT_AL_STRIPES;
+        }
+        if (alStripeSize == null)
+        {
+            alStripeSize = InternalApiConsts.DEFAULT_AL_SIZE;
+        }
 
         checkPeerSlotCount(peerSlots, rscDfn);
 
@@ -152,8 +162,8 @@ public class RscDrbdLayerHelper extends
             null,
             rscNameSuffix,
             peerSlots,
-            InternalApiConsts.DEFAULT_AL_STRIPES,
-            InternalApiConsts.DEFAULT_AL_SIZE,
+            alStripes,
+            alStripeSize,
             tcpPort,
             transportType,
             secret

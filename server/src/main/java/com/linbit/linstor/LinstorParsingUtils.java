@@ -311,7 +311,7 @@ public class LinstorParsingUtils
         return kvsName;
     }
 
-    public static DeviceLayerKind asDeviceLayerKind(final String layerName)
+    public static DeviceLayerKind asDeviceLayerKindOrNull(final String layerName)
     {
         DeviceLayerKind kind;
         switch (layerName.toUpperCase())
@@ -346,12 +346,22 @@ public class LinstorParsingUtils
                 kind = DeviceLayerKind.BCACHE;
                 break;
             default:
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_LAYER_KIND,
-                        "Given layer kind '" + layerName + "' is invalid"
-                    )
-                );
+                kind = null;
+        }
+        return kind;
+    }
+
+    public static DeviceLayerKind asDeviceLayerKind(final String layerName)
+    {
+        DeviceLayerKind kind = asDeviceLayerKindOrNull(layerName);
+        if (kind == null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_LAYER_KIND,
+                    "Given layer kind '" + layerName + "' is invalid"
+                )
+            );
         }
         return kind;
     }

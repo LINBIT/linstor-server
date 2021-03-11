@@ -81,6 +81,39 @@ public class Backups
         }
     }
 
+    @POST
+    @Path("{nodeName}/{rscName}")
+    public void restoreBackup(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName,
+        @PathParam("rscName") String rscName,
+        String jsonData
+    )
+    {
+        Flux<ApiCallRc> responses;
+        try
+        {
+            JsonGenTypes.BackupRestore data = objectMapper.readValue(jsonData, JsonGenTypes.BackupRestore.class);
+            responses = backupApiCallHandler.restoreBackup(
+                data.src_rsc_name,
+                data.stor_pool_name,
+                nodeName,
+                rscName,
+                data.bucket_name == null ? "" : data.bucket_name,
+                data.passphrase
+            ).subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
+            requestHelper.doFlux(
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
+            );
+        }
+        catch (JsonProcessingException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
+    }
+
     @DELETE
     @Path("/{rscName}")
     public void deleteBackups(

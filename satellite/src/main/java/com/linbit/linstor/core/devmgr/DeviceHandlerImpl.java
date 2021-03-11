@@ -578,6 +578,10 @@ public class DeviceHandlerImpl implements DeviceHandler
                         snapListNotifyDelete.add(snapshot);
                         // snapshot.delete is done by the deviceManager
                     }
+                    else
+                    {
+                        backupShippingManager.allBackupPartsRegistered(snapshot);
+                    }
                 }
             }
             catch (AccessDeniedException | DatabaseException exc)

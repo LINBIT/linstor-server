@@ -176,6 +176,23 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
+    protected void createLvForBackupIfNeeded(LvmData<Snapshot> snapVlm) throws StorageException
+    {
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(snapVlm.getVolumeGroup()),
+            config -> LvmCommands.createThin(
+                extCmdFactory.create(),
+                snapVlm.getVolumeGroup(),
+                ((LvmThinData<Snapshot>) snapVlm).getThinPool(),
+                snapVlm.getIdentifier(),
+                snapVlm.getUsableSize(),
+                config
+            )
+        );
+    }
+
+    @Override
     protected void createSnapshot(LvmData<Resource> vlmDataRef, LvmData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {

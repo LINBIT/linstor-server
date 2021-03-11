@@ -9,10 +9,12 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -296,7 +298,7 @@ public class CtrlSnapshotCrtHelper
         return isDiskless;
     }
 
-    private SnapshotDefinition createSnapshotDfnData(
+    SnapshotDefinition createSnapshotDfnData(
         ResourceDefinition rscDfn,
         SnapshotName snapshotName,
         SnapshotDefinition.Flags[] snapshotDfnInitFlags
@@ -342,7 +344,7 @@ public class CtrlSnapshotCrtHelper
         return snapshotDfn;
     }
 
-    private SnapshotVolumeDefinition createSnapshotVlmDfnData(SnapshotDefinition snapshotDfn, VolumeDefinition vlmDfn)
+    SnapshotVolumeDefinition createSnapshotVlmDfnData(SnapshotDefinition snapshotDfn, VolumeDefinition vlmDfn)
     {
         String descriptionInline = getSnapshotVlmDfnDescriptionInline(
             snapshotDfn.getResourceName().displayValue,
@@ -458,6 +460,58 @@ public class CtrlSnapshotCrtHelper
         return snapshot;
     }
 
+    Snapshot restoreSnapshot(SnapshotDefinition snapshotDfn, Node node, RscLayerDataApi layerData, Map<String, String> renameStorPoolsMap)
+    {
+        String snapshotNameStr = snapshotDfn.getName().displayValue;
+        String rscNameStr = snapshotDfn.getResourceName().displayValue;
+        String nodeName = node.getName().displayValue;
+
+        Snapshot snapshot;
+        try
+        {
+            snapshot = snapshotFactory.restore(
+                apiCtx,
+                layerData,
+                node,
+                snapshotDfn,
+                new Snapshot.Flags[0],
+                renameStorPoolsMap
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "register " + getSnapshotDescriptionInline(
+                    Collections.singletonList(nodeName),
+                    rscNameStr,
+                    snapshotNameStr
+                ),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                    String.format(
+                        "A snapshot with the name '%s' of the resource '%s' on '%s' already exists.",
+                        snapshotNameStr,
+                        rscNameStr,
+                        nodeName
+                    )
+                ),
+                dataAlreadyExistsExc
+            );
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
+        return snapshot;
+    }
+
     private SnapshotVolume createSnapshotVolume(
         Resource rsc,
         Snapshot snapshot,
@@ -472,6 +526,60 @@ public class CtrlSnapshotCrtHelper
                 rsc,
                 snapshot,
                 snapshotVolumeDefinition
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "register " + getSnapshotVlmDescriptionInline(
+                    snapshot.getNodeName(),
+                    snapshot.getResourceName(),
+                    snapshot.getSnapshotName(),
+                    snapshotVolumeDefinition.getVolumeNumber()
+                ),
+                ApiConsts.FAIL_ACC_DENIED_SNAPSHOT
+            );
+        }
+        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_SNAPSHOT,
+                    String.format(
+                        "Volume %d of snapshot '%s' of the resource '%s' on '%s' already exists.",
+                        snapshotVolumeDefinition.getVolumeNumber().value,
+                        snapshot.getSnapshotName(),
+                        snapshot.getResourceName(),
+                        snapshot.getNodeName()
+                    )
+                ),
+                dataAlreadyExistsExc
+            );
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
+        return snapVlm;
+    }
+
+    SnapshotVolume restoreSnapshotVolume(
+        RscLayerDataApi layerData,
+        Snapshot snapshot,
+        SnapshotVolumeDefinition snapshotVolumeDefinition,
+        Map<String, String> renameStorPoolsMap
+    )
+    {
+        SnapshotVolume snapVlm;
+        try
+        {
+            snapVlm = snapshotVolumeControllerFactory.restore(
+                apiCtx,
+                layerData,
+                snapshot,
+                snapshotVolumeDefinition,
+                renameStorPoolsMap
             );
         }
         catch (AccessDeniedException accDeniedExc)

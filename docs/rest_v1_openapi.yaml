@@ -4789,6 +4789,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
+  /v1/backups/{node}/{resource}:
+    post:
+      tags:
+        - developers
+      summary: restore backups
+      description: restore the specified backups
+      parameters:
+        - $ref: '#/components/parameters/Node'
+        - $ref: '#/components/parameters/Resource'
+      responses:
+        '200':
+          description: backup restore started or error messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupRestore'
   /v1/events/drbd/promotion:
     get:
       tags:
@@ -6798,6 +6819,17 @@ components:
           type: array
           items:
             type: string
+    BackupRestore:
+      type: object
+      properties:
+        src_rsc_name:
+          type: string
+        stor_pool_name:
+          type: string
+        bucket_name:
+          type: string
+        passphrase:
+          type: string
     PassPhraseCreate:
       type: object
       properties:

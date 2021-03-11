@@ -48,6 +48,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     private final Boolean isPmem;
     @JsonIgnore
     private final Boolean isVDO;
+    @JsonIgnore
     private final Boolean externalLocking;
 
     public StorPoolPojo(

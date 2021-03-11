@@ -737,6 +737,53 @@ public class DrbdLayer implements DeviceLayer
                         false,
                         false
                     );
+
+                    if (drbdRscData.getAbsResource().getStateFlags().isSet(workerCtx, Resource.Flags.BACKUP_RESTORE))
+                    {
+                        // If a backup is restored, the bitmask is restored as well. When restored, no other peers exist
+                        // at first. As soon as new peers are added, things go wrong if we leave the bitmask as it is
+                        // since it most likely contains old tracking data.
+                        ExtCmdFailedException forgetPeerExc = null;
+                        String[] nodeIds = drbdRscData.getAbsResource().getProps(workerCtx).getProp(
+                            InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        ).split(",");
+                        for (int i = 0; i < nodeIds.length; i++)
+                        {
+                            int nodeId = Integer.parseInt(nodeIds[i]);
+                            if (drbdRscData.getNodeId().value != nodeId)
+                            {
+                                try
+                                {
+                                    drbdUtils.forgetPeer(drbdRscData.getSuffixedResourceName(), nodeId);
+                                }
+                                catch (ExtCmdFailedException exc)
+                                {
+                                    if (forgetPeerExc == null)
+                                    {
+                                        forgetPeerExc = exc;
+                                    }
+                                    errorReporter.logError(
+                                        "Error while drbdsetup forget-peer for peer %d of %s",
+                                        nodeId,
+                                        drbdRscData.getSuffixedResourceName()
+                                    );
+                                }
+                            }
+                        }
+                        if (forgetPeerExc != null)
+                        {
+                            throw forgetPeerExc;
+                        }
+
+                        drbdUtils.adjust(
+                            drbdRscData,
+                            false,
+                            false,
+                            false
+                        );
+                    }
+
                     drbdRscData.setAdjustRequired(false);
 
                     boolean isDiskless = drbdRscData.getAbsResource().isDrbdDiskless(workerCtx);

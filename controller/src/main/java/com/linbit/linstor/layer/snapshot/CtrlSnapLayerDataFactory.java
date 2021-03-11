@@ -2,12 +2,13 @@ package com.linbit.linstor.layer.snapshot;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -21,12 +22,13 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Map;
+
 @Singleton
 public class CtrlSnapLayerDataFactory
 {
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
-    private final CtrlStorPoolResolveHelper storPoolResolveHelper;
     private final SnapDrbdLayerHelper drbdLayerHelper;
     private final SnapLuksLayerHelper luksLayerHelper;
     private final SnapStorageLayerHelper storageLayerHelper;
@@ -40,7 +42,6 @@ public class CtrlSnapLayerDataFactory
     public CtrlSnapLayerDataFactory(
         ErrorReporter errorReporterRef,
         @ApiContext AccessContext apiCtxRef,
-        CtrlStorPoolResolveHelper storPoolResolveHelperRef,
         SnapDrbdLayerHelper drbdLayerHelperRef,
         SnapLuksLayerHelper luksLayerHelperRef,
         SnapStorageLayerHelper storageLayerHelperRef,
@@ -53,7 +54,6 @@ public class CtrlSnapLayerDataFactory
     {
         errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
-        storPoolResolveHelper = storPoolResolveHelperRef;
         drbdLayerHelper = drbdLayerHelperRef;
         luksLayerHelper = luksLayerHelperRef;
         storageLayerHelper = storageLayerHelperRef;
@@ -135,6 +135,79 @@ public class CtrlSnapLayerDataFactory
         for (AbsRscLayerObject<Resource> child : rscDataRef.getChildren())
         {
             snapData.getChildren().add(copyRec(snapRef, child, snapData));
+        }
+        return snapData;
+    }
+
+    public void restoreLayerData(
+        RscLayerDataApi fromRscLayerDataApiRef,
+        Snapshot toSnapshot,
+        Map<String, String> renameStorPoolMapRef
+    )
+    {
+        try
+        {
+            AbsRscLayerObject<Snapshot> snapData = restoreRec(
+                fromRscLayerDataApiRef,
+                toSnapshot,
+                null,
+                renameStorPoolMapRef
+            );
+            toSnapshot.setLayerData(apiCtx, snapData);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_SQL,
+                    "A database exception occurred while creating layer data"
+                ),
+                exc
+            );
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (Exception exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An exception occurred while creating layer data"
+                ),
+                exc
+            );
+        }
+    }
+
+    private AbsRscLayerObject<Snapshot> restoreRec(
+        RscLayerDataApi fromRscLayerDataApiRef,
+        Snapshot toSnapshotRef,
+        AbsRscLayerObject<Snapshot> parentRef,
+        Map<String, String> renameStorPoolMapRef
+    )
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException, InvalidNameException
+    {
+        AbsSnapLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(fromRscLayerDataApiRef.getLayerKind());
+
+        AbsRscLayerObject<Snapshot> snapData = layerHelper.restoreSnapData(
+            toSnapshotRef,
+            fromRscLayerDataApiRef,
+            parentRef,
+            renameStorPoolMapRef
+        );
+
+        for (RscLayerDataApi child : fromRscLayerDataApiRef.getChildren())
+        {
+            snapData.getChildren().add(restoreRec(child, toSnapshotRef, snapData, renameStorPoolMapRef));
         }
         return snapData;
     }

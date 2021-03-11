@@ -135,7 +135,24 @@ public class CtrlSnapshotRestoreApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .build(),
-            () -> restoreResourceInTransaction(nodeNameStrs, fromRscNameStr, fromSnapshotNameStr, toRscNameStr)
+            () -> restoreResourceInTransaction(nodeNameStrs, fromRscNameStr, fromSnapshotNameStr, toRscNameStr, false)
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    public Flux<ApiCallRc> restoreSnapshotFromBackup(
+        List<String> nodeNameStrs,
+        String fromSnapshotNameStr,
+        String toRscNameStr
+    )
+    {
+        ResponseContext context = makeSnapshotRestoreContext(toRscNameStr);
+        return scopeRunner.fluxInTransactionalScope(
+            "Restore Snapshot Resource from backup",
+            lockGuardFactory.createDeferred()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .build(),
+            () -> restoreResourceInTransaction(nodeNameStrs, toRscNameStr, fromSnapshotNameStr, toRscNameStr, true)
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
@@ -143,7 +160,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         List<String> nodeNameStrs,
         String fromRscNameStr,
         String fromSnapshotNameStr,
-        String toRscNameStr
+        String toRscNameStr,
+        boolean fromBackup
     )
     {
         Flux<ApiCallRc> deploymentResponses = Flux.just();
@@ -188,7 +206,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 );
             }
 
-            if (isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPED))
+            if (!fromBackup && isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPED))
             {
                 setFlags(toRscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
             }
@@ -206,7 +224,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             {
                 for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots(peerAccCtx.get()))
                 {
-                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode()));
+                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode(), fromBackup));
                 }
             }
             else
@@ -214,7 +232,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 for (String nodeNameStr : nodeNameStrs)
                 {
                     Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node));
+                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node, fromBackup));
                 }
             }
 
@@ -385,7 +403,12 @@ public class CtrlSnapshotRestoreApiCallHandler
         return Flux.empty();
     }
 
-    private Resource restoreOnNode(SnapshotDefinition fromSnapshotDfn, ResourceDefinition toRscDfn, Node node)
+    private Resource restoreOnNode(
+        SnapshotDefinition fromSnapshotDfn,
+        ResourceDefinition toRscDfn,
+        Node node,
+        boolean fromBackup
+    )
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
         Snapshot snapshot = ctrlApiDataLoader.loadSnapshot(node, fromSnapshotDfn);
@@ -402,6 +425,10 @@ public class CtrlSnapshotRestoreApiCallHandler
             ctrlPropsHelper.getProps(snapshot),
             ctrlPropsHelper.getProps(rsc)
         );
+        if (fromBackup)
+        {
+            rsc.getStateFlags().enableFlags(peerAccCtx.get(), Resource.Flags.BACKUP_RESTORE);
+        }
 
         Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(toRscDfn);
         while (toVlmDfnIter.hasNext())

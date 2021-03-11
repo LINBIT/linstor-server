@@ -1,14 +1,20 @@
 package com.linbit.linstor.layer.snapshot;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -21,6 +27,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -51,7 +58,6 @@ public abstract class AbsSnapLayerHelper<
         layerRscIdPool = layerRscIdPoolRef;
         kind = kindRef;
     }
-
 
     public SNAP_LO copySnapData(
         Snapshot snapRef,
@@ -106,6 +112,120 @@ public abstract class AbsSnapLayerHelper<
             // however, this method is called when the Snapshot is created (no volumes)
             // but also for each just created snapshotVolume within this Snapshot
 
+        }
+        return snapData;
+    }
+
+    @SuppressWarnings("unchecked")
+    public SNAP_LO restoreSnapData(
+        Snapshot snapRef,
+        RscLayerDataApi rscLayerDataApiRef,
+        AbsRscLayerObject<Snapshot> parentRef,
+        Map<String, String> renameStorPoolMapRef
+    )
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException, InvalidNameException
+    {
+        String rscNameSuffix = rscLayerDataApiRef.getRscNameSuffix();
+        if (snapRef.getSnapshotDefinition().getLayerData(apiCtx, kind, rscNameSuffix) == null)
+        {
+            SNAP_DFN_LO snapDfnData = restoreSnapDfnData(
+                snapRef.getSnapshotDefinition(),
+                rscLayerDataApiRef,
+                renameStorPoolMapRef
+            );
+            if (snapDfnData != null)
+            {
+                snapRef.getSnapshotDefinition().setLayerData(apiCtx, snapDfnData);
+            }
+        }
+
+        SNAP_LO snapData;
+        if (
+            parentRef == null && snapRef.getLayerData(apiCtx) == null ||
+                parentRef != null && parentRef.getChildBySuffix(rscNameSuffix) == null
+        )
+        {
+            snapData = restoreSnapDataImpl(snapRef, rscLayerDataApiRef, parentRef, renameStorPoolMapRef);
+        }
+        if (parentRef == null)
+        {
+            if (snapRef.getLayerData(apiCtx) == null)
+            {
+                snapData = restoreSnapDataImpl(snapRef, rscLayerDataApiRef, parentRef, renameStorPoolMapRef);
+            }
+            else
+            {
+                AbsRscLayerObject<Snapshot> rootData = snapRef.getLayerData(apiCtx);
+                if (rootData != null && !rootData.getLayerKind().equals(kind))
+                {
+                    throw new ImplementationError(
+                        "Expected null or instance with " + kind + ", but got instance with " +
+                            rootData.getLayerKind()
+                    );
+                }
+                snapData = (SNAP_LO) rootData;
+            }
+        }
+        else
+        {
+            if (parentRef.getChildBySuffix(rscNameSuffix) == null)
+            {
+                snapData = restoreSnapDataImpl(snapRef, rscLayerDataApiRef, parentRef, renameStorPoolMapRef);
+            }
+            else
+            {
+                AbsRscLayerObject<Snapshot> childData = parentRef.getChildBySuffix(rscNameSuffix);
+                if (childData != null && !childData.getLayerKind().equals(kind))
+                {
+                    throw new ImplementationError(
+                        "Expected null or instance with " + kind + ", but got instance with " +
+                            childData.getLayerKind()
+                    );
+                }
+                snapData = (SNAP_LO) childData;
+            }
+        }
+
+        Map<VolumeNumber, SNAPVLM_LO> snapVlmMap = (Map<VolumeNumber, SNAPVLM_LO>) snapData.getVlmLayerObjects();
+
+        Iterator<SnapshotVolume> iterateVolumes = snapRef.iterateVolumes();
+        Map<Integer, VlmLayerDataApi> vlmLayerDataApiMap = new HashMap<>(rscLayerDataApiRef.getVolumeMap());
+        while (iterateVolumes.hasNext())
+        {
+            SnapshotVolume snapVlm = iterateVolumes.next();
+            VolumeNumber vlmNr = snapVlm.getVolumeNumber();
+
+            VlmLayerDataApi vlmLayerDataApi = vlmLayerDataApiMap.get(vlmNr.value);
+            if (vlmLayerDataApi == null)
+            {
+                throw new ImplementationError("No ApiData found for " + snapVlm);
+            }
+
+            if (snapVlmMap.get(vlmNr) == null)
+            {
+                SnapshotVolumeDefinition snapVlmDfn = snapVlm.getSnapshotVolumeDefinition();
+                if (snapVlmDfn.getLayerData(apiCtx, kind, rscNameSuffix) == null)
+                {
+                    SNAPVLM_DFN_LO snapVlmDfnData = restoreSnapVlmDfnData(
+                        snapVlmDfn,
+                        vlmLayerDataApi,
+                        renameStorPoolMapRef
+                    );
+                    if (snapVlmDfnData != null)
+                    {
+                        snapVlmDfn.setLayerData(apiCtx, snapVlmDfnData);
+                    }
+                }
+
+                SNAPVLM_LO snapVlmData = restoreSnapVlmLayerData(
+                    snapVlm,
+                    snapData,
+                    vlmLayerDataApi,
+                    renameStorPoolMapRef
+                );
+                snapVlmMap.put(vlmNr, snapVlmData);
+            }
         }
         return snapData;
     }
@@ -190,4 +310,60 @@ public abstract class AbsSnapLayerHelper<
         VlmProviderObject<Resource> vlmProviderObjectRef
     )
         throws DatabaseException, AccessDeniedException;
+
+    protected abstract SNAP_DFN_LO restoreSnapDfnData(
+        SnapshotDefinition snapshotDefinitionRef,
+        RscLayerDataApi rscLayerDataApiRef,
+        Map<String, String> renameStorPoolMapRef
+    )
+        throws DatabaseException, IllegalArgumentException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException;
+
+    protected abstract SNAPVLM_DFN_LO restoreSnapVlmDfnData(
+        SnapshotVolumeDefinition snapshotVolumeDefinitionRef,
+        VlmLayerDataApi vlmLayerDataApiRef,
+        Map<String, String> renameStorPoolMapRef
+    )
+        throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException;
+
+    protected abstract SNAP_LO restoreSnapDataImpl(
+        Snapshot snapRef,
+        RscLayerDataApi rscLayerDataApiRef,
+        AbsRscLayerObject<Snapshot> parentRef,
+        Map<String, String> renameStorPoolMapRef
+    )
+        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException;
+
+    protected abstract SNAPVLM_LO restoreSnapVlmLayerData(
+        SnapshotVolume snapVlmRef,
+        SNAP_LO snapDataRef,
+        VlmLayerDataApi vlmLayerDataApiRef,
+        Map<String, String> renameStorPoolMapRef
+    )
+        throws AccessDeniedException, InvalidNameException, DatabaseException;
+
+    protected StorPool getStorPool(
+        SnapshotVolume snapVlmRef,
+        String storPoolName,
+        Map<String, String> renameStorPoolMap
+    ) throws AccessDeniedException, InvalidNameException
+    {
+        StorPool storPool = null;
+        String renamedStorPool = renameStorPoolMap.get(storPoolName);
+        if (renamedStorPool == null)
+        {
+            // if no mapping is found, it is assumed that the old storPoolName still applies
+            renamedStorPool = storPoolName;
+        }
+
+        storPool = snapVlmRef.getNode().getStorPool(apiCtx, new StorPoolName(renamedStorPool));
+        if (storPool == null)
+        {
+            throw new ImplementationError(
+                "StorPool not found: " + snapVlmRef.getNode() + " " + renamedStorPool
+            );
+        }
+        return storPool;
+    }
 }

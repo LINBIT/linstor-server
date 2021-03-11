@@ -353,7 +353,8 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
 
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
-        ENCRYPTED(1L);
+        ENCRYPTED(1L),
+        GROSS_SIZE(1L << 1);
 
         public final long flagValue;
 

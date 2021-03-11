@@ -2,9 +2,12 @@ package com.linbit.linstor.layer.snapshot;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -28,6 +31,8 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+
+import java.util.Map;
 
 @Singleton
 public class SnapOpenflexLayerHelper extends AbsSnapLayerHelper<
@@ -79,6 +84,50 @@ public class SnapOpenflexLayerHelper extends AbsSnapLayerHelper<
         OpenflexRscData<Snapshot> snapDataRef,
         VlmProviderObject<Resource> vlmProviderObjectRef
     ) throws DatabaseException, AccessDeniedException
+    {
+        throw new ImplementationError("Openflex does not support snapshots");
+    }
+
+    @Override
+    protected RscDfnLayerObject restoreSnapDfnData(
+        SnapshotDefinition snapshotDefinitionRef,
+        RscLayerDataApi rscLayerDataApiRef,
+        Map<String, String> renameStorPoolMapRef
+    ) throws DatabaseException, IllegalArgumentException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException
+    {
+        throw new ImplementationError("Openflex does not support snapshots");
+    }
+
+    @Override
+    protected VlmDfnLayerObject restoreSnapVlmDfnData(
+        SnapshotVolumeDefinition snapshotVolumeDefinitionRef,
+        VlmLayerDataApi vlmLayerDataApiRef,
+        Map<String, String> renameStorPoolMapRef
+    ) throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
+        ValueInUseException
+    {
+        throw new ImplementationError("Openflex does not support snapshots");
+    }
+
+    @Override
+    protected OpenflexRscData<Snapshot> restoreSnapDataImpl(
+        Snapshot snapRef,
+        RscLayerDataApi rscLayerDataApiRef,
+        AbsRscLayerObject<Snapshot> parentRef,
+        Map<String, String> renameStorPoolMapRef
+    ) throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException
+    {
+        throw new ImplementationError("Openflex does not support snapshots");
+    }
+
+    @Override
+    protected OpenflexVlmData<Snapshot> restoreSnapVlmLayerData(
+        SnapshotVolume snapVlmRef,
+        OpenflexRscData<Snapshot> snapDataRef,
+        VlmLayerDataApi vlmLayerDataApiRef,
+        Map<String, String> renameStorPoolMapRef
+    ) throws AccessDeniedException, InvalidNameException, DatabaseException
     {
         throw new ImplementationError("Openflex does not support snapshots");
     }

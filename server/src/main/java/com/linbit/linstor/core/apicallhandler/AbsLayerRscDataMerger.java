@@ -478,6 +478,12 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
 
         }
 
+        // To restore backups, the usable size is needed in the snapshot
+        if (vlmData.getUsableSize() == VlmProviderObject.UNINITIALIZED_SIZE)
+        {
+            vlmData.setUsableSize(vlmPojo.getUsableSize());
+        }
+
         setStorPool(vlmData, storPool);
         putVlmData(storRscData, vlmData);
     }

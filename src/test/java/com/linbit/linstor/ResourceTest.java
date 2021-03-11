@@ -30,7 +30,8 @@ public class ResourceTest
             Resource.Flags.TIE_BREAKER.flagValue |
             Resource.Flags.INACTIVE.flagValue |
             Resource.Flags.INACTIVE_PERMANENTLY.flagValue |
-            Resource.Flags.REACTIVATE.flagValue;
+            Resource.Flags.REACTIVATE.flagValue |
+            Resource.Flags.BACKUP_RESTORE.flagValue;
         List<String> strList = Resource.Flags.toStringList(mask);
         assertEquals(Resource.Flags.values().length, strList.size());
 
@@ -48,7 +49,8 @@ public class ResourceTest
                 ApiConsts.FLAG_NVME_INITIATOR,
                 ApiConsts.FLAG_RSC_INACTIVE,
                 "REACTIVATE", // internal
-                "INACTIVE_PERMANENTLY" // internal
+                "INACTIVE_PERMANENTLY", // internal
+                "BACKUP_RESTORE" // internal
             },
             strList.toArray()
         );

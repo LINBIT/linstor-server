@@ -146,6 +146,27 @@ public class BackupToS3
         return mapper.readValue(s3is, BackupMetaDataPojo.class);
     }
 
+    public InputStream getObject(String key, String bucket)
+    {
+        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+        );
+
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
+            new EndpointConfiguration(
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+            )
+        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+            .build();
+        S3Object obj = s3.getObject(
+            bucket == null || bucket.length() == 0 ? backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET) : bucket, key
+        );
+        return obj.getObjectContent();
+    }
+
     public List<S3ObjectSummary> listObjects(String rsc, String bucket)
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
