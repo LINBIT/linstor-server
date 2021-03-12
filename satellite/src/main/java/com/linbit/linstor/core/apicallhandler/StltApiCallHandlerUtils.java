@@ -180,7 +180,8 @@ public class StltApiCallHandlerUtils
                             ApiRcException apiRcException = new ApiRcException(ApiCallRcImpl
                                 .entryBuilder(
                                     ApiConsts.FAIL_UNKNOWN_ERROR,
-                                    "Device provider threw a storage exception. Report Number: " + reportNumber
+                                    "The device provider generated a StorageException. " +
+                                    "Error report number: " + reportNumber
                                 )
                                 .setCause(exc.getCauseText())
                                 .setDetails(exc.getDetailsText())
@@ -199,7 +200,7 @@ public class StltApiCallHandlerUtils
                     ApiRcException apiRcException = new ApiRcException(ApiCallRcImpl
                         .entryBuilder(
                             ApiConsts.FAIL_UNKNOWN_ERROR,
-                            "Device provider threw a storage exception" + reportNumber
+                            "The device provider generated a StorageException. Error report number: " + reportNumber
                         )
                         .setCause(exc.getCauseText())
                         .setDetails(exc.getDetailsText())
