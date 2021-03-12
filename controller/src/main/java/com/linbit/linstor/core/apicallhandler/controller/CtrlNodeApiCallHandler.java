@@ -1040,6 +1040,33 @@ public class CtrlNodeApiCallHandler
         );
     }
 
+    public Flux<ApiCallRc> evictNode(String nodeName)
+    {
+        return scopeRunner.fluxInTransactionlessScope(
+            "Evict node", lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(), () ->
+            {
+                Node node = ctrlApiDataLoader.loadNode(nodeName, true);
+                try
+                {
+                    if (node.getPeer(apiCtx).isConnected())
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_IN_USE | ApiConsts.MASK_NODE,
+                                "Eviction of an online node is not possible."
+                            )
+                        );
+                    }
+                }
+                catch (AccessDeniedException exc)
+            {
+                    throw new ApiAccessDeniedException(exc, "to " + nodeName, ApiConsts.FAIL_ACC_DENIED_NODE);
+            }
+                return declareEvicted(node);
+            }
+        );
+    }
+
     public Flux<ApiCallRc> declareEvicted(Node node)
     {
         return scopeRunner.fluxInTransactionalScope(

@@ -157,8 +157,8 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                     {
                         AutoSelectFilterApi selectFilter = AutoSelectFilterPojo.merge(
                             new AutoSelectFilterPojo(
-                                minReplicaCount - curReplicaCount,
                                 null,
+                                minReplicaCount - curReplicaCount,
                                 null,
                                 null,
                                 null,
