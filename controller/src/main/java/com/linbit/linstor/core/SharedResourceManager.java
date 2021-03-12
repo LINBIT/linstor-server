@@ -40,24 +40,23 @@ public class SharedResourceManager
             while (rscIt.hasNext())
             {
                 Resource tmpRsc = rscIt.next();
-                if (tmpRsc == rsc)
+                if (tmpRsc != rsc)
                 {
-                    continue;
-                }
-                Set<StorPool> tmpStorPools = LayerVlmUtils.getStorPools(tmpRsc, sysCtx);
-                Set<SharedStorPoolName> tmpSharedSpNames = SharedStorPoolManager.getSharedSpNames(tmpStorPools);
+                    Set<StorPool> tmpStorPools = LayerVlmUtils.getStorPools(tmpRsc, sysCtx);
+                    Set<SharedStorPoolName> tmpSharedSpNames = SharedStorPoolManager.getSharedSpNames(tmpStorPools);
 
-                tmpSharedSpNames.retainAll(sharedSpNames);
-                if (!tmpSharedSpNames.isEmpty())
-                {
-                    // rsc shares at least one storPool with tmpRsc.
-                    // rsc can only get active if tmpRsc is inactive
-                    boolean isTmpRscInactive = tmpRsc.getStateFlags()
-                        .isSomeSet(sysCtx, Resource.Flags.INACTIVE, Resource.Flags.INACTIVE_PERMANENTLY);
-                    if (!isTmpRscInactive)
+                    tmpSharedSpNames.retainAll(sharedSpNames);
+                    if (!tmpSharedSpNames.isEmpty())
                     {
-                        ret = false;
-                        break;
+                        // rsc shares at least one storPool with tmpRsc.
+                        // rsc can only get active if tmpRsc is inactive
+                        boolean isTmpRscInactive = tmpRsc.getStateFlags()
+                            .isSomeSet(sysCtx, Resource.Flags.INACTIVE, Resource.Flags.INACTIVE_PERMANENTLY);
+                        if (!isTmpRscInactive)
+                        {
+                            ret = false;
+                            break;
+                        }
                     }
                 }
             }
