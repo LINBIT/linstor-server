@@ -53,12 +53,14 @@ public class PassphraseInitializer implements StartupInitializer
                     masterKey,
                     accCtx
                 );
-                encHelper.setCryptKey(masterKey);
+                // setPassphraseImpl sets the props in this namespace; to ensure they are there, get it again
+                namespace = encHelper.getEncryptedNamespace(accCtx);
+                encHelper.setCryptKey(masterKey, namespace);
             }
             else
             {
                 byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(namespace, ctrlCfg.getMasterPassphrase());
-                encHelper.setCryptKey(decryptedMasterKey);
+                encHelper.setCryptKey(decryptedMasterKey, namespace);
             }
         }
         catch (Throwable exc)

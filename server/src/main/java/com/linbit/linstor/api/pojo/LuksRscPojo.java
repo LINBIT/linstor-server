@@ -101,7 +101,7 @@ public class LuksRscPojo implements RscLayerDataApi
         @JsonIgnore
         private final long usableSize;
         @JsonIgnore
-        private final boolean isOpen;
+        private final boolean open;
         @JsonIgnore
         private final String diskState;
 
@@ -122,7 +122,7 @@ public class LuksRscPojo implements RscLayerDataApi
             backingDevice = backingDeviceRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
-            isOpen = isOpenRef;
+            open = isOpenRef;
             diskState = diskStateRef;
         }
 
@@ -138,7 +138,7 @@ public class LuksRscPojo implements RscLayerDataApi
             backingDevice = null;
             allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
-            isOpen = false;
+            open = false;
             diskState = null;
         }
 
@@ -176,9 +176,9 @@ public class LuksRscPojo implements RscLayerDataApi
             return usableSize;
         }
 
-        public boolean isOpened()
+        public boolean isOpen()
         {
-            return isOpen;
+            return open;
         }
 
         @Override

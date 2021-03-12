@@ -42,7 +42,6 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
@@ -322,8 +321,7 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     )
         throws DatabaseException
     {
-        VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
-        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+        VolumeNumber vlmNr = vlmRef.getVolumeNumber();
 
         LuksVlmData<Snapshot> luksVlmData = luksRscDataRef.getVlmLayerObjects().get(vlmNr);
         if (luksVlmData == null)

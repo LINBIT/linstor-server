@@ -82,10 +82,10 @@ public class BackupShippingService implements SystemService
         "exec 7<&0 0</dev/null; " +
         "set -o pipefail; " +
         "(" +
-        "zstd -d <&7 | " +
+        "exec 0<&7 7<&-; zstd -d | " +
         // "pv -s 100m -bnr -i 0.1 | " +
         "%s ;" +
-        ") <&0 & wait $!";
+        ") & wait $!";
 
     private final BackupToS3 backupHandler;
     private final Map<Snapshot, ShippingInfo> shippingInfoMap;

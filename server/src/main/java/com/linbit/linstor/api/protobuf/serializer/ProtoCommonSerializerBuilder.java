@@ -1598,7 +1598,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setEncryptedPassword(ByteString.copyFrom(luksVlmPojo.getEncryptedPassword()))
                 .setAllocatedSize(luksVlmPojo.getAllocatedSize())
                 .setUsableSize(luksVlmPojo.getUsableSize())
-                .setOpened(luksVlmPojo.isOpened());
+                .setOpened(luksVlmPojo.isOpen());
             if (luksVlmPojo.getDevicePath() != null)
             {
                 builder.setDevicePath(luksVlmPojo.getDevicePath());

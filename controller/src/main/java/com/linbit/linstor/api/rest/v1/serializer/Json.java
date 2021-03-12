@@ -641,7 +641,7 @@ public class Json
         luksVolume.backing_device = luksVlmPojo.getBackingDevice();
         luksVolume.allocated_size_kib = luksVlmPojo.getAllocatedSize();
         luksVolume.usable_size_kib = luksVlmPojo.getUsableSize();
-        luksVolume.opened = luksVlmPojo.isOpened();
+        luksVolume.opened = luksVlmPojo.isOpen();
         luksVolume.disk_state = luksVlmPojo.getDiskState();
         return luksVolume;
     }

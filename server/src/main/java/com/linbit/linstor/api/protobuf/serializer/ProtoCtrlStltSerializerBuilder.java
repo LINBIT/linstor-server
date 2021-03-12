@@ -1054,6 +1054,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     @Override
     public ProtoCtrlStltSerializerBuilder cryptKey(
         byte[] cryptKey,
+        byte[] cryptHash,
+        byte[] cryptSalt,
+        byte[] encKey,
         long fullSyncTimestamp,
         long updateId
     )
@@ -1062,6 +1065,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         {
             MsgIntCryptKey.newBuilder()
                 .setCryptKey(ByteString.copyFrom(cryptKey))
+                .setCryptHash(ByteString.copyFrom(cryptHash))
+                .setCryptSalt(ByteString.copyFrom(cryptSalt))
+                .setEncCryptKey(ByteString.copyFrom(encKey))
                 .setFullSyncId(fullSyncTimestamp)
                 .setUpdateId(updateId)
                 .build()

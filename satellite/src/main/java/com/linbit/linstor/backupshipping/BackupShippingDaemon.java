@@ -37,7 +37,8 @@ public class BackupShippingDaemon implements Runnable
 
     private boolean started = false;
     private Process cmdProcess;
-    private int unfinished = 0;
+    private boolean s3Finished = false;
+    private boolean cmdFinished = false;
     private boolean success = true;
 
     private final Consumer<Boolean> afterTermination;
@@ -68,12 +69,10 @@ public class BackupShippingDaemon implements Runnable
 
         if (restore)
         {
-            unfinished = 3;
             s3Thread = new Thread(threadGroupRef, this::runRestoring, "backup_" + threadName);
         }
         else
         {
-            unfinished = 2;
             handler.setStdOutListener(false);
             s3Thread = new Thread(threadGroupRef, this::runShipping, "backup_" + threadName);
         }
@@ -111,9 +110,9 @@ public class BackupShippingDaemon implements Runnable
             backupHandler.putObject(backupName, cmdProcess.getInputStream(), null);
             synchronized (syncObj)
             {
-                unfinished--;
+                s3Finished = true;
                 // success is true, no need to set again
-                if (unfinished == 0)
+                if (cmdFinished && s3Finished)
                 {
                     afterTermination.accept(success);
                 }
@@ -123,17 +122,17 @@ public class BackupShippingDaemon implements Runnable
         {
             synchronized (syncObj)
             {
-                unfinished--;
-                success = false;
-                if (unfinished == 0)
+                if (!s3Finished)
                 {
-                    afterTermination.accept(success);
-                }
-                else if (unfinished > 0)
-                {
+                    success = false;
+                    s3Finished = true;
                     // closing the stream might throw exceptions, which do not need to be reported if we already
                     // finished previously
                     errorReporter.reportError(exc);
+                }
+                if (cmdFinished && s3Finished)
+                {
+                    afterTermination.accept(success);
                 }
             }
         }
@@ -173,9 +172,9 @@ public class BackupShippingDaemon implements Runnable
             Thread.sleep(500);
             synchronized (syncObj)
             {
-                unfinished--;
+                s3Finished = true;
                 // success is true, no need to set again
-                if (unfinished == 0)
+                if (cmdFinished && s3Finished)
                 {
                     afterTermination.accept(success);
                 }
@@ -185,17 +184,17 @@ public class BackupShippingDaemon implements Runnable
         {
             synchronized (syncObj)
             {
-                unfinished--;
-                success = false;
-                if (unfinished == 0)
+                if (!s3Finished)
                 {
-                    afterTermination.accept(success);
-                }
-                else if (unfinished > 0)
-                {
+                    success = false;
+                    s3Finished = true;
                     // closing the streams might throw exceptions, which do not need to be reported if we already
                     // finished previously
                     errorReporter.reportError(exc);
+                }
+                if (cmdFinished && s3Finished)
+                {
+                    afterTermination.accept(success);
                 }
             }
         }
@@ -241,11 +240,14 @@ public class BackupShippingDaemon implements Runnable
                     errorReporter.logTrace("EOF. Exit code: " + exitCode);
                     synchronized (syncObj)
                     {
-                        success &= exitCode == 0;
-                        unfinished--;
-                        if (unfinished == 0)
+                        if (!cmdFinished)
                         {
-                            afterTermination.accept(success);
+                            cmdFinished = true;
+                            success &= exitCode == 0;
+                            if (s3Finished)
+                            {
+                                afterTermination.accept(success);
+                            }
                         }
                     }
                 }
@@ -278,7 +280,6 @@ public class BackupShippingDaemon implements Runnable
 
     public void shutdown()
     {
-        new Exception(Thread.currentThread().getName()).printStackTrace();
         started = false;
         handler.stop(false);
         if (cmdThread != null)

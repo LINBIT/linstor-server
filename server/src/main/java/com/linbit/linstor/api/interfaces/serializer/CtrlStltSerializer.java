@@ -140,7 +140,14 @@ public interface CtrlStltSerializer extends CommonSerializer
 
         CtrlStltSerializerBuilder updateFreeCapacities(Map<StorPool, SpaceInfo> spaceInfoMap);
 
-        CtrlStltSerializerBuilder cryptKey(byte[] masterKey, long timestamp, long updateId);
+        CtrlStltSerializerBuilder cryptKey(
+            byte[] masterKey,
+            byte[] cryptHash,
+            byte[] cryptSalt,
+            byte[] encKey,
+            long timestamp,
+            long updateId
+        );
 
         CommonSerializerBuilder storPoolApplied(
             StorPool storPoolRef,

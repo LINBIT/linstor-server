@@ -203,7 +203,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         luksVlmData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         luksVlmData.setBackingDevice(vlmPojoRef.getBackingDevice());
         luksVlmData.setDevicePath(vlmPojoRef.getDevicePath());
-        luksVlmData.setOpened(vlmPojoRef.isOpened());
+        luksVlmData.setOpened(vlmPojoRef.isOpen());
         luksVlmData.setDiskState(vlmPojoRef.getDiskState());
         luksVlmData.setUsableSize(vlmPojoRef.getUsableSize());
     }

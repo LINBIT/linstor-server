@@ -147,27 +147,35 @@ public class EncryptionHelper
     public byte[] getDecryptedMasterKey(Props namespace, String oldPassphrase)
         throws InvalidKeyException, LinStorException
     {
+        return getDecryptedMasterKey(
+            namespace.getProp(KEY_CRYPT_HASH),
+            namespace.getProp(KEY_CRYPT_KEY),
+            namespace.getProp(KEY_PASSPHRASE_SALT),
+            oldPassphrase
+        );
+    }
+
+    public byte[] getDecryptedMasterKey(String masterHash, String encKey, String passSalt, String passphrase)
+        throws LinStorException
+    {
         byte[] ret = null;
-        String masterHashStr = namespace.getProp(KEY_CRYPT_HASH);
-        String encryptedMasterKeyStr = namespace.getProp(KEY_CRYPT_KEY);
-        String passphraseSaltStr = namespace.getProp(KEY_PASSPHRASE_SALT);
 
         if (
-            masterHashStr == null ||
-                encryptedMasterKeyStr == null ||
-                passphraseSaltStr == null
+            masterHash == null ||
+                encKey == null ||
+                passSalt == null
         )
         {
             throw new MissingKeyPropertyException("Could not restore crypt passphrase as a property is not set");
         }
         else
         {
-            byte[] passphraseSalt = Base64.decode(passphraseSaltStr);
-            byte[] encryptedMasterKey = Base64.decode(encryptedMasterKeyStr);
+            byte[] passphraseSalt = Base64.decode(passSalt);
+            byte[] encryptedMasterKey = Base64.decode(encKey);
 
             SymmetricKeyCipher ciper = SymmetricKeyCipher.getInstanceWithPassword(
                 passphraseSalt,
-                oldPassphrase.getBytes(StandardCharsets.UTF_8),
+                passphrase.getBytes(StandardCharsets.UTF_8),
                 CipherStrength.KEY_LENGTH_128
             );
             // TODO: if MASTER_KEY_BYTES is configurable, the CipherStrength also has to be configurable
@@ -177,7 +185,7 @@ public class EncryptionHelper
             sha512.reset();
             byte[] hashedMasterKey = sha512.digest(decryptedData);
 
-            if (Arrays.equals(hashedMasterKey, Base64.decode(masterHashStr)))
+            if (Arrays.equals(hashedMasterKey, Base64.decode(masterHash)))
             {
                 ret = cryptoLenPad.retrieve(decryptedData);
             }
@@ -191,7 +199,7 @@ public class EncryptionHelper
         return ret;
     }
 
-    public void setCryptKey(byte[] cryptKey)
+    public void setCryptKey(byte[] cryptKey, Props namespace)
     {
         ctrlSecObj.setCryptKey(cryptKey);
 
@@ -205,6 +213,9 @@ public class EncryptionHelper
                     ctrlStltSrzl.onewayBuilder(InternalApiConsts.API_CRYPT_KEY)
                         .cryptKey(
                             cryptKey,
+                            Base64.decode(namespace.getProp(KEY_CRYPT_HASH)),
+                            Base64.decode(namespace.getProp(KEY_PASSPHRASE_SALT)),
+                            Base64.decode(namespace.getProp(KEY_CRYPT_KEY)),
                             peer.getFullSyncId(),
                             peer.getNextSerializerId()
                         )

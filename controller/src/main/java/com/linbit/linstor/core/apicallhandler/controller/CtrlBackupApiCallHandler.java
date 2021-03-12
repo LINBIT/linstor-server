@@ -2,7 +2,10 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.crypto.LengthPadding;
+import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -15,9 +18,13 @@ import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupListPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
+import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -44,11 +51,14 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
@@ -112,6 +122,9 @@ public class CtrlBackupApiCallHandler
     private CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
     private FreeCapacityFetcher freeCapacityFetcher;
     private CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandler;
+    private EncryptionHelper encHelper;
+    private CtrlSecurityObjects ctrlSecObj;
+    private LengthPadding cryptoLenPad;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -129,7 +142,10 @@ public class CtrlBackupApiCallHandler
         CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandlerRef,
         CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
-        CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandlerRef
+        CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandlerRef,
+        EncryptionHelper encHelperRef,
+        CtrlSecurityObjects ctrlSecObjRef,
+        LengthPadding cryptoLenPadRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -147,6 +163,9 @@ public class CtrlBackupApiCallHandler
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         ctrlSnapRestoreApiCallHandler = ctrlSnapRestoreApiCallHandlerRef;
+        encHelper = encHelperRef;
+        ctrlSecObj = ctrlSecObjRef;
+        cryptoLenPad = cryptoLenPadRef;
     }
 
     public Flux<ApiCallRc> createFullBackup(String rscNameRef) throws AccessDeniedException
@@ -213,7 +232,6 @@ public class CtrlBackupApiCallHandler
             }
             // TODO: actually choose node
             NodeName chosenNode = new NodeName(nodes.get(0));
-            // TODO: check if node/rsc has luks & keys
             ApiCallRcImpl responses = new ApiCallRcImpl();
             SnapshotDefinition snapDfn = snapshotCrtHelper
                 .createSnapshots(nodes, rscDfn.getName().displayValue, snapName, responses);
@@ -548,7 +566,7 @@ public class CtrlBackupApiCallHandler
                     }
                 }
             }
-            // 7. create layerPayload
+            // 5. create layerPayload
             RscLayerDataApi layers = metadata.getLayerData();
             Node node = ctrlApiDataLoader.loadNode(nodeName, true);
             if (!node.getPeer(peerAccCtx.get()).isConnected())
@@ -563,13 +581,68 @@ public class CtrlBackupApiCallHandler
                         .build()
                 );
             }
-            /*
-             * RestoreLayerHelper helper = getLayerData(layers, new RestoreLayerHelper(), storPool, node);
-             * if (!helper.apiCallRcErrors.isEmpty())
-             * {
-             * throw new ApiRcException(helper.apiCallRcErrors);
-             * }
-             */
+            // 6. do luks-stuff if needed
+            LuksLayerMetaPojo luksInfo = metadata.getLuksInfo();
+            byte[] srcMasterKey = null;
+            byte[] targetMasterKey = null;
+            if (luksInfo != null)
+            {
+                if (passphrase == null || passphrase.isEmpty())
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY | ApiConsts.MASK_BACKUP,
+                            "The resource " + srcRscName +
+                                " to be restored seems to have luks configured, but no passphrase was given."
+                        )
+                    );
+                }
+                try
+                {
+                    srcMasterKey = encHelper.getDecryptedMasterKey(
+                        luksInfo.getMasterCryptHash(),
+                        luksInfo.getMasterPassword(),
+                        luksInfo.getMasterCryptSalt(),
+                        passphrase
+                    );
+                }
+                catch (MissingKeyPropertyException exc)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                            "Some of the needed properties were not set in the metadata-file " + metaName +
+                                ". The metadata-file is probably corrupted and therefore unusable."
+                        ),
+                        exc
+                    );
+                }
+                catch (LinStorException exc)
+                {
+                    errorReporter.reportError(exc);
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                            "Decrypting the master password failed."
+                        )
+                    );
+                }
+
+                targetMasterKey = ctrlSecObj.getCryptKey();
+                if (targetMasterKey == null || targetMasterKey.length == 0)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl
+                            .entryBuilder(
+                                ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                                "Unable to restore an encrypted volume without having a master key"
+                            )
+                            .setCause("The masterkey was not initialized yet")
+                            .setCorrection("Create or enter the master passphrase")
+                            .build()
+                    );
+                }
+            }
             // 8. create rscDfn
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(targetRscName, false);
             ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
@@ -685,6 +758,22 @@ public class CtrlBackupApiCallHandler
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             snap.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
+            List<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
+                snap.getLayerData(peerAccCtx.get()), peerAccCtx.get()
+            );
+            usedDeviceLayerKinds.removeAll(
+                node.getPeer(peerAccCtx.get())
+                    .getExtToolsManager().getSupportedLayers()
+            );
+            if (!usedDeviceLayerKinds.isEmpty())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_LAYER_STACK | ApiConsts.MASK_BACKUP,
+                        "The node does not support the following needed layers: " + usedDeviceLayerKinds.toString()
+                    )
+                );
+            }
             // 13. create snapshotVlm(s)
             for (Entry<Integer, VlmMetaPojo> vlmMetaEntry : metadata.getRsc().getVlms().entrySet())
             {
@@ -693,6 +782,43 @@ public class CtrlBackupApiCallHandler
                 snapVlm.getProps(peerAccCtx.get()).map()
                     .putAll(metadata.getRsc().getVlms().get(vlmMetaEntry.getKey()).getProps());
             }
+            // LUKS
+            if (srcMasterKey != null)
+            {
+                List<AbsRscLayerObject<Snapshot>> luksLayers = LayerUtils.getChildLayerDataByKind(
+                    snap.getLayerData(peerAccCtx.get()),
+                    DeviceLayerKind.LUKS
+                );
+                try
+                {
+                    for (AbsRscLayerObject<Snapshot> layer : luksLayers)
+                    {
+                        for (VlmProviderObject<Snapshot> vlm : layer.getVlmLayerObjects().values())
+                        {
+                            LuksVlmData<Snapshot> luksVlm = (LuksVlmData<Snapshot>) vlm;
+                            byte[] vlmKey = luksVlm.getEncryptedKey();
+                            SymmetricKeyCipher srcCipher = SymmetricKeyCipher.getInstanceWithKey(srcMasterKey);
+                            byte[] decryptedData = srcCipher.decrypt(vlmKey);
+                            byte[] decryptedKey = cryptoLenPad.retrieve(decryptedData);
+
+                            SymmetricKeyCipher targetCipher = SymmetricKeyCipher.getInstanceWithKey(targetMasterKey);
+                            byte[] encodedData = cryptoLenPad.conceal(decryptedKey);
+                            byte[] encVlmKey = targetCipher.encrypt(encodedData);
+                            luksVlm.setEncryptedKey(encVlmKey);
+                        }
+                    }
+                }
+                catch (LinStorException exc)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                            "De- or encrypting the volume passwords failed."
+                        ),
+                        exc
+                    );
+                }
+            }
             // update stlts
             ctrlTransactionHelper.commit();
 
@@ -700,6 +826,7 @@ public class CtrlBackupApiCallHandler
         }
         catch (IOException exc)
         {
+            errorReporter.reportError(exc);
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP, "Failed to parse meta file " + metaName
