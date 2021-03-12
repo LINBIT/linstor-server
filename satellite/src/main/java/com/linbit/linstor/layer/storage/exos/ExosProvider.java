@@ -478,8 +478,10 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             }
         }
         int retry = isVlmActive ? 0 : MAX_LSSCSI_RETRY_COUNT - 1; // only scan once if vlm is expected to be inactive
-        while (retry++ < MAX_LSSCSI_RETRY_COUNT)
+        while (retry < MAX_LSSCSI_RETRY_COUNT)
         {
+            ++retry;
+
             LsscsiUtils.rescan(extCmdFactory, errorReporter, enclosureHostIds);
             List<LsscsiRow> lsscsiRowEntries = LsscsiUtils.getAll(extCmdFactory);
             // String preferredMac = exosCtrlMacAddrMapById.get(exosVlm.owner);
@@ -497,60 +499,14 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                         break;
                     }
                 }
-                if (!inspect)
+
+                if (inspect)
                 {
-                    continue;
-                }
-
-                /*
-                 * scsiIdentSerial will be something like
-                 * naa.600c0ff00029a5f56e7bfe5f01000000
-                 *
-                 * whereas wwn is only
-                 * 600C0FF00029A5F56E7BFE5F01000000
-                 */
-                Path scsiDevicePath = Paths.get("/sys/class/scsi_device/").resolve(lsscsiRow.hctl).resolve("device");
-                String scsiIdentSerial = FsUtils.readAllBytes(scsiDevicePath.resolve("wwid")).trim();
-
-                errorReporter.logTrace("inspecting: %s found wwn: %s", lsscsiRow.hctl, scsiIdentSerial);
-
-                if (scsiIdentSerial.toUpperCase().endsWith(wwn))
-                {
-                    String devPath = lsscsiRow.devPath;
-                    if (devPath.trim().equals("-"))
+                    lsscsiScanSuccess = inspectRow(lsscsiRow, wwn, vlmData, hctlSet);
+                    if (!lsscsiScanSuccess && retry < MAX_LSSCSI_RETRY_COUNT)
                     {
-                        errorReporter.logTrace("Device path '%s' is invalid. retrying lsscsi", devPath);
-                        lsscsiScanSuccess = false;
-                        if (retry != MAX_LSSCSI_RETRY_COUNT)
-                        {
-                            // this is the NOT last run before "giving up" and fallback to "best effort"
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        errorReporter.logTrace("Device %s matches WWN for newly created device", devPath);
-                        errorReporter.logTrace(
-                            "Adding HCTL [%s] to volume %s",
-                            lsscsiRow.hctl,
-                            vlmData.getIdentifier()
-                        );
-                        hctlSet.add(lsscsiRow.hctl);
-
-                        // if (devicePathToUse == null && devPath != null)
-                        // {
-                        // devicePathToUse = devPath; // use the first if the preferred controller was not found
-                        // }
-                        //
-                        // String sasAddress = FsUtils.readAllBytes(scsiDevicePath.resolve("sas_address")).trim();
-                        //
-                        // // String mac = SdparmUtils.getMac(extCmdFactory, devPath).replaceAll(" ", ":");
-                        // // if (mac.equalsIgnoreCase(preferredMac))
-                        // if (exosVlm.owner.equals(exosCtrlNameMapByTargetId.get(sasAddress)))
-                        // {
-                        // devicePathToUse = devPath;
-                        // errorReporter.logTrace("Device %s matches preferred controller. Choosing.", devPath);
-                        // }
+                        // this is NOT the last run before "giving up" and fallback to "best effort"
+                        break;
                     }
                 }
             }
@@ -562,7 +518,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                 if (rows.isEmpty())
                 {
                     lsscsiScanSuccess = false;
-                    if (retry == MAX_LSSCSI_RETRY_COUNT)
+                    if (retry >= MAX_LSSCSI_RETRY_COUNT)
                     {
                         throw new StorageException("Multipathd did not find given hctl: " + hctlSet);
                     }
@@ -586,15 +542,15 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                 }
             }
 
-
             if (multiPathDevSuffix != null)
             {
                 try
                 {
-                    Thread.sleep(1_000);// give multipath a bit more time for setup
+                    Thread.sleep(1_000L);// give multipath a bit more time for setup
                 }
                 catch (InterruptedException ignored)
-                {}
+                {
+                }
 
                 devicePathToUse = "/dev/mapper/" + multiPathDevSuffix;
                 errorReporter.logDebug("Found multipath device: %s", devicePathToUse);
@@ -604,10 +560,11 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             {
                 try
                 {
-                    Thread.sleep(300);
+                    Thread.sleep(300L);
                 }
                 catch (InterruptedException ignored)
-                {}
+                {
+                }
                 // and retry
             }
         }
@@ -651,6 +608,48 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                 }
             }
         }
+    }
+
+    private boolean inspectRow(
+        final LsscsiRow     lsscsiRow,
+        final String        wwn,
+        final ExosData<?>   vlmData,
+        final Set<String>   hctlSet
+    )
+        throws StorageException
+    {
+        boolean lsscsiScanSuccess = true;
+
+        // scsiIdentSerial will be something like
+        // naa.600c0ff00029a5f56e7bfe5f01000000
+        //
+        // whereas wwn is only
+        // 600C0FF00029A5F56E7BFE5F01000000
+        Path scsiDevicePath = Paths.get("/sys/class/scsi_device/").resolve(lsscsiRow.hctl).resolve("device");
+        String scsiIdentSerial = FsUtils.readAllBytes(scsiDevicePath.resolve("wwid")).trim();
+
+        errorReporter.logTrace("inspecting: %s found wwn: %s", lsscsiRow.hctl, scsiIdentSerial);
+
+        if (scsiIdentSerial.toUpperCase().endsWith(wwn))
+        {
+            String devPath = lsscsiRow.devPath;
+            if (devPath.trim().equals("-"))
+            {
+                errorReporter.logTrace("Device path '%s' is invalid. retrying lsscsi", devPath);
+                lsscsiScanSuccess = false;
+            }
+            else
+            {
+                errorReporter.logTrace("Device %s matches WWN for newly created device", devPath);
+                errorReporter.logTrace(
+                    "Adding HCTL [%s] to volume %s",
+                    lsscsiRow.hctl,
+                    vlmData.getIdentifier()
+                );
+                hctlSet.add(lsscsiRow.hctl);
+            }
+        }
+        return lsscsiScanSuccess;
     }
 
     private Set<String> getLunsToInspect(ExosData<?> vlmDataRef) throws AccessDeniedException
