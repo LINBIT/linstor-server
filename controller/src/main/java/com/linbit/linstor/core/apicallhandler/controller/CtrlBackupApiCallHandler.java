@@ -51,6 +51,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -251,9 +252,35 @@ public class CtrlBackupApiCallHandler
             for (AbsRscLayerObject<Resource> layer : drbdLayers)
             {
                 DrbdRscData<Resource> drbdLayer = (DrbdRscData<Resource>) layer;
-                for (DrbdRscData<Resource> rscData : drbdLayer.getRscDfnLayerObject().getDrbdRscDataList())
+                boolean extMeta = false;
+                boolean intMeta = false;
+                for (DrbdVlmData<Resource> drbdVlm : drbdLayer.getVlmLayerObjects().values())
                 {
-                    nodeIds.add(rscData.getNodeId().value);
+                    if (drbdVlm.isUsingExternalMetaData())
+                    {
+                        extMeta = true;
+                    }
+                    else
+                    {
+                        intMeta = true;
+                    }
+                }
+                if (intMeta && extMeta)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_BACKUP_CONFIG,
+                            "Backup shipping of resource '" + rscDfn.getName().displayValue +
+                                "' cannot be started since there is no support for mixing external and internal drbd-metadata among volumes."
+                        )
+                    );
+                }
+                if (!extMeta)
+                {
+                    for (DrbdRscData<Resource> rscData : drbdLayer.getRscDfnLayerObject().getDrbdRscDataList())
+                    {
+                        nodeIds.add(rscData.getNodeId().value);
+                    }
                 }
             }
 

@@ -744,10 +744,11 @@ public class DrbdLayer implements DeviceLayer
                         // at first. As soon as new peers are added, things go wrong if we leave the bitmask as it is
                         // since it most likely contains old tracking data.
                         ExtCmdFailedException forgetPeerExc = null;
-                        String[] nodeIds = drbdRscData.getAbsResource().getProps(workerCtx).getProp(
+                        String ids = drbdRscData.getAbsResource().getProps(workerCtx).getProp(
                             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
-                        ).split(",");
+                        );
+                        String[] nodeIds = ids == null || ids.isEmpty() ? new String[0] : ids.split(",");
                         for (int i = 0; i < nodeIds.length; i++)
                         {
                             int nodeId = Integer.parseInt(nodeIds[i]);

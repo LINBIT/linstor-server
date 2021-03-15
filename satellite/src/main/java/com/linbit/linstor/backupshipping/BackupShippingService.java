@@ -34,6 +34,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.utils.Base64;
 
@@ -192,34 +193,36 @@ public class BackupShippingService implements SystemService
         AbsStorageVlmData<Snapshot> snapVlmData
     ) throws StorageException
     {
-
-        String backupName = String.format(BACKUP_KEY_FORMAT, rscNameRef, rscNameSuffixRef, vlmNrRef, snapNameRef);
-        startDaemon(
-            cmdRef,
-            new String[]
-            {
-                "setsid",
-                "-w",
-                "bash",
-                "-c",
-                String.format(
-                    CMD_FORMAT_SENDING,
-                    cmdRef
-                )
-            },
-            snapNameRef,
-            backupName,
-            null,
-            false,
-            success -> postShipping(
-                success,
-                snapVlmData,
-                InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_SENT,
-                true,
-                false
-            ),
-            snapVlmData
-        );
+        if (!rscNameSuffixRef.equals(RscLayerSuffixes.SUFFIX_DRBD_META))
+        {
+            String backupName = String.format(BACKUP_KEY_FORMAT, rscNameRef, rscNameSuffixRef, vlmNrRef, snapNameRef);
+            startDaemon(
+                cmdRef,
+                new String[]
+                {
+                    "setsid",
+                    "-w",
+                    "bash",
+                    "-c",
+                    String.format(
+                        CMD_FORMAT_SENDING,
+                        cmdRef
+                    )
+                },
+                snapNameRef,
+                backupName,
+                null,
+                false,
+                success -> postShipping(
+                    success,
+                    snapVlmData,
+                    InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_SENT,
+                    true,
+                    false
+                ),
+                snapVlmData
+            );
+        }
     }
 
     public void restoreBackup(
@@ -471,6 +474,8 @@ public class BackupShippingService implements SystemService
         LuksLayerMetaPojo luksPojo = null;
         if (stltSecObj.getEncKey() != null && stltSecObj.getHash() != null && stltSecObj.getSalt() != null)
         {
+            System.out.println("key: " + Base64.encode(stltSecObj.getCryptKey()));
+            System.out.println("encKey: " + Base64.encode(stltSecObj.getEncKey()));
             luksPojo = new LuksLayerMetaPojo(
                 Base64.encode(stltSecObj.getEncKey()),
                 Base64.encode(stltSecObj.getHash()),
