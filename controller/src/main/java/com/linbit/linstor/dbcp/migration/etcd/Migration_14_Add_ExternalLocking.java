@@ -9,9 +9,9 @@ import java.util.TreeMap;
 
 @EtcdMigration(
     description = "Add 'external_locking' column, with default FALSE to storage pools",
-    version = 39
+    version = 41
 )
-public class Migration_12_Add_ExternalLocking extends BaseEtcdMigration
+public class Migration_14_Add_ExternalLocking extends BaseEtcdMigration
 {
     private static final String COL_EXTERNAL_LOCKING = "/EXTERNAL_LOCKING";
     private static final String TBL_STOR_POOL = "NODE_STOR_POOL/";

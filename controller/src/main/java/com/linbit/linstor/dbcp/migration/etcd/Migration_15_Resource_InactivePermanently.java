@@ -7,9 +7,9 @@ import java.util.TreeMap;
 
 @EtcdMigration(
     description = "Additionally set INACTIVE_PERMANENTLY flag to INACTIVE DRBD resources",
-    version = 40
+    version = 42
 )
-public class Migration_13_Resource_InactivePermanently extends BaseEtcdMigration
+public class Migration_15_Resource_InactivePermanently extends BaseEtcdMigration
 {
     private static final String RESOURCE_FLAGS = "RESOURCE_FLAGS";
 
