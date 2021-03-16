@@ -373,7 +373,7 @@ public class CtrlRscActivateApiCallHandler
                     .getSatelliteState()
                     .getResourceStates()
                     .get(rscRef.getDefinition().getName());
-                if (stltRscState.isInUse() != null)
+                if (stltRscState != null && stltRscState.isInUse() != null)
                 {
                     ret = stltRscState.isInUse();
                 }

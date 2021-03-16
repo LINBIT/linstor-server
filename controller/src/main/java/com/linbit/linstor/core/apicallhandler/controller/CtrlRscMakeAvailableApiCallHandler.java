@@ -9,34 +9,49 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.ResourceWithPayloadPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
+import com.linbit.linstor.core.apis.VolumeApi;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +64,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlRscMakeAvailableApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ResponseConverter responseConverter;
@@ -58,9 +74,11 @@ public class CtrlRscMakeAvailableApiCallHandler
     private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
     private final CtrlApiDataLoader dataLoader;
     private final Autoplacer autoplacer;
+    private final CtrlSatelliteUpdateCaller stltUpdateCaller;
 
     @Inject
     public CtrlRscMakeAvailableApiCallHandler(
+        ErrorReporter errorReporterRef,
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         ResponseConverter responseConverterRef,
@@ -69,9 +87,11 @@ public class CtrlRscMakeAvailableApiCallHandler
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         CtrlApiDataLoader dataLoaderRef,
-        Autoplacer autoplacerRef
+        Autoplacer autoplacerRef,
+        CtrlSatelliteUpdateCaller stltUpdateCallerRef
     )
     {
+        errorReporter = errorReporterRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         responseConverter = responseConverterRef;
@@ -81,6 +101,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
         dataLoader = dataLoaderRef;
         autoplacer = autoplacerRef;
+        stltUpdateCaller = stltUpdateCallerRef;
     }
 
     public Flux<ApiCallRc> makeResourceAvailable(
@@ -125,13 +146,19 @@ public class CtrlRscMakeAvailableApiCallHandler
         Resource rsc = dataLoader.loadRsc(nodeNameRef, rscNameRef, false);
         List<DeviceLayerKind> layerStack = getLayerStack(layerStackRef, rscDfn);
 
+        errorReporter.logTrace(
+            "Making resource %s available on node %s. Already exists: %b",
+            rscNameRef,
+            nodeNameRef,
+            rsc != null
+        );
         if (rsc != null)
         {
             /*
              * For now, we can only perform some basic checks if the wanted resource looks like the existing one.
              * If not, response with an error RC.
              */
-            if (!layerStack.isEmpty() && !layerStack.equals(getDeployedLayerStack(rsc)))
+            if (layerStackRef != null && !layerStackRef.isEmpty() && !layerStack.equals(getDeployedLayerStack(rsc)))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
@@ -150,105 +177,362 @@ public class CtrlRscMakeAvailableApiCallHandler
                 }
             }
 
-            /*
-             * TODO: if this gets rebased with shared SP, activate the resource if inactive and is allowed to be
-             * activated
-             */
-            // if (isFlagSet(rsc, Resource.Flags.INACTIVE) && !isFlagSet(rsc, Resource.Flags.INACTIVE_PERMANENTLY))
-            // {
-            // // activate rsc
-            // }
-
-            flux = Flux.just(
-                ApiCallRcImpl.singleApiCallRc(ApiConsts.MASK_SUCCESS, "Resource already deployed as requested")
-            );
+            if (isFlagSet(rsc, Resource.Flags.INACTIVE) && !isFlagSet(rsc, Resource.Flags.INACTIVE_PERMANENTLY))
+            {
+                Resource activeRsc = getActiveRsc(rscDfn);
+                if (activeRsc == null) {
+                    disableFlag(rsc, Resource.Flags.INACTIVE);
+                    flux = stltUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
+                        updateResponses -> CtrlResponseUtils.combineResponses(
+                            updateResponses,
+                            rsc.getResourceDefinition().getName(),
+                            Collections.singleton(rsc.getNode().getName()),
+                            "Resource activated on {0}",
+                            "Resource activated on {0}"
+                        )
+                    );
+                }
+                else
+                {
+                    setFlag(activeRsc, Resource.Flags.INACTIVE);
+                    flux = stltUpdateCaller.updateSatellites(activeRsc, Flux.empty()).transform(
+                        updateResponses -> CtrlResponseUtils.combineResponses(
+                            updateResponses,
+                            rsc.getResourceDefinition().getName(),
+                            Collections.singleton(rsc.getNode().getName()),
+                            "Resource deactivated on {0}",
+                            "Resource deactivated on {0}"
+                        )
+                    ).concatWith(postDeactivateOldRsc(rsc))
+                        .onErrorResume(error -> abortDeactivateOldRsc(activeRsc, rsc));
+                }
+            }
+            else
+            {
+                errorReporter.logTrace("Resource already in expected state. Nothing to do");
+                flux = Flux.just(
+                    ApiCallRcImpl.singleApiCallRc(ApiConsts.MASK_SUCCESS, "Resource already deployed as requested")
+                );
+            }
             ctrlTransactionHelper.commit();
         }
         else
         {
-            AutoSelectFilterPojo autoSelect = null;
-            long rscFlags = 0;
-            boolean disklessForErrorMsg = false;
+            ResourceWithPayloadApi createRscPojo;
+            // first, check if there is a shared storage pool already containing the shared resource on the given node
 
-            if (layerStack.contains(DeviceLayerKind.DRBD))
+            Node node = dataLoader.loadNode(nodeNameRef, true);
+            createRscPojo = getSharedResourceCreationPojo(rscDfn, node);
+            if (createRscPojo != null)
             {
-                if ((diskfulRef == null || !diskfulRef) && hasDrbdDiskfulPeer(rscDfn))
-                {
-                    // we can create a DRBD diskless resource
-                    autoSelect = createAutoSelectConfig(
-                        nodeNameRef,
-                        layerStack,
-                        Resource.Flags.DRBD_DISKLESS
-                    );
+                errorReporter.logTrace("Trying to place new shared resource");
 
-                    rscFlags = Resource.Flags.DRBD_DISKLESS.flagValue;
-                    disklessForErrorMsg = true;
-                }
-                else
-                {
-                    /*
-                     * No diskful peer (or forced diskful). "make resource available" is interpreted in this case as
-                     * creating the first
-                     * diskful resource. However, this might still mean that other layers like NVMe are involved
-                     */
-                    if (layerStack.contains(DeviceLayerKind.NVME) || layerStack.contains(DeviceLayerKind.OPENFLEX))
-                    {
-                        if (hasNvmeTarget(rscDfn))
-                        {
-                            // we want to connect as initiator
-                            autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, Resource.Flags.NVME_INITIATOR);
-                            rscFlags = Resource.Flags.NVME_INITIATOR.flagValue;
-                            disklessForErrorMsg = true;
-                        }
-                    }
-                    else
-                    {
-                        // default diskful DRBD setup with the given layers
-                        autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
-                        rscFlags = 0;
-                        disklessForErrorMsg = false;
-                    }
-                }
-            }
-
-            if (autoSelect == null)
-            {
-                // TODO: this will change once shared SP is merged into master
-
-                // default diskful setup with the given layers
-                autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
-                rscFlags = 0;
-                disklessForErrorMsg = false;
-            }
-
-            Set<StorPool> storPoolSet = autoplacer.autoPlace(
-                AutoSelectFilterPojo.merge(
-                    autoSelect,
-                    rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
-                ),
-                rscDfn,
-                CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerCtxProvider.get())
-            );
-
-            StorPool sp = getStorPoolOrFail(storPoolSet, nodeNameRef, disklessForErrorMsg);
-            ResourceWithPayloadApi createRscPojo = new ResourceWithPayloadPojo(
-                new RscPojo(
-                    rscNameRef,
-                    nodeNameRef,
-                    rscFlags,
-                    Collections.singletonMap(
-                        ApiConsts.KEY_STOR_POOL_NAME,
-                        sp.getName().displayValue
+                // try to deactivate already active resource first
+                Resource activeRsc = getActiveRsc(rscDfn);
+                setFlag(activeRsc, Resource.Flags.INACTIVE);
+                flux = stltUpdateCaller.updateSatellites(activeRsc, Flux.empty()).transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rscDfn.getName(),
+                        Collections.singleton(node.getName()),
+                        "Resource deactivated on {0}",
+                        "Resource deactivated on {0}"
+                    )
+                ).concatWith(
+                    freeCapacityFetcher.fetchThinFreeCapacities(Collections.singleton(node.getName())).flatMapMany(
+                        // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
+                        // the freeCapacities parameter here
+                        ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
+                            "create resource",
+                            lockGuardFactory.buildDeferred(
+                                LockType.WRITE,
+                                LockObj.NODES_MAP,
+                                LockObj.RSC_DFN_MAP,
+                                LockObj.STOR_POOL_DFN_MAP
+                            ),
+                            () -> ctrlRscCrtApiCallHandler.createResource(Collections.singletonList(createRscPojo))
                         )
-                    ),
-                layerStack.stream().map(DeviceLayerKind::name).collect(Collectors.toList()),
-                null
+                    )
+                ).onErrorResume(
+                    error -> abortDeactivateOldRsc(activeRsc, rsc)
+                        .concatWith(placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRef))
                 );
-            flux = ctrlRscCrtApiCallHandler.createResource(Collections.singletonList(createRscPojo));
+            }
+            else
+            {
+                flux = freeCapacityFetcher.fetchThinFreeCapacities(Collections.singleton(node.getName())).flatMapMany(
+                    // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
+                    // the freeCapacities parameter here
+                    ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
+                        "create resource",
+                        lockGuardFactory.buildDeferred(
+                            LockType.WRITE,
+                            LockObj.NODES_MAP,
+                            LockObj.RSC_DFN_MAP,
+                            LockObj.STOR_POOL_DFN_MAP
+                        ),
+                        () -> placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRef)
+                    )
+                );
+            }
             ctrlTransactionHelper.commit();
         }
 
         return flux;
+    }
+
+    private Flux<ApiCallRc> abortDeactivateOldRsc(Resource oldActiveRsc, Resource newActiveRsc)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Abort deactivate old rsc",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            () -> abortDeactivateOldRscInTransaction(oldActiveRsc, newActiveRsc)
+        );
+    }
+
+    private Flux<ApiCallRc> abortDeactivateOldRscInTransaction(
+        Resource oldActiveRscRef,
+        @Nullable Resource newActiveRscRef
+    )
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        if (newActiveRscRef == null || isFlagSet(newActiveRscRef, Resource.Flags.INACTIVE))
+        {
+            disableFlag(oldActiveRscRef, Resource.Flags.INACTIVE);
+
+            ctrlTransactionHelper.commit();
+            flux = stltUpdateCaller.updateSatellites(oldActiveRscRef, Flux.empty()).transform(
+                updateResponses -> CtrlResponseUtils.combineResponses(
+                    updateResponses,
+                    oldActiveRscRef.getResourceDefinition().getName(),
+                    Collections.singleton(oldActiveRscRef.getNode().getName()),
+                    "Resource reactivated on {0}",
+                    "Resource reactivated on {0}"
+                )
+            );
+
+        }
+        return flux;
+    }
+
+    private Flux<ApiCallRc> postDeactivateOldRsc(Resource newActiveRsc)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Post deactivate rsc",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            () -> postDeactivateOldRscInTransaction(newActiveRsc)
+        );
+    }
+
+    private Flux<ApiCallRc> postDeactivateOldRscInTransaction(Resource newActiveRscRef)
+    {
+        disableFlag(newActiveRscRef, Resource.Flags.INACTIVE);
+        ctrlTransactionHelper.commit();
+        return stltUpdateCaller.updateSatellites(newActiveRscRef, Flux.empty()).transform(
+            updateResponses -> CtrlResponseUtils.combineResponses(
+                updateResponses,
+                newActiveRscRef.getResourceDefinition().getName(),
+                Collections.singleton(newActiveRscRef.getNode().getName()),
+                "Resource activated on {0}",
+                "Resource activated on {0}"
+            )
+        );
+    }
+
+    private Resource getActiveRsc(ResourceDefinition rscDfnRef)
+    {
+        try
+        {
+            Iterator<Resource> rscIt = rscDfnRef.iterateResource(peerCtxProvider.get());
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                if (!rsc.getStateFlags().isSet(peerCtxProvider.get(), Resource.Flags.INACTIVE))
+                {
+                    return rsc;
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "finding active resource " + CtrlRscDfnApiCallHandler.getRscDfnDescription(rscDfnRef),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return null;
+    }
+
+    private void setFlag(Resource rsc, Flags... flags)
+    {
+        try
+        {
+            rsc.getStateFlags().enableFlags(peerCtxProvider.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "enabling flags of " + CtrlRscApiCallHandler.getRscDescription(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private void disableFlag(Resource rsc, Flags... flags)
+    {
+        try
+        {
+            rsc.getStateFlags().disableFlags(peerCtxProvider.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "disabling flags of " + CtrlRscApiCallHandler.getRscDescription(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private Flux<ApiCallRc> placeAnywhere(
+        String nodeNameRef,
+        ResourceDefinition rscDfnRef,
+        List<DeviceLayerKind> layerStackRef,
+        Boolean diskfulRef
+    )
+    {
+        ResponseContext context = makeContext(nodeNameRef, rscDfnRef.getName().displayValue);
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Place anywhere on node",
+            lockGuardFactory.buildDeferred(
+                LockType.WRITE,
+                LockObj.NODES_MAP,
+                LockObj.RSC_DFN_MAP,
+                LockObj.STOR_POOL_DFN_MAP
+            ),
+            () -> placeAnywhereInTransaction(
+                nodeNameRef,
+                rscDfnRef,
+                layerStackRef,
+                diskfulRef
+            )
+        )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> placeAnywhereInTransaction(
+        String nodeNameRef,
+        ResourceDefinition rscDfn,
+        List<DeviceLayerKind> layerStack,
+        Boolean diskfulRef
+    )
+    {
+        AutoSelectFilterPojo autoSelect = null;
+        long rscFlags = 0;
+        boolean disklessForErrorMsg = false;
+
+        if (layerStack.contains(DeviceLayerKind.DRBD))
+        {
+            if ((diskfulRef == null || !diskfulRef) && hasDrbdDiskfulPeer(rscDfn))
+            {
+                errorReporter.logTrace("Searching diskless storage pool for DRBD resource");
+                // we can create a DRBD diskless resource
+                autoSelect = createAutoSelectConfig(
+                    nodeNameRef,
+                    layerStack,
+                    Resource.Flags.DRBD_DISKLESS
+                );
+
+                rscFlags = Resource.Flags.DRBD_DISKLESS.flagValue;
+                disklessForErrorMsg = true;
+            }
+            else
+            {
+                /*
+                 * No diskful peer (or forced diskful). "make resource available" is interpreted in this case as
+                 * creating the first
+                 * diskful resource. However, this might still mean that other layers like NVMe are involved
+                 */
+                if (layerStack.contains(DeviceLayerKind.NVME) || layerStack.contains(DeviceLayerKind.OPENFLEX))
+                {
+                    if (hasNvmeTarget(rscDfn))
+                    {
+                        errorReporter.logTrace(
+                            "Searching diskless storage pool for DRBD over NVME (initiator) resource"
+                        );
+                        // we want to connect as initiator
+                        autoSelect = createAutoSelectConfig(
+                            nodeNameRef,
+                            layerStack,
+                            Resource.Flags.NVME_INITIATOR
+                        );
+                        rscFlags = Resource.Flags.NVME_INITIATOR.flagValue;
+                        disklessForErrorMsg = true;
+                    }
+                }
+                else
+                {
+                    errorReporter.logTrace("Searching diskful storage pool for DRBD resource");
+                    // default diskful DRBD setup with the given layers
+                    autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
+                    rscFlags = 0;
+                    disklessForErrorMsg = false;
+                }
+            }
+        }
+
+        if (autoSelect == null)
+        {
+            // TODO: this will change once shared SP is merged into master
+
+            // default diskful setup with the given layers
+            autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
+            rscFlags = 0;
+            disklessForErrorMsg = false;
+        }
+
+        Set<StorPool> storPoolSet = autoplacer.autoPlace(
+            AutoSelectFilterPojo.merge(
+                autoSelect,
+                rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+            ),
+            rscDfn,
+            CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerCtxProvider.get())
+        );
+
+        StorPool sp = getStorPoolOrFail(storPoolSet, nodeNameRef, disklessForErrorMsg);
+        ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
+            new RscPojo(
+                rscDfn.getName().displayValue,
+                nodeNameRef,
+                rscFlags,
+                Collections.singletonMap(
+                    ApiConsts.KEY_STOR_POOL_NAME,
+                    sp.getName().displayValue
+                )
+            ),
+            layerStack.stream().map(DeviceLayerKind::name).collect(Collectors.toList()),
+            null
+        );
+        ctrlTransactionHelper.commit();
+        return ctrlRscCrtApiCallHandler.createResource(Collections.singletonList(createRscPojo));
     }
 
     private boolean hasDrbdDiskfulPeer(ResourceDefinition rscDfnRef)
@@ -275,6 +559,147 @@ public class CtrlRscMakeAvailableApiCallHandler
             }
         }
         return foundPeer;
+    }
+
+    private ResourceWithPayloadApi getSharedResourceCreationPojo(ResourceDefinition rscDfnRef, Node nodeRef)
+    {
+        ResourceWithPayloadApi ret = null;
+        try
+        {
+            // build Map<SharedStorPoolName, StorPool> of current node
+            Map<SharedStorPoolName, StorPool> nodeStorPoolMap = new HashMap<>();
+            {
+                Iterator<StorPool> spIt = nodeRef.iterateStorPools(peerCtxProvider.get());
+                while (spIt.hasNext())
+                {
+                    StorPool sp = spIt.next();
+                    nodeStorPoolMap.put(sp.getSharedStorPoolName(), sp);
+                }
+            }
+
+            Iterator<Resource> rscIt = rscDfnRef.iterateResource(peerCtxProvider.get());
+            while (rscIt.hasNext() && ret == null)
+            {
+                Resource rsc = rscIt.next();
+                boolean allVolumesShared = true;
+                Iterator<Volume> vlmsIt = rsc.iterateVolumes();
+
+                List<VolumeApi> vlmApiList = new ArrayList<>();
+
+                while (vlmsIt.hasNext() && allVolumesShared)
+                {
+                    Volume vlm = vlmsIt.next();
+
+                    Map<String, StorPool> storPoolMap = LayerVlmUtils.getStorPoolMap(vlm, peerCtxProvider.get());
+
+                    // we need to ensure DATA and (if exists) DRBD_META paths are shared. the other storage pools can be
+                    // recreated
+
+                    StorPool dataSp = storPoolMap.get(RscLayerSuffixes.SUFFIX_DATA);
+                    StorPool drbdMetaSp = storPoolMap.get(RscLayerSuffixes.SUFFIX_DRBD_META);
+
+                    StorPool sharedDataSpFromNode = nodeStorPoolMap.get(dataSp.getSharedStorPoolName());
+                    StorPool sharedDrbdMetaSpFromNode = null;
+                    if (drbdMetaSp != null)
+                    {
+                        sharedDrbdMetaSpFromNode = nodeStorPoolMap.get(drbdMetaSp.getSharedStorPoolName());
+                    }
+
+                    Map<String, String> vlmsProps = new HashMap<>();
+                    if (sharedDataSpFromNode != null)
+                    {
+                        vlmsProps.put(
+                            ApiConsts.KEY_STOR_POOL_NAME,
+                            sharedDataSpFromNode.getName().displayValue
+                        );
+                        if (drbdMetaSp != null)
+                        {
+                            if (sharedDrbdMetaSpFromNode != null)
+                            {
+                                vlmsProps.put(
+                                    ApiConsts.KEY_STOR_POOL_DRBD_META_NAME,
+                                    sharedDrbdMetaSpFromNode.getName().displayValue
+                                );
+                            }
+                            else
+                            {
+                                allVolumesShared = false;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        allVolumesShared = false;
+                    }
+                    if (allVolumesShared)
+                    {
+                        vlmApiList.add(
+                            new VlmPojo(
+                                null,
+                                null,
+                                null,
+                                vlm.getVolumeNumber().value,
+                                0,
+                                vlmsProps,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null
+                            )
+                        );
+                    }
+                }
+                if (allVolumesShared) {
+                    Integer nodeId = null;
+                    {
+                        Set<AbsRscLayerObject<Resource>> drbdRscData = LayerRscUtils.getRscDataByProvider(
+                            rsc.getLayerData(peerCtxProvider.get()),
+                            DeviceLayerKind.DRBD
+                        );
+                        if (drbdRscData.size() == 1)
+                        {
+                            nodeId = ((DrbdRscData<Resource>) drbdRscData.iterator().next()).getNodeId().value;
+                        }
+                        else if (drbdRscData.size() > 1)
+                        {
+                            throw new ImplementationError("Unexpected drbdRscData count: " + drbdRscData.size());
+                        }
+                    }
+                    ret = new ResourceWithPayloadPojo(
+                        new RscPojo(
+                            rscDfnRef.getName().displayValue,
+                            nodeRef.getName().displayValue,
+                            null,
+                            null,
+                            null,
+                            0,
+                            Collections.emptyMap(),
+                            vlmApiList,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null
+                        ),
+                        LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).stream()
+                            .map(DeviceLayerKind::name).collect(Collectors.toList()),
+                        nodeId
+                    );
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "looking for shared resources of " + CtrlRscDfnApiCallHandler.getRscDfnDescription(rscDfnRef),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return ret;
     }
 
     private AutoSelectFilterPojo createAutoSelectConfig(

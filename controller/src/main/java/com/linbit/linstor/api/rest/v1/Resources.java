@@ -287,7 +287,6 @@ public class Resources
         String jsonData
     )
     {
-        // due to lazyness we simply reuse the ResourceCreate class
         JsonGenTypes.ResourceMakeAvailable rscData;
         try
         {
