@@ -659,7 +659,7 @@ public class RscDrbdLayerHelper extends
         return layerDataFactory.createDrbdVlmDfnData(
             vlmDfnRef,
             vlmDfnRef.getResourceDefinition().getName(),
-            fromSnapVlmDataRef.getRscLayerObject().getAbsResource().getSnapshotName(),
+            null,
             resourceNameSuffix,
             vlmDfnRef.getVolumeNumber(),
             null, // auto assign minor nr
