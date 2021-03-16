@@ -446,7 +446,8 @@ public class CtrlSnapshotRestoreApiCallHandler
             }
 
             Map<String, StorPool> storPool = LayerVlmUtils.getStorPoolMap(snapshot, volumeNumber, peerAccCtx.get());
-            Volume toVlm = ctrlVlmCrtApiHelper.createVolume(rsc, toVlmDfn, storPool, null);
+            Volume toVlm = ctrlVlmCrtApiHelper
+                .createVolumeFromSnapshot(rsc, toVlmDfn, storPool, null, fromSnapshotVolume);
 
             Props vlmProps = ctrlPropsHelper.getProps(toVlm);
             ctrlPropsHelper.copy(

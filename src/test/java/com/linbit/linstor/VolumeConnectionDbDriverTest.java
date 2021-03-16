@@ -1,10 +1,5 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -42,6 +37,11 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class VolumeConnectionDbDriverTest extends GenericDbBase
 {
@@ -155,14 +155,16 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
             resSrc,
             volDfn,
             null,
-            Collections.singletonMap("", storPool1)
+            Collections.singletonMap("", storPool1),
+            null
         );
         volDst = volumeFactory.create(
             SYS_CTX,
             resDst,
             volDfn,
             null,
-            Collections.singletonMap("", storPool2)
+            Collections.singletonMap("", storPool2),
+            null
         );
     }
 
@@ -227,7 +229,7 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
         Volume vol
     )
     {
-        vlmMap.put(new Triple<NodeName, ResourceName, VolumeNumber>(
+        vlmMap.put(new Triple<>(
                 vol.getAbsResource().getNode().getName(),
                 vol.getResourceDefinition().getName(),
                 vol.getVolumeDefinition().getVolumeNumber()

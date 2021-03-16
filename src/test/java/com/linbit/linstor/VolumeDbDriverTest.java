@@ -1,11 +1,5 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -40,6 +34,12 @@ import java.util.TreeMap;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class VolumeDbDriverTest extends GenericDbBase
 {
@@ -188,7 +188,8 @@ public class VolumeDbDriverTest extends GenericDbBase
             res,
             volDfn,
             new Volume.Flags[] {Volume.Flags.DELETE},
-            Collections.singletonMap("", storPool)
+            Collections.singletonMap("", storPool),
+            null
         );
         commit();
 
@@ -276,7 +277,8 @@ public class VolumeDbDriverTest extends GenericDbBase
             res,
             volDfn,
             null,
-            Collections.singletonMap("", storPool)
+            Collections.singletonMap("", storPool),
+            null
         );
 
         // no clearCaches
@@ -422,7 +424,8 @@ public class VolumeDbDriverTest extends GenericDbBase
             res,
             volDfn,
             null,
-            Collections.emptyMap()
+            Collections.emptyMap(),
+            null
         );
     }
 

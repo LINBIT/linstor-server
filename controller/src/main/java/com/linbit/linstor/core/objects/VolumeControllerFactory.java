@@ -10,9 +10,11 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -50,7 +52,8 @@ public class VolumeControllerFactory
         Resource rsc,
         VolumeDefinition vlmDfn,
         Volume.Flags[] flags,
-        Map<String, StorPool> storPoolMapRef
+        Map<String, StorPool> storPoolMapRef,
+        @Nullable AbsRscLayerObject<Snapshot> snapLayerData
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -86,7 +89,15 @@ public class VolumeControllerFactory
         {
             payload.putStorageVlmPayload(entry.getKey(), vlmNr, entry.getValue().getName().displayValue);
         }
-        layerStackHelper.ensureStackDataExists(rsc, null, payload);
+        if (snapLayerData == null)
+        {
+            layerStackHelper.ensureStackDataExists(rsc, null, payload);
+        }
+        else
+        {
+            // ignore payload if we have snapLayerData
+            layerStackHelper.copyLayerData(snapLayerData, rsc);
+        }
 
         return volData;
     }

@@ -1,8 +1,5 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -34,6 +31,9 @@ import java.util.Collections;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class ConnectionPropsTest extends GenericDbBase
 {
@@ -133,14 +133,16 @@ public class ConnectionPropsTest extends GenericDbBase
             res1,
             volDfn,
             null,
-            Collections.singletonMap("", storPool1)
+            Collections.singletonMap("", storPool1),
+            null
         );
         vol2 = volumeFactory.create(
             SYS_CTX,
             res2,
             volDfn,
             null,
-            Collections.singletonMap("", storPool2)
+            Collections.singletonMap("", storPool2),
+            null
         );
 
         nodeCon = nodeConnectionFactory.create(SYS_CTX, node1, node2);

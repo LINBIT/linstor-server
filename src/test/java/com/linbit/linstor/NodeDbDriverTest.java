@@ -438,7 +438,8 @@ public class NodeDbDriverTest extends GenericDbBase
                 volDfn,
                 new Volume.Flags[]
                 {},
-                Collections.singletonMap("", storPool1)
+                Collections.singletonMap("", storPool1),
+                null
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
             vol1Uuid = vol1.getUuid();
@@ -467,7 +468,8 @@ public class NodeDbDriverTest extends GenericDbBase
                 volDfn,
                 new Volume.Flags[]
                 {},
-                Collections.singletonMap("", storPool2)
+                Collections.singletonMap("", storPool2),
+                null
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);
             vol2Uuid = vol2.getUuid();

@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeControllerFactory;
@@ -89,18 +90,55 @@ public class CtrlVlmCrtApiHelper
         Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
+        return createVlmImpl(rsc, vlmDfn, storPoolMapRef, thinFreeCapacities, null);
+    }
+
+    public Volume createVolumeFromSnapshot(
+        Resource rscRef,
+        VolumeDefinition toVlmDfnRef,
+        Map<String, StorPool> storPoolRef,
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        SnapshotVolume fromSnapshotVolumeRef
+    )
+    {
+        return createVlmImpl(rscRef, toVlmDfnRef, storPoolRef, thinFreeCapacities, fromSnapshotVolumeRef);
+    }
+
+    private Volume createVlmImpl(
+        Resource rsc,
+        VolumeDefinition vlmDfn,
+        Map<String, StorPool> storPoolMapRef,
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        SnapshotVolume snapVlmRef
+    )
+    {
         checkIfStorPoolsAreUsable(rsc, vlmDfn, storPoolMapRef, thinFreeCapacities);
 
         Volume vlm;
         try
         {
-            vlm = volumeFactory.create(
-                peerAccCtx.get(),
-                rsc,
-                vlmDfn,
-                null, // flags
-                storPoolMapRef
-            );
+            if (snapVlmRef == null)
+            {
+                vlm = volumeFactory.create(
+                    peerAccCtx.get(),
+                    rsc,
+                    vlmDfn,
+                    null, // flags
+                    storPoolMapRef,
+                    null
+                );
+            }
+            else
+            {
+                vlm = volumeFactory.create(
+                    peerAccCtx.get(),
+                    rsc,
+                    vlmDfn,
+                    null, // flags
+                    storPoolMapRef,
+                    snapVlmRef.getAbsResource().getLayerData(peerAccCtx.get())
+                );
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
