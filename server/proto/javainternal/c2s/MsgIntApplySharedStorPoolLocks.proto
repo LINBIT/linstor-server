@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.c2s;
-import "javainternal/c2s/IntRsc.proto";
 
 // Internal message that the controller granted the given requested shared stor pool locks
 message MsgIntApplySharedStorPoolLocks

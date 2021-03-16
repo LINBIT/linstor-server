@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.s2c;
-import "javainternal/IntObjectId.proto";
 
 // Internal message about a successful node creation or modification
 message MsgIntUpdateLocalNodeChange
