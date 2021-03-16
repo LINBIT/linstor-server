@@ -54,6 +54,11 @@ public class SharedStorPoolName extends GenericName
         return ret;
     }
 
+    public static boolean isShared(String sharedStorPoolNameStr)
+    {
+        return sharedStorPoolNameStr != null && !sharedStorPoolNameStr.contains(RESERVED_CONNECTOR);
+    }
+
     public boolean isShared()
     {
         return shared;

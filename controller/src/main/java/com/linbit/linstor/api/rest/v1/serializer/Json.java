@@ -39,6 +39,7 @@ import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -62,6 +63,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -471,6 +473,8 @@ public class Json
         rsc.uuid = rscApi.getUuid().toString();
         rscApi.getCreateTimestamp().ifPresent(d -> rsc.create_timestamp = d.getTime());
 
+        rsc.shared_name = getSharedName(rscApi);
+
         if (withVolumes)
         {
             rsc.volumes = rscApi.getVlmList().stream().map(vlmApi ->
@@ -538,6 +542,34 @@ public class Json
         {
         }
         return rsc;
+    }
+
+    private static String getSharedName(ResourceApi rscApiRef)
+    {
+        LinkedList<RscLayerDataApi> toExplore = new LinkedList<>();
+        toExplore.add(rscApiRef.getLayerData());
+        while (!toExplore.isEmpty())
+        {
+            RscLayerDataApi cur = toExplore.removeFirst();
+            if (cur.getLayerKind().equals(DeviceLayerKind.STORAGE))
+            {
+                if (cur.getVolumeList().isEmpty())
+                {
+                    return null; // no volumes, no sharedName
+                }
+                String freeSpaceManagerName = cur.getVolumeList().get(0).getStorPoolApi().getFreeSpaceManagerName();
+                if (SharedStorPoolName.isShared(freeSpaceManagerName))
+                {
+                    return freeSpaceManagerName;
+                }
+                else
+                {
+                    return null; // do not return if sharedSpName is not shared
+                }
+            }
+            toExplore.addAll(cur.getChildren());
+        }
+        return null;
     }
 
     public static JsonGenTypes.Resource apiToResource(

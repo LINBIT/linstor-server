@@ -429,6 +429,11 @@ public class JsonGenTypes
         extends Resource
     {
         public List<Volume> volumes = Collections.emptyList();
+        /**
+         * shared space name of the data storage pool of the first volume of
+         * the resource or empty if data storage pool is not shared
+         */
+        public String shared_name;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

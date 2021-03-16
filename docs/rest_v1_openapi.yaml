@@ -22,6 +22,7 @@ info:
     Changelog:
 
     * unreleased
+       - added shared_name to ResourceWithVolumes
        - Added makeResourceAvailable API
        - Added diskless storage pool filter to AutoSelectFilter
        - Added external_locking to StoragePool
@@ -4997,6 +4998,11 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Volume'
+            shared_name:
+              type: string
+              description: |
+                shared space name of the data storage pool of the first volume of
+                the resource or empty if data storage pool is not shared
     ResourceCreate:
       type: object
       properties:
