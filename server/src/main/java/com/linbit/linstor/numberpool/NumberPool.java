@@ -51,6 +51,13 @@ public interface NumberPool
     int getSize();
 
     /**
+     * Indicates whether the number pool is empty (has no allocated numbers)
+     *
+     * @return True if none of the numbers managed by the number pool are allocated, false otherwise
+     */
+    boolean isEmpty();
+
+    /**
      * Returns the count of allocated numbers in this number pool
      *
      * @return Count of currently allocated numbers

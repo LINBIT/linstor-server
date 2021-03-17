@@ -179,6 +179,17 @@ public class BitmapPool implements NumberPool
     }
 
     /**
+     * Indicates whether the number pool is empty (has no allocated numbers)
+     *
+     * @return True if none of the numbers managed by the number pool are allocated, false otherwise
+     */
+    @Override
+    public boolean isEmpty()
+    {
+        return allocatedCount == 0;
+    }
+
+    /**
      * Returns the size of this number pool. This is the total count of numbers managed by this number pool.
      *
      * @return Size of the number pool
