@@ -39,6 +39,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 import com.linbit.linstor.utils.NameShortener;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -175,6 +176,20 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         throws AccessDeniedException, InvalidNameException
     {
         Set<StorPool> neededStorPools = new HashSet<>();
+
+        boolean resolveSp = false;
+
+        AbsRscLayerObject<Resource> rscData = rsc.getLayerData(apiCtx);
+        /*
+         * If we are creating a (diskless?) resource, we might need to resolve storage pool or not.
+         * If we are toggling disk we *must* resolve storage pools
+         *
+         * If we are creating a (diskless?) resource, we did not create StorRscData yet. (boolean will be false)
+         * If we are toggling disk, we already have StorRscData from a previous run (boolean will be true)
+         */
+        boolean rscToggleDiskOrCreation = rscData != null &&
+            !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.STORAGE).isEmpty();
+
         for (StorageVlmPayload storageVlmPayload : payloadRef.storagePayload.values())
         {
             StorPool storPool = rsc.getNode().getStorPool(apiCtx, new StorPoolName(storageVlmPayload.storPoolName));
@@ -182,20 +197,27 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             {
                 neededStorPools.add(storPool);
             }
+            else
+            {
+                resolveSp = true;
+            }
         }
 
-        CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
-        StorPool resolvedStorPool = storPoolResolveHelper.resolveStorPool(
-            apiCtx,
-            rsc,
-            vlmDfn,
-            ctrlRscLayerDataFactory.isDiskless(rsc) && !ctrlRscLayerDataFactory.isDiskAddRequested(rsc),
-            ctrlRscLayerDataFactory.isDiskRemoving(rsc),
-            false
-        ).extractApiCallRc(new ApiCallRcImpl());
-        if (resolvedStorPool != null)
+        if (rscToggleDiskOrCreation || resolveSp)
         {
-            neededStorPools.add(resolvedStorPool);
+            CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
+            StorPool resolvedStorPool = storPoolResolveHelper.resolveStorPool(
+                apiCtx,
+                rsc,
+                vlmDfn,
+                ctrlRscLayerDataFactory.isDiskless(rsc) && !ctrlRscLayerDataFactory.isDiskAddRequested(rsc),
+                ctrlRscLayerDataFactory.isDiskRemoving(rsc),
+                false
+            ).extractApiCallRc(new ApiCallRcImpl());
+            if (resolvedStorPool != null)
+            {
+                neededStorPools.add(resolvedStorPool);
+            }
         }
 
         return neededStorPools;
