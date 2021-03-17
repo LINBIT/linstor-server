@@ -1,16 +1,16 @@
 package com.linbit.linstor.transaction;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.linstor.dbdrivers.noop.NoOpMapDatabaseDriver;
 
 import java.util.TreeMap;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class TransactionMapTest
 {
@@ -71,6 +71,36 @@ public class TransactionMapTest
         assertEquals(value2, txMap.get(key));
         assertEquals(1, backingMap.size());
         assertEquals(1, txMap.size());
+    }
+
+    @Test
+    public void simpleCommitPrimitive()
+    {
+        TreeMap<String, String> primBackMap = new TreeMap<>();
+        TransactionMap<String, String> primTxMap = new TransactionMap<>(primBackMap, null, () -> dummyTxMgr);
+
+        String key = "key1";
+        String val = "val1";
+
+        primTxMap.put(key, val);
+        assertTrue(primBackMap.containsKey(key));
+        assertTrue(primTxMap.containsKey(key));
+        assertTrue(primBackMap.containsValue(val));
+        assertTrue(primTxMap.containsValue(val));
+
+        dummyTxMgr.commit();
+        assertTrue(primBackMap.containsKey(key));
+        assertTrue(primTxMap.containsKey(key));
+        assertTrue(primBackMap.containsValue(val));
+        assertTrue(primTxMap.containsValue(val));
+
+        dummyTxMgr.rollback();
+        assertTrue(primBackMap.containsKey(key));
+        assertTrue(primTxMap.containsKey(key));
+        assertTrue(primBackMap.containsValue(val));
+        assertTrue(primTxMap.containsValue(val));
+        assertEquals(1, primBackMap.size());
+        assertEquals(1, primTxMap.size());
     }
 
     @Test

@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class TransactionMap<KEY, VALUE extends TransactionObject>
+public class TransactionMap<KEY, VALUE>
     extends AbsTransactionObject implements Map<KEY, VALUE>
 {
     private MapDatabaseDriver<KEY, VALUE> dbDriver;
@@ -51,7 +51,9 @@ public class TransactionMap<KEY, VALUE extends TransactionObject>
             .forEach(to -> ((TransactionObject) to).setConnection(transMgrRef));
 
         // forward transaction manager on values
-        map.values().forEach(to -> to.setConnection(transMgrRef));
+        map.values().stream()
+            .filter(val -> val instanceof TransactionObject)
+            .forEach(to -> ((TransactionObject) to).setConnection(transMgrRef));
     }
 
     @Override

@@ -74,6 +74,14 @@ public class TransactionObjectFactory
         return createTransactionSet(null, backingSet, null);
     }
 
+    public <KEY, VALUE> TransactionMap<KEY, VALUE> createTransactionPrimitiveMap(
+        Map<KEY, VALUE> mapRef,
+        MapDatabaseDriver<KEY, VALUE> driver
+    )
+    {
+        return new TransactionMap<>(mapRef, driver, transMgrProvider);
+    }
+
     public <PARENT, VALUE extends TransactionObject> TransactionSet<PARENT, VALUE> createTransactionSet(
         PARENT parent,
         Set<VALUE> backingSet,
