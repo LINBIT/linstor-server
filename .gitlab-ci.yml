@@ -105,7 +105,7 @@ test-e2e:
     - |
       SAFE_REF_NAME=${CI_COMMIT_REF_NAME//\//-}
       if docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:$SAFE_REF_NAME ; then
-          TEST_BRANCH=$CI_COMMIT_REF_NAME
+          TEST_BRANCH=$SAFE_REF_NAME
           TEST_BUNDLE_BRANCH=$SAFE_REF_NAME
       else
           docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:latest
