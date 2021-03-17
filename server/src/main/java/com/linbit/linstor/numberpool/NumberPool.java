@@ -44,6 +44,27 @@ public interface NumberPool
     void deallocateAll(int[] nrList);
 
     /**
+     * Returns the size of this number pool. This is the total count of numbers managed by this number pool.
+     *
+     * @return Size of the number pool
+     */
+    int getSize();
+
+    /**
+     * Returns the count of allocated numbers in this number pool
+     *
+     * @return Count of currently allocated numbers
+     */
+    int getAllocatedCount();
+
+    /**
+     * Returns the count of available (unallocated) numbers in this number pool
+     *
+     * @return Count of currently available (unallocated) numbers
+     */
+    int getAvailableCount();
+
+    /**
      * Allocates multiple numbers and returns the allocation result for each of the numbers
      *
      * For each number in the list, allocation is attempted. The method returns a map, where

@@ -60,6 +60,8 @@ public class BitmapPool implements NumberPool
 
     private final LevelDataItem[] levelStack;
 
+    private int allocatedCount;
+
     private BitmapBase rootLevel;
 
     /**
@@ -149,6 +151,8 @@ public class BitmapPool implements NumberPool
             {
                 levelStack = null;
             }
+
+            allocatedCount = 0;
         }
         else
         {
@@ -166,11 +170,45 @@ public class BitmapPool implements NumberPool
         try
         {
             poolInit();
+            allocatedCount = 0;
         }
         finally
         {
             poolWrLock.unlock();
         }
+    }
+
+    /**
+     * Returns the size of this number pool. This is the total count of numbers managed by this number pool.
+     *
+     * @return Size of the number pool
+     */
+    @Override
+    public int getSize()
+    {
+        return poolSize;
+    }
+
+    /**
+     * Returns the count of allocated numbers in this number pool
+     *
+     * @return Count of currently allocated numbers
+     */
+    @Override
+    public int getAllocatedCount()
+    {
+        return allocatedCount;
+    }
+
+    /**
+     * Returns the count of available (unallocated) numbers in this number pool
+     *
+     * @return Count of currently available (unallocated) numbers
+     */
+    @Override
+    public int getAvailableCount()
+    {
+        return poolSize - allocatedCount;
     }
 
     /**
@@ -626,6 +664,7 @@ public class BitmapPool implements NumberPool
                         {
                             allocated = true;
                             quickAllocEmpty(curLevel, nr, lastElem);
+                            ++allocatedCount;
                             break;
                         }
                         // Traverse further by selecting the child element as the current level
@@ -643,6 +682,7 @@ public class BitmapPool implements NumberPool
                         {
                             allocated = true;
                             quickAllocEmpty(curLevel, nr, lastElem);
+                            ++allocatedCount;
                         }
                         else
                         {
@@ -655,18 +695,22 @@ public class BitmapPool implements NumberPool
                                 long nrBitMask = 1L << nrIdx;
                                 // If the number is not allocated yet, it is being allocated now
                                 allocated = (curBm.numbers[subIdx] & nrBitMask) == 0;
-                                // Allocate the number
-                                curBm.numbers[subIdx] |= nrBitMask;
-                                // Update pool used / pool full bits
-                                curBm.subUsedBits |= subBitMask;
-                                if (curBm.numbers[subIdx] == SUBELEMS_EXHAUSTED)
+                                if (allocated)
                                 {
-                                    curBm.subFullBits |= subBitMask;
+                                    // Allocate the number
+                                    curBm.numbers[subIdx] |= nrBitMask;
+                                    // Update pool used / pool full bits
+                                    curBm.subUsedBits |= subBitMask;
+                                    if (curBm.numbers[subIdx] == SUBELEMS_EXHAUSTED)
+                                    {
+                                        curBm.subFullBits |= subBitMask;
+                                    }
+                                    // Update the pool used / pool full bits on intermediate elements
+                                    // on the path to the number bitmap and deallocate any elements
+                                    // that have an exhausted number pool
+                                    allocUpdateLevels(curBm);
+                                    ++allocatedCount;
                                 }
-                                // Update the pool used / pool full bits on intermediate elements
-                                // on the path to the number bitmap and deallocate any elements
-                                // that have an exhausted number pool
-                                allocUpdateLevels(curBm);
                             }
                         }
                         break;
@@ -693,13 +737,17 @@ public class BitmapPool implements NumberPool
                 long nrBitMask = 1L << nrIdx;
                 // If the number is not allocated yet, it is being allocated now
                 allocated = (curBm.numbers[subIdx] & nrBitMask) == 0;
-                // Allocate the number
-                curBm.numbers[subIdx] |= nrBitMask;
-                // Update pool used / pool full bits
-                curBm.subUsedBits |= subBitMask;
-                if (curBm.numbers[subIdx] == SUBELEMS_EXHAUSTED)
+                if (allocated)
                 {
-                    curBm.subFullBits |= subBitMask;
+                    // Allocate the number
+                    curBm.numbers[subIdx] |= nrBitMask;
+                    // Update pool used / pool full bits
+                    curBm.subUsedBits |= subBitMask;
+                    if (curBm.numbers[subIdx] == SUBELEMS_EXHAUSTED)
+                    {
+                        curBm.subFullBits |= subBitMask;
+                    }
+                    ++allocatedCount;
                 }
             }
         }
@@ -758,6 +806,7 @@ public class BitmapPool implements NumberPool
                             // Child element was deallocated because its pool was exhausted, and
                             // the entire hierarchy can be allocated immediately
                             quickAllocFull(curLevel, nr, lastElem);
+                            --allocatedCount;
                         }
                         break;
                     }
@@ -784,24 +833,31 @@ public class BitmapPool implements NumberPool
                             // Number bitmap has been deallocated because it was exhausted, and
                             // the number bitmap can be allocated immediately
                             quickAllocFull(curLevel, nr, lastElem);
+                            --allocatedCount;
                         }
                     }
                     else
                     {
                         subIdx = (nr & MASK_BITMAP) >>> SH_LVL;
                         subBitMask = 1L << subIdx;
-                        // Deallocate the number
-                        curBm.numbers[subIdx] &= ~(1L << (nr & MASK_ELEM));
-                        // Update the pool used / pool full bits
-                        curBm.subFullBits  &= ~subBitMask;
-                        if (curBm.numbers[subIdx] == SUBELEMS_EMPTY)
+                        int nrIdx = nr & MASK_ELEM;
+                        long nrBitMask = 1L << nrIdx;
+                        if ((curBm.numbers[subIdx] & nrBitMask) != 0)
                         {
-                            curBm.subUsedBits &= ~subBitMask;
+                            // Deallocate the number
+                            curBm.numbers[subIdx] &= ~nrBitMask;
+                            // Update the pool used / pool full bits
+                            curBm.subFullBits  &= ~subBitMask;
+                            if (curBm.numbers[subIdx] == SUBELEMS_EMPTY)
+                            {
+                                curBm.subUsedBits &= ~subBitMask;
+                            }
+                            // Update the pool used / pool full bits on intermediate elements
+                            // on the path to the number bitmap and deallocate any elements
+                            // that have an empty number pool
+                            deallocUpdateLevels(curBm);
+                            --allocatedCount;
                         }
-                        // Update the pool used / pool full bits on intermediate elements
-                        // on the path to the number bitmap and deallocate any elements
-                        // that have an empty number pool
-                        deallocUpdateLevels(curBm);
                     }
                 }
                 ++curLevel;
@@ -815,13 +871,17 @@ public class BitmapPool implements NumberPool
             long subBitMask = 1L << subIdx;
             int nrIdx = nr & MASK_ELEM;
             long nrBitMask = 1L << nrIdx;
-            // Deallocate the number
-            curBm.numbers[subIdx] &= ~nrBitMask;
-            // Update pool used / pool full bits
-            curBm.subFullBits &= ~subBitMask;
-            if (curBm.numbers[subIdx] == 0L)
+            if ((curBm.numbers[subIdx] & nrBitMask) != 0)
             {
-                curBm.subUsedBits &= ~subBitMask;
+                // Deallocate the number
+                curBm.numbers[subIdx] &= ~nrBitMask;
+                // Update pool used / pool full bits
+                curBm.subFullBits &= ~subBitMask;
+                if (curBm.numbers[subIdx] == 0L)
+                {
+                    curBm.subUsedBits &= ~subBitMask;
+                }
+                --allocatedCount;
             }
         }
         // Release the references to IntermediateBitmap objects to enable deallocation
@@ -894,6 +954,7 @@ public class BitmapPool implements NumberPool
                                         }
                                     }
                                     quickAllocEmpty(curLevel, nr, lastElem);
+                                    ++allocatedCount;
                                 }
                             }
                             else
@@ -926,6 +987,7 @@ public class BitmapPool implements NumberPool
                                         }
                                     }
                                     quickAllocEmpty(curLevel, nr, lastElem);
+                                    ++allocatedCount;
                                 }
                             }
                             else
@@ -957,6 +1019,7 @@ public class BitmapPool implements NumberPool
                                                         curBm.subFullBits |= subBitMask;
                                                     }
                                                     allocUpdateLevels(curBm);
+                                                    ++allocatedCount;
                                                 }
                                             }
                                             else
@@ -1050,6 +1113,7 @@ public class BitmapPool implements NumberPool
                                         // All numbers in the current cell are allocated
                                         curBm.subFullBits |= subBitMask;
                                     }
+                                    ++allocatedCount;
                                 }
                             }
                             else
