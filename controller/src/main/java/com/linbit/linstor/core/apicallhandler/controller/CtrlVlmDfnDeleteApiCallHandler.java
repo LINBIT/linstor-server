@@ -7,6 +7,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -66,6 +67,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final ResponseConverter responseConverter;
     private final LockGuardFactory lockguardFactory;
     private final Provider<AccessContext> peerAccCtx;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlVlmDfnDeleteApiCallHandler(
@@ -76,7 +78,8 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockguardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -87,6 +90,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         responseConverter = responseConverterRef;
         lockguardFactory = lockguardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     @Override
@@ -146,6 +150,16 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         UUID vlmDfnUuid = vlmDfn.getUuid();
         ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
+        if (backupInfoMgr.containsRscDfn(rscDfn))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE,
+                    rscNameStr + " is currently being restored from a backup. " +
+                        "Please wait until the restore is finished"
+                )
+            );
+        }
 
         Optional<Resource> rscInUse = anyResourceInUsePrivileged(rscDfn);
         if (rscInUse.isPresent())

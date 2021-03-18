@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -49,6 +50,7 @@ public class CtrlVlmApiCallHandler
     private final Provider<Peer> peer;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlVlmApiCallHandler(
@@ -59,7 +61,8 @@ public class CtrlVlmApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         ctrlTransactionHelper = ctrlTransactionHelperRef;
@@ -70,6 +73,7 @@ public class CtrlVlmApiCallHandler
         peer = peerRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     public Flux<ApiCallRc> modify(
@@ -135,6 +139,16 @@ public class CtrlVlmApiCallHandler
                     ApiConsts.FAIL_UUID_VLM,
                     "UUID-check failed"
                 ));
+            }
+            if (backupInfoMgr.containsRscDfn(vlm.getResourceDefinition()))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        rscNameStr + " is currently being restored from a backup. " +
+                            "Please wait until the restore is finished"
+                    )
+                );
             }
 
             Props props = ctrlPropsHelper.getProps(vlm);

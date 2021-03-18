@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -78,6 +79,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     private final ResponseConverter responseConverter;
     private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     CtrlVlmDfnModifyApiCallHandler(
@@ -89,7 +91,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -101,6 +104,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         responseConverter = responseConverterRef;
         rscDfnMapLock = rscDfnMapLockRef;
         peerAccCtx = peerAccCtxRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     @Override
@@ -180,6 +184,16 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 ApiConsts.FAIL_UUID_VLM_DFN,
                 "UUID check failed. Given UUID: " + vlmDfnUuid + ". Persisted UUID: " + vlmDfn.getUuid()
             ));
+        }
+        if (backupInfoMgr.containsRscDfn(vlmDfn.getResourceDefinition()))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE,
+                    rscNameStr + " is currently being restored from a backup. " +
+                        "Please wait until the restore is finished"
+                )
+            );
         }
 
         notifyStlts = ctrlPropsHelper.fillProperties(responses, LinStorObject.VOLUME_DEFINITION, overrideProps,

@@ -21,6 +21,7 @@ import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
@@ -126,6 +127,7 @@ public class CtrlBackupApiCallHandler
     private EncryptionHelper encHelper;
     private CtrlSecurityObjects ctrlSecObj;
     private LengthPadding cryptoLenPad;
+    private BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -146,7 +148,8 @@ public class CtrlBackupApiCallHandler
         CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandlerRef,
         EncryptionHelper encHelperRef,
         CtrlSecurityObjects ctrlSecObjRef,
-        LengthPadding cryptoLenPadRef
+        LengthPadding cryptoLenPadRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -167,6 +170,7 @@ public class CtrlBackupApiCallHandler
         encHelper = encHelperRef;
         ctrlSecObj = ctrlSecObjRef;
         cryptoLenPad = cryptoLenPadRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     public Flux<ApiCallRc> createFullBackup(String rscNameRef) throws AccessDeniedException
@@ -342,7 +346,7 @@ public class CtrlBackupApiCallHandler
         ToDeleteCollections toDelete = new ToDeleteCollections();
         if (rscName.length() != 0)
         {
-            if (snapName.length() != 0)
+            if (snapName.length() != 0 && !backupInfoMgr.containsMetaFile(rscName, snapName))
             {
                 toDelete.s3keys = getKeysFromMeta(rscName + "_" + snapName + ".meta");
                 toDelete.snapKeys = Collections.singleton(
@@ -425,12 +429,12 @@ public class CtrlBackupApiCallHandler
         {
             Matcher mBack = BACKUP_KEY_PATTERN.matcher(s3keyRef);
             Matcher mMeta = META_FILE_PATTERN.matcher(s3keyRef);
-            if (mBack.matches())
+            if (mBack.matches() && !backupInfoMgr.containsMetaFile(mBack.group(1), mBack.group(4)))
             {
                 ret.s3keys.addAll(getKeysFromMeta(mBack.group(1) + "_" + mBack.group(4) + ".meta"));
                 ret.snapKeys.add(toSnapDfnKey(mBack.group(1), mBack.group(4)));
             }
-            else if (mMeta.matches())
+            else if (mMeta.matches() && !backupInfoMgr.containsMetaFile(s3keyRef))
             {
                 ret.s3keys.addAll(getKeysFromMeta(s3keyRef));
                 ret.snapKeys.add(toSnapDfnKey(mMeta.group(1), mMeta.group(2)));
@@ -462,7 +466,10 @@ public class CtrlBackupApiCallHandler
                 String ts = m.group(2).substring(5);
                 try
                 {
-                    if (timestamp.isEmpty() || SDF.parse(timestamp).after(SDF.parse(ts)))
+                    if (
+                        (timestamp.isEmpty() || SDF.parse(timestamp).after(SDF.parse(ts))) &&
+                        !backupInfoMgr.containsMetaFile(s3key)
+                    )
                     {
                         metaKeys.add(s3key);
                         ret.snapKeys.add(toSnapDfnKey(m.group(1), m.group(2)));
@@ -573,6 +580,15 @@ public class CtrlBackupApiCallHandler
             }
         }
         String metaName = srcRscName + "_back_" + SDF.format(latestBackTs) + ".meta";
+        if (backupInfoMgr.containsMetaFile(metaName))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE | ApiConsts.MASK_BACKUP,
+                    "The meta-file " + metaName + " is currently being used in a restore."
+                )
+            );
+        }
         // 3. get meta-file
         try
         {
@@ -711,6 +727,21 @@ public class CtrlBackupApiCallHandler
                         ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
                         "Snapshot " + snapName.displayValue + " already exists, please use snapshot restore instead."
                     )
+                );
+            }
+            else if (backupInfoMgr.containsRscDfn(rscDfn))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE | ApiConsts.MASK_BACKUP,
+                        "A backup is currently being restored to resource definition " + targetRscName + "."
+                    )
+                );
+            }
+            if (!backupInfoMgr.addEntry(rscDfn, metaName))
+            {
+                throw new ImplementationError(
+                    "Tried to overwrite existing backup-info-mgr entry for rscDfn " + targetRscName
                 );
             }
             // 9. create snapDfn
@@ -1164,7 +1195,7 @@ public class CtrlBackupApiCallHandler
                         LinstorParsingUtils.asRscName(rscNameRef),
                         "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
                     )
-                );
+                ).concatWith(postRestore(rscNameRef));
             }
         }
         catch (AccessDeniedException exc)
@@ -1199,6 +1230,7 @@ public class CtrlBackupApiCallHandler
             rsc.getProps(peerAccCtx.get())
                 .removeProp(InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET, ApiConsts.NAMESPC_BACKUP_SHIPPING);
         }
+        backupInfoMgr.removeEntry(rscDfn);
         ctrlTransactionHelper.commit();
         return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty()).transform(
             responses -> CtrlResponseUtils.combineResponses(

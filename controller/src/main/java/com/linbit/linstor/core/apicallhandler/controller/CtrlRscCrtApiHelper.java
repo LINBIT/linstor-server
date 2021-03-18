@@ -12,6 +12,7 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.compat.CompatibilityUtils;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
@@ -107,6 +108,7 @@ public class CtrlRscCrtApiHelper
     private final Provider<CtrlRscAutoHelper> autoHelper;
     private final Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelper;
     private final SharedResourceManager sharedRscMgr;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -125,7 +127,8 @@ public class CtrlRscCrtApiHelper
         CtrlRscLayerDataFactory layerDataHelperRef,
         Provider<CtrlRscAutoHelper> autoHelperRef,
         Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelperRef,
-        SharedResourceManager sharedRscMgrRef
+        SharedResourceManager sharedRscMgrRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -144,6 +147,7 @@ public class CtrlRscCrtApiHelper
         autoHelper = autoHelperRef;
         toggleDiskHelper = toggleDiskHelperRef;
         sharedRscMgr = sharedRscMgrRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     /**
@@ -173,6 +177,16 @@ public class CtrlRscCrtApiHelper
 
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+        if (backupInfoMgr.containsRscDfn(rscDfn))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE,
+                    rscNameStr + " is currently being restored from a backup. " +
+                        "Please wait until the restore is finished"
+                )
+            );
+        }
 
         Resource tiebreaker = autoHelper.get().getTiebreakerResource(nodeNameStr, rscNameStr);
         String storPoolName = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);

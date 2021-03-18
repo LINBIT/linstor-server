@@ -18,6 +18,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMapExtName;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -135,6 +136,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final ResourceControllerFactory resourceControllerFactory;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -165,7 +167,8 @@ public class CtrlRscDfnApiCallHandler
         CtrlRscCrtApiHelper CtrlRscCrtApiHelperRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         ResourceControllerFactory resourceControllerFactoryRef,
-        CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef
+        CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -196,6 +199,7 @@ public class CtrlRscDfnApiCallHandler
         freeCapacityFetcher = freeCapacityFetcherRef;
         resourceControllerFactory = resourceControllerFactoryRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     public ResourceDefinition createResourceDefinition(
@@ -419,6 +423,16 @@ public class CtrlRscDfnApiCallHandler
 
             ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
+            if (backupInfoMgr.containsRscDfn(rscDfn))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        rscNameStr + " is currently being restored from a backup. " +
+                            "Please wait until the restore is finished"
+                    )
+                );
+            }
             if (rscDfnUuid != null && !rscDfnUuid.equals(rscDfn.getUuid()))
             {
                 throw new ApiRcException(ApiCallRcImpl

@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -80,6 +81,8 @@ class CtrlVlmDfnApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
+    private final BackupInfoManager backupInfoMgr;
+
 
     @Inject
     CtrlVlmDfnApiCallHandler(
@@ -98,7 +101,8 @@ class CtrlVlmDfnApiCallHandler
         LengthPadding cryptoLenPadRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -117,6 +121,7 @@ class CtrlVlmDfnApiCallHandler
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     Flux<ApiCallRc> createVolumeDefinitions(
@@ -170,6 +175,16 @@ class CtrlVlmDfnApiCallHandler
             }
 
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+            if (backupInfoMgr.containsRscDfn(rscDfn))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        rscNameStr + " is currently being restored from a backup. " +
+                            "Please wait until the restore is finished"
+                    )
+                );
+            }
 
             Iterator<Resource> iterateResource = getRscIterator(rscDfn);
             List<Resource> rscList = new ArrayList<>();

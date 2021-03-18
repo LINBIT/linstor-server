@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -86,6 +87,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private final ResponseConverter responseConverter;
     private final Provider<AccessContext> peerAccCtx;
     private LockGuardFactory lockGuardFactory;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlSnapshotRollbackApiCallHandler(
@@ -97,7 +99,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -109,6 +112,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     @Override
@@ -158,6 +162,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameStr, snapshotNameStr, true);
         ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
+        ensureNoBackupRestoreRunning(rscDfn);
         ensureMostRecentSnapshot(rscDfn, snapshotDfn);
         ctrlSnapshotHelper.ensureSnapshotSuccessful(snapshotDfn);
         ensureSnapshotsForAllVolumes(rscDfn, snapshotDfn);
@@ -366,6 +371,20 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                 rscName,
                 "Re-activated resource {1} on {0} after rollback"
             ));
+    }
+
+    private void ensureNoBackupRestoreRunning(ResourceDefinition rscDfn)
+    {
+        if (backupInfoMgr.containsRscDfn(rscDfn))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE,
+                    rscDfn.getName().displayValue + " is currently being restored from a backup. " +
+                        "Please wait until the restore is finished"
+                )
+            );
+        }
     }
 
     private void ensureMostRecentSnapshot(ResourceDefinition rscDfn, SnapshotDefinition snapshotDfn)

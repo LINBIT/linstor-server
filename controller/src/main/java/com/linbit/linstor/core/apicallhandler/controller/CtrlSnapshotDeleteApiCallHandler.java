@@ -7,6 +7,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -65,6 +66,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     private final CtrlPropsHelper propsHelper;
     private final ErrorReporter errorReporter;
     private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlSnapshotDeleteApiCallHandler(
@@ -78,7 +80,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlPropsHelper propsHelperRef,
         ErrorReporter errorReporterRef,
-        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef
+        CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -92,6 +95,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         propsHelper = propsHelperRef;
         errorReporter = errorReporterRef;
         snapShipAbortHandler = snapShipAbortHandlerRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     @Override
@@ -142,6 +146,16 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                     ApiConsts.WARN_NOT_FOUND,
                     getSnapshotDfnDescription(snapshotNameStr) + " not found."
             ));
+        }
+        if (backupInfoMgr.containsRscDfn(snapshotDfn.getResourceDefinition()))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE,
+                    getSnapshotDfnDescription(snapshotNameStr) + " is currently being restored from a backup. " +
+                        "Please wait until the restore is finished"
+                )
+            );
         }
 
         ResourceName rscName = snapshotDfn.getResourceName();

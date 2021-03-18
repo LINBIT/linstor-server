@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -76,6 +77,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscAutoHelper autoHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlSnapshotRestoreApiCallHandler(
@@ -90,7 +92,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlRscAutoHelper ctrlRscAutoHelperRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        CtrlPropsHelper ctrlPropsHelperRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -105,6 +108,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         autoHelper = ctrlRscAutoHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     private ResponseContext makeSnapshotRestoreContext(String rscNameStr)
@@ -209,6 +213,17 @@ public class CtrlSnapshotRestoreApiCallHandler
             if (!fromBackup && isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPED))
             {
                 setFlags(toRscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
+            }
+
+            if (!fromBackup && backupInfoMgr.containsRscDfn(toRscDfn))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        fromSnapshotNameStr + " is currently being restored from a backup. " +
+                            "Please wait until the restore is finished"
+                    )
+                );
             }
 
             ctrlSnapshotHelper.ensureSnapshotSuccessful(fromSnapshotDfn);

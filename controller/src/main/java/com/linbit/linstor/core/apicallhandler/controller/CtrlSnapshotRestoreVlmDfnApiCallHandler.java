@@ -7,9 +7,11 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
@@ -50,6 +52,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     CtrlSnapshotRestoreVlmDfnApiCallHandler(
@@ -61,7 +64,8 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -73,6 +77,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     public ApiCallRc restoreVlmDfn(String fromRscNameStr, String fromSnapshotNameStr, String toRscNameStr)
@@ -94,6 +99,17 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
             SnapshotDefinition fromSnapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(fromRscDfn, fromSnapshotName, true);
 
             ResourceDefinition toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscNameStr, true);
+
+            if (backupInfoMgr.containsRscDfn(toRscDfn))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        toRscNameStr + " is currently being restored from a backup. " +
+                            "Please wait until the restore is finished"
+                    )
+                );
+            }
 
             for (SnapshotVolumeDefinition snapshotVlmDfn :
                 fromSnapshotDfn.getAllSnapshotVolumeDefinitions(peerAccCtx.get()))
