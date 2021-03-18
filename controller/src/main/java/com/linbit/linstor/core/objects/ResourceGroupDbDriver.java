@@ -260,6 +260,7 @@ public class ResourceGroupDbDriver
         final Integer replicaCount;
         final List<String> replicasOnSame;
         final List<String> replicasOnDifferent;
+        final Boolean disklessOnRemaining;
 
         try
         {
@@ -276,12 +277,18 @@ public class ResourceGroupDbDriver
                     String replicasOnDifferentStr = raw.get(REPLICAS_ON_DIFFERENT);
                     replicasOnDifferent = replicasOnDifferentStr != null ?
                         new ArrayList<>(OBJ_MAPPER.readValue(replicasOnDifferentStr, List.class)) : null;
+
+                    String disklessOnRemainingStr = raw.get(DISKLESS_ON_REMAINING);
+                    disklessOnRemaining = disklessOnRemainingStr != null ?
+                        Boolean.parseBoolean(disklessOnRemainingStr) : null;
                     break;
                 case SQL:
                     replicaCount = raw.get(REPLICA_COUNT);
 
                     replicasOnSame = raw.getAsStringList(REPLICAS_ON_SAME);
                     replicasOnDifferent = raw.getAsStringList(REPLICAS_ON_DIFFERENT);
+
+                    disklessOnRemaining = raw.get(DISKLESS_ON_REMAINING);
                     break;
                 default:
                     throw new ImplementationError("Unknown database type: " + getDbType());
@@ -291,6 +298,7 @@ public class ResourceGroupDbDriver
         {
             throw new DatabaseException(exc);
         }
+
         return new Pair<>(
             new ResourceGroup(
                 raw.build(UUID, java.util.UUID::fromString),
@@ -306,7 +314,7 @@ public class ResourceGroupDbDriver
                 replicasOnSame,
                 replicasOnDifferent,
                 DatabaseLoader.asDevLayerProviderList(raw.getAsStringList(ALLOWED_PROVIDER_LIST)),
-                raw.get(DISKLESS_ON_REMAINING),
+                disklessOnRemaining,
                 vlmGrpMap,
                 rscDfnMap,
                 this,
