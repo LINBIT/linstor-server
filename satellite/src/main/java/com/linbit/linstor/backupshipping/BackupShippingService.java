@@ -318,6 +318,7 @@ public class BackupShippingService implements SystemService
             if (!alreadyStarted(snapVlmData))
             {
                 killIfRunning(sendRecvCommand);
+                long size = snapVlmData.getAllocatedSize();
 
                 BackupShippingDaemon daemon = new BackupShippingDaemon(
                     errorReporter,
@@ -328,6 +329,7 @@ public class BackupShippingService implements SystemService
                     bucketNameRef,
                     backupHandler,
                     restore,
+                    size,
                     postAction
                 );
                 Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();

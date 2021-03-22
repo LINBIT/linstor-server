@@ -10,6 +10,7 @@ import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
 import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.storage.StorageException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +31,7 @@ public class BackupShippingDaemon implements Runnable
     private final BackupToS3 backupHandler;
     private final String backupName;
     private final String bucketName;
+    private final long volSize;
 
     private final LinkedBlockingDeque<Event> deque;
     private final DaemonHandler handler;
@@ -52,6 +54,7 @@ public class BackupShippingDaemon implements Runnable
         String bucketNameRef,
         BackupToS3 backupHandlerRef,
         boolean restore,
+        long size,
         Consumer<Boolean> afterTerminationRef
     )
     {
@@ -61,6 +64,7 @@ public class BackupShippingDaemon implements Runnable
         afterTermination = afterTerminationRef;
         backupName = backupNameRef;
         backupHandler = backupHandlerRef;
+        volSize = size;
 
         deque = new LinkedBlockingDeque<>(DFLT_DEQUE_CAPACITY);
         handler = new DaemonHandler(deque, command);
@@ -107,7 +111,7 @@ public class BackupShippingDaemon implements Runnable
     {
         try
         {
-            backupHandler.putObject(backupName, cmdProcess.getInputStream(), null);
+            backupHandler.putObjectMultipart(backupName, cmdProcess.getInputStream(), volSize);
             synchronized (syncObj)
             {
                 s3Finished = true;
@@ -118,7 +122,7 @@ public class BackupShippingDaemon implements Runnable
                 }
             }
         }
-        catch (SdkClientException exc)
+        catch (SdkClientException | IOException | StorageException exc)
         {
             synchronized (syncObj)
             {
@@ -149,24 +153,7 @@ public class BackupShippingDaemon implements Runnable
             int read_len = 0;
             while ((read_len = is.read(read_buf)) != -1)
             {
-                if (read_len == 0)
-                {
-                    try
-                    {
-                        do
-                        {
-                            Thread.sleep(10);
-                        }
-                        while (is.available() == 0);
-                    }
-                    catch (InterruptedException ignored)
-                    {
-                    }
-                }
-                else
-                {
-                    os.write(read_buf, 0, read_len);
-                }
+                os.write(read_buf, 0, read_len);
             }
             os.flush();
             Thread.sleep(500);

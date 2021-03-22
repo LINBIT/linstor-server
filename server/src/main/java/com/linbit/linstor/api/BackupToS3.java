@@ -3,12 +3,15 @@ package com.linbit.linstor.api;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.storage.StorageException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -19,13 +22,18 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
+import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.UploadPartRequest;
+import com.amazonaws.services.s3.model.UploadPartResult;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,8 +49,8 @@ public class BackupToS3
         stltConfigAccessor = stltConfigAccessorRef;
     }
 
-    public void putObject(String key, InputStream input, ObjectMetadata metadata)
-        throws SdkClientException, AmazonServiceException
+    public void putObjectMultipart(String key, InputStream input, long maxSize)
+        throws SdkClientException, AmazonServiceException, IOException, StorageException
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
@@ -57,9 +65,64 @@ public class BackupToS3
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
-        s3.putObject(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET), key, input, metadata
+
+        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        long bufferSize = Math.max(5 << 20, (long) (Math.ceil(maxSize / 10000.0) + 1.0));
+        if (bufferSize > Integer.MAX_VALUE)
+        {
+            throw new StorageException(
+                "Can only ship parts up to " + Integer.MAX_VALUE + " bytes." +
+                    " Current shipment would require parts with a size of " + bufferSize + " bytes."
+            );
+        }
+        List<PartETag> parts = new ArrayList<>();
+        InitiateMultipartUploadRequest initReq = new InitiateMultipartUploadRequest(
+            bucket,
+            key
         );
+        InitiateMultipartUploadResult initResp = s3.initiateMultipartUpload(initReq);
+        byte[] readBuf = new byte[(int) bufferSize];
+        int readLen = 0;
+        int offset = 0;
+        int partId = 1;
+        while ((readLen = input.read(readBuf, offset, readBuf.length - offset)) != -1)
+        {
+            offset += readLen;
+            if (readBuf.length == offset)
+            {
+                UploadPartRequest uploadRequest = new UploadPartRequest()
+                    .withBucketName(bucket)
+                    .withKey(key)
+                    .withUploadId(initResp.getUploadId())
+                    .withPartNumber(partId)
+                    .withInputStream(new ByteArrayInputStream(readBuf))
+                    .withPartSize(offset);
+                UploadPartResult uploadResult = s3.uploadPart(uploadRequest);
+                parts.add(uploadResult.getPartETag());
+                offset = 0;
+                partId++;
+            }
+        }
+        if (offset != 0)
+        {
+            UploadPartRequest uploadRequest = new UploadPartRequest()
+                .withBucketName(bucket)
+                .withKey(key)
+                .withUploadId(initResp.getUploadId())
+                .withPartNumber(partId)
+                .withInputStream(new ByteArrayInputStream(readBuf, 0, offset))
+                .withLastPart(true)
+                .withPartSize(offset);
+            UploadPartResult uploadResult = s3.uploadPart(uploadRequest);
+            parts.add(uploadResult.getPartETag());
+        }
+        CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(
+            bucket,
+            key,
+            initResp.getUploadId(),
+            parts
+        );
+        s3.completeMultipartUpload(compRequest);
     }
 
     public void putObject(String key, String content) throws SdkClientException, AmazonServiceException
