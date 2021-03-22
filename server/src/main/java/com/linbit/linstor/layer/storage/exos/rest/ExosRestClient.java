@@ -1,11 +1,11 @@
 package com.linbit.linstor.layer.storage.exos.rest;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.layer.storage.exos.ExosProvider;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse.ExosStatus;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers;
@@ -50,6 +50,10 @@ import io.sentry.util.Objects;
 
 public class ExosRestClient
 {
+    public static final String EXOS_POOL_NAME = InternalApiConsts.NAMESPC_EXOS + "/PoolName";
+    public static final String EXOS_POOL_SERIAL_NUMBER = ApiConsts.NAMESPC_EXOS + "/" +
+        ApiConsts.KEY_STOR_POOL_EXOS_POOL_SN;
+
     private static final MessageDigest SHA_256;
 
     private static final String API_LOGIN = "/login";
@@ -179,7 +183,7 @@ public class ExosRestClient
         throws InvalidKeyException, StorageException, AccessDeniedException
     {
         PriorityProps prioProps = getprioProps(storPoolRef);
-        String poolSn = storPoolRef.getProps(sysCtx).getProp(ExosProvider.EXOS_POOL_SERIAL_NUMBER);
+        String poolSn = storPoolRef.getProps(sysCtx).getProp(EXOS_POOL_SERIAL_NUMBER);
 
         ExosRestPoolCollection poolsCollection = simpleGetRequest(
             "/show/pools",
