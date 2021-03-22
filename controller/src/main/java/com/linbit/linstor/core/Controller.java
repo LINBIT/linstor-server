@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlConfigModule;
+import com.linbit.linstor.core.exos.ExosEnclosurePingTask;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
@@ -75,6 +76,7 @@ import com.linbit.utils.InjectorLoader;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -149,6 +151,7 @@ public final class Controller
     private final WhitelistProps whitelistProps;
 
     private final RetryResourcesTask retryResourcesTask;
+    private final ExosEnclosurePingTask exosPingTask;
 
     private final CtrlConfig ctrlCfg;
 
@@ -182,6 +185,7 @@ public final class Controller
         LogArchiveTask logArchiveTaskRef,
         AutoSnapshotTask autoSnapshotTaskRef,
         AutoDiskfulTask autoDiskfulTaskRef,
+        ExosEnclosurePingTask exosPingTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
         OpenFlexTargetProcessManager openFlexTargetProcessManagerRef,
@@ -213,6 +217,7 @@ public final class Controller
         updateSpaceInfoTask = updateSpaceInfoTaskRef;
         autoSnapshotTask = autoSnapshotTaskRef;
         autoDiskfulTask = autoDiskfulTaskRef;
+        exosPingTask = exosPingTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
         openflexTargetProcessManager = openFlexTargetProcessManagerRef;
@@ -272,6 +277,7 @@ public final class Controller
             taskScheduleService.addTask(autoSnapshotTask);
             taskScheduleService.addTask(autoDiskfulTask);
             taskScheduleService.addTask(updateSpaceInfoTask);
+            taskScheduleService.addTask(exosPingTask);
 
             systemServicesMap.put(controllerDb.getInstanceName(), controllerDb);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);

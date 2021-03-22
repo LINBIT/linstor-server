@@ -2,7 +2,6 @@ package com.linbit.linstor.layer.storage.exos;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -84,10 +83,6 @@ import com.google.common.base.Objects;
 @Singleton
 public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Resource>, ExosData<Snapshot>>
 {
-    public static final String EXOS_POOL_NAME = InternalApiConsts.NAMESPC_EXOS + "/PoolName";
-    public static final String EXOS_POOL_SERIAL_NUMBER =
-        ApiConsts.NAMESPC_EXOS + "/" + ApiConsts.KEY_STOR_POOL_EXOS_POOL_SN;
-
     private static final int MAX_LSSCSI_RETRY_COUNT = 10;
 
     private static final String ALL_OTHER_INITIATORS = "all other initiators";

@@ -141,7 +141,7 @@ public class CtrlConfApiCallHandler
         autoDiskfulTask = autoDiskfulTaskRef;
     }
 
-    private void updateSatelliteConf() throws AccessDeniedException
+    public void updateSatelliteConf() throws AccessDeniedException
     {
         for (Node nodeToContact : nodesMap.values())
         {

@@ -9,12 +9,14 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse.ExosStatus;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers;
+import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestEventsCollection;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestInitiators;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestMaps.ExosVolumeView;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPoolCollection;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPoolCollection.ExosRestPool;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestPorts;
+import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestSystemCollection;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestVolumesCollection;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestVolumesCollection.ExosRestVolume;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -63,7 +65,7 @@ public class ExosRestClient
 
     private static final long LOGIN_TIMEOUT = 29 * 60 * 1000; // 29 min in ms
 
-    private static final String[] CONTROLLERS = new String[] { "A", "B" };
+    public static final String[] CONTROLLERS = new String[] { "A", "B" };
     static final String KEY_API_IP = ApiConsts.KEY_STOR_POOL_EXOS_API_IP;
     static final String KEY_API_IP_ENV = ApiConsts.KEY_STOR_POOL_EXOS_API_IP_ENV;
     static final String KEY_API_PORT = ApiConsts.KEY_STOR_POOL_EXOS_API_PORT;
@@ -72,7 +74,6 @@ public class ExosRestClient
     static final String KEY_API_PASS = ApiConsts.KEY_STOR_POOL_EXOS_API_PASSWORD;
     static final String KEY_API_PASS_ENV = ApiConsts.KEY_STOR_POOL_EXOS_API_PASSWORD_ENV;
     static final String VLM_TYPE = ApiConsts.KEY_STOR_POOL_EXOS_VLM_TYPE;
-
 
     private static final Pair<String, String>[] REQ_KEY_SUFFIXES = new Pair[] {
         new Pair<>(CONTROLLERS[0] + "/" + KEY_API_IP, CONTROLLERS[0] + "/" + KEY_API_IP_ENV),
@@ -95,7 +96,6 @@ public class ExosRestClient
 
     private final RestHttpClient restClient;
     private final AccessContext sysCtx;
-    private final StltConfigAccessor stltConfigAccessor;
     private final ErrorReporter errorReporter;
     private final String enclosureName;
     private final Map<String, Long> lastLoginTimestamp = new HashMap<>();
@@ -106,8 +106,11 @@ public class ExosRestClient
     private final String baseEnclosureKey;
     private final String[] baseNamespace;
     private final String[] baseAndCtrlNamespace;
+    private Props props;
 
-
+    /*
+     * Should be used by the satellite
+     */
     public ExosRestClient(
         AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
@@ -115,9 +118,22 @@ public class ExosRestClient
         String enclosureNameRef
     )
     {
+        this(sysCtxRef, errorReporterRef, stltConfigAccessorRef.getReadonlyProps(), enclosureNameRef);
+    }
+
+    /*
+     * Should be used by the controller
+     */
+    public ExosRestClient(
+        AccessContext sysCtxRef,
+        ErrorReporter errorReporterRef,
+        Props propsRef,
+        String enclosureNameRef
+    )
+    {
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
-        stltConfigAccessor = stltConfigAccessorRef;
+        props = propsRef;
         Objects.requireNonNull(enclosureNameRef);
         enclosureName = enclosureNameRef;
         restClient = new RestHttpClient(errorReporterRef);
@@ -306,7 +322,24 @@ public class ExosRestClient
         return simpleGetRequest("/show/initiator", getprioProps(), ExosRestInitiators.class).getData();
     }
 
-    private <T extends ExosRestBaseResponse> RestResponse<T> simpleGetRequest(
+    public ExosRestSystemCollection showSystem() throws StorageException, AccessDeniedException
+    {
+        return simpleGetRequest("/show/system", getprioProps(), ExosRestSystemCollection.class).getData();
+    }
+
+    public ExosRestEventsCollection showEvents(int count) throws StorageException, AccessDeniedException
+    {
+        return simpleGetRequest("/show/events/both/last/" + count, getprioProps(), ExosRestEventsCollection.class)
+            .getData();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> exec(String url) throws StorageException, AccessDeniedException
+    {
+        return simpleGetRequest(url, getprioProps(), Map.class).getData();
+    }
+
+    private <T> RestResponse<T> simpleGetRequest(
         String relativeUrl,
         PriorityProps prioProps,
         Class<T> responseClass
@@ -316,7 +349,7 @@ public class ExosRestClient
         return simpleGetRequest(relativeUrl, prioProps, responseClass, false);
     }
 
-    private <T extends ExosRestBaseResponse> RestResponse<T> simpleGetRequest(
+    private <T> RestResponse<T> simpleGetRequest(
         String relativeUrl,
         PriorityProps prioProps,
         Class<T> responseClass,
@@ -416,17 +449,21 @@ public class ExosRestClient
         }
 
         T data = response.getData();
-        for (ExosStatus status : data.status)
+        if (data instanceof ExosRestBaseResponse)
         {
-            if (status.responseTypeNumeric == ExosStatus.STATUS_ERROR)
+            ExosRestBaseResponse exosBaseData = (ExosRestBaseResponse) data;
+            for (ExosStatus status : exosBaseData.status)
             {
-                throw new StorageException(
-                    "GET request failed: " + url + "\nResponse: " + status.response,
-                    null,
-                    null,
-                    null,
-                    getDetails(headers)
-                );
+                if (status.responseTypeNumeric == ExosStatus.STATUS_ERROR)
+                {
+                    throw new StorageException(
+                        "GET request failed: " + url + "\nResponse: " + status.response,
+                        null,
+                        null,
+                        null,
+                        getDetails(headers)
+                    );
+                }
             }
         }
 
@@ -540,12 +577,12 @@ public class ExosRestClient
 
     private PriorityProps getprioProps(StorPool sp) throws AccessDeniedException
     {
-        return new PriorityProps(sp.getProps(sysCtx), localNodeProps, stltConfigAccessor.getReadonlyProps());
+        return new PriorityProps(sp.getProps(sysCtx), localNodeProps, props);
     }
 
     private PriorityProps getprioProps() throws AccessDeniedException
     {
-        return new PriorityProps(localNodeProps, stltConfigAccessor.getReadonlyProps());
+        return new PriorityProps(localNodeProps, props);
     }
 
     private String getProp(PriorityProps prioProps, String key)
@@ -642,5 +679,4 @@ public class ExosRestClient
         }
         return hasProp;
     }
-
 }

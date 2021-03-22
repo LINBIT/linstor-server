@@ -12,6 +12,10 @@ import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
+import com.linbit.linstor.api.pojo.ExosConnectionMapPojo;
+import com.linbit.linstor.api.pojo.ExosDefaultsPojo;
+import com.linbit.linstor.api.pojo.ExosEnclosureEventPojo;
+import com.linbit.linstor.api.pojo.ExosEnclosureHealthPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
@@ -22,6 +26,7 @@ import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ExosDefaults;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceApi;
@@ -998,6 +1003,59 @@ public class Json
         vlmGrp.uuid = vlmGrpApi.getUUID().toString();
         vlmGrp.flags = FlagsHelper.toStringList(VolumeGroup.Flags.class, vlmGrpApi.getFlags());
         return vlmGrp;
+    }
+
+    public static ExosDefaults apiToExosDefaults(ExosDefaultsPojo pojo)
+    {
+        JsonGenTypes.ExosDefaults json = new JsonGenTypes.ExosDefaults();
+        json.password = pojo.getPassword();
+        json.password_env = pojo.getPasswordEnv();
+        json.username = pojo.getUsername();
+        json.username_env = pojo.getUsernameEnv();
+        return json;
+    }
+
+    public static JsonGenTypes.ExosEnclosureHealth apiToExosEnclosure(
+        ExosEnclosureHealthPojo pojo
+    )
+    {
+        JsonGenTypes.ExosEnclosureHealth json = new JsonGenTypes.ExosEnclosureHealth();
+        json.name = pojo.getEnclosureName();
+        json.ctrl_a_ip = pojo.getCtrlAIp();
+        json.ctrl_b_ip = pojo.getCtrlBIp();
+        json.health = pojo.getHealth();
+        json.health_reason = pojo.getHealthReason();
+
+        return json;
+    }
+
+    public static JsonGenTypes.ExosEnclosureEvent apiToExosEnclosureEvent(
+        ExosEnclosureEventPojo pojo
+    )
+    {
+        JsonGenTypes.ExosEnclosureEvent json = new JsonGenTypes.ExosEnclosureEvent();
+        json.additional_information = pojo.getAdditionalInformation();
+        json.controller = pojo.getController();
+        json.event_id = pojo.getExosEventId();
+        json.message = pojo.getMessage();
+        json.recommended_action = pojo.getRecommendedAction();
+        json.severity = pojo.getSeverity();
+        json.time_stamp = pojo.getTimeStampStr();
+        json.time_stamp_numeric = pojo.getTimeStampNumeric();
+
+        return json;
+    }
+
+    public static JsonGenTypes.ExosConnectionMap apiToExosConnectionMap(
+        ExosConnectionMapPojo pojo
+    )
+    {
+        JsonGenTypes.ExosConnectionMap json = new JsonGenTypes.ExosConnectionMap();
+        json.node_name = pojo.getNodeName();
+        json.enclosure_name = pojo.getEnclosureName();
+        json.connections = pojo.getConnections();
+
+        return json;
     }
 
     private Json()

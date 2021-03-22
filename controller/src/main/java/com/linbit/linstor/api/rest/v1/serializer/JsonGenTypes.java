@@ -1253,6 +1253,80 @@ public class JsonGenTypes
         public Boolean may_promote;
     }
 
+    /**
+     * Default settings for EXOS enclosures
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ExosDefaults
+    {
+        public String username;
+        public String username_env;
+        public String password;
+        public String password_env;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ExosDefaultsModify
+        extends ExosDefaults
+    {
+        /**
+         * A list of keys to unset. The keys have to exist in ExosDefaults
+         */
+        public List<String> unset_keys = Collections.emptyList();
+    }
+
+    /**
+     * EXOS enclosure name, controller IPs and health status
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ExosEnclosureHealth
+    {
+        public String name;
+        public String ctrl_a_ip;
+        public String ctrl_b_ip;
+        public String health;
+        public String health_reason;
+    }
+
+    /**
+     * EXOS enclosure
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ExosEnclosure
+    {
+        public String name;
+        public String ctrl_a_ip;
+        public String ctrl_b_ip;
+        public String username;
+        public String username_env;
+        public String password;
+        public String password_env;
+    }
+
+    /**
+     * EXOS event
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ExosEnclosureEvent
+    {
+        public String severity;
+        public String event_id;
+        public String controller;
+        public String time_stamp;
+        public Long time_stamp_numeric;
+        public String message;
+        public String additional_information;
+        public String recommended_action;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ExosConnectionMap
+    {
+        public String node_name;
+        public String enclosure_name;
+        public List<String> connections = Collections.emptyList();
+    }
+
     private JsonGenTypes()
     {
     }
