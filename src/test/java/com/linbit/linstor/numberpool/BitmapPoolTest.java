@@ -18,6 +18,19 @@ public class BitmapPoolTest
 {
     @Test
     @Parameters(method = "poolConfigurations")
+    public void testConstruction(PoolConfiguration poolConfiguration)
+    {
+        final int size = poolConfiguration.getSize();
+        BitmapPool bitmapPool = new BitmapPool(size);
+
+        assertThat(bitmapPool.getSize()).as("size check").isEqualTo(size);
+        assertThat(bitmapPool.getAvailableCount()).as("available count check").isEqualTo(size);
+        assertThat(bitmapPool.getAllocatedCount()).as("allocation count check").isEqualTo(0);
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isTrue();
+    }
+
+    @Test
+    @Parameters(method = "poolConfigurations")
     public void testAllocate(PoolConfiguration poolConfiguration)
     {
         BitmapPool bitmapPool = new BitmapPool(poolConfiguration.getSize());
@@ -27,6 +40,11 @@ public class BitmapPoolTest
 
         assertThat(bitmapPool.isAllocated(poolConfiguration.getOffset()))
             .as("isAllocated").isTrue();
+
+        assertThat(bitmapPool.getAllocatedCount()).as("allocation count check").isEqualTo(1);
+        assertThat(bitmapPool.getAvailableCount()).as("available count check")
+            .isEqualTo(poolConfiguration.getSize() - 1);
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isFalse();
     }
 
     @Test
@@ -39,6 +57,11 @@ public class BitmapPoolTest
 
         boolean allocated = bitmapPool.allocate(poolConfiguration.getOffset());
         assertThat(allocated).as("second allocate return value").isFalse();
+        assertThat(bitmapPool.getAllocatedCount()).as("allocation count check after double allocation")
+            .isEqualTo(1);
+        assertThat(bitmapPool.getAvailableCount()).as("available count check after double allocation")
+            .isEqualTo(poolConfiguration.getSize() - 1);
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isFalse();
     }
 
     @Test
@@ -56,6 +79,11 @@ public class BitmapPoolTest
 
         assertThat(bitmapPool.isAllocated(poolConfiguration.getOffset()))
             .as("isAllocated after").isFalse();
+        assertThat(bitmapPool.getAvailableCount())
+            .as("available count check").isEqualTo(poolConfiguration.getSize());
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isTrue();
+
+
     }
 
     @Test
@@ -72,6 +100,11 @@ public class BitmapPoolTest
             assertThat(bitmapPool.isAllocated(nr))
                 .as("isAllocated 0x%x", nr).isTrue();
         }
+        final int rangeSize = poolConfiguration.getRangeEnd() - poolConfiguration.getRangeStart() + 1;
+        assertThat(bitmapPool.getAllocatedCount()).as("allocation count check").isEqualTo(rangeSize);
+        assertThat(bitmapPool.getAvailableCount()).as("available count check")
+            .isEqualTo(poolConfiguration.getSize() - rangeSize);
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isFalse();
 
         if (poolConfiguration.getRangeStart() > 0)
         {
@@ -102,6 +135,12 @@ public class BitmapPoolTest
             assertThat(bitmapPool.isAllocated(nr))
                 .as("isAllocated 0x%x", nr).isFalse();
         }
+        assertThat(bitmapPool.getAllocatedCount() == 0)
+            .as("allocation count check").isTrue();
+        assertThat(bitmapPool.getAvailableCount() == poolConfiguration.getSize())
+            .as("available count check").isTrue();
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isTrue();
+
     }
 
     @Test
@@ -141,6 +180,11 @@ public class BitmapPoolTest
 
         assertThat(bitmapPool.findUnallocated(poolConfiguration.getRangeStart(), poolConfiguration.getRangeEnd()))
             .isEqualTo(poolConfiguration.getRangeStart() + 1);
+
+        assertThat(bitmapPool.getAllocatedCount()).as("allocation count check").isEqualTo(1);
+        assertThat(bitmapPool.getAvailableCount()).as("available count check")
+            .isEqualTo(poolConfiguration.getSize() - 1);
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isFalse();
     }
 
     @Test(expected = ExhaustedPoolException.class)
@@ -170,6 +214,11 @@ public class BitmapPoolTest
             poolConfiguration.getRangeEnd(),
             poolConfiguration.getOffset())
         ).isEqualTo(poolConfiguration.getOffset() + 1);
+
+        assertThat(bitmapPool.getAllocatedCount()).as("allocation count check").isEqualTo(1);
+        assertThat(bitmapPool.getAvailableCount()).as("available count check")
+            .isEqualTo(poolConfiguration.getSize() - 1);
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isFalse();
     }
 
     @Test
@@ -189,6 +238,11 @@ public class BitmapPoolTest
 
         assertThat(allocated).isEqualTo(expected);
         assertThat(bitmapPool.isAllocated(expected)).as("isAllocated after").isTrue();
+
+        assertThat(bitmapPool.getAllocatedCount()).as("allocation count check").isEqualTo(2);
+        assertThat(bitmapPool.getAvailableCount()).as("available count check")
+            .isEqualTo(poolConfiguration.getSize() - 2);
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isFalse();
     }
 
     @Test
@@ -211,6 +265,11 @@ public class BitmapPoolTest
 
         assertThat(allocated).isEqualTo(expected);
         assertThat(bitmapPool.isAllocated(expected)).as("isAllocated after").isTrue();
+
+        assertThat(bitmapPool.getAllocatedCount()).as("allocation count check").isEqualTo(2);
+        assertThat(bitmapPool.getAvailableCount()).as("available count check")
+            .isEqualTo(poolConfiguration.getSize() - 2);
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isFalse();
     }
 
 
@@ -230,6 +289,11 @@ public class BitmapPoolTest
             assertThat(bitmapPool.isAllocated(nr))
                 .as("isAllocated 0x%x", nr).isFalse();
         }
+
+        assertThat(bitmapPool.getAllocatedCount()).as("allocation count check").isEqualTo(0);
+        assertThat(bitmapPool.getAvailableCount()).as("available count check")
+            .isEqualTo(poolConfiguration.getSize());
+        assertThat(bitmapPool.isEmpty()).as("isEmpty check").isTrue();
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
