@@ -960,7 +960,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     {
         List<String> prefixedList = new ArrayList<>();
 
-        if (vlmRef.getAbsResource().getStateFlags().isSet(wrkCtx, Resource.Flags.INACTIVE))
+        if (!vlmRef.getAbsResource().getStateFlags().isSet(wrkCtx, Resource.Flags.INACTIVE))
         {
             // if resource is inactive, prefixedList stays empty. this will effectively clear the volume props-namespace
             // of the symlinks
