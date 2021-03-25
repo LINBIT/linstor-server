@@ -5,7 +5,6 @@ Section: admin
 Priority: optional
 Build-Depends: debhelper (>= 9),
                default-jdk-headless,
-               dh-systemd,
                gradle (>= 4.4.1),
                python3-all (>= 3.5)
 Standards-Version: 3.9.6
