@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import io.sentry.util.Objects;
 
 public class ExosRestClient
@@ -363,11 +364,13 @@ public class ExosRestClient
         }
 
         StorageException exc = null;
+        JsonParseException jsonParseExc = null;
         RestResponse<T> response = null;
         String url = null;
         Map<String, String> headers = null;
-        for (String ctrl : CONTROLLERS)
+        for (int ctrlIdx = 0; ctrlIdx < CONTROLLERS.length; ctrlIdx++)
         {
+            String ctrl = CONTROLLERS[ctrlIdx];
             if (!inLogin)
             {
                 ensureLoggedIn(prioProps, ctrl);
@@ -408,6 +411,24 @@ public class ExosRestClient
                     }
                     exc = null;
                     break;
+                }
+                catch (JsonParseException parseExc)
+                {
+                    if (
+                        jsonParseExc != null ||
+                        !parseExc.getRequestPayloadAsString().toLowerCase().contains("internal server error")
+                    )
+                    {
+                        exc = new StorageException("Failed to parse JSON", parseExc);
+                    }
+                    else
+                    {
+                        errorReporter.logTrace("parse exception, trying to re-login...");
+                        errorReporter.reportError(parseExc);
+                        lastLoginTimestamp.put(ctrl, -1L);
+                        ctrlIdx--;
+                    }
+                    jsonParseExc = parseExc;
                 }
                 catch (IOException ioExc)
                 {
