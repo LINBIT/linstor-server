@@ -12,6 +12,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -156,6 +157,7 @@ public class Backups
     }
 
     @DELETE
+    @Consumes(MediaType.APPLICATION_JSON)
     public void deleteBackup(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,

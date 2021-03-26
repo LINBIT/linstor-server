@@ -29,6 +29,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
@@ -216,8 +217,7 @@ public class GrizzlyHttpService implements SystemService
             }
 
             enableCompression(httpsServer);
-            addUiStaticHandler(httpsServer);
-            httpsServer.getHttpHandler().setAllowEncodedSlash(true);
+            httpsServer.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
         }
         else
         {
@@ -276,6 +276,7 @@ public class GrizzlyHttpService implements SystemService
         if (httpServer != null)
         {
             enableCompression(httpServer);
+            httpServer.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
         }
     }
 
