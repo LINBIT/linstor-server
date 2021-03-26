@@ -141,13 +141,6 @@ public abstract class AbsSnapLayerHelper<
         }
 
         SNAP_LO snapData;
-        if (
-            parentRef == null && snapRef.getLayerData(apiCtx) == null ||
-                parentRef != null && parentRef.getChildBySuffix(rscNameSuffix) == null
-        )
-        {
-            snapData = restoreSnapDataImpl(snapRef, rscLayerDataApiRef, parentRef, renameStorPoolMapRef);
-        }
         if (parentRef == null)
         {
             if (snapRef.getLayerData(apiCtx) == null)

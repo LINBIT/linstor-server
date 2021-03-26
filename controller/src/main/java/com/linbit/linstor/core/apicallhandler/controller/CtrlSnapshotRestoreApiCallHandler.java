@@ -215,7 +215,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 setFlags(toRscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
             }
 
-            if (!fromBackup && backupInfoMgr.containsRscDfn(toRscDfn))
+            if (!fromBackup && backupInfoMgr.restoreContainsRscDfn(toRscDfn))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

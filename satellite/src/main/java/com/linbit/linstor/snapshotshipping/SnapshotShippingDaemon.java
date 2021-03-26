@@ -71,6 +71,7 @@ public class SnapshotShippingDaemon implements Runnable
                     false
                 )
             );
+            shutdown();
         }
     }
 

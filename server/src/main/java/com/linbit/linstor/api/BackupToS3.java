@@ -22,6 +22,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
@@ -49,7 +50,31 @@ public class BackupToS3
         stltConfigAccessor = stltConfigAccessorRef;
     }
 
-    public void putObjectMultipart(String key, InputStream input, long maxSize)
+    public String initMultipart(String key)
+    {
+        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+        );
+
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
+            new EndpointConfiguration(
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+            )
+        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+            .build();
+
+        InitiateMultipartUploadRequest initReq = new InitiateMultipartUploadRequest(
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET),
+            key
+        );
+        InitiateMultipartUploadResult initResp = s3.initiateMultipartUpload(initReq);
+        return initResp.getUploadId();
+    }
+
+    public void putObjectMultipart(String key, InputStream input, long maxSize, String uploadId)
         throws SdkClientException, AmazonServiceException, IOException, StorageException
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
@@ -76,11 +101,7 @@ public class BackupToS3
             );
         }
         List<PartETag> parts = new ArrayList<>();
-        InitiateMultipartUploadRequest initReq = new InitiateMultipartUploadRequest(
-            bucket,
-            key
-        );
-        InitiateMultipartUploadResult initResp = s3.initiateMultipartUpload(initReq);
+
         byte[] readBuf = new byte[(int) bufferSize];
         int readLen = 0;
         int offset = 0;
@@ -93,7 +114,7 @@ public class BackupToS3
                 UploadPartRequest uploadRequest = new UploadPartRequest()
                     .withBucketName(bucket)
                     .withKey(key)
-                    .withUploadId(initResp.getUploadId())
+                    .withUploadId(uploadId)
                     .withPartNumber(partId)
                     .withInputStream(new ByteArrayInputStream(readBuf))
                     .withPartSize(offset);
@@ -108,7 +129,7 @@ public class BackupToS3
             UploadPartRequest uploadRequest = new UploadPartRequest()
                 .withBucketName(bucket)
                 .withKey(key)
-                .withUploadId(initResp.getUploadId())
+                .withUploadId(uploadId)
                 .withPartNumber(partId)
                 .withInputStream(new ByteArrayInputStream(readBuf, 0, offset))
                 .withLastPart(true)
@@ -119,10 +140,34 @@ public class BackupToS3
         CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(
             bucket,
             key,
-            initResp.getUploadId(),
+            uploadId,
             parts
         );
         s3.completeMultipartUpload(compRequest);
+    }
+
+    public void abortMultipart(String key, String uploadId) throws SdkClientException, AmazonServiceException
+    {
+        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+        );
+
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
+            new EndpointConfiguration(
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
+                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+            )
+        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+            .build();
+
+        AbortMultipartUploadRequest abortReq = new AbortMultipartUploadRequest(
+            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET),
+            key,
+            uploadId
+        );
+        s3.abortMultipartUpload(abortReq);
     }
 
     public void putObject(String key, String content) throws SdkClientException, AmazonServiceException

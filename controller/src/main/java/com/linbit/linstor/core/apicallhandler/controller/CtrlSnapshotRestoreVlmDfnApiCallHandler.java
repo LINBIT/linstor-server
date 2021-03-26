@@ -100,7 +100,7 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
 
             ResourceDefinition toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscNameStr, true);
 
-            if (backupInfoMgr.containsRscDfn(toRscDfn))
+            if (backupInfoMgr.restoreContainsRscDfn(toRscDfn))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

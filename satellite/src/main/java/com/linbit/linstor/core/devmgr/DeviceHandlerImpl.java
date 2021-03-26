@@ -549,7 +549,6 @@ public class DeviceHandlerImpl implements DeviceHandler
     {
         Map<ResourceName, List<Snapshot>> snapshotsByResourceName = unprocessedSnapshots.stream()
             .collect(Collectors.groupingBy(Snapshot::getResourceName));
-
         /*
          *  We cannot use the .process(Resource, List<Snapshot>, ApiCallRc) method as we do not have a
          *  resource. The resource is used for determining which DeviceLayer to use, thus would result in
@@ -609,6 +608,26 @@ public class DeviceHandlerImpl implements DeviceHandler
                     .setDetails(exc.getDetailsText())
                     .addErrorId(errorId)
                     .build()
+                );
+            }
+            catch (RuntimeException exc)
+            {
+                String errorId = errorReporter.reportError(
+                    exc,
+                    null,
+                    null,
+                    "An error occurred while processing resource '" + entry.getKey() + "'"
+                );
+
+                apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                    ApiCallRcImpl
+                        .entryBuilder(
+                            // TODO maybe include a ret-code into the exception
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            exc.getMessage()
+                        )
+                        .addErrorId(errorId)
+                        .build()
                 );
             }
             notificationListener.get().notifyResourceDispatchResponse(entry.getKey(), apiCallRc);

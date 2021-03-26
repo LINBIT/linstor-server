@@ -140,7 +140,7 @@ public class CtrlVlmApiCallHandler
                     "UUID-check failed"
                 ));
             }
-            if (backupInfoMgr.containsRscDfn(vlm.getResourceDefinition()))
+            if (backupInfoMgr.restoreContainsRscDfn(vlm.getResourceDefinition()))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

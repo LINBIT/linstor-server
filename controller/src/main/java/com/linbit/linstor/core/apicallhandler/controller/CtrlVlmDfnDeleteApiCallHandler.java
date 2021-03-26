@@ -150,7 +150,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         UUID vlmDfnUuid = vlmDfn.getUuid();
         ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
-        if (backupInfoMgr.containsRscDfn(rscDfn))
+        if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(

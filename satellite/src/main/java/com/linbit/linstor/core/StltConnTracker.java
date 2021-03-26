@@ -2,35 +2,44 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.SatellitePeerCtx;
 import com.linbit.linstor.event.EventBroker;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.ExceptionThrowingRunnable;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Objects;
 
 @Singleton
-class StltConnTracker implements ConnectionObserver
+public class StltConnTracker implements ConnectionObserver
 {
     private final CoreModule.PeerMap peerMap;
     private final EventBroker eventBroker;
     private final ControllerPeerConnector controllerPeerConnector;
-    private final DeviceManager devMgr;
+    private final Provider<DeviceManager> devMgrProvider;
+    private final ArrayList<ExceptionThrowingRunnable<StorageException>> closingListeners = new ArrayList<>();
+    private final ErrorReporter errorReporter;
 
     @Inject
     StltConnTracker(
         CoreModule.PeerMap peerMapRef,
         EventBroker eventBrokerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
-        DeviceManager devMgrRef
+        Provider<DeviceManager> devMgrProviderRef,
+        ErrorReporter errorReporterRef
     )
     {
         peerMap = peerMapRef;
         eventBroker = eventBrokerRef;
         controllerPeerConnector = controllerPeerConnectorRef;
-        devMgr = devMgrRef;
+        devMgrProvider = devMgrProviderRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -85,7 +94,7 @@ class StltConnTracker implements ConnectionObserver
         {
             if (Objects.equals(connPeer, controllerPeerConnector.getControllerPeer()))
             {
-                devMgr.controllerConnectionLost();
+                devMgrProvider.get().controllerConnectionLost();
             }
             eventBroker.connectionClosed(connPeer);
 
@@ -93,6 +102,28 @@ class StltConnTracker implements ConnectionObserver
             {
                 peerMap.remove(connPeer.getId());
             }
+            synchronized (closingListeners)
+            {
+                for (ExceptionThrowingRunnable<StorageException> closingListener : closingListeners)
+                {
+                    try
+                    {
+                        closingListener.run();
+                    }
+                    catch (StorageException exc)
+                    {
+                        errorReporter.reportError(exc);
+                    }
+                }
+            }
+        }
+    }
+
+    public void addClosingListener(ExceptionThrowingRunnable<StorageException> run)
+    {
+        synchronized (closingListeners)
+        {
+            closingListeners.add(run);
         }
     }
 }

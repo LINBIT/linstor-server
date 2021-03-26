@@ -20,6 +20,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Consumer;
 
 import com.amazonaws.SdkClientException;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 
 public class BackupShippingDaemon implements Runnable
 {
@@ -37,11 +38,12 @@ public class BackupShippingDaemon implements Runnable
     private final DaemonHandler handler;
     private final Object syncObj = new Object();
 
-    private boolean started = false;
+    private boolean running = false;
     private Process cmdProcess;
-    private boolean s3Finished = false;
-    private boolean cmdFinished = false;
-    private boolean success = true;
+    private boolean afterTerminationSent = false;
+    private boolean doneFirst = true;
+    private boolean restore;
+    private String uploadId = null;
 
     private final Consumer<Boolean> afterTermination;
 
@@ -53,7 +55,7 @@ public class BackupShippingDaemon implements Runnable
         String backupNameRef,
         String bucketNameRef,
         BackupToS3 backupHandlerRef,
-        boolean restore,
+        boolean restoreRef,
         long size,
         Consumer<Boolean> afterTerminationRef
     )
@@ -70,6 +72,7 @@ public class BackupShippingDaemon implements Runnable
         handler = new DaemonHandler(deque, command);
 
         cmdThread = new Thread(threadGroupRef, this, threadName);
+        restore = restoreRef;
 
         if (restore)
         {
@@ -82,10 +85,15 @@ public class BackupShippingDaemon implements Runnable
         }
     }
 
-    public void start()
+    public String start()
     {
-        started = true;
+        running = true;
         cmdThread.start();
+        String uploadIdRef = null;
+        if (!restore)
+        {
+            uploadIdRef = backupHandler.initMultipart(backupName);
+        }
         try
         {
             cmdProcess = handler.start();
@@ -104,97 +112,71 @@ public class BackupShippingDaemon implements Runnable
                     false
                 )
             );
+            shutdown();
         }
+        uploadId = uploadIdRef;
+        return uploadIdRef;
     }
 
     private void runShipping()
     {
+        errorReporter.logTrace("starting sending for backup %s", backupName);
+        boolean success = false;
         try
         {
-            backupHandler.putObjectMultipart(backupName, cmdProcess.getInputStream(), volSize);
-            synchronized (syncObj)
-            {
-                s3Finished = true;
-                // success is true, no need to set again
-                if (cmdFinished && s3Finished)
-                {
-                    afterTermination.accept(success);
-                }
-            }
+            backupHandler.putObjectMultipart(backupName, cmdProcess.getInputStream(), volSize, uploadId);
+            success = true;
         }
         catch (SdkClientException | IOException | StorageException exc)
         {
-            synchronized (syncObj)
+            if (!success && running)
             {
-                if (!s3Finished)
-                {
-                    success = false;
-                    s3Finished = true;
-                    // closing the stream might throw exceptions, which do not need to be reported if we already
-                    // finished previously
-                    errorReporter.reportError(exc);
-                }
-                if (cmdFinished && s3Finished)
-                {
-                    afterTermination.accept(success);
-                }
+                // closing the stream might throw exceptions, which do not need to be reported if we already
+                // successfully finished previously
+                errorReporter.reportError(exc);
             }
         }
+        threadFinished(success, true);
     }
 
     private void runRestoring()
     {
+        errorReporter.logTrace("starting restore for backup %s", backupName);
+        boolean success = false;
         try (
             InputStream is = backupHandler.getObject(backupName, bucketName);
             OutputStream os = cmdProcess.getOutputStream();
         )
         {
-            byte[] read_buf = new byte[1 << 20];
-            int read_len = 0;
-            while ((read_len = is.read(read_buf)) != -1)
+            byte[] readBuf = new byte[1 << 20];
+            int readLen = 0;
+            while ((readLen = is.read(readBuf)) != -1)
             {
-                os.write(read_buf, 0, read_len);
+                os.write(readBuf, 0, readLen);
             }
             os.flush();
             Thread.sleep(500);
-            synchronized (syncObj)
+            success = true;
+        }
+        catch (SdkClientException | IOException | InterruptedException exc)
+        {
+            if (!success && running)
             {
-                s3Finished = true;
-                // success is true, no need to set again
-                if (cmdFinished && s3Finished)
-                {
-                    afterTermination.accept(success);
-                }
+                // closing the streams might throw exceptions, which do not need to be reported if we already
+                // successfully finished previously
+                errorReporter.reportError(exc);
             }
         }
-        catch (SdkClientException | IOException exc)
-        {
-            synchronized (syncObj)
-            {
-                if (!s3Finished)
-                {
-                    success = false;
-                    s3Finished = true;
-                    // closing the streams might throw exceptions, which do not need to be reported if we already
-                    // finished previously
-                    errorReporter.reportError(exc);
-                }
-                if (cmdFinished && s3Finished)
-                {
-                    afterTermination.accept(success);
-                }
-            }
-        }
-        catch (InterruptedException ignored)
-        {
-        }
+        threadFinished(success, true);
     }
 
     @Override
     public void run()
     {
         errorReporter.logTrace("starting daemon: %s", Arrays.toString(command));
-        while (started)
+        boolean success = false;
+        boolean first = true;
+        while (running)
         {
             Event event;
             try
@@ -225,23 +207,20 @@ public class BackupShippingDaemon implements Runnable
                 {
                     int exitCode = handler.getExitCode();
                     errorReporter.logTrace("EOF. Exit code: " + exitCode);
-                    synchronized (syncObj)
+                    success = exitCode == 0;
+                    if (restore && !first || !restore)
                     {
-                        if (!cmdFinished)
-                        {
-                            cmdFinished = true;
-                            success &= exitCode == 0;
-                            if (s3Finished)
-                            {
-                                afterTermination.accept(success);
-                            }
-                        }
+                        running = false;
+                    }
+                    else
+                    {
+                        first = false;
                     }
                 }
             }
             catch (InterruptedException exc)
             {
-                if (started)
+                if (running)
                 {
                     errorReporter.reportError(new ImplementationError(exc));
                 }
@@ -256,6 +235,83 @@ public class BackupShippingDaemon implements Runnable
                 );
             }
         }
+        threadFinished(success, true);
+    }
+
+    private void threadFinished(boolean success, boolean shutdownAllowed)
+    {
+        synchronized (syncObj)
+        {
+            if (shutdownAllowed)
+            {
+                errorReporter.logTrace("thread finished");
+            }
+            if (doneFirst)
+            {
+                doneFirst = false;
+                if (!success)
+                {
+                    afterTerminationSent = true;
+                    afterTermination.accept(success);
+                    try
+                    {
+                        if (uploadId != null)
+                        {
+                            backupHandler.abortMultipart(backupName, uploadId);
+                        }
+                    }
+                    catch (SdkClientException exc)
+                    {
+                        if (exc.getClass() == AmazonS3Exception.class)
+                        {
+                            AmazonS3Exception s3Exc = (AmazonS3Exception) exc;
+                            if (s3Exc.getStatusCode() != 404)
+                            {
+                                errorReporter.reportError(exc);
+                            }
+                        }
+                        else
+                        {
+                            errorReporter.reportError(exc);
+                        }
+                    }
+                    if (shutdownAllowed)
+                    {
+                        shutdown();
+                    }
+                }
+            }
+            else if (!afterTerminationSent)
+            {
+                afterTerminationSent = true;
+                afterTermination.accept(success);
+                if (!success)
+                {
+                    try
+                    {
+                        if (uploadId != null)
+                        {
+                            backupHandler.abortMultipart(backupName, uploadId);
+                        }
+                    }
+                    catch (SdkClientException exc)
+                    {
+                        if (exc.getClass() == AmazonS3Exception.class)
+                        {
+                            AmazonS3Exception s3Exc = (AmazonS3Exception) exc;
+                            if (s3Exc.getStatusCode() != 404)
+                            {
+                                errorReporter.reportError(exc);
+                            }
+                        }
+                        else
+                        {
+                            errorReporter.reportError(exc);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -267,7 +323,8 @@ public class BackupShippingDaemon implements Runnable
 
     public void shutdown()
     {
-        started = false;
+        threadFinished(false, false);
+        running = false;
         handler.stop(false);
         if (cmdThread != null)
         {

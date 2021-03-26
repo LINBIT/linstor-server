@@ -76,6 +76,7 @@ public class PreConnectInitializer implements StartupInitializer
                             SnapshotDefinition.Flags.SHIPPING,
                             SnapshotDefinition.Flags.SHIPPING_CLEANUP
                         )
+                            && !snapDfn.getFlags().isSet(sysCtx, SnapshotDefinition.Flags.BACKUP)
                     )
                     {
                         snapDfn.getFlags().enableFlags(sysCtx, SnapshotDefinition.Flags.DELETE);
@@ -84,10 +85,13 @@ public class PreConnectInitializer implements StartupInitializer
                             snap.getFlags().enableFlags(sysCtx, Snapshot.Flags.DELETE);
 
                             Resource rsc = rscDfn.getResource(sysCtx, snap.getNodeName());
-                            retryResourceTask.add(
-                                rsc,
-                                snapDelApiCallHandler.deleteSnapshotsOnNodes(rscDfn.getName(), snapDfn.getName())
-                            );
+                            if (rsc != null)
+                            {
+                                retryResourceTask.add(
+                                    rsc,
+                                    snapDelApiCallHandler.deleteSnapshotsOnNodes(rscDfn.getName(), snapDfn.getName())
+                                );
+                            }
                         }
                     }
                 }

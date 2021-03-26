@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+// Internal message to notify the ctrl of the used backup-updateId for the multipart upload
+message MsgIntBackupShippingId
+{
+    string node_name = 1;
+    string rsc_name = 2;
+    string snap_name = 3;
+    string backup_name = 4;
+    string upload_id = 5;
+}

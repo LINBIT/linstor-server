@@ -147,7 +147,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                     getSnapshotDfnDescription(snapshotNameStr) + " not found."
             ));
         }
-        if (backupInfoMgr.containsRscDfn(snapshotDfn.getResourceDefinition()))
+        if (backupInfoMgr.restoreContainsRscDfn(snapshotDfn.getResourceDefinition()))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(

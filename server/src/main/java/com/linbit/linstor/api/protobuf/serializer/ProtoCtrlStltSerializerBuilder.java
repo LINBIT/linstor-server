@@ -65,6 +65,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippedOuterClass.MsgIntBackupShipped;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippingIdOuterClass.MsgIntBackupShippingId;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntCloneUpdateOuterClass.MsgIntCloneUpdate;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
@@ -769,6 +770,31 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setRscName(snapRef.getResourceName().displayValue)
                 .setSnapName(snapRef.getSnapshotName().displayValue)
                 .setSuccess(success)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder notifyBackupShippingId(
+        Snapshot snapRef,
+        String backupName,
+        String uploadId
+    )
+    {
+        try
+        {
+            MsgIntBackupShippingId.newBuilder()
+                .setNodeName(snapRef.getNodeName().displayValue)
+                .setRscName(snapRef.getResourceName().displayValue)
+                .setSnapName(snapRef.getSnapshotName().displayValue)
+                .setBackupName(backupName)
+                .setUploadId(uploadId)
                 .build()
                 .writeDelimitedTo(baos);
         }

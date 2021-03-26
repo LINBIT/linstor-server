@@ -423,7 +423,7 @@ public class CtrlRscDfnApiCallHandler
 
             ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
-            if (backupInfoMgr.containsRscDfn(rscDfn))
+            if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

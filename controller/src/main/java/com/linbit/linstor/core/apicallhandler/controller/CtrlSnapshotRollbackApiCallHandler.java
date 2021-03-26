@@ -375,7 +375,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
     private void ensureNoBackupRestoreRunning(ResourceDefinition rscDfn)
     {
-        if (backupInfoMgr.containsRscDfn(rscDfn))
+        if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(

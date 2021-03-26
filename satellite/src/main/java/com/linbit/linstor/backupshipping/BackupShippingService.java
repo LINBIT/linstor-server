@@ -24,6 +24,7 @@ import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.StltConnTracker;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -124,7 +125,8 @@ public class BackupShippingService implements SystemService
         CtrlStltSerializer interComSerializerRef,
         @SystemContext AccessContext accCtxRef,
         StltSecurityObjects stltSecObjRef,
-        StltConfigAccessor stltConfigAccessorRef
+        StltConfigAccessor stltConfigAccessorRef,
+        StltConnTracker stltConnTracker
     )
     {
         backupHandler = backupHandlerRef;
@@ -148,6 +150,9 @@ public class BackupShippingService implements SystemService
         shippingInfoMap = Collections.synchronizedMap(new TreeMap<>());
         startedShippments = Collections.synchronizedSet(new TreeSet<>());
         threadGroup = new ThreadGroup("SnapshotShippingSerivceThreadGroup");
+
+        // this causes all shippings to be aborted should the satellite lose connection to the controller
+        stltConnTracker.addClosingListener(this::killAllShipping);
     }
 
     public void killAllShipping() throws StorageException
@@ -291,8 +296,14 @@ public class BackupShippingService implements SystemService
                     {
                         for (SnapVlmDataInfo snapVlmDataInfo : info.snapVlmDataInfoMap.values())
                         {
-                            snapVlmDataInfo.daemon.start();
+                            String uploadId = snapVlmDataInfo.daemon.start();
                             startedShippments.add(snap);
+                            if (uploadId != null)
+                            {
+                                controllerPeerConnector.getControllerPeer().sendMessage(
+                                    interComSerializer.onewayBuilder(InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_ID).notifyBackupShippingId(snap, snapVlmDataInfo.backupName, uploadId).build()
+                                );
+                            }
                         }
                         info.isStarted = true;
                     }
@@ -424,7 +435,7 @@ public class BackupShippingService implements SystemService
         );
         Map<String, String> rscDfnPropsRef = rscDfnPrio.renderRelativeMap("");
         rscDfnPropsRef = new TreeMap<>(rscDfnPropsRef);
-        long rscDfnFlagsRef = snapDfn.getFlags().getFlagsBits(accCtx);
+        long rscDfnFlagsRef = snapDfn.getResourceDefinition().getFlags().getFlagsBits(accCtx);
 
         Map<Integer, VlmDfnMetaPojo> vlmDfnsRef = new TreeMap<>();
         Collection<SnapshotVolumeDefinition> vlmDfns = snapDfn.getAllSnapshotVolumeDefinitions(accCtx);
@@ -437,7 +448,8 @@ public class BackupShippingService implements SystemService
             );
             Map<String, String> vlmDfnPropsRef = vlmDfnPrio.renderRelativeMap("");
             vlmDfnPropsRef = new TreeMap<>(vlmDfnPropsRef);
-            long vlmDfnFlagsRef = snapVlmDfn.getFlags().getFlagsBits(accCtx);
+            // necessary to get the gross-size-flag, even though flags might have changed in the meantime
+            long vlmDfnFlagsRef = snapVlmDfn.getVolumeDefinition().getFlags().getFlagsBits(accCtx);
             long sizeRef = snapVlmDfn.getVolumeSize(accCtx);
             vlmDfnsRef
                 .put(snapVlmDfn.getVolumeNumber().value, new VlmDfnMetaPojo(vlmDfnPropsRef, vlmDfnFlagsRef, sizeRef));

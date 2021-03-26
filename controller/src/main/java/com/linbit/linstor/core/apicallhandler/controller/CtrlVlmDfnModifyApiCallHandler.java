@@ -185,7 +185,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 "UUID check failed. Given UUID: " + vlmDfnUuid + ". Persisted UUID: " + vlmDfn.getUuid()
             ));
         }
-        if (backupInfoMgr.containsRscDfn(vlmDfn.getResourceDefinition()))
+        if (backupInfoMgr.restoreContainsRscDfn(vlmDfn.getResourceDefinition()))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(

@@ -30,6 +30,7 @@ import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteU
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apis.BackupListApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -45,6 +46,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -70,6 +72,8 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -90,6 +94,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -128,6 +133,7 @@ public class CtrlBackupApiCallHandler
     private CtrlSecurityObjects ctrlSecObj;
     private LengthPadding cryptoLenPad;
     private BackupInfoManager backupInfoMgr;
+    private Provider<Peer> peerProvider;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -149,7 +155,8 @@ public class CtrlBackupApiCallHandler
         EncryptionHelper encHelperRef,
         CtrlSecurityObjects ctrlSecObjRef,
         LengthPadding cryptoLenPadRef,
-        BackupInfoManager backupInfoMgrRef
+        BackupInfoManager backupInfoMgrRef,
+        Provider<Peer> peerProviderRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -171,6 +178,7 @@ public class CtrlBackupApiCallHandler
         ctrlSecObj = ctrlSecObjRef;
         cryptoLenPad = cryptoLenPadRef;
         backupInfoMgr = backupInfoMgrRef;
+        peerProvider = peerProviderRef;
     }
 
     public Flux<ApiCallRc> createFullBackup(String rscNameRef) throws AccessDeniedException
@@ -346,7 +354,7 @@ public class CtrlBackupApiCallHandler
         ToDeleteCollections toDelete = new ToDeleteCollections();
         if (rscName.length() != 0)
         {
-            if (snapName.length() != 0 && !backupInfoMgr.containsMetaFile(rscName, snapName))
+            if (snapName.length() != 0 && !backupInfoMgr.restoreContainsMetaFile(rscName, snapName))
             {
                 toDelete.s3keys = getKeysFromMeta(rscName + "_" + snapName + ".meta");
                 toDelete.snapKeys = Collections.singleton(
@@ -429,12 +437,12 @@ public class CtrlBackupApiCallHandler
         {
             Matcher mBack = BACKUP_KEY_PATTERN.matcher(s3keyRef);
             Matcher mMeta = META_FILE_PATTERN.matcher(s3keyRef);
-            if (mBack.matches() && !backupInfoMgr.containsMetaFile(mBack.group(1), mBack.group(4)))
+            if (mBack.matches() && !backupInfoMgr.restoreContainsMetaFile(mBack.group(1), mBack.group(4)))
             {
                 ret.s3keys.addAll(getKeysFromMeta(mBack.group(1) + "_" + mBack.group(4) + ".meta"));
                 ret.snapKeys.add(toSnapDfnKey(mBack.group(1), mBack.group(4)));
             }
-            else if (mMeta.matches() && !backupInfoMgr.containsMetaFile(s3keyRef))
+            else if (mMeta.matches() && !backupInfoMgr.restoreContainsMetaFile(s3keyRef))
             {
                 ret.s3keys.addAll(getKeysFromMeta(s3keyRef));
                 ret.snapKeys.add(toSnapDfnKey(mMeta.group(1), mMeta.group(2)));
@@ -468,7 +476,7 @@ public class CtrlBackupApiCallHandler
                 {
                     if (
                         (timestamp.isEmpty() || SDF.parse(timestamp).after(SDF.parse(ts))) &&
-                        !backupInfoMgr.containsMetaFile(s3key)
+                        !backupInfoMgr.restoreContainsMetaFile(s3key)
                     )
                     {
                         metaKeys.add(s3key);
@@ -580,7 +588,7 @@ public class CtrlBackupApiCallHandler
             }
         }
         String metaName = srcRscName + "_back_" + SDF.format(latestBackTs) + ".meta";
-        if (backupInfoMgr.containsMetaFile(metaName))
+        if (backupInfoMgr.restoreContainsMetaFile(metaName))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
@@ -704,12 +712,6 @@ public class CtrlBackupApiCallHandler
                     apiCallRcs,
                     false
                 );
-                rscDfn.getFlags()
-                    .resetFlagsTo(
-                        peerAccCtx.get(), ResourceDefinition.Flags.restoreFlags(metadata.getRscDfn().getFlags())
-                    );
-                rscDfn.getProps(peerAccCtx.get()).clear();
-                rscDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
             }
             else if (rscDfn.getResourceCount() != 0)
             {
@@ -729,7 +731,7 @@ public class CtrlBackupApiCallHandler
                     )
                 );
             }
-            else if (backupInfoMgr.containsRscDfn(rscDfn))
+            else if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
@@ -738,12 +740,18 @@ public class CtrlBackupApiCallHandler
                     )
                 );
             }
-            if (!backupInfoMgr.addEntry(rscDfn, metaName))
+            if (!backupInfoMgr.restoreAddEntry(rscDfn, metaName))
             {
                 throw new ImplementationError(
                     "Tried to overwrite existing backup-info-mgr entry for rscDfn " + targetRscName
                 );
             }
+            rscDfn.getFlags()
+                .resetFlagsTo(
+                    peerAccCtx.get(), ResourceDefinition.Flags.restoreFlags(metadata.getRscDfn().getFlags())
+                );
+            rscDfn.getProps(peerAccCtx.get()).clear();
+            rscDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
             // 9. create snapDfn
             SnapshotDefinition snapDfn = snapshotCrtHelper.createSnapshotDfnData(
                 rscDfn,
@@ -774,8 +782,15 @@ public class CtrlBackupApiCallHandler
                         vlmDfnMetaEntry.getValue().getSize(),
                         VolumeDefinition.Flags.restoreFlags(vlmDfnMetaEntry.getValue().getFlags())
                     );
-                    vlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
                 }
+                else
+                {
+                    vlmDfn.getFlags().resetFlagsTo(
+                        peerAccCtx.get(), VolumeDefinition.Flags.restoreFlags(vlmDfnMetaEntry.getValue().getFlags())
+                    );
+                    vlmDfn.setVolumeSize(peerAccCtx.get(), vlmDfnMetaEntry.getValue().getSize());
+                }
+                vlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
                 totalSize += vlmDfnMetaEntry.getValue().getSize();
                 SnapshotVolumeDefinition snapVlmDfn = snapshotCrtHelper.createSnapshotVlmDfnData(snapDfn, vlmDfn);
                 snapVlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
@@ -1168,6 +1183,7 @@ public class CtrlBackupApiCallHandler
                 peerAccCtx.get(),
                 SnapshotDefinition.Flags.SHIPPING
             );
+            backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
             if (successRef)
             {
                 // start snap-restore
@@ -1181,10 +1197,14 @@ public class CtrlBackupApiCallHandler
                     Collections.emptyList(),
                     snapNameRef,
                     rscNameRef
-                ).concatWith(postRestore(rscNameRef));
+                );
             }
             else
             {
+                for (Snapshot snap : snapDfn.getAllSnapshots(peerAccCtx.get()))
+                {
+                    snap.markDeleted(peerAccCtx.get());
+                }
                 ctrlTransactionHelper.commit();
                 return ctrlSatelliteUpdateCaller.updateSatellites(
                     snapDfn,
@@ -1195,7 +1215,7 @@ public class CtrlBackupApiCallHandler
                         LinstorParsingUtils.asRscName(rscNameRef),
                         "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
                     )
-                ).concatWith(postRestore(rscNameRef));
+                ).concatWith(postReceivingFailed(snapDfn));
             }
         }
         catch (AccessDeniedException exc)
@@ -1208,37 +1228,55 @@ public class CtrlBackupApiCallHandler
         }
     }
 
-    private Flux<ApiCallRc> postRestore(String rscNameRef)
+    private Flux<ApiCallRc> postReceivingFailed(SnapshotDefinition snapDfn)
     {
         return scopeRunner.fluxInTransactionalScope(
             "post backup restore",
             lockGuardFactory.create()
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP).buildDeferred(),
-            () -> postRestoreInTransaction(rscNameRef)
+            () -> postReceivingFailedInTransaction(snapDfn)
         );
     }
 
-    private Flux<ApiCallRc> postRestoreInTransaction(String rscNameRef) throws AccessDeniedException, DatabaseException
+    private Flux<ApiCallRc> postReceivingFailedInTransaction(SnapshotDefinition snapDfn)
     {
-        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, false);
-        Iterator<Resource> itRsc = rscDfn.iterateResource(peerAccCtx.get());
-        while (itRsc.hasNext())
+        UUID uuid = snapDfn.getUuid();
+
+        try
         {
-            Resource rsc = itRsc.next();
-            rsc.getStateFlags().disableFlags(peerAccCtx.get(), Resource.Flags.BACKUP_RESTORE);
-            rsc.getProps(peerAccCtx.get())
-                .removeProp(InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+            for (Snapshot snapshot : snapDfn.getAllSnapshots(peerAccCtx.get()))
+            {
+                try
+                {
+                    snapshot.delete(peerAccCtx.get());
+                }
+                catch (AccessDeniedException accDeniedExc)
+                {
+                    throw new ImplementationError(accDeniedExc);
+                }
+                catch (DatabaseException sqlExc)
+                {
+                    throw new ApiDatabaseException(sqlExc);
+                }
+            }
         }
-        backupInfoMgr.removeEntry(rscDfn);
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
         ctrlTransactionHelper.commit();
-        return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty()).transform(
-            responses -> CtrlResponseUtils.combineResponses(
-                responses,
-                LinstorParsingUtils.asRscName(rscNameRef),
-                "Finished post restore backup on " + rscNameRef
+
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
+        responses.addEntry(
+            ApiSuccessUtils.defaultDeletedEntry(
+                uuid, getSnapshotDfnDescriptionInline(snapDfn.getResourceName(), snapDfn.getName())
             )
         );
+
+        return Flux.just(responses);
     }
 
     public Flux<ApiCallRc> shippingSent(String rscNameRef, String snapNameRef, boolean successRef)
@@ -1265,7 +1303,9 @@ public class CtrlBackupApiCallHandler
             snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
             if (successRef)
             {
+                String nodeName = peerProvider.get().getNode().getName().displayValue;
                 snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                backupInfoMgr.abortDeleteEntries(nodeName, rscNameRef, snapNameRef);
             }
             ctrlTransactionHelper.commit();
 

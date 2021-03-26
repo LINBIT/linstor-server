@@ -3,6 +3,9 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.BackupToS3;
+import com.linbit.linstor.core.BackupInfoManager;
+import com.linbit.linstor.core.BackupInfoManager.AbortInfo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -13,17 +16,24 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import com.amazonaws.SdkClientException;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -35,6 +45,9 @@ public class CtrlSnapshotShippingAbortHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final Provider<CtrlSnapshotDeleteApiCallHandler> snapDelHandlerProvider;
+    private final BackupInfoManager backupInfoMgr;
+    private final BackupToS3 backupHandler;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public CtrlSnapshotShippingAbortHandler(
@@ -43,7 +56,10 @@ public class CtrlSnapshotShippingAbortHandler
         LockGuardFactory lockguardFactoryRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        Provider<CtrlSnapshotDeleteApiCallHandler> snapDelHandlerProviderRef
+        Provider<CtrlSnapshotDeleteApiCallHandler> snapDelHandlerProviderRef,
+        BackupInfoManager backupInfoMgrRef,
+        BackupToS3 backupHandlerRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -52,6 +68,9 @@ public class CtrlSnapshotShippingAbortHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         snapDelHandlerProvider = snapDelHandlerProviderRef;
+        backupInfoMgr = backupInfoMgrRef;
+        backupHandler = backupHandlerRef;
+        errorReporter = errorReporterRef;
     }
 
     public Flux<ApiCallRc> abortSnapshotShippingPrivileged(Node nodeRef)
@@ -76,8 +95,15 @@ public class CtrlSnapshotShippingAbortHandler
             for (Snapshot snap : nodeRef.getSnapshots(apiCtx))
             {
                 SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
-                if (snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING))
+                if (
+                    snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING) &&
+                        !snap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET)
+                )
                 {
+                    if (snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.BACKUP))
+                    {
+                        abortBackupShippings(nodeRef);
+                    }
                     flux = flux.concatWith(snapDelHandlerProvider.get()
                         .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue)
                     );
@@ -115,10 +141,28 @@ public class CtrlSnapshotShippingAbortHandler
             {
                 if (snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING))
                 {
-                    flux = flux.concatWith(
-                        snapDelHandlerProvider.get()
-                        .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue)
-                    );
+                    boolean delete = true;
+                    if (snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.BACKUP))
+                    {
+                        for (Snapshot snap : snapDfn.getAllSnapshots(apiCtx))
+                        {
+                            if (!snap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET))
+                            {
+                                abortBackupShippings(snap.getNode());
+                            }
+                            else
+                            {
+                                delete = false;
+                            }
+                        }
+                    }
+                    if (delete)
+                    {
+                        flux = flux.concatWith(
+                            snapDelHandlerProvider.get()
+                                .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue)
+                        );
+                    }
                 }
             }
             ctrlTransactionHelper.commit();
@@ -169,6 +213,48 @@ public class CtrlSnapshotShippingAbortHandler
         catch (DatabaseException exc)
         {
             throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private void abortBackupShippings(Node nodeRef)
+    {
+        Map<Pair<String, String>, List<AbortInfo>> abortEntries = backupInfoMgr
+            .abortGetEntries(nodeRef.getName().displayValue);
+        if (abortEntries != null && !abortEntries.isEmpty())
+        {
+            for (Entry<Pair<String, String>, List<AbortInfo>> abortEntry : abortEntries.entrySet())
+            {
+                if (!abortEntry.getValue().isEmpty())
+                {
+                    for (AbortInfo abortInfo : abortEntry.getValue())
+                    {
+                        try
+                        {
+                            backupHandler.abortMultipart(abortInfo.backupName, abortInfo.uploadId);
+                        }
+                        catch (SdkClientException exc)
+                        {
+                            if (exc.getClass() == AmazonS3Exception.class)
+                            {
+                                AmazonS3Exception s3Exc = (AmazonS3Exception) exc;
+                                if (s3Exc.getStatusCode() != 404)
+                                {
+                                    errorReporter.reportError(exc);
+                                }
+                            }
+                            else
+                            {
+                                errorReporter.reportError(exc);
+                            }
+                        }
+                    }
+                    backupInfoMgr.abortDeleteEntries(
+                        nodeRef.getName().displayValue,
+                        abortEntry.getKey().objA,
+                        abortEntry.getKey().objB
+                    );
+                }
+            }
         }
     }
 
