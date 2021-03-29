@@ -414,9 +414,11 @@ public class ExosRestClient
                 }
                 catch (JsonParseException parseExc)
                 {
+                    String requestPayloadAsString = parseExc.getRequestPayloadAsString();
                     if (
                         jsonParseExc != null ||
-                        !parseExc.getRequestPayloadAsString().toLowerCase().contains("internal server error")
+                            (requestPayloadAsString != null &&
+                            !requestPayloadAsString.toLowerCase().contains("internal server error"))
                     )
                     {
                         exc = new StorageException("Failed to parse JSON", parseExc);

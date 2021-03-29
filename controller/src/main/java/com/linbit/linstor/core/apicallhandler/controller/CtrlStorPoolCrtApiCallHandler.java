@@ -18,6 +18,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.exos.ExosEnclosurePingTask;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.security.AccessContext;
@@ -52,6 +53,7 @@ public class CtrlStorPoolCrtApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
     private final StorPoolHelper storPoolHelper;
+    private final ExosEnclosurePingTask exosPingTask;
 
     @Inject
     public CtrlStorPoolCrtApiCallHandler(
@@ -64,7 +66,8 @@ public class CtrlStorPoolCrtApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        ExosEnclosurePingTask exosPingTaskRef
     )
     {
         apiCtx = apiCtxRef;
@@ -77,6 +80,7 @@ public class CtrlStorPoolCrtApiCallHandler
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        exosPingTask = exosPingTaskRef;
     }
 
     public Flux<ApiCallRc> createStorPool(
@@ -144,6 +148,16 @@ public class CtrlStorPoolCrtApiCallHandler
                     ApiConsts.NAMESPC_EXOS + "/" + ApiConsts.KEY_STOR_POOL_EXOS_POOL_SN
                 );
                 sharedStorPoolNameStr = enclosureName + "_" + poolSn;
+
+                if (exosPingTask.getClient(enclosureName) == null)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_EXOS_ENCLOSURE,
+                            "The given EXOS enclosure " + enclosureName + " was not registered yet."
+                        )
+                    );
+                }
             }
 
             StorPool storPool = storPoolHelper.createStorPool(
