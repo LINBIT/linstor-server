@@ -21,6 +21,7 @@ import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmDfnWithCreationPayloadPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -34,6 +35,7 @@ import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AutoSelectorConfig;
 import com.linbit.linstor.core.objects.Resource;
@@ -41,9 +43,11 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
+import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -58,6 +62,7 @@ import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
@@ -73,6 +78,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -103,7 +109,8 @@ public class CtrlRscGrpApiCallHandler
 
     private final CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
-    private AutoDiskfulTask autoDiskfulTask;
+    private final AutoDiskfulTask autoDiskfulTask;
+    private final StorPoolDefinitionRepository spdRepo;
 
     @Inject
     public CtrlRscGrpApiCallHandler(
@@ -125,7 +132,8 @@ public class CtrlRscGrpApiCallHandler
         CtrlQueryMaxVlmSizeHelper qmvsHelperRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         LockGuardFactory lockGuardFactoryRef,
-        AutoDiskfulTask autoDiskfulTaskRef
+        AutoDiskfulTask autoDiskfulTaskRef,
+        StorPoolDefinitionRepository spdRepoRef
     )
     {
         errorReporter = errorReporterRef;
@@ -147,6 +155,7 @@ public class CtrlRscGrpApiCallHandler
         freeCapacityFetcher = freeCapacityFetcherRef;
         lockGuardFactory = lockGuardFactoryRef;
         autoDiskfulTask = autoDiskfulTaskRef;
+        spdRepo = spdRepoRef;
     }
 
     List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames, List<String> propFilters)
@@ -255,6 +264,8 @@ public class CtrlRscGrpApiCallHandler
                 errorReporter.logInfo(successMessage);
             }
 
+            addUnknownStoragePoolWarning(rscGrp, responses);
+
             responseConverter.addWithOp(
                 responses,
                 context,
@@ -269,6 +280,104 @@ public class CtrlRscGrpApiCallHandler
         }
 
         return responses;
+    }
+
+    private void addUnknownStoragePoolWarning(ResourceGroup rscGrpRef, ApiCallRcImpl responsesRef)
+        throws AccessDeniedException
+    {
+        List<String> spNameDiskfulButDisklessExpectedList = new ArrayList<>();
+        List<String> spNameDisklessButDiskfulExpectedList = new ArrayList<>();
+        List<String> unknownSpNameList = new ArrayList<>();
+
+        StorPoolDefinitionMap spdMap = spdRepo.getMapForView(apiCtx);
+        AutoSelectorConfig autoPlaceConfig = rscGrpRef.getAutoPlaceConfig();
+        for (boolean diskfulExpected : new Boolean[] { true, false })
+        {
+            List<String> storPoolNamesToCheck;
+            if (diskfulExpected)
+            {
+                storPoolNamesToCheck = autoPlaceConfig.getStorPoolNameList(apiCtx);
+            }
+            else
+            {
+                storPoolNamesToCheck = autoPlaceConfig.getStorPoolDisklessNameList(apiCtx);
+            }
+            for (String spnameToCheck : storPoolNamesToCheck)
+            {
+                StorPoolDefinition spdfn = null;
+                for (Entry<StorPoolName, StorPoolDefinition> entry : spdMap.entrySet())
+                {
+                    if (entry.getKey().value.equalsIgnoreCase(spnameToCheck))
+                    {
+                        spdfn = entry.getValue();
+                        break;
+                    }
+                }
+                if (spdfn != null)
+                {
+                    if (
+                        !spdfn.streamStorPools(apiCtx)
+                            .anyMatch(sp -> sp.getDeviceProviderKind().hasBackingDevice() == diskfulExpected)
+                    )
+                    {
+                        if (diskfulExpected)
+                        {
+                            spNameDisklessButDiskfulExpectedList.add(spnameToCheck);
+                        }
+                        else
+                        {
+                            spNameDiskfulButDisklessExpectedList.add(spnameToCheck);
+                        }
+                    }
+                }
+                else
+                {
+                    unknownSpNameList.add(spnameToCheck);
+                }
+            }
+        }
+
+
+        if (
+            !spNameDiskfulButDisklessExpectedList.isEmpty() ||
+            !spNameDisklessButDiskfulExpectedList.isEmpty() ||
+            !unknownSpNameList.isEmpty()
+        )
+        {
+            StringBuilder sb = new StringBuilder();
+            if (!spNameDiskfulButDisklessExpectedList.isEmpty())
+            {
+                sb.append(
+                    "The following configured storage pools are diskful, but are wrongly configured to be used for diskless autoplacements:\n\t"
+                );
+                sb.append(StringUtils.join(spNameDiskfulButDisklessExpectedList, "\n\t"));
+                sb.append("\n");
+            }
+            if (!spNameDisklessButDiskfulExpectedList.isEmpty())
+            {
+                sb.append(
+                    "The following configured storage pools are diskless, but are wrongly configured to be used for diskful autoplacements:\n\t"
+                );
+                sb.append(StringUtils.join(spNameDisklessButDiskfulExpectedList, "\n\t"));
+                sb.append("\n");
+            }
+            if (!unknownSpNameList.isEmpty())
+            {
+                sb.append(
+                    "The following configured storage pools do not exist on any node:\n\t"
+                );
+                sb.append(StringUtils.join(unknownSpNameList, "\n\t"));
+            }
+
+            responsesRef.addEntries(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.WARN_NOT_FOUND,
+                    sb.toString().trim()
+                )
+            );
+
+        }
+
     }
 
     public Flux<ApiCallRc> modify(
@@ -422,6 +531,7 @@ public class CtrlRscGrpApiCallHandler
                         }
                     }
                 }
+                addUnknownStoragePoolWarning(rscGrpData, apiCallRcs);
             }
 
             ctrlTransactionHelper.commit();
