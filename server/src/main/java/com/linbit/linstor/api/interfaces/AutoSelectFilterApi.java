@@ -15,6 +15,8 @@ public interface AutoSelectFilterApi
 
     List<String> getStorPoolNameList();
 
+    List<String> getStorPoolDisklessNameList();
+
     List<String> getDoNotPlaceWithRscList();
 
     String getDoNotPlaceWithRscRegex();

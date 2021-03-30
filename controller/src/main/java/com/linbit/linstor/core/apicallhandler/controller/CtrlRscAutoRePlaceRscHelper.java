@@ -161,6 +161,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                 null,
                                 null,
                                 null,
+                                null,
                                 Collections.singletonList(rscDfn.getName().displayValue),
                                 null,
                                 null,

@@ -14,6 +14,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     private @Nullable Integer additionalPlaceCount;
     private @Nullable List<String> nodeNameList;
     private @Nullable List<String> storPoolNameList;
+    private @Nullable List<String> storPoolDisklessNameList;
     private @Nullable List<String> doNotPlaceWithRscList;
     private @Nullable String doNotPlaceWithRegex;
     private @Nullable List<String> replicasOnSameList;
@@ -29,6 +30,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         @Nullable Integer additionalPlaceCountRef,
         @Nullable List<String> nodeNameListRef,
         @Nullable List<String> storPoolNameListRef,
+        @Nullable List<String> storPoolDisklessNameListRef,
         @Nullable List<String> doNotPlaceWithRscListRef,
         @Nullable String doNotPlaceWithRegexRef,
         @Nullable List<String> replicasOnSameListRef,
@@ -44,6 +46,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         additionalPlaceCount = additionalPlaceCountRef;
         nodeNameList = nodeNameListRef;
         storPoolNameList = storPoolNameListRef;
+        storPoolDisklessNameList = storPoolDisklessNameListRef;
         doNotPlaceWithRscList = doNotPlaceWithRscListRef;
         doNotPlaceWithRegex = doNotPlaceWithRegexRef;
         replicasOnSameList = replicasOnSameListRef;
@@ -61,6 +64,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             api.getAdditionalReplicaCount(),
             api.getNodeNameList(),
             api.getStorPoolNameList(),
+            api.getStorPoolDisklessNameList(),
             api.getDoNotPlaceWithRscList(),
             api.getDoNotPlaceWithRscRegex(),
             api.getReplicasOnSameList(),
@@ -85,6 +89,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         List<String> notPlaceWithRscList = null;
         List<String> nodeNameList = null;
         List<String> storPoolNameList = null;
+        List<String> storPoolDisklessNameList = null;
         List<DeviceLayerKind> layerStack = null;
         List<DeviceProviderKind> providerList = null;
         Boolean disklessOnRemaining = null;
@@ -123,6 +128,10 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
                 {
                     storPoolNameList = cfgApi.getStorPoolNameList();
                 }
+                if (storPoolDisklessNameList == null)
+                {
+                    storPoolDisklessNameList = cfgApi.getStorPoolDisklessNameList();
+                }
                 if (nodeNameList == null)
                 {
                     nodeNameList = cfgApi.getNodeNameList();
@@ -155,6 +164,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             additionalPlaceCount,
             nodeNameList,
             storPoolNameList,
+            storPoolDisklessNameList,
             notPlaceWithRscList,
             notPlaceWithRscRegex,
             replicasOnSameList,
@@ -189,6 +199,12 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     public @Nullable List<String> getStorPoolNameList()
     {
         return storPoolNameList;
+    }
+
+    @Override
+    public List<String> getStorPoolDisklessNameList()
+    {
+        return storPoolDisklessNameList;
     }
 
     @Override

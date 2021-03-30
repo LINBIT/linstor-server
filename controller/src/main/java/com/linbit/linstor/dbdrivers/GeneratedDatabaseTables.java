@@ -842,6 +842,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl REPLICA_COUNT = new ColumnImpl("REPLICA_COUNT", Types.INTEGER, false, false);
         public static final ColumnImpl NODE_NAME_LIST = new ColumnImpl("NODE_NAME_LIST", Types.VARCHAR, false, true);
         public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, true);
+        public static final ColumnImpl POOL_NAME_DISKLESS = new ColumnImpl("POOL_NAME_DISKLESS", Types.VARCHAR, false, true);
         public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_REGEX = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_REGEX", Types.VARCHAR, false, true);
         public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_LIST = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_LIST", Types.VARCHAR, false, true);
         public static final ColumnImpl REPLICAS_ON_SAME = new ColumnImpl("REPLICAS_ON_SAME", Types.BLOB, false, true);
@@ -859,6 +860,7 @@ public class GeneratedDatabaseTables
             REPLICA_COUNT,
             NODE_NAME_LIST,
             POOL_NAME,
+            POOL_NAME_DISKLESS,
             DO_NOT_PLACE_WITH_RSC_REGEX,
             DO_NOT_PLACE_WITH_RSC_LIST,
             REPLICAS_ON_SAME,
@@ -883,6 +885,42 @@ public class GeneratedDatabaseTables
         public String toString()
         {
             return "Table RESOURCE_GROUPS";
+        }
+    }
+
+    public static class SatellitesCapacity implements DatabaseTable
+    {
+        private SatellitesCapacity() { }
+
+        // Primary Key
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
+
+        public static final ColumnImpl CAPACITY = new ColumnImpl("CAPACITY", Types.BLOB, false, false);
+        public static final ColumnImpl FAIL_FLAG = new ColumnImpl("FAIL_FLAG", Types.BOOLEAN, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            NODE_NAME,
+            CAPACITY,
+            FAIL_FLAG
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "SATELLITES_CAPACITY";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table SATELLITES_CAPACITY";
         }
     }
 
@@ -1251,6 +1289,40 @@ public class GeneratedDatabaseTables
         }
     }
 
+    public static class SpaceHistory implements DatabaseTable
+    {
+        private SpaceHistory() { }
+
+        // Primary Key
+        public static final ColumnImpl ENTRY_DATE = new ColumnImpl("ENTRY_DATE", Types.DATE, true, false);
+
+        public static final ColumnImpl CAPACITY = new ColumnImpl("CAPACITY", Types.BLOB, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            ENTRY_DATE,
+            CAPACITY
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "SPACE_HISTORY";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table SPACE_HISTORY";
+        }
+    }
+
     public static class StorPoolDefinitions implements DatabaseTable
     {
         private StorPoolDefinitions() { }
@@ -1284,6 +1356,38 @@ public class GeneratedDatabaseTables
         public String toString()
         {
             return "Table STOR_POOL_DEFINITIONS";
+        }
+    }
+
+    public static class TrackingDate implements DatabaseTable
+    {
+        private TrackingDate() { }
+
+        // Primary Key
+
+        public static final ColumnImpl ENTRY_DATE = new ColumnImpl("ENTRY_DATE", Types.DATE, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            ENTRY_DATE
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "TRACKING_DATE";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table TRACKING_DATE";
         }
     }
 
@@ -1472,6 +1576,7 @@ public class GeneratedDatabaseTables
     public static final ResourceConnections RESOURCE_CONNECTIONS = new ResourceConnections();
     public static final ResourceDefinitions RESOURCE_DEFINITIONS = new ResourceDefinitions();
     public static final ResourceGroups RESOURCE_GROUPS = new ResourceGroups();
+    public static final SatellitesCapacity SATELLITES_CAPACITY = new SatellitesCapacity();
     public static final SecAccessTypes SEC_ACCESS_TYPES = new SecAccessTypes();
     public static final SecAclMap SEC_ACL_MAP = new SecAclMap();
     public static final SecConfiguration SEC_CONFIGURATION = new SecConfiguration();
@@ -1482,7 +1587,9 @@ public class GeneratedDatabaseTables
     public static final SecRoles SEC_ROLES = new SecRoles();
     public static final SecTypes SEC_TYPES = new SecTypes();
     public static final SecTypeRules SEC_TYPE_RULES = new SecTypeRules();
+    public static final SpaceHistory SPACE_HISTORY = new SpaceHistory();
     public static final StorPoolDefinitions STOR_POOL_DEFINITIONS = new StorPoolDefinitions();
+    public static final TrackingDate TRACKING_DATE = new TrackingDate();
     public static final Volumes VOLUMES = new Volumes();
     public static final VolumeConnections VOLUME_CONNECTIONS = new VolumeConnections();
     public static final VolumeDefinitions VOLUME_DEFINITIONS = new VolumeDefinitions();
@@ -1605,12 +1712,16 @@ public class GeneratedDatabaseTables
         ResourceGroups.REPLICA_COUNT.table = RESOURCE_GROUPS;
         ResourceGroups.NODE_NAME_LIST.table = RESOURCE_GROUPS;
         ResourceGroups.POOL_NAME.table = RESOURCE_GROUPS;
+        ResourceGroups.POOL_NAME_DISKLESS.table = RESOURCE_GROUPS;
         ResourceGroups.DO_NOT_PLACE_WITH_RSC_REGEX.table = RESOURCE_GROUPS;
         ResourceGroups.DO_NOT_PLACE_WITH_RSC_LIST.table = RESOURCE_GROUPS;
         ResourceGroups.REPLICAS_ON_SAME.table = RESOURCE_GROUPS;
         ResourceGroups.REPLICAS_ON_DIFFERENT.table = RESOURCE_GROUPS;
         ResourceGroups.ALLOWED_PROVIDER_LIST.table = RESOURCE_GROUPS;
         ResourceGroups.DISKLESS_ON_REMAINING.table = RESOURCE_GROUPS;
+        SatellitesCapacity.NODE_NAME.table = SATELLITES_CAPACITY;
+        SatellitesCapacity.CAPACITY.table = SATELLITES_CAPACITY;
+        SatellitesCapacity.FAIL_FLAG.table = SATELLITES_CAPACITY;
         SecAccessTypes.ACCESS_TYPE_NAME.table = SEC_ACCESS_TYPES;
         SecAccessTypes.ACCESS_TYPE_VALUE.table = SEC_ACCESS_TYPES;
         SecAclMap.OBJECT_PATH.table = SEC_ACL_MAP;
@@ -1644,9 +1755,12 @@ public class GeneratedDatabaseTables
         SecTypeRules.DOMAIN_NAME.table = SEC_TYPE_RULES;
         SecTypeRules.TYPE_NAME.table = SEC_TYPE_RULES;
         SecTypeRules.ACCESS_TYPE.table = SEC_TYPE_RULES;
+        SpaceHistory.ENTRY_DATE.table = SPACE_HISTORY;
+        SpaceHistory.CAPACITY.table = SPACE_HISTORY;
         StorPoolDefinitions.UUID.table = STOR_POOL_DEFINITIONS;
         StorPoolDefinitions.POOL_NAME.table = STOR_POOL_DEFINITIONS;
         StorPoolDefinitions.POOL_DSP_NAME.table = STOR_POOL_DEFINITIONS;
+        TrackingDate.ENTRY_DATE.table = TRACKING_DATE;
         Volumes.UUID.table = VOLUMES;
         Volumes.NODE_NAME.table = VOLUMES;
         Volumes.RESOURCE_NAME.table = VOLUMES;

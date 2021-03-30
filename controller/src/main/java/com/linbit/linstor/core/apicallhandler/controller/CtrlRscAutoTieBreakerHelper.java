@@ -481,6 +481,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         1,
                         filterNodeNamesList,
                         null,
+                        null,
                         Collections.singletonList(ctx.rscDfn.getName().displayValue),
                         null,
                         null,

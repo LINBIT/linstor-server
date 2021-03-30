@@ -1933,6 +1933,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final List<String> doNotPlaceWithRscList = new ArrayList<>();
         private final List<String> nodeNameList = new ArrayList<>();
         private final List<String> storPoolNameList = new ArrayList<>();
+        private final List<String> storPoolDisklessNameList = new ArrayList<>();
         private String doNotPlaceWithRscRegexStr = null;
 
         private final List<String> replicasOnSameNodePropList = new ArrayList<>();
@@ -2025,6 +2026,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
+        RscAutoPlaceApiCall addStorPoolDiskless(String storPoolDisklessNameRef)
+        {
+            storPoolDisklessNameList.add(storPoolDisklessNameRef);
+            return this;
+        }
+
         RscAutoPlaceApiCall doNotPlaceWith(String... doNotPlaceWithRsc)
         {
             doNotPlaceWithRscList.addAll(Arrays.asList(doNotPlaceWithRsc));
@@ -2068,6 +2075,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     public List<String> getStorPoolNameList()
                     {
                         return storPoolNameList;
+                    }
+
+                    @Override
+                    public List<String> getStorPoolDisklessNameList()
+                    {
+                        return storPoolDisklessNameList;
                     }
 
                     @Override

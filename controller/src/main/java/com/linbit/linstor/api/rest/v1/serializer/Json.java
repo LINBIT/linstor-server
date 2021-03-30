@@ -756,6 +756,12 @@ public class Json
         }
 
         @Override
+        public List<String> getStorPoolDisklessNameList()
+        {
+            return autoSelectFilter.storage_pool_diskless_list;
+        }
+
+        @Override
         public List<String> getDoNotPlaceWithRscList()
         {
             return autoSelectFilter.not_place_with_rsc;

@@ -119,6 +119,7 @@ public class ResourceDefinitionSatelliteTest
                 null,
                 null,
                 null,
+                null,
                 null
             ),
             resName,
@@ -149,6 +150,7 @@ public class ResourceDefinitionSatelliteTest
                 UUID.randomUUID(),
                 new ResourceGroupName(InternalApiConsts.DEFAULT_RSC_GRP_NAME),
                 "",
+                null,
                 null,
                 null,
                 null,

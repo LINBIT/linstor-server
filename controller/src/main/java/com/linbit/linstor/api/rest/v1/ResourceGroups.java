@@ -178,6 +178,7 @@ public class ResourceGroups
                 select_filter.additional_place_count,
                 select_filter.node_name_list,
                 storPoolList,
+                select_filter.storage_pool_diskless_list,
                 select_filter.not_place_with_rsc,
                 select_filter.not_place_with_rsc_regex,
                 select_filter.replicas_on_same,

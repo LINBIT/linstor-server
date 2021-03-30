@@ -580,6 +580,7 @@ public class CtrlRscGrpApiCallHandler
             List<String> nodeNameList = null;
             Integer replicaCount = null;
             List<String> storPoolNameList = null;
+            List<String> storPoolDisklessNameList = null;
             List<String> doNotPlaceWithRscList = null;
             String doNotPlaceWithRscRegex = null;
             List<DeviceLayerKind> layerStackList = null;
@@ -593,6 +594,7 @@ public class CtrlRscGrpApiCallHandler
                 replicaCount = autoSelectFilter.getReplicaCount();
                 nodeNameList = autoSelectFilter.getNodeNameList();
                 storPoolNameList = autoSelectFilter.getStorPoolNameList();
+                storPoolDisklessNameList = autoSelectFilter.getStorPoolDisklessNameList();
                 doNotPlaceWithRscList = autoSelectFilter.getDoNotPlaceWithRscList();
                 doNotPlaceWithRscRegex = autoSelectFilter.getDoNotPlaceWithRscRegex();
                 replicasOnSameList = autoSelectFilter.getReplicasOnSameList();
@@ -609,6 +611,7 @@ public class CtrlRscGrpApiCallHandler
                 replicaCount,
                 nodeNameList,
                 storPoolNameList,
+                storPoolDisklessNameList,
                 doNotPlaceWithRscList,
                 doNotPlaceWithRscRegex,
                 replicasOnSameList,
@@ -812,6 +815,7 @@ public class CtrlRscGrpApiCallHandler
                     autoPlaceConfig.getAdditionalReplicaCount(),
                     autoPlaceConfig.getNodeNameList(),
                     autoPlaceConfig.getStorPoolNameList(),
+                    autoPlaceConfig.getStorPoolDisklessNameList(),
                     autoPlaceConfig.getDoNotPlaceWithRscList(),
                     autoPlaceConfig.getDoNotPlaceWithRscRegex(),
                     autoPlaceConfig.getReplicasOnSameList(),

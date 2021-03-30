@@ -23,6 +23,7 @@ info:
 
     * unreleased
        - Added makeResourceAvailable API
+       - Added diskless storage pool filter to AutoSelectFilter
     * 1.6.0
        - Added PropsInfoAll, PropsInfo and PropsInfoDetails as well as these entrypoints:
           - /v1/controller/properties/info
@@ -121,7 +122,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.6.0
+  version: 1.7.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -5396,6 +5397,11 @@ components:
         storage_pool:
           type: string
         storage_pool_list:
+          type: array
+          default: null
+          items:
+            type: string
+        storage_pool_diskless_list:
           type: array
           default: null
           items:

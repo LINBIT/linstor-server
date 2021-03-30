@@ -26,6 +26,8 @@ public interface ResourceGroupDatabaseDriver extends GenericDatabaseDriver<Resou
 
     CollectionDatabaseDriver<ResourceGroup, String> getStorPoolNameDriver();
 
+    CollectionDatabaseDriver<ResourceGroup, String> getStorPoolDisklessNameDriver();
+
     CollectionDatabaseDriver<ResourceGroup, String> getDoNotPlaceWithRscListDriver();
 
     SingleColumnDatabaseDriver<ResourceGroup, String> getDoNotPlaceWithRscRegexDriver();
@@ -37,5 +39,6 @@ public interface ResourceGroupDatabaseDriver extends GenericDatabaseDriver<Resou
     CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> getAllowedProviderListDriver();
 
     SingleColumnDatabaseDriver<ResourceGroup, Boolean> getDisklessOnRemainingDriver();
+
 
 }

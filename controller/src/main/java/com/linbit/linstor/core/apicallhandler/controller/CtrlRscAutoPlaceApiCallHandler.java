@@ -235,13 +235,15 @@ public class CtrlRscAutoPlaceApiCallHandler
         {
             storPoolNameList = mergedSelectFilter.getStorPoolNameList();
         }
-
-        errorReporter.logDebug(
-            "Auto-placing '%s' on %d additional nodes" +
-                (storPoolNameList == null ? "" : " using pool '" + storPoolNameList + "'"),
-            rscNameStr,
-            additionalPlaceCount
-        );
+        List<String> storPoolDisklessNameList = null;
+        if (
+            alreadyPlaced.isEmpty() ||
+                (mergedSelectFilter.getStorPoolDisklessNameList() != null &&
+                !mergedSelectFilter.getStorPoolDisklessNameList().isEmpty())
+            )
+        {
+            storPoolDisklessNameList = mergedSelectFilter.getStorPoolDisklessNameList();
+        }
 
         Flux<ApiCallRc> deploymentResponses;
         Flux<ApiCallRc> autoFlux;
@@ -278,6 +280,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 additionalPlaceCount,
                 mergedSelectFilter.getNodeNameList(),
                 storPoolNameList,
+                storPoolDisklessNameList,
                 Stream.concat(
                     mergedSelectFilter.getDoNotPlaceWithRscList().stream(),
                     // Do not attempt to re-use nodes that already have this resource

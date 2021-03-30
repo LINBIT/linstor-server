@@ -154,9 +154,18 @@ class StorPoolFilter
                 alreadyDeployedNodesProps.add(rscIt.next().getNode().getProps(apiAccCtx));
             }
         }
+        boolean diskful = disklessTypeRef == null;
 
         List<String> filterNodeNameList = selectFilter.getNodeNameList();
-        List<String> filterStorPoolNameList = selectFilter.getStorPoolNameList();
+        List<String> filterStorPoolNameList;
+        if (diskful)
+        {
+            filterStorPoolNameList = selectFilter.getStorPoolNameList();
+        }
+        else
+        {
+            filterStorPoolNameList = selectFilter.getStorPoolDisklessNameList();
+        }
         List<String> filterDoNotPlaceWithRscList = selectFilter.getDoNotPlaceWithRscList();
         String filterDoNotPlaceWithRscRegex = selectFilter.getDoNotPlaceWithRscRegex();
         Map<String, String> filterNodePropsMatch = extractFixedMatchingProperties(
@@ -171,7 +180,7 @@ class StorPoolFilter
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
         List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilter.skipAlreadyPlacedOnNodeNamesCheck();
 
-        logIfNotEmpty("filtering mode: %s", disklessTypeRef == null ? "diskful" : disklessTypeRef.name());
+        logIfNotEmpty("filtering mode: %s", diskful ? "diskful" : disklessTypeRef.name());
         logIfNotEmpty("filter node names: %s", filterNodeNameList);
         logIfNotEmpty("filter stor pool names: %s", filterStorPoolNameList);
         logIfNotEmpty("filter do not place with rsc: %s", filterDoNotPlaceWithRscList);
@@ -420,8 +429,15 @@ class StorPoolFilter
 
             if (nodeMatches)
             {
-                storPoolMatches = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(apiAccCtx)
-                    .orElse(0L) >= sizeInKib;
+                if (diskful)
+                {
+                    storPoolMatches = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(apiAccCtx)
+                        .orElse(0L) >= sizeInKib;
+                }
+                else
+                {
+                    storPoolMatches = !sp.getDeviceProviderKind().hasBackingDevice();
+                }
 
                 if (storPoolMatches && filterStorPoolNameList != null && !filterStorPoolNameList.isEmpty())
                 {

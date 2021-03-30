@@ -35,6 +35,7 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroup
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.LAYER_STACK;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.NODE_NAME_LIST;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.POOL_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.POOL_NAME_DISKLESS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_DIFFERENT;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_SAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.REPLICA_COUNT;
@@ -68,6 +69,7 @@ public class ResourceGroupDbDriver
     private final SingleColumnDatabaseDriver<ResourceGroup, Integer> replicaCountDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> nodeNameDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> storPoolNameDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> storPoolDisklessNameDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscListDriver;
     private final SingleColumnDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscRegexDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnSameListDriver;
@@ -108,6 +110,10 @@ public class ResourceGroupDbDriver
         setColumnSetter(REPLICA_COUNT, rscGrp -> rscGrp.getAutoPlaceConfig().getReplicaCount(dbCtxRef));
         setColumnSetter(NODE_NAME_LIST, rscGrp -> toString(rscGrp.getAutoPlaceConfig().getNodeNameList(dbCtxRef)));
         setColumnSetter(POOL_NAME, rscGrp -> toString(rscGrp.getAutoPlaceConfig().getStorPoolNameList(dbCtxRef)));
+        setColumnSetter(
+            POOL_NAME_DISKLESS,
+            rscGrp -> toString(rscGrp.getAutoPlaceConfig().getStorPoolDisklessNameList(dbCtxRef))
+        );
         setColumnSetter(
             DO_NOT_PLACE_WITH_RSC_REGEX,
             rscGrp -> rscGrp.getAutoPlaceConfig().getDoNotPlaceWithRscRegex(dbCtxRef)
@@ -164,6 +170,7 @@ public class ResourceGroupDbDriver
         );
         nodeNameDriver = generateCollectionToJsonStringArrayDriver(NODE_NAME_LIST);
         storPoolNameDriver = generateCollectionToJsonStringArrayDriver(POOL_NAME);
+        storPoolDisklessNameDriver = generateCollectionToJsonStringArrayDriver(POOL_NAME_DISKLESS);
         doNotPlaceWithRscListDriver = generateCollectionToJsonStringArrayDriver(DO_NOT_PLACE_WITH_RSC_LIST);
         doNotPlaceWithRscRegexDriver = generateSingleColumnDriver(
             DO_NOT_PLACE_WITH_RSC_REGEX,
@@ -208,6 +215,12 @@ public class ResourceGroupDbDriver
     public CollectionDatabaseDriver<ResourceGroup, String> getStorPoolNameDriver()
     {
         return storPoolNameDriver;
+    }
+
+    @Override
+    public CollectionDatabaseDriver<ResourceGroup, String> getStorPoolDisklessNameDriver()
+    {
+        return storPoolDisklessNameDriver;
     }
 
     @Override
@@ -309,6 +322,7 @@ public class ResourceGroupDbDriver
                 replicaCount,
                 raw.getAsStringList(NODE_NAME_LIST),
                 raw.getAsStringList(POOL_NAME),
+                raw.getAsStringList(POOL_NAME_DISKLESS),
                 raw.getAsStringList(DO_NOT_PLACE_WITH_RSC_LIST),
                 raw.get(DO_NOT_PLACE_WITH_RSC_REGEX),
                 replicasOnSame,

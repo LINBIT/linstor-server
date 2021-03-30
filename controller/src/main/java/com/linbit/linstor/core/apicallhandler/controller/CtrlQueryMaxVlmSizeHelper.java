@@ -95,6 +95,7 @@ public class CtrlQueryMaxVlmSizeHelper
                     null,
                     null,
                     Collections.singletonList(storPoolNameStr), // only consider this one storpoolname
+                    null, // query max vlm size does not make sense with diskless storpools
                     null,
                     null,
                     null,

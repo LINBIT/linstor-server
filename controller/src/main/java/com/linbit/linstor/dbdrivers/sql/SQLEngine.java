@@ -209,7 +209,7 @@ public class SQLEngine implements DbEngine
         DataToString<DATA> dataToString
     )
     {
-        return new SQLFlagsDriver<DATA, FLAG>(
+        return new SQLFlagsDriver<>(
             this,
             errorReporter,
             setters,
@@ -314,6 +314,13 @@ public class SQLEngine implements DbEngine
                 if (column.getSqlType() == Types.BLOB)
                 {
                     data = resultSet.getBytes(column.getName());
+                }
+                else
+                if (column.getSqlType() == Types.VARCHAR)
+                {
+                    // includes TEXT type, but if TEXT is read with .getObject the
+                    // returned type is in h2 case org.h2.jdbc.JdbcClob instead of String
+                    data = resultSet.getString(column.getName());
                 }
                 else
                 {

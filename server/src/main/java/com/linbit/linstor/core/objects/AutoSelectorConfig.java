@@ -34,6 +34,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
     private final TransactionSimpleObject<ResourceGroup, Integer> replicaCount;
     private final TransactionList<ResourceGroup, String> nodeNameList;
     private final TransactionList<ResourceGroup, String> storPoolNameList;
+    private final TransactionList<ResourceGroup, String> storPoolDisklessNameList;
     private final TransactionList<ResourceGroup, String> doNotPlaceWithRscList;
     private final TransactionSimpleObject<ResourceGroup, String> doNotPlaceWithRscRegex;
     private final TransactionList<ResourceGroup, String> replicasOnSameList;
@@ -47,6 +48,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
         Integer replicaCountRef,
         List<String> nodeNameListRef,
         List<String> storPoolNameListRef,
+        List<String> storPoolDisklessNameListRef,
         List<String> doNotPlaceWithRscListRef,
         String doNotPlaceWithRscRegexRef,
         List<String> replicasOnSameListRef,
@@ -77,6 +79,11 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             rscGrpRef,
             storPoolNameListRef,
             dbDriverRef.getStorPoolNameDriver()
+        );
+        storPoolDisklessNameList = transactionObjectFactoryRef.createTransactionPrimitiveList(
+            rscGrpRef,
+            storPoolDisklessNameListRef,
+            dbDriverRef.getStorPoolDisklessNameDriver()
         );
         doNotPlaceWithRscList = transactionObjectFactoryRef.createTransactionPrimitiveList(
             rscGrpRef,
@@ -138,6 +145,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             get(priorityApi.getReplicaCount(), baseCfg.replicaCount),
             get(priorityApi.getNodeNameList(), baseCfg.nodeNameList),
             get(priorityApi.getStorPoolNameList(), baseCfg.storPoolNameList),
+            get(priorityApi.getStorPoolDisklessNameList(), baseCfg.storPoolDisklessNameList),
             get(priorityApi.getDoNotPlaceWithRscList(), baseCfg.doNotPlaceWithRscList),
             get(priorityApi.getDoNotPlaceWithRscRegex(), baseCfg.doNotPlaceWithRscRegex),
             get(priorityApi.getReplicasOnSameList(), baseCfg.replicasOnSameList),
@@ -198,6 +206,10 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
         return protectedList(accCtx, storPoolNameList);
     }
 
+    public List<String> getStorPoolDisklessNameList(AccessContext accCtx) throws AccessDeniedException
+    {
+        return protectedList(accCtx, storPoolDisklessNameList);
+    }
 
     public List<String> getDoNotPlaceWithRscList(AccessContext accCtx) throws AccessDeniedException
     {
@@ -245,6 +257,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             null, // no "additional" placeCounts for rscGrps
             Collections.unmodifiableList(nodeNameList),
             Collections.unmodifiableList(storPoolNameList),
+            Collections.unmodifiableList(storPoolDisklessNameList),
             Collections.unmodifiableList(doNotPlaceWithRscList),
             doNotPlaceWithRscRegex.get(),
             Collections.unmodifiableList(replicasOnSameList),
@@ -276,6 +289,12 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             {
                 storPoolNameList.clear();
                 storPoolNameList.addAll(pojoStorPool);
+            }
+            List<String> pojoStorPoolDiskless = autoPlaceConfigRef.getStorPoolDisklessNameList();
+            if (pojoStorPoolDiskless != null)
+            {
+                storPoolDisklessNameList.clear();
+                storPoolDisklessNameList.addAll(pojoStorPoolDiskless);
             }
             Boolean disklessOnRemainingRef = autoPlaceConfigRef.getDisklessOnRemaining();
             if (disklessOnRemainingRef != null)
