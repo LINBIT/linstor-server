@@ -81,7 +81,7 @@ RUN { \
 	echo 'gpgcheck=1' ;\
 } >/etc/yum.repos.d/linbit-public.repo
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
-  yum install -y which lvm2 util-linux socat && \
+  yum install -y which lvm2 util-linux socat device-mapper-multipath lsscsi && \
   yum install -y /tmp/linstorpkgs/linstor-common*.rpm /tmp/linstorpkgs/linstor-satellite*.rpm && \
   yum install -y /tmp/tools/*.rpm && \
   yum install -y thin-send-recv && \
