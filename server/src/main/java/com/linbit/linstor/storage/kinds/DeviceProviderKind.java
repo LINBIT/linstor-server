@@ -112,7 +112,7 @@ public enum DeviceProviderKind
         ExtTools.SPDK
     ),
     EXOS(
-        true,
+        false,
         false,
         false,
         true,
