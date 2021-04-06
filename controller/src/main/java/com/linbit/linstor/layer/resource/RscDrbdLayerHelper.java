@@ -193,7 +193,7 @@ public class RscDrbdLayerHelper extends
         LayerPayload payload
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException
+            ValueInUseException, LinStorException
     {
         DrbdRscDfnData<Resource> drbdRscDfnData = ensureResourceDefinitionExists(
             vlmDfn.getResourceDefinition(),
@@ -228,7 +228,7 @@ public class RscDrbdLayerHelper extends
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException, ImplementationError, InvalidNameException
+            ValueInUseException, ImplementationError, InvalidNameException, LinStorException
     {
         ResourceDefinition rscDfn = rscRef.getDefinition();
         DrbdRscDfnData<Resource> drbdRscDfnData = ensureResourceDefinitionExists(

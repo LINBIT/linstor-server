@@ -321,7 +321,8 @@ public class CtrlRscLayerDataFactory
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException
+        throws DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
+            ValueInUseException, LinStorException
     {
         List<DeviceLayerKind> layerStack;
         try
@@ -370,7 +371,7 @@ public class CtrlRscLayerDataFactory
         LayerPayload payload
     )
         throws DatabaseException, ValueOutOfRangeException,
-            ExhaustedPoolException, ValueInUseException
+            ExhaustedPoolException, ValueInUseException, LinStorException
     {
         try
         {
@@ -506,6 +507,17 @@ public class CtrlRscLayerDataFactory
                 exc
             );
         }
+        catch (LinStorException lsExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Volume definition creation failed due to an unidentified error code, see text message " +
+                    "of nested exception"
+                ),
+                lsExc
+            );
+        }
         catch (Exception exc)
         {
             throw new ApiRcException(
@@ -524,7 +536,7 @@ public class CtrlRscLayerDataFactory
         AbsRscLayerObject<Resource> rscParentRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException
+        ValueInUseException, LinStorException
     {
         AbsRscLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(fromSnapData.getLayerKind());
 

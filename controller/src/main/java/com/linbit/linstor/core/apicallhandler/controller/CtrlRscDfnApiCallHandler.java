@@ -857,6 +857,17 @@ public class CtrlRscDfnApiCallHandler
             rcEntry.setSkipErrorReport(true);
             throw new ApiRcException(rcEntry.build(), exc);
         }
+        catch (LinStorException lsExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Volume definition creation failed due to an unidentified error code, see text message " +
+                    "of nested exception"
+                ),
+                lsExc
+            );
+        }
         return rscDfn;
     }
 

@@ -6,6 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -107,6 +108,17 @@ class CtrlVlmDfnCrtApiHelper
                 ApiConsts.FAIL_POOL_EXHAUSTED_MINOR_NR,
                 "Could not find free minor number"
             ), exhaustedPoolExc);
+        }
+        catch (LinStorException lsExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Volume definition creation failed due to an unidentified error code, see text message " +
+                    "of nested exception"
+                ),
+                lsExc
+            );
         }
         return vlmDfn;
     }

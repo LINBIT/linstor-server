@@ -409,7 +409,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         StorageRscData<Resource> storRscData,
         VlmProviderObject<Snapshot> snapVlmData
     )
-        throws DatabaseException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException, LinStorException
     {
         VlmProviderObject<Resource> vlmData;
 

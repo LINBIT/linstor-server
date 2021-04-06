@@ -105,7 +105,7 @@ public abstract class AbsRscLayerHelper<
         LayerPayload payload
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException
+        ValueInUseException, LinStorException
     {
         RSC_DFN_LO rscDfnData = rscDfn.getLayerData(apiCtx, kind, rscNameSuffix);
         if (rscDfnData == null)
@@ -137,7 +137,7 @@ public abstract class AbsRscLayerHelper<
         LayerPayload payload
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException
+        ValueInUseException, LinStorException
     {
         VLM_DFN_LO vlmDfnData = vlmDfn.getLayerData(apiCtx, kind, rscNameSuffix);
         if (vlmDfnData == null)
@@ -291,7 +291,7 @@ public abstract class AbsRscLayerHelper<
         AbsRscLayerObject<Resource> rscParentRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException
+        ValueInUseException, LinStorException
     {
         ensureResourceDefinitionDataCopiedFromSnapshot(
             rsc.getDefinition(),
@@ -330,7 +330,7 @@ public abstract class AbsRscLayerHelper<
         AbsRscLayerObject<Snapshot> fromSnapData
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException
+        ValueInUseException, LinStorException
     {
         RSC_DFN_LO rscDfnData = rscDfn.getLayerData(apiCtx, kind, fromSnapData.getResourceNameSuffix());
         if (rscDfnData == null)
@@ -436,7 +436,7 @@ public abstract class AbsRscLayerHelper<
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException, ImplementationError, InvalidNameException;
+            ValueInUseException, ImplementationError, InvalidNameException, LinStorException;
 
     protected abstract void mergeRscData(
         RSC_LO rscDataRef,
@@ -452,7 +452,7 @@ public abstract class AbsRscLayerHelper<
         LayerPayload payload
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException;
+        ValueInUseException, LinStorException;
 
     protected abstract void mergeRscDfnData(RSC_DFN_LO rscDfn, LayerPayload payload)
         throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, ValueInUseException,
@@ -464,7 +464,7 @@ public abstract class AbsRscLayerHelper<
         LayerPayload payloadRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException;
+        ValueInUseException, LinStorException;
 
     protected abstract void mergeVlmDfnData(
         VLM_DFN_LO vlmDfnDataRef,
@@ -531,7 +531,7 @@ public abstract class AbsRscLayerHelper<
         AbsRscLayerObject<Snapshot> fromSnapData
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException;
+        ValueInUseException, LinStorException;
 
     protected abstract RSC_LO restoreRscData(
         Resource rsc,
@@ -552,6 +552,6 @@ public abstract class AbsRscLayerHelper<
         RSC_LO rscDataRef,
         VlmProviderObject<Snapshot> vlmProviderObjectRef
     )
-        throws DatabaseException, AccessDeniedException;
+        throws DatabaseException, AccessDeniedException, LinStorException;
 
 }

@@ -3,6 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -205,16 +206,26 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
 
                     ArrayList<OpenflexRscData<Resource>> rscDataList = new ArrayList<>();
 
-                    ofRscDfnData = new OpenflexRscDfnData<>(
-                        rscDfn.getName(),
-                        rscNameSuffix,
-                        nameShortener.shorten(rscDfn, rscNameSuffix),
-                        rscDataList,
-                        nqn,
-                        this,
-                        transObjFactory,
-                        transMgrProvider
-                    );
+                    try
+                    {
+                        ofRscDfnData = new OpenflexRscDfnData<>(
+                            rscDfn.getName(),
+                            rscNameSuffix,
+                            nameShortener.shorten(rscDfn, rscNameSuffix),
+                            rscDataList,
+                            nqn,
+                            this,
+                            transObjFactory,
+                            transMgrProvider
+                        );
+                    }
+                    catch (LinStorException lsExc)
+                    {
+                        throw new ImplementationError(
+                            "Cannot reload Openflex resource definition from database",
+                            lsExc
+                        );
+                    }
                     cacheRscDfnDataMap.put(
                         new Pair<>(
                             rscDfn,

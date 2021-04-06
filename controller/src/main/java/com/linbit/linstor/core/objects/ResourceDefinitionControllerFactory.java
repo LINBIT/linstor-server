@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -74,7 +75,7 @@ public class ResourceDefinitionControllerFactory
         ResourceGroup rscGroup
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException,
-        ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException
+        ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException, LinStorException
     {
         ResourceDefinition rscDfn = resourceDefinitionRepository.get(accCtx, rscName);
 

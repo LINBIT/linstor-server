@@ -81,7 +81,7 @@ public class RscOpenflexLayerHelper
         String rscNameSuffixRef,
         LayerPayload payloadRef
     ) throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException
+        ValueInUseException, LinStorException
     {
         String shortName = nameShortener.shorten(rscDfnRef, rscNameSuffixRef);
         return layerDataFactory.createOpenflexRscDfnData(
@@ -131,7 +131,7 @@ public class RscOpenflexLayerHelper
         AbsRscLayerObject<Resource> parentObjectRef,
         List<DeviceLayerKind> layerListRef
     ) throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException, ImplementationError, InvalidNameException
+        ValueInUseException, ImplementationError, InvalidNameException, LinStorException
     {
         RscNvmeLayerHelper.ensureTargetNodeNameIsSet(rscRef, apiCtx);
         ResourceDefinition rscDfn = rscRef.getDefinition();
@@ -236,7 +236,7 @@ public class RscOpenflexLayerHelper
         ResourceDefinition rscDfnRef,
         AbsRscLayerObject<Snapshot> fromSnapDataRef
     ) throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException
+        ValueInUseException, LinStorException
     {
         String resourceNameSuffix = fromSnapDataRef.getResourceNameSuffix();
         OpenflexRscDfnData<Snapshot> snapDfnData = fromSnapDataRef.getAbsResource().getSnapshotDefinition()

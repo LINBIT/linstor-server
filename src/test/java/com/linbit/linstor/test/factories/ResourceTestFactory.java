@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
@@ -55,7 +56,7 @@ public class ResourceTestFactory
 
     public Resource get(String nodeName, String rscName, boolean createIfNotExists)
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, ValueOutOfRangeException,
-        ValueInUseException, ExhaustedPoolException, InvalidNameException
+        ValueInUseException, ExhaustedPoolException, InvalidNameException, LinStorException
     {
         Resource rsc = rscMap.get(new Pair<>(nodeName.toUpperCase(), rscName.toUpperCase()));
         if (rsc == null && createIfNotExists)
@@ -91,14 +92,14 @@ public class ResourceTestFactory
 
     public Resource create(Node node, ResourceDefinition rscDfn)
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, ValueOutOfRangeException,
-        ValueInUseException, ExhaustedPoolException, InvalidNameException
+        ValueInUseException, ExhaustedPoolException, InvalidNameException, LinStorException
     {
         return builder(node.getName().displayValue, rscDfn.getName().displayValue).build();
     }
 
     public Resource create(String nodeName, String rscName)
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, ValueOutOfRangeException,
-        ValueInUseException, ExhaustedPoolException, InvalidNameException
+        ValueInUseException, ExhaustedPoolException, InvalidNameException, LinStorException
     {
         return builder(nodeName, rscName).build();
     }
@@ -130,7 +131,8 @@ public class ResourceTestFactory
 
         public Resource build()
             throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException,
-            ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException, InvalidNameException
+            ValueOutOfRangeException, ValueInUseException, ExhaustedPoolException, InvalidNameException,
+            LinStorException
         {
             Resource rsc = rscFact.create(
                 accCtx,
