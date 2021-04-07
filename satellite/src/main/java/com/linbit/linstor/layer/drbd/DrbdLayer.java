@@ -907,7 +907,8 @@ public class DrbdLayer implements DeviceLayer
         throws VolumeException, AccessDeniedException
     {
         String metaDiskPath = drbdVlmData.getMetaDiskPath();
-        if (metaDiskPath == null)
+        boolean externalMd = metaDiskPath != null;
+        if (!externalMd)
         {
             // internal meta data
             metaDiskPath = drbdVlmData.getBackingDevice();
@@ -916,7 +917,7 @@ public class DrbdLayer implements DeviceLayer
         MdSuperblockBuffer mdUtils = new MdSuperblockBuffer();
         try
         {
-            mdUtils.readObject(metaDiskPath);
+            mdUtils.readObject(metaDiskPath, externalMd);
         }
         catch (IOException exc)
         {
@@ -952,7 +953,7 @@ public class DrbdLayer implements DeviceLayer
                     isMetaDataCorrupt = !drbdUtils.hasMetaData(
                         metaDiskPath,
                         drbdVlmData.getVlmDfnLayerObject().getMinorNr().value,
-                        "internal"
+                        externalMd ? "flex-external" : "internal"
                     );
                 }
                 catch (ExtCmdFailedException exc)

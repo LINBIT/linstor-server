@@ -66,7 +66,7 @@ public class MdSuperblockBuffer
         buffer.order(ByteOrder.BIG_ENDIAN);
     }
 
-    public void readObject(final String objPath)
+    public void readObject(final String objPath, final boolean externalMd)
         throws IOException
     {
         clear();
@@ -83,10 +83,13 @@ public class MdSuperblockBuffer
             {
                 throw new IOException("Object '" + objPath + "' is too small to contain a DRBD meta data superblock");
             }
-            long offset = fileSize - SUPERBLK_SIZE;
 
             // Read the DRBD meta data superblock
-            inChan.position(offset);
+            if (!externalMd)
+            {
+                long offset = fileSize - SUPERBLK_SIZE;
+                inChan.position(offset);
+            }
             inChan.read(buffer);
         }
 
