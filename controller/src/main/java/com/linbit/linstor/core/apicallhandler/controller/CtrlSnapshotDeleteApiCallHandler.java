@@ -161,6 +161,16 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         ResourceName rscName = snapshotDfn.getResourceName();
         SnapshotName snapshotName = snapshotDfn.getName();
 
+        if (isBackupShippingInProgress(snapshotDfn))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE,
+                    getSnapshotDfnDescription(snapshotNameStr) + " is currently being shipped as a backup. " +
+                        "Please wait until the shipping is finished or use backup abort --create"
+                )
+            );
+        }
         if (isSnapshotShippingInProgress(snapshotDfn))
         {
             snapShipAbortHandler.markSnapshotShippingAborted(snapshotDfn);
@@ -191,6 +201,26 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         try
         {
             shipping = snapshotDfnRef.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "checking if SnapshotDefinition is in progress",
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
+        return shipping;
+    }
+
+    private boolean isBackupShippingInProgress(SnapshotDefinition snapshotDfnRef)
+    {
+        boolean shipping = false;
+        try
+        {
+            shipping = snapshotDfnRef.getFlags()
+                .isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP) &&
+                !snapshotDfnRef.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING_ABORT);
         }
         catch (AccessDeniedException exc)
         {

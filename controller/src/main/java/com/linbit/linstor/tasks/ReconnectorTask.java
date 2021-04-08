@@ -157,7 +157,7 @@ public class ReconnectorTask implements Task
              * the only way I can think of now would require some rewriting of many method-signatures
              * converting them from non-flux to flux returning methods.
              */
-            snapShipAbortHandler.abortSnapshotShippingPrivileged(peer.getNode())
+            snapShipAbortHandler.abortAllShippingPrivileged(peer.getNode())
                 .subscriberContext(
                     Context.of(
                         ApiModule.API_CALL_NAME,

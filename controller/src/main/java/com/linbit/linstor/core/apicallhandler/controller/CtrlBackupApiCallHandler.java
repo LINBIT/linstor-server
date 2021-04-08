@@ -103,6 +103,7 @@ import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import com.amazonaws.services.s3.model.MultiObjectDeleteException;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import reactor.core.publisher.Flux;
+import reactor.util.function.Tuple2;
 
 @Singleton
 public class CtrlBackupApiCallHandler
@@ -134,6 +135,7 @@ public class CtrlBackupApiCallHandler
     private LengthPadding cryptoLenPad;
     private BackupInfoManager backupInfoMgr;
     private Provider<Peer> peerProvider;
+    private CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandler;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -156,7 +158,8 @@ public class CtrlBackupApiCallHandler
         CtrlSecurityObjects ctrlSecObjRef,
         LengthPadding cryptoLenPadRef,
         BackupInfoManager backupInfoMgrRef,
-        Provider<Peer> peerProviderRef
+        Provider<Peer> peerProviderRef,
+        CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandlerRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -179,6 +182,7 @@ public class CtrlBackupApiCallHandler
         cryptoLenPad = cryptoLenPadRef;
         backupInfoMgr = backupInfoMgrRef;
         peerProvider = peerProviderRef;
+        ctrlSnapShipAbortHandler = ctrlSnapShipAbortHandlerRef;
     }
 
     public Flux<ApiCallRc> createFullBackup(String rscNameRef) throws AccessDeniedException
@@ -203,21 +207,15 @@ public class CtrlBackupApiCallHandler
         try
         {
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
-            Collection<SnapshotDefinition> snapDfns = rscDfn.getSnapshotDfns(peerAccCtx.get());
-            for (SnapshotDefinition snapDfn : snapDfns)
+            Collection<SnapshotDefinition> snapDfns = getInProgressBackups(rscDfn);
+            if (!snapDfns.isEmpty())
             {
-                if (
-                    snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING) &&
-                        snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.BACKUP)
-                )
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_EXISTS_SNAPSHOT_SHIPPING,
-                            "Backup shipping of resource '" + rscNameRef + "' already in progress"
-                        )
-                    );
-                }
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_SNAPSHOT_SHIPPING,
+                        "Backup shipping of resource '" + rscNameRef + "' already in progress"
+                    )
+                );
             }
             Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx.get());
             List<String> nodes = new ArrayList<>();
@@ -1157,6 +1155,90 @@ public class CtrlBackupApiCallHandler
         return back;
     }
 
+    public Flux<ApiCallRc> backupAbort(String rscNameRef, boolean restore, boolean create) {
+        return scopeRunner.fluxInTransactionalScope(
+            "abort backup",
+            lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            () -> backupAbortInTransaction(rscNameRef, restore, create)
+        );
+    }
+
+    private Flux<ApiCallRc> backupAbortInTransaction(String rscNameRef, boolean restore, boolean create)
+        throws AccessDeniedException, DatabaseException
+    {
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+        Set<SnapshotDefinition> snapDfns = getInProgressBackups(rscDfn);
+        if (snapDfns.isEmpty())
+        {
+            return Flux.empty();
+        }
+        if (!restore && !create)
+        {
+            if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
+            {
+                restore = true;
+                if (snapDfns.size() > 1)
+                {
+                    create = true;
+                }
+            }
+            else
+            {
+                create = true;
+            }
+        }
+
+        Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateStlts = Flux.empty();
+        for (SnapshotDefinition snapDfn : snapDfns)
+        {
+            Collection<Snapshot> snaps = snapDfn.getAllSnapshots(peerAccCtx.get());
+            boolean abort = false;
+            for (Snapshot snap : snaps)
+            {
+                if (
+                    snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET) && restore ||
+                        snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE) && create
+                )
+                {
+                    abort = true;
+                }
+            }
+            if (abort)
+            {
+                snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+                snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT);
+                updateStlts = updateStlts.concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
+                );
+            }
+        }
+
+        ctrlTransactionHelper.commit();
+        return updateStlts.transform(
+                responses -> CtrlResponseUtils.combineResponses(
+                    responses,
+                    LinstorParsingUtils.asRscName(rscNameRef),
+                "Abort backups of {1} on {0} started"
+                )
+            );
+    }
+
+    private Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn) throws AccessDeniedException
+    {
+        Set<SnapshotDefinition> snapDfns = new HashSet<>();
+        for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
+        {
+            if (
+                snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING) &&
+                    snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.BACKUP)
+            )
+            {
+                snapDfns.add(snapDfn);
+            }
+        }
+        return snapDfns;
+    }
+
     public Flux<ApiCallRc> shippingReceived(String rscNameRef, String snapNameRef, boolean successRef)
     {
         return scopeRunner
@@ -1201,21 +1283,32 @@ public class CtrlBackupApiCallHandler
             }
             else
             {
-                for (Snapshot snap : snapDfn.getAllSnapshots(peerAccCtx.get()))
+                Flux<ApiCallRc> flux = Flux.empty();
+                if (snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
                 {
-                    snap.markDeleted(peerAccCtx.get());
+                    flux = ctrlSnapDeleteApiCallHandler.deleteSnapshot(
+                        snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue
+                    );
+                }
+                else
+                {
+                    for (Snapshot snap : snapDfn.getAllSnapshots(peerAccCtx.get()))
+                    {
+                        snap.markDeleted(peerAccCtx.get());
+                    }
+                    flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                        snapDfn,
+                        CtrlSatelliteUpdateCaller.notConnectedWarn()
+                    ).transform(
+                        responses -> CtrlResponseUtils.combineResponses(
+                            responses,
+                            LinstorParsingUtils.asRscName(rscNameRef),
+                            "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
+                        )
+                    ).concatWith(postReceivingFailed(snapDfn));
                 }
                 ctrlTransactionHelper.commit();
-                return ctrlSatelliteUpdateCaller.updateSatellites(
-                    snapDfn,
-                    CtrlSatelliteUpdateCaller.notConnectedWarn()
-                ).transform(
-                    responses -> CtrlResponseUtils.combineResponses(
-                        responses,
-                        LinstorParsingUtils.asRscName(rscNameRef),
-                        "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
-                    )
-                ).concatWith(postReceivingFailed(snapDfn));
+                return flux;
             }
         }
         catch (AccessDeniedException exc)
@@ -1300,13 +1393,20 @@ public class CtrlBackupApiCallHandler
         SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true);
         try
         {
+            String nodeName = peerProvider.get().getNode().getName().displayValue;
+            backupInfoMgr.abortDeleteEntries(nodeName, rscNameRef, snapNameRef);
+            if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
+            {
+                snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+                ctrlTransactionHelper.commit();
+                return ctrlSnapShipAbortHandler.abortBackupShippingPrivileged(snapDfn.getResourceDefinition());
+            }
             snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
             if (successRef)
             {
-                String nodeName = peerProvider.get().getNode().getName().displayValue;
                 snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
-                backupInfoMgr.abortDeleteEntries(nodeName, rscNameRef, snapNameRef);
             }
+
             ctrlTransactionHelper.commit();
 
             return ctrlSatelliteUpdateCaller.updateSatellites(

@@ -185,7 +185,7 @@ public class BackupShippingService implements SystemService
         }
         else
         {
-            errorReporter.logDebug("  shippingInfo is null, nothing to shutdown");
+            errorReporter.logDebug("  backupShippingInfo is null, nothing to shutdown");
         }
     }
 

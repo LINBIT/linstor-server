@@ -183,6 +183,28 @@ public class Backups
         }
     }
 
+    @DELETE
+    @Path("/abort/{rscName}")
+    public void abortBackup(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("rscName") String rscName,
+        @DefaultValue("false") @QueryParam("restore") boolean restore,
+        @DefaultValue("false") @QueryParam("create") boolean create
+    )
+    {
+        Flux<ApiCallRc> deleteFlux = backupApiCallHandler.backupAbort(
+            rscName, restore, create
+        ).subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
+        requestHelper.doFlux(
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(
+                deleteFlux,
+                Response.Status.OK
+            )
+        );
+    }
+
     @GET
     public Response listBackups(
         @Context Request request,

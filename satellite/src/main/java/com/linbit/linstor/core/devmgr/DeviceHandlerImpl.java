@@ -378,9 +378,12 @@ public class DeviceHandlerImpl implements DeviceHandler
                         snapListNotifyDelete.add(snapshot);
                         // snapshot.delete is done by the deviceManager
                     }
-                    // start the snapshot-shipping-daemons and backup-shipping-daemons if necessary
-                    snapshotShippingManager.allSnapshotPartsRegistered(snapshot);
-                    backupShippingManager.allBackupPartsRegistered(snapshot);
+                    else
+                    {
+                        // start the snapshot-shipping-daemons and backup-shipping-daemons if necessary
+                        snapshotShippingManager.allSnapshotPartsRegistered(snapshot);
+                        backupShippingManager.allBackupPartsRegistered(snapshot);
+                    }
                 }
 
                 /*

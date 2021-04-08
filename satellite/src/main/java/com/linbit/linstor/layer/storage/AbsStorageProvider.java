@@ -222,8 +222,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         {
             throw new ImplementationError("Process was called without previous prepare()");
         }
-        Object intentionalTypeEreasure = rawVlmDataList;
-        List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) intentionalTypeEreasure;
+        Object intentionalTypeErasure = rawVlmDataList;
+        List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) intentionalTypeErasure;
 
         Map<Boolean, List<VlmProviderObject<Snapshot>>> groupedSnapshotVolumesByDeletingFlag = snapshotVlms.stream()
             .collect(
@@ -688,6 +688,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
                 {
                     snapShipMgr.abort(snapVlm);
+                    backupShipMgr.abort(snapVlm);
                 }
 
                 errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
@@ -784,6 +785,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 {
                     errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
                     finishShipReceiving(vlmData, snapVlm);
+                }
+                if (
+                    snap.getSnapshotDefinition().getFlags()
+                        .isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT)
+                )
+                {
+                    backupShipMgr.abort(snapVlm);
                 }
             }
         }

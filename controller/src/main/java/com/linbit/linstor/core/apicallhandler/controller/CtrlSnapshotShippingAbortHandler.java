@@ -73,7 +73,7 @@ public class CtrlSnapshotShippingAbortHandler
         errorReporter = errorReporterRef;
     }
 
-    public Flux<ApiCallRc> abortSnapshotShippingPrivileged(Node nodeRef)
+    public Flux<ApiCallRc> abortAllShippingPrivileged(Node nodeRef)
     {
         return scopeRunner
             .fluxInTransactionalScope(
@@ -82,11 +82,11 @@ public class CtrlSnapshotShippingAbortHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> abortSnapshotShippingPrivilegedInTransaction(nodeRef)
+                () -> abortAllShippingPrivilegedInTransaction(nodeRef)
             );
     }
 
-    private Flux<ApiCallRc> abortSnapshotShippingPrivilegedInTransaction(Node nodeRef)
+    private Flux<ApiCallRc> abortAllShippingPrivilegedInTransaction(Node nodeRef)
     {
         Flux<ApiCallRc> flux = Flux.empty();
         try
@@ -139,29 +139,63 @@ public class CtrlSnapshotShippingAbortHandler
 
             for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(apiCtx))
             {
-                if (snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING))
+                if (
+                    snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING) &&
+                        !snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.BACKUP)
+                )
                 {
-                    boolean delete = true;
-                    if (snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.BACKUP))
+                    flux = flux.concatWith(
+                        snapDelHandlerProvider.get()
+                            .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue)
+                    );
+                }
+            }
+            ctrlTransactionHelper.commit();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return flux;
+    }
+
+    public Flux<ApiCallRc> abortBackupShippingPrivileged(ResourceDefinition rscDfn)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Abort backup shipments of rscDfn",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> abortBackupShippingPrivilegedInTransaction(rscDfn)
+            );
+    }
+
+    private Flux<ApiCallRc> abortBackupShippingPrivilegedInTransaction(ResourceDefinition rscDfn)
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        try
+        {
+
+            for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(apiCtx))
+            {
+                if (
+                    snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP)
+                )
+                {
+                    for (Snapshot snap : snapDfn.getAllSnapshots(apiCtx))
                     {
-                        for (Snapshot snap : snapDfn.getAllSnapshots(apiCtx))
+                        if (!snap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET))
                         {
-                            if (!snap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET))
-                            {
-                                abortBackupShippings(snap.getNode());
-                            }
-                            else
-                            {
-                                delete = false;
-                            }
+                            flux = flux.concatWith(
+                                snapDelHandlerProvider.get()
+                                    .deleteSnapshot(
+                                        snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue
+                                    )
+                            );
+                            abortBackupShippings(snap.getNode());
                         }
-                    }
-                    if (delete)
-                    {
-                        flux = flux.concatWith(
-                            snapDelHandlerProvider.get()
-                                .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue)
-                        );
                     }
                 }
             }
