@@ -59,17 +59,17 @@ public class Backups
     }
 
     @POST
-    @Path("/{rscName}")
     public void createFullBackup(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
-        @PathParam("rscName") String rscName
+        String jsonData
     )
     {
         Flux<ApiCallRc> responses;
         try
         {
-            responses = backupApiCallHandler.createFullBackup(rscName)
+            JsonGenTypes.BackupCreate data = objectMapper.readValue(jsonData, JsonGenTypes.BackupCreate.class);
+            responses = backupApiCallHandler.createFullBackup(data.rsc_name)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
@@ -80,14 +80,17 @@ public class Backups
         {
             throw new ImplementationError(exc);
         }
+        catch (JsonProcessingException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
     }
 
     @POST
-    @Path("{nodeName}/{rscName}")
+    @Path("{rscName}")
     public void restoreBackup(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
-        @PathParam("nodeName") String nodeName,
         @PathParam("rscName") String rscName,
         String jsonData
     )
@@ -99,7 +102,7 @@ public class Backups
             responses = backupApiCallHandler.restoreBackup(
                 data.src_rsc_name,
                 data.stor_pool_name,
-                nodeName,
+                data.node_name,
                 rscName,
                 data.bucket_name == null ? "" : data.bucket_name,
                 data.passphrase
@@ -116,7 +119,7 @@ public class Backups
     }
 
     @DELETE
-    @Path("/{rscName}")
+    @Path("{rscName}")
     public void deleteBackups(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
@@ -183,26 +186,33 @@ public class Backups
         }
     }
 
-    @DELETE
-    @Path("/abort/{rscName}")
+    @POST
+    @Path("{rscName}/abort")
     public void abortBackup(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
-        @DefaultValue("false") @QueryParam("restore") boolean restore,
-        @DefaultValue("false") @QueryParam("create") boolean create
+        String jsonData
     )
     {
-        Flux<ApiCallRc> deleteFlux = backupApiCallHandler.backupAbort(
-            rscName, restore, create
-        ).subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
-        requestHelper.doFlux(
-            asyncResponse,
-            ApiCallRcRestUtils.mapToMonoResponse(
-                deleteFlux,
-                Response.Status.OK
-            )
-        );
+        try
+        {
+            JsonGenTypes.BackupAbort data = objectMapper.readValue(jsonData, JsonGenTypes.BackupAbort.class);
+            Flux<ApiCallRc> deleteFlux = backupApiCallHandler.backupAbort(
+                rscName, data.restore, data.create
+            ).subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
+            requestHelper.doFlux(
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(
+                    deleteFlux,
+                    Response.Status.OK
+                )
+            );
+        }
+        catch (JsonProcessingException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
     }
 
     @GET

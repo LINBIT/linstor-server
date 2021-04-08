@@ -1213,6 +1213,20 @@ public class JsonGenTypes
         public String stor_pool_name;
         public String bucket_name;
         public String passphrase;
+        public String node_name;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupCreate
+    {
+        public String rsc_name;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupAbort
+    {
+        public Boolean restore;
+        public Boolean create;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

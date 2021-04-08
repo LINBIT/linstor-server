@@ -4744,14 +4744,11 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupDelete'
-  /v1/backups/{resource}:
     post:
       tags:
         - developers
       summary: create a full backup
       description: create and ship a full backup to the target system
-      parameters:
-        - $ref: '#/components/parameters/Resource'
       responses:
         '200':
            description: backup created and shipping started
@@ -4759,6 +4756,12 @@ paths:
              application/json:
                schema:
                  $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupCreate'
+  /v1/backups/{resource}:
     delete:
       tags:
         - developers
@@ -4789,14 +4792,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
-  /v1/backups/{node}/{resource}:
     post:
       tags:
         - developers
       summary: restore backups
       description: restore the specified backups
       parameters:
-        - $ref: '#/components/parameters/Node'
         - $ref: '#/components/parameters/Resource'
       responses:
         '200':
@@ -4810,6 +4811,26 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupRestore'
+  /v1/backups/{resource}/abort:
+    post:
+      tags:
+        - developers
+      summary: abort backups
+      description: abort all backups of the given resource
+      parameters:
+        - $ref: '#/components/parameters/Resource'
+      responses:
+        '200':
+          description: backups aborted or error messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupAbort'
   /v1/events/drbd/promotion:
     get:
       tags:
@@ -6830,6 +6851,20 @@ components:
           type: string
         passphrase:
           type: string
+        node_name:
+          type: string
+    BackupCreate:
+      type: object
+      properties:
+        rsc_name:
+          type: string
+    BackupAbort:
+      type: object
+      properties:
+        restore:
+          type: boolean
+        create:
+          type: boolean
     PassPhraseCreate:
       type: object
       properties:
