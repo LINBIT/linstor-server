@@ -86,11 +86,9 @@ RUN { \
 	echo 'gpgcheck=1' ;\
 } >/etc/yum.repos.d/linbit-public.repo
 
-# currently no thin-send-recv/snapshotshipping on !amd64.
-# we will build that for s390x soon, then we can rm the conditional
 RUN yum install -y cryptsetup nvme-cli epel-release && \
 	yum install -y zstd && \
-	if [ "$ARCH" = amd64 ]; then yum install -y thin-send-recv; fi && \
+	yum install -y thin-send-recv && \
 	yum clean all -y
 
 RUN sed -i 's/udev_rules.*=.*/udev_rules=0/' /etc/lvm/lvm.conf
