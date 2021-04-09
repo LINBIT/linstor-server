@@ -8,11 +8,12 @@ ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
 
 USER root
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
-RUN case $ARCH in \
-	amd64) cp /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 /etc/pki/rpm-gpg/tools-key ;;\
-	s390x) cp /etc/pki/rpm-gpg/RPM-GPG-KEY-ClefOS-7 /etc/pki/rpm-gpg/tools-key ;;\
-	*) echo "unsupported ARCH: $ARCH"; exit 1 ;;\
-	esac
+
+# extra tools
+# epel for zstd;
+RUN yum install -y epel-release yum-utils && \
+  mkdir /tmp/tools && cd /tmp/tools && yumdownloader cryptsetup nvme-cli zstd && \
+  yum remove -y epel-release && yum clean all -y
 
 RUN groupadd makepkg # !lbbuild
 RUN useradd -m -g makepkg makepkg # !lbbuild
@@ -66,15 +67,9 @@ LABEL name="linstor-satellite" \
 
 COPY COPYING /licenses/gpl-3.0.txt
 
-COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/
-RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
-  yum install -y which lvm2 util-linux socat && yum install -y /tmp/linstor-common*.rpm /tmp/linstor-satellite*.rpm && yum clean all -y
-
-# repo for additional tools not in UBI (cryptsetup,...)
-COPY --from=builder /etc/pki/rpm-gpg/tools-key /etc/pki/rpm-gpg/
-COPY scripts/centos_clefos_tools.sh /tmp/
-RUN /tmp/centos_clefos_tools.sh "$ARCH"
-
+# packages
+COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/linstorpkgs/
+COPY --from=builder /tmp/tools/*.rpm /tmp/tools/
 # linbit public repo for thin-send-recv
 RUN curl https://packages.linbit.com/package-signing-pubkey.asc > /etc/pki/rpm-gpg/package-signing-pubkey.asc
 RUN { \
@@ -85,12 +80,14 @@ RUN { \
 	echo 'gpgkey=file:///etc/pki/rpm-gpg/package-signing-pubkey.asc' ;\
 	echo 'gpgcheck=1' ;\
 } >/etc/yum.repos.d/linbit-public.repo
+RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
+  yum install -y which lvm2 util-linux socat && \
+  yum install -y /tmp/linstorpkgs/linstor-common*.rpm /tmp/linstorpkgs/linstor-satellite*.rpm && \
+  yum install -y /tmp/tools/*.rpm && \
+  yum install -y thin-send-recv && \
+  yum clean all -y
 
-RUN yum install -y cryptsetup nvme-cli epel-release && \
-	yum install -y zstd && \
-	yum install -y thin-send-recv && \
-	yum clean all -y
-
+# package post inst config
 RUN sed -i 's/udev_rules.*=.*/udev_rules=0/' /etc/lvm/lvm.conf
 RUN sed -i '/^devices {/a global_filter = [ "r|^/dev/drbd|" ]' /etc/lvm/lvm.conf
 # Ensure we log to files in containers, otherwise SOS reports won't show any logs at all
