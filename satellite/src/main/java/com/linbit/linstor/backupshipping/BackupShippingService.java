@@ -488,8 +488,6 @@ public class BackupShippingService implements SystemService
         LuksLayerMetaPojo luksPojo = null;
         if (stltSecObj.getEncKey() != null && stltSecObj.getHash() != null && stltSecObj.getSalt() != null)
         {
-            System.out.println("key: " + Base64.encode(stltSecObj.getCryptKey()));
-            System.out.println("encKey: " + Base64.encode(stltSecObj.getEncKey()));
             luksPojo = new LuksLayerMetaPojo(
                 Base64.encode(stltSecObj.getEncKey()),
                 Base64.encode(stltSecObj.getHash()),

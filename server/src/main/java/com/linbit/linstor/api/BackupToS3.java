@@ -25,11 +25,14 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -65,11 +68,14 @@ public class BackupToS3
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
+        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+
+        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
         InitiateMultipartUploadRequest initReq = new InitiateMultipartUploadRequest(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET),
+            bucket,
             key
-        );
+        ).withRequesterPays(reqPays);
         InitiateMultipartUploadResult initResp = s3.initiateMultipartUpload(initReq);
         return initResp.getUploadId();
     }
@@ -92,6 +98,8 @@ public class BackupToS3
             .build();
 
         String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+
         long bufferSize = Math.max(5 << 20, (long) (Math.ceil(maxSize / 10000.0) + 1.0));
         if (bufferSize > Integer.MAX_VALUE)
         {
@@ -117,7 +125,8 @@ public class BackupToS3
                     .withUploadId(uploadId)
                     .withPartNumber(partId)
                     .withInputStream(new ByteArrayInputStream(readBuf))
-                    .withPartSize(offset);
+                    .withPartSize(offset)
+                    .withRequesterPays(reqPays);
                 UploadPartResult uploadResult = s3.uploadPart(uploadRequest);
                 parts.add(uploadResult.getPartETag());
                 offset = 0;
@@ -133,7 +142,8 @@ public class BackupToS3
                 .withPartNumber(partId)
                 .withInputStream(new ByteArrayInputStream(readBuf, 0, offset))
                 .withLastPart(true)
-                .withPartSize(offset);
+                .withPartSize(offset)
+                .withRequesterPays(reqPays);
             UploadPartResult uploadResult = s3.uploadPart(uploadRequest);
             parts.add(uploadResult.getPartETag());
         }
@@ -142,7 +152,7 @@ public class BackupToS3
             key,
             uploadId,
             parts
-        );
+        ).withRequesterPays(reqPays);
         s3.completeMultipartUpload(compRequest);
     }
 
@@ -162,11 +172,14 @@ public class BackupToS3
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
 
+        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+
         AbortMultipartUploadRequest abortReq = new AbortMultipartUploadRequest(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET),
+            bucket,
             key,
             uploadId
-        );
+        ).withRequesterPays(reqPays);
         s3.abortMultipartUpload(abortReq);
     }
 
@@ -185,25 +198,13 @@ public class BackupToS3
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
-        s3.putObject(backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET), key, content);
-    }
-
-    public void deleteObject(String key) throws SdkClientException, AmazonServiceException
-    {
-        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
-        );
-
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-            new EndpointConfiguration(
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
-            )
-        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .build();
-        s3.deleteObject(backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET), key);
+        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+        ObjectMetadata meta = new ObjectMetadata();
+        meta.setContentLength(content.getBytes().length);
+        PutObjectRequest req = new PutObjectRequest(bucket, key, new ByteArrayInputStream(content.getBytes()), meta)
+            .withRequesterPays(reqPays);
+        s3.putObject(req);
     }
 
     public void deleteObjects(Set<String> keys)
@@ -221,15 +222,15 @@ public class BackupToS3
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
-        DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET)
-        );
+        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+        DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucket);
         String[] helper = new String[keys.size()];
-        deleteObjectsRequest.withKeys(keys.toArray(helper));
+        deleteObjectsRequest.withKeys(keys.toArray(helper)).withRequesterPays(reqPays);
         s3.deleteObjects(deleteObjectsRequest);
     }
 
-    public BackupMetaDataPojo getMetaFile(String key, String bucket)
+    public BackupMetaDataPojo getMetaFile(String key, String bucketRef)
         throws JsonParseException, JsonMappingException, IOException
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
@@ -246,15 +247,19 @@ public class BackupToS3
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
 
-        S3Object obj = s3.getObject(
-            bucket == null || bucket.length() == 0 ? backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET) : bucket, key
-        );
+        String bucket = bucketRef == null || bucketRef.length() == 0
+            ? backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET)
+            : bucketRef;
+        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+
+        GetObjectRequest req = new GetObjectRequest(bucket, key, reqPays);
+        S3Object obj = s3.getObject(req);
         S3ObjectInputStream s3is = obj.getObjectContent();
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(s3is, BackupMetaDataPojo.class);
     }
 
-    public InputStream getObject(String key, String bucket)
+    public InputStream getObject(String key, String bucketRef)
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
@@ -269,13 +274,18 @@ public class BackupToS3
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
-        S3Object obj = s3.getObject(
-            bucket == null || bucket.length() == 0 ? backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET) : bucket, key
-        );
+
+        String bucket = bucketRef == null || bucketRef.length() == 0
+            ? backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET)
+            : bucketRef;
+        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+
+        GetObjectRequest req = new GetObjectRequest(bucket, key, reqPays);
+        S3Object obj = s3.getObject(req);
         return obj.getObjectContent();
     }
 
-    public List<S3ObjectSummary> listObjects(String rsc, String bucket)
+    public List<S3ObjectSummary> listObjects(String rsc, String bucketRef)
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
@@ -290,19 +300,17 @@ public class BackupToS3
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
+        String bucket = bucketRef == null || bucketRef.length() == 0
+            ? backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET)
+            : bucketRef;
+        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
         ListObjectsV2Request req = new ListObjectsV2Request();
-        req.withSdkClientExecutionTimeout(
-            Integer.parseInt(backupProps.getPropWithDefault(ApiConsts.KEY_BACKUP_TIMEOUT, "5")) * 1000
+        req.withRequesterPays(reqPays)
+            .withBucketName(bucket)
+            .withSdkClientExecutionTimeout(
+                Integer.parseInt(backupProps.getPropWithDefault(ApiConsts.KEY_BACKUP_TIMEOUT, "5")) * 1000
         );
-        if (bucket == null || bucket.length() == 0)
-        {
-            req.withBucketName(backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET));
-        }
-        else
-        {
-            req.withBucketName(bucket);
-        }
         if (rsc != null && rsc.length() != 0)
         {
             req.withPrefix(rsc);
