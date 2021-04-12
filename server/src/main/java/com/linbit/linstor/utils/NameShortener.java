@@ -160,13 +160,12 @@ public class NameShortener
                 else
                 {
                     // Full resource name is short enough and does not conflict with existing names
+                    shortName = ret;
 
                     // Register the name as it is
                     existingNames.add(ret);
                     // Set shortName property
                     props.setProp(localPropKey, shortName);
-
-                    shortName = ret;
 
                     processNumberSuffix(shortName);
                 }
@@ -266,7 +265,6 @@ public class NameShortener
             }
             else
             {
-
                 baseName = fullNameLen <= maxBaseNameLen ? fullName : fullName.substring(0, maxBaseNameLen);
             }
         }
