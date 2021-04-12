@@ -25,11 +25,6 @@ import java.util.regex.Pattern;
 /**
  * This class's purpose is to shorten the resource name uniquely but also trying to stay
  * as close to the original as possible.
- *
- * This is done by replacing as many characters as needed at the end of the resulting string
- * with an incremental number.
- * Example: maxLen = 5, "resourceNameTooLong" will result in "res_1"
- * The 10th resource starting with "res.*" will increase the digit-count, resulting in "re_10"
  */
 // purposely not singleton and not injectable
 public class NameShortener
@@ -41,14 +36,22 @@ public class NameShortener
      * The property namespace used for lookup of already shortened name
      */
     private final String propNamespace;
+
     /**
      * The property key used for lookup of already shortened name
      */
     private final String propKey;
+
     /**
      * Maximal length of shortened (result) String
      */
     private final int maxLen;
+
+    /**
+     * Length of the base name (result) string
+     */
+    private final int maxBaseNameLen;
+
     /**
      * Delimiter used between baseString and the incremental number
      */
@@ -95,6 +98,8 @@ public class NameShortener
         delimiter = delimiterRef;
         delimiterLen = delimiterRef.length();
 
+        maxBaseNameLen = maxLen - delimiterLen - 6;
+
         existingNames = new TreeSet<>();
         namePools = new TreeMap<>();
         numberPattern = Pattern.compile(delimiterRef + "([1-9]\\d{0,5})$");
@@ -140,10 +145,11 @@ public class NameShortener
                 final boolean isExistingName = existingNames.contains(ret);
                 if (ret.length() > maxLen || isExistingName)
                 {
+                    final String baseName = getBaseName(ret);
+
                     // Name is too long or conflicts with an existing name
-                    final NumberPool nrPool = getNumberPool(ret, true);
+                    final NumberPool nrPool = getNumberPool(baseName, true);
                     int resourceNr = nrPool.autoAllocate(0, 999_999);
-                    String baseName = getBaseName(ret);
                     shortName = baseName + delimiter + resourceNr;
 
                     // Register the shortened name
@@ -216,11 +222,19 @@ public class NameShortener
         Matcher nrMatcher = numberPattern.matcher(name);
         if (nrMatcher.find())
         {
-            final String nrText = nrMatcher.group(1);
-            final int resourceNr = parseNumber(nrText);
+            final String nrSuffix = nrMatcher.group(1);
+            final String baseName = name.substring(0, name.length() - nrSuffix.length());
 
-            final NumberPool nrPool = getNumberPool(name, true);
-            nrPool.allocate(resourceNr);
+            // If there is a number pattern at the end of a name that is longer than the base name
+            // for auto-numbered names, the numbers do not need to be tracked, because then it's
+            // obviously not an auto-generated name/number combination
+            if (baseName.length() <= maxBaseNameLen)
+            {
+                final int resourceNr = parseNumber(nrSuffix.substring(delimiterLen));
+
+                final NumberPool nrPool = getNumberPool(name, true);
+                nrPool.allocate(resourceNr);
+            }
         }
     }
 
@@ -236,9 +250,33 @@ public class NameShortener
      */
     private String getBaseName(String fullName)
     {
-        int splitIdx = fullName.lastIndexOf(delimiter);
-        splitIdx += delimiter.length();
-        return fullName.substring(splitIdx, fullName.length());
+        final int fullNameLen = fullName.length();
+        String baseName;
+        if (fullNameLen <= maxLen)
+        {
+            // Find any existing number suffix
+            Matcher nrMatcher = numberPattern.matcher(fullName);
+            if (nrMatcher.find())
+            {
+                // Remove the number suffix
+                final int splitIdx = fullName.lastIndexOf(delimiter);
+                // If the name is still too long, shorten it to make it a suitable base name
+                baseName = splitIdx <= maxBaseNameLen ?
+                    fullName.substring(0, splitIdx) : fullName.substring(0, maxBaseNameLen);
+            }
+            else
+            {
+
+                baseName = fullNameLen <= maxBaseNameLen ? fullName : fullName.substring(0, maxBaseNameLen);
+            }
+        }
+        else
+        {
+            // If the name, with or without a number suffix, is longer than the permitted maximum length,
+            // then ignore what looks like a number suffix and shorten to base name length
+            baseName = fullName.substring(0, maxBaseNameLen);
+        }
+        return baseName;
     }
 
     /**
@@ -250,9 +288,8 @@ public class NameShortener
      *
      * @return
      */
-    private NumberPool getNumberPool(String fullName, boolean createFlag)
+    private NumberPool getNumberPool(String baseName, boolean createFlag)
     {
-        final String baseName = getBaseName(fullName);
         NumberPool numberPool = namePools.get(baseName);
         if (numberPool == null && createFlag)
         {
@@ -262,9 +299,8 @@ public class NameShortener
         return numberPool;
     }
 
-    private void removeNumberPool(String fullName)
+    private void removeNumberPool(String baseName)
     {
-        String baseName = getBaseName(fullName);
         namePools.remove(baseName);
     }
 
@@ -283,17 +319,18 @@ public class NameShortener
         String shortName = rscDfnProps.getProp(propKey);
         if (shortName != null)
         {
+            final String baseName = getBaseName(shortName);
             Matcher nrMatcher = numberPattern.matcher(shortName);
             if (nrMatcher.find())
             {
                 final int resourceNr = parseNumber(nrMatcher.group(1));
-                final NumberPool nrPool = getNumberPool(shortName, false);
+                final NumberPool nrPool = getNumberPool(baseName, false);
                 if (nrPool != null)
                 {
                     nrPool.deallocate(resourceNr);
                     if (nrPool.isEmpty())
                     {
-                        removeNumberPool(shortName);
+                        removeNumberPool(baseName);
                     }
                 }
             }
