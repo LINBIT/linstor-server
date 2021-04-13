@@ -40,7 +40,7 @@ public class NameShortenerTest
         NameShortener shorter = new NameShortener("", key, 10, TestAccessContextProvider.SYS_CTX, "_", null);
 
         addAndAssert(shorter, "rsc", "", key, "rsc"); // < limit
-        addAndAssert(shorter, "rscTooLong", "", key, "rsc_1");
+        addAndAssert(shorter, "rscTooLong00", "", key, "rsc_1");
         addAndAssert(shorter, "rscTooLong42", "", key, "rsc_2");
         addAndAssert(shorter, "rscTooLong43", "", key, "rsc_3");
         addAndAssert(shorter, "rscTooLong44", "", key, "rsc_4");
@@ -87,21 +87,22 @@ public class NameShortenerTest
         String key = "key";
         NameShortener shorter = new NameShortener("", key, 10, TestAccessContextProvider.SYS_CTX, "_", null);
 
-        addAndAssert(shorter, "aaatest001", "", key, "aaa_1");
-        addAndAssert(shorter, "aaatest002", "", key, "aaa_2");
-        addAndAssert(shorter, "aaatest003", "", key, "aaa_3");
-        addAndAssert(shorter, "aaatest004", "", key, "aaa_4");
-        addAndAssert(shorter, "aaatest005", "", key, "aaa_5");
-        addAndAssert(shorter, "aaatest006", "", key, "aaa_6");
-        addAndAssert(shorter, "aaatest007", "", key, "aaa_7");
-        addAndAssert(shorter, "aaatest008", "", key, "aaa_8");
-        addAndAssert(shorter, "aaatest009", "", key, "aaa_9");
-        addAndAssert(shorter, "aaatest010", "", key, "aaa_10");
+        addAndAssert(shorter, "aaatest000", "", key, "aaatest001");
+        addAndAssert(shorter, "aaaatest001", "", key, "aaa_1");
+        addAndAssert(shorter, "aaaatest002", "", key, "aaa_2");
+        addAndAssert(shorter, "aaaatest003", "", key, "aaa_3");
+        addAndAssert(shorter, "aaaatest004", "", key, "aaa_4");
+        addAndAssert(shorter, "aaaatest005", "", key, "aaa_5");
+        addAndAssert(shorter, "aaaatest006", "", key, "aaa_6");
+        addAndAssert(shorter, "aaaatest007", "", key, "aaa_7");
+        addAndAssert(shorter, "aaaatest008", "", key, "aaa_8");
+        addAndAssert(shorter, "aaaatest009", "", key, "aaa_9");
+        addAndAssert(shorter, "aaaatest010", "", key, "aaa_10");
 
-        addAndAssert(shorter, "aabtest001", "", key, "aab_1");
-        addAndAssert(shorter, "aabtest002", "", key, "aab_2");
+        addAndAssert(shorter, "aabatest001", "", key, "aab_1");
+        addAndAssert(shorter, "aabatest002", "", key, "aab_2");
 
-        addAndAssert(shorter, "aabdiff001", "", key, "aab_3");
+        addAndAssert(shorter, "aaabdiff001", "", key, "aaa_11");
     }
 
     @Test
