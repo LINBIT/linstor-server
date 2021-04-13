@@ -1,6 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -17,6 +18,7 @@ public interface StltUpdateTracker
     Flux<ApiCallRc> updateResource(UUID rscUuid, ResourceName resourceName, NodeName nodeName);
     Flux<ApiCallRc> updateStorPool(UUID storPoolUuid, StorPoolName storPoolName);
     Flux<ApiCallRc> updateSnapshot(UUID snapshotUuid, ResourceName resourceName, SnapshotName snapshotName);
+    Flux<ApiCallRc> updateExternalFile(UUID externalFileUuidRef, ExternalFileName externalFileNameRef);
 
     boolean isEmpty();
 }

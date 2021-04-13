@@ -2,11 +2,12 @@ package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -40,6 +41,7 @@ public final class ObjectProtection extends BaseTransactionObject
     private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
     private static final String PATH_FREE_SPACE_MGRS         = "/freespacemgrs/";
     private static final String PATH_KVS                     = "/keyvaluestores/";
+    private static final String PATH_EXT_FILES               = "/extfiles/";
 
     private static final String PATH_SYS                     = "/sys/";
     private static final String PATH_CONTROLLER              = PATH_SYS + "controller/";
@@ -549,9 +551,20 @@ public final class ObjectProtection extends BaseTransactionObject
         return PATH_FREE_SPACE_MGRS + sharedStorPoolName.value;
     }
 
+    /**
+     * ObjProt-Path for External files
+     *
+     * @param nameRef
+     *
+     * @return
+     */
+    public static String buildPath(ExternalFileName nameRef)
+    {
+        return PATH_EXT_FILES + nameRef.extFileName;
+    }
+
     String getObjectProtectionPath()
     {
         return objPath;
     }
-
 }

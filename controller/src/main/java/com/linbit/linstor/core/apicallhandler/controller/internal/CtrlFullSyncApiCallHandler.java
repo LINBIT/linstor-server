@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller.internal;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
@@ -13,10 +11,12 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltS
 import com.linbit.linstor.api.protobuf.internal.IntFullSyncResponse;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
@@ -44,6 +44,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import reactor.core.publisher.Flux;
 
+import static java.util.stream.Collectors.toList;
+
 @Singleton
 public class CtrlFullSyncApiCallHandler
 {
@@ -56,7 +58,9 @@ public class CtrlFullSyncApiCallHandler
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
+    private final ReadWriteLock externalFilesMapLock;
     private final IntFullSyncResponse fullSyncResponse;
+    private final ExternalFileRepository externalFilesRepo;
 
     @Inject
     CtrlFullSyncApiCallHandler(
@@ -67,7 +71,9 @@ public class CtrlFullSyncApiCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
-        IntFullSyncResponse fullSyncResponseRef
+        @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock externalFilesMapLockRef,
+        IntFullSyncResponse fullSyncResponseRef,
+        ExternalFileRepository externalFilesRepoRef
     )
     {
         errorReporter = errorReporterRef;
@@ -77,7 +83,9 @@ public class CtrlFullSyncApiCallHandler
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
+        externalFilesMapLock = externalFilesMapLockRef;
         fullSyncResponse = fullSyncResponseRef;
+        externalFilesRepo = externalFilesRepoRef;
     }
 
     public Flux<?> sendFullSync(Node satelliteNode, long expectedFullSyncId)
@@ -102,6 +110,7 @@ public class CtrlFullSyncApiCallHandler
                 nodesMapLock.readLock(),
                 rscDfnMapLock.readLock(),
                 storPoolDfnMapLock.readLock(),
+                externalFilesMapLock.readLock(),
                 peer.getSerializerLock().writeLock()
             ),
             () -> sendFullSyncInScope(satelliteNode, expectedFullSyncId, waitForAnswer)
@@ -117,6 +126,7 @@ public class CtrlFullSyncApiCallHandler
             Set<StorPool> storPools = new LinkedHashSet<>();
             Set<Resource> rscs = new LinkedHashSet<>();
             Set<Snapshot> snapshots = new LinkedHashSet<>();
+            Set<ExternalFile> externalFiles = new LinkedHashSet<>();
 
             nodes.add(satelliteNode); // always add the localNode
 
@@ -139,6 +149,8 @@ public class CtrlFullSyncApiCallHandler
 
             snapshots.addAll(satelliteNode.getInProgressSnapshots(apiCtx));
 
+            externalFiles.addAll(externalFilesRepo.getMapForView(apiCtx).values());
+
             Peer satellitePeer = satelliteNode.getPeer(apiCtx);
             satellitePeer.setFullSyncId(expectedFullSyncId);
 
@@ -158,7 +170,7 @@ public class CtrlFullSyncApiCallHandler
             }
 
             byte[] data = builder
-                .fullSync(nodes, storPools, rscs, snapshots, expectedFullSyncId, FULL_SYNC_RPC_ID)
+                .fullSync(nodes, storPools, rscs, snapshots, externalFiles, expectedFullSyncId, FULL_SYNC_RPC_ID)
                 .build();
 
             if (waitForAnswer)

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+import "javainternal/c2s/IntExternalFile.proto";
+
+// Internal message to apply a single external file
+message MsgIntApplyExternalFile
+{
+    IntExternalFile external_file = 1;
+    sint64 full_sync_id = 2;
+    sint64 update_id = 3;
+}

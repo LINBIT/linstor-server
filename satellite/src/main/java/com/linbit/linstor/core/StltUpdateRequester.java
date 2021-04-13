@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -99,6 +100,20 @@ public class StltUpdateRequester
                 .build()
         );
     }
+
+    public void requestExternalFileUpdate(UUID externalFileUuidRef, ExternalFileName externalFileNameRef)
+    {
+        sendRequest(
+            interComSerializer
+                .onewayBuilder(InternalApiConsts.API_REQUEST_EXTERNAL_FILE)
+                .requestExternalFileUpdate(
+                    externalFileUuidRef,
+                    externalFileNameRef.extFileName
+                )
+                .build()
+        );
+    }
+
     private void sendRequest(byte[] requestData)
     {
         if (requestData != null && requestData.length > 0)

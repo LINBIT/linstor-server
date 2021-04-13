@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -25,6 +26,7 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet, ApiCallRc responses);
     void rscUpdateApplied(Set<Resource.ResourceKey> rscSet);
     void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet);
+    void ExternalFileUpdateApplied(ExternalFileName extFile, NodeName nodeName, Set<ResourceName> rscNameSet);
 
     void markResourceForDispatch(ResourceName name);
     void markMultipleResourcesForDispatch(Set<ResourceName> rscSet);

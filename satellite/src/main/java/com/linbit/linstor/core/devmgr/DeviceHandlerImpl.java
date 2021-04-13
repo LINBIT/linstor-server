@@ -11,6 +11,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.StltExternalFileHandler;
 import com.linbit.linstor.core.SysFsHandler;
 import com.linbit.linstor.core.UdevHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -95,6 +96,9 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private final SysFsHandler sysFsHandler;
     private final UdevHandler udevHandler;
+    private final StltExternalFileHandler extFileHandler;
+
+    private Props localNodeProps;
 
     @Inject
     public DeviceHandlerImpl(
@@ -110,7 +114,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         ExtCmdFactory extCmdFactoryRef,
         SysFsHandler sysFsHandlerRef,
         UdevHandler udevHandlerRef,
-        SnapshotShippingService snapshotShippingManagerRef
+        SnapshotShippingService snapshotShippingManagerRef,
+        StltExternalFileHandler extFileHandlerRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -127,6 +132,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         sysFsHandler = sysFsHandlerRef;
         udevHandler = udevHandlerRef;
         snapshotShippingManager = snapshotShippingManagerRef;
+        extFileHandler = extFileHandlerRef;
 
         fullSyncApplied = new AtomicBoolean(false);
     }
@@ -405,6 +411,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                     }
                     rscListNotifyApplied.add(rsc);
                 }
+
+                extFileHandler.handle(rsc);
 
                 // give the layer the opportunity to send a "resource ready" event
                 resourceFinished(rsc.getLayerData(wrkCtx));
@@ -880,8 +888,11 @@ public class DeviceHandlerImpl implements DeviceHandler
         fullSyncApplied.set(true);
         try
         {
-            Props localNodeProps = localNode.getProps(wrkCtx);
+            localNodeProps = localNode.getProps(wrkCtx);
             localNodePropsChanged(localNodeProps);
+
+            extFileHandler.clear();
+            extFileHandler.rebuildExtFilesToRscDfnMaps(localNodeProps, localNode);
 
             snapshotShippingManager.killAllShipping();
         }

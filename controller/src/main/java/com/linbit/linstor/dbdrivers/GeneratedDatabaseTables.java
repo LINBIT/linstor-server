@@ -14,6 +14,46 @@ public class GeneratedDatabaseTables
     // Schema name
     public static final String DATABASE_SCHEMA_NAME = "LINSTOR";
 
+    public static class Files implements DatabaseTable
+    {
+        private Files() { }
+
+        // Primary Key
+        public static final ColumnImpl PATH = new ColumnImpl("PATH", Types.VARCHAR, true, false);
+
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl CONTENT = new ColumnImpl("CONTENT", Types.BLOB, false, false);
+        public static final ColumnImpl CONTENT_CHECKSUM = new ColumnImpl("CONTENT_CHECKSUM", Types.VARBINARY, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            UUID,
+            PATH,
+            FLAGS,
+            CONTENT,
+            CONTENT_CHECKSUM
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "FILES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table FILES";
+        }
+    }
+
     public static class KeyValueStore implements DatabaseTable
     {
         private KeyValueStore() { }
@@ -842,13 +882,13 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl DESCRIPTION = new ColumnImpl("DESCRIPTION", Types.VARCHAR, false, true);
         public static final ColumnImpl LAYER_STACK = new ColumnImpl("LAYER_STACK", Types.VARCHAR, false, true);
         public static final ColumnImpl REPLICA_COUNT = new ColumnImpl("REPLICA_COUNT", Types.INTEGER, false, false);
-        public static final ColumnImpl NODE_NAME_LIST = new ColumnImpl("NODE_NAME_LIST", Types.VARCHAR, false, true);
-        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, true);
-        public static final ColumnImpl POOL_NAME_DISKLESS = new ColumnImpl("POOL_NAME_DISKLESS", Types.VARCHAR, false, true);
-        public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_REGEX = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_REGEX", Types.VARCHAR, false, true);
-        public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_LIST = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_LIST", Types.VARCHAR, false, true);
-        public static final ColumnImpl REPLICAS_ON_SAME = new ColumnImpl("REPLICAS_ON_SAME", Types.BLOB, false, true);
-        public static final ColumnImpl REPLICAS_ON_DIFFERENT = new ColumnImpl("REPLICAS_ON_DIFFERENT", Types.BLOB, false, true);
+        public static final ColumnImpl NODE_NAME_LIST = new ColumnImpl("NODE_NAME_LIST", Types.CLOB, false, true);
+        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.CLOB, false, true);
+        public static final ColumnImpl POOL_NAME_DISKLESS = new ColumnImpl("POOL_NAME_DISKLESS", Types.CLOB, false, true);
+        public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_REGEX = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_REGEX", Types.CLOB, false, true);
+        public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_LIST = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_LIST", Types.CLOB, false, true);
+        public static final ColumnImpl REPLICAS_ON_SAME = new ColumnImpl("REPLICAS_ON_SAME", Types.CLOB, false, true);
+        public static final ColumnImpl REPLICAS_ON_DIFFERENT = new ColumnImpl("REPLICAS_ON_DIFFERENT", Types.CLOB, false, true);
         public static final ColumnImpl ALLOWED_PROVIDER_LIST = new ColumnImpl("ALLOWED_PROVIDER_LIST", Types.VARCHAR, false, true);
         public static final ColumnImpl DISKLESS_ON_REMAINING = new ColumnImpl("DISKLESS_ON_REMAINING", Types.BOOLEAN, false, true);
 
@@ -1557,6 +1597,7 @@ public class GeneratedDatabaseTables
         }
     }
 
+    public static final Files FILES = new Files();
     public static final KeyValueStore KEY_VALUE_STORE = new KeyValueStore();
     public static final LayerCacheVolumes LAYER_CACHE_VOLUMES = new LayerCacheVolumes();
     public static final LayerDrbdResources LAYER_DRBD_RESOURCES = new LayerDrbdResources();
@@ -1599,6 +1640,11 @@ public class GeneratedDatabaseTables
 
     static
     {
+        Files.UUID.table = FILES;
+        Files.PATH.table = FILES;
+        Files.FLAGS.table = FILES;
+        Files.CONTENT.table = FILES;
+        Files.CONTENT_CHECKSUM.table = FILES;
         KeyValueStore.UUID.table = KEY_VALUE_STORE;
         KeyValueStore.KVS_NAME.table = KEY_VALUE_STORE;
         KeyValueStore.KVS_DSP_NAME.table = KEY_VALUE_STORE;

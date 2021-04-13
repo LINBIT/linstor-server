@@ -6,6 +6,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -465,7 +466,7 @@ public class LinstorParsingUtils
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_KVS_NAME,
+                    ApiConsts.FAIL_INVLD_RSC_GRP_NAME,
                     "The given resource group name '" + rscGrpNameStr + "' is invalid."
                 ),
                 invalidNameExc
@@ -513,5 +514,25 @@ public class LinstorParsingUtils
                 );
         }
         return logLevel;
+    }
+
+    public static ExternalFileName asExtFileName(String pathRef)
+    {
+        ExternalFileName extFileName;
+        try
+        {
+            extFileName = new ExternalFileName(pathRef);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_EXT_FILE_NAME,
+                    "The given external file name '" + pathRef + "' is invalid."
+                ),
+                invalidNameExc
+            );
+        }
+        return extFileName;
     }
 }

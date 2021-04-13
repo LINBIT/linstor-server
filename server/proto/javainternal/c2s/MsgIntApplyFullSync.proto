@@ -6,6 +6,7 @@ import "javainternal/c2s/IntNode.proto";
 import "javainternal/c2s/IntStorPool.proto";
 import "javainternal/c2s/IntRsc.proto";
 import "javainternal/c2s/IntSnapshot.proto";
+import "javainternal/c2s/IntExternalFile.proto";
 
 // Internal message containing a full synchronization of the resource specific data
 message MsgIntApplyFullSync
@@ -27,4 +28,7 @@ message MsgIntApplyFullSync
 
     // Satellite specific in-progress snapshots (including resource definition, snapshot volume definitions etc)
     repeated IntSnapshot     snapshots   = 7;
+
+    // External files (all of them, not just the one needed by the satellite)
+    repeated IntExternalFile external_files = 8;
 }

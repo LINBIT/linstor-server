@@ -56,11 +56,20 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
     {
         try
         {
+            String newElementToString;
+            if (elementRef instanceof byte[])
+            {
+                newElementToString = new String((byte[]) elementRef);
+            }
+            else
+            {
+                newElementToString = Objects.toString(elementRef);
+            }
             errorReporter.logTrace("Updating %s's %s from [%s] to [%s] %s",
                 table.getName(),
                 colToUpdate.getName(),
                 dataValueToString.accept(parentRef),
-                Objects.toString(elementRef),
+                newElementToString,
                 dataToString.toString(parentRef)
             );
             try (PreparedStatement stmt = sqlEngine.getConnection().prepareStatement(updateStatement))
@@ -75,7 +84,7 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
                 table.getName(),
                 colToUpdate.getName(),
                 dataValueToString.accept(parentRef),
-                Objects.toString(elementRef),
+                newElementToString,
                 dataToString.toString(parentRef)
             );
         }

@@ -4,11 +4,13 @@ import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.crypto.LengthPadding;
 import com.linbit.crypto.LengthPaddingImpl;
+import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -48,6 +50,7 @@ public class CoreModule extends AbstractModule
     public static final String FREE_SPACE_MGR_MAP_LOCK = "freeSpaceMgrMapLock";
     public static final String KVS_MAP_LOCK = "keyValueStoreMapLock";
     public static final String RSC_GROUP_MAP_LOCK = "rscGrpMapLock";
+    public static final String EXT_FILE_MAP_LOCK = "extFileMapLock";
 
     private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
@@ -71,6 +74,7 @@ public class CoreModule extends AbstractModule
         bind(StorPoolDefinitionMap.class).to(StorPoolDefinitionMapImpl.class);
         bind(KeyValueStoreMap.class).to(KeyValueStoreMapImpl.class);
         bind(ResourceGroupMap.class).to(ResourceGroupMapImpl.class);
+        bind(ExternalFileMap.class).to(ExternalFilesMapImpl.class);
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
 
@@ -89,6 +93,8 @@ public class CoreModule extends AbstractModule
         bind(ReadWriteLock.class).annotatedWith(Names.named(KVS_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(RSC_GROUP_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(EXT_FILE_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
         bind(LengthPadding.class).to(LengthPaddingImpl.class);
     }
@@ -126,6 +132,10 @@ public class CoreModule extends AbstractModule
     }
 
     public interface PeerMap extends Map<String, Peer>
+    {
+    }
+
+    public interface ExternalFileMap extends Map<ExternalFileName, ExternalFile>
     {
     }
 
@@ -247,6 +257,17 @@ public class CoreModule extends AbstractModule
         @Inject
         public PeerMapImpl()
         {
+        }
+    }
+
+    @Singleton
+    public static class ExternalFilesMapImpl
+        extends TransactionMap<ExternalFileName, ExternalFile> implements ExternalFileMap
+    {
+        @Inject
+        public ExternalFilesMapImpl(Provider<TransactionMgr> transMgrProviderRef)
+        {
+            super(new TreeMap<>(), null, transMgrProviderRef);
         }
     }
 }

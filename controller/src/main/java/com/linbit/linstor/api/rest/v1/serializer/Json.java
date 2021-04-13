@@ -16,6 +16,7 @@ import com.linbit.linstor.api.pojo.ExosConnectionMapPojo;
 import com.linbit.linstor.api.pojo.ExosDefaultsPojo;
 import com.linbit.linstor.api.pojo.ExosEnclosureEventPojo;
 import com.linbit.linstor.api.pojo.ExosEnclosureHealthPojo;
+import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
@@ -62,6 +63,7 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
 import java.nio.charset.StandardCharsets;
@@ -1054,7 +1056,20 @@ public class Json
         json.node_name = pojo.getNodeName();
         json.enclosure_name = pojo.getEnclosureName();
         json.connections = pojo.getConnections();
+        return json;
+    }
 
+    public static JsonGenTypes.ExternalFile apiToExternalFile(
+        ExternalFilePojo pojo,
+        boolean includeContent
+    )
+    {
+        JsonGenTypes.ExternalFile json = new JsonGenTypes.ExternalFile();
+        json.path = pojo.getFileName();
+        if (includeContent)
+        {
+            json.content = Base64.encode(pojo.getContent());
+        }
         return json;
     }
 

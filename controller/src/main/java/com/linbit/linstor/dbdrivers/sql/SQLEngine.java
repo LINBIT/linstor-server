@@ -311,12 +311,13 @@ public class SQLEngine implements DbEngine
             for (Column column : columns)
             {
                 Object data;
-                if (column.getSqlType() == Types.BLOB)
+                int colSqlType = column.getSqlType();
+                if (colSqlType == Types.BLOB)
                 {
                     data = resultSet.getBytes(column.getName());
                 }
                 else
-                if (column.getSqlType() == Types.VARCHAR)
+                if (colSqlType == Types.VARCHAR || colSqlType == Types.CLOB)
                 {
                     // includes TEXT type, but if TEXT is read with .getObject the
                     // returned type is in h2 case org.h2.jdbc.JdbcClob instead of String

@@ -65,7 +65,7 @@ public class InjectorLoader
             errorLog.logInfo("Extension module \"%s\" is not installed", className);
         }
         catch (IllegalAccessException | InstantiationException | InvocationTargetException |
-               NoSuchMethodException | ClassCastException | LinkageError loadErr)
+               NoSuchMethodException | ClassCastException  loadErr)
         {
             errorLog.reportError(
                 new LinStorException(

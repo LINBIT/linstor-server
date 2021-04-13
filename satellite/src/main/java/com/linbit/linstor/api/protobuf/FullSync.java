@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
@@ -17,6 +18,7 @@ import com.linbit.linstor.layer.storage.utils.ProcCryptoUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
+import com.linbit.linstor.proto.javainternal.c2s.IntExternalFileOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
 import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
@@ -92,6 +94,13 @@ public class FullSync implements ApiCall
                 updateId
             )
         );
+        Set<ExternalFilePojo> extFiles = new TreeSet<>(
+            asExternalFiles(
+                applyFullSync.getExternalFilesList(),
+                fullSyncId,
+                updateId
+            )
+        );
 
         boolean success = apiCallHandler.applyFullSync(
             msgIntControllerData.getPropsMap(),
@@ -99,6 +108,7 @@ public class FullSync implements ApiCall
             storPools,
             resources,
             snapshots,
+            extFiles,
             applyFullSync.getFullSyncTimestamp(),
             Base64.decode(applyFullSync.getMasterKey())
         );
@@ -187,6 +197,20 @@ public class FullSync implements ApiCall
             snapshots.add(ApplySnapshot.asSnapshotPojo(snapshot, fullSyncId, updateId));
         }
         return snapshots;
+    }
+
+    private ArrayList<ExternalFilePojo> asExternalFiles(
+        List<IntExternalFileOuterClass.IntExternalFile> externalFilesList,
+        long fullSyncId,
+        long updateId
+    )
+    {
+        ArrayList<ExternalFilePojo> ret = new ArrayList<>(externalFilesList.size());
+        for (IntExternalFileOuterClass.IntExternalFile externalFile : externalFilesList)
+        {
+            ret.add(ApplyExternalFile.asExternalFilePojo(externalFile, fullSyncId, updateId));
+        }
+        return ret;
     }
 
 }

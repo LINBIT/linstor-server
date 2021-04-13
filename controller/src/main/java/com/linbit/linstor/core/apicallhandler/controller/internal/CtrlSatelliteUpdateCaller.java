@@ -13,12 +13,14 @@ import com.linbit.linstor.core.SatelliteConnectorImpl;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass.ApiCallResponse;
@@ -55,6 +57,7 @@ public class CtrlSatelliteUpdateCaller
     private final Provider<RetryResourcesTask> retryResourceTaskProvider;
     private final SatelliteConnectorImpl stltConnector;
     private final Provider<CtrlAuthenticator> ctrlAuthenticator;
+    private final NodeRepository nodeRepo;
 
     @Inject
     private CtrlSatelliteUpdateCaller(
@@ -62,7 +65,8 @@ public class CtrlSatelliteUpdateCaller
         CtrlStltSerializer serializerRef,
         Provider<RetryResourcesTask> retryResourceTaskProviderRef,
         SatelliteConnectorImpl stltConnectorRef,
-        Provider<CtrlAuthenticator> ctrlAuthenticatorRef
+        Provider<CtrlAuthenticator> ctrlAuthenticatorRef,
+        NodeRepository nodeRepoRef
     )
     {
         apiCtx = apiCtxRef;
@@ -70,6 +74,7 @@ public class CtrlSatelliteUpdateCaller
         retryResourceTaskProvider = retryResourceTaskProviderRef;
         stltConnector = stltConnectorRef;
         ctrlAuthenticator = ctrlAuthenticatorRef;
+        nodeRepo = nodeRepoRef;
     }
 
     /**
@@ -116,6 +121,12 @@ public class CtrlSatelliteUpdateCaller
     private Flux<ApiCallRc> updateSatellite(Node satelliteToUpdate, byte[] changedMessage)
         throws AccessDeniedException
     {
+        return updateSatellite(satelliteToUpdate, InternalApiConsts.API_CHANGED_NODE, changedMessage);
+    }
+
+    private Flux<ApiCallRc> updateSatellite(Node satelliteToUpdate, String apiCallName, byte[] changedMessage)
+        throws AccessDeniedException
+    {
         Flux<ApiCallRc> response;
         Peer peer = satelliteToUpdate.getPeer(apiCtx);
 
@@ -127,16 +138,11 @@ public class CtrlSatelliteUpdateCaller
         {
             NodeName nodeName = satelliteToUpdate.getName();
 
-            response = peer
-                .apiCall(
-                    InternalApiConsts.API_CHANGED_NODE,
-                    changedMessage
-                )
-
+            response = peer.apiCall(apiCallName, changedMessage)
                 .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
-
-                .onErrorMap(PeerNotConnectedException.class, ignored ->
-                    new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))
+                .onErrorMap(
+                    PeerNotConnectedException.class,
+                    ignored -> new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))
                 );
         }
 
@@ -421,5 +427,45 @@ public class CtrlSatelliteUpdateCaller
             Duration.ofMillis(timeoutMillis),
             Flux.just(false)
         );
+    }
+
+    public Flux<ApiCallRc> updateSatellite(ExternalFile extFileRef)
+    {
+        return Flux.merge(
+            updateAllSatellites(
+                InternalApiConsts.API_CHANGED_EXTERNAL_FILE,
+                internalComSerializer.headerlessBuilder()
+                    .changedExtFile(extFileRef.getUuid(), extFileRef.getName().extFileName)
+                    .build()
+            ).map(tuple -> tuple.getT2())
+        );
+    }
+
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateAllSatellites(String apiChangedNodeRef, byte[] message)
+    {
+        List<Tuple2<NodeName, Flux<ApiCallRc>>> responses = new ArrayList<>();
+        try
+        {
+            for (Node nodeToContact : nodeRepo.getMapForView(apiCtx).values())
+            {
+                Peer satellitePeer = nodeToContact.getPeer(apiCtx);
+
+                if (satellitePeer.isConnected() && !satellitePeer.hasFullSyncFailed())
+                {
+                    Flux<ApiCallRc> response = updateSatellite(
+                        nodeToContact,
+                        apiChangedNodeRef,
+                        message
+                    );
+
+                    responses.add(Tuples.of(nodeToContact.getName(), response));
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return Flux.fromIterable(responses);
     }
 }

@@ -8,6 +8,8 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.ExternalFileMap;
+import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
@@ -17,6 +19,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.NetInterface;
@@ -38,6 +41,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
@@ -146,6 +150,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final OpenflexLayerCtrlDatabaseDriver openflexLayerDriver;
     private final WritecacheLayerCtrlDatabaseDriver writecacheLayerDriver;
     private final CacheLayerCtrlDatabaseDriver cacheLayerDriver;
+    private final ExternalFileCtrlDatabaseDriver extFileDriver;
     private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
     private final Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelper;
 
@@ -158,6 +163,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final CoreModule.KeyValueStoreMap keyValueStoreMap;
     private final VolumeGroupCtrlDatabaseDriver vlmGrpDriver;
     private final ExosMappingManager exosMappingMgr;
+    private final ExternalFileMap extFileMap;
 
     @Inject
     public DatabaseLoader(
@@ -188,6 +194,7 @@ public class DatabaseLoader implements DatabaseDriver
         OpenflexLayerCtrlDatabaseDriver openflexLayerDriverRef,
         WritecacheLayerCtrlDatabaseDriver writecacheLayerDriverRef,
         CacheLayerCtrlDatabaseDriver cacheLayerDriverRef,
+        ExternalFileCtrlDatabaseDriver extFilesDriverRef,
         Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
         Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
@@ -197,7 +204,8 @@ public class DatabaseLoader implements DatabaseDriver
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
         CoreModule.KeyValueStoreMap keyValueStoreMapRef,
-        ExosMappingManager exosMappingMgrRef
+        ExosMappingManager exosMappingMgrRef,
+        CoreModule.ExternalFileMap extFileMapRef
     )
     {
         dbCtx = privCtx;
@@ -227,6 +235,7 @@ public class DatabaseLoader implements DatabaseDriver
         openflexLayerDriver = openflexLayerDriverRef;
         writecacheLayerDriver = writecacheLayerDriverRef;
         cacheLayerDriver = cacheLayerDriverRef;
+        extFileDriver = extFilesDriverRef;
         ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
         ctrlSnapLayerDataHelper = ctrlSnapLayerDataHelperRef;
 
@@ -238,6 +247,7 @@ public class DatabaseLoader implements DatabaseDriver
         freeSpaceMgrMap = freeSpaceMgrMapRef;
         keyValueStoreMap = keyValueStoreMapRef;
         exosMappingMgr = exosMappingMgrRef;
+        extFileMap = extFileMapRef;
     }
 
     /**
@@ -266,13 +276,15 @@ public class DatabaseLoader implements DatabaseDriver
                 );
             }
 
-            // load the main objects (nodes, rscDfns, storPoolDfns)
+            // load the main objects (nodes, rscDfns, storPoolDfns, extFile)
             Map<Node, Node.InitMaps> loadedNodesMap =
                 Collections.unmodifiableMap(nodeDriver.loadAll(null));
             Map<ResourceDefinition, ResourceDefinition.InitMaps> loadedRscDfnsMap =
                 Collections.unmodifiableMap(rscDfnDriver.loadAll(tmpRscGroups));
             Map<StorPoolDefinition, StorPoolDefinition.InitMaps> loadedStorPoolDfnsMap =
                 Collections.unmodifiableMap(storPoolDfnDriver.loadAll(null));
+            Map<ExternalFile, ExternalFile.InitMaps> loadedExtFilesMap =
+                Collections.unmodifiableMap(extFileDriver.loadAll(null));
 
             // add the rscDfns into the corresponding rscGroup rscDfn-map
             for (ResourceDefinition rscDfn : loadedRscDfnsMap.keySet())
@@ -288,6 +300,8 @@ public class DatabaseLoader implements DatabaseDriver
                 mapByName(loadedRscDfnsMap, ResourceDefinition::getName);
             Map<StorPoolName, StorPoolDefinition> tmpStorPoolDfnMap =
                 mapByName(loadedStorPoolDfnsMap, StorPoolDefinition::getName);
+            Map<ExternalFileName, ExternalFile> tmpExtFileMap =
+                mapByName(loadedExtFilesMap, ExternalFile::getName);
 
             // loading net interfaces
             List<NetInterface> loadedNetIfs = netIfDriver.loadAllAsList(tmpNodesMap);
@@ -536,6 +550,7 @@ public class DatabaseLoader implements DatabaseDriver
             rscGrpMap.putAll(tmpRscGroups);
             storPoolDfnMap.putAll(tmpStorPoolDfnMap);
             freeSpaceMgrMap.putAll(tmpFreeSpaceMgrMap);
+            extFileMap.putAll(tmpExtFileMap);
 
             // load external names
             for (ResourceDefinition rscDfn : tmpRscDfnMap.values())

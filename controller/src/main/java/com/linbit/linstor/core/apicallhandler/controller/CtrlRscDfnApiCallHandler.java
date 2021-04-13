@@ -28,6 +28,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
@@ -36,6 +37,7 @@ import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -51,6 +53,8 @@ import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -60,6 +64,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -1015,5 +1020,79 @@ public class CtrlRscDfnApiCallHandler
                 );
             }
         }
+    }
+
+    public Flux<ApiCallRc> setDeployFile(String rscName, String extFileName, boolean deploy)
+    {
+        ResponseContext context = makeResourceDefinitionContext(
+            ApiOperation.makeModifyOperation(),
+            rscName
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Deploy external file on resource definition",
+            lockGuardFactory.create().read(LockObj.EXT_FILE_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            () -> deployFileInTransaction(rscName, extFileName, deploy)
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> deployFileInTransaction(
+        String rscNameRef,
+        String extFileNameRef,
+        boolean deployRef
+    )
+    {
+        Flux<ApiCallRc> flux;
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+        ExternalFile extFile = ctrlApiDataLoader.loadExtFile(extFileNameRef, true);
+
+        try
+        {
+            if (deployRef)
+            {
+                CtrlExternalFilesHelper.deployPath(rscDfn.getProps(peerAccCtx.get()), extFile);
+            }
+            else
+            {
+                /*
+                 * Do not use undeployPath. Using undeployPath only sets the property's value to False, which might
+                 * result in conflicts where different rscDfns (or later rscDfn with node / ctrl) have different values
+                 * for the same external file.
+                 *
+                 * Using only deployPath and removePath prevents such conflicts by defining "if anything requires the
+                 * file to exist, the file will be created".
+                 */
+                CtrlExternalFilesHelper.removePath(rscDfn.getProps(peerAccCtx.get()), extFile);
+            }
+
+            ctrlTransactionHelper.commit();
+
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+                .transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rscDfn.getName(),
+                        "Deployed " + extFileNameRef + " on resource {1} on {0}"
+                    )
+                );
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "deploy external file on " + getRscDfnDescription(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+
+        return flux;
     }
 }

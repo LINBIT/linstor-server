@@ -293,22 +293,24 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
                     ret = null;
                 }
                 else
-                if (col.getSqlType() == Types.VARCHAR)
                 {
-                    ret = new ArrayList<>(OBJ_MAPPER.readValue((String) value, List.class));
-                }
-                else
-                if (col.getSqlType() == Types.BLOB)
-                {
-                    ret = new ArrayList<>(OBJ_MAPPER.readValue((byte[]) value, List.class));
-                }
-                else
-                {
-                    throw new DatabaseException(
-                        "Failed to deserialize json array. No handler found for sql type: " +
-                        JDBCType.valueOf(col.getSqlType()) +
-                        " in table " + table.getName() + ", column " + col.getName()
-                    );
+                    int colSqlType = col.getSqlType();
+                    if (colSqlType == Types.VARCHAR || colSqlType == Types.CLOB)
+                    {
+                        ret = new ArrayList<>(OBJ_MAPPER.readValue((String) value, List.class));
+                    }
+                    else if (colSqlType == Types.BLOB)
+                    {
+                        ret = new ArrayList<>(OBJ_MAPPER.readValue((byte[]) value, List.class));
+                    }
+                    else
+                    {
+                        throw new DatabaseException(
+                            "Failed to deserialize json array. No handler found for sql type: " +
+                                JDBCType.valueOf(colSqlType) +
+                                " in table " + table.getName() + ", column " + col.getName()
+                        );
+                    }
                 }
             }
             catch (IOException exc)

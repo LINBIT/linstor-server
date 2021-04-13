@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
@@ -103,6 +104,7 @@ public class StltApiCallHandler
     private final StltRscApiCallHandler rscHandler;
     private final StltStorPoolApiCallHandler storPoolHandler;
     private final StltSnapshotApiCallHandler snapshotHandler;
+    private final StltExternalFilesApiCallHandler extFilesHandler;
     private final StltExtToolsChecker deviceLayerChecker;
 
     private final CtrlStltSerializer interComSerializer;
@@ -111,9 +113,11 @@ public class StltApiCallHandler
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
+    private final ReadWriteLock extFileMapLock;
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final CoreModule.ExternalFileMap extFileMap;
 
     private final TreeMap<Long, ApplyData> dataToApply;
 
@@ -148,16 +152,19 @@ public class StltApiCallHandler
         StltRscApiCallHandler rscHandlerRef,
         StltStorPoolApiCallHandler storPoolHandlerRef,
         StltSnapshotApiCallHandler snapshotHandlerRef,
+        StltExternalFilesApiCallHandler extFilesHandlerRef,
         StltExtToolsChecker deviceLayerCheckerRef,
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
+        @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock extFileMapLockRef,
         @Named(LinStor.SATELLITE_PROPS) Props satellitePropsRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        CoreModule.ExternalFileMap extFileMapRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
         StltCryptApiCallHelper vlmDfnHandlerRef,
@@ -184,15 +191,18 @@ public class StltApiCallHandler
         rscHandler = rscHandlerRef;
         storPoolHandler = storPoolHandlerRef;
         snapshotHandler = snapshotHandlerRef;
+        extFilesHandler = extFilesHandlerRef;
         deviceLayerChecker = deviceLayerCheckerRef;
         interComSerializer = interComSerializerRef;
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
+        extFileMapLock = extFileMapLockRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
+        extFileMap = extFileMapRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObj = stltSecObjRef;
         vlmDfnHandler = vlmDfnHandlerRef;
@@ -283,6 +293,7 @@ public class StltApiCallHandler
         Set<StorPoolPojo> storPools,
         Set<RscPojo> resources,
         Set<SnapshotPojo> snapshots,
+        Set<ExternalFilePojo> extFilesRef,
         long fullSyncId,
         byte[] cryptKey
     )
@@ -305,6 +316,7 @@ public class StltApiCallHandler
                 nodesMap.clear();
                 rscDfnMap.clear();
                 storPoolDfnMap.clear();
+                extFileMap.clear();
 
                 for (NodePojo node : nodes)
                 {
@@ -347,6 +359,11 @@ public class StltApiCallHandler
                     snapshotHandler.applyChanges(snapshot);
                 }
 
+                for (ExternalFilePojo extFilePojo : extFilesRef)
+                {
+                    extFilesHandler.applyChanges(extFilePojo);
+                }
+
                 transMgrProvider.get().commit();
 
                 for (NodePojo node : nodes)
@@ -361,11 +378,15 @@ public class StltApiCallHandler
                 }
                 for (RscPojo rsc : resources)
                 {
-                    errorReporter.logTrace("Resource '" + rsc.getName() + "' created.");
+                    errorReporter.logTrace("Resource '" + rsc.getName() + "' received.");
                 }
                 for (SnapshotPojo snapshot : snapshots)
                 {
-                    errorReporter.logTrace("Snapshot '" + snapshot.getSnaphotDfn() + "' created.");
+                    errorReporter.logTrace("Snapshot '" + snapshot.getSnaphotDfn() + "' received.");
+                }
+                for (ExternalFilePojo extFilePojo : extFilesRef)
+                {
+                    errorReporter.logTrace("External file '%s' received.", extFilePojo.getFileName());
                 }
                 errorReporter.logTrace("Full sync with controller finished");
 
@@ -617,11 +638,20 @@ public class StltApiCallHandler
         applyChangedData(new ApplyEndedSnapshot(rscName, snapshotName, fullSyncId, updateId));
     }
 
+    public void applyExternalFileChanges(ExternalFilePojo extFilePojoRef)
+    {
+        applyChangedData(new ApplyExternalFile(extFilePojoRef, false));
+    }
+
+    public void applyDeletedExternalFileChanges(ExternalFilePojo extFilePojoRef)
+    {
+        applyChangedData(new ApplyExternalFile(extFilePojoRef, true));
+
+    }
     public void setCryptKey(byte[] key, long fullSyncId, long updateId)
     {
         applyChangedData(new ApplyCryptKey(key, fullSyncId, updateId));
     }
-
 
     private void applyChangedData(ApplyData data)
     {
@@ -1351,6 +1381,50 @@ public class StltApiCallHandler
                 stltSecObj.setCryptKey(cryptKey);
 
                 vlmDfnHandler.decryptAllNewLuksVlmKeys(true);
+            }
+        }
+    }
+
+    private class ApplyExternalFile implements ApplyData
+    {
+        private final ExternalFilePojo externalFilePojo;
+        private final boolean deleted;
+
+        ApplyExternalFile(ExternalFilePojo externalFilePojoRef, boolean deletedRef)
+        {
+            externalFilePojo = externalFilePojoRef;
+            deleted = deletedRef;
+        }
+
+        @Override
+        public long getFullSyncId()
+        {
+            return externalFilePojo.getFullSyncId();
+        }
+
+        @Override
+        public long getUpdateId()
+        {
+            return externalFilePojo.getUpdateId();
+        }
+
+        @Override
+        public void applyChange()
+        {
+            try (
+                LockGuard ls = LockGuard.createLocked(
+                    extFileMapLock.writeLock()
+                )
+            )
+            {
+                if (deleted)
+                {
+                    extFilesHandler.applyDeletedExtFile(externalFilePojo);
+                }
+                else
+                {
+                    extFilesHandler.applyChanges(externalFilePojo);
+                }
             }
         }
     }

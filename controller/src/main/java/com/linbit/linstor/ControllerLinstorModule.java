@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.core.repository.ExternalFileProtectionRepository;
+import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.core.repository.FreeSpaceMgrProtectionRepository;
 import com.linbit.linstor.core.repository.FreeSpaceMgrRepository;
 import com.linbit.linstor.core.repository.KeyValueStoreProtectionRepository;
@@ -29,5 +31,6 @@ public class ControllerLinstorModule extends AbstractModule
         bind(FreeSpaceMgrRepository.class).to(FreeSpaceMgrProtectionRepository.class);
         bind(SystemConfRepository.class).to(SystemConfProtectionRepository.class);
         bind(KeyValueStoreRepository.class).to(KeyValueStoreProtectionRepository.class);
+        bind(ExternalFileRepository.class).to(ExternalFileProtectionRepository.class);
     }
 }

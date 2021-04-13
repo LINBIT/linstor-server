@@ -1327,6 +1327,16 @@ public class JsonGenTypes
         public List<String> connections = Collections.emptyList();
     }
 
+    /**
+     * External file which can be configured to be deployed by Linstor
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ExternalFile
+    {
+        public String path;
+        public String content;
+    }
+
     private JsonGenTypes()
     {
     }

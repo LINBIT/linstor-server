@@ -3,6 +3,7 @@ package com.linbit.linstor.security;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.core.repository.ExternalFileProtectionRepository;
 import com.linbit.linstor.core.repository.FreeSpaceMgrProtectionRepository;
 import com.linbit.linstor.core.repository.KeyValueStoreProtectionRepository;
 import com.linbit.linstor.core.repository.NodeProtectionRepository;
@@ -30,6 +31,7 @@ public class DbCoreObjProtInitializer implements StartupInitializer
     private final FreeSpaceMgrProtectionRepository freeSpaceMgrProtectionRepository;
     private final SystemConfProtectionRepository systemConfProtectionRepository;
     private final KeyValueStoreProtectionRepository keyValueStoreProtectionRepository;
+    private final ExternalFileProtectionRepository externalFileProtectionRepository;
     private final ShutdownProtHolder shutdownProtHolder;
     private final TransactionMgrGenerator transactionMgrGenerator;
 
@@ -45,6 +47,7 @@ public class DbCoreObjProtInitializer implements StartupInitializer
         FreeSpaceMgrProtectionRepository freeSpaceMgrProtectionRepositoryRef,
         SystemConfProtectionRepository systemConfProtectionRepositoryRef,
         KeyValueStoreProtectionRepository keyValueStoreProtectionRepositoryRef,
+        ExternalFileProtectionRepository externalFileProtectionRepositoryRef,
         ShutdownProtHolder shutdownProtHolderRef,
         TransactionMgrGenerator transactionMgrGeneratorRef
     )
@@ -59,10 +62,12 @@ public class DbCoreObjProtInitializer implements StartupInitializer
         freeSpaceMgrProtectionRepository = freeSpaceMgrProtectionRepositoryRef;
         systemConfProtectionRepository = systemConfProtectionRepositoryRef;
         keyValueStoreProtectionRepository = keyValueStoreProtectionRepositoryRef;
+        externalFileProtectionRepository = externalFileProtectionRepositoryRef;
         shutdownProtHolder = shutdownProtHolderRef;
         transactionMgrGenerator = transactionMgrGeneratorRef;
     }
 
+    @Override
     public void initialize()
         throws InitializationException
     {
@@ -104,6 +109,13 @@ public class DbCoreObjProtInitializer implements StartupInitializer
                 ObjectProtection.buildPathController("keyValueStoreMap"),
                 true
             ));
+            externalFileProtectionRepository.setObjectProtection(
+                objectProtectionFactory.getInstance(
+                    initCtx,
+                    ObjectProtection.buildPathController("externalFileMap"),
+                    true
+                )
+            );
 
             // initializing controller OP
             systemConfProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(

@@ -2,6 +2,7 @@ package com.linbit.locks;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -42,7 +43,8 @@ public class LockGuardFactory
         RSC_DFN_MAP(3),
         STOR_POOL_DFN_MAP(4),
         KVS_MAP(5),
-        RSC_GRP_MAP(6);
+        RSC_GRP_MAP(6),
+        EXT_FILE_MAP(7);
 
         public final int lockIdx;
 
@@ -65,6 +67,7 @@ public class LockGuardFactory
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock kvsMapLock;
     private final ReadWriteLock rscGrpMapLock;
+    private final ReadWriteLock extFileMapLock;
 
     @Inject
     public LockGuardFactory(
@@ -74,7 +77,8 @@ public class LockGuardFactory
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
         @Named(CoreModule.KVS_MAP_LOCK) ReadWriteLock kvsMapLockRef,
-        @Named(CoreModule.RSC_GROUP_MAP_LOCK) ReadWriteLock rscGrpMapLockRef
+        @Named(CoreModule.RSC_GROUP_MAP_LOCK) ReadWriteLock rscGrpMapLockRef,
+        @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock extFileMapLockRef
     )
     {
         reconfigurationLock = reconfigurationLockRef;
@@ -84,6 +88,7 @@ public class LockGuardFactory
         ctrlConfigLock = ctrlConfigLockRef;
         kvsMapLock = kvsMapLockRef;
         rscGrpMapLock = rscGrpMapLockRef;
+        extFileMapLock = extFileMapLockRef;
     }
 
     public LockGuardBuilder create()
@@ -150,6 +155,9 @@ public class LockGuardFactory
                 break;
             case RSC_GRP_MAP:
                 lock = rscGrpMapLock;
+                break;
+            case EXT_FILE_MAP:
+                lock = extFileMapLock;
                 break;
             default:
                 throw new ImplementationError("Unknown lock identifier " + lockId.name());

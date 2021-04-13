@@ -71,6 +71,11 @@ public class InternalApiConsts
 
     public static final String API_RSP_SOS_REPORT = "ResponseSosReport";
 
+    public static final String API_CHANGED_EXTERNAL_FILE = "ChangedExternalFile";
+    public static final String API_REQUEST_EXTERNAL_FILE = "RequestExternalFile";
+    public static final String API_APPLY_EXTERNAL_FILE = "ApplyExternalFile";
+    public static final String API_APPLY_DELETED_EXTERNAL_FILE = "ApplyDeletedExternalFile";
+    public static final String API_NOTIFY_EXTERNAL_FILE_APPLIED = "NotifyExternalFileApplied";
     /*
      * Event stream actions
      */
@@ -150,6 +155,9 @@ public class InternalApiConsts
     public static final String DRBD_VERIFY_ALGO = "verify-alg";
     public static final String DRBD_AUTO_VERIFY_ALGO = "auto-verify-alg";
     public static final String KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_LIST = "auto-verify-algo-allowed-list";
+
+    // external files consts
+    public static final String NAMESPC_FILES = "files";
 
     private InternalApiConsts()
     {

@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
@@ -14,6 +15,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -28,6 +30,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
+import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.core.repository.KeyValueStoreRepository;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
@@ -57,6 +60,7 @@ public class CtrlApiDataLoader
     private final KeyValueStoreRepository kvsRepository;
     private final SystemConfRepository systemConfRepository;
     private final ResourceGroupRepository resourceGroupRepository;
+    private final ExternalFileRepository extFileRepository;
 
     @Inject
     public CtrlApiDataLoader(
@@ -67,7 +71,8 @@ public class CtrlApiDataLoader
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         KeyValueStoreRepository kvsRepositoryRef,
         SystemConfRepository systemConfRepositoryRef,
-        ResourceGroupRepository resourceGroupRepositoryRef
+        ResourceGroupRepository resourceGroupRepositoryRef,
+        ExternalFileRepository extFileRepositoryRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -78,6 +83,7 @@ public class CtrlApiDataLoader
         kvsRepository = kvsRepositoryRef;
         systemConfRepository = systemConfRepositoryRef;
         resourceGroupRepository = resourceGroupRepositoryRef;
+        extFileRepository = extFileRepositoryRef;
     }
 
     public final Node loadNode(String nodeNameStr, boolean failIfNull)
@@ -685,5 +691,49 @@ public class CtrlApiDataLoader
             );
         }
         return vlmGrp;
+    }
+
+    public final ExternalFile loadExtFile(String extFileNameStr, boolean failIfNull)
+    {
+        return loadExtFile(LinstorParsingUtils.asExtFileName(extFileNameStr), failIfNull);
+    }
+
+    public final ExternalFile loadExtFile(
+        ExternalFileName extFileName,
+        boolean failIfNull
+    )
+    {
+        ExternalFile extFile;
+        try
+        {
+            extFile = extFileRepository.get(
+                peerAccCtx.get(),
+                extFileName
+            );
+
+            if (failIfNull && extFile == null)
+            {
+                throw new ApiRcException(ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_EXT_FILE,
+                        "External file '" + extFileName.extFileName + "' not registered."
+                    )
+                    .setCause(
+                        "The specified external file '" + extFileName.extFileName +
+                        "' could not be found in the database")
+                    .setCorrection("Create an external file with the name '" + extFileName.extFileName + "' first.")
+                    .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + getRscDfnDescriptionInline(extFileName.extFileName),
+                ApiConsts.FAIL_ACC_DENIED_EXT_FILE
+            );
+        }
+        return extFile;
     }
 }

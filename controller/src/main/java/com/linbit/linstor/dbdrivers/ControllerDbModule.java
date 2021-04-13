@@ -2,8 +2,11 @@ package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
+import com.linbit.linstor.core.objects.CacheLayerETCDDriver;
+import com.linbit.linstor.core.objects.CacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.DrbdLayerETCDDriver;
 import com.linbit.linstor.core.objects.DrbdLayerSQLDbDriver;
+import com.linbit.linstor.core.objects.ExternalFileDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerETCDDriver;
 import com.linbit.linstor.core.objects.LuksLayerSQLDbDriver;
@@ -15,8 +18,6 @@ import com.linbit.linstor.core.objects.NvmeLayerETCDDriver;
 import com.linbit.linstor.core.objects.NvmeLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.OpenflexLayerETCDDriver;
 import com.linbit.linstor.core.objects.OpenflexLayerSQLDbDriver;
-import com.linbit.linstor.core.objects.CacheLayerETCDDriver;
-import com.linbit.linstor.core.objects.CacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
@@ -43,8 +44,12 @@ import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.etcd.DbEtcd;
 import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
@@ -60,8 +65,6 @@ import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
@@ -156,6 +159,8 @@ public class ControllerDbModule extends AbstractModule
         bind(SnapshotVolumeDatabaseDriver.class).to(SnapshotVolumeDbDriver.class);
         bind(KeyValueStoreCtrlDatabaseDriver.class).to(KeyValueStoreDbDriver.class);
         bind(KeyValueStoreDatabaseDriver.class).to(KeyValueStoreDbDriver.class);
+        bind(ExternalFileCtrlDatabaseDriver.class).to(ExternalFileDbDriver.class);
+        bind(ExternalFileDatabaseDriver.class).to(ExternalFileDbDriver.class);
         switch (dbType)
         {
             case SQL:

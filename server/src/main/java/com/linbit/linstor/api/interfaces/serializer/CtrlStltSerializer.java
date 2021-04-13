@@ -4,6 +4,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -52,6 +53,8 @@ public interface CtrlStltSerializer extends CommonSerializer
 
         CtrlStltSerializerBuilder changedConfig(StltConfig stltConfig) throws IOException;
 
+        CtrlStltSerializerBuilder changedExtFile(UUID extFileUUID, String extFileNameRef);
+
         CtrlStltSerializerBuilder controllerData(long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder node(
             Node node,
@@ -76,9 +79,19 @@ public interface CtrlStltSerializer extends CommonSerializer
             Set<Node> nodeSet,
             Set<StorPool> storPools,
             Set<Resource> resources,
-            Set<Snapshot> snapshots, long timestamp,
+            Set<Snapshot> snapshots,
+            Set<ExternalFile> externalFilesRef,
+            long timestamp,
             long updateId
         );
+
+        CommonSerializerBuilder externalFile(
+            ExternalFile extFileRef,
+            boolean includeContent,
+            long fullSyncIdRef,
+            long updateIdRef
+        );
+        CommonSerializerBuilder deletedExternalFile(String extFileNameStrRef, long fullSyncIdRef, long updateIdRef);
 
         CtrlStltSerializerBuilder grantsharedStorPoolLocks(Set<SharedStorPoolName> locksRef);
 
@@ -116,6 +129,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             String snapshotName
         );
         CtrlStltSerializerBuilder requestSharedStorPoolLocks(Set<SharedStorPoolName> sharedSPLocksRef);
+        CommonSerializerBuilder requestExternalFileUpdate(UUID extFileUuidRef, String extFileNameRef);
 
         CtrlStltSerializerBuilder updateFreeCapacities(Map<StorPool, SpaceInfo> spaceInfoMap);
 

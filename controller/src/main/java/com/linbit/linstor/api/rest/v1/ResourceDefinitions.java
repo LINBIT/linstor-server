@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -9,6 +10,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceDefinition
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnDeleteApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 
@@ -30,6 +32,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +52,7 @@ public class ResourceDefinitions
 {
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
+    private final CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
     private final CtrlRscDfnDeleteApiCallHandler ctrlRscDfnDeleteApiCallHandler;
     private final ObjectMapper objectMapper;
     private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
@@ -56,6 +61,7 @@ public class ResourceDefinitions
     ResourceDefinitions(
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
+        CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandlerRef,
         CtrlRscDfnDeleteApiCallHandler ctrlRscDfnDeleteApiCallHandlerRef,
         CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandlerRef
     )
@@ -63,6 +69,7 @@ public class ResourceDefinitions
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlRscDfnDeleteApiCallHandler = ctrlRscDfnDeleteApiCallHandlerRef;
+        ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
         ctrlPropsInfoApiCallHandler = ctrlPropsInfoApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
@@ -220,5 +227,57 @@ public class ResourceDefinitions
                 .build(),
             false
         );
+    }
+
+    @POST
+    @Path("{rscDfnName}/files/{path}")
+    public void deployFile(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("rscDfnName") String rscName,
+        @PathParam("path") String path
+    )
+    {
+        try
+        {
+            Flux<ApiCallRc> flux = ctrlRscDfnApiCallHandler.setDeployFile(
+                rscName,
+                URLDecoder.decode(path, StandardCharsets.UTF_8.displayName()),
+                true
+            ).subscriberContext(
+                requestHelper.createContext(ApiConsts.API_DEPLOY_EXT_FILE, request)
+            );
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
+        catch (UnsupportedEncodingException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    @DELETE
+    @Path("{rscDfnName}/files/{path}")
+    public void undeployFile(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("rscDfnName") String rscName,
+        @PathParam("path") String path
+    )
+    {
+        try
+        {
+            Flux<ApiCallRc> flux = ctrlRscDfnApiCallHandler.setDeployFile(
+                rscName,
+                URLDecoder.decode(path, StandardCharsets.UTF_8.displayName()),
+                false
+            ).subscriberContext(
+                requestHelper.createContext(ApiConsts.API_UNDEPLOY_EXT_FILE, request)
+            );
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
+        catch (UnsupportedEncodingException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 }

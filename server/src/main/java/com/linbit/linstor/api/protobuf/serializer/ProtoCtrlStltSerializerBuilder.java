@@ -9,6 +9,7 @@ import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
@@ -29,6 +30,7 @@ import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
+import com.linbit.linstor.proto.javainternal.c2s.IntExternalFileOuterClass.IntExternalFile;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf.Builder;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
@@ -45,6 +47,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyControllerOuterClass
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedNodeOuterClass.MsgIntApplyDeletedNode;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedRscOuterClass.MsgIntApplyDeletedRsc;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedStorPoolOuterClass.MsgIntApplyDeletedStorPool;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyExternalFileOuterClass.MsgIntApplyExternalFile;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyNodeOuterClass.MsgIntApplyNode;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgIntApplyRsc;
@@ -53,6 +56,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.M
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntExternalFileDeletedDataOuterClass.MsgIntExternalFileDeletedData;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgReqPhysicalDevicesOuterClass.MsgReqPhysicalDevices;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyConfigResponseOuterClass.MsgIntApplyConfigResponse;
@@ -101,6 +105,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     private final ResourceSerializerHelper rscSerializerHelper;
     private final SnapshotSerializerHelper snapshotSerializerHelper;
     private final NodeSerializerHelper nodeSerializerHelper;
+    private final ExternalFileSerializerHelper externalFileSerializerHelper;
     private final CtrlSecurityObjects secObjs;
 
     public ProtoCtrlStltSerializerBuilder(
@@ -120,6 +125,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         rscSerializerHelper = new ResourceSerializerHelper();
         snapshotSerializerHelper = new SnapshotSerializerHelper();
         nodeSerializerHelper = new NodeSerializerHelper();
+        externalFileSerializerHelper = new ExternalFileSerializerHelper();
     }
 
     /*
@@ -206,6 +212,16 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         appendObjectId(null, rscName);
         appendObjectId(snapshotUuid, snapshotName);
+        return this;
+    }
+
+    @Override
+    public ProtoCtrlStltSerializerBuilder changedExtFile(
+        UUID extFileUuidRef,
+        String extFileNameRef
+    )
+    {
+        appendObjectId(extFileUuidRef, extFileNameRef);
         return this;
     }
 
@@ -437,6 +453,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         Set<StorPool> storPools,
         Set<Resource> resources,
         Set<Snapshot> snapshots,
+        Set<ExternalFile> externalFiles,
         long fullSyncTimestamp,
         long updateId
     )
@@ -447,6 +464,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             ArrayList<IntStorPool> serializedStorPools = new ArrayList<>();
             ArrayList<IntRsc> serializedRscs = new ArrayList<>();
             ArrayList<IntSnapshot> serializedSnapshots = new ArrayList<>();
+            ArrayList<IntExternalFile> serializedExtFiles = new ArrayList<>();
 
             IntController serializedCtrl = ctrlSerializerHelper.buildControllerDataMsg();
 
@@ -476,6 +494,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 serializedSnapshots.add(snapshotSerializerHelper.buildSnapshotMsg(snapshot));
             }
+            for (ExternalFile extFile : externalFiles)
+            {
+                serializedExtFiles.add(externalFileSerializerHelper.buildExtFileMsg(extFile, false));
+            }
 
             String encodedMasterKey = "";
             byte[] cryptKey = secObjs.getCryptKey();
@@ -488,6 +510,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllStorPools(serializedStorPools)
                 .addAllRscs(serializedRscs)
                 .addAllSnapshots(serializedSnapshots)
+                .addAllExternalFiles(serializedExtFiles)
                 .setFullSyncTimestamp(fullSyncTimestamp)
                 .setMasterKey(encodedMasterKey)
                 .setCtrl(serializedCtrl)
@@ -516,6 +539,53 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 builder.addSharedStorPoolLocks(lock.displayValue);
             }
             builder.build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializerBuilder externalFile(
+        ExternalFile extFileRef,
+        boolean includeContent,
+        long fullSyncIdRef,
+        long updateIdRef
+    )
+    {
+        try
+        {
+            MsgIntApplyExternalFile.newBuilder()
+                .setExternalFile(externalFileSerializerHelper.buildExtFileMsg(extFileRef, includeContent))
+                .setFullSyncId(fullSyncIdRef)
+                .setUpdateId(updateIdRef)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            handleAccessDeniedException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializerBuilder deletedExternalFile(String extFileNameStrRef, long fullSyncIdRef, long updateIdRef)
+    {
+        try
+        {
+            MsgIntExternalFileDeletedData.newBuilder()
+                .setExternalFileName(extFileNameStrRef)
+                .setFullSyncId(fullSyncIdRef)
+                .setUpdateId(updateIdRef)
+                .build()
                 .writeDelimitedTo(baos);
         }
         catch (IOException exc)
@@ -746,6 +816,16 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         {
             handleIOException(exc);
         }
+        return this;
+    }
+
+    @Override
+    public CommonSerializerBuilder requestExternalFileUpdate(
+        UUID externalFileUuidRef,
+        String externalFileNameRef
+    )
+    {
+        appendObjectId(externalFileUuidRef, externalFileNameRef);
         return this;
     }
 
@@ -1057,6 +1137,25 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 }
             }
             return nodeConns;
+        }
+    }
+
+    private class ExternalFileSerializerHelper
+    {
+        private IntExternalFile buildExtFileMsg(ExternalFile extFile, boolean includeContentRef)
+            throws AccessDeniedException
+        {
+            IntExternalFile.Builder builder = IntExternalFile.newBuilder()
+                .setUuid(extFile.getUuid().toString())
+                .setName(extFile.getName().extFileName)
+                .setFlags(extFile.getFlags().getFlagsBits(serializerCtx))
+                .setContentChecksum(ByteString.copyFrom(extFile.getContentCheckSum(serializerCtx)));
+            if (includeContentRef)
+            {
+                builder = builder.setContent(ByteString.copyFrom(extFile.getContent(serializerCtx)));
+            }
+            return builder
+                .build();
         }
     }
 
