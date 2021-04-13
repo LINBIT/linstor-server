@@ -149,7 +149,7 @@ public class NameShortener
 
                     // Name is too long or conflicts with an existing name
                     final NumberPool nrPool = getNumberPool(baseName, true);
-                    int resourceNr = nrPool.autoAllocate(0, 999_999);
+                    int resourceNr = nrPool.autoAllocate(1, 999_999);
                     shortName = baseName + delimiter + resourceNr;
 
                     // Register the shortened name
