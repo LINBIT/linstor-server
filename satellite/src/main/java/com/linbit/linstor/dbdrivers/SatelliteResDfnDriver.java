@@ -2,8 +2,10 @@ package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -14,6 +16,7 @@ public class SatelliteResDfnDriver implements ResourceDefinitionDatabaseDriver
 {
     private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
     private final CollectionDatabaseDriver<?, ?> noOpColDriver = new NoOpCollectionDatabaseDriver<>();
+    private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
     private final CoreModule.ResourceDefinitionMap resDfnMap;
 
     @Inject
@@ -46,5 +49,12 @@ public class SatelliteResDfnDriver implements ResourceDefinitionDatabaseDriver
     public CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> getLayerStackDriver()
     {
         return (CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind>) noOpColDriver;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public SingleColumnDatabaseDriver<ResourceDefinition, ResourceGroup> getRscGrpDriver()
+    {
+        return (SingleColumnDatabaseDriver<ResourceDefinition, ResourceGroup>) noopSingleColDriver;
     }
 }

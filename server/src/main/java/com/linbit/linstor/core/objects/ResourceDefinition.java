@@ -146,7 +146,7 @@ public class ResourceDefinition extends BaseTransactionObject
             dbDriver.getLayerStackDriver()
         );
         deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-        rscGrp = transObjFactory.createTransactionSimpleObject(this, rscGrpRef, null);
+        rscGrp = transObjFactory.createTransactionSimpleObject(this, rscGrpRef, dbDriver.getRscGrpDriver());
 
         rscDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(resName)

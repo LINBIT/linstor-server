@@ -18,6 +18,7 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
@@ -62,8 +63,10 @@ public class ResourceDefinitionDbDriver
     private final Provider<TransactionMgr> transMgrProvider;
     private final StateFlagsPersistence<ResourceDefinition> flagsDriver;
     private final CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> layerStackDrvier;
+    private final SingleColumnDatabaseDriver<ResourceDefinition, ResourceGroup> rscGrpDriver;
     private final PropsContainerFactory propsContainerFactory;
     private final TransactionObjectFactory transObjFactory;
+
 
     @Inject
     public ResourceDefinitionDbDriver(
@@ -119,6 +122,11 @@ public class ResourceDefinitionDbDriver
 
         flagsDriver = generateFlagDriver(RESOURCE_FLAGS, ResourceDefinition.Flags.class);
         layerStackDrvier = generateCollectionToJsonStringArrayDriver(LAYER_STACK);
+        rscGrpDriver = generateSingleColumnDriver(
+            RESOURCE_GROUP_NAME,
+            rscGrp -> rscGrp.getName().displayValue,
+            rscGrp -> rscGrp.getName().value
+        );
     }
 
     @Override
@@ -131,6 +139,12 @@ public class ResourceDefinitionDbDriver
     public CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> getLayerStackDriver()
     {
         return layerStackDrvier;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<ResourceDefinition, ResourceGroup> getRscGrpDriver()
+    {
+        return rscGrpDriver;
     }
 
     @Override
