@@ -54,31 +54,30 @@ public class NameShortenerTest
 
         addAndAssert(shorter, "otherRsc", "", key, "otherRsc");
 
-        addAndAssert(shorter, "otherRsc", "", key, "oth_1");
-
         addAndAssert(shorter, "oth_10", "", key, "oth_10");
 
-        addAndAssert(shorter, "oth_1", "", key, "oth_2");
+        addAndAssert(shorter, "oth_1", "", key, "oth_1");
+        addAndAssert(shorter, "oth_2", "", key, "oth_2");
+        addAndAssert(shorter, "oth_3", "", key, "oth_3");
 
-        addAndAssert(shorter, "otherRsc02", "", key, "oth_3");
-
-        ResourceDefinition otherRsc03 = addAndAssert(shorter, "otherRsc03", "", key, "oth_4");
-        addAndAssert(shorter, "otherRsc04", "", key, "oth_5");
-        addAndAssert(shorter, "otherRsc05", "", key, "oth_6");
-        addAndAssert(shorter, "otherRsc06", "", key, "oth_7");
-        addAndAssert(shorter, "otherRsc32", "", key, "oth_8");
-        addAndAssert(shorter, "otherRsc42", "", key, "oth_9");
-        addAndAssert(shorter, "otherRsc90", "", key, "oth_11");
-        addAndAssert(shorter, "oth_11", "", key, "oth_12");
+        ResourceDefinition oth4 = addAndAssert(shorter, "otherWayTooLongResourceName01", "", key, "oth_4");
+        addAndAssert(shorter, "otherWayTooLongResourceName02", "", key, "oth_5");
+        addAndAssert(shorter, "otherWayTooLongResourceName03", "", key, "oth_6");
+        addAndAssert(shorter, "otherWayTooLongResourceName04", "", key, "oth_7");
+        addAndAssert(shorter, "otherWayTooLongResourceName05", "", key, "oth_8");
+        addAndAssert(shorter, "otherWayTooLongResourceName06", "", key, "oth_9");
+        addAndAssert(shorter, "otherWayTooLongResourceName07", "", key, "oth_10");
+        addAndAssert(shorter, "otherWayTooLongResourceName08", "", key, "oth_11");
+        addAndAssert(shorter, "otherWayTooLongResourceName09", "", key, "oth_12");
 
         addAndAssert(shorter, "ot", "42", key, "ot42");
         addAndAssert(shorter, "oth", "9001", key, "oth9001");
 
         addAndAssert(shorter, "abcdefg", "9001", key, "abc_1");
 
-        shorter.remove(otherRsc03, "");
-        addAndAssert(shorter, "otherRscTooLong", "", key, "oth_4");
-        addAndAssert(shorter, "otherRsc03", "", key, "oth_13");
+        shorter.remove(oth4, "");
+        addAndAssert(shorter, "otherWayTooLongResourceName10", "", key, "oth_4");
+        addAndAssert(shorter, "otherWayTooLongResourceName11", "", key, "oth_13");
     }
 
     @Test
@@ -87,7 +86,7 @@ public class NameShortenerTest
         String key = "key";
         NameShortener shorter = new NameShortener("", key, 10, TestAccessContextProvider.SYS_CTX, "_", null);
 
-        addAndAssert(shorter, "aaatest000", "", key, "aaatest001");
+        addAndAssert(shorter, "aaatest000", "", key, "aaatest000");
         addAndAssert(shorter, "aaaatest001", "", key, "aaa_1");
         addAndAssert(shorter, "aaaatest002", "", key, "aaa_2");
         addAndAssert(shorter, "aaaatest003", "", key, "aaa_3");
