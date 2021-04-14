@@ -222,16 +222,16 @@ public class NameShortener
         if (nrMatcher.find())
         {
             final String nrSuffix = nrMatcher.group(1);
-            final String baseName = name.substring(0, name.length() - nrSuffix.length());
+            final String baseName = name.substring(0, name.length() - nrSuffix.length() - delimiterLen);
 
             // If there is a number pattern at the end of a name that is longer than the base name
             // for auto-numbered names, the numbers do not need to be tracked, because then it's
             // obviously not an auto-generated name/number combination
             if (baseName.length() <= maxBaseNameLen)
             {
-                final int resourceNr = parseNumber(nrSuffix.substring(delimiterLen));
+                final int resourceNr = parseNumber(nrSuffix);
 
-                final NumberPool nrPool = getNumberPool(name, true);
+                final NumberPool nrPool = getNumberPool(baseName, true);
                 nrPool.allocate(resourceNr);
             }
         }
