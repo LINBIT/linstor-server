@@ -66,9 +66,9 @@ public class NameShortenerTest
         addAndAssert(shorter, "otherWayTooLongResourceName04", "", key, "oth_7");
         addAndAssert(shorter, "otherWayTooLongResourceName05", "", key, "oth_8");
         addAndAssert(shorter, "otherWayTooLongResourceName06", "", key, "oth_9");
-        addAndAssert(shorter, "otherWayTooLongResourceName07", "", key, "oth_10");
-        addAndAssert(shorter, "otherWayTooLongResourceName08", "", key, "oth_11");
-        addAndAssert(shorter, "otherWayTooLongResourceName09", "", key, "oth_12");
+        addAndAssert(shorter, "otherWayTooLongResourceName07", "", key, "oth_11");
+        addAndAssert(shorter, "otherWayTooLongResourceName08", "", key, "oth_12");
+        addAndAssert(shorter, "otherWayTooLongResourceName09", "", key, "oth_13");
 
         addAndAssert(shorter, "ot", "42", key, "ot42");
         addAndAssert(shorter, "oth", "9001", key, "oth9001");
@@ -77,7 +77,7 @@ public class NameShortenerTest
 
         shorter.remove(oth4, "");
         addAndAssert(shorter, "otherWayTooLongResourceName10", "", key, "oth_4");
-        addAndAssert(shorter, "otherWayTooLongResourceName11", "", key, "oth_13");
+        addAndAssert(shorter, "otherWayTooLongResourceName11", "", key, "oth_14");
     }
 
     @Test
