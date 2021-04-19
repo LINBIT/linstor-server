@@ -79,35 +79,30 @@ public class VolumeTestFactory
     }
 
     public VolumeTestFactory setDfltAccCtx(AccessContext dfltAccCtxRef)
-        throws LinStorException
     {
         dfltAccCtx = dfltAccCtxRef;
         return this;
     }
 
     public VolumeTestFactory setDfltFlags(Flags[] dfltFlagsRef)
-        throws LinStorException
     {
         dfltFlags = dfltFlagsRef;
         return this;
     }
 
     public VolumeTestFactory setDfltStorPoolMap(Map<String, String> dfltStorPoolMapRef)
-        throws LinStorException
     {
         dfltStorPoolMap = dfltStorPoolMapRef;
         return this;
     }
 
     public VolumeTestFactory setDfltStorPoolData(String spName)
-        throws LinStorException
     {
         dfltStorPoolMap.put("", spName);
         return this;
     }
 
     public VolumeTestFactory setDfltVlmSize(Long vlmSizeRef)
-        throws LinStorException
     {
         dfltVlmSize = vlmSizeRef;
         return this;
@@ -213,42 +208,36 @@ public class VolumeTestFactory
         }
 
         public VolumeBuilder setNodeName(String nodeNameRef)
-            throws LinStorException
         {
             nodeName = nodeNameRef;
             return this;
         }
 
         public VolumeBuilder setRscName(String rscNameRef)
-            throws LinStorException
         {
             rscName = rscNameRef;
             return this;
         }
 
         public VolumeBuilder setVlmNr(int vlmNrRef)
-            throws LinStorException
         {
             vlmNr = vlmNrRef;
             return this;
         }
 
         public VolumeBuilder setAccCtx(AccessContext accCtxRef)
-            throws LinStorException
         {
             accCtx = accCtxRef;
             return this;
         }
 
         public VolumeBuilder setFlags(Flags[] flagsRef)
-            throws LinStorException
         {
             flags = flagsRef;
             return this;
         }
 
         public VolumeBuilder setStorPoolMap(Map<String, StorPool> storPoolMapRef)
-            throws LinStorException
         {
             storPoolMap = storPoolMapRef;
             return this;

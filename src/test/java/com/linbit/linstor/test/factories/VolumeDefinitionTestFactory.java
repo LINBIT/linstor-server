@@ -73,28 +73,24 @@ public class VolumeDefinitionTestFactory
     }
 
     public VolumeDefinitionTestFactory setDfltAccCtx(AccessContext dfltAccCtxRef)
-        throws LinStorException
     {
         dfltAccCtx = dfltAccCtxRef;
         return this;
     }
 
     public VolumeDefinitionTestFactory setDfltMinorNrSupplier(Supplier<Integer> dfltMinorNrSupplierRef)
-        throws LinStorException
     {
         dfltMinorNrSupplier = dfltMinorNrSupplierRef;
         return this;
     }
 
     public VolumeDefinitionTestFactory setDfltSize(long dfltSizeRef)
-        throws LinStorException
     {
         dfltSize = dfltSizeRef;
         return this;
     }
 
     public VolumeDefinitionTestFactory setDfltFlags(Flags[] dfltFlagsRef)
-        throws LinStorException
     {
         dfltFlags = dfltFlagsRef;
         return this;
@@ -186,19 +182,16 @@ public class VolumeDefinitionTestFactory
         }
 
         public void setAccCtx(AccessContext accCtxRef)
-            throws LinStorException
         {
             accCtx = accCtxRef;
         }
 
         public void setRscName(String rscNameRef)
-            throws LinStorException
         {
             rscName = rscNameRef;
         }
 
         public void setVlmNr(int vlmNrRef)
-            throws LinStorException
         {
             vlmNr = vlmNrRef;
         }
@@ -212,19 +205,16 @@ public class VolumeDefinitionTestFactory
         }
 
         public void setMinorNr(Integer minorNrRef)
-            throws LinStorException
         {
             minorNr = minorNrRef;
         }
 
         public void setSize(Long sizeRef)
-            throws LinStorException
         {
             size = sizeRef;
         }
 
         public void setFlags(Flags[] flagsRef)
-            throws LinStorException
         {
             flags = flagsRef;
         }
