@@ -7,7 +7,6 @@ import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -43,7 +42,6 @@ import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdResource;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
-import com.linbit.linstor.layer.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.logging.ErrorReport;
@@ -67,12 +65,10 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Date;
@@ -518,8 +514,6 @@ public class StltApiCallHandler
 
             transMgrProvider.get().commit();
 
-            regenerateLinstorCommonConf();
-
             reconfigureAllStorageDrivers();
 
             Set<ResourceName> slctRsc = new TreeSet<>();
@@ -538,98 +532,6 @@ public class StltApiCallHandler
         catch (InvalidKeyException | InvalidValueException exc)
         {
             throw new ImplementationError(exc);
-        }
-    }
-
-    private void regenerateLinstorCommonConf()
-    {
-        if (drbdVersion.hasDrbd9())
-        {
-            Path tmpResFileOut = Paths.get(CoreModule.CONFIG_PATH + "/" + "linstor-common.tmp");
-            Node.Type localNodeType;
-            try
-            {
-                localNodeType = controllerPeerConnector.getLocalNode().getNodeType(apiCtx);
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-            if (tmpResFileOut != null && !localNodeType.equals(Node.Type.OPENFLEX_TARGET))
-            {
-                try (
-                    FileOutputStream commonFileOut = new FileOutputStream(tmpResFileOut.toFile())
-                )
-                {
-                    ConfFileBuilder confFileBuilder = new ConfFileBuilder(
-                        errorReporter,
-                        whitelistProps,
-                        stltConf
-                    );
-                    commonFileOut.write(confFileBuilder.buildCommonConf(stltConf).getBytes());
-                }
-                catch (IOException ioExc)
-                {
-                    String ioErrorMsg = ioExc.getMessage();
-                    if (ioErrorMsg == null)
-                    {
-                        ioErrorMsg = "The runtime environment or operating system did not provide a " +
-                            "description of the I/O error";
-                    }
-
-                    errorReporter.reportError(
-                        Level.ERROR,
-                        new LinStorException(
-                            "Creation of the common Linstor DRBD configuration file " +
-                                "'linstor_common.conf' failed due to an I/O error",
-                            null,
-                            "Creation of the DRBD configuration file failed due to an I/O error",
-                            "- Check whether enough free space is available for the creation of the file\n" +
-                                "- Check whether the application has write access to the target directory\n" +
-                                "- Check whether the storage is operating flawlessly",
-                            "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                            ioExc
-                        ),
-                        apiCtx,
-                        null,
-                        ioErrorMsg
-                    );
-                }
-                catch (AccessDeniedException accDeniedExc)
-                {
-                    throw new ImplementationError(accDeniedExc);
-                }
-
-                try
-                {
-                    Files.move(
-                        tmpResFileOut,
-                        Paths.get(CoreModule.CONFIG_PATH + "/linstor_common.conf"),
-                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
-                    );
-                }
-                catch (IOException ioExc)
-                {
-                    String ioErrorMsg = ioExc.getMessage();
-                    errorReporter.reportError(
-                        Level.ERROR,
-                        new LinStorException(
-                            "Unable to move temporary common Linstor DRBD configuration file " +
-                                "'linstor_common.conf' failed due to an I/O error",
-                            null,
-                            "Creation of the DRBD configuration file failed due to an I/O error",
-                            "- Check whether enough free space is available for the creation of the file\n" +
-                                "- Check whether the application has write access to the target directory\n" +
-                                "- Check whether the storage is operating flawlessly",
-                            "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                            ioExc
-                        ),
-                        apiCtx,
-                        null,
-                        ioErrorMsg
-                    );
-                }
-            }
         }
     }
 

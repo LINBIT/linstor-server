@@ -25,10 +25,8 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -47,7 +45,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -86,24 +83,6 @@ public class ConfFileBuilder
         accCtx = accCtxRef;
         localRscData = localRscRef;
         remoteResourceData = remoteResourcesRef;
-        whitelistProps = whitelistPropsRef;
-        stltProps = stltPropsRef;
-
-        stringBuilder = new StringBuilder();
-        indentDepth = 0;
-    }
-
-    // Constructor used for the common linstor conf
-    public ConfFileBuilder(
-        final ErrorReporter errorReporterRef,
-        final WhitelistProps whitelistPropsRef,
-        final Props stltPropsRef
-    )
-    {
-        errorReporter = errorReporterRef;
-        accCtx = null;
-        localRscData = null;
-        remoteResourceData = null;
         whitelistProps = whitelistPropsRef;
         stltProps = stltPropsRef;
 
@@ -160,9 +139,6 @@ public class ConfFileBuilder
         appendLine("resource \"%s\"", localRscData.getSuffixedResourceName());
         try (Section resourceSection = new Section())
         {
-            // include linstor common
-            appendLine("template-file \"linstor_common.conf\";");
-
             PriorityProps prioProps = new PriorityProps()
                 .addProps(localRscProps, "R (" + rscDfn.getName() + ")")
                 .addProps(rscDfnProps, "RD (" + rscDfn.getName() + ")")
@@ -564,77 +540,6 @@ public class ConfFileBuilder
         }
     }
 
-    public String buildCommonConf(final Props satelliteProps) throws AccessDeniedException
-    {
-        appendLine(header());
-        appendLine("");
-        appendLine("common");
-        try (Section commonSection = new Section())
-        {
-            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS).isPresent() ||
-                satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent())
-            {
-                appendLine("disk");
-                try (Section ignore = new Section())
-                {
-                    appendDrbdOptions(
-                        LinStorObject.CONTROLLER,
-                        satelliteProps,
-                        ApiConsts.NAMESPC_DRBD_DISK_OPTIONS
-                    );
-
-                    appendDrbdOptions(
-                        LinStorObject.CONTROLLER,
-                        satelliteProps,
-                        ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS
-                    );
-                }
-            }
-
-            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS).isPresent())
-            {
-                appendLine("");
-                appendLine("handlers");
-                try (Section optionsSection = new Section())
-                {
-                    appendDrbdOptions(
-                        LinStorObject.CONTROLLER,
-                        satelliteProps,
-                        ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS
-                    );
-                }
-            }
-
-            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_NET_OPTIONS).isPresent())
-            {
-                appendLine("net");
-                try (Section ignore = new Section())
-                {
-                    appendDrbdOptions(
-                        LinStorObject.CONTROLLER,
-                        satelliteProps,
-                        ApiConsts.NAMESPC_DRBD_NET_OPTIONS
-                    );
-                }
-            }
-
-            if (satelliteProps.getNamespace(ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS).isPresent())
-            {
-                appendLine("options");
-                try (Section ignore = new Section())
-                {
-                    appendDrbdOptions(
-                        LinStorObject.CONTROLLER,
-                        satelliteProps,
-                        ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS
-                    );
-                }
-            }
-        }
-
-        return stringBuilder.toString();
-    }
-
     private void appendCompressionPlugin(ResourceDefinition rscDfn, String compressionType)
         throws AccessDeniedException
     {
@@ -990,12 +895,6 @@ public class ConfFileBuilder
         appendIndent();
         append(format, args);
         stringBuilder.append("\n");
-    }
-
-    private void appendCommentLine(String format, Object... args)
-    {
-        stringBuilder.append("#");
-        appendLine(format, args);
     }
 
     private static class ResourceNameComparator implements Comparator<DrbdRscData<?>>
