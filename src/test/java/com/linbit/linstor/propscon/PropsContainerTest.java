@@ -1,17 +1,6 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.linstor.security.GenericDbBase;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_AMOUNT;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_KEY;
@@ -25,6 +14,19 @@ import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateEntries;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateKeys;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateValues;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.glue;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -57,6 +59,25 @@ public class PropsContainerTest extends GenericDbBase
         rootEntrySet = root.entrySet();
         rootKeySet = root.keySet();
         rootValues = root.values();
+    }
+
+    @Test
+    public void dummy() throws Throwable
+    {
+        root.setProp("test/bla/a", "b");
+        Props testProps = root.getNamespace("test").get();
+        testProps.clear();
+        testProps.setProp("/test/blubb/a", "b");
+        testProps.setProp("/bla/yada/a", "b");
+
+        for (Entry<String, String> entry : root.entrySet())
+        {
+            System.out.println(entry.getKey() + ": " + entry.getValue());
+        }
+        for (Entry<String, String> entry : testProps.entrySet())
+        {
+            System.out.println(entry.getKey() + ": " + entry.getValue());
+        }
     }
 
     @Test

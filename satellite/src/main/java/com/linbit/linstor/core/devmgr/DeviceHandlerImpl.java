@@ -1031,7 +1031,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
 
         Props vlmProps = vlmRef.getProps(wrkCtx);
-        Optional<Props> symlinkProps = vlmProps.getNamespace(ApiConsts.NAMESPC_DEV_SYMLINKS);
+        Optional<Props> symlinkProps = vlmProps.getNamespace(ApiConsts.NAMESPC_STLT_DEV_SYMLINKS);
         if (symlinkProps.isPresent())
         {
             symlinkProps.get().clear();
@@ -1039,7 +1039,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         for (int i = 0; i < prefixedList.size(); i++)
         {
             String symlink = prefixedList.get(i);
-            vlmProps.setProp(Integer.toString(i), symlink, ApiConsts.NAMESPC_DEV_SYMLINKS);
+            vlmProps.setProp(Integer.toString(i), symlink, ApiConsts.NAMESPC_STLT_DEV_SYMLINKS);
         }
     }
 }

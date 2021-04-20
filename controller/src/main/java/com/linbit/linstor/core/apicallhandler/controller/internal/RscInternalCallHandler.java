@@ -6,6 +6,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -14,6 +15,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -31,6 +33,8 @@ import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -51,6 +55,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -229,7 +235,7 @@ public class RscInternalCallHandler
             }
 
             layerRscDataMerger.mergeLayerData(rsc, rscLayerDataPojoRef, false);
-            mergeProps(rscPropsRef, rsc.getProps(apiCtx));
+            mergeStltProps(rscPropsRef, rsc.getProps(apiCtx));
 
             Set<AbsRscLayerObject<Resource>> storageResources = LayerRscUtils.getRscDataByProvider(
                 rsc.getLayerData(apiCtx),
@@ -244,7 +250,7 @@ public class RscInternalCallHandler
 
                 VlmLayerDataApi vlmLayerDataPojo = rscLayerDataPojoRef.getVolumeMap().get(vlmNr.value);
 
-                mergeProps(vlmPropsRef.get(vlmNr.value), vlm.getProps(apiCtx));
+                mergeStltProps(vlmPropsRef.get(vlmNr.value), vlm.getProps(apiCtx));
 
                 if (vlmLayerDataPojo != null)
                 {
@@ -341,9 +347,37 @@ public class RscInternalCallHandler
         }
     }
 
-    private void mergeProps(Map<String, String> srcPropsMap, Props targetProps)
+    private void mergeStltProps(Map<String, String> srcPropsMap, Props targetProps)
     {
-        targetProps.keySet().retainAll(srcPropsMap.keySet());
-        targetProps.map().putAll(srcPropsMap);
+        /*
+         * only merge properties from the "Satellite" namespace.
+         * other properties might have been added or deleted in the meantime, but the satellite
+         * did not get the update yet so those properties would be undone / restored now.
+         */
+        Optional<Props> stltNs = targetProps.getNamespace(ApiConsts.NAMESPC_STLT);
+        if (stltNs.isPresent())
+        {
+            Props stltProps = stltNs.get();
+            stltProps.keySet().retainAll(srcPropsMap.keySet());
+        }
+        try
+        {
+            for (Entry<String, String> entry : srcPropsMap.entrySet())
+            {
+                String key = entry.getKey();
+                if (key.startsWith(ApiConsts.NAMESPC_STLT))
+                {
+                    targetProps.setProp(key, entry.getValue());
+                }
+            }
+        }
+        catch (InvalidKeyException | InvalidValueException | AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
     }
 }
