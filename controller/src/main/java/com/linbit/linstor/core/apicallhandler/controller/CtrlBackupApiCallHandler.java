@@ -241,7 +241,7 @@ public class CtrlBackupApiCallHandler
                     )
                 );
             }
-            // TODO: actually choose node
+            // TODO: actually choose node - needs to always be the same storage type
             NodeName chosenNode = new NodeName(nodes.get(0));
             ApiCallRcImpl responses = new ApiCallRcImpl();
             SnapshotDefinition snapDfn = snapshotCrtHelper

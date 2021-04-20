@@ -774,6 +774,54 @@ public class GeneratedDatabaseTables
         }
     }
 
+    public static class Remotes implements DatabaseTable
+    {
+        private Remotes() { }
+
+        // Primary Key
+        public static final ColumnImpl NAME = new ColumnImpl("NAME", Types.VARCHAR, true, false);
+
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl DSP_NAME = new ColumnImpl("DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl ENDPOINT = new ColumnImpl("ENDPOINT", Types.VARCHAR, false, false);
+        public static final ColumnImpl BUCKET = new ColumnImpl("BUCKET", Types.VARCHAR, false, false);
+        public static final ColumnImpl REGION = new ColumnImpl("REGION", Types.VARCHAR, false, false);
+        public static final ColumnImpl ACCESS_KEY = new ColumnImpl("ACCESS_KEY", Types.CHAR, false, false);
+        public static final ColumnImpl SECRET_KEY = new ColumnImpl("SECRET_KEY", Types.CHAR, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            UUID,
+            NAME,
+            DSP_NAME,
+            FLAGS,
+            ENDPOINT,
+            BUCKET,
+            REGION,
+            ACCESS_KEY,
+            SECRET_KEY
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "REMOTES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table REMOTES";
+        }
+    }
+
     public static class Resources implements DatabaseTable
     {
         private Resources() { }
@@ -1656,6 +1704,7 @@ public class GeneratedDatabaseTables
     public static final NodeNetInterfaces NODE_NET_INTERFACES = new NodeNetInterfaces();
     public static final NodeStorPool NODE_STOR_POOL = new NodeStorPool();
     public static final PropsContainers PROPS_CONTAINERS = new PropsContainers();
+    public static final Remotes REMOTES = new Remotes();
     public static final Resources RESOURCES = new Resources();
     public static final ResourceConnections RESOURCE_CONNECTIONS = new ResourceConnections();
     public static final ResourceDefinitions RESOURCE_DEFINITIONS = new ResourceDefinitions();
@@ -1776,6 +1825,15 @@ public class GeneratedDatabaseTables
         PropsContainers.PROPS_INSTANCE.table = PROPS_CONTAINERS;
         PropsContainers.PROP_KEY.table = PROPS_CONTAINERS;
         PropsContainers.PROP_VALUE.table = PROPS_CONTAINERS;
+        Remotes.UUID.table = REMOTES;
+        Remotes.NAME.table = REMOTES;
+        Remotes.DSP_NAME.table = REMOTES;
+        Remotes.FLAGS.table = REMOTES;
+        Remotes.ENDPOINT.table = REMOTES;
+        Remotes.BUCKET.table = REMOTES;
+        Remotes.REGION.table = REMOTES;
+        Remotes.ACCESS_KEY.table = REMOTES;
+        Remotes.SECRET_KEY.table = REMOTES;
         Resources.UUID.table = RESOURCES;
         Resources.NODE_NAME.table = RESOURCES;
         Resources.RESOURCE_NAME.table = RESOURCES;

@@ -7,12 +7,14 @@ import com.linbit.crypto.LengthPaddingImpl;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
@@ -51,6 +53,7 @@ public class CoreModule extends AbstractModule
     public static final String KVS_MAP_LOCK = "keyValueStoreMapLock";
     public static final String RSC_GROUP_MAP_LOCK = "rscGrpMapLock";
     public static final String EXT_FILE_MAP_LOCK = "extFileMapLock";
+    public static final String REMOTE_MAP_LOCK = "remoteMapLock";
 
     private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
@@ -75,6 +78,7 @@ public class CoreModule extends AbstractModule
         bind(KeyValueStoreMap.class).to(KeyValueStoreMapImpl.class);
         bind(ResourceGroupMap.class).to(ResourceGroupMapImpl.class);
         bind(ExternalFileMap.class).to(ExternalFilesMapImpl.class);
+        bind(RemoteMap.class).to(RemoteMapImpl.class);
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
 
@@ -95,6 +99,8 @@ public class CoreModule extends AbstractModule
         bind(ReadWriteLock.class).annotatedWith(Names.named(RSC_GROUP_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(EXT_FILE_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(REMOTE_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
         bind(LengthPadding.class).to(LengthPaddingImpl.class);
     }
@@ -136,6 +142,10 @@ public class CoreModule extends AbstractModule
     }
 
     public interface ExternalFileMap extends Map<ExternalFileName, ExternalFile>
+    {
+    }
+
+    public interface RemoteMap extends Map<RemoteName, Remote>
     {
     }
 
@@ -268,6 +278,18 @@ public class CoreModule extends AbstractModule
         public ExternalFilesMapImpl(Provider<TransactionMgr> transMgrProviderRef)
         {
             super(new TreeMap<>(), null, transMgrProviderRef);
+        }
+    }
+
+    @Singleton
+    public static class RemoteMapImpl
+        extends TransactionMap<RemoteName, Remote>
+        implements RemoteMap
+    {
+        @Inject
+        public RemoteMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<>(), null, transMgrProvider);
         }
     }
 }

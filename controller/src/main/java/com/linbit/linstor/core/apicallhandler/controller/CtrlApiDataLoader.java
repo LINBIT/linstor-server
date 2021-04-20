@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -18,6 +19,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -33,6 +35,7 @@ import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.core.repository.KeyValueStoreRepository;
 import com.linbit.linstor.core.repository.NodeRepository;
+import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
@@ -61,6 +64,7 @@ public class CtrlApiDataLoader
     private final SystemConfRepository systemConfRepository;
     private final ResourceGroupRepository resourceGroupRepository;
     private final ExternalFileRepository extFileRepository;
+    private final RemoteRepository remoteRepository;
 
     @Inject
     public CtrlApiDataLoader(
@@ -72,7 +76,8 @@ public class CtrlApiDataLoader
         KeyValueStoreRepository kvsRepositoryRef,
         SystemConfRepository systemConfRepositoryRef,
         ResourceGroupRepository resourceGroupRepositoryRef,
-        ExternalFileRepository extFileRepositoryRef
+        ExternalFileRepository extFileRepositoryRef,
+        RemoteRepository remoteRepositoryRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -84,6 +89,7 @@ public class CtrlApiDataLoader
         systemConfRepository = systemConfRepositoryRef;
         resourceGroupRepository = resourceGroupRepositoryRef;
         extFileRepository = extFileRepositoryRef;
+        remoteRepository = remoteRepositoryRef;
     }
 
     public final Node loadNode(String nodeNameStr, boolean failIfNull)
@@ -735,5 +741,51 @@ public class CtrlApiDataLoader
             );
         }
         return extFile;
+    }
+
+    public final Remote loadRemote(String remoteNameStr, boolean failIfNull)
+    {
+        return loadRemote(LinstorParsingUtils.asRemoteName(remoteNameStr), failIfNull);
+    }
+
+    public final Remote loadRemote(
+        RemoteName remoteName,
+        boolean failIfNull
+    )
+    {
+        Remote remote;
+        try
+        {
+            remote = remoteRepository.get(
+                peerAccCtx.get(),
+                remoteName
+            );
+
+            if (failIfNull && remote == null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_NOT_FOUND_REMOTE,
+                            "Remote '" + remoteName.displayValue + "' not registered."
+                        )
+                        .setCause(
+                            "The specified remote '" + remoteName.displayValue +
+                                "' could not be found in the database"
+                        )
+                        .setCorrection("Create a remote with the name '" + remoteName.displayValue + "' first.")
+                        .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + getRscDfnDescriptionInline(remoteName.displayValue),
+                ApiConsts.FAIL_ACC_DENIED_REMOTE
+            );
+        }
+        return remote;
     }
 }

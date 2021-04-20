@@ -17,6 +17,7 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
@@ -63,6 +64,7 @@ public class SatelliteDbModule extends AbstractModule
         bind(SnapshotDatabaseDriver.class).to(SatelliteSnapshotDriver.class);
         bind(SnapshotVolumeDatabaseDriver.class).to(SatelliteSnapshotVlmDriver.class);
         bind(ExternalFileDatabaseDriver.class).to(SatelliteExternalFileDriver.class);
+        bind(S3RemoteDatabaseDriver.class).to(SatelliteS3RemoteDriver.class);
 
         bind(ResourceGroupDatabaseDriver.class).to(SatelliteRscGrpDriver.class);
         bind(VolumeGroupDatabaseDriver.class).to(SatelliteVlmGrpDriver.class);

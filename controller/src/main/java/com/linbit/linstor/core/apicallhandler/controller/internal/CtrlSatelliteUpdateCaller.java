@@ -15,6 +15,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -436,6 +437,18 @@ public class CtrlSatelliteUpdateCaller
                 InternalApiConsts.API_CHANGED_EXTERNAL_FILE,
                 internalComSerializer.headerlessBuilder()
                     .changedExtFile(extFileRef.getUuid(), extFileRef.getName().extFileName)
+                    .build()
+            ).map(tuple -> tuple.getT2())
+        );
+    }
+
+    public Flux<ApiCallRc> updateSatellite(Remote remoteRef)
+    {
+        return Flux.merge(
+            updateAllSatellites(
+                InternalApiConsts.API_CHANGED_REMOTE,
+                internalComSerializer.headerlessBuilder()
+                    .changedRemote(remoteRef.getUuid(), remoteRef.getName().displayValue)
                     .build()
             ).map(tuple -> tuple.getT2())
         );

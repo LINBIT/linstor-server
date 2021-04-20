@@ -1499,6 +1499,17 @@ public class JsonGenTypes
         public String status;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class S3Remote
+    {
+        public String remote_name;
+        public String endpoint;
+        public String bucket;
+        public String region;
+        public String access_key;
+        public String secret_key;
+    }
+
     private JsonGenTypes()
     {
     }

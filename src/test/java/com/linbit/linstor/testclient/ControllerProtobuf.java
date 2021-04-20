@@ -5,6 +5,7 @@ import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
@@ -249,6 +250,7 @@ public class ControllerProtobuf extends ProtobufIO
         final Set<Resource> resources,
         final Set<Snapshot> snapshots,
         final Set<ExternalFile> externalFiles,
+        final Set<Remote> remotes,
         final long timestamp,
         final long updateId
     )
@@ -265,6 +267,7 @@ public class ControllerProtobuf extends ProtobufIO
                 resources,
                 snapshots,
                 externalFiles,
+                remotes,
                 timestamp,
                 updateId
             )

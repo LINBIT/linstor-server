@@ -10,6 +10,7 @@ import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -492,6 +493,26 @@ public class LinstorParsingUtils
             );
         }
         return rscGrpName;
+    }
+
+    public static RemoteName asRemoteName(String remoteNameStr)
+    {
+        RemoteName remoteName;
+        try
+        {
+            remoteName = new RemoteName(remoteNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_REMOTE_NAME,
+                    "The given remote name '" + remoteNameStr + "' is invalid."
+                ),
+                invalidNameExc
+            );
+        }
+        return remoteName;
     }
 
     public static Level asLogLevel(String logLevelRef)

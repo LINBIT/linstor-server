@@ -16,6 +16,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
@@ -105,6 +106,7 @@ public class StltApiCallHandler
     private final StltStorPoolApiCallHandler storPoolHandler;
     private final StltSnapshotApiCallHandler snapshotHandler;
     private final StltExternalFilesApiCallHandler extFilesHandler;
+    private final StltRemoteApiCallHandler remoteHandler;
     private final StltExtToolsChecker deviceLayerChecker;
 
     private final CtrlStltSerializer interComSerializer;
@@ -114,10 +116,12 @@ public class StltApiCallHandler
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock extFileMapLock;
+    private final ReadWriteLock remoteMapLock;
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final CoreModule.ExternalFileMap extFileMap;
+    private final CoreModule.RemoteMap remoteMap;
 
     private final TreeMap<Long, ApplyData> dataToApply;
 
@@ -153,6 +157,7 @@ public class StltApiCallHandler
         StltStorPoolApiCallHandler storPoolHandlerRef,
         StltSnapshotApiCallHandler snapshotHandlerRef,
         StltExternalFilesApiCallHandler extFilesHandlerRef,
+        StltRemoteApiCallHandler remoteHandlerRef,
         StltExtToolsChecker deviceLayerCheckerRef,
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
@@ -160,11 +165,13 @@ public class StltApiCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock extFileMapLockRef,
+        @Named( CoreModule.REMOTE_MAP_LOCK) ReadWriteLock remoteMapLockRef,
         @Named(LinStor.SATELLITE_PROPS) Props satellitePropsRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CoreModule.ExternalFileMap extFileMapRef,
+        CoreModule.RemoteMap remoteMapRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
         StltCryptApiCallHelper vlmDfnHandlerRef,
@@ -192,6 +199,7 @@ public class StltApiCallHandler
         storPoolHandler = storPoolHandlerRef;
         snapshotHandler = snapshotHandlerRef;
         extFilesHandler = extFilesHandlerRef;
+        remoteHandler = remoteHandlerRef;
         deviceLayerChecker = deviceLayerCheckerRef;
         interComSerializer = interComSerializerRef;
         reconfigurationLock = reconfigurationLockRef;
@@ -199,10 +207,12 @@ public class StltApiCallHandler
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         extFileMapLock = extFileMapLockRef;
+        remoteMapLock = remoteMapLockRef;
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
         extFileMap = extFileMapRef;
+        remoteMap = remoteMapRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObj = stltSecObjRef;
         vlmDfnHandler = vlmDfnHandlerRef;
@@ -294,6 +304,7 @@ public class StltApiCallHandler
         Set<RscPojo> resources,
         Set<SnapshotPojo> snapshots,
         Set<ExternalFilePojo> extFilesRef,
+        Set<S3RemotePojo> s3remotes,
         long fullSyncId,
         byte[] cryptKey,
         byte[] cryptHash,
@@ -307,7 +318,8 @@ public class StltApiCallHandler
                 reconfigurationLock.writeLock(),
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.writeLock(),
-                storPoolDfnMapLock.writeLock()
+                storPoolDfnMapLock.writeLock(),
+                remoteMapLock.writeLock()
             )
         )
         {
@@ -320,6 +332,7 @@ public class StltApiCallHandler
                 rscDfnMap.clear();
                 storPoolDfnMap.clear();
                 extFileMap.clear();
+                remoteMap.clear();
 
                 for (NodePojo node : nodes)
                 {
@@ -367,6 +380,11 @@ public class StltApiCallHandler
                     extFilesHandler.applyChanges(extFilePojo);
                 }
 
+                for (S3RemotePojo s3remote : s3remotes)
+                {
+                    remoteHandler.applyChangesS3(s3remote);
+                }
+
                 transMgrProvider.get().commit();
 
                 for (NodePojo node : nodes)
@@ -390,6 +408,10 @@ public class StltApiCallHandler
                 for (ExternalFilePojo extFilePojo : extFilesRef)
                 {
                     errorReporter.logTrace("External file '%s' received.", extFilePojo.getFileName());
+                }
+                for (S3RemotePojo s3remote : s3remotes)
+                {
+                    errorReporter.logTrace("Remote '" + s3remote.getRemoteName() + "' received.");
                 }
                 errorReporter.logTrace("Full sync with controller finished");
 
@@ -649,7 +671,16 @@ public class StltApiCallHandler
     public void applyDeletedExternalFileChanges(ExternalFilePojo extFilePojoRef)
     {
         applyChangedData(new ApplyExternalFile(extFilePojoRef, true));
+    }
 
+    public void applyS3RemoteChanges(S3RemotePojo s3remotePojoRef)
+    {
+        applyChangedData(new ApplyS3Remote(s3remotePojoRef, false));
+    }
+
+    public void applyDeletedS3RemoteChanges(S3RemotePojo s3remotePojoRef)
+    {
+        applyChangedData(new ApplyS3Remote(s3remotePojoRef, true));
     }
 
     public void setCryptKey(byte[] key, byte[] hash, byte[] salt, byte[] encKey, long fullSyncId, long updateId)
@@ -1441,6 +1472,50 @@ public class StltApiCallHandler
                 else
                 {
                     extFilesHandler.applyChanges(externalFilePojo);
+                }
+            }
+        }
+    }
+
+    private class ApplyS3Remote implements ApplyData
+    {
+        private final S3RemotePojo s3remotePojo;
+        private final boolean deleted;
+
+        ApplyS3Remote(S3RemotePojo s3remotePojoRef, boolean deletedRef)
+        {
+            s3remotePojo = s3remotePojoRef;
+            deleted = deletedRef;
+        }
+
+        @Override
+        public long getFullSyncId()
+        {
+            return s3remotePojo.getFullSyncId();
+        }
+
+        @Override
+        public long getUpdateId()
+        {
+            return s3remotePojo.getUpdateId();
+        }
+
+        @Override
+        public void applyChange()
+        {
+            try (
+                LockGuard ls = LockGuard.createLocked(
+                    remoteMapLock.writeLock()
+                )
+            )
+            {
+                if (deleted)
+                {
+                    remoteHandler.applyDeletedS3Remote(s3remotePojo);
+                }
+                else
+                {
+                    remoteHandler.applyChangesS3(s3remotePojo);
                 }
             }
         }

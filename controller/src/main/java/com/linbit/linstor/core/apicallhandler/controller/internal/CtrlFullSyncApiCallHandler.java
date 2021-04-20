@@ -13,10 +13,12 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.ExternalFileRepository;
+import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
@@ -59,6 +61,8 @@ public class CtrlFullSyncApiCallHandler
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock externalFilesMapLock;
+    private final ReadWriteLock remoteMapLock;
+    private final RemoteRepository remoteRepo;
     private final IntFullSyncResponse fullSyncResponse;
     private final ExternalFileRepository externalFilesRepo;
 
@@ -72,8 +76,10 @@ public class CtrlFullSyncApiCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock externalFilesMapLockRef,
+        @Named(CoreModule.REMOTE_MAP_LOCK) ReadWriteLock remoteMapLockRef,
         IntFullSyncResponse fullSyncResponseRef,
-        ExternalFileRepository externalFilesRepoRef
+        ExternalFileRepository externalFilesRepoRef,
+        RemoteRepository remoteRepoRef
     )
     {
         errorReporter = errorReporterRef;
@@ -84,6 +90,8 @@ public class CtrlFullSyncApiCallHandler
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         externalFilesMapLock = externalFilesMapLockRef;
+        remoteMapLock = remoteMapLockRef;
+        remoteRepo = remoteRepoRef;
         fullSyncResponse = fullSyncResponseRef;
         externalFilesRepo = externalFilesRepoRef;
     }
@@ -111,6 +119,7 @@ public class CtrlFullSyncApiCallHandler
                 rscDfnMapLock.readLock(),
                 storPoolDfnMapLock.readLock(),
                 externalFilesMapLock.readLock(),
+                remoteMapLock.readLock(),
                 peer.getSerializerLock().writeLock()
             ),
             () -> sendFullSyncInScope(satelliteNode, expectedFullSyncId, waitForAnswer)
@@ -127,6 +136,7 @@ public class CtrlFullSyncApiCallHandler
             Set<Resource> rscs = new LinkedHashSet<>();
             Set<Snapshot> snapshots = new LinkedHashSet<>();
             Set<ExternalFile> externalFiles = new LinkedHashSet<>();
+            Set<Remote> remotes = new LinkedHashSet<>();
 
             nodes.add(satelliteNode); // always add the localNode
 
@@ -150,6 +160,7 @@ public class CtrlFullSyncApiCallHandler
             snapshots.addAll(satelliteNode.getInProgressSnapshots(apiCtx));
 
             externalFiles.addAll(externalFilesRepo.getMapForView(apiCtx).values());
+            remotes.addAll(remoteRepo.getMapForView(apiCtx).values());
 
             Peer satellitePeer = satelliteNode.getPeer(apiCtx);
             satellitePeer.setFullSyncId(expectedFullSyncId);
@@ -170,7 +181,9 @@ public class CtrlFullSyncApiCallHandler
             }
 
             byte[] data = builder
-                .fullSync(nodes, storPools, rscs, snapshots, externalFiles, expectedFullSyncId, FULL_SYNC_RPC_ID)
+                .fullSync(
+                    nodes, storPools, rscs, snapshots, externalFiles, remotes, expectedFullSyncId, FULL_SYNC_RPC_ID
+                )
                 .build();
 
             if (waitForAnswer)

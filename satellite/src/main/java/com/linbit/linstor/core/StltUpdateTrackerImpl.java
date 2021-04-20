@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -132,6 +133,23 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
         return update(updateNotification);
     }
 
+    @Override
+    public Flux<ApiCallRc> updateS3Remote(
+        UUID remoteUuid,
+        RemoteName remoteName
+    )
+    {
+        UpdateNotification updateNotification;
+        synchronized (sched)
+        {
+            updateNotification = cachedUpdates.remoteUpdates.computeIfAbsent(
+                remoteName,
+                ignored -> new UpdateNotification(remoteUuid)
+            );
+        }
+        return update(updateNotification);
+    }
+
     public void collectUpdateNotifications(
         UpdateBundle updates,
         AtomicBoolean condFlag,
@@ -237,6 +255,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
         public final Map<StorPoolName, UpdateNotification> storPoolUpdates = new TreeMap<>();
         public final Map<SnapshotDefinition.Key, UpdateNotification> snapshotUpdates = new TreeMap<>();
         public final Map<ExternalFileName, UpdateNotification> externalFileUpdates = new TreeMap<>();
+        public final Map<RemoteName, UpdateNotification> remoteUpdates = new TreeMap<>();
 
         /**
          * Copies the update notifications, but not the check notifications, to another UpdateBundle
@@ -254,6 +273,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
             other.storPoolUpdates.putAll(storPoolUpdates);
             other.snapshotUpdates.putAll(snapshotUpdates);
             other.externalFileUpdates.putAll(externalFileUpdates);
+            other.remoteUpdates.putAll(remoteUpdates);
         }
 
         /**
@@ -265,7 +285,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
         {
             return !controllerUpdate.isPresent() && nodeUpdates.isEmpty() &&
                 rscUpdates.isEmpty() && storPoolUpdates.isEmpty() && snapshotUpdates.isEmpty() &&
-                externalFileUpdates.isEmpty();
+                externalFileUpdates.isEmpty() && remoteUpdates.isEmpty();
         }
 
         /**
@@ -280,6 +300,7 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
             storPoolUpdates.clear();
             snapshotUpdates.clear();
             externalFileUpdates.clear();
+            remoteUpdates.clear();
         }
     }
 }

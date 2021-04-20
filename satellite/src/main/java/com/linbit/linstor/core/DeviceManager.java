@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
@@ -27,6 +28,8 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void rscUpdateApplied(Set<Resource.ResourceKey> rscSet);
     void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet);
     void ExternalFileUpdateApplied(ExternalFileName extFile, NodeName nodeName, Set<ResourceName> rscNameSet);
+
+    void remoteUpdateApplied(RemoteName remoteNameRef, NodeName nodeNameRef);
 
     void markResourceForDispatch(ResourceName name);
     void markMultipleResourcesForDispatch(Set<ResourceName> rscSet);

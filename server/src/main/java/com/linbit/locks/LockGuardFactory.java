@@ -44,7 +44,8 @@ public class LockGuardFactory
         STOR_POOL_DFN_MAP(4),
         KVS_MAP(5),
         RSC_GRP_MAP(6),
-        EXT_FILE_MAP(7);
+        EXT_FILE_MAP(7),
+        REMOTE_MAP(8);
 
         public final int lockIdx;
 
@@ -68,6 +69,7 @@ public class LockGuardFactory
     private final ReadWriteLock kvsMapLock;
     private final ReadWriteLock rscGrpMapLock;
     private final ReadWriteLock extFileMapLock;
+    private final ReadWriteLock remoteMapLock;
 
     @Inject
     public LockGuardFactory(
@@ -78,7 +80,8 @@ public class LockGuardFactory
         @Named(CoreModule.CTRL_CONF_LOCK) ReadWriteLock ctrlConfigLockRef,
         @Named(CoreModule.KVS_MAP_LOCK) ReadWriteLock kvsMapLockRef,
         @Named(CoreModule.RSC_GROUP_MAP_LOCK) ReadWriteLock rscGrpMapLockRef,
-        @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock extFileMapLockRef
+        @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock extFileMapLockRef,
+        @Named(CoreModule.REMOTE_MAP_LOCK) ReadWriteLock remoteMapLockRef
     )
     {
         reconfigurationLock = reconfigurationLockRef;
@@ -89,6 +92,7 @@ public class LockGuardFactory
         kvsMapLock = kvsMapLockRef;
         rscGrpMapLock = rscGrpMapLockRef;
         extFileMapLock = extFileMapLockRef;
+        remoteMapLock = remoteMapLockRef;
     }
 
     public LockGuardBuilder create()
@@ -158,6 +162,8 @@ public class LockGuardFactory
                 break;
             case EXT_FILE_MAP:
                 lock = extFileMapLock;
+            case REMOTE_MAP:
+                lock = remoteMapLock;
                 break;
             default:
                 throw new ImplementationError("Unknown lock identifier " + lockId.name());

@@ -5,6 +5,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -109,6 +110,19 @@ public class StltUpdateRequester
                 .requestExternalFileUpdate(
                     externalFileUuidRef,
                     externalFileNameRef.extFileName
+                )
+                .build()
+        );
+    }
+
+    public void requestRemoteUpdate(UUID remoteUuidRef, RemoteName remoteNameRef)
+    {
+        sendRequest(
+            interComSerializer
+                .onewayBuilder(InternalApiConsts.API_REQUEST_REMOTE)
+                .requestRemoteUpdate(
+                    remoteUuidRef,
+                    remoteNameRef.displayValue
                 )
                 .build()
         );

@@ -10,9 +10,11 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ExternalFileMap;
+import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -30,6 +32,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -57,6 +60,7 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionCtrlDatabaseDri
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver.RscLayerInfo;
+import com.linbit.linstor.dbdrivers.interfaces.S3RemoteCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeCtrlDatabaseDriver;
@@ -154,6 +158,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final CacheLayerCtrlDatabaseDriver cacheLayerDriver;
     private final BCacheLayerCtrlDatabaseDriver bcacheLayerDriver;
     private final ExternalFileCtrlDatabaseDriver extFileDriver;
+    private final S3RemoteCtrlDatabaseDriver s3remoteDriver;
     private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
     private final Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelper;
 
@@ -168,6 +173,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final ExosMappingManager exosMappingMgr;
     private final ExternalFileMap extFileMap;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
+    private final RemoteMap remoteMap;
 
     @Inject
     public DatabaseLoader(
@@ -200,6 +206,7 @@ public class DatabaseLoader implements DatabaseDriver
         CacheLayerCtrlDatabaseDriver cacheLayerDriverRef,
         BCacheLayerCtrlDatabaseDriver bcacheLayerDriverRef,
         ExternalFileCtrlDatabaseDriver extFilesDriverRef,
+        S3RemoteCtrlDatabaseDriver s3remoteDriverRef,
         Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
         Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
@@ -211,7 +218,8 @@ public class DatabaseLoader implements DatabaseDriver
         CoreModule.KeyValueStoreMap keyValueStoreMapRef,
         ExosMappingManager exosMappingMgrRef,
         CoreModule.ExternalFileMap extFileMapRef,
-        CtrlStorPoolResolveHelper storPoolResolveHelperRef
+        CtrlStorPoolResolveHelper storPoolResolveHelperRef,
+        CoreModule.RemoteMap remoteMapRef
     )
     {
         dbCtx = privCtx;
@@ -243,6 +251,7 @@ public class DatabaseLoader implements DatabaseDriver
         cacheLayerDriver = cacheLayerDriverRef;
         bcacheLayerDriver = bcacheLayerDriverRef;
         extFileDriver = extFilesDriverRef;
+        s3remoteDriver = s3remoteDriverRef;
         ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
         ctrlSnapLayerDataHelper = ctrlSnapLayerDataHelperRef;
 
@@ -256,6 +265,7 @@ public class DatabaseLoader implements DatabaseDriver
         exosMappingMgr = exosMappingMgrRef;
         extFileMap = extFileMapRef;
         storPoolResolveHelper = storPoolResolveHelperRef;
+        remoteMap = remoteMapRef;
     }
 
     /**
@@ -291,7 +301,7 @@ public class DatabaseLoader implements DatabaseDriver
                 );
             }
 
-            // load the main objects (nodes, rscDfns, storPoolDfns, extFile)
+            // load the main objects (nodes, rscDfns, storPoolDfns, extFiles, remotes)
             Map<Node, Node.InitMaps> loadedNodesMap =
                 Collections.unmodifiableMap(nodeDriver.loadAll(null));
             Map<ResourceDefinition, ResourceDefinition.InitMaps> loadedRscDfnsMap =
@@ -300,6 +310,8 @@ public class DatabaseLoader implements DatabaseDriver
                 Collections.unmodifiableMap(storPoolDfnDriver.loadAll(null));
             Map<ExternalFile, ExternalFile.InitMaps> loadedExtFilesMap =
                 Collections.unmodifiableMap(extFileDriver.loadAll(null));
+            Map<S3Remote, S3Remote.InitMaps> loadedRemotesMap = Collections
+                .unmodifiableMap(s3remoteDriver.loadAll(null));
 
             // add the rscDfns into the corresponding rscGroup rscDfn-map
             for (ResourceDefinition rscDfn : loadedRscDfnsMap.keySet())
@@ -317,6 +329,7 @@ public class DatabaseLoader implements DatabaseDriver
                 mapByName(loadedStorPoolDfnsMap, StorPoolDefinition::getName);
             Map<ExternalFileName, ExternalFile> tmpExtFileMap =
                 mapByName(loadedExtFilesMap, ExternalFile::getName);
+            Map<RemoteName, S3Remote> tmpRemoteMap = mapByName(loadedRemotesMap, S3Remote::getName);
 
             // loading net interfaces
             List<NetInterface> loadedNetIfs = netIfDriver.loadAllAsList(tmpNodesMap);
@@ -566,6 +579,7 @@ public class DatabaseLoader implements DatabaseDriver
             storPoolDfnMap.putAll(tmpStorPoolDfnMap);
             freeSpaceMgrMap.putAll(tmpFreeSpaceMgrMap);
             extFileMap.putAll(tmpExtFileMap);
+            remoteMap.putAll(tmpRemoteMap);
 
             // load external names
             for (ResourceDefinition rscDfn : tmpRscDfnMap.values())

@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
-import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
@@ -25,6 +24,7 @@ import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
@@ -1124,6 +1124,17 @@ public class Json
         response.clone_name = clonedName;
         response.messages = Json.apiCallRcToJson(messages);
         return response;
+    }
+
+    public static JsonGenTypes.S3Remote apiToS3Remote(S3RemotePojo pojo)
+    {
+        JsonGenTypes.S3Remote json = new JsonGenTypes.S3Remote();
+        json.remote_name = pojo.getRemoteName();
+        json.endpoint = pojo.getEndpoint();
+        json.bucket = pojo.getBucket();
+        json.region = pojo.getRegion();
+
+        return json;
     }
 
     private Json()

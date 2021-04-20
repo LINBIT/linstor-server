@@ -127,6 +127,12 @@ public class InternalApiConsts
     public static final String KEY_BACKUP_BUCKET_TO_RESTORE = "BackupBucketToRestore";
     public static final String KEY_BACKUP_NODE_IDS_TO_RESET = "BackupNodeIdsToReset";
 
+    public static final String API_REQUEST_REMOTE = "RequestRemote";
+    public static final String API_APPLY_DELETED_REMOTE = "ApplyDeletedRemote";
+    public static final String API_APPLY_REMOTE = "ApplyRemote";
+    public static final String API_CHANGED_REMOTE = "ChangedRemote";
+    public static final String NAMESPC_REMOTE = "Remote";
+
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;
 

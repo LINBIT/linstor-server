@@ -13,8 +13,10 @@ import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -37,6 +39,7 @@ import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNodeConn;
 import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntOtherRsc;
 import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
+import com.linbit.linstor.proto.javainternal.c2s.IntS3RemoteOuterClass.IntS3Remote;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass.IntSnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
@@ -51,12 +54,14 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyExternalFileOuterCla
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyNodeOuterClass.MsgIntApplyNode;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgIntApplyRsc;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyS3RemoteOuterClass.MsgIntApplyS3Remote;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySharedStorPoolLocksOuterClass.MsgIntApplySharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntExternalFileDeletedDataOuterClass.MsgIntExternalFileDeletedData;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntRemoteDeletedOuterClass.MsgIntRemoteDeleted;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntSnapshotEndedDataOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgReqPhysicalDevicesOuterClass.MsgReqPhysicalDevices;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyConfigResponseOuterClass.MsgIntApplyConfigResponse;
@@ -109,6 +114,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     private final SnapshotSerializerHelper snapshotSerializerHelper;
     private final NodeSerializerHelper nodeSerializerHelper;
     private final ExternalFileSerializerHelper externalFileSerializerHelper;
+    private final RemoteSerializerHelper remoteSerializerHelper;
     private final CtrlSecurityObjects secObjs;
 
     public ProtoCtrlStltSerializerBuilder(
@@ -129,6 +135,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         snapshotSerializerHelper = new SnapshotSerializerHelper();
         nodeSerializerHelper = new NodeSerializerHelper();
         externalFileSerializerHelper = new ExternalFileSerializerHelper();
+        remoteSerializerHelper = new RemoteSerializerHelper();
     }
 
     /*
@@ -226,6 +233,16 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     )
     {
         appendObjectId(extFileUuidRef, extFileNameRef);
+        return this;
+    }
+
+    @Override
+    public ProtoCtrlStltSerializerBuilder changedRemote(
+        UUID remoteUuidRef,
+        String remoteNameRef
+    )
+    {
+        appendObjectId(remoteUuidRef, remoteNameRef);
         return this;
     }
 
@@ -458,6 +475,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         Set<Resource> resources,
         Set<Snapshot> snapshots,
         Set<ExternalFile> externalFiles,
+        Set<Remote> remotes,
         long fullSyncTimestamp,
         long updateId
     )
@@ -469,6 +487,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             ArrayList<IntRsc> serializedRscs = new ArrayList<>();
             ArrayList<IntSnapshot> serializedSnapshots = new ArrayList<>();
             ArrayList<IntExternalFile> serializedExtFiles = new ArrayList<>();
+            ArrayList<IntS3Remote> serializedS3Remotes = new ArrayList<>();
 
             IntController serializedCtrl = ctrlSerializerHelper.buildControllerDataMsg();
 
@@ -502,6 +521,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 serializedExtFiles.add(externalFileSerializerHelper.buildExtFileMsg(extFile, false));
             }
+            for (Remote remote : remotes)
+            {
+                serializedS3Remotes.add(remoteSerializerHelper.buildS3RemoteMsg(remote));
+            }
 
             String encodedMasterKey = "";
             byte[] cryptKey = secObjs.getCryptKey();
@@ -515,6 +538,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllRscs(serializedRscs)
                 .addAllSnapshots(serializedSnapshots)
                 .addAllExternalFiles(serializedExtFiles)
+                .addAllS3Remotes(serializedS3Remotes)
                 .setFullSyncTimestamp(fullSyncTimestamp)
                 .setMasterKey(encodedMasterKey)
                 .setCtrl(serializedCtrl)
@@ -528,6 +552,52 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         catch (AccessDeniedException exc)
         {
             handleAccessDeniedException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializerBuilder remote(
+        Remote remoteRef,
+        long fullSyncIdRef,
+        long updateIdRef
+    )
+    {
+        try
+        {
+            MsgIntApplyS3Remote.newBuilder()
+                .setS3Remote(remoteSerializerHelper.buildS3RemoteMsg(remoteRef))
+                .setFullSyncId(fullSyncIdRef)
+                .setUpdateId(updateIdRef)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            handleAccessDeniedException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CommonSerializerBuilder deletedRemote(String remoteNameStrRef, long fullSyncIdRef, long updateIdRef)
+    {
+        try
+        {
+            MsgIntRemoteDeleted.newBuilder()
+                .setRemoteName(remoteNameStrRef)
+                .setFullSyncId(fullSyncIdRef)
+                .setUpdateId(updateIdRef)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
         }
         return this;
     }
@@ -900,6 +970,16 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
+    public CommonSerializerBuilder requestRemoteUpdate(
+        UUID remoteUuidRef,
+        String remoteNameRef
+    )
+    {
+        appendObjectId(remoteUuidRef, remoteNameRef);
+        return this;
+    }
+
+    @Override
     public CtrlStltSerializer.CtrlStltSerializerBuilder updateFreeCapacities(
         Map<StorPool, SpaceInfo> spaceInfoMap
     )
@@ -1230,6 +1310,25 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 builder = builder.setContent(ByteString.copyFrom(extFile.getContent(serializerCtx)));
             }
+            return builder
+                .build();
+        }
+    }
+
+    private class RemoteSerializerHelper
+    {
+        private IntS3Remote buildS3RemoteMsg(Remote remote)
+            throws AccessDeniedException
+        {
+            S3Remote s3remote = (S3Remote) remote;
+            IntS3Remote.Builder builder = IntS3Remote.newBuilder()
+                .setUuid(s3remote.getUuid().toString())
+                .setName(s3remote.getName().displayValue)
+                .setEndpoint(s3remote.getUrl(serializerCtx))
+                .setBucket(s3remote.getBucket(serializerCtx))
+                .setRegion(s3remote.getRegion(serializerCtx))
+                .setAccessKey(s3remote.getAccessKey(serializerCtx))
+                .setSecretKey(s3remote.getSecretKey(serializerCtx));
             return builder
                 .build();
         }

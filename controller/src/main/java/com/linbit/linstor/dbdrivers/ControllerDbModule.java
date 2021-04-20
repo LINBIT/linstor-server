@@ -26,6 +26,7 @@ import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdETCDDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdSQLDbDriver;
+import com.linbit.linstor.core.objects.S3RemoteDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDbDriver;
@@ -79,6 +80,8 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.S3RemoteCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionCtrlDatabaseDriver;
@@ -165,6 +168,8 @@ public class ControllerDbModule extends AbstractModule
         bind(KeyValueStoreDatabaseDriver.class).to(KeyValueStoreDbDriver.class);
         bind(ExternalFileCtrlDatabaseDriver.class).to(ExternalFileDbDriver.class);
         bind(ExternalFileDatabaseDriver.class).to(ExternalFileDbDriver.class);
+        bind(S3RemoteCtrlDatabaseDriver.class).to(S3RemoteDbDriver.class);
+        bind(S3RemoteDatabaseDriver.class).to(S3RemoteDbDriver.class);
         switch (dbType)
         {
             case SQL:

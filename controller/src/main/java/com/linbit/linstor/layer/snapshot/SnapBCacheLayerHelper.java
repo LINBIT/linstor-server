@@ -112,8 +112,7 @@ class SnapBCacheLayerHelper
         SnapshotDefinition snapshotDefinitionRef,
         RscLayerDataApi rscLayerDataApiRef,
         Map<String, String> renameStorPoolMapRef
-    )
-        throws DatabaseException, IllegalArgumentException, ValueOutOfRangeException, ExhaustedPoolException,
+    ) throws DatabaseException, IllegalArgumentException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
         // BCacheLayer does not have resource-definition specific data
@@ -125,8 +124,7 @@ class SnapBCacheLayerHelper
         SnapshotVolumeDefinition snapshotVolumeDefinitionRef,
         VlmLayerDataApi vlmLayerDataApiRef,
         Map<String, String> renameStorPoolMapRef
-    )
-        throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
+    ) throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
         // BCacheLayer does not have volume-definition specific data
@@ -139,8 +137,7 @@ class SnapBCacheLayerHelper
         RscLayerDataApi rscLayerDataApiRef,
         AbsRscLayerObject<Snapshot> parentRef,
         Map<String, String> renameStorPoolMapRef
-    )
-        throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException
+    ) throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException, AccessDeniedException
     {
         return layerDataFactory.createBCacheRscData(
             layerRscIdPool.autoAllocate(),
@@ -156,13 +153,10 @@ class SnapBCacheLayerHelper
         BCacheRscData<Snapshot> snapDataRef,
         VlmLayerDataApi vlmLayerDataApiRef,
         Map<String, String> renameStorPoolMapRef
-    )
-        throws AccessDeniedException, InvalidNameException, DatabaseException
+    ) throws AccessDeniedException, InvalidNameException, DatabaseException
     {
         StorPool cacheStorPool = getStorPool(
-            snapVlmRef,
-            ((WritecacheVlmPojo) vlmLayerDataApiRef).getCacheStorPoolName(),
-            renameStorPoolMapRef
+            snapVlmRef, ((WritecacheVlmPojo) vlmLayerDataApiRef).getCacheStorPoolName(), renameStorPoolMapRef
         );
         return layerDataFactory.createBCacheVlmData(
             snapVlmRef,

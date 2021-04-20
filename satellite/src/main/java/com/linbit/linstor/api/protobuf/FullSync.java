@@ -6,6 +6,7 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializerBuilder;
@@ -21,6 +22,7 @@ import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntCont
 import com.linbit.linstor.proto.javainternal.c2s.IntExternalFileOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
 import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
+import com.linbit.linstor.proto.javainternal.c2s.IntS3RemoteOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
@@ -101,6 +103,7 @@ public class FullSync implements ApiCall
                 updateId
             )
         );
+        Set<S3RemotePojo> s3remotes = new TreeSet<>(asS3Remote(applyFullSync.getS3RemotesList(), fullSyncId, updateId));
 
         boolean success = apiCallHandler.applyFullSync(
             msgIntControllerData.getPropsMap(),
@@ -109,6 +112,7 @@ public class FullSync implements ApiCall
             resources,
             snapshots,
             extFiles,
+            s3remotes,
             applyFullSync.getFullSyncTimestamp(),
             Base64.decode(applyFullSync.getMasterKey()),
             applyFullSync.getCryptHash().toByteArray(),
@@ -212,6 +216,20 @@ public class FullSync implements ApiCall
         for (IntExternalFileOuterClass.IntExternalFile externalFile : externalFilesList)
         {
             ret.add(ApplyExternalFile.asExternalFilePojo(externalFile, fullSyncId, updateId));
+        }
+        return ret;
+    }
+
+    private ArrayList<S3RemotePojo> asS3Remote(
+        List<IntS3RemoteOuterClass.IntS3Remote> s3remoteList,
+        long fullSyncId,
+        long updateId
+    )
+    {
+        ArrayList<S3RemotePojo> ret = new ArrayList<>(s3remoteList.size());
+        for (IntS3RemoteOuterClass.IntS3Remote s3remote : s3remoteList)
+        {
+            ret.add(ApplyS3Remote.asS3RemotePojo(s3remote, fullSyncId, updateId));
         }
         return ret;
     }

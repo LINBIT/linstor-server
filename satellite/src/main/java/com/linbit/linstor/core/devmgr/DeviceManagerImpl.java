@@ -31,6 +31,7 @@ import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -38,6 +39,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -116,12 +118,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private final CoreModule.ResourceGroupMap rscGrpMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.ExternalFileMap extFileMap;
+    private final CoreModule.RemoteMap remoteMap;
 
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock extFileMapLock;
+    private final ReadWriteLock remoteMapLock;
 
     private final StltUpdateRequester stltUpdateRequester;
     private final ControllerPeerConnector controllerPeerConnector;
@@ -221,11 +225,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         CoreModule.ResourceGroupMap rscGrpMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.ExternalFileMap extFileMapRef,
+        CoreModule.RemoteMap remoteMapRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock extFileMapLockRef,
+        @Named(CoreModule.REMOTE_MAP_LOCK) ReadWriteLock remoteMapLockRef,
         StltUpdateRequester stltUpdateRequesterRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CtrlStltSerializer interComSerializerRef,
@@ -250,11 +256,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         rscGrpMap = rscGrpMapRef;
         rscDfnMap = rscDfnMapRef;
         extFileMap = extFileMapRef;
+        remoteMap = remoteMapRef;
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         extFileMapLock = extFileMapLockRef;
+        remoteMapLock = remoteMapLockRef;
         stltUpdateRequester = stltUpdateRequesterRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         interComSerializer = interComSerializerRef;
@@ -482,6 +490,25 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             UpdateNotification updateNot = rcvPendingBundle.externalFileUpdates.remove(extFileNameRef);
 
             markPendingRscDispatch(updateNot, rscNameSet);
+            markPendingNodeDispatch(updateNot, nodeNameRef);
+            if (rcvPendingBundle.isEmpty())
+            {
+                sched.notify();
+            }
+        }
+    }
+
+    @Override
+    public void remoteUpdateApplied(
+        RemoteName remoteNameRef,
+        NodeName nodeNameRef
+    )
+    {
+        synchronized (sched)
+        {
+            UpdateNotification updateNot = rcvPendingBundle.remoteUpdates.remove(remoteNameRef);
+
+            // markPendingRscDispatch(updateNot, rscNameSet); probably not needed
             markPendingNodeDispatch(updateNot, nodeNameRef);
             if (rcvPendingBundle.isEmpty())
             {
@@ -851,6 +878,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             requestRscUpdates(extractUuids(updPendingBundle.rscUpdates));
             requestSnapshotUpdates(extractUuids(updPendingBundle.snapshotUpdates));
             requestExternalFileUpdates(extractUuids(updPendingBundle.externalFileUpdates));
+            requestRemoteUpdates(extractUuids(updPendingBundle.remoteUpdates));
 
             updPendingBundle.clear();
         }
@@ -919,11 +947,13 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             Lock rscDfnWrLock = rscDfnMapLock.writeLock();
             Lock storPoolWrLock = storPoolDfnMapLock.writeLock();
             Lock extfileWrLock = extFileMapLock.writeLock();
+            Lock remoteWrLock = remoteMapLock.writeLock();
             reconfWrLock.lock();
             nodesWrLock.lock();
             rscDfnWrLock.lock();
             storPoolWrLock.lock();
             extfileWrLock.lock();
+            remoteWrLock.lock();
 
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
             Node localNode = controllerPeerConnector.getLocalNode();
@@ -1074,6 +1104,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 rscDfnWrLock.unlock();
                 nodesWrLock.unlock();
                 reconfWrLock.unlock();
+                remoteWrLock.unlock();
             }
         }
     }
@@ -1481,6 +1512,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         Lock nodeMapWrLock = nodesMapLock.writeLock();
         Lock rscDfnMapWrLock = rscDfnMapLock.writeLock();
         Lock extFileWrLock = extFileMapLock.writeLock();
+        Lock remoteWrLock = remoteMapLock.writeLock();
 
         rcfgWrLock.lock();
         try
@@ -1661,6 +1693,28 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             {
                 extFileWrLock.unlock();
             }
+
+            remoteWrLock.lock();
+            try
+            {
+                List<RemoteName> remoteNamesToDelete = new ArrayList<>();
+                for (Remote remote : remoteMap.values())
+                {
+                    if (remote.getFlags().isSet(wrkCtx, Remote.Flags.DELETE))
+                    {
+                        remoteNamesToDelete.add(remote.getName());
+                        remote.delete(wrkCtx);
+                    }
+                }
+                for (RemoteName remoteNameToDelete : remoteNamesToDelete)
+                {
+                    remoteMap.remove(remoteNameToDelete);
+                }
+            }
+            finally
+            {
+                remoteWrLock.unlock();
+            }
         }
         catch (DatabaseException ignored)
         {
@@ -1744,6 +1798,18 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         {
             errLog.logTrace("Requesting update for external file '%s'", entry.getKey().extFileName);
             stltUpdateRequester.requestExternalFileUpdate(
+                entry.getValue(),
+                entry.getKey()
+            );
+        }
+    }
+
+    private void requestRemoteUpdates(Map<RemoteName, UUID> remoteUpdates)
+    {
+        for (Entry<RemoteName, UUID> entry : remoteUpdates.entrySet())
+        {
+            errLog.logTrace("Requesting update for remote '%s'", entry.getKey().displayValue);
+            stltUpdateRequester.requestRemoteUpdate(
                 entry.getValue(),
                 entry.getKey()
             );

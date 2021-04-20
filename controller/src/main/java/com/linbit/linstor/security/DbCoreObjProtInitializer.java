@@ -7,6 +7,7 @@ import com.linbit.linstor.core.repository.ExternalFileProtectionRepository;
 import com.linbit.linstor.core.repository.FreeSpaceMgrProtectionRepository;
 import com.linbit.linstor.core.repository.KeyValueStoreProtectionRepository;
 import com.linbit.linstor.core.repository.NodeProtectionRepository;
+import com.linbit.linstor.core.repository.RemoteProtectionRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionProtectionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupProtectionRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionProtectionRepository;
@@ -32,6 +33,7 @@ public class DbCoreObjProtInitializer implements StartupInitializer
     private final SystemConfProtectionRepository systemConfProtectionRepository;
     private final KeyValueStoreProtectionRepository keyValueStoreProtectionRepository;
     private final ExternalFileProtectionRepository externalFileProtectionRepository;
+    private final RemoteProtectionRepository remoteProtectionRepository;
     private final ShutdownProtHolder shutdownProtHolder;
     private final TransactionMgrGenerator transactionMgrGenerator;
 
@@ -48,6 +50,7 @@ public class DbCoreObjProtInitializer implements StartupInitializer
         SystemConfProtectionRepository systemConfProtectionRepositoryRef,
         KeyValueStoreProtectionRepository keyValueStoreProtectionRepositoryRef,
         ExternalFileProtectionRepository externalFileProtectionRepositoryRef,
+        RemoteProtectionRepository remoteProtectionRepositoryRef,
         ShutdownProtHolder shutdownProtHolderRef,
         TransactionMgrGenerator transactionMgrGeneratorRef
     )
@@ -63,6 +66,7 @@ public class DbCoreObjProtInitializer implements StartupInitializer
         systemConfProtectionRepository = systemConfProtectionRepositoryRef;
         keyValueStoreProtectionRepository = keyValueStoreProtectionRepositoryRef;
         externalFileProtectionRepository = externalFileProtectionRepositoryRef;
+        remoteProtectionRepository = remoteProtectionRepositoryRef;
         shutdownProtHolder = shutdownProtHolderRef;
         transactionMgrGenerator = transactionMgrGeneratorRef;
     }
@@ -116,6 +120,11 @@ public class DbCoreObjProtInitializer implements StartupInitializer
                     true
                 )
             );
+            remoteProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(
+                initCtx,
+                ObjectProtection.buildPathController("remoteMap"),
+                true
+            ));
 
             // initializing controller OP
             systemConfProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(

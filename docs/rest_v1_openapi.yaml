@@ -28,6 +28,7 @@ info:
        - Added /v1/resource-groups/{resource_group}/adjust
        - Added /v1/resource-groups/adjustall
        - Added Backup and BackupList, as well as the entrypoint /v1/backups
+       - Added S3Remote and the corresponding entrypoint /v1/remotes
     * 1.9.0
        - Extended SatelliteConfig with remote_spdk boolean
     * 1.8.1
@@ -5009,6 +5010,83 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ExosConnectionMap'
+  /v1/remotes:
+    get:
+      tags:
+        - developers
+      summary: list all remotes
+      description: list of all known remotes on this cluster
+      responses:
+        '200':
+          description: list of remotes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/S3Remote'
+    delete:
+      tags:
+        - developers
+      summary: delete a remote
+      description: delete the given remote
+      parameters:
+        - name: remote_name
+          in: query
+          required: true
+          description: name of the remote
+          schema:
+            type: string
+      responses:
+        '200':
+          description: remote successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+  /v1/remotes/s3/{remoteName}:
+    parameters:
+      - name: remoteName
+        in: path
+        required: true
+        description: name of the remote
+        schema:
+          type: string
+    put:
+      tags:
+        - developers
+      summary: modify a s3 remote
+      description: modify an existing s3 remote
+      responses:
+        '200':
+          description: s3 remote modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/S3Remote'
+  /v1/remotes/s3:
+    post:
+      tags:
+        - developers
+      summary: creates a new s3 remote
+      description: Creates a new s3 remote unless it already exists
+      responses:
+        '200':
+          description: s3 remote successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/S3Remote'
 
   /v1/files:
     parameters:
@@ -7172,3 +7250,18 @@ components:
 #          description: total bytes to be cloned
 #        messages:
 #          $ref: '#/components/schemas/ApiCallRcList'
+    S3Remote:
+      type: object
+      properties:
+        remote_name:
+          type: string
+        endpoint:
+          type: string
+        bucket:
+          type: string
+        region:
+          type: string
+        access_key:
+          type: string
+        secret_key:
+          type: string

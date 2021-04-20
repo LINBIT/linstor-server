@@ -6,6 +6,7 @@ import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
@@ -54,6 +55,7 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder changedConfig(StltConfig stltConfig) throws IOException;
 
         CtrlStltSerializerBuilder changedExtFile(UUID extFileUUID, String extFileNameRef);
+        CtrlStltSerializerBuilder changedRemote(UUID remoteUUID, String remoteNameRef);
 
         CtrlStltSerializerBuilder controllerData(long fullSyncTimestamp, long updateId);
         CtrlStltSerializerBuilder node(
@@ -81,6 +83,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             Set<Resource> resources,
             Set<Snapshot> snapshots,
             Set<ExternalFile> externalFilesRef,
+            Set<Remote> remotes,
             long timestamp,
             long updateId
         );
@@ -92,6 +95,14 @@ public interface CtrlStltSerializer extends CommonSerializer
             long updateIdRef
         );
         CommonSerializerBuilder deletedExternalFile(String extFileNameStrRef, long fullSyncIdRef, long updateIdRef);
+
+        CommonSerializerBuilder remote(
+            Remote remoteRef,
+            long fullSyncIdRef,
+            long updateIdRef
+        );
+
+        CommonSerializerBuilder deletedRemote(String remoteNameRef, long fullSyncIdRef, long updateIdRef);
 
         CtrlStltSerializerBuilder grantsharedStorPoolLocks(Set<SharedStorPoolName> locksRef);
 
@@ -138,6 +149,8 @@ public interface CtrlStltSerializer extends CommonSerializer
         );
         CtrlStltSerializerBuilder requestSharedStorPoolLocks(Set<SharedStorPoolName> sharedSPLocksRef);
         CommonSerializerBuilder requestExternalFileUpdate(UUID extFileUuidRef, String extFileNameRef);
+
+        CommonSerializerBuilder requestRemoteUpdate(UUID remoteUuidRef, String remoteNameRef);
 
         CtrlStltSerializerBuilder updateFreeCapacities(Map<StorPool, SpaceInfo> spaceInfoMap);
 
