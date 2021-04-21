@@ -541,7 +541,7 @@ public class CtrlNodeApiCallHandler
                 }
             }
 
-            if (reconNodes.isEmpty())
+            if (!reconNodes.isEmpty())
             {
                 responses.addEntry(
                     ApiCallRcImpl.simpleEntry(
@@ -550,7 +550,7 @@ public class CtrlNodeApiCallHandler
                     )
                 );
             }
-            if (evictNodes.isEmpty())
+            if (!evictNodes.isEmpty())
             {
                 responses.addEntry(
                     ApiCallRcImpl.simpleEntry(
