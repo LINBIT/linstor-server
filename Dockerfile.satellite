@@ -12,7 +12,9 @@ RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Cri
 # extra tools
 # epel for zstd;
 RUN yum install -y epel-release yum-utils && \
-  mkdir /tmp/tools && cd /tmp/tools && yumdownloader cryptsetup nvme-cli zstd && \
+  mkdir /tmp/tools && cd /tmp/tools && \
+  yumdownloader cryptsetup nvme-cli zstd xfsprogs e2fsprogs e2fsprogs-libs && \
+  rm -f /tmp/tools/*.i686.rpm && \
   yum remove -y epel-release && yum clean all -y
 
 RUN groupadd makepkg # !lbbuild
