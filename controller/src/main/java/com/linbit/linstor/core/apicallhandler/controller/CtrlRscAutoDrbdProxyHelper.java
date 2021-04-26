@@ -195,6 +195,7 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
         return new PriorityProps(
             rsc.getProps(peerCtx),
             rsc.getResourceDefinition().getProps(peerCtx),
+            rsc.getDefinition().getResourceGroup().getProps(peerCtx),
             rsc.getNode().getProps(peerCtx),
             systemConfRepository.getCtrlConfForView(peerCtx)
         );

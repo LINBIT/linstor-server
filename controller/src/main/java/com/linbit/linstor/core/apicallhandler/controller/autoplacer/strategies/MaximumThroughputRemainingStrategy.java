@@ -88,13 +88,14 @@ public class MaximumThroughputRemainingStrategy implements AutoplaceStrategy
 
     private double getThroughput(Volume vlm) throws AccessDeniedException
     {
-
         PriorityProps prioProps = new PriorityProps(
             vlm.getProps(apiCtx),
             vlm.getAbsResource().getProps(apiCtx),
             vlm.getAbsResource().getNode().getProps(apiCtx),
             vlm.getVolumeDefinition().getProps(apiCtx),
             vlm.getResourceDefinition().getProps(apiCtx),
+            vlm.getResourceDefinition().getResourceGroup().getVolumeGroupProps(apiCtx, vlm.getVolumeNumber()),
+            vlm.getResourceDefinition().getResourceGroup().getProps(apiCtx),
             sysCfgRepo.getCtrlConfForView(apiCtx)
         );
         String readVal = prioProps.getProp(ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ, ApiConsts.NAMESPC_SYS_FS, "0.0");

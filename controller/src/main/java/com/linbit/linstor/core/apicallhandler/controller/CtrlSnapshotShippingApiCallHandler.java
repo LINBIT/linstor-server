@@ -462,6 +462,7 @@ public class CtrlSnapshotShippingApiCallHandler
 
             String snapShipNamePrefix = new PriorityProps(
                 propsHelper.getProps(rscDfn),
+                propsHelper.getProps(rscDfn.getResourceGroup()),
                 propsHelper.getCtrlPropsForView()
             ).getProp(ApiConsts.KEY_SNAPSHOT_SHIPPING_PREFIX, null, ApiConsts.DFLT_SNAPSHOT_SHIPPING_PREFIX);
 

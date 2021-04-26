@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TimeoutException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -279,11 +280,18 @@ public class CtrlSnapshotCrtApiCallHandler
     private String getAutoSnapshotName(ResourceDefinition rscDfnRef)
     {
         Props rscDfnProps = propsHelper.getProps(rscDfnRef);
-        String snapPrefix = rscDfnProps.getPropWithDefault(
+        PriorityProps prioProps = new PriorityProps(
+            rscDfnProps,
+            propsHelper.getProps(rscDfnRef.getResourceGroup()),
+            propsHelper.getCtrlPropsForView()
+        );
+
+        String snapPrefix = prioProps.getProp(
             ApiConsts.KEY_AUTO_SNAPSHOT_PREFIX,
             ApiConsts.NAMESPC_AUTO_SNAPSHOT,
             InternalApiConsts.DEFAULT_AUTO_SNAPSHOT_PREFIX
         );
+
         int id = Integer.parseInt(
             rscDfnProps.getPropWithDefault(
                 ApiConsts.KEY_AUTO_SNAPSHOT_NEXT_ID,

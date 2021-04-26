@@ -156,9 +156,7 @@ public class StltExternalFileHandler
              */
 
             PriorityProps prioProps = new PriorityProps(
-                rscDfn.getProps(wrkCtx),
-                localNodeProps,
-                stltProps
+                rscDfn.getProps(wrkCtx) // for now prop is only allowed in RD.
             );
 
             Map<String, String> files = prioProps.renderRelativeMap(InternalApiConsts.NAMESPC_FILES);
