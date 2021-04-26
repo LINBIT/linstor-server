@@ -910,7 +910,7 @@ public class CtrlRscGrpApiCallHandler
                 null,
                 null,
                 null,
-                rscGrp.getProps(peerCtx).map(),
+                Collections.emptyMap(),
                 vlmDfnCrtList,
                 layerStackStr,
                 null,
