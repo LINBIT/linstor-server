@@ -795,8 +795,10 @@ public class CtrlRscGrpApiCallHandler
             objRefs
         );
 
-        return scopeRunner
-            .fluxInTransactionalScope(
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet()).flatMapMany(
+            // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
+            // the freeCapacities parameter here
+            ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
                 "Spawn resource-definition",
                 lockGuardFactory.buildDeferred(
                     WRITE,
@@ -813,7 +815,7 @@ public class CtrlRscGrpApiCallHandler
                     context
                 )
             )
-            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
     private Flux<ApiCallRc> spawnInTransaction(
