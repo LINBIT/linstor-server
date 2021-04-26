@@ -77,6 +77,7 @@ class StltExternalFilesApiCallHandler
             if (extFilePojo.getContent() != null && extFilePojo.getContent().length > 0)
             {
                 localExtFile.setContent(apiCtx, extFilePojo.getContent());
+                localExtFile.setAlreadyWritten(false);
             }
 
             if (

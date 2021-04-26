@@ -44,7 +44,7 @@ public class ExternalFile extends BaseTransactionObject
 
     private final TransactionSimpleObject<ExternalFile, byte[]> content;
     private final TransactionSimpleObject<ExternalFile, byte[]> contentCheckSum;
-    private final TransactionSimpleObject<ExternalFile, byte[]> localContentCheckSum; // stlt only
+    private final TransactionSimpleObject<ExternalFile, Boolean> alreadyWritten; // stlt only
 
     private final TransactionSimpleObject<ExternalFile, Boolean> deleted;
 
@@ -80,9 +80,9 @@ public class ExternalFile extends BaseTransactionObject
             contentCheckSumRef,
             dbDriver.getContentCheckSumDriver()
         );
-        localContentCheckSum = transObjFactory.createTransactionSimpleObject(
+        alreadyWritten = transObjFactory.createTransactionSimpleObject(
             this,
-            new byte[0],
+            false,
             null
         );
 
@@ -144,19 +144,19 @@ public class ExternalFile extends BaseTransactionObject
     /*
      * used by satellite only -> no access check
      */
-    public void setLocalContentCheckSum(byte[] chkSum) throws DatabaseException
+    public void setAlreadyWritten(boolean alreadyWrittenRef) throws DatabaseException
     {
         checkDeleted();
-        localContentCheckSum.set(chkSum);
+        alreadyWritten.set(alreadyWrittenRef);
     }
 
     /*
      * used by satellite only -> no access check
      */
-    public boolean needsRewriteChanged(AccessContext wrkCtxRef)
+    public boolean alreadyWritten()
     {
         checkDeleted();
-        return !Arrays.equals(contentCheckSum.get(), localContentCheckSum.get());
+        return alreadyWritten.get();
     }
 
     public byte[] getContent(AccessContext accCtx) throws AccessDeniedException

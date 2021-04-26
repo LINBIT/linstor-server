@@ -14,8 +14,7 @@ import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.layer.DeviceLayer;
-import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -25,7 +24,6 @@ import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
@@ -51,7 +49,6 @@ public class StltExternalFileHandler
     private final Props stltProps;
     private final ExternalFileMap extFileMap;
     private final ResourceDefinitionMap rscDfnMap;
-    private final Provider<NotificationListener> notificationListener;
 
     private Props localNodeProps;
 
@@ -60,7 +57,6 @@ public class StltExternalFileHandler
         ErrorReporter errorReporterRef,
         @DeviceManagerContext AccessContext wrkCtxRef,
         @Named(LinStor.SATELLITE_PROPS) Props satellitePropsRef,
-        Provider<DeviceLayer.NotificationListener> notificationListenerRef,
         CoreModule.ExternalFileMap extFileMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef
     )
@@ -68,7 +64,6 @@ public class StltExternalFileHandler
         errorReporter = errorReporterRef;
         wrkCtx = wrkCtxRef;
         stltProps = satellitePropsRef;
-        notificationListener = notificationListenerRef;
         extFileMap = extFileMapRef;
         rscDfnMap = rscDfnMapRef;
         extFileRequestedByRscDfnsMap = new HashMap<>();
@@ -111,7 +106,7 @@ public class StltExternalFileHandler
                 getRequestedExternalFiles(localRsc, false);
             }
         }
-        catch (AccessDeniedException | InvalidNameException exc)
+        catch (AccessDeniedException | InvalidNameException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -125,14 +120,14 @@ public class StltExternalFileHandler
             requestedExternalFiles = getRequestedExternalFiles(rscRef, true);
             rewriteIfNeeded(requestedExternalFiles);
         }
-        catch (AccessDeniedException | InvalidNameException exc)
+        catch (AccessDeniedException | InvalidNameException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
     }
 
     private Set<ExternalFileName> getRequestedExternalFiles(Resource rscRef, boolean deleteExtFileIfNotNeeded)
-        throws AccessDeniedException, InvalidNameException, StorageException
+        throws AccessDeniedException, InvalidNameException, StorageException, DatabaseException
     {
         Set<ExternalFileName> ret = new HashSet<>();
 
@@ -173,7 +168,6 @@ public class StltExternalFileHandler
                 {
                     ExternalFileName extFileName = new ExternalFileName("/" + file.getKey());
                     ret.add(extFileName);
-                    System.out.println("found: " + extFileName.extFileName);
 
                     lazyAdd(rscDfnToExtFilesMap, rscName, extFileName);
                     lazyAdd(extFileRequestedByRscDfnsMap, extFileName, rscName);
@@ -190,16 +184,19 @@ public class StltExternalFileHandler
             {
                 requestedByRscDfnSet.remove(rscName);
 
-                if (requestedByRscDfnSet.isEmpty() && deleteExtFileIfNotNeeded)
+                if (deleteExtFileIfNotNeeded)
                 {
-                    delete(extFileName);
-                }
-                else
-                {
-                    errorReporter.logTrace(
-                        "Not deleting %s as it is still used by some resource definitions",
-                        extFileName.extFileName
-                    );
+                    if (requestedByRscDfnSet.isEmpty())
+                    {
+                        delete(extFileName);
+                    }
+                    else
+                    {
+                        errorReporter.logTrace(
+                            "Not deleting %s as it is still used by some resource definitions",
+                            extFileName.extFileName
+                        );
+                    }
                 }
             }
         }
@@ -220,7 +217,7 @@ public class StltExternalFileHandler
     }
 
     private void rewriteIfNeeded(Set<ExternalFileName> requestedExternalFilesRef)
-        throws InvalidNameException, StorageException
+        throws InvalidNameException, StorageException, DatabaseException, AccessDeniedException
     {
         for (ExternalFileName extFileName : requestedExternalFilesRef)
         {
@@ -229,14 +226,17 @@ public class StltExternalFileHandler
             {
                 throw new ImplementationError("Unknown external file requested");
             }
-            if (externalFile.needsRewriteChanged(wrkCtx))
+            if (
+                !externalFile.alreadyWritten() && externalFile.getContent(wrkCtx) != null &&
+                externalFile.getContent(wrkCtx).length > 0
+            )
             {
                 rewrite(externalFile);
             }
         }
     }
 
-    private void rewrite(ExternalFile externalFile) throws StorageException
+    private void rewrite(ExternalFile externalFile) throws StorageException, DatabaseException
     {
         Path path = Paths.get(externalFile.getName().extFileName);
         Path tmpFile;
@@ -281,14 +281,22 @@ public class StltExternalFileHandler
                 exc
             );
         }
+        errorReporter.logDebug("External file %s written successfully", path.toString());
+        externalFile.setAlreadyWritten(true);
     }
 
-    private void delete(ExternalFileName extFileNameRef) throws StorageException
+    private void delete(ExternalFileName extFileNameRef) throws StorageException, DatabaseException
     {
         try
         {
             errorReporter.logTrace("Deleting external file: %s", extFileNameRef.extFileName);
             Files.deleteIfExists(Paths.get(extFileNameRef.extFileName));
+
+            ExternalFile extFile = extFileMap.get(extFileNameRef);
+            if (!extFile.isDeleted())
+            {
+                extFile.setAlreadyWritten(false);
+            }
         }
         catch (IOException exc)
         {
