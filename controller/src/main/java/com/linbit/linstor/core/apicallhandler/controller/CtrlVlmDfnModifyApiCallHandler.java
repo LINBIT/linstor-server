@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Supplier;
@@ -238,9 +239,15 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         boolean sizeChanges = size != null;
         if (sizeChanges)
         {
-            if (size < getVlmDfnSize(vlmDfn))
+            long diffSize = size - getVlmDfnSize(vlmDfn);
+
+            if (diffSize < 0)
             {
                 ensureShrinkingIsSupported(vlmDfn);
+            }
+            else
+            {
+                ensureAllStorPoolsHaveEnoughFreeSpace(vlmDfn, diffSize);
             }
 
             updateForResize = true;
@@ -318,6 +325,62 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 {
                     throw createExc.get();
                 }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    /**
+     * All participating storage pools must have at least the additional free space left.
+     * Thin pools always fulfill this requirement.
+     *
+     * NOTE:
+     * The controller can only use the estimated additional size for checking. That means, even
+     * if the controller (barely) passes this check, the satellite might still run into an issue
+     * when executing the resize with the actual additional space, which might be more than we get
+     * here.
+     */
+    private void ensureAllStorPoolsHaveEnoughFreeSpace(VolumeDefinition vlmDfnRef, long additionalSize)
+    {
+        try
+        {
+            Iterator<Resource> rscIt = vlmDfnRef.getResourceDefinition().iterateResource(apiCtx);
+            Set<StorPool.Key> storPoolKeySet = new TreeSet<>();
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, apiCtx, true);
+                for (StorPool sp : storPools)
+                {
+                    if (!sp.getDeviceProviderKind().usesThinProvisioning())
+                    {
+                        if (sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(apiCtx).orElse(0L) < additionalSize)
+                        {
+                            storPoolKeySet.add(new StorPool.Key(sp));
+                        }
+                    }
+                }
+            }
+
+            if (!storPoolKeySet.isEmpty())
+            {
+                StringBuilder sb = new StringBuilder();
+                for (StorPool.Key key : storPoolKeySet)
+                {
+                    sb.append("Node: ").append(key.getNodeName().displayValue).append(", StorPool: ").append(key.getStorPoolName().displayValue).append("\n");
+                }
+                sb.setLength(sb.length() - 1); // cut last \n
+
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_ENOUGH_FREE_SPACE,
+                        "Cannot grow the volumedefinition by " + additionalSize +
+                            "KiB, as the following storage pool do not have enough free space:\n" + sb.toString()
+                    )
+                );
             }
         }
         catch (AccessDeniedException exc)
