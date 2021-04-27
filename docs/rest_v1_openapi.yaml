@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.7.0
        - Added shared_name to ResourceWithVolumes
        - Added makeResourceAvailable API
        - Added diskless storage pool filter to AutoSelectFilter

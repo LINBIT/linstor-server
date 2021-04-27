@@ -1,3 +1,174 @@
+linstor-server (1.12.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * proccryptoutils: Parse /proc/crypto and filter methods
+  * rsc-create/del: update rsc-dfn DRBD verify-algo
+  * linstor-common: allow KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO
+  * rest-api-doc: fix resource-group create example
+  * confbuilder: small code cleanup
+  * confbuilder: decide by property type if quoting is needed(drbd)
+  * verify-algo: only allow a specified list of driver names
+  * verify-algo: do no overwrite an already set verify algorithm
+  * auto-verify-algo: check that verify-algo is supported on all nodes
+  * debian/control: remove dh-systemd dep
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * Update k8s-await-election to fix linstor client timeout
+  * Containers: Ensure LINSTOR components log to files
+  * CI: use docker safe refname for virter test version
+  * docker: add deps for exos provider
+
+  [ Gabor Hernadi ]
+  * Drbd: Fix ImplError when deleting a VlmDfn
+  * RscDfn,modify: Run autoplace if rscGrp changes
+  * linstor-common: Fixed duplicate ApiCall-ID
+  * MakeRscAvail: First version
+  * Autoplace: Returns null instead of Optional
+  * StltExtToolsChecker: Added cache
+  * Stlt collecting symlinks to devices
+  * Snap,Luks: Fixed incorrect copying of layer data
+  * Drbd,Snap,Restore: Fixed restore bug
+  * RscGrp,Db: Fixed ClassCastException
+  * Undelete resource
+  * Added equals and hashcode to Tx-Set,-List and -Map
+  * MakeRscAvailable: Added support for undelete
+  * Autoplacer: Added support for undelete
+  * Drbd: Fixed 'hasMetaData' check for external MD
+  * Stlt,symlink: Fixed incorrect handling of INACTIVE flag
+  * Autoplace: Add dedicated list of diskless SPs
+  * RscGrp: Add WARN if unknown/mismatched SP is defined
+  * RscDfn: Changing RscGrp now persists
+  * FreeSpaceMgr: Removed unused sharedStoragePools-set
+  * Renamed FreeSpaceMgrName -> SharedStorPoolName
+  * FreeSpaceMgr: Removed unused objProt
+  * Test: Added TestFactory classes
+  * SharedStorPoolManager: First version + Tests
+  * TransObjFact: added createVolatileTransaction* methods
+  * LayerVlmUtils: Made parameters more generic
+  * SharedSPMgr: New version also allows locking by node
+  * NotifyDevMgrRunCompleted: new internal api
+  * SharedSpMgr: Second version
+  * SharedSp: Added external_locking to SP
+  * SharedSp: Added external_locking to SP
+  * PhysicalStorageAPI: Added shared_space and external_locking
+  * StorPools: Fixed NPE
+  * Resource: Added INACTIVE_PERMANENTLY
+  * StltExtToolsChecker: Added cache
+  * LvmProvider can now de-/activate volumes
+  * Create StorPool: Added check if shared is supported
+  * SharedSP: First version
+  * Tests: Fixed security setting for tests
+  * SharedSpMgr: no longer transactional
+  * TcpConnectorService: removed unused variables
+  * ExtCmdFactoryStlt: Prohibits new sharedSP-calls
+  * CtrlConnTracker: Release sharedLocks if satellite goes offline
+  * SharedSP,AutoTiebreaker: only count ACTIVE resources
+  * SharedSP,Autoplacer: fixed counting
+  * DevMgr: Inverted accesses to svcCondFlag
+  * DevMgr: Added an initial wait until svcCond gets true
+  * DevMgr,SharedSp: Improved locking/releasing of shared locks
+  * SharedSPMgr: Fixed synchronized ordering
+  * DevMgr: Attempt to fix deadlock when requesting shared locks
+  * StltApiCallHandler: Report storExc during fetchSize
+  * AbsStorage: Do not update size of inactive volume
+  * SharedSp: Disable sharedSp for lvmthin SP
+  * SharedSp: Fix resource deletion
+  * CrtRsc: Added warning response when adding diskless flag
+  * LayerData: Added nullchecks
+  * RscDel: Activate last shared rsc
+  * SharedSp: Implemented review suggestions
+  * RscAct: Fixed wrong response message
+  * SharedSp: Fixed Luks setups
+  * SharedSp: Fixed cleanup bug
+  * NameShortener: added vlmDfn support
+  * NameShortener: Moved to server project
+  * ExosProvider: First version
+  * ExosProvider: Fixed resize
+  * VlmDfn: Added shrink-supported check
+  * Exos.Rest: Add HTTP-headers to exception
+  * NameShortener: Extended tests
+  * Exos: started using new properties hierarchy
+  * Exos: Auto-discover
+  * Exos: Made ExosRestClient multi-enclosure aware
+  * Exos: Added ExtTool.LSSCSI dependency
+  * Exos: auto-discovery now sets node props
+  * Exos: use multipath-device instead of single device
+  * SharedSP: fixed possible NPE
+  * ExosRestClient: add "Accept: application/json" header
+  * DevMgr: always give up sharedLocks when devMgr-cycle ends
+  * Exos: small rework on scaning lsscsi devices
+  * Exos: Add all exos-initiator-ids with 4 LSB masking
+  * Exos: Limit initial mapping to exos storpools
+  * Exos: added dependency to /sys/class/ entries
+  * Toggle-disk: fixed bugs with shared SP
+  * Fixed tests
+  * SharedSpMgr: Fixed bug where too many locks were granted
+  * SPResolve: add boolean to toggle auto-search
+  * Fix: SysFsHandler retires fetching maj:min
+  * DevHandler: checkPool can also change local node props
+  * Exos: fixed bugs with inactive resource hctl handling
+  * ToggleDisk: Fixed shared rsc toggle disk bug
+  * Exos: Whitelisted props for deletion
+  * Exos: Added _EVN properties for IP, Username and Pw
+  * ToggleDisk: diskful->diskless resource is now activated
+  * SharedSpMgr: Fixed incorrect hasNodeActiveLocks check
+  * ETCD-Migration: fixed versions
+  * Proto: removed unused imports
+  * RscList: Added shared_name
+  * ToggleDisk: Another fix for resolving storage pools
+  * ExosRestClient: Moved to server project
+  * Exos: Added REST-API
+  * ExosRestClient: Added retry in case of internal server errors
+  * Exos: Added null-checks
+  * Exos: Disabled snapshot support
+  * MakeRscAvail: try to make rsc active
+  * DRBD: remove linstor_common.conf
+  * RscApplied: Only merge Satellite props-namespace
+  * Node,reconnect: Fixed wrong warning message
+  * ExtFiles: first version
+  * ExtFiles: Only write if Linstor changed content
+  * RscGrp,spawn: Added fetchThinSpaces
+  * RD,Props: Made sure RG props are also used
+  * RG,spawn: Do not copy props to RD
+  * VlmDfn,resize: Add check if all SPs have enough free space
+
+  [ Robert Altnoeder ]
+  * Minor control flow and style cleanups
+  * Minor control flow cleanup, potential optimization
+  * NumberPool: Keep track of the count of allocated numbers
+  * NumberPool: Added method isEmpty
+  * Add checks for new methods to BitmapPoolTest
+  * Fixed dfltAddrSupplier algorithm in NetInterfaceTestFactory
+  * Move return statement out of try block
+  * Skip superfluous intermediate list creation
+  * RetryHandler enhancements
+  * Change control flow to comply with coding standard
+  * Enhance text message for an unhandled StorageException
+  * Change control flow, extract function
+  * Style cleanup
+  * NameShortener: Simplified and fixed reimplementation
+  * Propagate and handle LinStorException from NameShortener
+  * Change NameShortener to use a fixed maximum base name length
+  * NameShortener: Fix statement order
+  * NameShortenerTest: Adjust max length
+  * NameShortenerTest fixes
+  * NameShortener: Start numbering at 1
+  * NameShortenerTest: Adjust tests to changed name length
+  * NameShortenerTest: Fix expected names in test
+  * NameShortener: Fix processNumberSuffix method
+  * Remove superfluous 'throws LinStorException' from tests
+
+  [ Johanna Kucera ]
+  * sos-report: nicer error-handling
+  * evict-api: allow manual eviction via api
+
+  [ Roland Kammerer ]
+  * containers: install thin-send-recv in s390x
+  * containers: get pkgs in first stage
+  * containers,satellite: add ext/xfs tools
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 27 Apr 2021 09:52:14 +0000
+
 linstor-server (1.11.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
