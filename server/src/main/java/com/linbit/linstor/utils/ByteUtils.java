@@ -28,12 +28,19 @@ public class ByteUtils
 
     public static String bytesToHex(byte[] bytes)
     {
-        byte[] hexChars = new byte[bytes.length * 2];
-        for (int j = 0; j < bytes.length; j++)
+        if (bytes.length > Integer.MAX_VALUE >>> 1)
         {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
-            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+            throw new IllegalArgumentException(
+                "Input data size of " + bytes.length + " bytes is too large for " +
+                "method bytesToHex"
+            );
+        }
+        byte[] hexChars = new byte[bytes.length * 2];
+        for (int idx = 0; idx < bytes.length; idx++)
+        {
+            int value = bytes[idx] & 0xFF;
+            hexChars[idx * 2] = HEX_ARRAY[value >>> 4];
+            hexChars[idx * 2 + 1] = HEX_ARRAY[value & 0x0F];
         }
         return new String(hexChars, StandardCharsets.UTF_8);
     }
@@ -42,9 +49,15 @@ public class ByteUtils
     {
         char[] charArray = hex.toCharArray();
         byte[] ret = new byte[charArray.length / 2];
-        for (int i = 0; i < charArray.length; i += 2)
+        for (int idx = 1; idx < charArray.length; idx += 2)
         {
-            ret[i / 2] = (byte) (Character.digit(charArray[i], 16) << 4 | Character.digit(charArray[i + 1], 16));
+            final int hi = Character.digit(charArray[idx - 1], 16);
+            final int lo = Character.digit(charArray[idx], 16);
+            if (hi == -1 || lo == -1)
+            {
+                throw new IllegalArgumentException("Invalid string passed to method hexToBytes: \"" + hex + "\"");
+            }
+            ret[idx / 2] = (byte) (hi << 4 | lo);
         }
         return ret;
     }

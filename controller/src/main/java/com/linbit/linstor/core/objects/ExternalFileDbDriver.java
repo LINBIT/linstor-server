@@ -130,7 +130,18 @@ public class ExternalFileDbDriver extends AbsDatabaseDriver<ExternalFile, Extern
     {
         final ExternalFileName extFileName = raw.build(PATH, ExternalFileName::new);
         final byte[] content;
-        final byte[] contentCheckSum = ByteUtils.hexToBytes(raw.get(CONTENT_CHECKSUM));
+        final byte[] contentCheckSum;
+        try
+        {
+            contentCheckSum = ByteUtils.hexToBytes(raw.get(CONTENT_CHECKSUM));
+        }
+        catch (IllegalArgumentException illArgExc)
+        {
+            throw new DatabaseException(
+                "Database column " + CONTENT_CHECKSUM.getName() + " contains invalid data",
+                illArgExc
+            );
+        }
         final long initFlags;
 
         switch (getDbType())
