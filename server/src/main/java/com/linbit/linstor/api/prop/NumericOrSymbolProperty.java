@@ -57,14 +57,16 @@ public class NumericOrSymbolProperty extends GenericProperty implements Property
     @Override
     public String getErrorMsg()
     {
+        String errorMsg;
         if (super.getUnit() == null)
         {
-            return "This value has to match " + getValue() + ".";
+            errorMsg = "This value has to match " + getValue() + ".";
         }
         else
         {
-            return "This value  has to match " + getValue() + " " + getUnit() + ".";
+            errorMsg = "This value  has to match " + getValue() + " " + getUnit() + ".";
         }
+        return errorMsg;
     }
 
 }

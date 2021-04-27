@@ -229,7 +229,8 @@ public class CtrlSnapshotCrtApiCallHandler
                 {
                     throw new ImplementationError(exc);
                 }
-            } while (snapDfn != null);
+            }
+            while (snapDfn != null);
 
             ApiCallRcImpl responses = new ApiCallRcImpl();
 
@@ -473,25 +474,22 @@ public class CtrlSnapshotCrtApiCallHandler
             try
             {
                 SatelliteState stltState = snapshot.getNode().getPeer(apiCtx).getSatelliteState();
-                if (stltState == null)
+                if (stltState != null)
                 {
-                    continue;
-                }
-                SatelliteResourceState rscState = stltState.getResourceStates().get(snapshotDfn.getResourceName());
-                if (rscState == null)
-                {
-                    continue;
-                }
-                Collection<SatelliteVolumeState> vlmStates = rscState.getVolumeStates().values();
-                if (vlmStates == null)
-                {
-                    continue;
-                }
-                for (SatelliteVolumeState stltVlmStates : vlmStates)
-                {
-                    if (!stltVlmStates.getDiskState().equalsIgnoreCase("uptodate"))
+                    SatelliteResourceState rscState = stltState.getResourceStates().get(snapshotDfn.getResourceName());
+                    if (rscState != null)
                     {
-                        allUpToDate = false;
+                        Collection<SatelliteVolumeState> vlmStates = rscState.getVolumeStates().values();
+                        if (vlmStates != null)
+                        {
+                            for (SatelliteVolumeState stltVlmStates : vlmStates)
+                            {
+                                if (!stltVlmStates.getDiskState().equalsIgnoreCase("uptodate"))
+                                {
+                                    allUpToDate = false;
+                                }
+                            }
+                        }
                     }
                 }
             }

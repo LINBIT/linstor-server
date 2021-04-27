@@ -51,18 +51,16 @@ public class BackupInfoManager
      */
     public boolean restoreAddEntry(ResourceDefinition rscDfn, String metaName)
     {
+        boolean addFlag;
         synchronized (restoreMap)
         {
-            if (!restoreMap.containsKey(rscDfn))
+            addFlag = !restoreMap.containsKey(rscDfn);
+            if (addFlag)
             {
                 restoreMap.put(rscDfn, metaName);
-                return true;
-            }
-            else
-            {
-                return false;
             }
         }
+        return addFlag;
     }
 
     /**
@@ -285,16 +283,17 @@ public class BackupInfoManager
      */
     public boolean backupsToDownloadAddEntry(Snapshot snap, Snapshot successor)
     {
+        boolean addFlag;
         synchronized (backupsToDownload)
         {
             // TODO: change to Map<Snapshot, Snapshot>
-            if (backupsToDownload.containsKey(snap))
+            addFlag = !backupsToDownload.containsKey(snap);
+            if (addFlag)
             {
-                return false;
+                backupsToDownload.put(snap, successor);
             }
-            backupsToDownload.put(snap, successor);
-            return true;
         }
+        return addFlag;
     }
 
     /**

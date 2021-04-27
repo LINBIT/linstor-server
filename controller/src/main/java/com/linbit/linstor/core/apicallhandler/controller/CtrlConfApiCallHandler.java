@@ -466,20 +466,32 @@ public class CtrlConfApiCallHandler
             throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
     {
         String oldVal = systemConfRepository.setCtrlProp(accCtx, key, value, namespace);
-        if (oldVal != null) {
-            return !oldVal.equals(value);
+        boolean changed;
+        if (oldVal != null)
+        {
+            changed = !oldVal.equals(value);
         }
-        return true;
+        else
+        {
+            changed = true;
+        }
+        return changed;
     }
 
     private boolean setStltProp(AccessContext accCtx, String key, String value)
         throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
     {
         String oldVal = systemConfRepository.setStltProp(accCtx, key, value);
-        if (oldVal != null) {
-            return !oldVal.equals(value);
+        boolean changed;
+        if (oldVal != null)
+        {
+            changed = !oldVal.equals(value);
         }
-        return true;
+        else
+        {
+            changed = true;
+        }
+        return changed;
     }
 
     public ApiCallRc setProp(String key, String namespace, String value)

@@ -249,10 +249,17 @@ public class WhitelistProps
     public boolean needsQuoting(LinStorObject lsObj, String key)
     {
         Property rule = rules.getOrDefault(lsObj, Collections.emptyMap()).get(key);
-        if (rule == null) {
-            return false;
+
+        boolean result;
+        if (rule != null)
+        {
+            result = rule.getType() == Property.PropertyType.STRING || rule.getType() == Property.PropertyType.SYMBOL;
         }
-        return rule.getType() == Property.PropertyType.STRING || rule.getType() == Property.PropertyType.SYMBOL;
+        else
+        {
+            result = false;
+        }
+        return result;
     }
 
     public boolean isAllowed(LinStorObject lsObj, List<String> ignoredKeys, String key, String value, boolean log)

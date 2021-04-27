@@ -181,7 +181,8 @@ public class StorageLayer implements DeviceLayer
                 ).objB.add(snapVlmProviderObject);
             }
         }
-        for (Entry<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> entry : groupedData.entrySet())
+        for (Entry<DeviceProvider, Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>>> entry :
+            groupedData.entrySet())
         {
             DeviceProvider deviceProvider = entry.getKey();
             Pair<List<VlmProviderObject<Resource>>, List<VlmProviderObject<Snapshot>>> pair = entry.getValue();
@@ -441,10 +442,16 @@ public class StorageLayer implements DeviceLayer
         return ret;
     }
 
-    private boolean isVolumeFlagSetPrivileged(Volume vlm, Volume.Flags flag) {
-        try {
-            return vlm.getFlags().isSet(storDriverAccCtx, flag);
-        } catch (AccessDeniedException ignored) {}
-        return false;
+    private boolean isVolumeFlagSetPrivileged(Volume vlm, Volume.Flags flag)
+    {
+        boolean isSet = false;
+        try
+        {
+            isSet = vlm.getFlags().isSet(storDriverAccCtx, flag);
+        }
+        catch (AccessDeniedException ignored)
+        {
+        }
+        return isSet;
     }
 }

@@ -124,7 +124,8 @@ public class CtrlStorPoolListApiCallHandler
                     storPoolDfn -> storPoolsFilter.isEmpty() ||
                     storPoolsFilter.contains(storPoolDfn.getName())
                 )
-                .forEach(storPoolDfn ->
+                .forEach(
+                    storPoolDfn ->
                     {
                         try
                         {
@@ -134,56 +135,58 @@ public class CtrlStorPoolListApiCallHandler
                                 .collect(toList()))
                             {
                                 Props props = storPool.getProps(peerAccCtx.get());
-                                if (!props.contains(propFilters))
-                                    continue;
-
-                                Long freeCapacity;
-                                Long totalCapacity;
-
-                                final Tuple2<SpaceInfo, List<ApiCallRc>> storageInfo = freeCapacityAnswers != null ?
-                                    freeCapacityAnswers.get(new StorPool.Key(storPool)) : null;
-
-                                Peer peer = storPool.getNode().getPeer(peerAccCtx.get());
-                                if (peer == null || !peer.isConnected())
+                                if (props.contains(propFilters))
                                 {
-                                    freeCapacity = null;
-                                    totalCapacity = null;
-                                    storPool.clearReports();
-                                    storPool.addReports(
-                                        new ApiCallRcImpl(
-                                            ResponseUtils.makeNotConnectedWarning(storPool.getNode().getName())
+                                    Long freeCapacity;
+                                    Long totalCapacity;
+
+                                    final Tuple2<SpaceInfo, List<ApiCallRc>> storageInfo = freeCapacityAnswers != null ?
+                                        freeCapacityAnswers.get(new StorPool.Key(storPool)) : null;
+
+                                    Peer peer = storPool.getNode().getPeer(peerAccCtx.get());
+                                    if (peer == null || !peer.isConnected())
+                                    {
+                                        freeCapacity = null;
+                                        totalCapacity = null;
+                                        storPool.clearReports();
+                                        storPool.addReports(
+                                            new ApiCallRcImpl(
+                                                ResponseUtils.makeNotConnectedWarning(storPool.getNode().getName())
+                                            )
+                                        );
+                                    }
+                                    else
+                                    if (storageInfo == null)
+                                    {
+                                        freeCapacity = storPool.getFreeSpaceTracker()
+                                            .getFreeCapacityLastUpdated(peerAccCtx.get()).orElse(null);
+                                        totalCapacity = storPool.getFreeSpaceTracker()
+                                            .getTotalCapacity(peerAccCtx.get()).orElse(null);
+                                    }
+                                    else
+                                    {
+                                        SpaceInfo spaceInfo = storageInfo.getT1();
+                                        storPool.clearReports();
+                                        for (ApiCallRc apiCallRc : storageInfo.getT2())
+                                        {
+                                            storPool.addReports(apiCallRc);
+                                        }
+
+                                        freeCapacity = spaceInfo.freeCapacity;
+                                        totalCapacity = spaceInfo.totalCapacity;
+                                    }
+
+                                    // fullSyncId and updateId null, as they are not going to be serialized anyway
+                                    storPools.add(
+                                        storPool.getApiData(
+                                            totalCapacity,
+                                            freeCapacity,
+                                            peerAccCtx.get(),
+                                            null,
+                                            null
                                         )
                                     );
                                 }
-                                else
-                                if (storageInfo == null)
-                                {
-                                    freeCapacity = storPool.getFreeSpaceTracker()
-                                        .getFreeCapacityLastUpdated(peerAccCtx.get()).orElse(null);
-                                    totalCapacity = storPool.getFreeSpaceTracker()
-                                        .getTotalCapacity(peerAccCtx.get()).orElse(null);
-                                }
-                                else
-                                {
-                                    SpaceInfo spaceInfo = storageInfo.getT1();
-                                    storPool.clearReports();
-                                    for (ApiCallRc apiCallRc : storageInfo.getT2())
-                                    {
-                                        storPool.addReports(apiCallRc);
-                                    }
-
-                                    freeCapacity = spaceInfo.freeCapacity;
-                                    totalCapacity = spaceInfo.totalCapacity;
-                                }
-
-                                // fullSyncId and updateId null, as they are not going to be serialized anyway
-                                storPools.add(storPool.getApiData(
-                                    totalCapacity,
-                                    freeCapacity,
-                                    peerAccCtx.get(),
-                                    null,
-                                    null
-                                ));
                             }
                         }
                         catch (AccessDeniedException accDeniedExc)

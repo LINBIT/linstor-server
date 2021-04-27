@@ -96,15 +96,15 @@ public class SpdkUtils
                 if (volumeGroups.contains(vgStr))
                 {
                     Iterator<JsonNode> aliases = element.path(SPDK_ALIASES).elements();
-                    String path_alias = "";
+                    String pathAlias = "";
 
                     while (aliases.hasNext())
                     {
                         JsonNode alias = aliases.next();
-                        path_alias = alias.asText();
+                        pathAlias = alias.asText();
                     }
 
-                    final String identifier = path_alias.split("/")[1]; // 0 is Volume Group, 1 is Logical Volume
+                    final String identifier = pathAlias.split("/")[1]; // 0 is Volume Group, 1 is Logical Volume
                     final String path = String.format(SPDK_PATH_PREFIX + "%s/%s", vgStr, identifier);
                     final long size = element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_NUM_BLOCKS).asLong();
                     final float dataPercent = SPDK_DEFAULT_DATA_PERCENT;
@@ -151,13 +151,18 @@ public class SpdkUtils
     public static <T> Long getBlockSizeByName(final SpdkCommands<T> spdkCommands, String name)
         throws StorageException, AccessDeniedException
     {
+        Long blockSize;
         Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.lvsByName(name));
-        while (elements.hasNext())
+        if (elements.hasNext())
         {
             JsonNode element = elements.next();
-            return element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_NUM_BLOCKS).asLong();
+            blockSize = element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_NUM_BLOCKS).asLong();
         }
-        throw new StorageException("Volume not found: " + name);
+        else
+        {
+            throw new StorageException("Volume not found: " + name);
+        }
+        return blockSize;
     }
 
     public static <T> Map<String, Long> getVgTotalSize(final SpdkCommands<T> spdkCommands, Set<String> volumeGroups)

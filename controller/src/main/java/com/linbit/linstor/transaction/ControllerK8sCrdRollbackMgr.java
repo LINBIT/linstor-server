@@ -103,41 +103,43 @@ public class ControllerK8sCrdRollbackMgr
     )
     {
         List<RollbackCrd> rollbackList = currentTransactionRef.getRollbackClient().list().getItems();
-        if (rollbackList.size() > 1)
+        final int listSize = rollbackList.size();
+        if (listSize == 1)
+        {
+            RollbackSpec rollbackSpec = rollbackList.get(0).getSpec();
+
+            for (Entry<String, HashSet<String>> entry : rollbackSpec.getDeleteMap().entrySet())
+            {
+                DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
+                HashSet<String> keysToDelete = entry.getValue();
+                delete(currentTransactionRef, dbTable, keysToDelete, specToCrdRef);
+            }
+
+            for (Entry<String, HashMap<String, LinstorSpec>> entry : rollbackSpec.getRollbackMap().entrySet())
+            {
+                DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
+                ArrayList<SPEC> specList = new ArrayList<>();
+                for (LinstorSpec linstorSpec : entry.getValue().values())
+                {
+                    specList.add((SPEC) linstorSpec);
+                }
+
+                restoreData(
+                    currentTransactionRef,
+                    dbTable,
+                    specList,
+                    specToCrdRef
+                );
+            }
+
+            cleanup(currentTransactionRef);
+        }
+        else
+        if (listSize > 1)
         {
             throw new ImplementationError("Unexpected count of rollback objects: " + rollbackList.size());
         }
-        if (rollbackList.isEmpty())
-        {
-            return;
-        }
-        RollbackSpec rollbackSpec = rollbackList.get(0).getSpec();
-
-        for (Entry<String, HashSet<String>> entry : rollbackSpec.getDeleteMap().entrySet())
-        {
-            DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
-            HashSet<String> keysToDelete = entry.getValue();
-            delete(currentTransactionRef, dbTable, keysToDelete, specToCrdRef);
-        }
-
-        for (Entry<String, HashMap<String, LinstorSpec>> entry : rollbackSpec.getRollbackMap().entrySet())
-        {
-            DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
-            ArrayList<SPEC> specList = new ArrayList<>();
-            for (LinstorSpec linstorSpec : entry.getValue().values())
-            {
-                specList.add((SPEC) linstorSpec);
-            }
-
-            restoreData(
-                currentTransactionRef,
-                dbTable,
-                specList,
-                specToCrdRef
-            );
-        }
-
-        cleanup(currentTransactionRef);
+        // else empty list, no-op
     }
 
     @SuppressWarnings("unchecked")

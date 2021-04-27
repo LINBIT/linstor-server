@@ -155,13 +155,15 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         for (Resource rsc : node.streamResources(peerAccCtx.get()).collect(Collectors.toList()))
         {
             ApiCallRc rcResult = ctrlRscDeleteApiHelper.ensureNotInUse(rsc, false);
-            if (!rcResult.isEmpty()) {
+            if (!rcResult.isEmpty())
+            {
                 res = false;
                 resp.addEntries(rcResult);
             }
 
             rcResult = ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc, false);
-            if (!rcResult.isEmpty()) {
+            if (!rcResult.isEmpty())
+            {
                 res = false;
                 resp.addEntries(rcResult);
             }
@@ -405,6 +407,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
     private boolean deleteNodeIfEmpty(Node node)
     {
+        boolean canDelete = false;
         try
         {
             // to avoid having to pass a parameter through several different methods
@@ -413,7 +416,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
             if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
             {
-                boolean canDelete = node.getResourceCount() == 0;
+                canDelete = node.getResourceCount() == 0;
                 if (canDelete)
                 {
                     // If the node has no resources, then there should not be any volumes referenced
@@ -432,8 +435,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                                 ApiCallRcImpl.simpleEntry(
                                     ApiConsts.FAIL_EXISTS_VLM,
                                     String.format(
-                                        "Deletion of node '%s' failed because the storage pool '%s' references volumes " +
-                                            "on this node, although the node does not reference any resources",
+                                        "Deletion of node '%s' failed because the storage pool '%s' references " +
+                                            "volumes on this node, although the node does not reference any resources",
                                         node.getName(),
                                         storPool.getName()
                                     )
@@ -447,14 +450,13 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                     deletePrivileged(node);
                     removeNodePrivileged(nodeName);
                 }
-                return canDelete;
             }
         }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
-        return false;
+        return canDelete;
     }
 
     private void requireNodesMapChangeAccess()

@@ -18,15 +18,16 @@ public class LongProperty extends GenericProperty implements Property
     @Override
     public boolean isValid(String value)
     {
+        boolean validFlag = false;
         try
         {
             Long.parseLong(value);
-            return true;
+            validFlag = true;
         }
-        catch (NumberFormatException exc)
+        catch (NumberFormatException ignored)
         {
-            return false;
         }
+        return validFlag;
     }
 
     @Override
@@ -38,13 +39,15 @@ public class LongProperty extends GenericProperty implements Property
     @Override
     public String getErrorMsg()
     {
+        String errorMsg;
         if (super.getUnit() == null)
         {
-            return "This value has to be of type Long.";
+            errorMsg = "This value has to be of type Long.";
         }
         else
         {
-            return "This value contains " + getUnit() + " and has to be of type Long.";
+            errorMsg = "This value contains " + getUnit() + " and has to be of type Long.";
         }
+        return errorMsg;
     }
 }

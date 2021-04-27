@@ -498,13 +498,14 @@ public class CtrlNodeApiCallHandler
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 node.getUuid(), getNodeDescriptionInline(node)));
 
-            if (notifyStlts) {
+            if (notifyStlts)
+            {
                 flux = flux.concatWith(
                     ctrlSatelliteUpdateCaller.updateSatellites(
                         node.getUuid(),
                         nodeName,
-                        findNodesToContact(apiCtx, node))
-                        .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                        findNodesToContact(apiCtx, node)
+                    ).flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
                 );
             }
         }
@@ -984,12 +985,13 @@ public class CtrlNodeApiCallHandler
     private Flux<ApiCallRc> setStltConfig(String nodeName, SatelliteConfigApi config)
         throws IOException, AccessDeniedException
     {
-        Peer peer = ctrlApiDataLoader.loadNode(nodeName, true).getPeer(peerAccCtx.get());
-        if (!peer.isConnected())
+        Peer curPeer = ctrlApiDataLoader.loadNode(nodeName, true).getPeer(peerAccCtx.get());
+        if (!curPeer.isConnected())
         {
             return Flux.empty();
         }
-        StltConfig stltConf = peer.getStltConfig();
+
+        StltConfig stltConf = curPeer.getStltConfig();
         String logLevel = config.getLogLevel();
         String logLevelLinstor = config.getLogLevelLinstor();
         if (logLevel == null || logLevel.isEmpty())
@@ -1012,41 +1014,42 @@ public class CtrlNodeApiCallHandler
         }
         ResponseContext context = makeNodeContext(ApiOperation.makeModifyOperation(), nodeName);
         byte[] msg = stltComSerializer.headerlessBuilder().changedConfig(stltConf).build();
-        return peer
+        return curPeer
             .apiCall(InternalApiConsts.API_MOD_STLT_CONFIG, msg)
             .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
-            .map(responseMsg ->
-            {
-                MsgIntApplyConfigResponse resp;
-                ApiCallRc rc;
-                try
+            .map(
+                responseMsg ->
                 {
-                    resp = MsgIntApplyConfigResponse.parseDelimitedFrom(responseMsg);
-                    if (resp.getSuccess())
+                    MsgIntApplyConfigResponse resp;
+                    ApiCallRc rc;
+                    try
                     {
-                        rc = ApiCallRcImpl.singleApiCallRc(
-                            ApiConsts.MODIFIED | ApiConsts.MASK_NODE,
-                            "Successfully updated satellite config"
-                        );
+                        resp = MsgIntApplyConfigResponse.parseDelimitedFrom(responseMsg);
+                        if (resp.getSuccess())
+                        {
+                            rc = ApiCallRcImpl.singleApiCallRc(
+                                ApiConsts.MODIFIED | ApiConsts.MASK_NODE,
+                                "Successfully updated satellite config"
+                            );
+                        }
+                        else
+                        {
+                            rc = ApiCallRcImpl.singleApiCallRc(
+                                ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_NODE,
+                                "Failure while updating satellite config"
+                            );
+                        }
                     }
-                    else
+                    catch (IOException exc)
                     {
                         rc = ApiCallRcImpl.singleApiCallRc(
                             ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_NODE,
                             "Failure while updating satellite config"
                         );
                     }
+                    return rc;
                 }
-                catch (IOException e)
-                {
-                    rc = ApiCallRcImpl.singleApiCallRc(
-                        ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_NODE,
-                        "Failure while updating satellite config"
-                    );
-                }
-                return rc;
-            })
-            .transform(response -> responseConverter.reportingExceptions(context, response));
+            ).transform(response -> responseConverter.reportingExceptions(context, response));
     }
 
     public Flux<ApiCallRc> restoreNode(String nodeName, boolean deleteResources, boolean deleteSnapshots)
@@ -1181,7 +1184,7 @@ public class CtrlNodeApiCallHandler
                         "Successfully restored node " + nodeName
                     );
                     flux = flux.concatWith(updateFlux.transform(tuple -> Flux.empty()));
-                    return flux.concatWithValues(rc);
+                    flux = flux.concatWithValues(rc);
                 }
                 catch (AccessDeniedException exc)
                 {
@@ -1190,7 +1193,7 @@ public class CtrlNodeApiCallHandler
                         ApiConsts.FAIL_ACC_DENIED_NODE | ApiConsts.MASK_NODE,
                         "Access to node " + nodeName + " denied"
                     );
-                    return Flux.just(rc);
+                    flux = Flux.just(rc);
                 }
                 catch (DatabaseException exc)
                 {
@@ -1199,8 +1202,9 @@ public class CtrlNodeApiCallHandler
                         ApiConsts.FAIL_SQL | ApiConsts.MASK_NODE,
                         "Database Error, see error report " + rep
                     );
-                    return Flux.just(rc);
+                    flux = Flux.just(rc);
                 }
+                return flux;
             }
         );
     }
