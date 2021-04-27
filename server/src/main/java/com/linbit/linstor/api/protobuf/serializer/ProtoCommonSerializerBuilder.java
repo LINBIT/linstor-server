@@ -298,11 +298,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         boolean logPrintStackTrace,
         String logDirectory,
         String logLevel,
-        String logLevelLinstor,
-        String stltOverrideNodeName,
+        String logLevelLinstorPrm,
+        String stltOverrideNodeNamePrm,
         boolean openflex,
         boolean remoteSpdk,
-        Pattern drbdKeepResPattern,
+        Pattern drbdKeepResPatternPrm,
         String netBindAddress,
         Integer netPort,
         String netType
@@ -310,18 +310,13 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     {
         try
         {
-            if (logLevelLinstor == null || logLevelLinstor.isEmpty())
-            {
-                logLevelLinstor = logLevel;
-            }
-            if (stltOverrideNodeName == null)
-            {
-                stltOverrideNodeName = "";
-            }
-            if (drbdKeepResPattern == null)
-            {
-                drbdKeepResPattern = Pattern.compile("");
-            }
+            String logLevelLinstor = logLevelLinstorPrm == null || logLevelLinstorPrm.isEmpty() ?
+                logLevel : logLevelLinstorPrm;
+
+            String stltOverrideNodeName = stltOverrideNodeNamePrm != null ? stltOverrideNodeNamePrm : "";
+
+            Pattern drbdKeepResPattern = drbdKeepResPatternPrm != null ? drbdKeepResPatternPrm : Pattern.compile("");
+
             MsgIntAuthResponse.newBuilder()
                 .setSuccess(true)
                 .setExpectedFullSyncId(expectedFullSyncIdRef)
@@ -599,7 +594,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 msgErrorReport.setErrorTime(errReport.getDateTime().getTime());
                 msgErrorReport.setNodeNames(errReport.getNodeName());
                 msgErrorReport.setFilename(errReport.getFileName());
-                msgErrorReport.setModule((int)errReport.getModule().getFlagValue());
+                msgErrorReport.setModule((int) errReport.getModule().getFlagValue());
                 errReport.getVersion().ifPresent(msgErrorReport::setVersion);
                 errReport.getPeer().ifPresent(msgErrorReport::setPeer);
                 errReport.getException().ifPresent(msgErrorReport::setException);
@@ -629,19 +624,24 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         try
         {
             final MsgDelErrorReports.Builder bld = MsgDelErrorReports.newBuilder();
-            if (since != null) {
+            if (since != null)
+            {
                 bld.setSince(since.getTime());
             }
-            if (to != null) {
+            if (to != null)
+            {
                 bld.setTo(to.getTime());
             }
-            if (exception != null) {
+            if (exception != null)
+            {
                 bld.setException(exception);
             }
-            if (version != null) {
+            if (version != null)
+            {
                 bld.setVersion(version);
             }
-            if (ids != null) {
+            if (ids != null)
+            {
                 bld.addAllIds(ids);
             }
             bld.build().writeDelimitedTo(baos);
