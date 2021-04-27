@@ -4521,7 +4521,7 @@ paths:
       description: |
         Delets the given external file. This effectively also deletes the file
         on all satellites
-      repsonses:
+      responses:
         '200':
           description: Enclosure successfully deleted
           content:
@@ -4639,6 +4639,7 @@ components:
     ExternalFileName:
       name: extFileName
       in: path
+      required: true
       description: Name of an external file
       schema:
         type: string
