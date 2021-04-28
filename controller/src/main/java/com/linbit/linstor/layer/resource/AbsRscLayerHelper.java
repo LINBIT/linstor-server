@@ -298,7 +298,33 @@ public abstract class AbsRscLayerHelper<
             fromSnapDataRef
         );
 
-        RSC_LO rscData = restoreRscData(rsc, fromSnapDataRef, rscParentRef);
+        // resource might already have root data, as this method is called from resourceFactory as well as from
+        // volumeFactory. That means, creating (or restoring) a resource with one volume will call this method 2 times.
+        AbsRscLayerObject<Resource> layerData;
+        if (rscParentRef == null)
+        {
+            layerData = rsc.getLayerData(apiCtx);
+        }
+        else
+        {
+            layerData = rscParentRef.getChildBySuffix(fromSnapDataRef.getResourceNameSuffix());
+        }
+        RSC_LO rscData;
+        if (layerData == null)
+        {
+            rscData = restoreRscData(rsc, fromSnapDataRef, rscParentRef);
+        }
+        else
+        {
+            if (!layerData.getLayerKind().equals(kind))
+            {
+                throw new ImplementationError(
+                    "Layer data already exists but has unexpected kind: " + layerData.getLayerKind() + ". Expected: " +
+                        kind
+                );
+            }
+            rscData = (RSC_LO) layerData;
+        }
 
         Map<VolumeNumber, VLM_LO> vlmMap = (Map<VolumeNumber, VLM_LO>) rscData.getVlmLayerObjects();
         for (VlmProviderObject<Snapshot> snapVlmData : fromSnapDataRef.getVlmLayerObjects().values())
