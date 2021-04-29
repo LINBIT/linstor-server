@@ -130,32 +130,14 @@ public class ResourceGroupDbDriver
             DISKLESS_ON_REMAINING,
             rscGrp -> rscGrp.getAutoPlaceConfig().getDisklessOnRemaining(dbCtxRef)
         );
-
-        switch (getDbType())
-        {
-            case ETCD:
-                setColumnSetter(
-                    REPLICAS_ON_SAME,
-                    rscGrp -> toString(rscGrp.getAutoPlaceConfig().getReplicasOnSameList(dbCtxRef))
-                );
-                setColumnSetter(
-                    REPLICAS_ON_DIFFERENT,
-                    rscGrp -> toString(rscGrp.getAutoPlaceConfig().getReplicasOnDifferentList(dbCtxRef))
-                );
-                break;
-            case SQL:
-                setColumnSetter(
-                    REPLICAS_ON_SAME,
-                    rscGrp -> toBlob(rscGrp.getAutoPlaceConfig().getReplicasOnSameList(dbCtxRef))
-                );
-                setColumnSetter(
-                    REPLICAS_ON_DIFFERENT,
-                    rscGrp -> toBlob(rscGrp.getAutoPlaceConfig().getReplicasOnDifferentList(dbCtxRef))
-                );
-                break;
-            default:
-                throw new ImplementationError("Unknown database type: " + getDbType());
-        }
+        setColumnSetter(
+            REPLICAS_ON_SAME,
+            rscGrp -> toString(rscGrp.getAutoPlaceConfig().getReplicasOnSameList(dbCtxRef))
+        );
+        setColumnSetter(
+            REPLICAS_ON_DIFFERENT,
+            rscGrp -> toString(rscGrp.getAutoPlaceConfig().getReplicasOnDifferentList(dbCtxRef))
+        );
 
         descriptionDriver = generateSingleColumnDriver(
             DESCRIPTION,
