@@ -1,3 +1,17 @@
+linstor-server (1.12.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * doc-rest-api: fix external files errors
+  * linstor-common: updated drbdsetup.xml
+
+  [ Gabor Hernadi ]
+  * Snap,retore: Fixed creation of duplicate layer DB entries
+  * Add migration fixing duplicate layer-data
+  * RscGrp: Fixed incorrectly stored values
+  * Add ETCD migration fixing duplicate layer-data
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 30 Apr 2021 07:10:18 +0000
+
 linstor-server (1.12.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
