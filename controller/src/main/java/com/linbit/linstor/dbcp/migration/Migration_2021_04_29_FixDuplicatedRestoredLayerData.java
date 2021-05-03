@@ -22,6 +22,7 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
     private static final String RESOURCE_NAME = "RESOURCE_NAME";
     private static final String SNAPSHOT_NAME = "SNAPSHOT_NAME";
     private static final String KIND = "LAYER_RESOURCE_KIND";
+    private static final String RSC_SUFFIX = "LAYER_RESOURCE_SUFFIX";
     /*
      * 1.12.0 introduced a bug where restoring a snapshot into a new resource by accident creates too many layer-data.
      * The resource itself will work as expected, but when trying to remove the resource, the additionally created
@@ -33,7 +34,16 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
     {
         try(
             PreparedStatement select = dbCon.prepareStatement(
-                " SELECT LRI." + StringUtils.join(", LRI.", LAYER_RESOURCE_ID, NODE_NAME, RESOURCE_NAME, SNAPSHOT_NAME, KIND) +
+                " SELECT LRI." +
+                    StringUtils.join(
+                        ", LRI.",
+                        LAYER_RESOURCE_ID,
+                        NODE_NAME,
+                        RESOURCE_NAME,
+                        SNAPSHOT_NAME,
+                        KIND,
+                        RSC_SUFFIX
+                    ) +
                 " FROM LAYER_RESOURCE_IDS AS LRI"
             );
             ResultSet rs = select.executeQuery();
@@ -81,7 +91,8 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
                     rs.getString(NODE_NAME),
                     rs.getString(RESOURCE_NAME),
                     rs.getString(SNAPSHOT_NAME),
-                    kind
+                    kind,
+                    rs.getString(RSC_SUFFIX)
                 );
                 Integer lastId = lastIds.put(key, rs.getInt(LAYER_RESOURCE_ID));
                 if (lastId != null)
@@ -128,13 +139,15 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
         String rscName;
         String snapName;
         String kind;
+        String rscSuffix;
 
-        public LriKey(String nodeNameRef, String rscNameRef, String snapNameRef, String kindRef)
+        public LriKey(String nodeNameRef, String rscNameRef, String snapNameRef, String kindRef, String rscSuffixRef)
         {
             nodeName = nodeNameRef;
             rscName = rscNameRef;
             snapName = snapNameRef;
             kind = kindRef;
+            rscSuffix = rscSuffixRef;
         }
 
         @Override
@@ -146,6 +159,7 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
             result = prime * result + ((nodeName == null) ? 0 : nodeName.hashCode());
             result = prime * result + ((rscName == null) ? 0 : rscName.hashCode());
             result = prime * result + ((snapName == null) ? 0 : snapName.hashCode());
+            result = prime * result + ((rscSuffix == null) ? 0 : rscSuffix.hashCode());
             return result;
         }
 
@@ -163,7 +177,8 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
             return Objects.equals(nodeName, other.nodeName) &&
                 Objects.equals(rscName, other.rscName) &&
                 Objects.equals(snapName, other.snapName) &&
-                Objects.equals(kind, other.kind);
+                Objects.equals(kind, other.kind) &&
+                Objects.equals(rscSuffix, other.rscSuffix);
         }
 
     }
