@@ -1,3 +1,10 @@
+linstor-server (1.12.2-1) experimental; urgency=medium
+
+  * RscGrp: Fix incorrectly stored value
+  * RscGrp: Fixed incorrect migration
+
+ -- Gabor Hernadi <gabor.hernadi@linbit.com>  Tue, 04 May 2021 09:04:09 +0000
+
 linstor-server (1.12.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
