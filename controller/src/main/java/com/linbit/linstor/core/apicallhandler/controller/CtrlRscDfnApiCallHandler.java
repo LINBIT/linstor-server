@@ -38,6 +38,7 @@ import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ExternalFile;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -467,10 +468,10 @@ public class CtrlRscDfnApiCallHandler
             {
                 ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGroupName, true);
 
-                int curRscCount = rscDfn.getResourceCount();
+                int curDiskfulRscCount = getDiskfulResourceCount(rscDfn);
                 int newReplCount = getReplicaCount(rscGrp);
 
-                if (curRscCount < newReplCount)
+                if (curDiskfulRscCount < newReplCount)
                 {
                     autoFlux = autoFlux.concatWith(
                         ctrlRscAutoPlaceApiCallHandler.autoPlace(
@@ -503,6 +504,30 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
+    }
+
+    private int getDiskfulResourceCount(ResourceDefinition rscDfnRef)
+    {
+        int count;
+        try
+        {
+            count = (int) rscDfnRef.streamResource(apiCtx).filter(rsc ->
+            {
+                try
+                {
+                    return rsc.getStateFlags().isUnset(apiCtx, Resource.Flags.DISKLESS);
+                }
+                catch (AccessDeniedException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+            }).count();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return count;
     }
 
     private int getReplicaCount(ResourceGroup rscGrp)
