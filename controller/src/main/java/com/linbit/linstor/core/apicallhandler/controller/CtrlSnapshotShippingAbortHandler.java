@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.BackupToS3;
@@ -8,13 +9,16 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.BackupInfoManager.AbortInfo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -47,6 +51,7 @@ public class CtrlSnapshotShippingAbortHandler
     private final Provider<CtrlSnapshotDeleteApiCallHandler> snapDelHandlerProvider;
     private final BackupInfoManager backupInfoMgr;
     private final BackupToS3 backupHandler;
+    private final RemoteRepository remoteRepo;
     private final ErrorReporter errorReporter;
 
     @Inject
@@ -59,6 +64,7 @@ public class CtrlSnapshotShippingAbortHandler
         Provider<CtrlSnapshotDeleteApiCallHandler> snapDelHandlerProviderRef,
         BackupInfoManager backupInfoMgrRef,
         BackupToS3 backupHandlerRef,
+        RemoteRepository remoteRepoRef,
         ErrorReporter errorReporterRef
     )
     {
@@ -70,6 +76,7 @@ public class CtrlSnapshotShippingAbortHandler
         snapDelHandlerProvider = snapDelHandlerProviderRef;
         backupInfoMgr = backupInfoMgrRef;
         backupHandler = backupHandlerRef;
+        remoteRepo = remoteRepoRef;
         errorReporter = errorReporterRef;
     }
 
@@ -264,7 +271,13 @@ public class CtrlSnapshotShippingAbortHandler
                     {
                         try
                         {
-                            backupHandler.abortMultipart(abortInfo.backupName, abortInfo.uploadId);
+                            S3Remote remote = remoteRepo.getS3(apiCtx, new RemoteName(abortInfo.remoteName));
+                            backupHandler.abortMultipart(
+                                abortInfo.backupName,
+                                abortInfo.uploadId,
+                                remote,
+                                apiCtx
+                            );
                         }
                         catch (SdkClientException exc)
                         {
@@ -280,6 +293,10 @@ public class CtrlSnapshotShippingAbortHandler
                             {
                                 errorReporter.reportError(exc);
                             }
+                        }
+                        catch (AccessDeniedException | InvalidNameException exc)
+                        {
+                            throw new ImplementationError(exc);
                         }
                     }
                     backupInfoMgr.abortDeleteEntries(

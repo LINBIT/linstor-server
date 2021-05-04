@@ -37,7 +37,12 @@ public class NotifyBackupShippingId implements ApiCallReactive
     {
         MsgIntBackupShippingId ship = MsgIntBackupShippingId.parseDelimitedFrom(msgDataInRef);
         backupInfoMgr.abortAddEntry(
-            ship.getNodeName(), ship.getRscName(), ship.getSnapName(), ship.getBackupName(), ship.getUploadId()
+            ship.getNodeName(),
+            ship.getRscName(),
+            ship.getSnapName(),
+            ship.getBackupName(),
+            ship.getUploadId(),
+            ship.getRemoteName()
         );
         return Flux.<byte[]> empty();
     }

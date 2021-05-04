@@ -1204,6 +1204,7 @@ public class JsonGenTypes
     {
         public Boolean external;
         public List<String> s3keys = Collections.emptyList();
+        public String remote_name;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1211,7 +1212,7 @@ public class JsonGenTypes
     {
         public String src_rsc_name;
         public String stor_pool_name;
-        public String bucket_name;
+        public String remote_name;
         public String passphrase;
         public String node_name;
     }
@@ -1220,6 +1221,7 @@ public class JsonGenTypes
     public static class BackupCreate
     {
         public String rsc_name;
+        public String remote_name;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -9,7 +9,10 @@ import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
 import com.linbit.linstor.api.BackupToS3;
+import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 
 import java.io.IOException;
@@ -31,7 +34,7 @@ public class BackupShippingDaemon implements Runnable
     private final String[] command;
     private final BackupToS3 backupHandler;
     private final String backupName;
-    private final String bucketName;
+    private final S3Remote remote;
     private final long volSize;
 
     private final LinkedBlockingDeque<Event> deque;
@@ -44,6 +47,7 @@ public class BackupShippingDaemon implements Runnable
     private boolean doneFirst = true;
     private boolean restore;
     private String uploadId = null;
+    private AccessContext accCtx;
 
     private final Consumer<Boolean> afterTermination;
 
@@ -53,20 +57,22 @@ public class BackupShippingDaemon implements Runnable
         String threadName,
         String[] commandRef,
         String backupNameRef,
-        String bucketNameRef,
+        S3Remote remoteRef,
         BackupToS3 backupHandlerRef,
         boolean restoreRef,
         long size,
-        Consumer<Boolean> afterTerminationRef
+        Consumer<Boolean> afterTerminationRef,
+        AccessContext accCtxRef
     )
     {
         errorReporter = errorReporterRef;
         command = commandRef;
-        bucketName = bucketNameRef;
+        remote = remoteRef;
         afterTermination = afterTerminationRef;
         backupName = backupNameRef;
         backupHandler = backupHandlerRef;
         volSize = size;
+        accCtx = accCtxRef;
 
         deque = new LinkedBlockingDeque<>(DFLT_DEQUE_CAPACITY);
         handler = new DaemonHandler(deque, command);
@@ -90,12 +96,12 @@ public class BackupShippingDaemon implements Runnable
         running = true;
         cmdThread.start();
         String uploadIdRef = null;
-        if (!restore)
-        {
-            uploadIdRef = backupHandler.initMultipart(backupName);
-        }
         try
         {
+            if (!restore)
+            {
+                uploadIdRef = backupHandler.initMultipart(backupName, remote, accCtx);
+            }
             cmdProcess = handler.start();
             s3Thread.start();
         }
@@ -105,6 +111,21 @@ public class BackupShippingDaemon implements Runnable
                 new SystemServiceStartException(
                     "Unable to daemon for SnapshotShipping",
                     "I/O error attempting to start '" + Arrays.toString(command) + "'",
+                    exc.getMessage(),
+                    null,
+                    null,
+                    exc,
+                    false
+                )
+            );
+            shutdown();
+        }
+        catch (AccessDeniedException exc)
+        {
+            errorReporter.reportError(
+                new SystemServiceStartException(
+                    "Unable to daemon for SnapshotShipping",
+                    "Access denied exception attempting to start '" + Arrays.toString(command) + "'",
                     exc.getMessage(),
                     null,
                     null,
@@ -124,7 +145,8 @@ public class BackupShippingDaemon implements Runnable
         boolean success = false;
         try
         {
-            backupHandler.putObjectMultipart(backupName, cmdProcess.getInputStream(), volSize, uploadId);
+            backupHandler
+                .putObjectMultipart(backupName, cmdProcess.getInputStream(), volSize, uploadId, remote, accCtx);
             success = true;
         }
         catch (SdkClientException | IOException | StorageException exc)
@@ -136,6 +158,11 @@ public class BackupShippingDaemon implements Runnable
                 errorReporter.reportError(exc);
             }
         }
+        catch (AccessDeniedException exc)
+        {
+            threadFinished(success, true);
+            throw new ImplementationError(exc);
+        }
         threadFinished(success, true);
     }
 
@@ -144,7 +171,7 @@ public class BackupShippingDaemon implements Runnable
         errorReporter.logTrace("starting restore for backup %s", backupName);
         boolean success = false;
         try (
-            InputStream is = backupHandler.getObject(backupName, bucketName);
+            InputStream is = backupHandler.getObject(backupName, remote, accCtx);
             OutputStream os = cmdProcess.getOutputStream();
         )
         {
@@ -166,6 +193,11 @@ public class BackupShippingDaemon implements Runnable
                 // successfully finished previously
                 errorReporter.reportError(exc);
             }
+        }
+        catch (AccessDeniedException exc)
+        {
+            threadFinished(success, true);
+            throw new ImplementationError(exc);
         }
         threadFinished(success, true);
     }
@@ -257,7 +289,7 @@ public class BackupShippingDaemon implements Runnable
                     {
                         if (uploadId != null)
                         {
-                            backupHandler.abortMultipart(backupName, uploadId);
+                            backupHandler.abortMultipart(backupName, uploadId, remote, accCtx);
                         }
                     }
                     catch (SdkClientException exc)
@@ -274,6 +306,10 @@ public class BackupShippingDaemon implements Runnable
                         {
                             errorReporter.reportError(exc);
                         }
+                    }
+                    catch (AccessDeniedException exc)
+                    {
+                        throw new ImplementationError(exc);
                     }
                     if (shutdownAllowed)
                     {
@@ -291,7 +327,7 @@ public class BackupShippingDaemon implements Runnable
                     {
                         if (uploadId != null)
                         {
-                            backupHandler.abortMultipart(backupName, uploadId);
+                            backupHandler.abortMultipart(backupName, uploadId, remote, accCtx);
                         }
                     }
                     catch (SdkClientException exc)
@@ -308,6 +344,10 @@ public class BackupShippingDaemon implements Runnable
                         {
                             errorReporter.reportError(exc);
                         }
+                    }
+                    catch (AccessDeniedException exc)
+                    {
+                        throw new ImplementationError(exc);
                     }
                 }
             }

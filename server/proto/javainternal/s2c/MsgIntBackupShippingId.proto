@@ -10,4 +10,5 @@ message MsgIntBackupShippingId
     string snap_name = 3;
     string backup_name = 4;
     string upload_id = 5;
+    string remote_name = 6;
 }

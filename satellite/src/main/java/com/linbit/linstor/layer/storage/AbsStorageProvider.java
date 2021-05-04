@@ -737,9 +737,16 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
                     if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
                     {
-                        createLvForBackupIfNeeded(snapVlm);
-                        waitForSnapIfNeeded(snapVlm);
-                        startBackupRestore(snapVlm);
+                        try
+                        {
+                            createLvForBackupIfNeeded(snapVlm);
+                            waitForSnapIfNeeded(snapVlm);
+                            startBackupRestore(snapVlm);
+                        }
+                        catch (InvalidNameException exc)
+                        {
+                            throw new ImplementationError(exc);
+                        }
                     }
                     else
                     {
@@ -754,8 +761,15 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         }
                         else if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE))
                         {
-                            waitForSnapIfNeeded(snapVlm);
-                            startBackupShipping(snapVlm);
+                            try
+                            {
+                                waitForSnapIfNeeded(snapVlm);
+                                startBackupShipping(snapVlm);
+                            }
+                            catch (InvalidNameException exc)
+                            {
+                                throw new ImplementationError(exc);
+                            }
                         }
                     }
                 }
@@ -913,7 +927,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
     }
 
-    protected void startBackupShipping(LAYER_SNAP_DATA snapVlmData) throws StorageException, AccessDeniedException
+    protected void startBackupShipping(LAYER_SNAP_DATA snapVlmData)
+        throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
         backupShipMgr.sendBackup(
@@ -1189,7 +1204,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         return restoreSnapshotName;
     }
 
-    private void startBackupRestore(LAYER_SNAP_DATA snapVlmData) throws StorageException, AccessDeniedException
+    private void startBackupRestore(LAYER_SNAP_DATA snapVlmData)
+        throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
         backupShipMgr.restoreBackup(

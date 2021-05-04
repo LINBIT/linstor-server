@@ -69,7 +69,7 @@ public class Backups
         try
         {
             JsonGenTypes.BackupCreate data = objectMapper.readValue(jsonData, JsonGenTypes.BackupCreate.class);
-            responses = backupApiCallHandler.createFullBackup(data.rsc_name)
+            responses = backupApiCallHandler.createFullBackup(data.rsc_name, data.remote_name)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
@@ -104,7 +104,7 @@ public class Backups
                 data.stor_pool_name,
                 data.node_name,
                 rscName,
-                data.bucket_name == null ? "" : data.bucket_name,
+                data.remote_name,
                 data.passphrase
             ).subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
@@ -124,8 +124,9 @@ public class Backups
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
-        @DefaultValue("") @QueryParam("snapName") String snapName,
-        @DefaultValue("") @QueryParam("timestamp") String timestamp
+        @DefaultValue("") @QueryParam("snap_name") String snapName,
+        @DefaultValue("") @QueryParam("timestamp") String timestamp,
+        @QueryParam("remote_name") String remoteName
     )
     {
         if (snapName.length() != 0 && timestamp.length() != 0)
@@ -147,7 +148,7 @@ public class Backups
         else
         {
             Flux<ApiCallRc> deleteFlux = backupApiCallHandler.deleteBackup(
-                rscName, snapName, timestamp, Collections.emptyList(), false
+                rscName, snapName, timestamp, remoteName, Collections.emptyList(), false
             ).subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
@@ -174,7 +175,7 @@ public class Backups
             requestHelper.doFlux(
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(
-                    backupApiCallHandler.deleteBackup("", "", "", data.s3keys, data.external)
+                    backupApiCallHandler.deleteBackup("", "", "", data.remote_name, data.s3keys, data.external)
                         .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request)),
                     Response.Status.OK
                 )
@@ -218,8 +219,8 @@ public class Backups
     @GET
     public Response listBackups(
         @Context Request request,
-        @DefaultValue("") @QueryParam("rscName") String rscName,
-        @DefaultValue("") @QueryParam("bucketName") String bucketName
+        @DefaultValue("") @QueryParam("rsc_name") String rscName,
+        @DefaultValue("") @QueryParam("remote_name") String remoteName
     )
     {
         return requestHelper.doInScope(
@@ -227,7 +228,7 @@ public class Backups
             () ->
             {
                 Pair<Collection<BackupListApi>, Set<String>> backups = backupApiCallHandler
-                    .listBackups(rscName, bucketName);
+                    .listBackups(rscName, remoteName);
                 JsonGenTypes.Backup backupList = new JsonGenTypes.Backup();
                 List<JsonGenTypes.BackupList> jsonBackups = fillJson(backups.objA);
                 backupList.linstor = jsonBackups;

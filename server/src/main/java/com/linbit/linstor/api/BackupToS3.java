@@ -2,7 +2,10 @@ package com.linbit.linstor.api;
 
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 
 import javax.inject.Inject;
@@ -53,22 +56,21 @@ public class BackupToS3
         stltConfigAccessor = stltConfigAccessorRef;
     }
 
-    public String initMultipart(String key)
+    public String initMultipart(String key, S3Remote remote, AccessContext accCtx) throws AccessDeniedException
     {
-        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+            remote.getAccessKey(accCtx),
+            remote.getSecretKey(accCtx)
         );
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+                remote.getUrl(accCtx),
+                remote.getRegion(accCtx)
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
-        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        String bucket = remote.getBucket(accCtx);
 
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
@@ -80,24 +82,29 @@ public class BackupToS3
         return initResp.getUploadId();
     }
 
-    public void putObjectMultipart(String key, InputStream input, long maxSize, String uploadId)
-        throws SdkClientException, AmazonServiceException, IOException, StorageException
+    public void putObjectMultipart(
+        String key,
+        InputStream input,
+        long maxSize,
+        String uploadId,
+        S3Remote remote,
+        AccessContext accCtx
+    ) throws AccessDeniedException, SdkClientException, AmazonServiceException, IOException, StorageException
     {
-        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+            remote.getAccessKey(accCtx),
+            remote.getSecretKey(accCtx)
         );
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+                remote.getUrl(accCtx),
+                remote.getRegion(accCtx)
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
 
-        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
         long bufferSize = Math.max(5 << 20, (long) (Math.ceil(maxSize / 10000.0) + 1.0));
@@ -156,23 +163,23 @@ public class BackupToS3
         s3.completeMultipartUpload(compRequest);
     }
 
-    public void abortMultipart(String key, String uploadId) throws SdkClientException, AmazonServiceException
+    public void abortMultipart(String key, String uploadId, S3Remote remote, AccessContext accCtx)
+        throws AccessDeniedException, SdkClientException, AmazonServiceException
     {
-        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+            remote.getAccessKey(accCtx),
+            remote.getSecretKey(accCtx)
         );
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+                remote.getUrl(accCtx),
+                remote.getRegion(accCtx)
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
 
-        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
         AbortMultipartUploadRequest abortReq = new AbortMultipartUploadRequest(
@@ -183,22 +190,22 @@ public class BackupToS3
         s3.abortMultipartUpload(abortReq);
     }
 
-    public void putObject(String key, String content) throws SdkClientException, AmazonServiceException
+    public void putObject(String key, String content, S3Remote remote, AccessContext accCtx)
+        throws AccessDeniedException, SdkClientException, AmazonServiceException
     {
-        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+            remote.getAccessKey(accCtx),
+            remote.getSecretKey(accCtx)
         );
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+                remote.getUrl(accCtx),
+                remote.getRegion(accCtx)
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
-        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
         ObjectMetadata meta = new ObjectMetadata();
         meta.setContentLength(content.getBytes().length);
@@ -207,22 +214,21 @@ public class BackupToS3
         s3.putObject(req);
     }
 
-    public void deleteObjects(Set<String> keys)
+    public void deleteObjects(Set<String> keys, S3Remote remote, AccessContext accCtx) throws AccessDeniedException
     {
-        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+            remote.getAccessKey(accCtx),
+            remote.getSecretKey(accCtx)
         );
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+                remote.getUrl(accCtx),
+                remote.getRegion(accCtx)
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
-        String bucket = backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET);
+        String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
         DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucket);
         String[] helper = new String[keys.size()];
@@ -230,26 +236,23 @@ public class BackupToS3
         s3.deleteObjects(deleteObjectsRequest);
     }
 
-    public BackupMetaDataPojo getMetaFile(String key, String bucketRef)
-        throws JsonParseException, JsonMappingException, IOException
+    public BackupMetaDataPojo getMetaFile(String key, S3Remote remote, AccessContext accCtx)
+        throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
     {
-        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+            remote.getAccessKey(accCtx),
+            remote.getSecretKey(accCtx)
         );
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+                remote.getUrl(accCtx),
+                remote.getRegion(accCtx)
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
 
-        String bucket = bucketRef == null || bucketRef.length() == 0
-            ? backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET)
-            : bucketRef;
+        String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
         GetObjectRequest req = new GetObjectRequest(bucket, key, reqPays);
@@ -259,25 +262,22 @@ public class BackupToS3
         return mapper.readValue(s3is, BackupMetaDataPojo.class);
     }
 
-    public InputStream getObject(String key, String bucketRef)
+    public InputStream getObject(String key, S3Remote remote, AccessContext accCtx) throws AccessDeniedException
     {
-        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+            remote.getAccessKey(accCtx),
+            remote.getSecretKey(accCtx)
         );
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+                remote.getUrl(accCtx),
+                remote.getRegion(accCtx)
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
 
-        String bucket = bucketRef == null || bucketRef.length() == 0
-            ? backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET)
-            : bucketRef;
+        String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
         GetObjectRequest req = new GetObjectRequest(bucket, key, reqPays);
@@ -285,24 +285,23 @@ public class BackupToS3
         return obj.getObjectContent();
     }
 
-    public List<S3ObjectSummary> listObjects(String rsc, String bucketRef)
+    public List<S3ObjectSummary> listObjects(String rsc, S3Remote remote, AccessContext accCtx)
+        throws AccessDeniedException
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ACCESS_KEY),
-            backupProps.getProp(ApiConsts.KEY_BACKUP_S3_SECRET_KEY)
+            remote.getAccessKey(accCtx),
+            remote.getSecretKey(accCtx)
         );
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_ENDPOINT),
-                backupProps.getProp(ApiConsts.KEY_BACKUP_S3_REGION)
+                remote.getUrl(accCtx),
+                remote.getRegion(accCtx)
             )
         ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .build();
-        String bucket = bucketRef == null || bucketRef.length() == 0
-            ? backupProps.getProp(ApiConsts.KEY_BACKUP_S3_BUCKET)
-            : bucketRef;
+        String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
         ListObjectsV2Request req = new ListObjectsV2Request();

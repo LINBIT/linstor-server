@@ -73,7 +73,14 @@ public class BackupInfoManager
         }
     }
 
-    public void abortAddEntry(String nodeName, String rscName, String snapName, String backupName, String uploadId)
+    public void abortAddEntry(
+        String nodeName,
+        String rscName,
+        String snapName,
+        String backupName,
+        String uploadId,
+        String remoteName
+    )
     {
         Pair<String, String> pair = new Pair<>(rscName, snapName);
 
@@ -82,12 +89,12 @@ public class BackupInfoManager
         {
             if (map.containsKey(pair))
             {
-                map.get(pair).add(new AbortInfo(backupName, uploadId));
+                map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
             }
             else
             {
                 map.put(pair, new ArrayList<>());
-                map.get(pair).add(new AbortInfo(backupName, uploadId));
+                map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
             }
         }
         else
@@ -95,7 +102,7 @@ public class BackupInfoManager
             abortMap.put(nodeName, new HashMap<>());
             map = abortMap.get(nodeName);
             map.put(pair, new ArrayList<>());
-            map.get(pair).add(new AbortInfo(backupName, uploadId));
+            map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
         }
     }
 
@@ -119,11 +126,13 @@ public class BackupInfoManager
     {
         public final String backupName;
         public final String uploadId;
+        public final String remoteName;
 
-        AbortInfo(String backupNameRef, String uploadIdRef)
+        AbortInfo(String backupNameRef, String uploadIdRef, String remoteNameRef)
         {
             backupName = backupNameRef;
             uploadId = uploadIdRef;
+            remoteName = remoteNameRef;
         }
     }
 

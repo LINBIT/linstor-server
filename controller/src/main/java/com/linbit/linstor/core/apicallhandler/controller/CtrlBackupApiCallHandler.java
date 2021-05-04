@@ -34,16 +34,19 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apis.BackupListApi;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -136,6 +139,7 @@ public class CtrlBackupApiCallHandler
     private BackupInfoManager backupInfoMgr;
     private Provider<Peer> peerProvider;
     private CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandler;
+    private RemoteRepository remoteRepo;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -159,7 +163,8 @@ public class CtrlBackupApiCallHandler
         LengthPadding cryptoLenPadRef,
         BackupInfoManager backupInfoMgrRef,
         Provider<Peer> peerProviderRef,
-        CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandlerRef
+        CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandlerRef,
+        RemoteRepository remoteRepoRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -183,9 +188,10 @@ public class CtrlBackupApiCallHandler
         backupInfoMgr = backupInfoMgrRef;
         peerProvider = peerProviderRef;
         ctrlSnapShipAbortHandler = ctrlSnapShipAbortHandlerRef;
+        remoteRepo = remoteRepoRef;
     }
 
-    public Flux<ApiCallRc> createFullBackup(String rscNameRef) throws AccessDeniedException
+    public Flux<ApiCallRc> createFullBackup(String rscNameRef, String remoteNameRef) throws AccessDeniedException
     {
         Date now = new Date();
 
@@ -195,13 +201,13 @@ public class CtrlBackupApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .buildDeferred(),
-            () -> backupSnapshot(rscNameRef, SNAP_PREFIX + SDF.format(now))
+            () -> backupSnapshot(rscNameRef, SNAP_PREFIX + SDF.format(now), remoteNameRef)
         );
 
         return response;
     }
 
-    private Flux<ApiCallRc> backupSnapshot(String rscNameRef, String snapName)
+    private Flux<ApiCallRc> backupSnapshot(String rscNameRef, String snapName, String remoteName)
         throws AccessDeniedException
     {
         try
@@ -296,9 +302,15 @@ public class CtrlBackupApiCallHandler
 
             snapDfn.getSnapshot(peerAccCtx.get(), chosenNode).getFlags()
                 .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
-            snapDfn.getSnapshot(peerAccCtx.get(), chosenNode).getProps(peerAccCtx.get()).setProp(
+            Props snapProps = snapDfn.getSnapshot(peerAccCtx.get(), chosenNode).getProps(peerAccCtx.get());
+            snapProps.setProp(
                 InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                 StringUtils.join(nodeIds, ","),
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            snapProps.setProp(
+                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                remoteName,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             ctrlTransactionHelper.commit();
@@ -327,6 +339,7 @@ public class CtrlBackupApiCallHandler
         String rscName,
         String snapName,
         String timestamp,
+        String remoteName,
         List<String> s3keys,
         boolean external
     )
@@ -337,7 +350,7 @@ public class CtrlBackupApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .buildDeferred(),
-            () -> deleteBackupInTransaction(rscName, snapName, timestamp, s3keys, external)
+            () -> deleteBackupInTransaction(rscName, snapName, timestamp, remoteName, s3keys, external)
         );
     }
 
@@ -345,23 +358,25 @@ public class CtrlBackupApiCallHandler
         String rscName,
         String snapName,
         String timestamp,
+        String remoteName,
         List<String> s3keys,
         boolean external
-    )
+    ) throws AccessDeniedException, InvalidNameException
     {
+        S3Remote s3remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteName));
         ToDeleteCollections toDelete = new ToDeleteCollections();
         if (rscName.length() != 0)
         {
             if (snapName.length() != 0 && !backupInfoMgr.restoreContainsMetaFile(rscName, snapName))
             {
-                toDelete.s3keys = getKeysFromMeta(rscName + "_" + snapName + ".meta");
+                toDelete.s3keys = getKeysFromMeta(rscName + "_" + snapName + ".meta", s3remote);
                 toDelete.snapKeys = Collections.singleton(
                     toSnapDfnKey(rscName, snapName)
                 );
             }
             else
             {
-                toDelete = getDeleteList(rscName, timestamp);
+                toDelete = getDeleteList(rscName, timestamp, s3remote);
             }
         }
         else if (s3keys.size() != 0)
@@ -372,7 +387,7 @@ public class CtrlBackupApiCallHandler
             }
             else
             {
-                toDelete = getDeleteList(s3keys);
+                toDelete = getDeleteList(s3keys, s3remote);
             }
         }
         else
@@ -397,7 +412,7 @@ public class CtrlBackupApiCallHandler
         {
             if (!toDelete.s3keys.isEmpty())
             {
-                backupHandler.deleteObjects(toDelete.s3keys);
+                backupHandler.deleteObjects(toDelete.s3keys, s3remote, peerAccCtx.get());
             }
             else
             {
@@ -428,7 +443,7 @@ public class CtrlBackupApiCallHandler
         return Flux.<ApiCallRc> just(apiCallRc).concatWith(deleteSnapFlux);
     }
 
-    private ToDeleteCollections getDeleteList(List<String> s3keysRef)
+    private ToDeleteCollections getDeleteList(List<String> s3keysRef, S3Remote s3remote) throws AccessDeniedException
     {
         ToDeleteCollections ret = new ToDeleteCollections();
         for (String s3keyRef : s3keysRef)
@@ -437,12 +452,12 @@ public class CtrlBackupApiCallHandler
             Matcher mMeta = META_FILE_PATTERN.matcher(s3keyRef);
             if (mBack.matches() && !backupInfoMgr.restoreContainsMetaFile(mBack.group(1), mBack.group(4)))
             {
-                ret.s3keys.addAll(getKeysFromMeta(mBack.group(1) + "_" + mBack.group(4) + ".meta"));
+                ret.s3keys.addAll(getKeysFromMeta(mBack.group(1) + "_" + mBack.group(4) + ".meta", s3remote));
                 ret.snapKeys.add(toSnapDfnKey(mBack.group(1), mBack.group(4)));
             }
             else if (mMeta.matches() && !backupInfoMgr.restoreContainsMetaFile(s3keyRef))
             {
-                ret.s3keys.addAll(getKeysFromMeta(s3keyRef));
+                ret.s3keys.addAll(getKeysFromMeta(s3keyRef, s3remote));
                 ret.snapKeys.add(toSnapDfnKey(mMeta.group(1), mMeta.group(2)));
             }
             else
@@ -457,10 +472,12 @@ public class CtrlBackupApiCallHandler
         return ret;
     }
 
-    private ToDeleteCollections getDeleteList(String rscName, String timestamp)
+    private ToDeleteCollections getDeleteList(String rscName, String timestamp, S3Remote s3remote)
+        throws AccessDeniedException
     {
         Set<String> metaKeys = new HashSet<>();
-        Set<String> s3keys = backupHandler.listObjects(rscName, "").stream().map(S3ObjectSummary::getKey)
+        Set<String> s3keys = backupHandler.listObjects(rscName, s3remote, peerAccCtx.get()).stream()
+            .map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
         ToDeleteCollections ret = new ToDeleteCollections();
         for (String s3key : s3keys)
@@ -489,17 +506,17 @@ public class CtrlBackupApiCallHandler
         }
         for (String metaName : metaKeys)
         {
-            ret.s3keys.addAll(getKeysFromMeta(metaName));
+            ret.s3keys.addAll(getKeysFromMeta(metaName, s3remote));
         }
         return ret;
     }
 
-    private Set<String> getKeysFromMeta(String metaName)
+    private Set<String> getKeysFromMeta(String metaName, S3Remote s3remote) throws AccessDeniedException
     {
         Set<String> keys = new TreeSet<>();
         try
         {
-            BackupMetaDataPojo metadata = backupHandler.getMetaFile(metaName, "");
+            BackupMetaDataPojo metadata = backupHandler.getMetaFile(metaName, s3remote, peerAccCtx.get());
             List<List<BackupInfoPojo>> backInfoLists = metadata.getBackups();
             for (List<BackupInfoPojo> backInfoList : backInfoLists)
             {
@@ -530,7 +547,7 @@ public class CtrlBackupApiCallHandler
         String storPoolName,
         String nodeName,
         String targetRscName,
-        String bucketName,
+        String remoteName,
         String passphrase
     )
     {
@@ -543,7 +560,7 @@ public class CtrlBackupApiCallHandler
                         LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP
                     ),
                     () -> restoreBackupInTransaction(
-                        srcRscName, storPoolName, nodeName, thinFreeCapacities, targetRscName, bucketName, passphrase
+                        srcRscName, storPoolName, nodeName, thinFreeCapacities, targetRscName, remoteName, passphrase
                     )
                 )
             );
@@ -555,12 +572,14 @@ public class CtrlBackupApiCallHandler
         String nodeName,
         Map<StorPool.Key, Long> thinFreeCapacities,
         String targetRscName,
-        String bucketName,
+        String remoteName,
         String passphrase
-    )
+    ) throws AccessDeniedException, InvalidNameException
     {
+        S3Remote remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteName));
         // 1. list srcRscName*
-        Set<String> s3keys = backupHandler.listObjects(srcRscName, bucketName).stream().map(S3ObjectSummary::getKey)
+        Set<String> s3keys = backupHandler.listObjects(srcRscName, remote, peerAccCtx.get()).stream()
+            .map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
         // 2. find meta-file
         Date latestBackTs = null;
@@ -598,7 +617,7 @@ public class CtrlBackupApiCallHandler
         // 3. get meta-file
         try
         {
-            BackupMetaDataPojo metadata = backupHandler.getMetaFile(metaName, bucketName);
+            BackupMetaDataPojo metadata = backupHandler.getMetaFile(metaName, remote, peerAccCtx.get());
             // 4. meta ok?
             for (List<BackupInfoPojo> backupList : metadata.getBackups())
             {
@@ -824,8 +843,8 @@ public class CtrlBackupApiCallHandler
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             snapProps.setProp(
-                InternalApiConsts.KEY_BACKUP_BUCKET_TO_RESTORE,
-                bucketName,
+                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                remote.getName().displayValue,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             snap.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
@@ -943,9 +962,11 @@ public class CtrlBackupApiCallHandler
         return renameMap;
     }
 
-    public Pair<Collection<BackupListApi>, Set<String>> listBackups(String rscNameRef, String bucketNameRef)
+    public Pair<Collection<BackupListApi>, Set<String>> listBackups(String rscNameRef, String remoteNameRef)
+        throws AccessDeniedException, InvalidNameException
     {
-        List<S3ObjectSummary> objects = backupHandler.listObjects(rscNameRef, bucketNameRef);
+        S3Remote remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteNameRef));
+        List<S3ObjectSummary> objects = backupHandler.listObjects(rscNameRef, remote, peerAccCtx.get());
         Set<String> s3keys = objects.stream().map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
         Map<String, BackupListApi> backups = new TreeMap<>();
@@ -959,7 +980,7 @@ public class CtrlBackupApiCallHandler
             {
                 try
                 {
-                    BackupMetaDataPojo metadata = backupHandler.getMetaFile(s3key, bucketNameRef);
+                    BackupMetaDataPojo metadata = backupHandler.getMetaFile(s3key, remote, peerAccCtx.get());
                     List<List<BackupInfoPojo>> backInfoLists = metadata.getBackups();
                     BackupInfoPojo firstBackInfo = backInfoLists.get(0).get(0);
                     Map<String, String> vlms = new TreeMap<>();
@@ -1273,6 +1294,11 @@ public class CtrlBackupApiCallHandler
                     peerAccCtx.get(),
                     SnapshotDefinition.Flags.SHIPPED
                 );
+                for (Snapshot snap : snapDfn.getAllSnapshots(peerAccCtx.get()))
+                {
+                    snap.getProps(peerAccCtx.get())
+                        .removeProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                }
                 ctrlTransactionHelper.commit();
 
                 return ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
@@ -1406,7 +1432,13 @@ public class CtrlBackupApiCallHandler
             {
                 snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
             }
-
+            for (Snapshot snap : snapDfn.getAllSnapshots(peerAccCtx.get()))
+            {
+                snap.getProps(peerAccCtx.get())
+                    .removeProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                snap.getProps(peerAccCtx.get())
+                    .removeProp(InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+            }
             ctrlTransactionHelper.commit();
 
             return ctrlSatelliteUpdateCaller.updateSatellites(

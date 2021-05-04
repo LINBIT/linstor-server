@@ -4709,14 +4709,14 @@ paths:
       summary: list all backups
       description: list all backups in a single bucket
       parameters:
-        - name: rscName
+        - name: rsc_name
           in: query
           description: Only show backups of this resource
           schema:
             type: string
-        - name: bucketName
+        - name: remote_name
           in: query
-          description: The bucket to list the backups from, uses the bucket set in the properties if not given here
+          description: The remote to list the backups from
           schema:
             type: string
       responses:
@@ -4770,7 +4770,7 @@ paths:
       description: delete either the specified backup, or all backups before the specified timestamp, or all backups of the given resource
       parameters:
         - $ref: '#/components/parameters/Resource'
-        - name: snapName
+        - name: snap_name
           in: query
           description: delete this specific backup
           schema:
@@ -4778,6 +4778,12 @@ paths:
         - name: timestamp
           in: query
           description: format of the timestamp is yyyyMMdd_HHmmss, delete all backups before this timestamp (not inclusive)
+          schema:
+            type: string
+        - name: remote_name
+          in: query
+          required: true
+          description: remote to delete the backups from
           schema:
             type: string
       responses:
@@ -6988,6 +6994,8 @@ components:
           type: array
           items:
             type: string
+        remote_name:
+          type: string
     BackupRestore:
       type: object
       properties:
@@ -6995,7 +7003,7 @@ components:
           type: string
         stor_pool_name:
           type: string
-        bucket_name:
+        remote_name:
           type: string
         passphrase:
           type: string
@@ -7005,6 +7013,8 @@ components:
       type: object
       properties:
         rsc_name:
+          type: string
+        remote_name:
           type: string
     BackupAbort:
       type: object
