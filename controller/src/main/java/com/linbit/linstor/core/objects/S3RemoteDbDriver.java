@@ -25,15 +25,15 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Pair;
 
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Remotes.ACCESS_KEY;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Remotes.BUCKET;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Remotes.DSP_NAME;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Remotes.ENDPOINT;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Remotes.FLAGS;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Remotes.NAME;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Remotes.REGION;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Remotes.SECRET_KEY;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Remotes.UUID;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.ACCESS_KEY;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.BUCKET;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.DSP_NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.ENDPOINT;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.FLAGS;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.NAME;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.REGION;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.SECRET_KEY;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.UUID;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -68,7 +68,7 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
         TransactionObjectFactory transObjFactoryRef
     )
     {
-        super(errorReporterRef, GeneratedDatabaseTables.REMOTES, dbEngine, objProtDriverRef);
+        super(errorReporterRef, GeneratedDatabaseTables.S3_REMOTES, dbEngine, objProtDriverRef);
         dbCtx = dbCtxRef;
         transMgrProvider = transMgrProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
@@ -173,7 +173,7 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
     @Override
     protected String getId(S3Remote dataRef) throws AccessDeniedException
     {
-        return "Remote(" + dataRef.getName().value + ")";
+        return "S3Remote(" + dataRef.getName().displayValue + ")";
     }
 
     private class InitMapsImpl implements S3Remote.InitMaps

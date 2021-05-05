@@ -162,6 +162,7 @@ public class LockGuardFactory
                 break;
             case EXT_FILE_MAP:
                 lock = extFileMapLock;
+                break;
             case REMOTE_MAP:
                 lock = remoteMapLock;
                 break;

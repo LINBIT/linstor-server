@@ -18,6 +18,7 @@ import com.linbit.linstor.api.pojo.ExosDefaultsPojo;
 import com.linbit.linstor.api.pojo.ExosEnclosureEventPojo;
 import com.linbit.linstor.api.pojo.ExosEnclosureHealthPojo;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
+import com.linbit.linstor.api.pojo.LinstorRemotePojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
@@ -1133,6 +1134,16 @@ public class Json
         json.endpoint = pojo.getEndpoint();
         json.bucket = pojo.getBucket();
         json.region = pojo.getRegion();
+
+        return json;
+    }
+
+    public static JsonGenTypes.LinstorRemote apiToLinstorRemote(LinstorRemotePojo pojo)
+    {
+        JsonGenTypes.LinstorRemote json = new JsonGenTypes.LinstorRemote();
+        json.remote_name = pojo.getRemoteName();
+        json.url = pojo.getUrl();
+        // encrypted passphrase intentionally not serialized
 
         return json;
     }

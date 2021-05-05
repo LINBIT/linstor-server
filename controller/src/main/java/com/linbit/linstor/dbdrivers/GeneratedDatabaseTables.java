@@ -574,6 +574,48 @@ public class GeneratedDatabaseTables
         }
     }
 
+    public static class LinstorRemotes implements DatabaseTable
+    {
+        private LinstorRemotes() { }
+
+        // Primary Key
+        public static final ColumnImpl NAME = new ColumnImpl("NAME", Types.VARCHAR, true, false);
+
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl DSP_NAME = new ColumnImpl("DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl URL = new ColumnImpl("URL", Types.VARCHAR, false, false);
+        public static final ColumnImpl ENCRYPTED_PASSPHRASE = new ColumnImpl("ENCRYPTED_PASSPHRASE", Types.BLOB, false, true);
+
+        public static final Column[] ALL = new Column[]
+        {
+            UUID,
+            NAME,
+            DSP_NAME,
+            FLAGS,
+            URL,
+            ENCRYPTED_PASSPHRASE
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "LINSTOR_REMOTES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table LINSTOR_REMOTES";
+        }
+    }
+
     public static class Nodes implements DatabaseTable
     {
         private Nodes() { }
@@ -774,54 +816,6 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class Remotes implements DatabaseTable
-    {
-        private Remotes() { }
-
-        // Primary Key
-        public static final ColumnImpl NAME = new ColumnImpl("NAME", Types.VARCHAR, true, false);
-
-        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
-        public static final ColumnImpl DSP_NAME = new ColumnImpl("DSP_NAME", Types.VARCHAR, false, false);
-        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
-        public static final ColumnImpl ENDPOINT = new ColumnImpl("ENDPOINT", Types.VARCHAR, false, false);
-        public static final ColumnImpl BUCKET = new ColumnImpl("BUCKET", Types.VARCHAR, false, false);
-        public static final ColumnImpl REGION = new ColumnImpl("REGION", Types.VARCHAR, false, false);
-        public static final ColumnImpl ACCESS_KEY = new ColumnImpl("ACCESS_KEY", Types.CHAR, false, false);
-        public static final ColumnImpl SECRET_KEY = new ColumnImpl("SECRET_KEY", Types.CHAR, false, false);
-
-        public static final Column[] ALL = new Column[]
-        {
-            UUID,
-            NAME,
-            DSP_NAME,
-            FLAGS,
-            ENDPOINT,
-            BUCKET,
-            REGION,
-            ACCESS_KEY,
-            SECRET_KEY
-        };
-
-        @Override
-        public Column[] values()
-        {
-            return ALL;
-        }
-
-        @Override
-        public String getName()
-        {
-            return "REMOTES";
-        }
-
-        @Override
-        public String toString()
-        {
-            return "Table REMOTES";
-        }
-    }
-
     public static class Resources implements DatabaseTable
     {
         private Resources() { }
@@ -1015,6 +1009,54 @@ public class GeneratedDatabaseTables
         public String toString()
         {
             return "Table RESOURCE_GROUPS";
+        }
+    }
+
+    public static class S3Remotes implements DatabaseTable
+    {
+        private S3Remotes() { }
+
+        // Primary Key
+        public static final ColumnImpl NAME = new ColumnImpl("NAME", Types.VARCHAR, true, false);
+
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl DSP_NAME = new ColumnImpl("DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl ENDPOINT = new ColumnImpl("ENDPOINT", Types.VARCHAR, false, false);
+        public static final ColumnImpl BUCKET = new ColumnImpl("BUCKET", Types.VARCHAR, false, false);
+        public static final ColumnImpl REGION = new ColumnImpl("REGION", Types.VARCHAR, false, false);
+        public static final ColumnImpl ACCESS_KEY = new ColumnImpl("ACCESS_KEY", Types.CHAR, false, false);
+        public static final ColumnImpl SECRET_KEY = new ColumnImpl("SECRET_KEY", Types.CHAR, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            UUID,
+            NAME,
+            DSP_NAME,
+            FLAGS,
+            ENDPOINT,
+            BUCKET,
+            REGION,
+            ACCESS_KEY,
+            SECRET_KEY
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "S3_REMOTES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table S3_REMOTES";
         }
     }
 
@@ -1699,16 +1741,17 @@ public class GeneratedDatabaseTables
     public static final LayerResourceIds LAYER_RESOURCE_IDS = new LayerResourceIds();
     public static final LayerStorageVolumes LAYER_STORAGE_VOLUMES = new LayerStorageVolumes();
     public static final LayerWritecacheVolumes LAYER_WRITECACHE_VOLUMES = new LayerWritecacheVolumes();
+    public static final LinstorRemotes LINSTOR_REMOTES = new LinstorRemotes();
     public static final Nodes NODES = new Nodes();
     public static final NodeConnections NODE_CONNECTIONS = new NodeConnections();
     public static final NodeNetInterfaces NODE_NET_INTERFACES = new NodeNetInterfaces();
     public static final NodeStorPool NODE_STOR_POOL = new NodeStorPool();
     public static final PropsContainers PROPS_CONTAINERS = new PropsContainers();
-    public static final Remotes REMOTES = new Remotes();
     public static final Resources RESOURCES = new Resources();
     public static final ResourceConnections RESOURCE_CONNECTIONS = new ResourceConnections();
     public static final ResourceDefinitions RESOURCE_DEFINITIONS = new ResourceDefinitions();
     public static final ResourceGroups RESOURCE_GROUPS = new ResourceGroups();
+    public static final S3Remotes S3_REMOTES = new S3Remotes();
     public static final SatellitesCapacity SATELLITES_CAPACITY = new SatellitesCapacity();
     public static final SecAccessTypes SEC_ACCESS_TYPES = new SecAccessTypes();
     public static final SecAclMap SEC_ACL_MAP = new SecAclMap();
@@ -1800,6 +1843,12 @@ public class GeneratedDatabaseTables
         LayerWritecacheVolumes.VLM_NR.table = LAYER_WRITECACHE_VOLUMES;
         LayerWritecacheVolumes.NODE_NAME.table = LAYER_WRITECACHE_VOLUMES;
         LayerWritecacheVolumes.POOL_NAME.table = LAYER_WRITECACHE_VOLUMES;
+        LinstorRemotes.UUID.table = LINSTOR_REMOTES;
+        LinstorRemotes.NAME.table = LINSTOR_REMOTES;
+        LinstorRemotes.DSP_NAME.table = LINSTOR_REMOTES;
+        LinstorRemotes.FLAGS.table = LINSTOR_REMOTES;
+        LinstorRemotes.URL.table = LINSTOR_REMOTES;
+        LinstorRemotes.ENCRYPTED_PASSPHRASE.table = LINSTOR_REMOTES;
         Nodes.UUID.table = NODES;
         Nodes.NODE_NAME.table = NODES;
         Nodes.NODE_DSP_NAME.table = NODES;
@@ -1825,15 +1874,6 @@ public class GeneratedDatabaseTables
         PropsContainers.PROPS_INSTANCE.table = PROPS_CONTAINERS;
         PropsContainers.PROP_KEY.table = PROPS_CONTAINERS;
         PropsContainers.PROP_VALUE.table = PROPS_CONTAINERS;
-        Remotes.UUID.table = REMOTES;
-        Remotes.NAME.table = REMOTES;
-        Remotes.DSP_NAME.table = REMOTES;
-        Remotes.FLAGS.table = REMOTES;
-        Remotes.ENDPOINT.table = REMOTES;
-        Remotes.BUCKET.table = REMOTES;
-        Remotes.REGION.table = REMOTES;
-        Remotes.ACCESS_KEY.table = REMOTES;
-        Remotes.SECRET_KEY.table = REMOTES;
         Resources.UUID.table = RESOURCES;
         Resources.NODE_NAME.table = RESOURCES;
         Resources.RESOURCE_NAME.table = RESOURCES;
@@ -1872,6 +1912,15 @@ public class GeneratedDatabaseTables
         ResourceGroups.REPLICAS_ON_DIFFERENT.table = RESOURCE_GROUPS;
         ResourceGroups.ALLOWED_PROVIDER_LIST.table = RESOURCE_GROUPS;
         ResourceGroups.DISKLESS_ON_REMAINING.table = RESOURCE_GROUPS;
+        S3Remotes.UUID.table = S3_REMOTES;
+        S3Remotes.NAME.table = S3_REMOTES;
+        S3Remotes.DSP_NAME.table = S3_REMOTES;
+        S3Remotes.FLAGS.table = S3_REMOTES;
+        S3Remotes.ENDPOINT.table = S3_REMOTES;
+        S3Remotes.BUCKET.table = S3_REMOTES;
+        S3Remotes.REGION.table = S3_REMOTES;
+        S3Remotes.ACCESS_KEY.table = S3_REMOTES;
+        S3Remotes.SECRET_KEY.table = S3_REMOTES;
         SatellitesCapacity.NODE_NAME.table = SATELLITES_CAPACITY;
         SatellitesCapacity.CAPACITY.table = SATELLITES_CAPACITY;
         SatellitesCapacity.FAIL_FLAG.table = SATELLITES_CAPACITY;

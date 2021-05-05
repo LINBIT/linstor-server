@@ -1500,6 +1500,13 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class RemoteList
+    {
+        public List<S3Remote> s3_remotes = Collections.emptyList();
+        public List<LinstorRemote> linstor_remotes = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class S3Remote
     {
         public String remote_name;
@@ -1508,6 +1515,14 @@ public class JsonGenTypes
         public String region;
         public String access_key;
         public String secret_key;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class LinstorRemote
+    {
+        public String remote_name;
+        public String url;
+        public String passphrase;
     }
 
     private JsonGenTypes()

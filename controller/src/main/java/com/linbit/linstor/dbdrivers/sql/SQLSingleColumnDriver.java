@@ -56,22 +56,28 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
     {
         try
         {
-            String newElementToString;
             if (elementRef instanceof byte[])
             {
-                newElementToString = new String((byte[]) elementRef);
+                errorReporter.logTrace(
+                    "Updating %s's %s from [%s] to [%s] %s",
+                    table.getName(),
+                    colToUpdate.getName(),
+                    dataValueToString.accept(parentRef) == null ? "null" : "<Array of bytes>",
+                    elementRef == null ? "null" : "<Array of bytes>",
+                    dataToString.toString(parentRef)
+                );
             }
             else
             {
-                newElementToString = Objects.toString(elementRef);
+                errorReporter.logTrace(
+                    "Updating %s's %s from [%s] to [%s] %s",
+                    table.getName(),
+                    colToUpdate.getName(),
+                    dataValueToString.accept(parentRef),
+                    Objects.toString(elementRef),
+                    dataToString.toString(parentRef)
+                );
             }
-            errorReporter.logTrace("Updating %s's %s from [%s] to [%s] %s",
-                table.getName(),
-                colToUpdate.getName(),
-                dataValueToString.accept(parentRef),
-                newElementToString,
-                dataToString.toString(parentRef)
-            );
             try (PreparedStatement stmt = sqlEngine.getConnection().prepareStatement(updateStatement))
             {
                 int idx = fillSetter(stmt, 1, elementRef);
@@ -79,14 +85,27 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
 
                 stmt.executeUpdate();
             }
-            errorReporter.logTrace(
-                "%s's %s updated from [%s] to [%s] %s",
-                table.getName(),
-                colToUpdate.getName(),
-                dataValueToString.accept(parentRef),
-                newElementToString,
-                dataToString.toString(parentRef)
-            );
+            if (elementRef instanceof byte[])
+            {
+                errorReporter.logTrace(
+                    "%s's %s updated from [%s] to [%s] %s",
+                    table.getName(),
+                    colToUpdate.getName(),
+                    dataValueToString.accept(parentRef) == null ? "null" : "<Array of bytes>",
+                    elementRef == null ? "null" : "<Array of bytes>",
+                    dataToString.toString(parentRef)
+                );
+            }
+            else {
+                errorReporter.logTrace(
+                    "%s's %s updated from [%s] to [%s] %s",
+                    table.getName(),
+                    colToUpdate.getName(),
+                    dataValueToString.accept(parentRef),
+                    Objects.toString(elementRef),
+                    dataToString.toString(parentRef)
+                );
+            }
         }
         catch (SQLException sqlExc)
         {

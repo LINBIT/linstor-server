@@ -7,12 +7,15 @@ import com.linbit.crypto.SymmetricKeyCipher.CipherStrength;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -227,5 +230,29 @@ public class EncryptionHelper
                 throw new ImplementationError(exc);
             }
         }
+    }
+
+    public byte[] encrypt(String plainKey) throws LinStorException
+    {
+        byte[] masterKey = ctrlSecObj.getCryptKey();
+        if (masterKey == null || masterKey.length == 0)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                        "Unable to create encrypt key without having a master key"
+                    )
+                    .setCause("The masterkey was not initialized yet")
+                    .setCorrection("Create or enter the master passphrase")
+                    .build()
+            );
+        }
+
+        SymmetricKeyCipher cipher;
+        cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
+
+        byte[] encodedData = cryptoLenPad.conceal(plainKey.getBytes());
+        return cipher.encrypt(encodedData);
     }
 }

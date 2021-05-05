@@ -5,15 +5,12 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.LengthPadding;
-import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.SharedResourceManager;
-import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
@@ -64,6 +61,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     private final Provider<RscNvmeLayerHelper> nvmeHelperProvider;
     private final SharedResourceManager sharedRscMgr;
 
+    private final EncryptionHelper encryptionHelper;
+
     @Inject
     RscLuksLayerHelper(
         ErrorReporter errorReporterRef,
@@ -74,7 +73,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         LengthPadding cryptoLenPadRef,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
-        SharedResourceManager sharedRscMgrRef
+        SharedResourceManager sharedRscMgrRef,
+        EncryptionHelper encryptionHelperRef
     )
     {
         super(
@@ -93,6 +93,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         cryptoLenPad = cryptoLenPadRef;
         nvmeHelperProvider = nvmeHelperProviderRef;
         sharedRscMgr = sharedRscMgrRef;
+        encryptionHelper = encryptionHelperRef;
     }
 
     @Override
@@ -252,27 +253,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         if (encryptedVlmKey == null)
         {
             errorReporter.logTrace("creating new encryptedVlmKey");
-            byte[] masterKey = secObjs.getCryptKey();
-            if (masterKey == null || masterKey.length == 0)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
-                            "Unable to create an encrypted volume definition without having a master key"
-                        )
-                        .setCause("The masterkey was not initialized yet")
-                        .setCorrection("Create or enter the master passphrase")
-                        .build()
-                );
-            }
-
-            String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
-            SymmetricKeyCipher cipher;
-            cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
-
-            byte[] encodedData = cryptoLenPad.conceal(vlmDfnKeyPlain.getBytes());
-            encryptedVlmKey = cipher.encrypt(encodedData);
+            encryptedVlmKey = encryptionHelper.encrypt(SecretGenerator.generateSecretString(SECRET_KEY_BYTES));
         }
 
         return layerDataFactory.createLuksVlmData(

@@ -2,7 +2,6 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
@@ -58,17 +57,39 @@ public class Remotes
             requestHelper.createContext(ApiConsts.API_LST_REMOTE, request),
             () ->
             {
-                List<S3RemotePojo> remotePojoList = remoteHandler.listS3();
-                List<JsonGenTypes.S3Remote> remotes = remotePojoList.stream()
-                    .map(pojo -> Json.apiToS3Remote(pojo))
+                JsonGenTypes.RemoteList remoteList = new JsonGenTypes.RemoteList();
+                remoteList.s3_remotes = remoteHandler.listS3().stream()
+                    .map(Json::apiToS3Remote)
                     .collect(Collectors.toList());
-                return RequestHelper.queryRequestResponse(
-                    objectMapper,
-                    ApiConsts.FAIL_UNKNOWN_ERROR,
-                    null,
-                    null,
-                    remotes
-                );
+                remoteList.linstor_remotes = remoteHandler.listLinstor().stream()
+                    .map(Json::apiToLinstorRemote)
+                    .collect(Collectors.toList());
+
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(remoteList))
+                    .build();
+            },
+            false
+        );
+    }
+
+    @GET
+    @Path("s3")
+    public Response getS3Remotes(@Context Request request)
+    {
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_LST_REMOTE, request),
+            () ->
+            {
+                List<JsonGenTypes.S3Remote> remoteList = remoteHandler.listS3().stream()
+                    .map(Json::apiToS3Remote)
+                    .collect(Collectors.toList());
+
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(remoteList))
+                    .build();
             },
             false
         );
@@ -125,6 +146,84 @@ public class Remotes
                 remoteJson.region,
                 remoteJson.access_key,
                 remoteJson.secret_key
+            ).subscriberContext(
+                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
+            );
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+    }
+
+    @GET
+    @Path("linstor")
+    public Response getLinstorRemotes(@Context Request request)
+    {
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_LST_REMOTE, request),
+            () ->
+            {
+                List<JsonGenTypes.LinstorRemote> remoteList = remoteHandler.listLinstor().stream()
+                    .map(Json::apiToLinstorRemote)
+                    .collect(Collectors.toList());
+
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(remoteList))
+                    .build();
+            },
+            false
+        );
+    }
+
+    @POST
+    @Path("linstor")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void createLinstorRemote(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.LinstorRemote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.LinstorRemote.class);
+            Flux<ApiCallRc> flux = remoteHandler.createLinstor(
+                remoteJson.remote_name,
+                remoteJson.url,
+                remoteJson.passphrase
+            ).subscriberContext(
+                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
+            );
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+    }
+
+    @PUT
+    @Path("linstor/{remoteName}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void changeLinstorRemote(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("remoteName") String remoteName,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.LinstorRemote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.LinstorRemote.class);
+            Flux<ApiCallRc> flux = remoteHandler.changeLinstor(
+                remoteName,
+                remoteJson.url,
+                remoteJson.passphrase
             ).subscriberContext(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );

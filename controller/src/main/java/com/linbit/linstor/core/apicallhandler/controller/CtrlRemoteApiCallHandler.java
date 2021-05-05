@@ -2,14 +2,17 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.LinstorRemotePojo;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -17,9 +20,11 @@ import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.objects.LinstorRemote;
+import com.linbit.linstor.core.objects.LinstorRemoteControllerFactory;
 import com.linbit.linstor.core.objects.Remote;
-import com.linbit.linstor.core.objects.Remote.Flags;
 import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.S3RemoteControllerFactory;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -34,18 +39,24 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import reactor.core.publisher.Flux;
 
 @Singleton
 public class CtrlRemoteApiCallHandler
 {
+    private static final Pattern LINSTOR_URL_PATTERN = Pattern.compile("(https?://)?([^:]+)(:[0-9]+)?");
+
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -55,7 +66,9 @@ public class CtrlRemoteApiCallHandler
     private final ScopeRunner scopeRunner;
     private final ResponseConverter responseConverter;
     private final S3RemoteControllerFactory s3remoteFactory;
+    private final LinstorRemoteControllerFactory linstorRemoteFactory;
     private final RemoteRepository remoteRepository;
+    private final EncryptionHelper encryptionHelper;
 
     @Inject
     public CtrlRemoteApiCallHandler(
@@ -68,7 +81,9 @@ public class CtrlRemoteApiCallHandler
         ScopeRunner scopeRunnerRef,
         ResponseConverter responseConverterRef,
         S3RemoteControllerFactory s3remoteFactoryRef,
-        RemoteRepository remoteRepositoryRef
+        LinstorRemoteControllerFactory linstorRemoteFactoryRef,
+        RemoteRepository remoteRepositoryRef,
+        EncryptionHelper encryptionHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -80,7 +95,9 @@ public class CtrlRemoteApiCallHandler
         scopeRunner = scopeRunnerRef;
         responseConverter = responseConverterRef;
         s3remoteFactory = s3remoteFactoryRef;
+        linstorRemoteFactory = linstorRemoteFactoryRef;
         remoteRepository = remoteRepositoryRef;
+        encryptionHelper = encryptionHelperRef;
     }
 
     public List<S3RemotePojo> listS3()
@@ -94,6 +111,27 @@ public class CtrlRemoteApiCallHandler
                 if (entry.getValue() instanceof S3Remote)
                 {
                     ret.add(((S3Remote) entry.getValue()).getApiData(pAccCtx, null, null));
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            // ignore, we will return an empty list
+        }
+        return ret;
+    }
+
+    public List<LinstorRemotePojo> listLinstor()
+    {
+        ArrayList<LinstorRemotePojo> ret = new ArrayList<>();
+        try
+        {
+            AccessContext pAccCtx = peerAccCtx.get();
+            for (Entry<RemoteName, Remote> entry : remoteRepository.getMapForView(pAccCtx).entrySet())
+            {
+                if (entry.getValue() instanceof LinstorRemote)
+                {
+                    ret.add(((LinstorRemote) entry.getValue()).getApiData(pAccCtx, null, null));
                 }
             }
         }
@@ -262,6 +300,235 @@ public class CtrlRemoteApiCallHandler
         return ctrlSatelliteUpdateCaller.updateSatellite(remote);
     }
 
+    public Flux<ApiCallRc> createLinstor(
+        String remoteNameRef,
+        String urlRef,
+        String passphraseRef
+    )
+    {
+        ResponseContext context = makeRemoteContext(
+            ApiOperation.makeModifyOperation(),
+            remoteNameRef
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Create linstor remote",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.REMOTE_MAP),
+            () -> createLinstorInTransaction(
+                remoteNameRef,
+                urlRef,
+                passphraseRef
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> createLinstorInTransaction(
+        String remoteNameRef,
+        String urlRef,
+        String passphraseRef
+    )
+    {
+        RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameRef);
+        if (ctrlApiDataLoader.loadRemote(remoteName, false) != null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_REMOTE,
+                    "A remote with the name '" + remoteNameRef +
+                        "' already exists. Please use a different name or try to modify the remote instead."
+                )
+            );
+        }
+        LinstorRemote remote = null;
+
+        try
+        {
+            byte[] encryptedTargetPassphrase = null;
+            if (passphraseRef != null)
+            {
+                encryptedTargetPassphrase = encryptionHelper.encrypt(passphraseRef);
+            }
+
+            remote = linstorRemoteFactory.create(
+                peerAccCtx.get(),
+                remoteName,
+                createUrlWithDefaults(urlRef),
+                encryptedTargetPassphrase
+            );
+            remoteRepository.put(apiCtx, remote);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "create " + getRemoteDescription(remoteNameRef),
+                ApiConsts.FAIL_ACC_DENIED_REMOTE
+            );
+        }
+        catch (LinStorDataAlreadyExistsException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        catch (LinStorException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An exception occurred while creating linstor remote object"
+                ),
+                exc
+            );
+        }
+
+        ctrlTransactionHelper.commit();
+        return Flux.just(
+            new ApiCallRcImpl(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.CREATED,
+                    "Linstor remote successfully created"
+                )
+            )
+        );
+    }
+
+    private URL createUrlWithDefaults(String urlRef)
+    {
+        URL url;
+
+        Matcher matcher = LINSTOR_URL_PATTERN.matcher(urlRef);
+        if (!matcher.find())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "Given URL '" + urlRef + "' did not match expected pattern of " + LINSTOR_URL_PATTERN.pattern()
+                )
+            );
+        }
+
+        String protocol = matcher.group(1);
+        String domain = matcher.group(2);
+        String port = matcher.group(3);
+
+        int dfltPort = CtrlConfig.DEFAULT_HTTP_REST_PORT;
+        if (protocol == null || protocol.isEmpty()) {
+            protocol = "http://";
+        }else if (protocol.equals("https://")) {
+            dfltPort = CtrlConfig.DEFAULT_HTTPS_REST_PORT;
+        }
+
+        if (port == null || port.isEmpty()) {
+            port = ":" + Integer.toString(dfltPort);
+        }
+
+        try
+        {
+            url = new URL(protocol + domain + port);
+        }
+        catch (MalformedURLException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An exception occurred while parsing the given URL"
+                ),
+                exc
+            );
+        }
+        return url;
+    }
+
+    public Flux<ApiCallRc> changeLinstor(
+        String remoteName,
+        String urlStrRef,
+        String passphraseRef
+    )
+    {
+        ResponseContext context = makeRemoteContext(
+            ApiOperation.makeModifyOperation(),
+            remoteName
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Modify linstor remote",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.REMOTE_MAP),
+            () -> changeLinstorInTransaction(
+                remoteName,
+                urlStrRef,
+                passphraseRef
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> changeLinstorInTransaction(
+        String remoteNameStr,
+        String urlStrRef,
+        String passphraseRef
+    )
+    {
+        RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStr);
+        Remote remote = ctrlApiDataLoader.loadRemote(remoteName, true);
+        if (!(remote instanceof LinstorRemote))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_REMOTE,
+                    "The remote with the name '" + remoteNameStr +
+                        "' is not a s3 remote."
+                )
+            );
+        }
+        LinstorRemote linstorRemote = (LinstorRemote) remote;
+        try
+        {
+            if (urlStrRef != null && !urlStrRef.isEmpty())
+            {
+                linstorRemote.setUrl(apiCtx, createUrlWithDefaults(urlStrRef));
+            }
+            if (passphraseRef != null && !passphraseRef.isEmpty())
+            {
+                linstorRemote.setEncryptedTargetPassphase(peerAccCtx.get(), encryptionHelper.encrypt(passphraseRef));
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "modify " + getRemoteDescription(remoteNameStr),
+                ApiConsts.FAIL_ACC_DENIED_REMOTE
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        catch (LinStorException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An exception occurred while creating linstor remote object"
+                ),
+                exc
+            );
+        }
+
+        ctrlTransactionHelper.commit();
+        return Flux.just(
+            new ApiCallRcImpl(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.MODIFIED,
+                    "Linstor remote successfully updated"
+                )
+            )
+        );
+    }
+
     public Flux<ApiCallRc> delete(String remoteNameStrRef)
     {
         ResponseContext context = makeRemoteContext(
@@ -358,7 +625,7 @@ public class CtrlRemoteApiCallHandler
         return Flux.just(new ApiCallRcImpl(response));
     }
 
-    private void enableFlags(Remote remoteRef, Flags... flags)
+    private void enableFlags(Remote remoteRef, Remote.Flags... flags)
     {
         try
         {

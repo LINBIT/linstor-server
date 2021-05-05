@@ -15,10 +15,6 @@ public interface Remote
 {
     RemoteName getName();
 
-    String getUrl(AccessContext accCtx) throws AccessDeniedException;
-
-    void setUrl(AccessContext accCtx, String url) throws AccessDeniedException, DatabaseException;
-
     void delete(AccessContext apiCtxRef) throws AccessDeniedException, DatabaseException;
 
     UUID getUuid();

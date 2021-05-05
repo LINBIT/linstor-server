@@ -79,6 +79,12 @@ public class S3Remote extends BaseTransactionObject
 
         transObjs = Arrays.asList(
             objProt,
+            endpoint,
+            bucket,
+            region,
+            accessKey,
+            secretKey,
+            flags,
             deleted
         );
     }
@@ -110,7 +116,6 @@ public class S3Remote extends BaseTransactionObject
         return remoteName;
     }
 
-    @Override
     public String getUrl(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
@@ -118,7 +123,6 @@ public class S3Remote extends BaseTransactionObject
         return endpoint.get();
     }
 
-    @Override
     public void setUrl(AccessContext accCtx, String url) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
@@ -253,5 +257,4 @@ public class S3Remote extends BaseTransactionObject
     {
         return dbgInstanceId;
     }
-
 }

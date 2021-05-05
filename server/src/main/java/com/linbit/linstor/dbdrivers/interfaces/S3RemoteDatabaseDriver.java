@@ -11,7 +11,7 @@ public interface S3RemoteDatabaseDriver
      * Creates or updates the given S3Remote object into the database.
      *
      * @param remote
-     * 
+     *
      * @throws DatabaseException
      */
     void create(S3Remote remote) throws DatabaseException;
@@ -20,7 +20,7 @@ public interface S3RemoteDatabaseDriver
      * Removes the given S3Remote object from the database
      *
      * @param remote
-     * 
+     *
      * @throws DatabaseException
      */
     void delete(S3Remote remote) throws DatabaseException;
