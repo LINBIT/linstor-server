@@ -49,7 +49,7 @@ public class ChangedS3Remote implements ApiCallReactive
         RemoteName remoteName;
         try
         {
-            remoteName = new RemoteName(remoteStr);
+            remoteName = new RemoteName(remoteStr, true);
         }
         catch (InvalidNameException invalidNameExc)
         {

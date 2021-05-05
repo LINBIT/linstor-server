@@ -170,7 +170,7 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
     protected Pair<S3Remote, InitMaps> load(RawParameters raw, Void ignored)
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        final RemoteName remoteName = raw.build(DSP_NAME, RemoteName::new);
+        final RemoteName remoteName = raw.<String, RemoteName, InvalidNameException>build(DSP_NAME, RemoteName::new);
         final long initFlags;
         final byte[] accessKey;
         final byte[] secretKey;

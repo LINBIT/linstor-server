@@ -140,7 +140,7 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
     protected Pair<LinstorRemote, LinstorRemote.InitMaps> load(RawParameters raw, Void ignored)
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        final RemoteName remoteName = raw.build(DSP_NAME, RemoteName::new);
+        final RemoteName remoteName = raw.<String, RemoteName, InvalidNameException>build(DSP_NAME, RemoteName::new);
         final long initFlags;
         final byte[] encryptedPassphrase;
         switch (getDbType())
