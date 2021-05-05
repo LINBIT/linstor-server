@@ -144,12 +144,26 @@ public class RestHttpClient implements RestClient
                      * Technically JSON allows duplicate keys, even with different value types.
                      * In some cases we need to get rid of this. (sorry for this ugly hack)
                      */
-                    Map<String, Object> obj = OBJECT_MAPPER.readValue(
-                        jsonData,
-                        new TypeReference<Map<String, Object>>()
-                        {}
-                    );
-                    respObj = OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
+
+                    if (request.responseClass.isArray())
+                    {
+                        Map<String, Object>[] obj = OBJECT_MAPPER.readValue(
+                            jsonData,
+                            new TypeReference<Map<String, Object>[]>()
+                            {}
+                        );
+                        respObj = OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
+                    }
+                    else
+                    {
+                        Map<String, Object> obj = OBJECT_MAPPER.readValue(
+                            jsonData,
+                            new TypeReference<Map<String, Object>>()
+                            {}
+                        );
+                        respObj = OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
+                    }
+
                 }
                 else
                 {
