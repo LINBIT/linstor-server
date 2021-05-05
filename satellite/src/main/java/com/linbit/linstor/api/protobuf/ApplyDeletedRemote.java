@@ -2,7 +2,6 @@ package com.linbit.linstor.api.protobuf;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntRemoteDeletedOuterClass.MsgIntRemoteDeleted;
 
@@ -36,27 +35,10 @@ public class ApplyDeletedRemote implements ApiCall
         MsgIntRemoteDeleted msgApplyDeletedRemote = MsgIntRemoteDeleted
             .parseDelimitedFrom(msgDataIn);
 
-        S3RemotePojo s3remotePojo = asS3RemotePojo(
+        apiCallHandler.applyDeletedRemoteChanges(
             msgApplyDeletedRemote.getRemoteName(),
             msgApplyDeletedRemote.getFullSyncId(),
             msgApplyDeletedRemote.getUpdateId()
-        );
-        apiCallHandler.applyDeletedS3RemoteChanges(s3remotePojo);
-    }
-
-    static S3RemotePojo asS3RemotePojo(String s3remoteName, long fullSyncId, long updateId)
-    {
-        return new S3RemotePojo(
-            null,
-            s3remoteName,
-            0,
-            "",
-            "",
-            "",
-            new byte[0],
-            new byte[0],
-            fullSyncId,
-            updateId
         );
     }
 }

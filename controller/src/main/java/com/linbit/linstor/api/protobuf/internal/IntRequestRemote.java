@@ -39,5 +39,4 @@ public class IntRequestRemote implements ApiCall
 
         remoteInternalCallHandler.handleRemoteRequest(remoteUuid, remoteNameStr);
     }
-
 }

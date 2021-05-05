@@ -18,6 +18,7 @@ import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
+import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.prop.WhitelistPropsReconfigurator;
@@ -675,12 +676,17 @@ public class StltApiCallHandler
 
     public void applyS3RemoteChanges(S3RemotePojo s3remotePojoRef)
     {
-        applyChangedData(new ApplyS3Remote(s3remotePojoRef, false));
+        applyChangedData(new ApplyS3Remote(s3remotePojoRef));
     }
 
-    public void applyDeletedS3RemoteChanges(S3RemotePojo s3remotePojoRef)
+    public void applyStltRemoteChanges(StltRemotePojo stltRemotePojoRef)
     {
-        applyChangedData(new ApplyS3Remote(s3remotePojoRef, true));
+        applyChangedData(new ApplyStltRemote(stltRemotePojoRef, false));
+    }
+
+    public void applyDeletedRemoteChanges(String remoteNameRef, long fullSyncId, long updateId)
+    {
+        applyChangedData(new ApplyRemoteDelete(remoteNameRef, fullSyncId, updateId));
     }
 
     public void setCryptKey(byte[] key, byte[] hash, byte[] salt, byte[] encKey, long fullSyncId, long updateId)
@@ -1480,12 +1486,10 @@ public class StltApiCallHandler
     private class ApplyS3Remote implements ApplyData
     {
         private final S3RemotePojo s3remotePojo;
-        private final boolean deleted;
 
-        ApplyS3Remote(S3RemotePojo s3remotePojoRef, boolean deletedRef)
+        ApplyS3Remote(S3RemotePojo s3remotePojoRef)
         {
             s3remotePojo = s3remotePojoRef;
-            deleted = deletedRef;
         }
 
         @Override
@@ -1509,14 +1513,83 @@ public class StltApiCallHandler
                 )
             )
             {
+                remoteHandler.applyChangesS3(s3remotePojo);
+            }
+        }
+    }
+
+    private class ApplyStltRemote implements ApplyData
+    {
+        private final StltRemotePojo stltRemotePojo;
+        private final boolean deleted;
+
+        ApplyStltRemote(StltRemotePojo stltRemotePojoRef, boolean deletedRef)
+        {
+            stltRemotePojo = stltRemotePojoRef;
+            deleted = deletedRef;
+        }
+
+        @Override
+        public long getFullSyncId()
+        {
+            return stltRemotePojo.getFullSyncId();
+        }
+
+        @Override
+        public long getUpdateId()
+        {
+            return stltRemotePojo.getUpdateId();
+        }
+
+        @Override
+        public void applyChange()
+        {
+            try (LockGuard ls = LockGuard.createLocked(remoteMapLock.writeLock()))
+            {
                 if (deleted)
                 {
-                    remoteHandler.applyDeletedS3Remote(s3remotePojo);
+                    remoteHandler.applyDeletedStltRemote(stltRemotePojo);
                 }
                 else
                 {
-                    remoteHandler.applyChangesS3(s3remotePojo);
+                    remoteHandler.applyChangesStlt(stltRemotePojo);
                 }
+            }
+        }
+    }
+
+    private class ApplyRemoteDelete implements ApplyData
+    {
+        private final String remoteNameStr;
+
+        private final long fullSyncId;
+        private final long updateId;
+
+        ApplyRemoteDelete(String remoteNameStrRef, long fullSyncIdRef, long updateIdRef)
+        {
+            remoteNameStr = remoteNameStrRef;
+            fullSyncId = fullSyncIdRef;
+            updateId = updateIdRef;
+        }
+
+        @Override
+        public long getFullSyncId()
+        {
+            return fullSyncId;
+        }
+
+        @Override
+        public long getUpdateId()
+        {
+            return updateId;
+        }
+
+        @Override
+        public void applyChange()
+        {
+            try (LockGuard ls = LockGuard.createLocked(remoteMapLock.writeLock()))
+            {
+                remoteHandler.applyDeletedRemote(remoteNameStr);
             }
         }
     }

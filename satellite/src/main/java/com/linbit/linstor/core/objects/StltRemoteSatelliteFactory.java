@@ -6,10 +6,11 @@ import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.S3RemoteDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtectionFactory;
+import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
@@ -18,64 +19,56 @@ import javax.inject.Provider;
 
 import java.util.UUID;
 
-public class S3RemoteSatelliteFactory
+public class StltRemoteSatelliteFactory
 {
-    private final S3RemoteDatabaseDriver driver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final RemoteMap remoteMap;
+    private final StateFlagsPersistence<?> noopFlagDriver = new NoOpFlagDriver();
 
     @Inject
-    public S3RemoteSatelliteFactory(
+    public StltRemoteSatelliteFactory(
         CoreModule.RemoteMap remoteMapRef,
-        S3RemoteDatabaseDriver driverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         remoteMap = remoteMapRef;
-        driver = driverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
 
-    public S3Remote getInstanceSatellite(
+    public StltRemote getInstanceSatellite(
         AccessContext accCtx,
         UUID uuid,
         RemoteName remoteNameRef,
         long initflags,
-        String endpointRef,
-        String bucketRef,
-        String regionRef,
-        byte[] accessKeyRef,
-        byte[] secretKeyRef
+        String ipRef,
+        Integer portRef
     )
         throws ImplementationError
     {
         Remote remote = remoteMap.get(remoteNameRef);
-        S3Remote s3remote = null;
+        StltRemote stltRemote = null;
         if (remote == null)
         {
             try
             {
-                s3remote = new S3Remote(
+                stltRemote = new StltRemote(
                     objectProtectionFactory.getInstance(accCtx, "", true),
                     uuid,
-                    driver,
                     remoteNameRef,
                     initflags,
-                    endpointRef,
-                    bucketRef,
-                    regionRef,
-                    accessKeyRef,
-                    secretKeyRef,
+                    ipRef,
+                    portRef,
+                    (StateFlagsPersistence<StltRemote>) noopFlagDriver,
                     transObjFactory,
                     transMgrProvider
                 );
-                remoteMap.put(remoteNameRef, s3remote);
+                remoteMap.put(remoteNameRef, stltRemote);
             }
             catch (AccessDeniedException | DatabaseException exc)
             {
@@ -87,16 +80,16 @@ public class S3RemoteSatelliteFactory
             if (!remote.getUuid().equals(uuid))
             {
                 throw new DivergentUuidsException(
-                    S3Remote.class.getSimpleName(),
+                    StltRemote.class.getSimpleName(),
                     remote.getName().displayValue,
                     remoteNameRef.displayValue,
                     remote.getUuid(),
                     uuid
                 );
             }
-            if (remote instanceof S3Remote)
+            if (remote instanceof StltRemote)
             {
-                s3remote = (S3Remote) remote;
+                stltRemote = (StltRemote) remote;
             }
             else
             {
@@ -105,6 +98,6 @@ public class S3RemoteSatelliteFactory
                 );
             }
         }
-        return s3remote;
+        return stltRemote;
     }
 }

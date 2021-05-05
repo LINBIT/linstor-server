@@ -21,6 +21,8 @@ public interface Remote
 
     StateFlags<Flags> getFlags();
 
+    RemoteType getType();
+
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L);
@@ -80,5 +82,12 @@ public interface Remote
         {
             return FlagsHelper.fromStringList(Flags.class, listFlags);
         }
+    }
+
+    public enum RemoteType
+    {
+        S3,
+        SATELLTE,
+        LINSTOR // controller only, should never be sent to satellite
     }
 }

@@ -59,7 +59,7 @@ public class RemoteInternalCallHandler
             )
         )
         {
-            RemoteName remoteName = new RemoteName(remoteNameStr);
+            RemoteName remoteName = new RemoteName(remoteNameStr, true);
 
             Peer currentPeer = peer.get();
 

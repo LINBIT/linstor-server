@@ -193,6 +193,12 @@ public class S3Remote extends BaseTransactionObject
         return flags;
     }
 
+    @Override
+    public RemoteType getType()
+    {
+        return RemoteType.S3;
+    }
+
     public S3RemotePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId) throws AccessDeniedException
     {
         checkDeleted();

@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.StltRemote;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
@@ -42,6 +43,7 @@ import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
 import com.linbit.linstor.proto.javainternal.c2s.IntS3RemoteOuterClass.IntS3Remote;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass.IntSnapshot;
+import com.linbit.linstor.proto.javainternal.c2s.IntStltRemoteOuterClass.IntStltRemote;
 import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
@@ -53,8 +55,8 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyDeletedStorPoolOuter
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyExternalFileOuterClass.MsgIntApplyExternalFile;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyNodeOuterClass.MsgIntApplyNode;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRemoteOuterClass.MsgIntApplyRemote;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRscOuterClass.MsgIntApplyRsc;
-import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyS3RemoteOuterClass.MsgIntApplyS3Remote;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySharedStorPoolLocksOuterClass.MsgIntApplySharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
@@ -523,7 +525,14 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
             for (Remote remote : remotes)
             {
-                serializedS3Remotes.add(remoteSerializerHelper.buildS3RemoteMsg(remote));
+                if (remote instanceof S3Remote)
+                {
+                    serializedS3Remotes.add(remoteSerializerHelper.buildS3RemoteMsg((S3Remote) remote));
+                }
+                else if (remote instanceof StltRemote)
+                {
+                    // should never happen, can be ignored
+                }
             }
 
             String encodedMasterKey = "";
@@ -565,9 +574,16 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            MsgIntApplyS3Remote.newBuilder()
-                .setS3Remote(remoteSerializerHelper.buildS3RemoteMsg(remoteRef))
-                .setFullSyncId(fullSyncIdRef)
+            MsgIntApplyRemote.Builder builder = MsgIntApplyRemote.newBuilder();
+            if (remoteRef instanceof S3Remote)
+            {
+                builder.setS3Remote(remoteSerializerHelper.buildS3RemoteMsg((S3Remote) remoteRef));
+            }
+            else if (remoteRef instanceof StltRemote)
+            {
+                builder.setSatelliteRemote(remoteSerializerHelper.buildStltRemoteMsg((StltRemote) remoteRef));
+            }
+            builder.setFullSyncId(fullSyncIdRef)
                 .setUpdateId(updateIdRef)
                 .build()
                 .writeDelimitedTo(baos);
@@ -584,7 +600,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public CommonSerializerBuilder deletedRemote(String remoteNameStrRef, long fullSyncIdRef, long updateIdRef)
+    public CommonSerializerBuilder deletedRemote(
+        String remoteNameStrRef,
+        long fullSyncIdRef,
+        long updateIdRef
+    )
     {
         try
         {
@@ -1319,10 +1339,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     private class RemoteSerializerHelper
     {
-        private IntS3Remote buildS3RemoteMsg(Remote remote)
+        private IntS3Remote buildS3RemoteMsg(S3Remote s3remote)
             throws AccessDeniedException
         {
-            S3Remote s3remote = (S3Remote) remote;
             IntS3Remote.Builder builder = IntS3Remote.newBuilder()
                 .setUuid(s3remote.getUuid().toString())
                 .setName(s3remote.getName().displayValue)
@@ -1332,6 +1351,17 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setAccessKey(ByteString.copyFrom(s3remote.getAccessKey(serializerCtx)))
                 .setSecretKey(ByteString.copyFrom(s3remote.getSecretKey(serializerCtx)));
             return builder
+                .build();
+        }
+
+        public IntStltRemote buildStltRemoteMsg(StltRemote stltremote)
+            throws AccessDeniedException
+        {
+            return IntStltRemote.newBuilder()
+                .setUuid(stltremote.getUuid().toString())
+                .setName(stltremote.getName().displayValue)
+                .setTargetIp(stltremote.getIp(serializerCtx))
+                .setTargetPort(stltremote.getPort(serializerCtx))
                 .build();
         }
     }

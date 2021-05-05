@@ -229,7 +229,7 @@ public class FullSync implements ApiCall
         ArrayList<S3RemotePojo> ret = new ArrayList<>(s3remoteList.size());
         for (IntS3RemoteOuterClass.IntS3Remote s3remote : s3remoteList)
         {
-            ret.add(ApplyS3Remote.asS3RemotePojo(s3remote, fullSyncId, updateId));
+            ret.add(ApplyRemote.asS3RemotePojo(s3remote, fullSyncId, updateId));
         }
         return ret;
     }

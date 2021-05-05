@@ -19,9 +19,38 @@ public class RemoteName extends GenericName
         {
             Checks.hostNameCheck(remoteName);
         }
-        else if (!remoteName.startsWith("."))
+    }
+
+    /**
+     * Ensures that the remoteName has a leading "." in order to avoid naming conflicts with user-remote names
+     *
+     * This method should only be used for StltRemotes, as those should also be thrown away after the backup is shipped
+     * (successfully or not)
+     *
+     * @param remoteNameRef
+     *
+     * @return
+     */
+    public static RemoteName createInternal(String remoteNameRef)
+    {
+        String remoteNameToCreate;
+        if (!remoteNameRef.startsWith("."))
         {
-            throw new ImplementationError("Internal RemoteNames must begin with '.'!");
+            remoteNameToCreate = "." + remoteNameRef;
         }
+        else
+        {
+            remoteNameToCreate = remoteNameRef;
+        }
+        RemoteName remoteName;
+        try
+        {
+            remoteName = new RemoteName(remoteNameToCreate, true);
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError("Internal remote names should not throw InvalidNameExceptions", exc);
+        }
+        return remoteName;
     }
 }

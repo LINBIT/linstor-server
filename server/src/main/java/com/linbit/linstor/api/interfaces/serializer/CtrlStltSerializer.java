@@ -102,7 +102,11 @@ public interface CtrlStltSerializer extends CommonSerializer
             long updateIdRef
         );
 
-        CommonSerializerBuilder deletedRemote(String remoteNameRef, long fullSyncIdRef, long updateIdRef);
+        CommonSerializerBuilder deletedRemote(
+            String remoteNameRef,
+            long fullSyncIdRef,
+            long updateIdRef
+        );
 
         CtrlStltSerializerBuilder grantsharedStorPoolLocks(Set<SharedStorPoolName> locksRef);
 

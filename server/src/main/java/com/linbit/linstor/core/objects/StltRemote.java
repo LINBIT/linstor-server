@@ -2,32 +2,34 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
-import com.linbit.linstor.api.pojo.LinstorRemotePojo;
+import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.LinstorRemoteDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Provider;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.UUID;
 
-public class LinstorRemote extends BaseTransactionObject
-    implements Remote, DbgInstanceUuid, Comparable<LinstorRemote>, ProtectedObject
+/**
+ * Temporary object storing ip+port other other informations of the target satellite.
+ * This object will NOT be persisted.
+ * This object is expected to be deleted after a backup shipping.
+ */
+public class StltRemote extends BaseTransactionObject
+    implements Remote, DbgInstanceUuid, Comparable<StltRemote>, ProtectedObject
 {
     public interface InitMaps
     {
@@ -37,21 +39,20 @@ public class LinstorRemote extends BaseTransactionObject
     private final ObjectProtection objProt;
     private final UUID objId;
     private final transient UUID dbgInstanceId;
-    private final LinstorRemoteDatabaseDriver driver;
     private final RemoteName remoteName;
-    private final TransactionSimpleObject<LinstorRemote, URL> url;
-    private final TransactionSimpleObject<LinstorRemote, byte[]> encryptedTargetPassphrase;
-    private final TransactionSimpleObject<LinstorRemote, Boolean> deleted;
+    private final TransactionSimpleObject<StltRemote, String> ip;
+    private final TransactionSimpleObject<StltRemote, Integer> port;
+    private final TransactionSimpleObject<StltRemote, Boolean> deleted;
     private final StateFlags<Flags> flags;
 
-    public LinstorRemote(
+    public StltRemote(
         ObjectProtection objProtRef,
         UUID objIdRef,
-        LinstorRemoteDatabaseDriver driverRef,
         RemoteName remoteNameRef,
         long initialFlags,
-        URL urlRef,
-        @Nullable byte[] encryptedTargetPassphraseRef,
+        String ipRef,
+        Integer portRef,
+        StateFlagsPersistence<StltRemote> stateFlagsDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -61,20 +62,15 @@ public class LinstorRemote extends BaseTransactionObject
         objId = objIdRef;
         dbgInstanceId = UUID.randomUUID();
         remoteName = remoteNameRef;
-        driver = driverRef;
 
-        url = transObjFactory.createTransactionSimpleObject(this, urlRef, driver.getUrlDriver());
-        encryptedTargetPassphrase = transObjFactory.createTransactionSimpleObject(
-            this,
-            encryptedTargetPassphraseRef,
-            driver.getEncryptedPassphraseDriver()
-        );
+        ip = transObjFactory.createTransactionSimpleObject(this, ipRef, null);
+        port = transObjFactory.createTransactionSimpleObject(this, portRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
             this,
             Flags.class,
-            driver.getStateFlagsPersistence(),
+            stateFlagsDriverRef,
             initialFlags
         );
 
@@ -82,8 +78,9 @@ public class LinstorRemote extends BaseTransactionObject
 
         transObjs = Arrays.asList(
             objProt,
-            url,
-            encryptedTargetPassphrase,
+            ip,
+            port,
+            flags,
             deleted
         );
     }
@@ -96,7 +93,7 @@ public class LinstorRemote extends BaseTransactionObject
     }
 
     @Override
-    public int compareTo(@Nonnull LinstorRemote s3remote)
+    public int compareTo(@Nonnull StltRemote s3remote)
     {
         return remoteName.compareTo(s3remote.getName());
     }
@@ -115,34 +112,32 @@ public class LinstorRemote extends BaseTransactionObject
         return remoteName;
     }
 
-    public URL getUrl(AccessContext accCtx) throws AccessDeniedException
+    public String getIp(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return url.get();
+        return ip.get();
     }
 
-    public void setUrl(AccessContext accCtx, URL urlRef) throws DatabaseException, AccessDeniedException
+    public void setIp(AccessContext accCtx, String ipRef) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        url.set(urlRef);
+        ip.set(ipRef);
     }
 
-
-    public byte[] getEncryptedTargetPassphrase(AccessContext accCtx) throws AccessDeniedException
+    public int getPort(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return encryptedTargetPassphrase.get();
+        return port.get();
     }
 
-    public void setEncryptedTargetPassphase(AccessContext accCtx, byte[] encryptedTargetPassphraseRef)
-        throws DatabaseException, AccessDeniedException
+    public void setPort(AccessContext accCtx, int portRef) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        encryptedTargetPassphrase.set(encryptedTargetPassphraseRef);
+        port.set(portRef);
     }
 
     @Override
@@ -155,30 +150,31 @@ public class LinstorRemote extends BaseTransactionObject
     @Override
     public RemoteType getType()
     {
-        return RemoteType.LINSTOR;
+        return RemoteType.SATELLTE;
     }
 
-    public LinstorRemotePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
-        throws AccessDeniedException
+    public StltRemotePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return new LinstorRemotePojo(
+        return new StltRemotePojo(
             objId,
             remoteName.displayValue,
             flags.getFlagsBits(accCtx),
-            url.get().toString(),
+            ip.get(),
+            port.get(),
             fullSyncId,
             updateId
         );
     }
 
-    public void applyApiData(AccessContext accCtx, LinstorRemotePojo apiData)
-        throws AccessDeniedException, DatabaseException, MalformedURLException
+    public void applyApiData(AccessContext accCtx, StltRemotePojo apiData)
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        url.set(new URL(apiData.getUrl()));
+        ip.set(apiData.getIp());
+        port.set(apiData.getPort());
     }
 
     public boolean isDeleted()
@@ -196,8 +192,6 @@ public class LinstorRemote extends BaseTransactionObject
             objProt.delete(accCtx);
 
             activateTransMgr();
-
-            driver.delete(this);
 
             deleted.set(true);
         }
