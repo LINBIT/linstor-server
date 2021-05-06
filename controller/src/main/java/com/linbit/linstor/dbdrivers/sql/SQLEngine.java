@@ -455,6 +455,9 @@ public class SQLEngine implements DbEngine
                             case Types.BLOB:
                                 stmt.setBytes(idx, (byte[]) obj);
                                 break;
+                            case Types.CLOB:
+                                stmt.setString(idx, (String) obj);
+                                break;
                             default:
                                 stmt.setObject(idx, obj, col.getSqlType());
                                 break;
