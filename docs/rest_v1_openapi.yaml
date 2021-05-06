@@ -42,7 +42,7 @@ info:
          - /v1/resource-definitions/{resource}/resources/{node_name}/activate
          - /v1/resource-definitions/{resource}/resources/{node_name}/deactivate
     * 1.6.0
-       - Added PropsInfoAll, PropsInfo and PropsInfoDetails as well as these entrypoints:
+       - Added the PropsInfo API which exposes meta information about properties:
           - /v1/controller/properties/info
           - /v1/controller/properties/info/all
           - /v1/nodes/properties/info
@@ -255,17 +255,31 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/storage-pool-definitions/properties/info:
     get:
-      summary: list all storage-pool-definition properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all storage-pool-definition properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given storage pool definition.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                MaxOversubscriptionRatio:
+                  info: 'Maximum allowed ratio of the sum of volume sizes in a thin pool to the total capacity of the pool (default 20)'
+                  prop_type: 'range'
+                  value: '(1 - 1000)'
+                'sys/fs/blkio_throttle_read_iops':
+                  info: 'Sets the /sys/fs/cgroup/blkio/blkio.throttle.read_iops_device'
+                  prop_type: 'long'
   /v1/nodes:
     get:
       tags:
@@ -538,17 +552,33 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/nodes/properties/info:
     get:
-      summary: list all node properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all node properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given node.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                'Cache/Cachesize':
+                  info: 'Size of the cache in % (0-100) or KiB otherwise.'
+                  prop_type: 'regex'
+                  value: '^100%|[0-9]{1,2}([.][0-9]*)?%|[1-9][0-9]{2,}$'
+                  dflt: '5%'
+                StorPoolName:
+                  info: 'Linstor storage pool name to use.'
+                  prop_type: 'regex'
+                  value: '^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$'
   /v1/nodes/{node}/lost:
     parameters:
       - $ref: '#/components/parameters/Node'
@@ -870,17 +900,32 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Node'
     get:
-      summary: list all storage-pool properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all storage-pool properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given storage pool on a particular node.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                PrefNic:
+                  info: 'Preferred network interface to use'
+                  prop_type: 'regex'
+                  value: '^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$'
+                'StorDriver/LvcreateType':
+                  prop_type: 'regex'
+                  value: '(?:linear|lz4|lzma|mirror|raid0|raid1|raid10|raid4|raid5|raid6|striped)'
+                  dflt: 'linear'
   /v1/nodes/{node}/restore:
     parameters:
       - $ref: '#/components/parameters/Node'
@@ -1443,17 +1488,33 @@ paths:
           description: An error occurred. See error message for more details
   /v1/resource-definitions/properties/info:
     get:
-      summary: list all resource-definition properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all resource-definition properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given resource definition.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+                example:
+                  'DrbdOptions/PeerDevice/c-fill-target':
+                    prop_type: 'range'
+                    value: '(0 - 1048576)'
+                    dflt: '100'
+                    unit: 'bytes'
+                  'Writecache/Options/AutocommitTime':
+                    info: 'autocommit time in milliseconds. The data is automatically committed if this time passes and no FLUSH request is received'
+                    prop_type: 'long'
+                    dflt: '1000'
   /v1/resource-definitions/{resource}/volume-definitions:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -1728,17 +1789,33 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Resource'
     get:
-      summary: list all volume-definition properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all volume-definition properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given volume definition of a particular resource.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                'StorDriver/LvcreateType':
+                  prop_type: 'regex'
+                  value: '(?:linear|lz4|lzma|mirror|raid0|raid1|raid10|raid4|raid5|raid6|striped)'
+                  dflt: 'linear'
+                'DrbdOptions/Disk/disk-timeout':
+                  prop_type: 'range'
+                  value: '(0 - 6000)'
+                  dflt: '0'
+                  unit: '1/10 seconds'
   /v1/resource-definitions/{resource}/resources:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -1999,17 +2076,32 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Resource'
     get:
-      summary: list all resource properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all resource properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given resource in a particular resource definition.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                'DrbdOptions/auto-diskful-allow-cleanup':
+                  info: 'Allows this resource to be cleaned up after toggle-disk + resync is finished'
+                  prop_type: 'boolean_true_false'
+                  value: '(?i)(?:true|false|yes|no)'
+                'FileSystem/Type':
+                  info: 'File system type to use'
+                  prop_type: 'regex'
+                  value: '(?:ext4|xfs)'
   /v1/resource-definitions/{resource}/resources/{node}/volumes:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -2077,17 +2169,31 @@ paths:
       - $ref: '#/components/parameters/Node'
       - $ref: '#/components/parameters/Resource'
     get:
-      summary: list all volume properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all volume properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given volume of a particular resource on a particular node.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                StorPoolNameDrbdMeta:
+                  info: 'Linstor storage pool name to use for external metadata.'
+                  prop_type: 'regex'
+                  value: '^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$'
+                'sys/fs/blkio_throttle_write':
+                  info: 'Sets the /sys/fs/cgroup/blkio/blkio.throttle.write_bps_device'
+                  prop_type: 'long'
   /v1/resource-definitions/{resource}/resources/{node}/toggle-disk/diskless:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -2425,17 +2531,32 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Resource'
     get:
-      summary: list all resource-connection properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all resource-connection properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given connection of a particular resource.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                'DrbdOptions/PeerDevice/resync-rate':
+                  prop_type: 'range'
+                  value: '(1 - 8388608)'
+                  dflt: '250'
+                  unit: 'bytes/second'
+                'DrbdOptions/Net/fencing':
+                  prop_type: 'regex'
+                  value: '(?:dont-care|resource-and-stonith|resource-only)'
   /v1/resource-definitions/{resource}/snapshots:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -2898,17 +3019,33 @@ paths:
                 $ref: '#/components/schemas/ApiCallRcList'
   /v1/resource-groups/properties/info:
     get:
-      summary: list all resource-group properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all resource-group properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given resource group.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                'Writecache/Options/AutocommitBlocks':
+                  info: 'when the application writes this amount of blocks without issuing the FLUSH request, the blocks are automatically committed'
+                  prop_type: 'long'
+                  dflt: '64 for pmem, 65536 for ssd'
+                'DrbdOptions/Resource/peer-ack-delay':
+                  prop_type: 'range'
+                  value: '(1 - 10000)'
+                  dflt: '100'
+                  unit: 'milliseconds'
   /v1/resource-groups/{resource_group}/spawn:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
@@ -3104,17 +3241,33 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
     get:
-      summary: list all volume-group properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all volume-group properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any given volume group of a particular resource group.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                'Cache/Policy':
+                  info: 'Replacement policy'
+                  prop_type: 'regex'
+                  value: '(?:cleaner|mq|smq)'
+                  dflt: 'smq'
+                StorPoolNameDrbdMeta:
+                  info: 'Linstor storage pool name to use for external metadata.'
+                  prop_type: 'regex'
+                  value: '^|.internal|[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$'
   /v1/resource-groups/{resource_group}/query-max-volume-size:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
@@ -3588,25 +3741,49 @@ paths:
           $ref: '#/components/responses/OperationFailed'
   /v1/controller/properties/info:
     get:
-      summary: list all controller properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all controller properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for the LINSTOR controller.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A map where the key is the property name and the value is a
+            PropsInfo object describing the property.
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                ExtCmdWaitTimeout:
+                  info: 'Wait timeout for an external command in milliseconds'
+                  prop_type: 'long'
+                'Autoplacer/Weights/MinReservedSpace':
+                  info: "Weight of 'MinReservedSpace' autoplacer-strategy"
+                  prop_type: 'regex'
+                  value: '^[0-9]+([.][0-9]+)?'
+                  dflt: '0.0'
 
   /v1/controller/properties/info/all:
     get:
-      summary: list all properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all properties of all entities
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for any entity in the cluster. This includes the controller,
+        resource definitions, resource groups, connections, volumes, etc.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A structure that maps entity types to a map of their properties.
+            The key is the entity type in uppercase. The value is a map
+            where the key is the property name and the value is a PropsInfo
+            object describing the property.
           content:
             application/json:
               schema:
@@ -3615,6 +3792,28 @@ paths:
                   type: object
                   additionalProperties:
                     $ref: '#/components/schemas/PropsInfo'
+              example:
+                NODE:
+                  'Cache/CachePool':
+                    info: 'Name of the storage pool used for the cache cache device'
+                    prop_type: 'regex'
+                    value: '^[a-zA-Z0-9_][a-zA-Z0-9_-]{2,47}$'
+                  'Writecache/Options/LowWatermark':
+                    info: 'stop writeback when the number of used blocks drops below this watermark'
+                    prop_type: 'long'
+                    dflt: '45'
+                STORAGEPOOL_DEFINITION:
+                  MaxOversubscriptionRatio:
+                    info: 'Maximum allowed ratio of the sum of volume sizes in a thin pool to the total capacity of the pool (default 20)'
+                    prop_type: 'range'
+                    value: '(1 - 1000)'
+                CONTROLLER:
+                  'Autoplacer/Weights/MinReservedSpace':
+                    info: "Weight of 'MinReservedSpace' autoplacer-strategy"
+                    prop_type: 'regex'
+                    value: '^[0-9]+([.][0-9]+)?'
+                    dflt: '0.0'
+
   /v1/controller/config:
     get:
       tags:
@@ -3740,17 +3939,45 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Resource'
     get:
-      summary: list all drbd-proxy properties
-      description: list all property-names and their descriptions
+      tags:
+        - developers
+      summary: List all drbd-proxy properties
+      description: |
+        List all properties, including their names and descriptions, that can
+        be set for DRBD proxy on a given resource definition.
       responses:
         '200':
-          description: list of property-names
+          description: |
+            A structure that maps the DBRD proxy configuration sections to their properties.
+            The key is the DRBD proxy configuration section The value is a map where the
+            key is the property name and the value is a PropsInfo object describing the
+            property.\
+            The following DRBD proxy configuration sections exist:
+            - DRBD_PROXY
+            - DRBD_PROXY_LZMA
+            - DRBD_PROXY_LZ4
+            - DRBD_PROXY_ZLIB
+            - DRBD_PROXY_ZSTD
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/PropsInfo'
+              example:
+                DRBD_PROXY:
+                  'DrbdOptions/Proxy/ping-timeout':
+                    prop_type: 'range'
+                    value: '(1 - 300)'
+                    dflt: '200'
+                    unit: '1/10 seconds'
+                DRBD_PROXY_LZ4: {}
+                DRBD_PROXY_LZMA:
+                  'DrbdOptions/ProxyCompression/lp':
+                    prop_type: 'range'
+                    value: '(0 - 4)'
+                    dflt: '0'
+
   /v1/resource-definitions/{resource}/drbd-proxy/enable/{node_a}/{node_b}:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -5977,6 +6204,12 @@ components:
           type: string
     PropsInfo:
       type: object
+      example:
+        info: 'sets the c-plan-ahead parameter for a peer device'
+        prop_type: 'range'
+        value: '(0 - 300)'
+        dflt: '20'
+        unit: '1/10 seconds'
       properties:
         info:
           type: string
