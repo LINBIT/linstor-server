@@ -4507,6 +4507,11 @@ paths:
         - developers
       summary: register or modify a previously registered external file
       description: Register or modify a previously registered external file
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalFile'
       responses:
         '200':
           description: external file registered or modified
