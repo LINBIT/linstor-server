@@ -29,7 +29,7 @@ gen_go() {
 		mkdir "$dstdir"
 		cd gosrc || die "Could not cd to gosrc"
 		for f in model_*.go; do
-			tail +$NRHDR "$f" > "../${dstdir}/${f}"
+			tail -n+$NRHDR "$f" > "../${dstdir}/${f}"
 		done
 	) || die "Subshell did not terminate successfully"
 }
