@@ -54,7 +54,15 @@
       "no_property_description": "warning",
       "description_mentions_json": "warning",
       "array_of_arrays": "warning",
-      "inconsistent_property_type": "warning",
+      "inconsistent_property_type": [
+        "warning",
+        [
+          "code",
+          "default",
+          "type",
+          "value"
+        ]
+      ],
       "property_case_convention": [
         "error",
         "lower_snake_case"
@@ -95,6 +103,7 @@
     "responses": {
       "no_response_codes": "error",
       "no_success_response_codes": "warning",
+      "protocol_switching_and_success_code": "error",
       "no_response_body": "warning",
       "ibm_status_code_guidelines": "warning"
     },
