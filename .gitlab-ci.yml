@@ -25,16 +25,19 @@ stages:
 check-openapi:
   stage: build
   image:
-    name: jamescooke/openapi-validator:0.44.0
+    name: jamescooke/openapi-validator
     entrypoint: [""] # force empty entrypoint to workaround a gitlab issue
   rules:
     - changes:
         - docs/rest_v1_openapi.yaml
+        - docs/.spectral.yaml
+        - docs/.validaterc
   before_script:
     - echo default before disabled
   script:
     # openapi-validator currently can't disable the null property check, so sed them out
-    - lint-openapi -e docs/rest_v1_openapi.yaml -c docs/.validaterc
+    - cd docs
+    - lint-openapi -e rest_v1_openapi.yaml
 
 build:
   stage: build
