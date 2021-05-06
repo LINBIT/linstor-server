@@ -2,8 +2,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.crypto.LengthPadding;
-import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -13,6 +11,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
+import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
@@ -118,28 +117,28 @@ public class CtrlBackupApiCallHandler
     // TODO: fix pattern for incremetal backups
     private static final Pattern BACKUP_KEY_PATTERN = Pattern
         .compile("^([a-zA-Z0-9_-]{2,48})(\\..+)?_([0-9]{5})_(back_[0-9]{8}_[0-9]{6})$");
-    private Provider<AccessContext> peerAccCtx;
-    private CtrlApiDataLoader ctrlApiDataLoader;
-    private CtrlSnapshotCrtHelper snapshotCrtHelper;
-    private CtrlSnapshotCrtApiCallHandler snapshotCrtHandler;
-    private ScopeRunner scopeRunner;
-    private LockGuardFactory lockGuardFactory;
-    private CtrlTransactionHelper ctrlTransactionHelper;
-    private ErrorReporter errorReporter;
-    private CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
-    private BackupToS3 backupHandler;
-    private CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandler;
-    private CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
-    private CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
-    private FreeCapacityFetcher freeCapacityFetcher;
-    private CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandler;
-    private EncryptionHelper encHelper;
-    private CtrlSecurityObjects ctrlSecObj;
-    private LengthPadding cryptoLenPad;
-    private BackupInfoManager backupInfoMgr;
-    private Provider<Peer> peerProvider;
-    private CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandler;
-    private RemoteRepository remoteRepo;
+    private final Provider<AccessContext> peerAccCtx;
+    private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final CtrlSnapshotCrtHelper snapshotCrtHelper;
+    private final CtrlSnapshotCrtApiCallHandler snapshotCrtHandler;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final ErrorReporter errorReporter;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
+    private final BackupToS3 backupHandler;
+    private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandler;
+    private final CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
+    private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
+    private final FreeCapacityFetcher freeCapacityFetcher;
+    private final CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandler;
+    private final EncryptionHelper encHelper;
+    private final DecryptionHelper decHelper;
+    private final CtrlSecurityObjects ctrlSecObj;
+    private final BackupInfoManager backupInfoMgr;
+    private final Provider<Peer> peerProvider;
+    private final CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandler;
+    private final RemoteRepository remoteRepo;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -159,8 +158,8 @@ public class CtrlBackupApiCallHandler
         FreeCapacityFetcher freeCapacityFetcherRef,
         CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandlerRef,
         EncryptionHelper encHelperRef,
+        DecryptionHelper decHelperRef,
         CtrlSecurityObjects ctrlSecObjRef,
-        LengthPadding cryptoLenPadRef,
         BackupInfoManager backupInfoMgrRef,
         Provider<Peer> peerProviderRef,
         CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandlerRef,
@@ -183,8 +182,8 @@ public class CtrlBackupApiCallHandler
         freeCapacityFetcher = freeCapacityFetcherRef;
         ctrlSnapRestoreApiCallHandler = ctrlSnapRestoreApiCallHandlerRef;
         encHelper = encHelperRef;
+        decHelper = decHelperRef;
         ctrlSecObj = ctrlSecObjRef;
-        cryptoLenPad = cryptoLenPadRef;
         backupInfoMgr = backupInfoMgrRef;
         peerProvider = peerProviderRef;
         ctrlSnapShipAbortHandler = ctrlSnapShipAbortHandlerRef;
@@ -887,13 +886,9 @@ public class CtrlBackupApiCallHandler
                         {
                             LuksVlmData<Snapshot> luksVlm = (LuksVlmData<Snapshot>) vlm;
                             byte[] vlmKey = luksVlm.getEncryptedKey();
-                            SymmetricKeyCipher srcCipher = SymmetricKeyCipher.getInstanceWithKey(srcMasterKey);
-                            byte[] decryptedData = srcCipher.decrypt(vlmKey);
-                            byte[] decryptedKey = cryptoLenPad.retrieve(decryptedData);
+                            byte[] decryptedKey = decHelper.decrypt(srcMasterKey, vlmKey);
 
-                            SymmetricKeyCipher targetCipher = SymmetricKeyCipher.getInstanceWithKey(targetMasterKey);
-                            byte[] encodedData = cryptoLenPad.conceal(decryptedKey);
-                            byte[] encVlmKey = targetCipher.encrypt(encodedData);
+                            byte[] encVlmKey = encHelper.encrypt(decryptedKey);
                             luksVlm.setEncryptedKey(encVlmKey);
                         }
                     }

@@ -234,6 +234,11 @@ public class EncryptionHelper
 
     public byte[] encrypt(String plainKey) throws LinStorException
     {
+        return encrypt(plainKey.getBytes());
+    }
+
+    public byte[] encrypt(byte[] plainKey) throws LinStorException
+    {
         byte[] masterKey = ctrlSecObj.getCryptKey();
         if (masterKey == null || masterKey.length == 0)
         {
@@ -249,10 +254,9 @@ public class EncryptionHelper
             );
         }
 
-        SymmetricKeyCipher cipher;
-        cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
+        SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
 
-        byte[] encodedData = cryptoLenPad.conceal(plainKey.getBytes());
+        byte[] encodedData = cryptoLenPad.conceal(plainKey);
         return cipher.encrypt(encodedData);
     }
 }

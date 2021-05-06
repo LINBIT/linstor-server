@@ -1,10 +1,9 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
-import com.linbit.crypto.LengthPadding;
-import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.DeviceManager;
@@ -38,7 +37,7 @@ public class StltCryptApiCallHelper
     private final StltSecurityObjects secObjs;
     private ResourceDefinitionMap rscDfnMap;
     private DeviceManager devMgr;
-    private final LengthPadding cryptoLenPad;
+    private final DecryptionHelper decryptionHelper;
 
     @Inject
     StltCryptApiCallHelper(
@@ -47,7 +46,7 @@ public class StltCryptApiCallHelper
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects secObjsRef,
         DeviceManager devMgrRef,
-        LengthPadding cryptoLenPadRef
+        DecryptionHelper decryptionHelperRef
     )
     {
         rscDfnMap = rscDfnMapRef;
@@ -55,7 +54,7 @@ public class StltCryptApiCallHelper
         transMgrProvider = transMgrProviderRef;
         secObjs = secObjsRef;
         devMgr = devMgrRef;
-        cryptoLenPad = cryptoLenPadRef;
+        decryptionHelper = decryptionHelperRef;
     }
 
     public void decryptAllNewLuksVlmKeys(boolean updateDevMgr)
@@ -88,9 +87,7 @@ public class StltCryptApiCallHelper
                                 if (reactivate || cryptVlmData.getDecryptedPassword() == null)
                                 {
                                     byte[] encryptedKey = cryptVlmData.getEncryptedKey();
-                                    SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
-                                    byte[] decryptedData = cipher.decrypt(encryptedKey);
-                                    byte[] decryptedKey = cryptoLenPad.retrieve(decryptedData);
+                                    byte[] decryptedKey = decryptionHelper.decrypt(masterKey, encryptedKey);
 
                                     cryptVlmData.setDecryptedPassword(decryptedKey);
                                     decryptedResources.add(rscDfn.getName());
