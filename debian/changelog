@@ -1,3 +1,16 @@
+linstor-server (1.12.3-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * RscDfn,mod: fixed autoplacer run when changing rscGrp
+  * SqlEngine: Treat CLOBs as Strings
+
+  [ Rene Peinthor ]
+  * gitlab-ci: pin openapi-validator to 0.44.0
+  * gitlab-ci: fix latest openapi linter to use correct ruleset
+  * migration: update verify algorithm list for drbd
+
+ -- Gabor Hernadi <gabor.hernadi@linbit.com>  Fri, 07 May 2021 06:19:27 +0000
+
 linstor-server (1.12.2-1) experimental; urgency=medium
 
   * RscGrp: Fix incorrectly stored value

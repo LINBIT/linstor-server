@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.12.2
+Version: 1.12.3
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -137,6 +137,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Fri May  7 2021 Rene Peinthor <rene.peinthor@linbit.com> 1.12.3-1
+- New upstream release. Postgresql resource-group fixes. Bug fixes
+
 * Tue May  4 2021 Rene Peinthor <rene.peinthor@linbit.com> 1.12.2-1
 - New upstream release. Fix db migrations
 
