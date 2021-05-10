@@ -50,8 +50,8 @@ public class S3RemoteSatelliteFactory
         String endpointRef,
         String bucketRef,
         String regionRef,
-        String accessKeyRef,
-        String secretKeyRef
+        byte[] accessKeyRef,
+        byte[] secretKeyRef
     )
         throws ImplementationError
     {

@@ -54,8 +54,8 @@ public class ApplyS3Remote implements ApiCall
             proto.getEndpoint(),
             proto.getBucket(),
             proto.getRegion(),
-            proto.getAccessKey(),
-            proto.getSecretKey(),
+            proto.getAccessKey().toByteArray(),
+            proto.getSecretKey().toByteArray(),
             fullSyncId,
             updateId
         );

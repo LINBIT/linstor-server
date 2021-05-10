@@ -411,7 +411,7 @@ public class CtrlBackupApiCallHandler
         {
             if (!toDelete.s3keys.isEmpty())
             {
-                backupHandler.deleteObjects(toDelete.s3keys, s3remote, peerAccCtx.get());
+                backupHandler.deleteObjects(toDelete.s3keys, s3remote, peerAccCtx.get(), getLocalMasterKey());
             }
             else
             {
@@ -475,7 +475,8 @@ public class CtrlBackupApiCallHandler
         throws AccessDeniedException
     {
         Set<String> metaKeys = new HashSet<>();
-        Set<String> s3keys = backupHandler.listObjects(rscName, s3remote, peerAccCtx.get()).stream()
+        Set<String> s3keys = backupHandler
+            .listObjects(rscName, s3remote, peerAccCtx.get(), getLocalMasterKey()).stream()
             .map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
         ToDeleteCollections ret = new ToDeleteCollections();
@@ -515,7 +516,8 @@ public class CtrlBackupApiCallHandler
         Set<String> keys = new TreeSet<>();
         try
         {
-            BackupMetaDataPojo metadata = backupHandler.getMetaFile(metaName, s3remote, peerAccCtx.get());
+            BackupMetaDataPojo metadata = backupHandler
+                .getMetaFile(metaName, s3remote, peerAccCtx.get(), getLocalMasterKey());
             List<List<BackupInfoPojo>> backInfoLists = metadata.getBackups();
             for (List<BackupInfoPojo> backInfoList : backInfoLists)
             {
@@ -576,8 +578,9 @@ public class CtrlBackupApiCallHandler
     ) throws AccessDeniedException, InvalidNameException
     {
         S3Remote remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteName));
+        byte[] targetMasterKey = getLocalMasterKey();
         // 1. list srcRscName*
-        Set<String> s3keys = backupHandler.listObjects(srcRscName, remote, peerAccCtx.get()).stream()
+        Set<String> s3keys = backupHandler.listObjects(srcRscName, remote, peerAccCtx.get(), targetMasterKey).stream()
             .map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
         // 2. find meta-file
@@ -616,7 +619,8 @@ public class CtrlBackupApiCallHandler
         // 3. get meta-file
         try
         {
-            BackupMetaDataPojo metadata = backupHandler.getMetaFile(metaName, remote, peerAccCtx.get());
+            BackupMetaDataPojo metadata = backupHandler
+                .getMetaFile(metaName, remote, peerAccCtx.get(), targetMasterKey);
             // 4. meta ok?
             for (List<BackupInfoPojo> backupList : metadata.getBackups())
             {
@@ -651,7 +655,6 @@ public class CtrlBackupApiCallHandler
             // 6. do luks-stuff if needed
             LuksLayerMetaPojo luksInfo = metadata.getLuksInfo();
             byte[] srcMasterKey = null;
-            byte[] targetMasterKey = null;
             if (luksInfo != null)
             {
                 if (passphrase == null || passphrase.isEmpty())
@@ -692,21 +695,6 @@ public class CtrlBackupApiCallHandler
                             ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
                             "Decrypting the master password failed."
                         )
-                    );
-                }
-
-                targetMasterKey = ctrlSecObj.getCryptKey();
-                if (targetMasterKey == null || targetMasterKey.length == 0)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl
-                            .entryBuilder(
-                                ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
-                                "Unable to restore an encrypted volume without having a master key"
-                            )
-                            .setCause("The masterkey was not initialized yet")
-                            .setCorrection("Create or enter the master passphrase")
-                            .build()
                     );
                 }
             }
@@ -961,7 +949,8 @@ public class CtrlBackupApiCallHandler
         throws AccessDeniedException, InvalidNameException
     {
         S3Remote remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteNameRef));
-        List<S3ObjectSummary> objects = backupHandler.listObjects(rscNameRef, remote, peerAccCtx.get());
+        List<S3ObjectSummary> objects = backupHandler
+            .listObjects(rscNameRef, remote, peerAccCtx.get(), getLocalMasterKey());
         Set<String> s3keys = objects.stream().map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
         Map<String, BackupListApi> backups = new TreeMap<>();
@@ -975,7 +964,8 @@ public class CtrlBackupApiCallHandler
             {
                 try
                 {
-                    BackupMetaDataPojo metadata = backupHandler.getMetaFile(s3key, remote, peerAccCtx.get());
+                    BackupMetaDataPojo metadata = backupHandler
+                        .getMetaFile(s3key, remote, peerAccCtx.get(), getLocalMasterKey());
                     List<List<BackupInfoPojo>> backInfoLists = metadata.getBackups();
                     BackupInfoPojo firstBackInfo = backInfoLists.get(0).get(0);
                     Map<String, String> vlms = new TreeMap<>();
@@ -1539,6 +1529,25 @@ public class CtrlBackupApiCallHandler
             );
         }
         return null;
+    }
+
+    private byte[] getLocalMasterKey()
+    {
+        byte[] masterKey = ctrlSecObj.getCryptKey();
+        if (masterKey == null || masterKey.length == 0)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                        "Unable to decrypt the S3 access key and secret key without having a master key"
+                    )
+                    .setCause("The masterkey was not initialized yet")
+                    .setCorrection("Create or enter the master passphrase")
+                    .build()
+            );
+        }
+        return masterKey;
     }
 
     private static class ToDeleteCollections

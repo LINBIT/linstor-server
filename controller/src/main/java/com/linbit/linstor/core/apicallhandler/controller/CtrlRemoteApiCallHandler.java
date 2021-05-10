@@ -29,6 +29,7 @@ import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.S3RemoteControllerFactory;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -69,6 +70,7 @@ public class CtrlRemoteApiCallHandler
     private final LinstorRemoteControllerFactory linstorRemoteFactory;
     private final RemoteRepository remoteRepository;
     private final EncryptionHelper encryptionHelper;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public CtrlRemoteApiCallHandler(
@@ -83,7 +85,8 @@ public class CtrlRemoteApiCallHandler
         S3RemoteControllerFactory s3remoteFactoryRef,
         LinstorRemoteControllerFactory linstorRemoteFactoryRef,
         RemoteRepository remoteRepositoryRef,
-        EncryptionHelper encryptionHelperRef
+        EncryptionHelper encryptionHelperRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -98,6 +101,7 @@ public class CtrlRemoteApiCallHandler
         linstorRemoteFactory = linstorRemoteFactoryRef;
         remoteRepository = remoteRepositoryRef;
         encryptionHelper = encryptionHelperRef;
+        errorReporter = errorReporterRef;
     }
 
     public List<S3RemotePojo> listS3()
@@ -189,8 +193,10 @@ public class CtrlRemoteApiCallHandler
 
         try
         {
+            byte[] accessKey = encryptionHelper.encrypt(accessKeyRef);
+            byte[] secretKey = encryptionHelper.encrypt(secretKeyRef);
             remote = s3remoteFactory
-                .create(peerAccCtx.get(), remoteName, endpointRef, bucketRef, regionRef, accessKeyRef, secretKeyRef);
+                .create(peerAccCtx.get(), remoteName, endpointRef, bucketRef, regionRef, accessKey, secretKey);
             remoteRepository.put(apiCtx, remote);
         }
         catch (AccessDeniedException exc)
@@ -205,10 +211,19 @@ public class CtrlRemoteApiCallHandler
         {
             throw new ImplementationError(exc);
         }
-
         catch (DatabaseException exc)
         {
             throw new ApiDatabaseException(exc);
+        }
+        catch (LinStorException exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                    "Encrypting the access key or secret key failed."
+                )
+            );
         }
 
         ctrlTransactionHelper.commit();
@@ -276,11 +291,41 @@ public class CtrlRemoteApiCallHandler
             }
             if (accessKeyRef != null && !accessKeyRef.isEmpty())
             {
-                s3remote.setAccessKey(peerAccCtx.get(), accessKeyRef);
+                byte[] accessKey;
+                try
+                {
+                    accessKey = encryptionHelper.encrypt(accessKeyRef);
+                }
+                catch (LinStorException exc)
+                {
+                    errorReporter.reportError(exc);
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                            "Encrypting the access key failed."
+                        )
+                    );
+                }
+                s3remote.setAccessKey(peerAccCtx.get(), accessKey);
             }
             if (secretKeyRef != null && !secretKeyRef.isEmpty())
             {
-                s3remote.setSecretKey(peerAccCtx.get(), secretKeyRef);
+                byte[] secretKey;
+                try
+                {
+                    secretKey = encryptionHelper.encrypt(secretKeyRef);
+                }
+                catch (LinStorException exc)
+                {
+                    errorReporter.reportError(exc);
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                            "Encrypting the secret key failed."
+                        )
+                    );
+                }
+                s3remote.setSecretKey(peerAccCtx.get(), secretKey);
             }
         }
         catch (AccessDeniedException exc)

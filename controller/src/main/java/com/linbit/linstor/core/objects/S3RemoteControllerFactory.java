@@ -49,8 +49,8 @@ public class S3RemoteControllerFactory
         String endpointRef,
         String bucketRef,
         String regionRef,
-        String accessKeyRef,
-        String secretKeyRef
+        byte[] accessKeyRef,
+        byte[] secretKeyRef
     )
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {

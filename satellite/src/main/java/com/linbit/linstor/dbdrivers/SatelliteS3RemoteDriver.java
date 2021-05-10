@@ -52,16 +52,16 @@ public class SatelliteS3RemoteDriver implements S3RemoteDatabaseDriver
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<S3Remote, String> getAccessKeyDriver()
+    public SingleColumnDatabaseDriver<S3Remote, byte[]> getAccessKeyDriver()
     {
-        return (SingleColumnDatabaseDriver<S3Remote, String>) singleColDriver;
+        return (SingleColumnDatabaseDriver<S3Remote, byte[]>) singleColDriver;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public SingleColumnDatabaseDriver<S3Remote, String> getSecretKeyDriver()
+    public SingleColumnDatabaseDriver<S3Remote, byte[]> getSecretKeyDriver()
     {
-        return (SingleColumnDatabaseDriver<S3Remote, String>) singleColDriver;
+        return (SingleColumnDatabaseDriver<S3Remote, byte[]>) singleColDriver;
     }
 
     @SuppressWarnings("unchecked")

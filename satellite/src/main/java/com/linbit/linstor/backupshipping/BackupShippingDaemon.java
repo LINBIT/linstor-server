@@ -40,6 +40,7 @@ public class BackupShippingDaemon implements Runnable
     private final LinkedBlockingDeque<Event> deque;
     private final DaemonHandler handler;
     private final Object syncObj = new Object();
+    private final byte[] masterKey;
 
     private boolean running = false;
     private Process cmdProcess;
@@ -47,7 +48,7 @@ public class BackupShippingDaemon implements Runnable
     private boolean doneFirst = true;
     private boolean restore;
     private String uploadId = null;
-    private AccessContext accCtx;
+    private final AccessContext accCtx;
 
     private final Consumer<Boolean> afterTermination;
 
@@ -62,7 +63,8 @@ public class BackupShippingDaemon implements Runnable
         boolean restoreRef,
         long size,
         Consumer<Boolean> afterTerminationRef,
-        AccessContext accCtxRef
+        AccessContext accCtxRef,
+        byte[] masterKeyRef
     )
     {
         errorReporter = errorReporterRef;
@@ -73,6 +75,7 @@ public class BackupShippingDaemon implements Runnable
         backupHandler = backupHandlerRef;
         volSize = size;
         accCtx = accCtxRef;
+        masterKey = masterKeyRef;
 
         deque = new LinkedBlockingDeque<>(DFLT_DEQUE_CAPACITY);
         handler = new DaemonHandler(deque, command);
@@ -100,7 +103,7 @@ public class BackupShippingDaemon implements Runnable
         {
             if (!restore)
             {
-                uploadIdRef = backupHandler.initMultipart(backupName, remote, accCtx);
+                uploadIdRef = backupHandler.initMultipart(backupName, remote, accCtx, masterKey);
             }
             cmdProcess = handler.start();
             s3Thread.start();
@@ -146,7 +149,9 @@ public class BackupShippingDaemon implements Runnable
         try
         {
             backupHandler
-                .putObjectMultipart(backupName, cmdProcess.getInputStream(), volSize, uploadId, remote, accCtx);
+                .putObjectMultipart(
+                    backupName, cmdProcess.getInputStream(), volSize, uploadId, remote, accCtx, masterKey
+                );
             success = true;
         }
         catch (SdkClientException | IOException | StorageException exc)
@@ -171,7 +176,7 @@ public class BackupShippingDaemon implements Runnable
         errorReporter.logTrace("starting restore for backup %s", backupName);
         boolean success = false;
         try (
-            InputStream is = backupHandler.getObject(backupName, remote, accCtx);
+            InputStream is = backupHandler.getObject(backupName, remote, accCtx, masterKey);
             OutputStream os = cmdProcess.getOutputStream();
         )
         {
@@ -289,7 +294,7 @@ public class BackupShippingDaemon implements Runnable
                     {
                         if (uploadId != null)
                         {
-                            backupHandler.abortMultipart(backupName, uploadId, remote, accCtx);
+                            backupHandler.abortMultipart(backupName, uploadId, remote, accCtx, masterKey);
                         }
                     }
                     catch (SdkClientException exc)
@@ -327,7 +332,7 @@ public class BackupShippingDaemon implements Runnable
                     {
                         if (uploadId != null)
                         {
-                            backupHandler.abortMultipart(backupName, uploadId, remote, accCtx);
+                            backupHandler.abortMultipart(backupName, uploadId, remote, accCtx, masterKey);
                         }
                     }
                     catch (SdkClientException exc)

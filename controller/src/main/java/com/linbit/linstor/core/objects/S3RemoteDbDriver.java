@@ -23,6 +23,8 @@ import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.utils.ByteUtils;
+import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.S3Remotes.ACCESS_KEY;
@@ -52,8 +54,8 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
     protected final SingleColumnDatabaseDriver<S3Remote, String> endpointDriver;
     protected final SingleColumnDatabaseDriver<S3Remote, String> bucketDriver;
     protected final SingleColumnDatabaseDriver<S3Remote, String> regionDriver;
-    protected final SingleColumnDatabaseDriver<S3Remote, String> accessKeyDriver;
-    protected final SingleColumnDatabaseDriver<S3Remote, String> secretKeyDriver;
+    protected final SingleColumnDatabaseDriver<S3Remote, byte[]> accessKeyDriver;
+    protected final SingleColumnDatabaseDriver<S3Remote, byte[]> secretKeyDriver;
     protected final StateFlagsPersistence<S3Remote> flagsDriver;
     protected final AccessContext dbCtx;
 
@@ -81,18 +83,48 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
         setColumnSetter(ENDPOINT, remote -> remote.getUrl(dbCtx));
         setColumnSetter(BUCKET, remote -> remote.getBucket(dbCtx));
         setColumnSetter(REGION, remote -> remote.getRegion(dbCtx));
-        setColumnSetter(ACCESS_KEY, remote -> remote.getAccessKey(dbCtx));
-        setColumnSetter(SECRET_KEY, remote -> remote.getSecretKey(dbCtx));
+        switch (getDbType())
+        {
+            case ETCD:
+                setColumnSetter(ACCESS_KEY, remote -> Base64.encode(remote.getAccessKey(dbCtx)));
+                setColumnSetter(SECRET_KEY, remote -> Base64.encode(remote.getSecretKey(dbCtx)));
+                break;
+            case SQL:
+                setColumnSetter(ACCESS_KEY, remote -> remote.getAccessKey(dbCtx));
+                setColumnSetter(SECRET_KEY, remote -> remote.getSecretKey(dbCtx));
+                break;
+            default:
+                throw new ImplementationError("Unknown database type: " + getDbType());
+        }
 
         endpointDriver = generateSingleColumnDriver(ENDPOINT, remote -> remote.getUrl(dbCtx), Function.identity());
         bucketDriver = generateSingleColumnDriver(BUCKET, remote -> remote.getBucket(dbCtx), Function.identity());
         regionDriver = generateSingleColumnDriver(REGION, remote -> remote.getRegion(dbCtx), Function.identity());
-        accessKeyDriver = generateSingleColumnDriver(
-            ACCESS_KEY, remote -> remote.getAccessKey(dbCtx), Function.identity()
-        );
-        secretKeyDriver = generateSingleColumnDriver(
-            SECRET_KEY, remote -> remote.getSecretKey(dbCtx), Function.identity()
-        );
+        switch (getDbType())
+        {
+            case ETCD:
+                accessKeyDriver = generateSingleColumnDriver(
+                    ACCESS_KEY,
+                    remote -> ByteUtils.bytesToHex(remote.getAccessKey(dbCtx)),
+                    byteArr -> ByteUtils.bytesToHex(byteArr)
+                );
+                secretKeyDriver = generateSingleColumnDriver(
+                    SECRET_KEY,
+                    remote -> ByteUtils.bytesToHex(remote.getSecretKey(dbCtx)),
+                    byteArr -> ByteUtils.bytesToHex(byteArr)
+                );
+                break;
+            case SQL:
+                accessKeyDriver = generateSingleColumnDriver(
+                    ACCESS_KEY, remote -> ByteUtils.bytesToHex(remote.getAccessKey(dbCtx)), Function.identity()
+                );
+                secretKeyDriver = generateSingleColumnDriver(
+                    SECRET_KEY, remote -> ByteUtils.bytesToHex(remote.getSecretKey(dbCtx)), Function.identity()
+                );
+                break;
+            default:
+                throw new ImplementationError("Unknown database type: " + getDbType());
+        }
 
         flagsDriver = generateFlagDriver(FLAGS, S3Remote.Flags.class);
 
@@ -117,13 +149,13 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
     }
 
     @Override
-    public SingleColumnDatabaseDriver<S3Remote, String> getAccessKeyDriver()
+    public SingleColumnDatabaseDriver<S3Remote, byte[]> getAccessKeyDriver()
     {
         return accessKeyDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<S3Remote, String> getSecretKeyDriver()
+    public SingleColumnDatabaseDriver<S3Remote, byte[]> getSecretKeyDriver()
     {
         return secretKeyDriver;
     }
@@ -140,13 +172,19 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
     {
         final RemoteName remoteName = raw.build(DSP_NAME, RemoteName::new);
         final long initFlags;
+        final byte[] accessKey;
+        final byte[] secretKey;
         switch (getDbType())
         {
             case ETCD:
                 initFlags = Long.parseLong(raw.get(FLAGS));
+                accessKey = Base64.decode(raw.get(ACCESS_KEY));
+                secretKey = Base64.decode(raw.get(SECRET_KEY));
                 break;
             case SQL:
                 initFlags = raw.get(FLAGS);
+                accessKey = raw.get(ACCESS_KEY);
+                secretKey = raw.get(SECRET_KEY);
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
@@ -161,8 +199,8 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
                 raw.get(ENDPOINT),
                 raw.get(BUCKET),
                 raw.get(REGION),
-                raw.get(ACCESS_KEY),
-                raw.get(SECRET_KEY),
+                accessKey,
+                secretKey,
                 transObjFactory,
                 transMgrProvider
             ),

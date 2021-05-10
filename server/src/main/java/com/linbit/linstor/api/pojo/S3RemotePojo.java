@@ -10,8 +10,8 @@ public class S3RemotePojo implements Comparable<S3RemotePojo>
     private final String endpoint;
     private final String bucket;
     private final String region;
-    private final String accessKey;
-    private final String secretKey;
+    private final byte[] accessKey;
+    private final byte[] secretKey;
     private final Long fullSyncId;
     private final Long updateId;
 
@@ -22,8 +22,8 @@ public class S3RemotePojo implements Comparable<S3RemotePojo>
         String endpointRef,
         String bucketRef,
         String regionRef,
-        String accessKeyRef,
-        String secretKeyRef,
+        byte[] accessKeyRef,
+        byte[] secretKeyRef,
         Long fullSyncIdRef,
         Long updateIdRef
     )
@@ -70,12 +70,12 @@ public class S3RemotePojo implements Comparable<S3RemotePojo>
         return region;
     }
 
-    public String getAccessKey()
+    public byte[] getAccessKey()
     {
         return accessKey;
     }
 
-    public String getSecretKey()
+    public byte[] getSecretKey()
     {
         return secretKey;
     }

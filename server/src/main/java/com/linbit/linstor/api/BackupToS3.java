@@ -1,8 +1,11 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.S3Remote;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -49,19 +52,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class BackupToS3
 {
     private final StltConfigAccessor stltConfigAccessor;
+    private final DecryptionHelper decHelper;
+    private final ErrorReporter errorReporter;
 
     @Inject
-    public BackupToS3(StltConfigAccessor stltConfigAccessorRef)
+    public BackupToS3(
+        StltConfigAccessor stltConfigAccessorRef,
+        DecryptionHelper decHelperRef,
+        ErrorReporter errorReporterRef
+    )
     {
         stltConfigAccessor = stltConfigAccessorRef;
+        decHelper = decHelperRef;
+        errorReporter = errorReporterRef;
     }
 
-    public String initMultipart(String key, S3Remote remote, AccessContext accCtx) throws AccessDeniedException
+    public String initMultipart(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)
+        throws AccessDeniedException
     {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            remote.getAccessKey(accCtx),
-            remote.getSecretKey(accCtx)
-        );
+        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
@@ -88,13 +97,11 @@ public class BackupToS3
         long maxSize,
         String uploadId,
         S3Remote remote,
-        AccessContext accCtx
+        AccessContext accCtx,
+        byte[] masterKey
     ) throws AccessDeniedException, SdkClientException, AmazonServiceException, IOException, StorageException
     {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            remote.getAccessKey(accCtx),
-            remote.getSecretKey(accCtx)
-        );
+        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
@@ -163,13 +170,10 @@ public class BackupToS3
         s3.completeMultipartUpload(compRequest);
     }
 
-    public void abortMultipart(String key, String uploadId, S3Remote remote, AccessContext accCtx)
+    public void abortMultipart(String key, String uploadId, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException, SdkClientException, AmazonServiceException
     {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            remote.getAccessKey(accCtx),
-            remote.getSecretKey(accCtx)
-        );
+        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
@@ -190,13 +194,10 @@ public class BackupToS3
         s3.abortMultipartUpload(abortReq);
     }
 
-    public void putObject(String key, String content, S3Remote remote, AccessContext accCtx)
+    public void putObject(String key, String content, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException, SdkClientException, AmazonServiceException
     {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            remote.getAccessKey(accCtx),
-            remote.getSecretKey(accCtx)
-        );
+        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
@@ -214,12 +215,10 @@ public class BackupToS3
         s3.putObject(req);
     }
 
-    public void deleteObjects(Set<String> keys, S3Remote remote, AccessContext accCtx) throws AccessDeniedException
+    public void deleteObjects(Set<String> keys, S3Remote remote, AccessContext accCtx, byte[] masterKey)
+        throws AccessDeniedException
     {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            remote.getAccessKey(accCtx),
-            remote.getSecretKey(accCtx)
-        );
+        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
@@ -236,13 +235,10 @@ public class BackupToS3
         s3.deleteObjects(deleteObjectsRequest);
     }
 
-    public BackupMetaDataPojo getMetaFile(String key, S3Remote remote, AccessContext accCtx)
+    public BackupMetaDataPojo getMetaFile(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
     {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            remote.getAccessKey(accCtx),
-            remote.getSecretKey(accCtx)
-        );
+        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
@@ -262,12 +258,10 @@ public class BackupToS3
         return mapper.readValue(s3is, BackupMetaDataPojo.class);
     }
 
-    public InputStream getObject(String key, S3Remote remote, AccessContext accCtx) throws AccessDeniedException
+    public InputStream getObject(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)
+        throws AccessDeniedException
     {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            remote.getAccessKey(accCtx),
-            remote.getSecretKey(accCtx)
-        );
+        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
@@ -285,14 +279,11 @@ public class BackupToS3
         return obj.getObjectContent();
     }
 
-    public List<S3ObjectSummary> listObjects(String rsc, S3Remote remote, AccessContext accCtx)
+    public List<S3ObjectSummary> listObjects(String rsc, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            remote.getAccessKey(accCtx),
-            remote.getSecretKey(accCtx)
-        );
+        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
             new EndpointConfiguration(
@@ -322,5 +313,30 @@ public class BackupToS3
             objects.addAll(result.getObjectSummaries());
         }
         return objects;
+    }
+
+    private BasicAWSCredentials getCredentials(S3Remote remote, AccessContext accCtx, byte[] masterKey)
+    {
+        String accessKey;
+        String secretKey;
+        try
+        {
+            accessKey = new String(decHelper.decrypt(masterKey, remote.getAccessKey(accCtx)));
+            secretKey = new String(decHelper.decrypt(masterKey, remote.getSecretKey(accCtx)));
+        }
+        catch (LinStorException exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                    "Decrypting the access key or secret key failed."
+                )
+            );
+        }
+        return new BasicAWSCredentials(
+            accessKey,
+            secretKey
+        );
     }
 }

@@ -1025,8 +1025,8 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl ENDPOINT = new ColumnImpl("ENDPOINT", Types.VARCHAR, false, false);
         public static final ColumnImpl BUCKET = new ColumnImpl("BUCKET", Types.VARCHAR, false, false);
         public static final ColumnImpl REGION = new ColumnImpl("REGION", Types.VARCHAR, false, false);
-        public static final ColumnImpl ACCESS_KEY = new ColumnImpl("ACCESS_KEY", Types.CHAR, false, false);
-        public static final ColumnImpl SECRET_KEY = new ColumnImpl("SECRET_KEY", Types.CHAR, false, false);
+        public static final ColumnImpl ACCESS_KEY = new ColumnImpl("ACCESS_KEY", Types.BLOB, false, false);
+        public static final ColumnImpl SECRET_KEY = new ColumnImpl("SECRET_KEY", Types.BLOB, false, false);
 
         public static final Column[] ALL = new Column[]
         {

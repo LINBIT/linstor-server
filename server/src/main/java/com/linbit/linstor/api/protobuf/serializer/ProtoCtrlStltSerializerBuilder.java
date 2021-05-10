@@ -1327,8 +1327,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setEndpoint(s3remote.getUrl(serializerCtx))
                 .setBucket(s3remote.getBucket(serializerCtx))
                 .setRegion(s3remote.getRegion(serializerCtx))
-                .setAccessKey(s3remote.getAccessKey(serializerCtx))
-                .setSecretKey(s3remote.getSecretKey(serializerCtx));
+                .setAccessKey(ByteString.copyFrom(s3remote.getAccessKey(serializerCtx)))
+                .setSecretKey(ByteString.copyFrom(s3remote.getSecretKey(serializerCtx)));
             return builder
                 .build();
         }

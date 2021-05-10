@@ -11,6 +11,6 @@ message IntS3Remote
     string  endpoint = 4;
     string  bucket = 5;
     string  region = 6;
-    string  access_key = 7;
-    string  secret_key = 8;
+    bytes   access_key = 7;
+    bytes   secret_key = 8;
 }

@@ -4,11 +4,15 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.BackupInfoManager.AbortInfo;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
@@ -53,6 +57,7 @@ public class CtrlSnapshotShippingAbortHandler
     private final BackupToS3 backupHandler;
     private final RemoteRepository remoteRepo;
     private final ErrorReporter errorReporter;
+    private final CtrlSecurityObjects ctrlSecObj;
 
     @Inject
     public CtrlSnapshotShippingAbortHandler(
@@ -65,7 +70,8 @@ public class CtrlSnapshotShippingAbortHandler
         BackupInfoManager backupInfoMgrRef,
         BackupToS3 backupHandlerRef,
         RemoteRepository remoteRepoRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        CtrlSecurityObjects ctrlSecObjRef
     )
     {
         apiCtx = apiCtxRef;
@@ -78,6 +84,7 @@ public class CtrlSnapshotShippingAbortHandler
         backupHandler = backupHandlerRef;
         remoteRepo = remoteRepoRef;
         errorReporter = errorReporterRef;
+        ctrlSecObj = ctrlSecObjRef;
     }
 
     public Flux<ApiCallRc> abortAllShippingPrivileged(Node nodeRef)
@@ -272,11 +279,26 @@ public class CtrlSnapshotShippingAbortHandler
                         try
                         {
                             S3Remote remote = remoteRepo.getS3(apiCtx, new RemoteName(abortInfo.remoteName));
+                            byte[] masterKey = ctrlSecObj.getCryptKey();
+                            if (masterKey == null || masterKey.length == 0)
+                            {
+                                throw new ApiRcException(
+                                    ApiCallRcImpl
+                                        .entryBuilder(
+                                            ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                                            "Unable to decrypt the S3 access key and secret key without having a master key"
+                                        )
+                                        .setCause("The masterkey was not initialized yet")
+                                        .setCorrection("Create or enter the master passphrase")
+                                        .build()
+                                );
+                            }
                             backupHandler.abortMultipart(
                                 abortInfo.backupName,
                                 abortInfo.uploadId,
                                 remote,
-                                apiCtx
+                                apiCtx,
+                                masterKey
                             );
                         }
                         catch (SdkClientException exc)

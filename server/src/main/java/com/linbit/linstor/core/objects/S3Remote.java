@@ -39,8 +39,8 @@ public class S3Remote extends BaseTransactionObject
     private final TransactionSimpleObject<S3Remote, String> endpoint;
     private final TransactionSimpleObject<S3Remote, String> bucket;
     private final TransactionSimpleObject<S3Remote, String> region;
-    private final TransactionSimpleObject<S3Remote, String> accessKey;
-    private final TransactionSimpleObject<S3Remote, String> secretKey;
+    private final TransactionSimpleObject<S3Remote, byte[]> accessKey;
+    private final TransactionSimpleObject<S3Remote, byte[]> secretKey;
     private final TransactionSimpleObject<S3Remote, Boolean> deleted;
     private final StateFlags<Flags> flags;
 
@@ -53,8 +53,8 @@ public class S3Remote extends BaseTransactionObject
         String endpointRef,
         String bucketRef,
         String regionRef,
-        String accessKeyRef,
-        String secretKeyRef,
+        byte[] accessKeyRef,
+        byte[] secretKeyRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -158,28 +158,28 @@ public class S3Remote extends BaseTransactionObject
         region.set(regionRef);
     }
 
-    public String getAccessKey(AccessContext accCtx) throws AccessDeniedException
+    public byte[] getAccessKey(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return accessKey.get();
     }
 
-    public void setAccessKey(AccessContext accCtx, String accessKeyRef) throws AccessDeniedException, DatabaseException
+    public void setAccessKey(AccessContext accCtx, byte[] accessKeyRef) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         accessKey.set(accessKeyRef);
     }
 
-    public String getSecretKey(AccessContext accCtx) throws AccessDeniedException
+    public byte[] getSecretKey(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return secretKey.get();
     }
 
-    public void setSecretKey(AccessContext accCtx, String secretKeyRef) throws AccessDeniedException, DatabaseException
+    public void setSecretKey(AccessContext accCtx, byte[] secretKeyRef) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);

@@ -53,8 +53,8 @@ public class ApplyDeletedRemote implements ApiCall
             "",
             "",
             "",
-            "",
-            "",
+            "".getBytes(),
+            "".getBytes(),
             fullSyncId,
             updateId
         );

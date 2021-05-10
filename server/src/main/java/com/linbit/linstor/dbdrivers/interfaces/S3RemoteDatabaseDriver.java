@@ -31,9 +31,9 @@ public interface S3RemoteDatabaseDriver
 
     SingleColumnDatabaseDriver<S3Remote, String> getRegionDriver();
 
-    SingleColumnDatabaseDriver<S3Remote, String> getAccessKeyDriver();
+    SingleColumnDatabaseDriver<S3Remote, byte[]> getAccessKeyDriver();
 
-    SingleColumnDatabaseDriver<S3Remote, String> getSecretKeyDriver();
+    SingleColumnDatabaseDriver<S3Remote, byte[]> getSecretKeyDriver();
 
     StateFlagsPersistence<S3Remote> getStateFlagsPersistence();
 }

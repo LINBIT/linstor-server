@@ -41,6 +41,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
@@ -358,7 +361,8 @@ public class BackupShippingService implements SystemService
                     restore,
                     size,
                     postAction,
-                    accCtx
+                    accCtx,
+                    stltSecObj.getCryptKey()
                 );
                 Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
                 ShippingInfo info = shippingInfoMap.get(snap);
@@ -414,7 +418,9 @@ public class BackupShippingService implements SystemService
                                         InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
                                         ApiConsts.NAMESPC_BACKUP_SHIPPING
                                     ) + ".meta";
-                                backupHandler.putObject(key, fillPojo(snap), shippingInfo.remote, accCtx);
+                                backupHandler.putObject(
+                                    key, fillPojo(snap), shippingInfo.remote, accCtx, stltSecObj.getCryptKey()
+                                );
                             }
                             catch (InvalidKeyException | AccessDeniedException | JsonProcessingException exc)
                             {
@@ -504,7 +510,14 @@ public class BackupShippingService implements SystemService
         }
 
         LuksLayerMetaPojo luksPojo = null;
-        if (stltSecObj.getEncKey() != null && stltSecObj.getHash() != null && stltSecObj.getSalt() != null)
+        List<AbsRscLayerObject<Snapshot>> luksLayers = LayerUtils.getChildLayerDataByKind(
+            snap.getLayerData(accCtx),
+            DeviceLayerKind.LUKS
+        );
+        if (
+            !luksLayers.isEmpty() &&
+            stltSecObj.getEncKey() != null && stltSecObj.getHash() != null && stltSecObj.getSalt() != null
+        )
         {
             luksPojo = new LuksLayerMetaPojo(
                 Base64.encode(stltSecObj.getEncKey()),
