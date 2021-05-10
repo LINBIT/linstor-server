@@ -3,6 +3,7 @@ package com.linbit.linstor.utils;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -18,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -110,21 +110,34 @@ public class NameShortener
     public String shorten(ResourceDefinition rscDfn, String rscSuffix)
         throws AccessDeniedException, DatabaseException, LinStorException
     {
-        return shorten(rscDfn.getProps(accCtx), "", rscDfn.getName().displayValue + rscSuffix);
+        return shorten(rscDfn.getProps(accCtx), "", rscDfn.getName().displayValue + rscSuffix, false);
     }
 
-    public String shorten(VolumeDefinition vlmDfn, String keyPrefix, String rscSuffix)
+    public String shorten(VolumeDefinition vlmDfn, String keyPrefix, String rscSuffix, boolean appendVlmNr)
         throws AccessDeniedException, DatabaseException, LinStorException
     {
-        return shorten(
+        String overrideVlmId = vlmDfn.getProps(accCtx).getProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID);
+        String fullName;
+        if (overrideVlmId != null)
+        {
+            fullName = overrideVlmId;
+        }
+        else
+        {
+            fullName = vlmDfn.getResourceDefinition().getName().displayValue + rscSuffix +
+                (appendVlmNr ? String.format("_%05d", vlmDfn.getVolumeNumber().value) : "");
+        }
+        String shortName = shorten(
             vlmDfn.getProps(accCtx),
             keyPrefix,
-            vlmDfn.getResourceDefinition().getName().displayValue + rscSuffix +
-                String.format("_%05d", vlmDfn.getVolumeNumber().value)
+            fullName,
+            overrideVlmId != null
         );
+
+        return shortName;
     }
 
-    public String shorten(Props props, String propKeyPrefix, String fullName)
+    public String shorten(Props props, String propKeyPrefix, String fullName, boolean forceVolumeName)
         throws AccessDeniedException, DatabaseException, LinStorException
     {
         String shortName = null;
@@ -179,6 +192,20 @@ public class NameShortener
                 existingNames.add(shortName);
 
                 processNumberSuffix(shortName);
+            }
+
+            if (forceVolumeName && !shortName.equals(fullName))
+            {
+                throw new LinStorException(
+                    "Cannot use forced volum id!",
+                    "The given volume id " + fullName + " cannot be used",
+                    "The given volume id " + fullName + " (possibly set via " +
+                        ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID + ") is already used by a different volume-definition.",
+                    "Ensure that \n" +
+                        " * '" + fullName + "' is not already used by a different volume definition\n" +
+                        " * '" + fullName + "' does not contain invalid characters for the used storage provider",
+                    null
+                );
             }
         }
         catch (ExhaustedPoolException exc)

@@ -1,5 +1,8 @@
 package com.linbit.linstor.utils;
 
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -7,6 +10,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.SatellitePropDriver;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.TestAccessContextProvider;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
 
@@ -17,6 +21,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class NameShortenerTest
 {
@@ -131,8 +136,38 @@ public class NameShortenerTest
     {
         String key = "key";
         NameShortener shorter = new NameShortener("", key, 10, TestAccessContextProvider.SYS_CTX, "_", "a-zA-Z");
-        addAndAssert(shorter, "ab", 0, "", "ns1", key, "ab");
-        addAndAssert(shorter, "ab", 0, "", "ns2", key, "ab_1");
+        addAndAssert(shorter, "ab", 0, "", "ns1", key, "ab", false);
+        addAndAssert(shorter, "ab", 0, "", "ns2", key, "ab_1", false);
+    }
+
+    @Test
+    public void overrideVlmIdTest() throws Throwable
+    {
+        String key = "key";
+        NameShortener shorter = new NameShortener("", key, 32, TestAccessContextProvider.SYS_CTX, "_", "a-zA-Z");
+
+        VolumeDefinition vlmDfn = getVlmDfn("rsc", 0);
+        String overrideVlmId = "test";
+        vlmDfn.getProps(TestAccessContextProvider.SYS_CTX)
+            .setProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID, overrideVlmId);
+        String keyPrefix = "";
+        String shorten = shorter.shorten(vlmDfn, keyPrefix, "", false);
+
+        assertEquals(overrideVlmId, shorten);
+        assertEquals(overrideVlmId, vlmDfn.getProps(TestAccessContextProvider.SYS_CTX).getProp(keyPrefix + key));
+
+        VolumeDefinition vlmDfn2 = getVlmDfn("rsc2", 0);
+        vlmDfn2.getProps(TestAccessContextProvider.SYS_CTX)
+            .setProp(ApiConsts.KEY_STOR_POOL_OVERRIDE_VLM_ID, overrideVlmId);
+        try
+        {
+            shorter.shorten(vlmDfn2, keyPrefix, "", false);
+            fail("exception expected");
+        }
+        catch (LinStorException expected)
+        {
+
+        }
     }
 
     private ResourceDefinition addAndAssert(
@@ -144,12 +179,7 @@ public class NameShortenerTest
     )
         throws Throwable
     {
-        ResourceDefinition rscDfn = rscDfnMap.get(rscName);
-        if (rscDfn == null)
-        {
-            rscDfn = mock(rscName);
-            rscDfnMap.put(rscName, rscDfn);
-        }
+        ResourceDefinition rscDfn = getRscDfn(rscName);
 
         String shortenedName = nameShortener.shorten(rscDfn, rscSuffix);
 
@@ -169,22 +199,15 @@ public class NameShortenerTest
         String rscSuffix,
         String propKeyPrefix,
         String propKey,
-        String expectedShortenedRscName
+        String expectedShortenedRscName,
+        boolean appendVlmNr
     )
         throws Throwable
     {
-        ResourceDefinition rscDfn = rscDfnMap.get(rscName);
-        if (rscDfn == null)
-        {
-            rscDfn = mock(rscName);
-            rscDfnMap.put(rscName, rscDfn);
-        }
-        VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(TestAccessContextProvider.SYS_CTX, new VolumeNumber(0));
-        if (vlmDfn == null) {
-            vlmDfn = mock(rscDfn, vlmNr);
-        }
+        ResourceDefinition rscDfn = getRscDfn(rscName);
+        VolumeDefinition vlmDfn = getVlmDfn(rscDfn, vlmNr);
 
-        String shortenedName = nameShortener.shorten(vlmDfn, propKeyPrefix, rscSuffix);
+        String shortenedName = nameShortener.shorten(vlmDfn, propKeyPrefix, rscSuffix, appendVlmNr);
 
         assertEquals(expectedShortenedRscName, shortenedName);
         assertEquals(
@@ -192,6 +215,33 @@ public class NameShortenerTest
             shortenedName
         );
 
+        return vlmDfn;
+    }
+
+    private ResourceDefinition getRscDfn(String rscName) throws Throwable
+    {
+        ResourceDefinition rscDfn = rscDfnMap.get(rscName);
+        if (rscDfn == null)
+        {
+            rscDfn = mock(rscName);
+            rscDfnMap.put(rscName, rscDfn);
+        }
+        return rscDfn;
+    }
+
+    private VolumeDefinition getVlmDfn(String rscNameStr, int vlmNr)
+        throws AccessDeniedException, ValueOutOfRangeException, Throwable
+    {
+        return getVlmDfn(getRscDfn(rscNameStr), vlmNr);
+    }
+
+    private VolumeDefinition getVlmDfn(ResourceDefinition rscDfn, int vlmNr)
+        throws AccessDeniedException, ValueOutOfRangeException, Throwable
+    {
+        VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(TestAccessContextProvider.SYS_CTX, new VolumeNumber(0));
+        if (vlmDfn == null) {
+            vlmDfn = mock(rscDfn, vlmNr);
+        }
         return vlmDfn;
     }
 

@@ -271,10 +271,10 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                     break;
                 case EXOS:
                     exosNameShortener.shorten(
-                        vlmDfn.getProps(apiCtx),
+                        vlmDfn,
                         storPool.getSharedStorPoolName().displayValue,
-                        // do not append "_00000" to vlmName
-                        vlmDfn.getResourceDefinition().getName().displayValue + rscData.getResourceNameSuffix()
+                        rscData.getResourceNameSuffix(),
+                        false
                     );
                     try
                     {
@@ -448,7 +448,8 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                 exosNameShortener.shorten(
                     vlmRef.getVolumeDefinition(),
                     storPool.getSharedStorPoolName().displayValue,
-                    storRscData.getResourceNameSuffix()
+                    storRscData.getResourceNameSuffix(),
+                    false
                 );
                 ExosData<Resource> exosData = layerDataFactory.createExosData(vlmRef, storRscData, storPool);
                 exosData.updateShortName(apiCtx);
