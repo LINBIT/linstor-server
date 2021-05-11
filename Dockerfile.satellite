@@ -7,13 +7,23 @@ ENV LINSTOR_TGZNAME linstor-server
 ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
 
 USER root
+RUN echo "skip_missing_names_on_install=no" >> /etc/yum.conf
+
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
 
 # extra tools
 # epel for zstd;
 RUN yum install -y epel-release yum-utils && \
   mkdir /tmp/tools && cd /tmp/tools && \
-  yumdownloader cryptsetup nvme-cli zstd xfsprogs e2fsprogs e2fsprogs-libs && \
+  yumdownloader \
+    cryptsetup \
+    nvme-cli \
+    zstd \
+    xfsprogs \
+    e2fsprogs e2fsprogs-libs \
+    device-mapper-multipath device-mapper-multipath-libs \
+    lsscsi \
+  && \
   rm -f /tmp/tools/*.i686.rpm && \
   yum remove -y epel-release && yum clean all -y
 
@@ -69,6 +79,8 @@ LABEL name="linstor-satellite" \
 
 COPY COPYING /licenses/gpl-3.0.txt
 
+RUN echo "skip_missing_names_on_install=no" >> /etc/yum.conf
+
 # packages
 COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/linstorpkgs/
 COPY --from=builder /tmp/tools/*.rpm /tmp/tools/
@@ -83,7 +95,7 @@ RUN { \
 	echo 'gpgcheck=1' ;\
 } >/etc/yum.repos.d/linbit-public.repo
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
-  yum install -y which lvm2 util-linux socat device-mapper-multipath lsscsi && \
+  yum install -y which lvm2 util-linux socat && \
   yum install -y /tmp/linstorpkgs/linstor-common*.rpm /tmp/linstorpkgs/linstor-satellite*.rpm && \
   yum install -y /tmp/tools/*.rpm && \
   yum install -y thin-send-recv && \

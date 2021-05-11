@@ -6,6 +6,7 @@ ENV LINSTOR_TGZNAME linstor-server
 ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
 
 USER root
+RUN echo "skip_missing_names_on_install=no" >> /etc/yum.conf
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical
 RUN groupadd makepkg # !lbbuild
 RUN useradd -m -g makepkg makepkg # !lbbuild
@@ -58,6 +59,8 @@ LABEL name="linstor-controller" \
       description="LINSTOR's controller component"
 
 COPY COPYING /licenses/gpl-3.0.txt
+
+RUN echo "skip_missing_names_on_install=no" >> /etc/yum.conf
 
 ENV PSK=https://packages.linbit.com/package-signing-pubkey.asc
 ENV REPO=/etc/yum.repos.d/linbit.repo
