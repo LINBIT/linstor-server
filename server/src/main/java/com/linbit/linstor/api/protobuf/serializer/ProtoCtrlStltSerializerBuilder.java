@@ -854,7 +854,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     public CtrlStltSerializerBuilder notifyBackupShippingId(
         Snapshot snapRef,
         String backupName,
-        String uploadId
+        String uploadId,
+        String remoteNameRef
     )
     {
         try
@@ -865,6 +866,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setSnapName(snapRef.getSnapshotName().displayValue)
                 .setBackupName(backupName)
                 .setUploadId(uploadId)
+                .setRemoteName(remoteNameRef)
                 .build()
                 .writeDelimitedTo(baos);
         }

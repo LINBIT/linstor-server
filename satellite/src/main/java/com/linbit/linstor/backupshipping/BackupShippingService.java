@@ -310,11 +310,31 @@ public class BackupShippingService implements SystemService
                         {
                             String uploadId = snapVlmDataInfo.daemon.start();
                             startedShippments.add(snap);
+
                             if (uploadId != null)
                             {
-                                controllerPeerConnector.getControllerPeer().sendMessage(
-                                    interComSerializer.onewayBuilder(InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_ID).notifyBackupShippingId(snap, snapVlmDataInfo.backupName, uploadId).build()
-                                );
+                                try
+                                {
+                                    String remoteName = snap.getProps(accCtx).getProp(
+                                        InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                    );
+                                    controllerPeerConnector.getControllerPeer().sendMessage(
+                                        interComSerializer
+                                            .onewayBuilder(InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_ID)
+                                            .notifyBackupShippingId(
+                                                snap,
+                                                snapVlmDataInfo.backupName,
+                                                uploadId,
+                                                remoteName
+                                            )
+                                            .build()
+                                    );
+                                }
+                                catch (InvalidKeyException | AccessDeniedException exc)
+                                {
+                                    throw new ImplementationError(exc);
+                                }
                             }
                         }
                         info.isStarted = true;
