@@ -326,8 +326,32 @@ public class CtrlSnapshotShippingAbortHandler
                         abortEntry.getKey().objA,
                         abortEntry.getKey().objB
                     );
+                    enableFlagsPrivileged(
+                        ctrlApiDataLoader.loadSnapshotDfn(
+                            abortEntry.getKey().objA,
+                            abortEntry.getKey().objB,
+                            true
+                        ),
+                        SnapshotDefinition.Flags.SHIPPING_ABORT
+                    );
                 }
             }
+        }
+    }
+
+    private void enableFlagsPrivileged(SnapshotDefinition snapDfn, SnapshotDefinition.Flags... snapDfnFlags)
+    {
+        try
+        {
+            snapDfn.getFlags().enableFlags(apiCtx, snapDfnFlags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
         }
     }
 
