@@ -2234,7 +2234,7 @@ public class CtrlBackupApiCallHandler
                 )
             );
         }
-        catch (AccessDeniedException | InvalidValueException | InvalidKeyException exc)
+        catch (AccessDeniedException | InvalidNameException | InvalidValueException | InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }

@@ -22,7 +22,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class NotifyBackupShippingId implements ApiCallReactive
 {
-    private BackupInfoManager backupInfoMgr;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public NotifyBackupShippingId(
@@ -36,7 +36,7 @@ public class NotifyBackupShippingId implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataInRef) throws IOException
     {
         MsgIntBackupShippingId ship = MsgIntBackupShippingId.parseDelimitedFrom(msgDataInRef);
-        backupInfoMgr.abortAddEntry(
+        backupInfoMgr.abortAddS3Entry(
             ship.getNodeName(),
             ship.getRscName(),
             ship.getSnapName(),

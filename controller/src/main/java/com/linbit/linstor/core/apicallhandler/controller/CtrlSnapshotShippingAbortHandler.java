@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.BackupInfoManager.AbortInfo;
+import com.linbit.linstor.core.BackupInfoManager.AbortS3Info;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -29,7 +30,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
-import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -266,19 +266,20 @@ public class CtrlSnapshotShippingAbortHandler
 
     private void abortBackupShippings(Node nodeRef)
     {
-        Map<Pair<String, String>, List<AbortInfo>> abortEntries = backupInfoMgr
-            .abortGetEntries(nodeRef.getName().displayValue);
+        Map<SnapshotDefinition.Key, AbortInfo> abortEntries = backupInfoMgr.abortGetEntries(nodeRef.getName());
         if (abortEntries != null && !abortEntries.isEmpty())
         {
-            for (Entry<Pair<String, String>, List<AbortInfo>> abortEntry : abortEntries.entrySet())
+            for (Entry<SnapshotDefinition.Key, AbortInfo> abortEntry : abortEntries.entrySet())
             {
-                if (!abortEntry.getValue().isEmpty())
+                AbortInfo abortInfo = abortEntry.getValue();
+                List<AbortS3Info> abortS3List = abortInfo.abortS3InfoList;
+                if (!abortInfo.isEmpty())
                 {
-                    for (AbortInfo abortInfo : abortEntry.getValue())
+                    for (AbortS3Info abortS3Info : abortS3List)
                     {
                         try
                         {
-                            S3Remote remote = remoteRepo.getS3(apiCtx, new RemoteName(abortInfo.remoteName));
+                            S3Remote remote = remoteRepo.getS3(apiCtx, new RemoteName(abortS3Info.remoteName));
                             byte[] masterKey = ctrlSecObj.getCryptKey();
                             if (masterKey == null || masterKey.length == 0)
                             {
@@ -294,8 +295,8 @@ public class CtrlSnapshotShippingAbortHandler
                                 );
                             }
                             backupHandler.abortMultipart(
-                                abortInfo.backupName,
-                                abortInfo.uploadId,
+                                abortS3Info.backupName,
+                                abortS3Info.uploadId,
                                 remote,
                                 apiCtx,
                                 masterKey
@@ -321,15 +322,14 @@ public class CtrlSnapshotShippingAbortHandler
                             throw new ImplementationError(exc);
                         }
                     }
-                    backupInfoMgr.abortDeleteEntries(
-                        nodeRef.getName().displayValue,
-                        abortEntry.getKey().objA,
-                        abortEntry.getKey().objB
-                    );
+                    // nothing to do for AbortL2LInfo entries, just enable the ABORT flag
+
+                    SnapshotDefinition.Key snapDfnkey = abortEntry.getKey();
+                    backupInfoMgr.abortDeleteEntries(nodeRef.getName(), snapDfnkey);
                     enableFlagsPrivileged(
                         ctrlApiDataLoader.loadSnapshotDfn(
-                            abortEntry.getKey().objA,
-                            abortEntry.getKey().objB,
+                            snapDfnkey.getResourceName(),
+                            snapDfnkey.getSnapshotName(),
                             true
                         ),
                         SnapshotDefinition.Flags.SHIPPING_ABORT

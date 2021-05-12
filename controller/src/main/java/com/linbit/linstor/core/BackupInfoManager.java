@@ -1,9 +1,15 @@
 package com.linbit.linstor.core;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.Key;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -18,7 +24,7 @@ import java.util.Map;
 public class BackupInfoManager
 {
     private Map<ResourceDefinition, String> restoreMap;
-    private Map<String, Map<Pair<String, String>, List<AbortInfo>>> abortMap;
+    private Map<NodeName, Map<SnapshotDefinition.Key, AbortInfo>> abortMap;
     private Map<Snapshot, LinkedList<Snapshot>> backupsToUpload;
 
     @Inject
@@ -77,7 +83,7 @@ public class BackupInfoManager
         }
     }
 
-    public void abortAddEntry(
+    public void abortAddS3Entry(
         String nodeName,
         String rscName,
         String snapName,
@@ -86,48 +92,83 @@ public class BackupInfoManager
         String remoteName
     )
     {
-        Pair<String, String> pair = new Pair<>(rscName, snapName);
-
+        // DO NOT just synchronize within getAbortInfo as the following .add(new Abort*Info(..)) should also be in the
+        // same synchronized block as the initial get
         synchronized (abortMap)
         {
-            Map<Pair<String, String>, List<AbortInfo>> map = abortMap.get(nodeName);
-            if (map != null)
-            {
-                if (map.containsKey(pair))
-                {
-                    map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
-                }
-                else
-                {
-                    map.put(pair, new ArrayList<>());
-                    map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
-                }
-            }
-            else
-            {
-                abortMap.put(nodeName, new HashMap<>());
-                map = abortMap.get(nodeName);
-                map.put(pair, new ArrayList<>());
-                map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
-            }
+            getAbortInfo(nodeName, rscName, snapName).abortS3InfoList.add(
+                new AbortS3Info(backupName, uploadId, remoteName)
+            );
         }
     }
 
-    public void abortDeleteEntries(String nodeName, String rscName, String snapName)
+    public void abortAddL2LEntry(NodeName nodeName, Key key)
     {
-        Pair<String, String> pair = new Pair<>(rscName, snapName);
-
+        // DO NOT just synchronize within getAbortInfo as the following .add(new Abort*Info(..)) should also be in the
+        // same synchronized block as the initial get
         synchronized (abortMap)
         {
-            Map<Pair<String, String>, List<AbortInfo>> map = abortMap.get(nodeName);
+            getAbortInfo(nodeName, key).abortL2LInfoList.add(new AbortL2LInfo());
+        }
+    }
+
+    private AbortInfo getAbortInfo(String nodeName, String rscName, String snapName)
+    {
+        try
+        {
+            return getAbortInfo(
+                new NodeName(nodeName),
+                new SnapshotDefinition.Key(new ResourceName(rscName), new SnapshotName(snapName))
+            );
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private AbortInfo getAbortInfo(NodeName nodeName, SnapshotDefinition.Key snapDfnKey)
+    {
+        Map<SnapshotDefinition.Key, AbortInfo> map = abortMap.get(nodeName);
+        if (map == null)
+        {
+            map = new HashMap<>();
+            abortMap.put(nodeName, map);
+        }
+
+        AbortInfo abortInfo = map.get(snapDfnKey);
+        if (abortInfo == null)
+        {
+            abortInfo = new AbortInfo();
+            map.put(snapDfnKey, abortInfo);
+        }
+        return abortInfo;
+    }
+
+    public void abortDeleteEntries(String nodeName, String rscName, String snapName) throws InvalidNameException
+    {
+        synchronized (abortMap)
+        {
+            abortDeleteEntries(
+                new NodeName(nodeName),
+                new SnapshotDefinition.Key(new ResourceName(rscName), new SnapshotName(snapName))
+            );
+        }
+    }
+
+    public void abortDeleteEntries(NodeName nodeName, SnapshotDefinition.Key snapDfnKey)
+    {
+        synchronized (abortMap)
+        {
+            Map<SnapshotDefinition.Key, AbortInfo> map = abortMap.get(nodeName);
             if (map != null)
             {
-                map.remove(pair);
+                map.remove(snapDfnKey);
             }
         }
     }
 
-    public Map<Pair<String, String>, List<AbortInfo>> abortGetEntries(String nodeName)
+    public Map<SnapshotDefinition.Key, AbortInfo> abortGetEntries(NodeName nodeName)
     {
         synchronized (abortMap)
         {
@@ -164,13 +205,24 @@ public class BackupInfoManager
         }
     }
 
-    public class AbortInfo
+    public static class AbortInfo
+    {
+        public final List<AbortS3Info> abortS3InfoList = new ArrayList<>();
+        public final List<AbortL2LInfo> abortL2LInfoList = new ArrayList<>();
+
+        public boolean isEmpty()
+        {
+            return abortS3InfoList.isEmpty() && abortL2LInfoList.isEmpty();
+        }
+    }
+
+    public static class AbortS3Info
     {
         public final String backupName;
         public final String uploadId;
         public final String remoteName;
 
-        AbortInfo(String backupNameRef, String uploadIdRef, String remoteNameRef)
+        AbortS3Info(String backupNameRef, String uploadIdRef, String remoteNameRef)
         {
             backupName = backupNameRef;
             uploadId = uploadIdRef;
@@ -178,4 +230,8 @@ public class BackupInfoManager
         }
     }
 
+    public static class AbortL2LInfo
+    {
+        // no special data needed (for now?)
+    }
 }
