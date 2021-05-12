@@ -107,94 +107,103 @@ public class SizeConv
             switch (str.toLowerCase().trim())
             {
                 case "":
+                    // fall-through
                 case "b":
                     unit = SizeUnit.UNIT_B;
                     break;
                 case "k":
+                    // fall-through
                 case "kb":
                     if (!forcePowerOfTwo)
                     {
                         unit = SizeUnit.UNIT_kB;
                         break;
                     }
-                    // else: fallthrough
+                    // else: fall-through
                 case "kib":
                     unit = SizeUnit.UNIT_KiB;
                     break;
                 case "m":
+                    // fall-through
                 case "mb":
                     if (!forcePowerOfTwo)
                     {
                         unit = SizeUnit.UNIT_MB;
                         break;
                     }
-                    // else: fallthrough
+                    // else: fall-through
                 case "mib":
                     unit = SizeUnit.UNIT_MiB;
                     break;
                 case "g":
+                    // fall-through
                 case "gb":
                     if (!forcePowerOfTwo)
                     {
                         unit = SizeUnit.UNIT_GB;
                         break;
                     }
-                    // else: fallthrough
+                    // else: fall-through
                 case "gib":
                     unit = SizeUnit.UNIT_GiB;
                     break;
                 case "t":
+                    // fall-through
                 case "tb":
                     if (!forcePowerOfTwo)
                     {
                         unit = SizeUnit.UNIT_TB;
                         break;
                     }
-                    // else: fallthrough
+                    // else: fall-through
                 case "tib":
                     unit = SizeUnit.UNIT_TiB;
                     break;
                 case "p":
+                    // fall-through
                 case "pb":
                     if (!forcePowerOfTwo)
                     {
                         unit = SizeUnit.UNIT_PB;
                         break;
                     }
-                    // else: fallthrough
+                    // else: fall-through
                 case "pib":
                     unit = SizeUnit.UNIT_PiB;
                     break;
                 case "e":
+                    // fall-through
                 case "eb":
                     if (!forcePowerOfTwo)
                     {
                         unit = SizeUnit.UNIT_EB;
                         break;
                     }
-                    // else: fallthrough
+                    // else: fall-through
                 case "eib":
                     unit = SizeUnit.UNIT_EiB;
                     break;
                 case "z":
+                    // fall-through
                 case "zb":
                     if (!forcePowerOfTwo)
                     {
                         unit = SizeUnit.UNIT_ZB;
                         break;
                     }
-                    // else: fallthrough
+                    // else: fall-through
                 case "zib":
                     unit = SizeUnit.UNIT_ZiB;
                     break;
                 case "y":
+                    // fall-through
                 case "yb":
                     if (!forcePowerOfTwo)
                     {
                         unit = SizeUnit.UNIT_YB;
                         break;
                     }
-                    // else: fallthrough
+                    // else: fall-through
                 case "yib":
                     unit = SizeUnit.UNIT_YiB;
                     break;

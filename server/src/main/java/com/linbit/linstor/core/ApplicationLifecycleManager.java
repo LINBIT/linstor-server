@@ -65,10 +65,10 @@ public class ApplicationLifecycleManager
         Runtime.getRuntime().addShutdownHook(new ModuleShutdownHook(shutdownCtx, this));
     }
 
-    public void startSystemServices(ArrayList<StartupInitializer> services)
+    public void startSystemServices(ArrayList<StartupInitializer> servicesRef)
         throws SystemServiceStartException
     {
-        this.services = services;
+        services = servicesRef;
         // Start services
         for (StartupInitializer service : services)
         {
@@ -107,9 +107,9 @@ public class ApplicationLifecycleManager
     public void stopSystemServices(ArrayList<StartupInitializer> services)
     {
         // Shutdown services in backwards order
-        for (int i = services.size()-1; i >= 0; i--)
+        for (int idx = services.size() - 1; idx >= 0; idx--)
         {
-            StartupInitializer service = services.get(i);
+            StartupInitializer service = services.get(idx);
             SystemService sysService = service.getSystemService();
             if (sysService != null)
             {

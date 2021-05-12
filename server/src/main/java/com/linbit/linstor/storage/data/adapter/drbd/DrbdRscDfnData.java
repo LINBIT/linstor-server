@@ -82,8 +82,8 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
         resourceNameSuffix = resourceNameSuffixRef;
         tcpPortPool = tcpPortPoolRef;
         dbDriver = dbDriverRef;
-        suffixedResourceName = rscNameRef.displayValue + (snapNameRef == null ? "" : snapNameRef.displayValue)
-            + resourceNameSuffixRef;
+        suffixedResourceName = rscNameRef.displayValue + (snapNameRef == null ? "" : snapNameRef.displayValue) +
+            resourceNameSuffixRef;
         rscName = Objects.requireNonNull(rscNameRef);
         snapName = snapNameRef;
         alStripes = alStripesRef;

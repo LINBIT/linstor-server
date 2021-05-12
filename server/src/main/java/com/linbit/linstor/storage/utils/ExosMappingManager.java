@@ -278,7 +278,7 @@ public class ExosMappingManager
         private final String name;
         private final Map<String, ExosCtrl> controllerMap;
 
-        public ExosEnclosure(String nameRef)
+        ExosEnclosure(String nameRef)
         {
             name = nameRef;
             controllerMap = new HashMap<>();
@@ -287,7 +287,7 @@ public class ExosMappingManager
 
     private class ExosCtrl
     {
-        private final static int DFLT_PORT_COUNT = 4;
+        private static final int DFLT_PORT_COUNT = 4;
         private final Map<String, ExosPort> ports;
 
         private ExosCtrl()

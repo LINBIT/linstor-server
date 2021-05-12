@@ -149,7 +149,8 @@ public class RestHttpClient implements RestClient
                         Map<String, Object>[] obj = OBJECT_MAPPER.readValue(
                             jsonData,
                             new TypeReference<Map<String, Object>[]>()
-                            {}
+                            {
+                            }
                         );
                         respObj = OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
                     }
@@ -158,7 +159,8 @@ public class RestHttpClient implements RestClient
                         Map<String, Object> obj = OBJECT_MAPPER.readValue(
                             jsonData,
                             new TypeReference<Map<String, Object>>()
-                            {}
+                            {
+                            }
                         );
                         respObj = OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
                     }

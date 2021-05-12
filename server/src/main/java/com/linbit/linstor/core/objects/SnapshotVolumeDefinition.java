@@ -42,7 +42,7 @@ import java.util.UUID;
 public class SnapshotVolumeDefinition extends BaseTransactionObject
     implements DbgInstanceUuid, Comparable<SnapshotVolumeDefinition>
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<NodeName, SnapshotVolume> getSnapshotVlmMap();
     }

@@ -1080,7 +1080,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 try
                 {
                     serverSocket.bind(bindAddress);
-                } catch (AlreadyBoundException boundExc)
+                }
+                catch (AlreadyBoundException boundExc)
                 {
                     // Thrown if this server socket is already bound.
                     // This is NOT the same error as if the TCP port is already in use,
@@ -1091,7 +1092,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                         "A newly created server socket could not be bound, because it is bound already.",
                         boundExc
                     );
-                } catch (UnsupportedAddressTypeException addrExc)
+                }
+                catch (UnsupportedAddressTypeException addrExc)
                 {
                     // Thrown if the socket can not be bound, because the type of
                     // address to bind the socket to is unsupported
@@ -1100,7 +1102,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             "is not of a supported type.",
                         addrExc
                     );
-                } catch (ClosedChannelException closeExc)
+                }
+                catch (ClosedChannelException closeExc)
                 {
                     // Thrown if the socket is closed when bind() is called
                     savedExc = new IOException(
@@ -1108,7 +1111,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             "while its initialization was still in progress.",
                         closeExc
                     );
-                } catch (IOException ioExc)
+                }
+                catch (IOException ioExc)
                 {
                     savedExc = ioExc;
                 }
@@ -1121,7 +1125,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     try
                     {
                         inetBindAddress = (InetSocketAddress) bindAddress;
-                    } catch (ClassCastException ccExc)
+                    }
+                    catch (ClassCastException ccExc)
                     {
                         // bindAddress is not a known IP protocol
                         // No automatic failback is possible, throw the original exception
@@ -1144,7 +1149,9 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 InetAddress.getByAddress(FALLBACK_LOOPBACK_ADDR),
                                 inetBindAddress.getPort()
                             );
-                        } else if (addr.isAnyLocalAddress())
+                        }
+                        else
+                        if (addr.isAnyLocalAddress())
                         {
                             errorReporter.logWarning(
                                 "%s: Connector %s: Binding the socket to the IPv6 anylocal address failed, " +
@@ -1165,7 +1172,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                 serverSocket.bind(fallbackAddress);
                                 // Fallback succeeded, discard the exception
                                 savedExc = null;
-                            } catch (AlreadyBoundException boundExc)
+                            }
+                            catch (AlreadyBoundException boundExc)
                             {
                                 // Thrown if this server socket is already bound.
                                 // This is NOT the same error as if the TCP port is already in use,
@@ -1175,7 +1183,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                         "because the socket is bound already.",
                                     boundExc
                                 );
-                            } catch (UnsupportedAddressTypeException | IOException ignored)
+                            }
+                            catch (UnsupportedAddressTypeException | IOException ignored)
                             {
                                 // Fallback attempt failed
                                 // Will throw the original exception further below
@@ -1199,7 +1208,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 try
                 {
                     serverSocket.register(serverSelector, OP_ACCEPT);
-                } catch (IllegalBlockingModeException illModeExc)
+                }
+                catch (IllegalBlockingModeException illModeExc)
                 {
                     // Implementation error, configureBlocking() skipped
                     throw new ImplementationError(
@@ -1207,7 +1217,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             "blocking mode was not configured correctly",
                         illModeExc
                     );
-                } catch (ClosedSelectorException closeExc)
+                }
+                catch (ClosedSelectorException closeExc)
                 {
                     // Thrown if the selector is closed when register() is called
                     throw new IOException(
@@ -1216,7 +1227,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             "I/O operations for the server socket.",
                         closeExc
                     );
-                } catch (CancelledKeyException cancelExc)
+                }
+                catch (CancelledKeyException cancelExc)
                 {
                     // May be thrown by register() if the channel is already registered
                     // with the selector, but has already been cancelled too (which should
@@ -1227,7 +1239,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             "selection key was already registered and cancelled during initialization",
                         cancelExc
                     );
-                } catch (IllegalSelectorException illSelExc)
+                }
+                catch (IllegalSelectorException illSelExc)
                 {
                     // Thrown by register() if the selector is from another I/O provider
                     // than the channel that is being registered
@@ -1236,7 +1249,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                             "was created by another type of I/O provider than the associated selector",
                         illSelExc
                     );
-                } catch (IllegalArgumentException illArg)
+                }
+                catch (IllegalArgumentException illArg)
                 {
                     // Generated if a bit in the I/O operations specified
                     // in register() does not correspond with a supported I/O operation
@@ -1251,7 +1265,8 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 // Enable entering the run() method's selector loop
                 shutdownFlag.set(false);
                 initFlag = true;
-            } finally
+            }
+            finally
             {
                 if (!initFlag)
                 {

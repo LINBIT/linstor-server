@@ -151,16 +151,16 @@ public class ExtToolsInfo
          *
          * null-values on either side also fulfill "greater or equal"
          */
-        public boolean greaterOrEqual(Version v)
+        public boolean greaterOrEqual(Version vsn)
         {
             // DO NOT rely on compareTo method, because of different handling of null values
-            int cmp = major == null || v.major == null ? 1 : Integer.compare(major, v.major);
+            int cmp = (major == null || vsn.major == null) ? 1 : Integer.compare(major, vsn.major);
             if (cmp == 0)
             {
-                cmp = minor == null || v.minor == null ? 1 : Integer.compare(minor, v.minor);
+                cmp = minor == null || vsn.minor == null ? 1 : Integer.compare(minor, vsn.minor);
                 if (cmp == 0)
                 {
-                    cmp = patch == null | v.patch == null ? 1 : Integer.compare(patch, v.patch);
+                    cmp = patch == null | vsn.patch == null ? 1 : Integer.compare(patch, vsn.patch);
                 }
             }
             return cmp >= 0;

@@ -54,7 +54,7 @@ import java.util.stream.Stream;
  */
 public class VolumeDefinition extends BaseTransactionObject implements DbgInstanceUuid, Comparable<VolumeDefinition>
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<String, Volume> getVlmMap();
     }
@@ -529,7 +529,7 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
         }
     }
 
-    public static enum Flags implements com.linbit.linstor.stateflags.Flags
+    public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),
         ENCRYPTED(1L << 1),

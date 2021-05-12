@@ -78,7 +78,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         File logDir = baseLogDirectory.toFile();
         if (!logDir.exists())
         {
-            if(!logDir.mkdirs())
+            if (!logDir.mkdirs())
             {
                 logError("Unable to create log directory: " + logDir);
             }
@@ -293,10 +293,13 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             {
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 final String utf8 = StandardCharsets.UTF_8.name();
-                try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+                try (PrintStream ps = new PrintStream(baos, true, utf8))
+                {
                     writeErrorReport(ps, reportNr, client, errorInfo, errorTime, contextInfo);
-                } catch (UnsupportedEncodingException e) {
-                    logError(e.getMessage());
+                }
+                catch (UnsupportedEncodingException exc)
+                {
+                    logError(exc.getMessage());
                 }
                 h2ErrorReporter.writeErrorReportToDB(
                     reportNr,

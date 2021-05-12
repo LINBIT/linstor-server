@@ -527,17 +527,15 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 while (rscIt.hasNext())
                 {
                     Resource otherRsc = rscIt.next();
-                    if (otherRsc.equals(rscRef))
+                    if (!otherRsc.equals(rscRef))
                     {
-                        continue;
-                    }
-
-                    Set<StorPool> otherStorPools = LayerVlmUtils.getStorPools(otherRsc, apiCtx);
-                    for (StorPool otherStorPool : otherStorPools)
-                    {
-                        if (otherStorPool.getSharedStorPoolName().equals(sharedStorPoolName))
+                        Set<StorPool> otherStorPools = LayerVlmUtils.getStorPools(otherRsc, apiCtx);
+                        for (StorPool otherStorPool : otherStorPools)
                         {
-                            sharedSPAlreadyInUse = true;
+                            if (otherStorPool.getSharedStorPoolName().equals(sharedStorPoolName))
+                            {
+                                sharedSPAlreadyInUse = true;
+                            }
                         }
                     }
                 }

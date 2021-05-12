@@ -2,9 +2,11 @@ package com.linbit.linstor.storage;
 
 import java.util.Objects;
 
-public class ProcCryptoEntry {
+public class ProcCryptoEntry
+{
 
-    public enum CryptoType {
+    public enum CryptoType
+    {
         SKCIPHER("skcipher"),
         CIPHER("cipher"),
         SHASH("shash"),
@@ -18,21 +20,28 @@ public class ProcCryptoEntry {
         UNKNOWN("");
 
         private final String name;
-        CryptoType(String nameRef) {
+        CryptoType(String nameRef)
+        {
             this.name = nameRef;
         }
 
-        public String getName() {
+        public String getName()
+        {
             return name;
         }
 
-        public static CryptoType fromString(String type) {
-            for (CryptoType ct : CryptoType.values()) {
-                if (type.equals(ct.getName())) {
-                    return ct;
+        public static CryptoType fromString(String type)
+        {
+            CryptoType result = UNKNOWN;
+            for (CryptoType ct : CryptoType.values())
+            {
+                if (type.equals(ct.getName()))
+                {
+                    result = ct;
+                    break;
                 }
             }
-            return UNKNOWN;
+            return result;
         }
 
         @Override
@@ -81,11 +90,9 @@ public class ProcCryptoEntry {
     }
 
     @Override
-    public boolean equals(Object o)
+    public boolean equals(Object obj)
     {
-        if (o instanceof ProcCryptoEntry)
-            return this.driver.equals(((ProcCryptoEntry)o).driver);
-        return false;
+        return obj instanceof ProcCryptoEntry && (driver.equals(((ProcCryptoEntry) obj).driver));
     }
 
     @Override

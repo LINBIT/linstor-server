@@ -16,5 +16,6 @@ public interface ResourceLayerIdDatabaseDriver
     <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>>
     SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> getParentDriver();
 
-    <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>> SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean> getSuspendDriver();
+    <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>>
+    SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean> getSuspendDriver();
 }

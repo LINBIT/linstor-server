@@ -96,7 +96,8 @@ public class EventProcessor
                         }
                     }
                 }
-            } finally
+            }
+            finally
             {
                 eventHandlingLock.unlock();
             }

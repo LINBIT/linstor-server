@@ -28,7 +28,7 @@ import java.util.UUID;
 
 public class KeyValueStore extends BaseTransactionObject implements Comparable<KeyValueStore>, ProtectedObject
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         // currently only a place holder for future maps
     }

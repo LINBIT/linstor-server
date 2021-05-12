@@ -54,7 +54,8 @@ class StltCmdLineArgsParser
     @CommandLine.Option(names = {"--port"}, description = "overrides the plain port")
     private Integer plainPort;
 
-    @CommandLine.Option(names = {"-s", "--skip-hostname-check"}, description = "deprecated. this argument will be silently ignored")
+    @CommandLine.Option(names = {"-s", "--skip-hostname-check"},
+        description = "deprecated. this argument will be silently ignored")
     @Deprecated
     private Boolean skipHostNameCheck;
 
@@ -69,7 +70,7 @@ class StltCmdLineArgsParser
     @CommandLine.Option(names = {"--override-node-name"}, description = "Overrides node name used in error reports.")
     private String nodeName;
 
-    @CommandLine.Option(names= {"--openflex"}, hidden = true)
+    @CommandLine.Option(names = {"--openflex"}, hidden = true)
     private boolean openflex;
 
     @CommandLine.Option(names = { "--remote-spdk" }, hidden = true)

@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 public class StorPoolDefinition extends BaseTransactionObject
     implements DbgInstanceUuid, Comparable<StorPoolDefinition>, ProtectedObject
 {
-    public static interface InitMaps
+    public interface InitMaps
     {
         Map<NodeName, StorPool> getStorPoolMap();
     }

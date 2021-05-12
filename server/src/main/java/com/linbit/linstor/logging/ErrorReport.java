@@ -1,6 +1,5 @@
 package com.linbit.linstor.logging;
 
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.objects.Node;
 
 import javax.annotation.Nonnull;

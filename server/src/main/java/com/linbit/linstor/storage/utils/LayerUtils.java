@@ -156,9 +156,9 @@ public class LayerUtils
 
         private LayerNode addChildren(DeviceLayerKind... kinds)
         {
-            for (DeviceLayerKind kind : kinds)
+            for (DeviceLayerKind curKind : kinds)
             {
-                successor.put(kind, NODES.computeIfAbsent(kind, (ignore) -> new LayerNode(kind)));
+                successor.put(curKind, NODES.computeIfAbsent(curKind, (ignore) -> new LayerNode(curKind)));
             }
             return this;
         }
@@ -212,7 +212,8 @@ public class LayerUtils
 
         AbsRscLayerObject<?> curLayerObject = rscLayerObject;
 
-        while (curLayerObject != null) {
+        while (curLayerObject != null)
+        {
             DeviceLayerKind kind = curLayerObject.getLayerKind();
             usedLayers.add(kind);
 

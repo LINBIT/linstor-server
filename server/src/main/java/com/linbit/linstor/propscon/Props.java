@@ -72,25 +72,29 @@ public interface Props extends TransactionObject, Iterable<Map.Entry<String, Str
      */
     default boolean contains(List<String> propFilters)
     {
+        boolean result = true;
         if (!propFilters.isEmpty())
         {
             for (final String pFilter : propFilters)
             {
                 String[] split = pFilter.split("=", 2);
-                String value = this.getProp(split[0]);
+                String value = getProp(split[0]);
                 if (value == null)
                 {
-                    return false;
+                    result = false;
+                    break;
                 }
+                else
                 if (split.length > 1)
                 {
                     if (!value.equals(split[1]))
                     {
-                        return false;
+                        result = false;
+                        break;
                     }
                 }
             }
         }
-        return true;
+        return result;
     }
 }
