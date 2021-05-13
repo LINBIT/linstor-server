@@ -412,11 +412,11 @@ public class CtrlExosApiCallHandler
             else
             {
                 setIfNotNull(
-                    enclosureRef + "/" + ExosRestClient.CONTROLLERS[0],
+                    enclosureRef + "/" + ExosRestClient.CONTROLLERS[0] + "/" + ApiConsts.KEY_STOR_POOL_EXOS_API_IP,
                     ctrlAIpRef
                 );
                 setIfNotNull(
-                    enclosureRef + "/" + ExosRestClient.CONTROLLERS[1],
+                    enclosureRef + "/" + ExosRestClient.CONTROLLERS[1] + "/" + ApiConsts.KEY_STOR_POOL_EXOS_API_IP,
                     ctrlBIpRef
                 );
                 setIfNotNull(
