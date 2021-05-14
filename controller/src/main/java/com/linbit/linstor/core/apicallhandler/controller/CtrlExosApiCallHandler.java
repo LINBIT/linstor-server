@@ -185,6 +185,8 @@ public class CtrlExosApiCallHandler
 
             ctrlConfApiCallHandler.updateSatelliteConf();
 
+            exosPingTask.getPojos(true); // force recache
+
             apiCallRc.addEntry(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.MASK_SUCCESS,
@@ -437,6 +439,8 @@ public class CtrlExosApiCallHandler
                 );
 
                 txHelper.commit();
+
+                exosPingTask.getPojos(true); // force recache
 
                 ctrlConfApiCallHandler.updateSatelliteConf();
 
