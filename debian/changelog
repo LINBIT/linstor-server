@@ -1,3 +1,21 @@
+linstor-server (1.12.4-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * OpenApi,files: Added missing requestBody
+  * Exos: Fixed setting corret properties
+  * Exos: Force recache after modifying Exos settings
+  * Rsc: Added de-/activate to openapi.yaml
+  * NameShortener: support OverrideVlmId property
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * docker: create error when requested package is missing
+
+  [ Rene Peinthor ]
+  * ctrlconf: fix setting the correct ctrl property(instead of stlt)
+  * migration: auto-verify, only use non keyed algos and migrate ctrl disable
+
+ -- Gabor Hernadi <gabor.hernadi@linbit.com>  Tue, 18 May 2021 06:34:10 +0000
+
 linstor-server (1.12.3-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
