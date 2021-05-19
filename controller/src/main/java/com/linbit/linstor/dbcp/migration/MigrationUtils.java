@@ -7,7 +7,6 @@ import com.linbit.linstor.dbdrivers.derby.DbConstants;
 import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -388,61 +387,7 @@ public class MigrationUtils
         switch (dbProductRef)
         {
             case MARIADB:
-                int[] version = getVersion(dbConRef.getMetaData().getDatabaseProductVersion());
-                if (version[0] >= 10 && version[1] >= 2 && version.length == 3 && version[2] >= 1)
-                {
-                    sql = String.format("ALTER TABLE %s DROP CONSTRAINT IF EXISTS %s;", table, constraintName);
-                }
-                else
-                {
-                    // mariadb does not support dropping check-constraints, but also ignored adding them.
-                    // we should be fine
-                    // sql = null is fine, the executor has to take care of it
-                }
-                break;
-            case ASE:
-            case DB2:
-            case DB2_I:
-            case DB2_Z:
-            case DERBY:
-            case H2:
-            case INFORMIX:
-            case MSFT_SQLSERVER:
-            case MYSQL:
-            case ORACLE_RDBMS:
-            case POSTGRESQL:
-                sql = String.format("ALTER TABLE %s DROP CONSTRAINT %s;", table, constraintName);
-                break;
-            case ETCD: // fall-through
-            case UNKNOWN:
-            default:
-                throw new ImplementationError("Unexpected database type: " + dbProductRef);
-        }
-        return sql;
-    }
-
-    public static String dropColumnConstraintUnique(
-        Connection dbConRef,
-        DbProduct dbProductRef,
-        String table,
-        String constraintName
-    ) throws SQLException, ImplementationError
-    {
-        String sql = null;
-        switch (dbProductRef)
-        {
-            case MARIADB:
-                int[] version = getVersion(dbConRef.getMetaData().getDatabaseProductVersion());
-                if (version[0] >= 10 && version[1] >= 2 && version.length == 3 && version[2] >= 1)
-                {
-                    sql = String.format("ALTER TABLE %s DROP CONSTRAINT IF EXISTS %s;", table, constraintName);
-                }
-                else
-                {
-                    // mariadb does not support dropping unique-constraints, but also ignored adding them.
-                    // we should be fine
-                    // sql = null is fine, the executor has to take care of it
-                }
+                sql = String.format("ALTER TABLE %s DROP CONSTRAINT IF EXISTS %s;", table, constraintName);
                 break;
             case ASE:
             case DB2:
