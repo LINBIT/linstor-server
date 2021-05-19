@@ -451,7 +451,7 @@ public class JsonGenTypes
         /**
          * if true resource will be created as diskful even if diskless would be possible
          */
-        public Boolean diskful;
+        public boolean diskful = false;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

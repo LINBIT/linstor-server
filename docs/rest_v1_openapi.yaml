@@ -5339,6 +5339,7 @@ components:
             $ref: '#/components/schemas/LayerType'
         diskful:
           type: boolean
+          default: false
           description: if true resource will be created as diskful even if diskless would be possible
     ResourceModify:
       type: object

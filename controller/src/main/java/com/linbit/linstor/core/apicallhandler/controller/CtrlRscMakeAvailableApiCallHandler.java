@@ -108,7 +108,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         String nodeNameRef,
         String rscNameRef,
         List<String> layerStackRef,
-        Boolean diskfulRef
+        boolean diskfulRef
     )
     {
         ResponseContext context = makeContext(nodeNameRef, rscNameRef);
@@ -136,7 +136,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         String nodeNameRef,
         String rscNameRef,
         List<String> layerStackRef,
-        Boolean diskfulRef,
+        boolean diskfulRef,
         ResponseContext contextRef
     )
     {
@@ -414,7 +414,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         String nodeNameRef,
         ResourceDefinition rscDfnRef,
         List<DeviceLayerKind> layerStackRef,
-        Boolean diskfulRef
+        boolean diskfulRef
     )
     {
         ResponseContext context = makeContext(nodeNameRef, rscDfnRef.getName().displayValue);
@@ -441,7 +441,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         String nodeNameRef,
         ResourceDefinition rscDfn,
         List<DeviceLayerKind> layerStack,
-        Boolean diskfulRef
+        boolean diskfulRef
     )
     {
         AutoSelectFilterPojo autoSelect = null;
@@ -450,7 +450,7 @@ public class CtrlRscMakeAvailableApiCallHandler
 
         if (layerStack.contains(DeviceLayerKind.DRBD))
         {
-            if ((diskfulRef == null || !diskfulRef) && hasDrbdDiskfulPeer(rscDfn))
+            if (!diskfulRef && hasDrbdDiskfulPeer(rscDfn))
             {
                 errorReporter.logTrace("Searching diskless storage pool for DRBD resource");
                 // we can create a DRBD diskless resource
