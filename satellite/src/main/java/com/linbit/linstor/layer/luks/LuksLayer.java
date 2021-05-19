@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.luks;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
@@ -26,6 +27,9 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -42,11 +46,16 @@ public class LuksLayer implements DeviceLayer
     // linstor calculates in KiB
     private static final int MIB = 1024;
 
+    private static final int LUKS1_HEADER_SIZE = 2 * MIB;
+    private static final int LUKS2_HEADER_SIZE = 16 * MIB;
+
     private final AccessContext sysCtx;
     private final CryptSetupCommands cryptSetup;
     private final Provider<DeviceHandler> resourceProcessorProvider;
     private final ExtCmdFactory extCmdFactory;
     private final ErrorReporter errorReporter;
+
+    private final long luksHeaderSize;
 
     @Inject
     public LuksLayer(
@@ -54,7 +63,8 @@ public class LuksLayer implements DeviceLayer
         CryptSetupCommands cryptSetupRef,
         ExtCmdFactory extCmdFactoryRef,
         Provider<DeviceHandler> resourceProcessorRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        StltExtToolsChecker extToolsCheckerRef
     )
     {
         sysCtx = sysCtxRef;
@@ -62,6 +72,23 @@ public class LuksLayer implements DeviceLayer
         extCmdFactory = extCmdFactoryRef;
         resourceProcessorProvider = resourceProcessorRef;
         errorReporter = errorReporterRef;
+
+        ExtToolsInfo cryptSetupInfo = extToolsCheckerRef.getExternalTools(false).get(ExtTools.CRYPT_SETUP);
+        if (cryptSetupInfo != null && cryptSetupInfo.isSupported())
+        {
+            if (cryptSetupInfo.hasVersionOrHigher(new Version(2, 1)))
+            {
+                luksHeaderSize = LUKS2_HEADER_SIZE;
+            }
+            else
+            {
+                luksHeaderSize = LUKS1_HEADER_SIZE;
+            }
+        }
+        else
+        {
+            luksHeaderSize = -1;
+        }
     }
 
     @Override
@@ -112,7 +139,7 @@ public class LuksLayer implements DeviceLayer
         throws AccessDeniedException, DatabaseException, StorageException
     {
         LuksVlmData<Resource> luksData = (LuksVlmData<Resource>) vlmData;
-        long grossSize = luksData.getUsableSize() + 16 * MIB;
+        long grossSize = luksData.getUsableSize() + luksHeaderSize;
         luksData.setAllocatedSize(grossSize);
 
         VlmProviderObject<Resource> childVlmData = luksData.getSingleChild();
@@ -126,7 +153,7 @@ public class LuksLayer implements DeviceLayer
     {
         LuksVlmData<Resource> luksData = (LuksVlmData<Resource>) vlmData;
         long grossSize = luksData.getAllocatedSize();
-        long netSize = grossSize - 16 * MIB;
+        long netSize = grossSize - luksHeaderSize;
 
         luksData.setUsableSize(netSize);
 

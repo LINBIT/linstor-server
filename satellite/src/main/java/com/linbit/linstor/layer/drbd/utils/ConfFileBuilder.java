@@ -766,7 +766,7 @@ public class ConfFileBuilder
         if (((Volume) vlmData.getVolume()).getFlags().isUnset(localAccCtx, Volume.Flags.DELETE))
         {
             final String disk;
-            if ((!isPeerRsc && vlmData.getBackingDevice() == null) ||
+            boolean isDiskless = (!isPeerRsc && vlmData.getBackingDevice() == null) ||
                 (isPeerRsc &&
                 // FIXME: vlmData.getRscLayerObject().getFlags should be used here
                      vlmData.getVolume().getAbsResource().disklessForDrbdPeers(accCtx)
@@ -774,8 +774,8 @@ public class ConfFileBuilder
                 (!isPeerRsc &&
                 // FIXME: vlmData.getRscLayerObject().getFlags should be used here
                      vlmData.getVolume().getAbsResource().isDrbdDiskless(accCtx)
-                )
-            )
+                );
+            if (isDiskless)
             {
                 disk = "none";
             }
@@ -849,7 +849,10 @@ public class ConfFileBuilder
                         "N (" + rscDfn.getName() + ")"
                     )
                     .addProps(stltProps, "C");
-                if (vlmPrioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS))
+                if (
+                    vlmPrioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) ||
+                        (!isPeerRsc && !isDiskless)
+                )
                 {
                     appendLine("disk");
                     try (Section ignore = new Section())
@@ -859,6 +862,15 @@ public class ConfFileBuilder
                             ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
                             vlmPrioProps
                         );
+                        if (!isPeerRsc && !isDiskless)
+                        {
+                            appendLine(
+                                "size        %s;",
+                                Long.toString(
+                                    vlmData.getUsableSize() * 2 // from kib to sectors
+                                )
+                            );
+                        }
                     }
                 }
 
