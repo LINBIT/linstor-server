@@ -75,6 +75,7 @@ public class CtrlRscMakeAvailableApiCallHandler
     private final CtrlApiDataLoader dataLoader;
     private final Autoplacer autoplacer;
     private final CtrlSatelliteUpdateCaller stltUpdateCaller;
+    private final CtrlRscToggleDiskApiCallHandler toggleDiskHandler;
 
     @Inject
     public CtrlRscMakeAvailableApiCallHandler(
@@ -88,7 +89,8 @@ public class CtrlRscMakeAvailableApiCallHandler
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         CtrlApiDataLoader dataLoaderRef,
         Autoplacer autoplacerRef,
-        CtrlSatelliteUpdateCaller stltUpdateCallerRef
+        CtrlSatelliteUpdateCaller stltUpdateCallerRef,
+        CtrlRscToggleDiskApiCallHandler toggleDiskHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -102,6 +104,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         dataLoader = dataLoaderRef;
         autoplacer = autoplacerRef;
         stltUpdateCaller = stltUpdateCallerRef;
+        toggleDiskHandler = toggleDiskHandlerRef;
     }
 
     public Flux<ApiCallRc> makeResourceAvailable(
@@ -209,10 +212,41 @@ public class CtrlRscMakeAvailableApiCallHandler
             }
             else
             {
-                errorReporter.logTrace("Resource already in expected state. Nothing to do");
-                flux = Flux.just(
-                    ApiCallRcImpl.singleApiCallRc(ApiConsts.MASK_SUCCESS, "Resource already deployed as requested")
-                );
+                /*
+                 * checking for DRBD_DISKLESS instead of DISKLESS to prevent NVMe and other cases.
+                 * Toggle disk ONLY works with DRBD.
+                 */
+                if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS) && diskfulRef)
+                {
+                    // toggle disk
+                    AutoSelectFilterPojo autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
+                    autoSelect.setSkipAlreadyPlacedOnNodeNamesCheck(Collections.singletonList(nodeNameRef));
+
+                    Set<StorPool> storPoolSet = autoplacer.autoPlace(
+                        AutoSelectFilterPojo.merge(
+                            autoSelect,
+                            rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+                        ),
+                        rscDfn,
+                        CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerCtxProvider.get())
+                    );
+                    StorPool sp = getStorPoolOrFail(storPoolSet, nodeNameRef, false);
+
+                    flux = toggleDiskHandler.resourceToggleDisk(
+                        nodeNameRef,
+                        rscNameRef,
+                        sp.getName().displayValue,
+                        null,
+                        false
+                    );
+                }
+                else
+                {
+                    errorReporter.logTrace("Resource already in expected state. Nothing to do");
+                    flux = Flux.just(
+                        ApiCallRcImpl.singleApiCallRc(ApiConsts.MASK_SUCCESS, "Resource already deployed as requested")
+                    );
+                }
             }
             ctrlTransactionHelper.commit();
         }
