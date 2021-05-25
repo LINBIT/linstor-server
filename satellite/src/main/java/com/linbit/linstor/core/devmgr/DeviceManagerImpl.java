@@ -16,6 +16,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.backupshipping.BackupShippingService;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
@@ -209,6 +210,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private ResourceStateEvent resourceStateEvent;
 
     private SnapshotShippingService snapshipService;
+    private BackupShippingService backupService;
 
     // Saved for later check against what the controller granted
     private TreeSet<SharedStorPoolName> grantedLocks;
@@ -247,6 +249,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         DrbdVersion drbdVersionRef,
         ExtCmdFactory extCmdFactoryRef,
         SnapshotShippingService snapshipServiceRef,
+        BackupShippingService backupServiceRef,
         StltExternalFileHandler extFileHandlerRef
     )
     {
@@ -276,6 +279,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         drbdVersion = drbdVersionRef;
         extCmdFactory = extCmdFactoryRef;
         snapshipService = snapshipServiceRef;
+        backupService = backupServiceRef;
         extFileHandler = extFileHandlerRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
@@ -1531,6 +1535,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         for (Snapshot snapshot : snapshotDefinition.getAllSnapshots(wrkCtx))
                         {
                             snapshipService.snapshotDeleted(snapshot);
+                            backupService.snapshotDeleted(snapshot);
                             snapshot.delete(wrkCtx);
                         }
 

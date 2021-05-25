@@ -732,6 +732,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         )
                     );
                 }
+
                 if (!snapshotExists(snapVlm))
                 {
                     errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
@@ -790,6 +791,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
+                System.out.println("wooops");
                 Snapshot snap = snapVlm.getVolume().getAbsResource();
                 if (
                     snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
@@ -806,6 +808,22 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 )
                 {
                     backupShipMgr.abort(snapVlm);
+                }
+                if (
+                    snapshotExists(snapVlm) &&
+                    snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                        !backupShipMgr.alreadyStarted(snapVlm) && !backupShipMgr.alreadyFinished(snapVlm)
+                )
+                {
+                    System.out.println("start restore");
+                    try
+                    {
+                        startBackupRestore(snapVlm);
+                    }
+                    catch (InvalidNameException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
                 }
             }
         }
@@ -845,6 +863,43 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         if (prevSnapName != null)
         {
             Snapshot snap = snapVlm.getVolume().getAbsResource();
+            SnapshotDefinition prevSnapDfn = snap.getResourceDefinition()
+                .getSnapshotDfn(storDriverAccCtx, new SnapshotName(prevSnapName));
+            if (prevSnapDfn != null)
+            {
+                AbsRscLayerObject<Snapshot> prevSnapLayerData = prevSnapDfn
+                    .getSnapshot(storDriverAccCtx, snap.getNodeName())
+                    .getLayerData(storDriverAccCtx);
+
+                Set<AbsRscLayerObject<Snapshot>> prevSnapStorageDataSet = LayerRscUtils
+                    .getRscDataByProvider(prevSnapLayerData, DeviceLayerKind.STORAGE);
+
+                AbsRscLayerObject<Snapshot> currentSnapLayerData = snapVlm.getRscLayerObject();
+                String curSnapNameSuffix = currentSnapLayerData.getResourceNameSuffix();
+
+                for (AbsRscLayerObject<Snapshot> prevSnapStorageData : prevSnapStorageDataSet)
+                {
+                    String prevSnapNameSuffix = prevSnapStorageData.getResourceNameSuffix();
+                    if (prevSnapNameSuffix.equals(curSnapNameSuffix))
+                    {
+                        prevSnapVlmData = prevSnapStorageData.getVlmProviderObject(snapVlm.getVlmNr());
+                        break;
+                    }
+                }
+            }
+        }
+        return prevSnapVlmData;
+    }
+
+    private LAYER_SNAP_DATA getPreviousSnapvlmData(LAYER_SNAP_DATA snapVlm, Snapshot snap)
+        throws InvalidKeyException, AccessDeniedException, InvalidNameException
+    {
+        LAYER_SNAP_DATA prevSnapVlmData = null;
+
+        String prevSnapName = snap.getProps(storDriverAccCtx)
+            .getProp(InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        if (prevSnapName != null)
+        {
             SnapshotDefinition prevSnapDfn = snap.getResourceDefinition()
                 .getSnapshotDfn(storDriverAccCtx, new SnapshotName(prevSnapName));
             if (prevSnapDfn != null)
@@ -931,12 +986,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException
     {
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
+        LAYER_SNAP_DATA prevSnapVlmData = getPreviousSnapvlmData(snapVlmData, snapVlm.getAbsResource());
         backupShipMgr.sendBackup(
             snapVlm.getSnapshotName().displayValue,
             snapVlm.getResourceName().displayValue,
             snapVlmData.getRscLayerObject().getResourceNameSuffix(),
             snapVlm.getVolumeNumber().value,
-            getSnapshotShippingSendingCommandImpl(null, snapVlmData),
+            getSnapshotShippingSendingCommandImpl(prevSnapVlmData, snapVlmData),
             snapVlmData
         );
     }

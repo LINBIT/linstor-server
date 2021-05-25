@@ -1214,6 +1214,7 @@ public class JsonGenTypes
         public String stor_pool_name;
         public String remote_name;
         public String passphrase;
+        public String last_backup;
         public String node_name;
     }
 
@@ -1222,6 +1223,7 @@ public class JsonGenTypes
     {
         public String rsc_name;
         public String remote_name;
+        public Boolean incremential;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

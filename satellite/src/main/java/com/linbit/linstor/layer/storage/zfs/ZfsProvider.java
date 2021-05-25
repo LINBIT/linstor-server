@@ -598,7 +598,11 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected String getSnapshotShippingReceivingCommandImpl(ZfsData<Snapshot> snapVlmDataRef)
         throws StorageException, AccessDeniedException
     {
-        return "zfs receive -F " + getZPool(snapVlmDataRef.getStorPool()) + "/" + asSnapLvIdentifier(snapVlmDataRef);
+        return "zfs receive -F " + getZPool(snapVlmDataRef.getStorPool()) + "/" +
+            asLvIdentifier(
+                snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
+                ((SnapshotVolume) snapVlmDataRef.getVolume()).getSnapshotVolumeDefinition()
+            );
     }
 
     @Override

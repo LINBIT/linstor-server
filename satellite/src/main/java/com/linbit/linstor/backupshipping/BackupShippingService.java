@@ -52,7 +52,6 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,7 +68,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.amazonaws.SdkClientException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Singleton
@@ -99,6 +97,7 @@ public class BackupShippingService implements SystemService
     private final BackupToS3 backupHandler;
     private final Map<Snapshot, ShippingInfo> shippingInfoMap;
     private final Set<Snapshot> startedShippments;
+    private final Map<Snapshot, List<String>> finishedShipments;
     private final ThreadGroup threadGroup;
     private final AccessContext accCtx;
     private final RemoteMap remoteMap;
@@ -159,6 +158,7 @@ public class BackupShippingService implements SystemService
 
         shippingInfoMap = Collections.synchronizedMap(new TreeMap<>());
         startedShippments = Collections.synchronizedSet(new TreeSet<>());
+        finishedShipments = Collections.synchronizedMap(new TreeMap<>());
         threadGroup = new ThreadGroup("SnapshotShippingSerivceThreadGroup");
 
         // this causes all shippings to be aborted should the satellite lose connection to the controller
@@ -253,17 +253,19 @@ public class BackupShippingService implements SystemService
     {
         String backupName = "";
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-        String metaName = snapVlm.getSnapshot().getProps(accCtx)
-            .getProp(InternalApiConsts.KEY_BACKUP_META_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-        Pattern metaPattern = Pattern.compile("^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})\\.meta$");
-        Matcher m = metaPattern.matcher(metaName);
+        String simpleBackupName = snapVlm.getSnapshot().getProps(accCtx)
+            .getProp(InternalApiConsts.KEY_BACKUP_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        Pattern p = Pattern.compile("^([a-zA-Z0-9_-]{2,48})_(back_(?:inc_)?[0-9]{8}_[0-9]{6})$");
+        Matcher m = p.matcher(simpleBackupName);
         if (m.matches())
         {
             backupName = String.format(BACKUP_KEY_FORMAT, m.group(1), rscNameSuffixRef, vlmNrRef, m.group(2));
         }
         else
         {
-            throw new ImplementationError("Not a meta file: " + metaName);
+            throw new ImplementationError(
+                "The simplified backup-name " + simpleBackupName + " does not conform to the expected format."
+            );
         }
         String remoteName = snapVlm.getSnapshot().getProps(accCtx)
             .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
@@ -316,9 +318,16 @@ public class BackupShippingService implements SystemService
                                 try
                                 {
                                     String remoteName = snap.getProps(accCtx).getProp(
-                                        InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                                        InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                                         ApiConsts.NAMESPC_BACKUP_SHIPPING
                                     );
+                                    if (remoteName == null || remoteName.isEmpty())
+                                    {
+                                        remoteName = snap.getProps(accCtx).getProp(
+                                            InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                        );
+                                    }
                                     controllerPeerConnector.getControllerPeer().sendMessage(
                                         interComSerializer
                                             .onewayBuilder(InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_ID)
@@ -391,7 +400,7 @@ public class BackupShippingService implements SystemService
                     info = new ShippingInfo();
                     shippingInfoMap.put(snap, info);
                 }
-                info.snapVlmDataInfoMap.put(snapVlmData, new SnapVlmDataInfo(daemon, backupNameRef));
+                info.snapVlmDataInfoMap.put(snapVlmData, new SnapVlmDataInfo(daemon, backupNameRef, snapVlmData.getVlmNr().value));
                 info.remote = (S3Remote) remote;
             }
         }
@@ -439,10 +448,10 @@ public class BackupShippingService implements SystemService
                                         ApiConsts.NAMESPC_BACKUP_SHIPPING
                                     ) + ".meta";
                                 backupHandler.putObject(
-                                    key, fillPojo(snap), shippingInfo.remote, accCtx, stltSecObj.getCryptKey()
+                                    key, fillPojo(snap, shippingInfo.remote, key), shippingInfo.remote, accCtx, stltSecObj.getCryptKey()
                                 );
                             }
-                            catch (InvalidKeyException | AccessDeniedException | JsonProcessingException exc)
+                            catch (InvalidKeyException | AccessDeniedException | IOException exc)
                             {
                                 errorReporter.reportError(new ImplementationError(exc));
                                 success = false;
@@ -462,13 +471,31 @@ public class BackupShippingService implements SystemService
                     {
                         snapVlmDataInfo.daemon.shutdown(); // just make sure that everything is already stopped
                     }
+                    try
+                    {
+                        String simpleBackupName = snap.getProps(accCtx)
+                            .getProp(InternalApiConsts.KEY_BACKUP_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        if (finishedShipments.containsKey(snap))
+                        {
+                            finishedShipments.get(snap).add(simpleBackupName);
+                        }
+                        else
+                        {
+                            finishedShipments.put(snap, Arrays.asList(simpleBackupName));
+                        }
+                    }
+                    catch (InvalidKeyException | AccessDeniedException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
                     shippingInfoMap.remove(snap);
+                    startedShippments.remove(snap);
                 }
             }
         }
     }
 
-    private String fillPojo(Snapshot snap) throws JsonProcessingException, AccessDeniedException
+    private String fillPojo(Snapshot snap, S3Remote remote, String metaName) throws AccessDeniedException, IOException
     {
         SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
         PriorityProps rscDfnPrio = new PriorityProps(
@@ -516,8 +543,13 @@ public class BackupShippingService implements SystemService
 
         RscMetaPojo rscRef = new RscMetaPojo(rscPropsRef, rscFlagsRef, vlmsRef);
 
-        // TODO: for inc, get backups from old meta file
-        List<List<BackupInfoPojo>> backupsRef = new ArrayList<>();
+        Map<Integer, List<BackupInfoPojo>> backupsRef;
+        if(snap.getProps(accCtx).getProp(InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, ApiConsts.NAMESPC_BACKUP_SHIPPING) != null) {
+            backupsRef = backupHandler.getMetaFile(metaName, remote, accCtx, stltSecObj.getCryptKey()).getBackups();
+        }
+        else {
+            backupsRef = new TreeMap<>();
+        }
         String finishedTime = SDF.format(new Date());
         for (SnapVlmDataInfo snapInfo : shippingInfoMap.get(snap).snapVlmDataInfoMap.values())
         {
@@ -526,7 +558,14 @@ public class BackupShippingService implements SystemService
                 finishedTime,
                 snap.getNodeName().displayValue
             );
-            backupsRef.add(Arrays.asList(backInfo));
+            if (backupsRef.containsKey(snapInfo.vlmNr))
+            {
+                backupsRef.get(snapInfo.vlmNr).add(backInfo);
+            }
+            else
+            {
+                backupsRef.put(snapInfo.vlmNr, Arrays.asList(backInfo));
+            }
         }
 
         LuksLayerMetaPojo luksPojo = null;
@@ -553,9 +592,24 @@ public class BackupShippingService implements SystemService
         return mapper.writeValueAsString(pojo);
     }
 
-    private boolean alreadyStarted(AbsStorageVlmData<Snapshot> snapVlmDataRef)
+    public boolean alreadyStarted(AbsStorageVlmData<Snapshot> snapVlmDataRef)
     {
         return startedShippments.contains(snapVlmDataRef.getVolume().getAbsResource());
+    }
+
+    public boolean alreadyFinished(AbsStorageVlmData<Snapshot> snapVlmDataRef)
+    {
+        try
+        {
+            return finishedShipments.get(snapVlmDataRef.getVolume().getAbsResource()).contains(
+                snapVlmDataRef.getVolume().getAbsResource().getProps(accCtx)
+                    .getProp(InternalApiConsts.KEY_BACKUP_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING)
+            );
+        }
+        catch (InvalidKeyException | AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private void killIfRunning(String cmdToKill) throws StorageException
@@ -658,6 +712,7 @@ public class BackupShippingService implements SystemService
     public void snapshotDeleted(Snapshot snap)
     {
         startedShippments.remove(snap);
+        finishedShipments.remove(snap);
     }
 
     private static class ShippingInfo
@@ -674,11 +729,13 @@ public class BackupShippingService implements SystemService
     {
         private BackupShippingDaemon daemon;
         private String backupName;
+        private int vlmNr;
 
-        private SnapVlmDataInfo(BackupShippingDaemon daemonRef, String backupNameRef)
+        private SnapVlmDataInfo(BackupShippingDaemon daemonRef, String backupNameRef, int vlmNrRef)
         {
             daemon = daemonRef;
             backupName = backupNameRef;
+            vlmNr = vlmNrRef;
         }
     }
 

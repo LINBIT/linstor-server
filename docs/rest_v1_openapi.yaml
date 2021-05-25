@@ -4748,7 +4748,7 @@ paths:
     post:
       tags:
         - developers
-      summary: create a full backup
+      summary: create a full or incremential backup
       description: create and ship a full backup to the target system
       responses:
         '200':
@@ -7007,6 +7007,8 @@ components:
           type: string
         passphrase:
           type: string
+        last_backup:
+          type: string
         node_name:
           type: string
     BackupCreate:
@@ -7016,6 +7018,8 @@ components:
           type: string
         remote_name:
           type: string
+        incremential:
+          type: boolean
     BackupAbort:
       type: object
       properties:

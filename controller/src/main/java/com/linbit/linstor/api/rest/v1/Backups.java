@@ -59,7 +59,7 @@ public class Backups
     }
 
     @POST
-    public void createFullBackup(
+    public void createBackup(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
         String jsonData
@@ -69,7 +69,7 @@ public class Backups
         try
         {
             JsonGenTypes.BackupCreate data = objectMapper.readValue(jsonData, JsonGenTypes.BackupCreate.class);
-            responses = backupApiCallHandler.createFullBackup(data.rsc_name, data.remote_name)
+            responses = backupApiCallHandler.createBackup(data.rsc_name, data.remote_name, data.incremential)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
@@ -96,16 +96,37 @@ public class Backups
     )
     {
         Flux<ApiCallRc> responses;
+
         try
         {
             JsonGenTypes.BackupRestore data = objectMapper.readValue(jsonData, JsonGenTypes.BackupRestore.class);
+            if (((data.last_backup == null || data.last_backup.isEmpty()) &&
+                (data.src_rsc_name == null || data.src_rsc_name.isEmpty())) ||
+                (data.last_backup != null && data.last_backup.isEmpty() &&
+                data.src_rsc_name != null && data.src_rsc_name.isEmpty()))
+            {
+                // either neither last_backup and src_rsc_name are given, or both
+                requestHelper
+                    .doFlux(
+                        asyncResponse,
+                        ApiCallRcRestUtils.mapToMonoResponse(
+                            Flux.just(
+                                ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.FAIL_INVLD_REQUEST,
+                                    "Too many or too few parameters given. Either last_backup or src_rsc_name is required, but not both!"
+                                )
+                            ), Response.Status.BAD_REQUEST
+                        )
+                    );
+            }
             responses = backupApiCallHandler.restoreBackup(
                 data.src_rsc_name,
                 data.stor_pool_name,
                 data.node_name,
                 rscName,
                 data.remote_name,
-                data.passphrase
+                data.passphrase,
+                data.last_backup
             ).subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,

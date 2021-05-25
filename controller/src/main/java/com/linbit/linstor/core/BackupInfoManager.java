@@ -1,6 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.Pair;
 
@@ -9,6 +10,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -17,12 +19,14 @@ public class BackupInfoManager
 {
     private Map<ResourceDefinition, String> restoreMap;
     private Map<String, Map<Pair<String, String>, List<AbortInfo>>> abortMap;
+    private Map<Snapshot, LinkedList<String>> backupsToUpload;
 
     @Inject
     public BackupInfoManager(TransactionObjectFactory transObjFactoryRef)
     {
         restoreMap = transObjFactoryRef.createTransactionPrimitiveMap(new HashMap<>(), null);
         abortMap = new HashMap<>();
+        backupsToUpload = new HashMap<>();
     }
 
     public boolean restoreAddEntry(ResourceDefinition rscDfn, String metaName)
@@ -120,6 +124,26 @@ public class BackupInfoManager
     public Map<Pair<String, String>, List<AbortInfo>> abortGetEntries(String nodeName)
     {
         return abortMap.get(nodeName);
+    }
+
+    public boolean backupsToUploadAddEntry(Snapshot snap, LinkedList<String> backupNames)
+    {
+        if (backupsToUpload.containsKey(snap))
+        {
+            return false;
+        }
+        backupsToUpload.put(snap, backupNames);
+        return true;
+    }
+
+    public String getNextBackupToUpload(Snapshot snap)
+    {
+        return backupsToUpload.get(snap).pollFirst();
+    }
+
+    public void backupsToUploadRemoveEntry(Snapshot snap)
+    {
+        backupsToUpload.remove(snap);
     }
 
     public class AbortInfo

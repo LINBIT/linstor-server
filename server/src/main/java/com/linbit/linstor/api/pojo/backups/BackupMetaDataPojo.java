@@ -3,6 +3,7 @@ package com.linbit.linstor.api.pojo.backups;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -15,7 +16,7 @@ public class BackupMetaDataPojo
     private final RscDfnMetaPojo rscDfn;
     private final RscMetaPojo rsc;
     private final LuksLayerMetaPojo luksInfo;
-    private final List<List<BackupInfoPojo>> backups;
+    private final Map<Integer, List<BackupInfoPojo>> backups;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public BackupMetaDataPojo(
@@ -23,7 +24,7 @@ public class BackupMetaDataPojo
         @JsonProperty("rscDfn") RscDfnMetaPojo rscDfnRef,
         @JsonProperty("rsc") RscMetaPojo rscRef,
         @JsonProperty("luksInfo") LuksLayerMetaPojo luksInfoRef,
-        @JsonProperty("backups") List<List<BackupInfoPojo>> backupsRef
+        @JsonProperty("backups") Map<Integer, List<BackupInfoPojo>> backupsRef
     )
     {
         layerData = layerDataRef;
@@ -53,7 +54,7 @@ public class BackupMetaDataPojo
         return luksInfo;
     }
 
-    public List<List<BackupInfoPojo>> getBackups()
+    public Map<Integer, List<BackupInfoPojo>> getBackups()
     {
         return backups;
     }
