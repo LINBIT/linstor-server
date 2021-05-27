@@ -47,8 +47,8 @@ subprojects {
             testCompile fileTree(dir: "libs/compileClasspath")
             testRuntime fileTree(dir: "libs/runtimeClasspath")
         } else {
-            implementation group: 'com.google.inject', name: 'guice', version: '4.2.3'
-            implementation group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '4.2.3'
+            implementation group: 'com.google.inject', name: 'guice', version: '5.0.1'
+            implementation group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '5.0.1'
 
 //            compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
             compileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
@@ -372,7 +372,7 @@ dependencies {
     testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.18.+'
     testImplementation group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
 
-    testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '4.2.3'
+    testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '5.0.1'
     testImplementation group: 'io.projectreactor', name: 'reactor-test', version: '3.3.12.RELEASE'
 }
 
