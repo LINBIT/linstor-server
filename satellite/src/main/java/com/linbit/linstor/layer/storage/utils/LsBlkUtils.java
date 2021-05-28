@@ -123,7 +123,15 @@ public class LsBlkUtils
         return true;
     }
 
-    public static String[] blkid(ExtCmd extCmd)
+    /**
+     * Returns a Array of blkid identifed devices.
+     *
+     * Was used for physical devices listening, but is slow on lot of devices.
+     * @param extCmd
+     * @return
+     * @throws StorageException
+     */
+    public static String[] blkid(@Nonnull ExtCmd extCmd)
         throws StorageException
     {
         ExtCmd.OutputData outputData = Commands.genericExecutor(
@@ -142,16 +150,15 @@ public class LsBlkUtils
         return blkIdResult.split("\n");
     }
 
-    public static List<LsBlkEntry> filterDeviceCandidates(List<LsBlkEntry> entries, final String[] blkIdEntries)
+    public static List<LsBlkEntry> filterDeviceCandidates(List<LsBlkEntry> entries)
     {
-        final List<String> blkIds = Arrays.asList(blkIdEntries);
         return entries.stream()
             .filter(lsBlkEntry -> lsBlkEntry.getParentName().isEmpty() &&
                 lsBlkEntry.getSize() > MINIMAL_DEVICE_SIZE_BYTES &&
                 lsBlkEntry.getMajor() != MAJOR_DRBD_NR)
+            .filter(lsBlkEntry -> lsBlkEntry.getFsType().isEmpty())
             .filter(lsBlkEntry -> entries.stream()
                 .noneMatch(entry -> entry.getParentName().equals(lsBlkEntry.getName())))
-            .filter(lsBlkEntry -> blkIds.stream().noneMatch(blkid -> blkid.endsWith(lsBlkEntry.getName())))
             .collect(Collectors.toList());
     }
 }

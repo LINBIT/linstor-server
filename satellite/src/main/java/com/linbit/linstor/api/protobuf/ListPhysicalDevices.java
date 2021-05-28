@@ -59,11 +59,10 @@ public class ListPhysicalDevices implements ApiCall
                 MsgReqPhysicalDevicesOuterClass.MsgReqPhysicalDevices.parseDelimitedFrom(msgDataIn);
 
             List<LsBlkEntry> entries = LsBlkUtils.lsblk(extCmdFactory.create());
-            String[] blkIdEntries = LsBlkUtils.blkid(extCmdFactory.create());
 
             if (msgReqPhysicalDevices.getFilter())
             {
-                entries = LsBlkUtils.filterDeviceCandidates(entries, blkIdEntries);
+                entries = LsBlkUtils.filterDeviceCandidates(entries);
             }
 
             byte[] answer = ctrlStltSerializer

@@ -30,7 +30,7 @@ public class LsBlkEntry
         SERIAL("SERIAL"),
         WWN("WWN");
 
-        private String value;
+        final private String value;
 
         LsBlkFields(final String valueRef)
         {
