@@ -24,7 +24,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
         public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
         public static final ColumnImpl CONTENT = new ColumnImpl("CONTENT", Types.BLOB, false, false);
-        public static final ColumnImpl CONTENT_CHECKSUM = new ColumnImpl("CONTENT_CHECKSUM", Types.VARBINARY, false, false);
+        public static final ColumnImpl CONTENT_CHECKSUM = new ColumnImpl("CONTENT_CHECKSUM", Types.VARCHAR, false, false);
 
         public static final Column[] ALL = new Column[]
         {
@@ -87,6 +87,46 @@ public class GeneratedDatabaseTables
         public String toString()
         {
             return "Table KEY_VALUE_STORE";
+        }
+    }
+
+    public static class LayerBcacheVolumes implements DatabaseTable
+    {
+        private LayerBcacheVolumes() { }
+
+        // Primary Keys
+        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
+        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
+
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl DEV_UUID = new ColumnImpl("DEV_UUID", Types.CHAR, false, true);
+
+        public static final Column[] ALL = new Column[]
+        {
+            LAYER_RESOURCE_ID,
+            VLM_NR,
+            NODE_NAME,
+            POOL_NAME,
+            DEV_UUID
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "LAYER_BCACHE_VOLUMES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table LAYER_BCACHE_VOLUMES";
         }
     }
 
@@ -1599,6 +1639,7 @@ public class GeneratedDatabaseTables
 
     public static final Files FILES = new Files();
     public static final KeyValueStore KEY_VALUE_STORE = new KeyValueStore();
+    public static final LayerBcacheVolumes LAYER_BCACHE_VOLUMES = new LayerBcacheVolumes();
     public static final LayerCacheVolumes LAYER_CACHE_VOLUMES = new LayerCacheVolumes();
     public static final LayerDrbdResources LAYER_DRBD_RESOURCES = new LayerDrbdResources();
     public static final LayerDrbdResourceDefinitions LAYER_DRBD_RESOURCE_DEFINITIONS = new LayerDrbdResourceDefinitions();
@@ -1648,6 +1689,11 @@ public class GeneratedDatabaseTables
         KeyValueStore.UUID.table = KEY_VALUE_STORE;
         KeyValueStore.KVS_NAME.table = KEY_VALUE_STORE;
         KeyValueStore.KVS_DSP_NAME.table = KEY_VALUE_STORE;
+        LayerBcacheVolumes.LAYER_RESOURCE_ID.table = LAYER_BCACHE_VOLUMES;
+        LayerBcacheVolumes.VLM_NR.table = LAYER_BCACHE_VOLUMES;
+        LayerBcacheVolumes.NODE_NAME.table = LAYER_BCACHE_VOLUMES;
+        LayerBcacheVolumes.POOL_NAME.table = LAYER_BCACHE_VOLUMES;
+        LayerBcacheVolumes.DEV_UUID.table = LAYER_BCACHE_VOLUMES;
         LayerCacheVolumes.LAYER_RESOURCE_ID.table = LAYER_CACHE_VOLUMES;
         LayerCacheVolumes.VLM_NR.table = LAYER_CACHE_VOLUMES;
         LayerCacheVolumes.NODE_NAME.table = LAYER_CACHE_VOLUMES;

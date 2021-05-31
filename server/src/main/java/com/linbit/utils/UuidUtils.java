@@ -1,11 +1,17 @@
 package com.linbit.utils;
 
 import com.linbit.linstor.DbgInstanceUuid;
+
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class UuidUtils
 {
+    public static final Pattern UUID_PATTERN = Pattern.compile(
+        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    );
+
     private static final int UUID_BYTES = 16;
 
     public static byte[] asByteArray(UUID id)
@@ -44,6 +50,16 @@ public class UuidUtils
             idText = "<null objRef>";
         }
         return idText;
+    }
+
+    public static boolean isUuid(String str)
+    {
+        return UUID_PATTERN.matcher(str).find();
+    }
+
+    public static UUID asUuidOrNull(String str)
+    {
+        return isUuid(str) ? UUID.fromString(str) : null;
     }
 
     private UuidUtils()

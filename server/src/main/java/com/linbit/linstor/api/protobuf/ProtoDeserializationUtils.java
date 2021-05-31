@@ -217,6 +217,9 @@ public class ProtoDeserializationUtils
             case CACHE:
                 kind = DeviceLayerKind.CACHE;
                 break;
+            case BCACHE:
+                kind = DeviceLayerKind.BCACHE;
+                break;
             case OPENFLEX:
                 kind = DeviceLayerKind.OPENFLEX;
                 break;
@@ -392,6 +395,9 @@ public class ProtoDeserializationUtils
                 break;
             case DM_CACHE:
                 tool = ExtTools.DM_CACHE;
+                break;
+            case BCACHE_TOOLS:
+                tool = ExtTools.BCACHE_TOOLS;
                 break;
             case LOSETUP:
                 tool = ExtTools.LOSETUP;

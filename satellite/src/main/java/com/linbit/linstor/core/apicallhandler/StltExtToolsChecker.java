@@ -107,6 +107,7 @@ public class StltExtToolsChecker
                 getSpdkInfo(),
                 getWritecacheInfo(loadedModules),
                 getCacheInfo(loadedModules),
+                getBCacheInfo(),
                 getLosetupInfo(),
                 getZstdInfo(),
                 getSocatInfo(),
@@ -252,6 +253,50 @@ public class StltExtToolsChecker
         List<String> errorList = new ArrayList<>();
         checkModuleLoaded(loadedModulesRef, "dm-cache", errorList);
         return new ExtToolsInfo(ExtTools.DM_CACHE, errorList.isEmpty(), null, null, null, errorList);
+    }
+
+    private ExtToolsInfo getBCacheInfo()
+    {
+        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(
+            ec -> ec == 0 || ec == 1,
+            "make-bcache",
+            "-h"
+        );
+
+        ExtToolsInfo extToolsInfo = stdoutOrErrorReason.map(
+            pair ->
+                new ExtToolsInfo(
+                    ExtTools.BCACHE_TOOLS,
+                    true,
+                    null,
+                    null,
+                    null,
+                    Collections.emptyList()
+            ),
+            notSupportedReasonList -> new ExtToolsInfo(
+                ExtTools.BCACHE_TOOLS,
+                false,
+                null,
+                null,
+                null,
+                notSupportedReasonList
+            )
+        );
+        if (extToolsInfo.isSupported())
+        {
+            errorReporter.logTrace(
+                "Checking support for %s: supported ",
+                ExtTools.BCACHE_TOOLS.name()
+            );
+        }
+        else
+        {
+            errorReporter.logTrace(
+                "Checking support for %s: NOT supported ",
+                ExtTools.BCACHE_TOOLS.name()
+            );
+        }
+        return extToolsInfo;
     }
 
     private ExtToolsInfo getLosetupInfo()

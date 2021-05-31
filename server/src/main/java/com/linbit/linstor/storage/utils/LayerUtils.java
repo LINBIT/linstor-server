@@ -8,6 +8,7 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
+import static com.linbit.linstor.storage.kinds.DeviceLayerKind.BCACHE;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.CACHE;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
@@ -34,11 +35,12 @@ public class LayerUtils
     {
         TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE, CACHE, OPENFLEX);
 
-        NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE, OPENFLEX, CACHE);
+        NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE, OPENFLEX, CACHE, BCACHE);
         NODES.get(LUKS).addChildren(STORAGE, OPENFLEX);
-        NODES.get(NVME).addChildren(LUKS, STORAGE, WRITECACHE, CACHE, OPENFLEX);
-        NODES.get(WRITECACHE).addChildren(NVME, LUKS, STORAGE, CACHE, OPENFLEX);
-        NODES.get(CACHE).addChildren(NVME, LUKS, STORAGE, OPENFLEX, WRITECACHE);
+        NODES.get(NVME).addChildren(LUKS, STORAGE, WRITECACHE, CACHE, OPENFLEX, BCACHE);
+        NODES.get(WRITECACHE).addChildren(NVME, LUKS, STORAGE, CACHE, OPENFLEX, BCACHE);
+        NODES.get(CACHE).addChildren(NVME, LUKS, STORAGE, OPENFLEX, WRITECACHE, BCACHE);
+        NODES.get(BCACHE).addChildren(NVME, LUKS, STORAGE, OPENFLEX, WRITECACHE);
 
         NODES.get(OPENFLEX).addChildren(STORAGE); // will be ignored, just adding for convenience
         // "every layerlist has to end with STORAGE"

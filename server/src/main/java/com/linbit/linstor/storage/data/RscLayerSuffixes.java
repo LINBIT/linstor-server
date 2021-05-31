@@ -18,6 +18,9 @@ public final class RscLayerSuffixes
     public static final String SUFFIX_CACHE_CACHE = ".dmcache_cache"; // just like moon moon
     public static final String SUFFIX_CACHE_META = ".dmcache_meta";
 
+    // BCache
+    public static final String SUFFIX_BCACHE_CACHE = ".bcache";
+
     private RscLayerSuffixes()
     {
     }

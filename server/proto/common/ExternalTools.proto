@@ -27,6 +27,7 @@ message ExternalToolsInfo
         LSSCSI = 17;
         SAS_PHY = 18;
         SAS_DEVICE = 19;
+        BCACHE_TOOLS = 20;
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

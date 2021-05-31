@@ -21,6 +21,9 @@ info:
 
     Changelog:
 
+    * unreleased
+       - Added layer BCACHE
+         - Schemas BCacheResource and BCacheVolume
     * 1.7.0
        - Added shared_name to ResourceWithVolumes
        - Added makeResourceAvailable API
@@ -5165,6 +5168,7 @@ components:
         - NVME
         - WRITECACHE
         - CACHE
+        - BCACHE
         - OPENFLEX
     DrbdResourceDefinitionLayer:
       type: object
@@ -5453,6 +5457,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CacheVolume'
+    BCacheResource:
+      type: object
+      properties:
+        bcache_volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BCacheVolume'
     ResourceLayer:
       type: object
       properties:
@@ -5478,6 +5489,8 @@ components:
           $ref: '#/components/schemas/WritecacheResource'
         cache:
           $ref: '#/components/schemas/CacheResource'
+        bcache:
+          $ref: '#/components/schemas/BCacheResource'
     ResourceState:
       type: object
       properties:
@@ -5752,6 +5765,28 @@ components:
           type: string
           description: String describing current volume state
 
+    BCacheVolume:
+      type: object
+      properties:
+        volume_number:
+          type: integer
+          format: int32
+        device_path:
+          type: string
+          description: block device path
+        device_path_cache:
+          type: string
+          description: block device path used as cache device
+        allocated_size_kib:
+          type: integer
+          format: int64
+        usable_size_kib:
+          type: integer
+          format: int64
+        disk_state:
+          type: string
+          description: String describing current volume state
+
     VolumeLayer:
       type: object
       properties:
@@ -5765,6 +5800,7 @@ components:
             - $ref: '#/components/schemas/NVMEVolume'
             - $ref: '#/components/schemas/WritecacheVolume'
             - $ref: '#/components/schemas/CacheVolume'
+            - $ref: '#/components/schemas/BCacheVolume'
 
     Volume:
       type: object

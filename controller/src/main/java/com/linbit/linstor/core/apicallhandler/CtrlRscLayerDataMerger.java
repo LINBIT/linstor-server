@@ -8,6 +8,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.BCacheRscPojo;
+import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -32,6 +34,8 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
+import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -552,10 +556,52 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
+    protected BCacheRscData<Resource> createBCacheRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Resource> parentRef,
+        BCacheRscPojo bcacheRscPojoRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        throw new ImplementationError("Received unknown bcache resource from satellite");
+    }
+
+    @Override
+    protected void createBCacheVlm(
+        AbsVolume<Resource> vlmRef,
+        BCacheRscData<Resource> bcacheRscDataRef,
+        BCacheVlmPojo vlmPojo,
+        VolumeNumber vlmNrRef
+    )
+    {
+        throw new ImplementationError("Missing bcache volume from satellite");
+    }
+
+    @Override
+    protected void removeBCacheVlm(BCacheRscData<Resource> bcacheRscDataRef, VolumeNumber vlmNrRef)
+        throws DatabaseException, AccessDeniedException
+    {
+        // ignored. A parent volume might have more volumes in one of its children than in an other one
+    }
+
+    @Override
+    protected void mergeBCacheVlm(BCacheVlmPojo vlmPojoRef, BCacheVlmData<Resource> bcacheVlmDataRef)
+        throws DatabaseException
+    {
+        bcacheVlmDataRef.setAllocatedSize(vlmPojoRef.getAllocatedSize());
+        bcacheVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
+        bcacheVlmDataRef.setCacheDevice(vlmPojoRef.getDevicePathCache());
+        bcacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
+        bcacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
+        bcacheVlmDataRef.setDeviceUuid(vlmPojoRef.getDeviceUuid());
+    }
+
+    @Override
     protected OpenflexRscDfnData<Resource> mergeOrCreateOpenflexRscDfnData(
         Resource rscRef,
         OpenflexRscDfnPojo ofRscDfnPojoRef
-    ) throws DatabaseException, AccessDeniedException
+    )
+        throws DatabaseException, AccessDeniedException
     {
         OpenflexRscDfnData<Resource> ofRscDfnData = rscRef.getResourceDefinition().getLayerData(
             apiCtx,

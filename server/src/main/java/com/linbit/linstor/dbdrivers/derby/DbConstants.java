@@ -51,6 +51,7 @@ public class DbConstants
     public static final String TBL_LAYER_STORAGE_VOLUMES = "LAYER_STORAGE_VOLUMES";
     public static final String TBL_LAYER_WRITECACHE_VOLUMES = "LAYER_WRITECACHE_VOLUMES";
     public static final String TBL_LAYER_CACHE_VOLUMES = "LAYER_CACHE_VOLUMES";
+    public static final String TBL_LAYER_BCACHE_VOLUMES  = "LAYER_BCACHE_VOLUMES";
     public static final String TBL_RESOURCE_GROUPS       = "RESOURCE_GROUPS";
     public static final String TBL_VOLUME_GROUPS         = "VOLUME_GROUPS";
 
@@ -184,6 +185,9 @@ public class DbConstants
     // LAYER_CACHE_VOLUMES column names
     public static final String POOL_NAME_CACHE = "POOL_NAME_CACHE";
     public static final String POOL_NAME_META = "POOL_NAME_META";
+
+    // LAYER_BCACHE_VOLUMES column names
+    public static final String DEV_UUID = "DEV_UUID";
 
     // LAYER_STORAGE_VOLUMES column names
     public static final String PROVIDER_KIND = "PROVIDER_KIND";

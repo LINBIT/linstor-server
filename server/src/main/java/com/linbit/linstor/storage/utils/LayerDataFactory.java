@@ -12,6 +12,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
@@ -22,6 +23,8 @@ import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
+import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -73,6 +76,7 @@ public class LayerDataFactory
     private final OpenflexLayerDatabaseDriver openflexDbDriver;
     private final WritecacheLayerDatabaseDriver writecacheDbDriver;
     private final CacheLayerDatabaseDriver cacheDbDriver;
+    private final BCacheLayerDatabaseDriver bcacheDbDriver;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
 
@@ -89,6 +93,7 @@ public class LayerDataFactory
         OpenflexLayerDatabaseDriver openflexDbDriverRef,
         WritecacheLayerDatabaseDriver writecacheDbDriverRef,
         CacheLayerDatabaseDriver cacheDbDriverRef,
+        BCacheLayerDatabaseDriver bcacheDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -103,6 +108,7 @@ public class LayerDataFactory
         openflexDbDriver = openflexDbDriverRef;
         writecacheDbDriver = writecacheDbDriverRef;
         cacheDbDriver = cacheDbDriverRef;
+        bcacheDbDriver = bcacheDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
 
@@ -508,6 +514,46 @@ public class LayerDataFactory
             cacheStorPool,
             metaStorPool,
             cacheDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+    }
+
+    public <RSC extends AbsResource<RSC>> BCacheRscData<RSC> createBCacheRscData(
+        int rscLayerId,
+        RSC rsc,
+        String rscNameSuffix,
+        AbsRscLayerObject<RSC> parentData
+    )
+        throws DatabaseException
+    {
+        BCacheRscData<RSC> bcacheRscData = new BCacheRscData<>(
+            rscLayerId,
+            rsc,
+            parentData,
+            new HashSet<>(),
+            rscNameSuffix,
+            bcacheDbDriver,
+            new TreeMap<>(),
+            transObjFactory,
+            transMgrProvider
+        );
+        resourceLayerIdDatabaseDriver.persist(bcacheRscData);
+        bcacheDbDriver.persist(bcacheRscData);
+        return bcacheRscData;
+    }
+
+    public <RSC extends AbsResource<RSC>> BCacheVlmData<RSC> createBCacheVlmData(
+        AbsVolume<RSC> vlm,
+        StorPool cacheStorPool,
+        BCacheRscData<RSC> rscData
+    )
+    {
+        return new BCacheVlmData<>(
+            vlm,
+            rscData,
+            cacheStorPool,
+            bcacheDbDriver,
             transObjFactory,
             transMgrProvider
         );

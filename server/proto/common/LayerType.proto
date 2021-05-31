@@ -13,4 +13,5 @@ enum LayerType
     WRITECACHE = 5;
     OPENFLEX = 6;
     CACHE = 7;
+    BCACHE = 8;
 }

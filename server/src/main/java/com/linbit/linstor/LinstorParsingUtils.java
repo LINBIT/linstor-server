@@ -342,6 +342,9 @@ public class LinstorParsingUtils
             case "CACHE":
                 kind = DeviceLayerKind.CACHE;
                 break;
+            case "BCACHE":
+                kind = DeviceLayerKind.BCACHE;
+                break;
             default:
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

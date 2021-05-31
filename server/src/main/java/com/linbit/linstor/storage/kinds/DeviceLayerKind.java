@@ -34,6 +34,11 @@ public enum DeviceLayerKind
         true,
         ExtTools.DM_CACHE
     ),
+    BCACHE(
+        true,
+        true,
+        ExtTools.BCACHE_TOOLS
+    ),
     OPENFLEX(
         false,
         true,

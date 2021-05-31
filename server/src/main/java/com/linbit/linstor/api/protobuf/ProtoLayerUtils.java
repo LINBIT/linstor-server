@@ -7,6 +7,8 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.BCacheRscPojo;
+import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -34,6 +36,7 @@ import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.proto.common.BCacheRscOuterClass.BCacheVlm;
 import com.linbit.linstor.proto.common.CacheRscOuterClass.CacheVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRscDfn;
@@ -56,6 +59,7 @@ import com.linbit.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 
 public class ProtoLayerUtils
@@ -258,6 +262,30 @@ public class ProtoLayerUtils
                 }
             }
             break;
+        case BCACHE:
+        {
+            if (protoRscData.hasBcache())
+            {
+                BCacheRscPojo bcacheRscPojo = new BCacheRscPojo(
+                    protoRscData.getId(),
+                    new ArrayList<>(),
+                    protoRscData.getRscNameSuffix(),
+                    new ArrayList<>(),
+                    protoRscData.getSuspend()
+                );
+                List<BCacheVlmPojo> volumeList = bcacheRscPojo.getVolumeList();
+                for (BCacheVlm protoVlm : protoRscData.getBcache().getVlmsList())
+                {
+                    volumeList.add(extractBCacheVlm(protoVlm, fullSyncId, updateId));
+                }
+                ret = bcacheRscPojo;
+            }
+            else
+            {
+                ret = null;
+            }
+        }
+            break;
             case UNKNOWN_LAYER: // fall-through
             case UNRECOGNIZED: // fall-through
             default:
@@ -315,6 +343,9 @@ public class ProtoLayerUtils
             case CACHE:
                 str = "CACHE";
                 break;
+            case BCACHE:
+                str = "BCACHE";
+                break;
             case UNKNOWN_LAYER: // fall-through
             case UNRECOGNIZED: // fall-through
             default:
@@ -362,7 +393,8 @@ public class ProtoLayerUtils
                 case LUKS: // fall-through
                 case NVME: // fall-through
                 case WRITECACHE: // fall-through
-                case CACHE:
+                case CACHE:// fall-through
+                case BCACHE:
                     rscDfnLayerDataApi = null;
                     break;
                 case UNKNOWN_LAYER: // fall-through
@@ -413,7 +445,8 @@ public class ProtoLayerUtils
                 case NVME:// fall-through
                 case OPENFLEX:// fall-through
                 case WRITECACHE: // fall-through
-                case CACHE:
+                case CACHE:// fall-through
+                case BCACHE:
                     vlmDfnLayerDataApi = null;
                     break;
                 case UNKNOWN_LAYER: // fall-through
@@ -636,6 +669,25 @@ public class ProtoLayerUtils
             protoVlm.getAllocatedSize(),
             protoVlm.getUsableSize(),
             protoVlm.getDiskState()
+        );
+    }
+
+    private static BCacheVlmPojo extractBCacheVlm(BCacheVlm protoVlm, long fullSyncId, long updateId)
+    {
+        UUID uuid = null;
+        if (protoVlm.getDeviceUuid() != null && !protoVlm.getDeviceUuid().isEmpty())
+        {
+            uuid = UUID.fromString(protoVlm.getDeviceUuid());
+        }
+        return new BCacheVlmPojo(
+            protoVlm.getVlmNr(),
+            protoVlm.getDevicePathData(),
+            protoVlm.getDevicePathCache(),
+            protoVlm.getCacheStorPoolName(),
+            protoVlm.getAllocatedSize(),
+            protoVlm.getUsableSize(),
+            protoVlm.getDiskState(),
+            uuid
         );
     }
 

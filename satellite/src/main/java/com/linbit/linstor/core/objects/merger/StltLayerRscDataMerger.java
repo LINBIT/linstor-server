@@ -8,6 +8,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.BCacheRscPojo;
+import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -44,6 +46,8 @@ import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
+import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -806,6 +810,81 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     protected void mergeCacheVlm(
         CacheVlmPojo vlmPojo,
         CacheVlmData<Resource> cacheVlmData
+    )
+    {
+        // ignoring allocatedSize
+        // ignoring devicePath
+        // ignoring devicePathCache
+        // ignoring diskState
+        // ignoring exists
+        // ignoring identifier
+        // ignoring usableSize
+        // ignoring cacheStorPool (cannot be updated / changed)
+    }
+
+    @Override
+    protected BCacheRscData<Resource> createBCacheRscData(
+        Resource rscRef,
+        AbsRscLayerObject<Resource> parentRef,
+        BCacheRscPojo bcacheRscPojoRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        BCacheRscData<Resource> bcacheRscData = layerDataFactory.createBCacheRscData(
+            bcacheRscPojoRef.getId(),
+            rscRef,
+            bcacheRscPojoRef.getRscNameSuffix(),
+            parentRef
+        );
+        if (parentRef == null)
+        {
+            rscRef.setLayerData(apiCtx, bcacheRscData);
+        }
+        else
+        {
+            updateParent(bcacheRscData, parentRef);
+        }
+        return bcacheRscData;
+    }
+
+    @Override
+    protected void removeBCacheVlm(BCacheRscData<Resource> bcacheRscDataRef, VolumeNumber vlmNrRef)
+        throws DatabaseException, AccessDeniedException
+    {
+        bcacheRscDataRef.remove(apiCtx, vlmNrRef);
+    }
+
+    @Override
+    protected void createBCacheVlm(
+        AbsVolume<Resource> vlmRef,
+        BCacheRscData<Resource> bcacheRscDataRef,
+        BCacheVlmPojo vlmPojo,
+        VolumeNumber vlmNrRef
+    )
+        throws AccessDeniedException, InvalidNameException
+    {
+        String cacheStorPoolNameStr = vlmPojo.getCacheStorPoolName();
+        StorPool cacheStorPool = null;
+        if (cacheStorPoolNameStr != null && !cacheStorPoolNameStr.trim().isEmpty())
+        {
+            cacheStorPool = vlmRef.getAbsResource().getNode().getStorPool(
+                apiCtx,
+                new StorPoolName(cacheStorPoolNameStr)
+            );
+        }
+
+        BCacheVlmData<Resource> bcacheVlmData = layerDataFactory.createBCacheVlmData(
+            vlmRef,
+            cacheStorPool,
+            bcacheRscDataRef
+        );
+        bcacheRscDataRef.getVlmLayerObjects().put(vlmNrRef, bcacheVlmData);
+    }
+
+    @Override
+    protected void mergeBCacheVlm(
+        BCacheVlmPojo vlmPojo,
+        BCacheVlmData<Resource> bcacheVlmData
     )
     {
         // ignoring allocatedSize

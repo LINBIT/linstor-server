@@ -10,6 +10,8 @@ import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
+import com.linbit.linstor.api.pojo.BCacheRscPojo;
+import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -56,6 +58,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
+import com.linbit.linstor.proto.common.BCacheRscOuterClass.BCacheRsc;
+import com.linbit.linstor.proto.common.BCacheRscOuterClass.BCacheVlm;
 import com.linbit.linstor.proto.common.CacheRscOuterClass.CacheRsc;
 import com.linbit.linstor.proto.common.CacheRscOuterClass.CacheVlm;
 import com.linbit.linstor.proto.common.DrbdRscOuterClass.DrbdRsc;
@@ -1256,6 +1260,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case CACHE:
                 layerType = LayerType.CACHE;
                 break;
+            case BCACHE:
+                layerType = LayerType.BCACHE;
+                break;
             default: throw new RuntimeException("Not implemented.");
         }
         return layerType;
@@ -1298,6 +1305,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 break;
             case DM_CACHE:
                 ret = ExternalTools.DM_CACHE;
+                break;
+            case BCACHE_TOOLS:
+                ret = ExternalTools.BCACHE_TOOLS;
                 break;
             case LOSETUP:
                 ret = ExternalTools.LOSETUP;
@@ -1360,7 +1370,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                         case STORAGE: // fall-through
                         case NVME: // fall-through
                         case WRITECACHE: // fall-through
-                        case CACHE:
+                        case CACHE: // fall-through
+                        case BCACHE:
                             // no rsc-dfn related data
                             break;
                         default:
@@ -1399,7 +1410,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                         case NVME: // fall-through
                         case OPENFLEX: // fall-through
                         case WRITECACHE: // fall-through
-                        case CACHE:
+                        case CACHE: // fall-through
+                        case BCACHE:
                             // no vlm-dfn related data
                             break;
                         default:
@@ -1457,6 +1469,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case CACHE:
                     builder.setCache(buildCacheRscData((CacheRscPojo) rscLayerPojo));
+                    break;
+                case BCACHE:
+                    builder.setBcache(buildBCacheRscData((BCacheRscPojo) rscLayerPojo));
                     break;
                 default:
                     break;
@@ -1641,7 +1656,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             }
 
             return WritecacheRsc.newBuilder()
-                .setFlags(0) // TODO serialize flags as soon NvmeRscData get flags
+                .setFlags(0)
                 .addAllVlms(protoVlms)
                 .build();
         }
@@ -1655,7 +1670,21 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             }
 
             return CacheRsc.newBuilder()
-                .setFlags(0) // TODO serialize flags as soon NvmeRscData get flags
+                .setFlags(0)
+                .addAllVlms(protoVlms)
+                .build();
+        }
+
+        private static BCacheRsc buildBCacheRscData(BCacheRscPojo rscLayerPojoRef)
+        {
+            List<BCacheVlm> protoVlms = new ArrayList<>();
+            for (BCacheVlmPojo vlmPojo : rscLayerPojoRef.getVolumeList())
+            {
+                protoVlms.add(buildBCacheVlm(vlmPojo));
+            }
+
+            return BCacheRsc.newBuilder()
+                .setFlags(0)
                 .addAllVlms(protoVlms)
                 .build();
         }
@@ -1829,6 +1858,32 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             if (vlmPojo.getMetaStorPoolName() != null)
             {
                 protoVlmBuilder.setMetaStorPoolName(vlmPojo.getMetaStorPoolName());
+            }
+
+            return protoVlmBuilder.build();
+        }
+
+        private static BCacheVlm buildBCacheVlm(BCacheVlmPojo vlmPojo)
+        {
+            BCacheVlm.Builder protoVlmBuilder = BCacheVlm.newBuilder()
+                .setVlmNr(vlmPojo.getVlmNr())
+                .setAllocatedSize(vlmPojo.getAllocatedSize())
+                .setUsableSize(vlmPojo.getUsableSize());
+            if (vlmPojo.getDevicePath() != null)
+            {
+                protoVlmBuilder.setDevicePathData(vlmPojo.getDevicePath());
+            }
+            if (vlmPojo.getDevicePathCache() != null)
+            {
+                protoVlmBuilder.setDevicePathCache(vlmPojo.getDevicePathCache());
+            }
+            if (vlmPojo.getDiskState() != null)
+            {
+                protoVlmBuilder.setDiskState(vlmPojo.getDiskState());
+            }
+            if (vlmPojo.getCacheStorPoolName() != null)
+            {
+                protoVlmBuilder.setCacheStorPoolName(vlmPojo.getCacheStorPoolName());
             }
 
             return protoVlmBuilder.build();

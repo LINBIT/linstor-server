@@ -25,6 +25,7 @@ import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
+import com.linbit.utils.ExceptionThrowingBiFunction;
 
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands.SPDK_RPC_SCRIPT;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
@@ -34,13 +35,20 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Singleton
 public class SysFsHandler
@@ -57,6 +65,12 @@ public class SysFsHandler
 
     private static final String SPDK_THROTTLE_READ_MBPS = "--r_mbytes_per_sec";
     private static final String SPDK_THROTTLE_WRITE_MBPS = "--w_mbytes_per_sec";
+
+    private static final String SYS_FS_BCACHE = SYS_FS + "/bcache";
+    private static final Path PATH_SYS_FS_BCACHE = Paths.get(SYS_FS_BCACHE);
+    private static final Pattern PATTERN_PATH_SYS_FS_BCACHE_BDEV = Pattern.compile(
+        "^" + SYS_FS_BCACHE + "/([^/]+)/bdev[^/]+"
+    );
 
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
@@ -480,6 +494,43 @@ public class SysFsHandler
         return out.equals("1");
     }
 
+    public HashMap<UUID, String> queryBCacheDevices() throws StorageException
+    {
+        HashMap<UUID, String> ret = new HashMap<>();
+        try
+        {
+            Files.walkFileTree(
+                PATH_SYS_FS_BCACHE,
+                new SysFsFileWalker(
+                    (path, ignored) ->
+                    {
+                        String pathStr = path.toString();
+                        Matcher matcher = PATTERN_PATH_SYS_FS_BCACHE_BDEV.matcher(pathStr);
+                        Path pathDev = path.resolve("dev");
+                        if (matcher.find() && Files.exists(pathDev))
+                        {
+                            String link = Files.readSymbolicLink(pathDev).getFileName().toString();
+                            errorReporter.logTrace("SysFsHandler: Found BCache: %s -> %s", matcher.group(1), link);
+                            ret.put(
+                                UUID.fromString(matcher.group(1)),
+                                link
+                            );
+                        }
+                        return FileVisitResult.CONTINUE;
+                }
+                ));
+            if (ret.isEmpty())
+            {
+                errorReporter.logTrace("SysFsHandler: No BCache found");
+            }
+        }
+        catch (IOException exc)
+        {
+            throw new StorageException("Failed to query bcache device paths", exc);
+        }
+        return ret;
+    }
+
     private interface Executor<T>
     {
         void exec(T obj) throws StorageException, AccessDeniedException, InvalidKeyException;
@@ -488,5 +539,23 @@ public class SysFsHandler
     private interface BiExecutor<T, V>
     {
         void exec(T obj, V arg2) throws StorageException, AccessDeniedException, InvalidKeyException;
+    }
+
+    private static class SysFsFileWalker extends SimpleFileVisitor<Path>
+    {
+        private final ExceptionThrowingBiFunction<Path, BasicFileAttributes, FileVisitResult, IOException> fct;
+
+        public SysFsFileWalker(
+            ExceptionThrowingBiFunction<Path, BasicFileAttributes, FileVisitResult, IOException> fctRef
+        )
+        {
+            fct = fctRef;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path fileRef, BasicFileAttributes attrsRef) throws IOException
+        {
+            return fct.accept(fileRef, attrsRef);
+        }
     }
 }

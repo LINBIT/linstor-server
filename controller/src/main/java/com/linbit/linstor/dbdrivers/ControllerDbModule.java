@@ -2,6 +2,8 @@ package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
+import com.linbit.linstor.core.objects.BCacheLayerETCDDriver;
+import com.linbit.linstor.core.objects.BCacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.CacheLayerETCDDriver;
 import com.linbit.linstor.core.objects.CacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.DrbdLayerETCDDriver;
@@ -44,6 +46,8 @@ import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.etcd.DbEtcd;
 import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
+import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
@@ -193,6 +197,8 @@ public class ControllerDbModule extends AbstractModule
                 bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerSQLDbDriver.class);
                 bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
                 bind(CacheLayerDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
+                bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerSQLDbDriver.class);
+                bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerSQLDbDriver.class);
                 break;
             case ETCD:
                 bind(ControllerDatabase.class).to(DbEtcd.class);
@@ -225,6 +231,8 @@ public class ControllerDbModule extends AbstractModule
                 bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerETCDDriver.class);
                 bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerETCDDriver.class);
                 bind(CacheLayerDatabaseDriver.class).to(CacheLayerETCDDriver.class);
+                bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerETCDDriver.class);
+                bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerETCDDriver.class);
                 break;
             default:
                 throw new RuntimeException("Unknown database type: " + dbType);

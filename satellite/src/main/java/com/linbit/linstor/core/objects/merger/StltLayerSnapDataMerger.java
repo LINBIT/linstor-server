@@ -8,6 +8,8 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.BCacheRscPojo;
+import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -45,6 +47,8 @@ import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
+import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -764,7 +768,7 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     protected void mergeWritecacheVlm(WritecacheVlmPojo vlmPojoRef, WritecacheVlmData<Snapshot> writecacheVlmDataRef)
         throws DatabaseException
     {
-        // (for now) ignoring everythin
+        // (for now) ignoring everything
     }
 
     @Override
@@ -846,7 +850,77 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     )
         throws DatabaseException
     {
-        // (for now) ignoring everythin
+        // (for now) ignoring everything
+    }
+
+    @Override
+    protected BCacheRscData<Snapshot> createBCacheRscData(
+        Snapshot snapRef,
+        AbsRscLayerObject<Snapshot> parentRef,
+        BCacheRscPojo bcacheRscPojoRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        BCacheRscData<Snapshot> writecacheSnapData = layerDataFactory.createBCacheRscData(
+            bcacheRscPojoRef.getId(),
+            snapRef,
+            bcacheRscPojoRef.getRscNameSuffix(),
+            parentRef
+        );
+        if (parentRef == null)
+        {
+            snapRef.setLayerData(apiCtx, writecacheSnapData);
+        }
+        else
+        {
+            updateParent(writecacheSnapData, parentRef);
+        }
+        return writecacheSnapData;
+    }
+
+    @Override
+    protected void removeBCacheVlm(
+        BCacheRscData<Snapshot> bcacheRscDataRef,
+        VolumeNumber vlmNrRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        bcacheRscDataRef.remove(apiCtx, vlmNrRef);
+    }
+
+    @Override
+    protected void createBCacheVlm(
+        AbsVolume<Snapshot> vlmRef,
+        BCacheRscData<Snapshot> bcacheRscDataRef,
+        BCacheVlmPojo vlmPojoRef,
+        VolumeNumber vlmNrRef
+    )
+        throws AccessDeniedException, InvalidNameException
+    {
+        String cacheStorPoolNameStr = vlmPojoRef.getCacheStorPoolName();
+        StorPool cacheStorPool = null;
+        if (cacheStorPoolNameStr != null && !cacheStorPoolNameStr.trim().isEmpty())
+        {
+            cacheStorPool = vlmRef.getAbsResource().getNode().getStorPool(
+                apiCtx,
+                new StorPoolName(cacheStorPoolNameStr)
+            );
+        }
+
+        BCacheVlmData<Snapshot> bcacheVlmData = layerDataFactory.createBCacheVlmData(
+            vlmRef,
+            cacheStorPool,
+            bcacheRscDataRef
+        );
+
+        bcacheRscDataRef.getVlmLayerObjects().put(vlmNrRef, bcacheVlmData);
+    }
+
+    @Override
+    protected void mergeBCacheVlm(BCacheVlmPojo vlmPojoRef, BCacheVlmData<Snapshot> bcacheVlmDataRef)
+        throws DatabaseException
+    {
+        // (for now) ignoring everything
     }
 
     @Override
