@@ -583,6 +583,17 @@ public class DrbdLayer implements DeviceLayer
 
             if (contProcess)
             {
+                for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                {
+                    StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
+                    // only continue if either both flags (RESIZE + DRBD_RESIZE) are set or none of them
+                    contProcess &= (vlmFlags.isSet(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE) ||
+                        vlmFlags.isUnset(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE));
+                }
+            }
+
+            if (contProcess)
+            {
                 // hasMetaData needs to be run after child-resource processed
                 List<DrbdVlmData<Resource>> createMetaData = new ArrayList<>();
                 if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx))
@@ -609,14 +620,13 @@ public class DrbdLayer implements DeviceLayer
                 {
                     for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                     {
-                        if (needsResize(drbdVlmData))
+                        if (needsResize(drbdVlmData) && drbdVlmData.getSizeState().equals(Size.TOO_SMALL))
                         {
                             drbdUtils.resize(
                                 drbdVlmData,
                                 // TODO: not sure if we should "--assume-clean" if data device is only partially
                                 // thinly backed
-                                VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false),
-                                null
+                                VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false)
                             );
                         }
                     }
@@ -840,14 +850,21 @@ public class DrbdLayer implements DeviceLayer
                     .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS)
             )
             {
+                boolean resFileRegenerated = false;
                 for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
                     if (needsResize(drbdVlmData) && drbdVlmData.getSizeState().equals(Size.TOO_LARGE))
                     {
+                        if (!resFileRegenerated)
+                        {
+                            // before shrinking we need to write the new size into the .res file
+                            regenerateResFile(drbdRscData);
+                            resFileRegenerated = true;
+                        }
+
                         drbdUtils.resize(
                             drbdVlmData,
-                            false, // we dont need to --assume-clean when shrinking...
-                            drbdVlmData.getUsableSize()
+                            false // we dont need to --assume-clean when shrinking...
                         );
                         // DO NOT set size.AS_EXPECTED as we most likely want to grow a little
                         // bit again once the layers below finished shrinking

@@ -237,11 +237,13 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         }
 
         boolean sizeChanges = size != null;
+        boolean shrink = false;
         if (sizeChanges)
         {
             long diffSize = size - getVlmDfnSize(vlmDfn);
 
-            if (diffSize < 0)
+            shrink = diffSize < 0;
+            if (shrink)
             {
                 ensureShrinkingIsSupported(vlmDfn);
             }
@@ -255,8 +257,24 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             setVlmDfnSize(vlmDfn, size);
         }
 
+        Flux<ApiCallRc> updateResponses = Flux.empty();
         if (updateForResize)
         {
+            /*
+             * If the VlmDfn will grow in size, we have to
+             * * set the RESIZE flag on all volumes
+             * * let all satellites do an update
+             * * set the DRBD_RESIZE flag on one volume (DRBD-resizing is cluster-aware)
+             * * let all satellites do the update where actually only one performs the DRBD resize.
+             * * unset all RESIZE and DRBD_RESIZE flags
+             *
+             * If the VlmDfn will shrink, we have to:
+             * * set the DRBD_RESIZE flag on one volume + update stlts
+             * * set the RESIZE flag on all volumes + updatestlts
+             * * unset RESIZE and DRBD_RESIZE flags
+             *
+             * Note: Satellites do not care about vlmDfn RESIZE flag, only about vlm RESIZE and DRBD_RESIZE flag
+             */
             notifyStlts = true;
             Iterator<Volume> vlmIter = iterateVolumes(vlmDfn);
 
@@ -265,11 +283,17 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 markVlmDfnResize(vlmDfn);
             }
 
-            while (vlmIter.hasNext())
+            if (shrink)
             {
-                Volume vlm = vlmIter.next();
-
-                markVlmResize(vlm);
+                updateResponses = resizeDrbdInTransaction(rscName, vlmNr)
+                    .concatWith(resizeNonDrbd(rscName, vlmNr))
+                    .concatWith(finishResize(rscName, vlmNr));
+            }
+            else
+            {
+                updateResponses = resizeNonDrbdInTransaction(rscName, vlmNr)
+                    .concatWith(resizeDrbd(rscName, vlmNr))
+                    .concatWith(finishResize(rscName, vlmNr));
             }
         }
 
@@ -277,10 +301,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         responses.addEntry(ApiSuccessUtils.defaultModifiedEntry(vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
 
-        Flux<ApiCallRc> updateResponses = notifyStlts ? updateSatellites(rscName, vlmNr, sizeChanges) : Flux.empty();
-
-        return Flux
-            .just((ApiCallRc) responses)
+        return Flux.just((ApiCallRc) responses)
             .concatWith(updateResponses);
     }
 
@@ -495,26 +516,77 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         }
         else
         {
-            Optional<Volume> drbdResizeVlm = streamVolumesPrivileged(vlmDfn)
-                .filter(this::isDrbdDiskful)
-                .findAny();
-            drbdResizeVlm.ifPresent(this::markVlmDrbdResize);
+            Set<NodeName> nodeNames = new HashSet<>();
+            Iterator<Volume> vlmIter = iterateVolumes(vlmDfn);
+            while (vlmIter.hasNext())
+            {
+                Volume vlm = vlmIter.next();
+                markVlmDrbdResize(vlm);
+                nodeNames.add(vlm.getAbsResource().getNode().getName());
+            }
 
             ctrlTransactionHelper.commit();
 
-            Flux<ApiCallRc> nextStep = finishResize(rscName, vlmNr);
 
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), nextStep)
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), Flux.empty())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
                         updateResponses,
                         rscName,
-                        getNodeNames(drbdResizeVlm),
+                        nodeNames,
                         "Resized DRBD resource {1} on {0}",
                         null
                     )
-                )
-                .concatWith(nextStep);
+                );
+        }
+
+        return flux;
+    }
+
+    private Flux<ApiCallRc> resizeNonDrbd(ResourceName rscName, VolumeNumber vlmNr)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Resize Non DRBD",
+                LockGuard.createDeferred(rscDfnMapLock.writeLock()),
+                () -> resizeNonDrbdInTransaction(rscName, vlmNr)
+            );
+    }
+
+    private Flux<ApiCallRc> resizeNonDrbdInTransaction(ResourceName rscName, VolumeNumber vlmNr)
+    {
+        VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
+
+        Flux<ApiCallRc> flux;
+
+        if (vlmDfn == null)
+        {
+            flux = Flux.empty();
+        }
+        else
+        {
+            Set<NodeName> nodeNames = new HashSet<>();
+            Iterator<Volume> vlmIter = iterateVolumes(vlmDfn);
+            while (vlmIter.hasNext())
+            {
+                Volume vlm = vlmIter.next();
+
+                markVlmResize(vlm);
+                nodeNames.add(vlm.getAbsResource().getNode().getName());
+            }
+
+            ctrlTransactionHelper.commit();
+
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), Flux.empty())
+                .transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rscName,
+                        nodeNames,
+                        "Resized resource {1} on {0}",
+                        null
+                    )
+                );
         }
 
         return flux;

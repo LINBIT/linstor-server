@@ -865,9 +865,9 @@ public class ConfFileBuilder
                         if (!isPeerRsc && !isDiskless)
                         {
                             appendLine(
-                                "size        %s;",
+                                "size        %sk;",
                                 Long.toString(
-                                    vlmData.getUsableSize() * 2 // from kib to sectors
+                                    vlmData.getUsableSize()
                                 )
                             );
                         }
