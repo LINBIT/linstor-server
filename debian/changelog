@@ -1,3 +1,24 @@
+linstor-server (1.12.5-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * make-rsc-available: Set default for diskful flag
+  * db-migrationutils: always drop constraints on mariadb
+  * common: allow preferred nic for rd and rg
+  * physica-devs: Do not use blkid for filtering anymore
+
+  [ Gabor Hernadi ]
+  * MakeAvailable: toggle-disk if diskful is set
+  * Luks: Fixed reserving correct size for header
+  * AbsStorProvider: Fixed resize condition
+  * DRBD: Fixed shrinking
+  * Mixed SPs: Allow more combinations
+
+  [ Christoph Böhmwalder ]
+  * docs: apidiffgo: use more common tail syntax
+  * docs: rest-api: clarify PropsInfo documentation
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 02 Jun 2021 11:00:23 +0000
+
 linstor-server (1.12.4-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
