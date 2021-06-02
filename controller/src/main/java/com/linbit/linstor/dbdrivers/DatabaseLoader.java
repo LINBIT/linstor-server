@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
+import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -164,6 +165,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final VolumeGroupCtrlDatabaseDriver vlmGrpDriver;
     private final ExosMappingManager exosMappingMgr;
     private final ExternalFileMap extFileMap;
+    private final CtrlStorPoolResolveHelper storPoolResolveHelper;
 
     @Inject
     public DatabaseLoader(
@@ -205,7 +207,8 @@ public class DatabaseLoader implements DatabaseDriver
         ControllerCoreModule.FreeSpaceMgrMap freeSpaceMgrMapRef,
         CoreModule.KeyValueStoreMap keyValueStoreMapRef,
         ExosMappingManager exosMappingMgrRef,
-        CoreModule.ExternalFileMap extFileMapRef
+        CoreModule.ExternalFileMap extFileMapRef,
+        CtrlStorPoolResolveHelper storPoolResolveHelperRef
     )
     {
         dbCtx = privCtx;
@@ -248,6 +251,7 @@ public class DatabaseLoader implements DatabaseDriver
         keyValueStoreMap = keyValueStoreMapRef;
         exosMappingMgr = exosMappingMgrRef;
         extFileMap = extFileMapRef;
+        storPoolResolveHelper = storPoolResolveHelperRef;
     }
 
     /**
@@ -258,6 +262,13 @@ public class DatabaseLoader implements DatabaseDriver
     {
         try
         {
+            /*
+             * After 1.12.4 we are prohibiting mixing LVM with LVM_THIN.
+             * If such combination was already in the database, we have to disable that check during DB loading
+             * since an error during DB loading time is fatal.
+             */
+            storPoolResolveHelper.setEnableChecks(false);
+
             // load the resource groups
             Map<ResourceGroup, ResourceGroup.InitMaps> loadedRscGroupsMap =
                 Collections.unmodifiableMap(rscGrpDriver.loadAll(null));
@@ -587,6 +598,10 @@ public class DatabaseLoader implements DatabaseDriver
         catch (LinStorException exc)
         {
             throw new ImplementationError("Unknown error during loading data from DB", exc);
+        }
+        finally
+        {
+            storPoolResolveHelper.setEnableChecks(true);
         }
     }
 

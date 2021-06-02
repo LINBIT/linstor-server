@@ -41,6 +41,12 @@ public class CtrlStorPoolResolveHelper
     private final CtrlPropsHelper ctrlPropsHelper;
     private final Provider<AccessContext> peerCtxProvider;
 
+    /**
+     * Disables all checks of this class. Used while loading data from a database that was created with more
+     * relaxed limitations
+     */
+    private boolean enableChecks;
+
     @Inject
     public CtrlStorPoolResolveHelper(
         @ApiContext AccessContext apiCtxRef,
@@ -177,9 +183,19 @@ public class CtrlStorPoolResolveHelper
         return new ApiCallRcWith<>(responses, storPool);
     }
 
+    public void setEnableChecks(boolean enableCheckRef)
+    {
+        enableChecks = enableCheckRef;
+    }
+
     private void checkSameKindAsPeers(VolumeDefinition vlmDfn, NodeName nodeName, StorPool storPool)
         throws AccessDeniedException
     {
+        if (!enableChecks)
+        {
+            return;
+        }
+
         DeviceProviderKind driverKind = storPool.getDeviceProviderKind();
 
         for (Resource peerRsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
@@ -230,7 +246,7 @@ public class CtrlStorPoolResolveHelper
 
     private void checkBackingDiskWithDiskless(final Resource rsc, final StorPool storPool)
     {
-        if (storPool != null && storPool.getDeviceProviderKind().hasBackingDevice())
+        if (enableChecks && storPool != null && storPool.getDeviceProviderKind().hasBackingDevice())
         {
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(FAIL_INVLD_STOR_POOL_NAME,
