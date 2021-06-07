@@ -1,3 +1,9 @@
+linstor-server (1.12.6-1) experimental; urgency=medium
+
+  * DB: Skip mixing storPools check while DB loading
+
+ -- Gabor Hernadi <gabor.hernadi@linbit.com>  Mon, 07 Jun 2021 07:01:30 +0000
+
 linstor-server (1.12.5-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
