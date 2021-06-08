@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer.storage.utils;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
@@ -7,6 +8,7 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -50,13 +52,25 @@ public class SharedStorageUtils
                     {
                         VlmProviderObject<Resource> otherVlmData = otherRscStorData
                             .getVlmProviderObject(localVlmData.getVlmNr());
-                        SharedStorPoolName otherSharedStorPoolName = otherVlmData.getStorPool().getSharedStorPoolName();
 
-                        if (localSharedStorPoolName.equals(otherSharedStorPoolName))
+                        if (otherVlmData != null)
                         {
-                            neededBySharedResource = true;
-                            break;
+                            SharedStorPoolName otherSharedStorPoolName = otherVlmData.getStorPool()
+                                .getSharedStorPoolName();
+
+                            if (localSharedStorPoolName.equals(otherSharedStorPoolName))
+                            {
+                                neededBySharedResource = true;
+                                break;
+                            }
                         }
+                        else if (RscLayerSuffixes.isNonMetaDataLayerSuffix(otherRscStorData.getResourceNameSuffix()))
+                        {
+                            throw new ImplementationError(
+                                "No data volume found for " + otherRscStorData.getAbsResource()
+                            );
+                        }
+
                     }
                 }
             }
