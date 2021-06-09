@@ -417,6 +417,11 @@ class StltRscApiCallHandler
                 }
 
                 // update flags
+                errorReporter.logTrace(
+                    "resetting flags of local rsc (%s) to %s",
+                    localRsc,
+                    FlagsHelper.toStringList(Resource.Flags.class, rscRawData.getLocalRscFlags())
+                );
                 localRsc.getStateFlags().resetFlagsTo(
                     apiCtx,
                     Resource.Flags.restoreFlags(rscRawData.getLocalRscFlags())
@@ -744,6 +749,12 @@ class StltRscApiCallHandler
         Props vlmProps = vlm.getProps(apiCtx);
         vlmProps.map().putAll(vlmApi.getVlmProps());
         vlmProps.keySet().retainAll(vlmApi.getVlmProps().keySet());
+        errorReporter.logTrace(
+            "resetting flags of %s vlm (%s) to %s",
+            remoteRsc ? "remote" : "local",
+            vlm.toString(),
+            FlagsHelper.toStringList(Volume.Flags.class, vlmApi.getFlags())
+        );
         vlm.getFlags().resetFlagsTo(apiCtx, Volume.Flags.restoreFlags(vlmApi.getFlags()));
     }
 
