@@ -61,6 +61,9 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import java.util.HashSet;
+import java.util.List;
+
 public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
 {
     protected final AccessContext apiCtx;
@@ -81,7 +84,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             RSC rsc,
             RscLayerDataApi rscLayerDataPojo,
             AbsRscLayerObject<RSC> parent,
-            boolean remoteResourceRef
+            boolean remoteResourceRef,
+            List<RscLayerDataApi> pojoChildren
         )
             throws DatabaseException, ValueOutOfRangeException, AccessDeniedException, IllegalArgumentException,
                 ExhaustedPoolException, ValueInUseException, InvalidNameException;
@@ -147,7 +151,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             rsc,
             rscLayerDataPojo,
             parent,
-            remoteResourceRef
+            remoteResourceRef,
+            rscLayerDataPojo.getChildren()
         );
         // rscLayerObject.setSuspendIo(rscLayerDataPojo.getSuspend());
 
@@ -161,7 +166,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         RSC rsc,
         RscLayerDataApi rscDataPojo,
         AbsRscLayerObject<RSC> parent,
-        boolean ignoredRemoteResource
+        boolean ignoredRemoteResource,
+        List<RscLayerDataApi> pojoChildren
     )
         throws DatabaseException, ValueOutOfRangeException, AccessDeniedException, IllegalArgumentException,
             ExhaustedPoolException, ValueInUseException, InvalidNameException
@@ -192,6 +198,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             mergeDrbdRscData(parent, drbdRscPojo, drbdRscData);
         }
 
+        HashSet<VolumeNumber> drbdVlmDataToDelete = new HashSet<>(drbdRscData.getVlmLayerObjects().keySet());
         // do not iterate over rsc.volumes as those might have changed in the meantime
         // see gitlab 368
         for (DrbdVlmPojo drbdVlmPojo : drbdRscPojo.getVolumeList())
@@ -204,9 +211,30 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             }
             else
             {
+                drbdVlmDataToDelete.remove(vlmNr);
                 restoreDrbdVlm(vlm, drbdRscData, drbdVlmPojo);
             }
         }
+        for (VolumeNumber vlmNrToDelete : drbdVlmDataToDelete)
+        {
+            removeDrbdVlm(drbdRscData, vlmNrToDelete);
+        }
+
+        // it is possible (i.e. during a toggle disk) that we need to delete a child (i.e. ".meta") while keeping /
+        // converting another child (i.e. from LVM/ZFS to Diskless)
+        HashSet<String> childSuffixesToKeep = new HashSet<>();
+        for (RscLayerDataApi pojoChild : pojoChildren)
+        {
+            childSuffixesToKeep.add(pojoChild.getRscNameSuffix());
+        }
+        for (AbsRscLayerObject<RSC> child : drbdRscData.getChildren())
+        {
+            if (!childSuffixesToKeep.contains(child.getResourceNameSuffix()))
+            {
+                child.delete();
+            }
+        }
+
         return drbdRscData;
     }
 
@@ -229,7 +257,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         RSC rsc,
         RscLayerDataApi rscDataPojo,
         AbsRscLayerObject<RSC> parent,
-        boolean ignoredRemoteResource
+        boolean ignoredRemoteResource,
+        List<RscLayerDataApi> ignoredPojoChildren
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException
     {
@@ -272,7 +301,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         RSC rsc,
         RscLayerDataApi rscDataPojo,
         AbsRscLayerObject<RSC> parent,
-        boolean remoteResource
+        boolean remoteResource,
+        List<RscLayerDataApi> ignoredPojoChildren
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, InvalidNameException
     {
@@ -297,6 +327,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             updateParent(storRscData, parent);
         }
 
+        HashSet<VolumeNumber> storVlmDataToDelete = new HashSet<>(storRscData.getVlmLayerObjects().keySet());
         // do not iterate over rsc.volumes as those might have changed in the meantime
         // see gitlab 368
         for (VlmLayerDataApi vlmPojo : storRscPojo.getVolumeList())
@@ -311,6 +342,11 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             {
                 createOrMergeStorageVlm(vlm, storRscData, vlmPojo, remoteResource);
             }
+        }
+        for (VolumeNumber vlmNrToDelete : storVlmDataToDelete)
+        {
+            System.out.println("removing Storage vlm");
+            removeStorageVlm(storRscData, vlmNrToDelete);
         }
         return storRscData;
     }
@@ -448,7 +484,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         RSC rsc,
         RscLayerDataApi rscDataPojo,
         AbsRscLayerObject<RSC> parent,
-        boolean ignoredRemoteResource
+        boolean ignoredRemoteResource,
+        List<RscLayerDataApi> ignoredPojoChildren
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException
     {
@@ -507,7 +544,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         RSC rsc,
         RscLayerDataApi rscDataPojo,
         AbsRscLayerObject<RSC> parent,
-        boolean ignoredRemoteResource
+        boolean ignoredRemoteResource,
+        List<RscLayerDataApi> ignoredPojoChildren
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException
     {
@@ -592,7 +630,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         RSC rsc,
         RscLayerDataApi rscDataPojo,
         AbsRscLayerObject<RSC> parent,
-        boolean ignoredRemoteResource
+        boolean ignoredRemoteResource,
+        List<RscLayerDataApi> ignoredPojoChildren
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, InvalidNameException
     {
@@ -656,7 +695,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         RSC rsc,
         RscLayerDataApi rscDataPojo,
         AbsRscLayerObject<RSC> parent,
-        boolean ignoredRemoteResource
+        boolean ignoredRemoteResource,
+        List<RscLayerDataApi> ignoredPojoChildren
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, InvalidNameException
     {
@@ -720,7 +760,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         RSC rsc,
         RscLayerDataApi rscDataPojo,
         AbsRscLayerObject<RSC> parent,
-        boolean ignoredRemoteResource
+        boolean ignoredRemoteResource,
+        List<RscLayerDataApi> ignoredPojoChildren
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, InvalidNameException
     {
