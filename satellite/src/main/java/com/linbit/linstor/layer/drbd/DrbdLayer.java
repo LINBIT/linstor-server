@@ -626,7 +626,8 @@ public class DrbdLayer implements DeviceLayer
                                 drbdVlmData,
                                 // TODO: not sure if we should "--assume-clean" if data device is only partially
                                 // thinly backed
-                                VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false)
+                                VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false),
+                                null
                             );
                         }
                     }
@@ -850,21 +851,14 @@ public class DrbdLayer implements DeviceLayer
                     .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS)
             )
             {
-                boolean resFileRegenerated = false;
                 for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
                     if (needsResize(drbdVlmData) && drbdVlmData.getSizeState().equals(Size.TOO_LARGE))
                     {
-                        if (!resFileRegenerated)
-                        {
-                            // before shrinking we need to write the new size into the .res file
-                            regenerateResFile(drbdRscData);
-                            resFileRegenerated = true;
-                        }
-
                         drbdUtils.resize(
                             drbdVlmData,
-                            false // we dont need to --assume-clean when shrinking...
+                            false, // we dont need to --assume-clean when shrinking...
+                            drbdVlmData.getUsableSize()
                         );
                         // DO NOT set size.AS_EXPECTED as we most likely want to grow a little
                         // bit again once the layers below finished shrinking
