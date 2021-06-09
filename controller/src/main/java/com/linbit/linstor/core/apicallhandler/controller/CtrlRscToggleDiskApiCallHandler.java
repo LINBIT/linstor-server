@@ -403,7 +403,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                  * We also have to remove the currently diskless DrbdRscData and free up the node-id as now we must
                  * use the shared resource's node-id
                  */
-                // layerList = removeLayerData(rsc);
+                removeLayerData(rsc);
             }
             // rebuilds the layerdata in case we just removed it..
         }
@@ -430,13 +430,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             layerList = LayerRscUtils.getLayerStack(rscRef, apiCtx);
             AbsRscLayerObject<Resource> layerData = rscRef.getLayerData(apiCtx);
-            Collection<? extends VlmProviderObject<Resource>> vlmDataCollection = layerData.getVlmLayerObjects()
-                .values();
-            for (VlmProviderObject<Resource> vlmData : vlmDataCollection)
-            {
-                layerData.remove(apiCtx, vlmData.getVlmNr());
-            }
-            layerData.delete();
+            layerData.delete(apiCtx);
             rscRef.setLayerData(apiCtx, null);
         }
         catch (AccessDeniedException exc)
@@ -699,22 +693,28 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
 
+        List<DeviceLayerKind> layerList = null;
         if (removeDisk)
         {
             markDiskRemoved(rsc);
 
             activateIfPossible(rsc);
+            /*
+             * We also have to remove the possible meta-children of previous StorageRscData.
+             * LayerData will be recreated with ensureStackDataExists
+             */
+            layerList = removeLayerData(rsc);
         }
         else
         {
             markDiskAdded(rsc);
+            ctrlLayerStackHelper.resetStoragePools(rsc);
         }
+        ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, new LayerPayload());
+
         Flux<ApiCallRc> autoFlux = rscAutoHelper.get().manage(
             new AutoHelperContext(responses, context, rsc.getDefinition())
         ).getFlux();
-
-        ctrlLayerStackHelper.resetStoragePools(rsc);
-        ctrlLayerStackHelper.ensureStackDataExists(rsc, null, new LayerPayload());
 
         ctrlTransactionHelper.commit();
 

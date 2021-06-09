@@ -302,7 +302,7 @@ public class Resource extends AbsResource<Resource>
 
             if (rootLayerData.get() != null)
             {
-                rootLayerData.get().delete();
+                rootLayerData.get().delete(accCtx);
             }
 
             activateTransMgr();

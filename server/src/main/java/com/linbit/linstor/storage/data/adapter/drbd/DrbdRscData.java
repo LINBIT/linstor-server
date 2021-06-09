@@ -202,9 +202,9 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void delete() throws DatabaseException
+    public void delete(AccessContext accCtxRef) throws DatabaseException, AccessDeniedException
     {
-        super.delete();
+        super.delete(accCtxRef);
         drbdRscDfnData.getDrbdRscDataList().remove(this);
     }
 

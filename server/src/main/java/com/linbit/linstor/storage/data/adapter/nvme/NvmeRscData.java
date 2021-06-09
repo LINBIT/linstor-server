@@ -108,12 +108,6 @@ public class NvmeRscData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void delete() throws DatabaseException
-    {
-        super.delete();
-    }
-
-    @Override
     protected void deleteVlmFromDatabase(NvmeVlmData<RSC> drbdVlmData) throws DatabaseException
     {
         // no-op

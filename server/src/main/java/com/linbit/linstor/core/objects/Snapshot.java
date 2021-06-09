@@ -204,7 +204,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
 
             if (rootLayerData.get() != null)
             {
-                rootLayerData.get().delete();
+                rootLayerData.get().delete(accCtx);
             }
             activateTransMgr();
             dbDriver.delete(this);

@@ -42,7 +42,7 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
 
     RscLayerDataApi asPojo(AccessContext accCtx) throws AccessDeniedException;
 
-    void delete() throws DatabaseException;
+    void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException;
 
     void remove(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException, DatabaseException;
 

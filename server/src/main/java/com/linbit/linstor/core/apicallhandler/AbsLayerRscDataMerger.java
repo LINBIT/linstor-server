@@ -61,6 +61,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -222,17 +223,23 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
 
         // it is possible (i.e. during a toggle disk) that we need to delete a child (i.e. ".meta") while keeping /
         // converting another child (i.e. from LVM/ZFS to Diskless)
-        HashSet<String> childSuffixesToKeep = new HashSet<>();
+        HashSet<Integer> childRscIdsToKeep = new HashSet<>();
         for (RscLayerDataApi pojoChild : pojoChildren)
         {
-            childSuffixesToKeep.add(pojoChild.getRscNameSuffix());
+            childRscIdsToKeep.add(pojoChild.getId());
         }
+        ArrayList<AbsRscLayerObject<RSC>> childrenToDelete = new ArrayList<>();
         for (AbsRscLayerObject<RSC> child : drbdRscData.getChildren())
         {
-            if (!childSuffixesToKeep.contains(child.getResourceNameSuffix()))
+            if (!childRscIdsToKeep.contains(child.getRscLayerId()))
             {
-                child.delete();
+                childrenToDelete.add(child);
             }
+        }
+        for (AbsRscLayerObject<RSC> childToDelete : childrenToDelete)
+        {
+            childToDelete.delete(apiCtx);
+            drbdRscData.getChildren().remove(childToDelete);
         }
 
         return drbdRscData;
@@ -327,7 +334,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             updateParent(storRscData, parent);
         }
 
-        HashSet<VolumeNumber> storVlmDataToDelete = new HashSet<>(storRscData.getVlmLayerObjects().keySet());
         // do not iterate over rsc.volumes as those might have changed in the meantime
         // see gitlab 368
         for (VlmLayerDataApi vlmPojo : storRscPojo.getVolumeList())
@@ -342,11 +348,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
             {
                 createOrMergeStorageVlm(vlm, storRscData, vlmPojo, remoteResource);
             }
-        }
-        for (VolumeNumber vlmNrToDelete : storVlmDataToDelete)
-        {
-            System.out.println("removing Storage vlm");
-            removeStorageVlm(storRscData, vlmNrToDelete);
         }
         return storRscData;
     }

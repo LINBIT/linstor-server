@@ -160,11 +160,15 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected abstract void deleteRscFromDatabase() throws DatabaseException;
 
     @Override
-    public void delete() throws DatabaseException
+    public void delete(AccessContext accCtx) throws DatabaseException, AccessDeniedException
     {
         for (AbsRscLayerObject<RSC> rscLayerObject : children)
         {
-            rscLayerObject.delete();
+            rscLayerObject.delete(accCtx);
+        }
+        for (VolumeNumber vlmNr : vlmMap.keySet())
+        {
+            remove(accCtx, vlmNr);
         }
         deleteRscFromDatabase();
         dbDriver.delete(this);
