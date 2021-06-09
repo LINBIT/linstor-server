@@ -19,6 +19,7 @@ import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.StltConfigAccessor;
+import com.linbit.linstor.core.SysBlockUtils;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
@@ -585,10 +586,8 @@ public class DrbdLayer implements DeviceLayer
             {
                 for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
-                    StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
                     // only continue if either both flags (RESIZE + DRBD_RESIZE) are set or none of them
-                    contProcess &= (vlmFlags.isSet(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE) ||
-                        vlmFlags.isUnset(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE));
+                    contProcess &= areBothResizeFlagsSet(drbdVlmData);
                 }
             }
 
@@ -748,13 +747,47 @@ public class DrbdLayer implements DeviceLayer
         return contProcess;
     }
 
-    private boolean needsResize(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException
+    private boolean areBothResizeFlagsSet(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException
+    {
+        StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
+        return vlmFlags.isSet(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE) ||
+            vlmFlags.isUnset(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE);
+    }
+
+    private boolean needsResize(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException, StorageException
     {
         // A resize should not be called on a resize without a disk
         // there was a bug in pre 0.9.2 versions where diskless would be chosen for the resize command
         boolean isResizeFlagSet = ((Volume) drbdVlmData.getVolume()).getFlags()
             .isSet(workerCtx, Volume.Flags.DRBD_RESIZE);
-        return isResizeFlagSet && drbdVlmData.hasDisk();
+        boolean needsResize = isResizeFlagSet && drbdVlmData.hasDisk();
+
+        if (needsResize)
+        {
+            long sizeInSectors = SysBlockUtils.getDrbdSizeInSectors(
+                extCmdFactory,
+                drbdVlmData.getVlmDfnLayerObject().getMinorNr().value
+            );
+            long sizeInKib = sizeInSectors * 2;
+            if (drbdVlmData.getUsableSize() != sizeInKib)
+            {
+                if (drbdVlmData.getUsableSize() < sizeInKib)
+                {
+                    drbdVlmData.setSizeState(Size.TOO_SMALL);
+                }
+                else
+                {
+                    drbdVlmData.setSizeState(Size.TOO_LARGE);
+                }
+            }
+            else
+            {
+                drbdVlmData.setSizeState(Size.AS_EXPECTED);
+                needsResize = false;
+            }
+        }
+
+        return needsResize;
     }
 
     private String generateDevicePath(DrbdVlmData<Resource> drbdVlmData)
@@ -858,7 +891,7 @@ public class DrbdLayer implements DeviceLayer
                         drbdUtils.resize(
                             drbdVlmData,
                             false, // we dont need to --assume-clean when shrinking...
-                            drbdVlmData.getUsableSize()
+                            drbdVlmData.getExpectedUsableSize()
                         );
                         // DO NOT set size.AS_EXPECTED as we most likely want to grow a little
                         // bit again once the layers below finished shrinking
