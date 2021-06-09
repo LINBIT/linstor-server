@@ -247,7 +247,7 @@ public enum DeviceProviderKind
                 allowed = kind2.equals(LVM);
                 break;
             case LVM_THIN:
-                allowed = kind2.equals(LVM_THIN) || kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
+                allowed = kind2.equals(LVM_THIN);
                 break;
             case OPENFLEX_TARGET:
                 allowed = kind2.equals(OPENFLEX_TARGET);
@@ -257,7 +257,7 @@ public enum DeviceProviderKind
                 break;
             case ZFS:
             case ZFS_THIN:
-                allowed = kind2.equals(ZFS) || kind2.equals(ZFS_THIN) || kind2.equals(LVM_THIN);
+                allowed = kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
                 break;
             case EXOS:
                 allowed = kind2.equals(EXOS);
