@@ -51,7 +51,6 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     private Size sizeState;
     private String diskState;
     private long originalSize = UNINITIALIZED_SIZE;
-    private long expectedUsableSize = UNINITIALIZED_SIZE;
 
     public DrbdVlmData(
         AbsVolume<RSC> vlmRef,
@@ -147,11 +146,6 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     public void setUsableSize(long usableSizeRef)
     {
         usableSize = usableSizeRef;
-    }
-
-    public long getExpectedUsableSize()
-    {
-        return expectedUsableSize;
     }
 
     @Override

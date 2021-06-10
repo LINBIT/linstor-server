@@ -768,10 +768,10 @@ public class DrbdLayer implements DeviceLayer
                 extCmdFactory,
                 drbdVlmData.getVlmDfnLayerObject().getMinorNr().value
             );
-            long sizeInKib = sizeInSectors * 2;
-            if (drbdVlmData.getUsableSize() != sizeInKib)
+            long actualSizeInKib = sizeInSectors / 2;
+            if (drbdVlmData.getUsableSize() != actualSizeInKib)
             {
-                if (drbdVlmData.getUsableSize() < sizeInKib)
+                if (drbdVlmData.getUsableSize() > actualSizeInKib)
                 {
                     drbdVlmData.setSizeState(Size.TOO_SMALL);
                 }
@@ -891,7 +891,7 @@ public class DrbdLayer implements DeviceLayer
                         drbdUtils.resize(
                             drbdVlmData,
                             false, // we dont need to --assume-clean when shrinking...
-                            drbdVlmData.getExpectedUsableSize()
+                            drbdVlmData.getUsableSize()
                         );
                         // DO NOT set size.AS_EXPECTED as we most likely want to grow a little
                         // bit again once the layers below finished shrinking
