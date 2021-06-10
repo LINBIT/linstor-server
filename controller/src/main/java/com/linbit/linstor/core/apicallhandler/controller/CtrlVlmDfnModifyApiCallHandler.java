@@ -516,24 +516,19 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         }
         else
         {
-            Set<NodeName> nodeNames = new HashSet<>();
-            Iterator<Volume> vlmIter = iterateVolumes(vlmDfn);
-            while (vlmIter.hasNext())
-            {
-                Volume vlm = vlmIter.next();
-                markVlmDrbdResize(vlm);
-                nodeNames.add(vlm.getAbsResource().getNode().getName());
-            }
+            Optional<Volume> drbdResizeVlm = streamVolumesPrivileged(vlmDfn)
+                .filter(this::isDrbdDiskful)
+                .findAny();
+            drbdResizeVlm.ifPresent(this::markVlmDrbdResize);
 
             ctrlTransactionHelper.commit();
-
 
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), Flux.empty())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
                         updateResponses,
                         rscName,
-                        nodeNames,
+                        getNodeNames(drbdResizeVlm),
                         "Resized DRBD resource {1} on {0}",
                         null
                     )

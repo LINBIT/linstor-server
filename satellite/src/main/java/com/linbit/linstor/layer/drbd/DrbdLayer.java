@@ -589,6 +589,26 @@ public class DrbdLayer implements DeviceLayer
                     // only continue if either both flags (RESIZE + DRBD_RESIZE) are set or none of them
                     contProcess &= areBothResizeFlagsSet(drbdVlmData);
                 }
+
+                if (contProcess)
+                {
+                    for (DrbdRscData<Resource> peer : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
+                    {
+                        if (!drbdRscData.equals(peer))
+                        {
+                            for (DrbdVlmData<Resource> peerVlm : peer.getVlmLayerObjects().values())
+                            {
+                                if (isFlagSet(peerVlm, Volume.Flags.DRBD_RESIZE) &&
+                                    !isFlagSet(peerVlm, Volume.Flags.RESIZE))
+                                {
+                                    // if a peer is currently shrinking, don't do anything
+                                    contProcess = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if (contProcess)
@@ -752,6 +772,12 @@ public class DrbdLayer implements DeviceLayer
         StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
         return vlmFlags.isSet(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE) ||
             vlmFlags.isUnset(workerCtx, Volume.Flags.RESIZE, Volume.Flags.DRBD_RESIZE);
+    }
+
+    private boolean isFlagSet(DrbdVlmData<Resource> drbdVlmData, Volume.Flags... flagsRef) throws AccessDeniedException
+    {
+        StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
+        return vlmFlags.isSet(workerCtx, flagsRef);
     }
 
     private boolean needsResize(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException, StorageException
