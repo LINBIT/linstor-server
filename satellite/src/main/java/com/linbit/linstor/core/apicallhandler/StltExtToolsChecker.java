@@ -107,7 +107,7 @@ public class StltExtToolsChecker
                 getSpdkInfo(),
                 getWritecacheInfo(loadedModules),
                 getCacheInfo(loadedModules),
-                getBCacheInfo(),
+                getBCacheInfo(loadedModules),
                 getLosetupInfo(),
                 getZstdInfo(),
                 getSocatInfo(),
@@ -255,33 +255,43 @@ public class StltExtToolsChecker
         return new ExtToolsInfo(ExtTools.DM_CACHE, errorList.isEmpty(), null, null, null, errorList);
     }
 
-    private ExtToolsInfo getBCacheInfo()
+    private ExtToolsInfo getBCacheInfo(List<String> loadedModulesRef)
     {
-        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(
-            ec -> ec == 0 || ec == 1,
-            "make-bcache",
-            "-h"
-        );
+        ExtToolsInfo extToolsInfo;
 
-        ExtToolsInfo extToolsInfo = stdoutOrErrorReason.map(
-            pair ->
-                new ExtToolsInfo(
+        List<String> failReasons = new ArrayList<>();
+        checkModuleLoaded(loadedModulesRef, "bcache", failReasons);
+        if (!failReasons.isEmpty())
+        {
+            extToolsInfo = new ExtToolsInfo(ExtTools.BCACHE_TOOLS, false, null, null, null, failReasons);
+        }
+        else
+        {
+            Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(
+                ec -> ec == 0 || ec == 1,
+                "make-bcache",
+                "-h"
+            );
+
+            extToolsInfo = stdoutOrErrorReason.map(
+                pair -> new ExtToolsInfo(
                     ExtTools.BCACHE_TOOLS,
                     true,
                     null,
                     null,
                     null,
                     Collections.emptyList()
-            ),
-            notSupportedReasonList -> new ExtToolsInfo(
-                ExtTools.BCACHE_TOOLS,
-                false,
-                null,
-                null,
-                null,
-                notSupportedReasonList
-            )
-        );
+                ),
+                notSupportedReasonList -> new ExtToolsInfo(
+                    ExtTools.BCACHE_TOOLS,
+                    false,
+                    null,
+                    null,
+                    null,
+                    notSupportedReasonList
+                )
+            );
+        }
         if (extToolsInfo.isSupported())
         {
             errorReporter.logTrace(
