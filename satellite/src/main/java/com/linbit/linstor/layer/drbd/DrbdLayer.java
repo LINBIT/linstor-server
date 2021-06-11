@@ -923,6 +923,9 @@ public class DrbdLayer implements DeviceLayer
                         // bit again once the layers below finished shrinking
                     }
                 }
+                // quickfix here: drbd resize returns immediately and doesn't wait until other peers have the new size
+                // so until we correctly wait for other peers, we will just hope it finishes within 1s
+                Thread.sleep(1000);
             }
         }
         catch (ExtCmdFailedException exc)
@@ -931,6 +934,9 @@ public class DrbdLayer implements DeviceLayer
                 String.format("Failed to shrink DRBD resource %s", drbdRscData.getSuffixedResourceName()),
                 exc
             );
+        }
+        catch (InterruptedException ignore)
+        {
         }
     }
 
