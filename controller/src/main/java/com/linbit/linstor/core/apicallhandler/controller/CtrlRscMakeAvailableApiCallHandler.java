@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -10,6 +11,7 @@ import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.ResourceWithPayloadPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
+import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -23,6 +25,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
@@ -52,11 +55,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
@@ -76,6 +81,8 @@ public class CtrlRscMakeAvailableApiCallHandler
     private final Autoplacer autoplacer;
     private final CtrlSatelliteUpdateCaller stltUpdateCaller;
     private final CtrlRscToggleDiskApiCallHandler toggleDiskHandler;
+    private final SharedResourceManager sharedRscMgr;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     public CtrlRscMakeAvailableApiCallHandler(
@@ -90,7 +97,9 @@ public class CtrlRscMakeAvailableApiCallHandler
         CtrlApiDataLoader dataLoaderRef,
         Autoplacer autoplacerRef,
         CtrlSatelliteUpdateCaller stltUpdateCallerRef,
-        CtrlRscToggleDiskApiCallHandler toggleDiskHandlerRef
+        CtrlRscToggleDiskApiCallHandler toggleDiskHandlerRef,
+        SharedResourceManager sharedRscMgrRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -105,6 +114,8 @@ public class CtrlRscMakeAvailableApiCallHandler
         autoplacer = autoplacerRef;
         stltUpdateCaller = stltUpdateCallerRef;
         toggleDiskHandler = toggleDiskHandlerRef;
+        sharedRscMgr = sharedRscMgrRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     public Flux<ApiCallRc> makeResourceAvailable(
@@ -182,7 +193,7 @@ public class CtrlRscMakeAvailableApiCallHandler
 
             if (isFlagSet(rsc, Resource.Flags.INACTIVE) && !isFlagSet(rsc, Resource.Flags.INACTIVE_PERMANENTLY))
             {
-                Resource activeRsc = getActiveRsc(rscDfn);
+                Resource activeRsc = getActiveRsc(rsc);
                 if (activeRsc == null) {
                     disableFlag(rsc, Resource.Flags.INACTIVE);
                     flux = stltUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
@@ -262,7 +273,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                 errorReporter.logTrace("Trying to place new shared resource");
 
                 // try to deactivate already active resource first
-                Resource activeRsc = getActiveRsc(rscDfn);
+                Resource activeRsc = getActiveRsc(createRscPojo, node, rscDfn);
                 setFlag(activeRsc, Resource.Flags.INACTIVE);
                 flux = stltUpdateCaller.updateSatellites(activeRsc, Flux.empty()).transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
@@ -379,14 +390,39 @@ public class CtrlRscMakeAvailableApiCallHandler
         );
     }
 
-    private Resource getActiveRsc(ResourceDefinition rscDfnRef)
+    private Resource getActiveRsc(Resource myRsc)
+    {
+        ResourceDefinition rscDfn = myRsc.getResourceDefinition();
+        try
+        {
+            TreeSet<Resource> sharedResources = sharedRscMgr.getSharedResources(myRsc);
+            for (Resource rsc : sharedResources)
+            {
+                if (!myRsc.equals(rsc) && !rsc.getStateFlags().isSet(peerCtxProvider.get(), Resource.Flags.INACTIVE))
+                {
+                    return rsc;
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "finding active resource " + CtrlRscDfnApiCallHandler.getRscDfnDescription(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return null;
+    }
+
+    private Resource getActiveRsc(ResourceWithPayloadApi rscToCreate, Node node, ResourceDefinition rscDfn)
     {
         try
         {
-            Iterator<Resource> rscIt = rscDfnRef.iterateResource(peerCtxProvider.get());
-            while (rscIt.hasNext())
+            Set<SharedStorPoolName> sharedSpNames = getSharedSpNamesByRscCreateApi(rscToCreate, node, rscDfn);
+            TreeSet<Resource> sharedResources = sharedRscMgr.getSharedResources(sharedSpNames, rscDfn);
+            for (Resource rsc : sharedResources)
             {
-                Resource rsc = rscIt.next();
                 if (!rsc.getStateFlags().isSet(peerCtxProvider.get(), Resource.Flags.INACTIVE))
                 {
                     return rsc;
@@ -397,11 +433,81 @@ public class CtrlRscMakeAvailableApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 exc,
-                "finding active resource " + CtrlRscDfnApiCallHandler.getRscDfnDescription(rscDfnRef),
+                "finding active resource " + CtrlRscDfnApiCallHandler.getRscDfnDescription(rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
         return null;
+    }
+
+    private HashSet<SharedStorPoolName> getSharedSpNamesByRscCreateApi(
+        ResourceWithPayloadApi rscToCreateRef,
+        Node node,
+        ResourceDefinition rscDfn
+    )
+        throws AccessDeniedException
+    {
+        HashSet<SharedStorPoolName> ret = new HashSet<>();
+        try
+        {
+            Set<String> storPoolNames = new HashSet<>();
+            AccessContext peerCtx = peerCtxProvider.get();
+
+            for (VolumeApi vlmApi : rscToCreateRef.getRscApi().getVlmList())
+            {
+                List<Map<String, String>> prioMaps = new ArrayList<>();
+                prioMaps.add(vlmApi.getVlmProps());
+                prioMaps.add(rscToCreateRef.getRscApi().getProps());
+                prioMaps.add(
+                    rscDfn.getVolumeDfn(
+                        peerCtx,
+                        LinstorParsingUtils.asVlmNr(vlmApi.getVlmNr())
+                    )
+                        .getProps(peerCtx).map()
+                );
+                prioMaps.add(rscDfn.getProps(peerCtx).map());
+                prioMaps.add(rscDfn.getResourceGroup().getProps(peerCtx).map());
+                prioMaps.add(node.getProps(peerCtx).map());
+
+                String poolName = get(prioMaps, ApiConsts.KEY_STOR_POOL_NAME);
+
+                if (poolName != null)
+                {
+                    storPoolNames.add(poolName);
+                }
+
+                String drbdMetaStorPoolName = get(prioMaps, ApiConsts.KEY_STOR_POOL_DRBD_META_NAME);
+                if (drbdMetaStorPoolName != null)
+                {
+                    storPoolNames.add(drbdMetaStorPoolName);
+                }
+            }
+
+            for (String storPoolName : storPoolNames)
+            {
+                StorPool sp = node.getStorPool(peerCtx, new StorPoolName(storPoolName));
+                ret.add(sp.getSharedStorPoolName());
+            }
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
+    }
+
+    private String get(List<Map<String, String>> prioMapsRef, String key)
+    {
+        String value = null;
+        for (Map<String, String> map : prioMapsRef)
+        {
+            value = map.get(key);
+            if (value != null)
+            {
+                break;
+            }
+        }
+        return value;
     }
 
     private void setFlag(Resource rsc, Flags... flags)
