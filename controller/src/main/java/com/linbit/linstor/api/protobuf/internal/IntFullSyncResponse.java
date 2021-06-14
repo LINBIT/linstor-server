@@ -12,6 +12,7 @@ import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlFullSyncRe
 import com.linbit.linstor.core.apicallhandler.controller.internal.StorPoolInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass.MsgIntFullSyncResponse;
@@ -35,12 +36,12 @@ import reactor.core.publisher.Flux;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_FULL_SYNC_RESPONSE,
-    description = "Satellite's response to full sync data",
-    transactional = true
+    description = "Satellite's response to full sync data"
 )
 @Singleton
 public class IntFullSyncResponse implements ApiCallReactive
 {
+    private final ErrorReporter errorReporter;
     private final ScopeRunner scopeRunner;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
@@ -50,6 +51,7 @@ public class IntFullSyncResponse implements ApiCallReactive
 
     @Inject
     public IntFullSyncResponse(
+        ErrorReporter errorReporterRef,
         ScopeRunner scopeRunnerRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
@@ -58,6 +60,7 @@ public class IntFullSyncResponse implements ApiCallReactive
         Provider<Peer> satelliteProviderRef
     )
     {
+        errorReporter = errorReporterRef;
         scopeRunner = scopeRunnerRef;
         nodesMapLock = nodesMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
@@ -114,6 +117,9 @@ public class IntFullSyncResponse implements ApiCallReactive
                     ProcCryptoEntry.CryptoType.fromString(ce.getType()),
                     ce.getPriority()))
                 .collect(Collectors.toList());
+            errorReporter.logTrace("CryptoEntries for %s: %s",
+                satellitePeerRef.getNode().getName(),
+                cryptoEntries.stream().map(ProcCryptoEntry::getName).collect(Collectors.toList()));
             satellitePeerRef.getNode().setCryptoEntries(cryptoEntries);
 
             flux = scopeRunner
@@ -123,13 +129,13 @@ public class IntFullSyncResponse implements ApiCallReactive
                     () -> updateCapacities(satellitePeerRef, capacityInfoPojoList)
                 )
                 .thenMany(ctrlFullSyncApiCallHandler.fullSyncSuccess(satellitePeerRef, ctx)
-                    .thenMany(Flux.<byte[]>empty())
+                    .thenMany(Flux.empty())
                 );
         }
         else
         {
             flux = ctrlFullSyncApiCallHandler.fullSyncFailed(satellitePeerRef)
-                .thenMany(Flux.<byte[]>empty());
+                .thenMany(Flux.empty());
         }
         return flux;
     }
