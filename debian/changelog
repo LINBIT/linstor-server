@@ -1,3 +1,29 @@
+linstor-server (1.13.0~rc.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Revert "Luks: Fixed reserving correct size for header"
+  * Revert "Mixed SPs: Allow more combinations"
+  * Revert "DRBD: Fixed shrinking"
+  * StltRscApiCallHandler: Added trace logs
+  * Drbd: Fixed new resize method
+  * DrbdLayer: Fixed sizeState calculation
+  * DrbdLayer: Fixed resize conditions
+  * BCache: First version
+  * Bcache: Added check for loaded module
+  * MakeRscAvailable: Fixed finding active resource
+  * SharedStorageUtils: Added null check
+  * AbsLayerRscDataMerger: Delete local removed secondary children
+  * RscLayerMerger: Added support for partial subtree restructuring
+
+  [ Rene Peinthor ]
+  * drbdlayer-shrink: for now hope shrink on other peers finishes within 1s
+  * gradle: update to guice 5.0.1
+  * fullsync: log retrieved crypto entries
+  * Revert "drbdlayer-shrink: for now hope shrink on other peers finishes  [...]
+  * metrics: add device path as label for volume stats
+
+ -- Gabor Hernadi <gabor.hernadi@linbit.com>  Mon, 14 Jun 2021 13:57:53 +0000
+
 linstor-server (1.12.6-1) experimental; urgency=medium
 
   * DB: Skip mixing storPools check while DB loading
