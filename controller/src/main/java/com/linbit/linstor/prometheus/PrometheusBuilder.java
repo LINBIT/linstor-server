@@ -177,6 +177,7 @@ public class PrometheusBuilder {
         map.put("resource", resourceApi.getName());
         map.put("node", resourceApi.getNodeName());
         map.put("volume", vlmApi.getVlmNr() + "");
+        map.put("device_path", vlmApi.getDevicePath());
         return map;
     }
 

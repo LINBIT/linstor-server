@@ -10,8 +10,8 @@ import java.util.Map;
 
 public class ResourceList
 {
-    private ArrayList<ResourceApi> rscs = new ArrayList<>();
-    private Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
+    private final ArrayList<ResourceApi> rscs = new ArrayList<>();
+    private final Map<NodeName, SatelliteState> satelliteStates = new HashMap<>();
 
     public void addResource(ResourceApi rscApi)
     {
