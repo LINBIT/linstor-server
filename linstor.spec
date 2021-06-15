@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.13.0.rc.1
+Version: 1.13.0~rc.1
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -7,7 +7,8 @@ BuildArch: noarch
 %define GRADLE_FLAGS --offline --gradle-user-home /tmp --no-daemon --exclude-task generateJava
 %define LS_PREFIX /usr/share/linstor-server
 %define FIREWALLD_SERVICES /usr/lib/firewalld/services
-%define NAME_VERS %{name}-server-%{version}
+%define FILE_VERSION %(echo %{version} | sed -e 's/~/\./')
+%define NAME_VERS %{name}-server-%{FILE_VERSION}
 
 # Prevent brp-java-repack-jars from being run.
 %define __jar_repack %{nil}
@@ -15,7 +16,7 @@ BuildArch: noarch
 Group: System Environment/Daemons
 License: GPLv2+
 URL: https://github.com/LINBIT/linstor-server
-Source0: http://www.linbit.com/downloads/linstor/linstor-server-%{version}.tar.gz
+Source0: http://www.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.tar.gz
 
 %if 0%{?suse_version} >= 1500
 BuildRequires: java-1_8_0-openjdk-headless java-1_8_0-openjdk-devel python
@@ -74,7 +75,7 @@ Linstor shared components between linstor-controller and linstor-satellite
 %files common -f %{_builddir}/%{NAME_VERS}/server/jar.deps
 %dir %{LS_PREFIX}
 %dir %{LS_PREFIX}/lib
-%{LS_PREFIX}/lib/server-%{version}.jar
+%{LS_PREFIX}/lib/server-%{FILE_VERSION}.jar
 %dir %{LS_PREFIX}/lib/conf
 %{LS_PREFIX}/lib/conf/logback.xml
 
@@ -90,7 +91,7 @@ Linstor controller manages linstor satellites and persistant data storage.
 %files controller -f %{_builddir}/%{NAME_VERS}/controller/jar.deps
 %dir %{LS_PREFIX}
 %dir %{LS_PREFIX}/lib
-%{LS_PREFIX}/lib/controller-%{version}.jar
+%{LS_PREFIX}/lib/controller-%{FILE_VERSION}.jar
 %dir %{LS_PREFIX}/bin
 %{LS_PREFIX}/bin/Controller
 %{LS_PREFIX}/bin/linstor-config
@@ -121,7 +122,7 @@ and creates drbd resource files.
 %files satellite -f %{_builddir}/%{NAME_VERS}/satellite/jar.deps
 %dir %{LS_PREFIX}
 %dir %{LS_PREFIX}/lib
-%{LS_PREFIX}/lib/satellite-%{version}.jar
+%{LS_PREFIX}/lib/satellite-%{FILE_VERSION}.jar
 %dir %{LS_PREFIX}/bin
 %{LS_PREFIX}/bin/Satellite
 %{_unitdir}/linstor-satellite.service
