@@ -7,7 +7,7 @@ BuildArch: noarch
 %define GRADLE_FLAGS --offline --gradle-user-home /tmp --no-daemon --exclude-task generateJava
 %define LS_PREFIX /usr/share/linstor-server
 %define FIREWALLD_SERVICES /usr/lib/firewalld/services
-%define FILE_VERSION %(echo %{version} | sed -e 's/~/\./')
+%define FILE_VERSION %(echo %{version} | sed -e 's/~/\-/')
 %define NAME_VERS %{name}-server-%{FILE_VERSION}
 
 # Prevent brp-java-repack-jars from being run.

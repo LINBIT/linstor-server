@@ -16,8 +16,9 @@ GENSRC=./server/generated-src
 VERSINFO=$(GENRES)/version-info.properties
 
 # echo v0.1 to get it started
-VERSION ?= $(shell echo $(shell git describe --tags || echo "v0.1") | sed -e 's/^v//;s/^[^0-9]*//;s/-/./;s/\(.*\)-g/\1-/')
+VERSION ?= $(shell echo $(shell git describe --tags || echo "v0.1") | sed -e 's/^v//;s/^[^0-9]*//;s/\(.*\)-g/\1-/')
 GITHASH := $(shell git rev-parse HEAD)
+DEBVERSION = $(shell echo $(VERSION) | sed -e 's/-/~/g')
 
 .PHONY: .filelist
 .filelist:
@@ -81,7 +82,7 @@ ifneq ($(FORCE),1)
 	if ! tmp=$$(git diff --name-status HEAD 2>&1) || test -n "$$tmp" ; then \
 		echo >&2 "$$tmp"; echo >&2 "Uncommitted changes"; exit 1; \
 	fi
-	if ! grep -q "^linstor-server ($(VERSION)" debian/changelog ; then \
+	if ! grep -q "^linstor-server ($(DEBVERSION)" debian/changelog ; then \
 		echo >&2 "debian/changelog needs update"; exit 1; \
 	fi
 	for df in "$(DOCKERFILE_CONTROLLER)" "$(DOCKERFILE_SATELLITE)"; do \
