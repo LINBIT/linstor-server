@@ -9,35 +9,22 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
-import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
-import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
-import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
-import com.linbit.linstor.api.pojo.backups.RscDfnMetaPojo;
-import com.linbit.linstor.api.pojo.backups.RscMetaPojo;
-import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
-import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltConnTracker;
 import com.linbit.linstor.core.StltSecurityObjects;
-import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Remote;
-import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -45,10 +32,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.utils.LayerUtils;
-import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -57,10 +40,8 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,7 +52,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.amazonaws.SdkClientException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Singleton
 public class BackupShippingService implements SystemService
@@ -475,8 +455,6 @@ public class BackupShippingService implements SystemService
                                     shippingInfo.s3MetaKey,
                                     fillPojo(
                                         snap,
-                                        shippingInfo.remote,
-                                        shippingInfo.s3MetaKey,
                                         shippingInfo.basedOnS3MetaKey
                                     ),
                                     shippingInfo.remote,
@@ -528,60 +506,9 @@ public class BackupShippingService implements SystemService
         }
     }
 
-    private String fillPojo(Snapshot snap, S3Remote remote, String metaName, String basedOnMetaName)
+    private String fillPojo(Snapshot snap, String basedOnMetaName)
         throws AccessDeniedException, IOException, ParseException
     {
-        SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
-        ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
-        ResourceGroup rscGrp = rscDfn.getResourceGroup();
-
-        String startTime = snapDfn.getName().displayValue.substring(BackupShippingConsts.SNAP_PREFIX_LEN);
-        long startTimestamp = BackupApi.DATE_FORMAT.parse(startTime).getTime();
-
-        PriorityProps rscDfnPrio = new PriorityProps(
-            snapDfn.getProps(accCtx),
-            rscGrp.getProps(accCtx),
-            snap.getNode().getProps(accCtx),
-            stltConfigAccessor.getReadonlyProps()
-        );
-        Map<String, String> rscDfnPropsRef = rscDfnPrio.renderRelativeMap("");
-        rscDfnPropsRef = new TreeMap<>(rscDfnPropsRef);
-        long rscDfnFlagsRef = rscDfn.getFlags().getFlagsBits(accCtx);
-
-        Map<Integer, VlmDfnMetaPojo> vlmDfnsRef = new TreeMap<>();
-        Collection<SnapshotVolumeDefinition> vlmDfns = snapDfn.getAllSnapshotVolumeDefinitions(accCtx);
-        for (SnapshotVolumeDefinition snapVlmDfn : vlmDfns)
-        {
-            PriorityProps vlmDfnPrio = new PriorityProps(
-                snapVlmDfn.getProps(accCtx),
-                rscGrp.getVolumeGroupProps(accCtx, snapVlmDfn.getVolumeNumber())
-            );
-            Map<String, String> vlmDfnPropsRef = vlmDfnPrio.renderRelativeMap("");
-            vlmDfnPropsRef = new TreeMap<>(vlmDfnPropsRef);
-            // necessary to get the gross-size-flag, even though flags might have changed in the meantime
-            long vlmDfnFlagsRef = snapVlmDfn.getVolumeDefinition().getFlags().getFlagsBits(accCtx);
-            long sizeRef = snapVlmDfn.getVolumeSize(accCtx);
-            vlmDfnsRef
-                .put(snapVlmDfn.getVolumeNumber().value, new VlmDfnMetaPojo(vlmDfnPropsRef, vlmDfnFlagsRef, sizeRef));
-        }
-
-        RscDfnMetaPojo rscDfnRef = new RscDfnMetaPojo(rscDfnPropsRef, rscDfnFlagsRef, vlmDfnsRef);
-
-        Map<String, String> rscPropsRef = snap.getProps(accCtx).map();
-        long rscFlagsRef = 0;
-
-        Map<Integer, VlmMetaPojo> vlmsRef = new TreeMap<>();
-        Iterator<SnapshotVolume> vlmIt = snap.iterateVolumes();
-        while (vlmIt.hasNext())
-        {
-            SnapshotVolume vlm = vlmIt.next();
-            Map<String, String> vlmPropsRef = vlm.getProps(accCtx).map();
-            long vlmFlagsRef = 0;
-            vlmsRef.put(vlm.getVolumeNumber().value, new VlmMetaPojo(vlmPropsRef, vlmFlagsRef));
-        }
-
-        RscMetaPojo rscRef = new RscMetaPojo(rscPropsRef, rscFlagsRef, vlmsRef);
-
         Map<Integer, BackupInfoPojo> backupsRef = new TreeMap<>();
         for (SnapVlmDataInfo snapInfo : shippingInfoMap.get(snap).snapVlmDataInfoMap.values())
         {
@@ -593,41 +520,17 @@ public class BackupShippingService implements SystemService
             backupsRef.put(snapInfo.vlmNr, backInfo);
         }
 
-        LuksLayerMetaPojo luksPojo = null;
-        List<AbsRscLayerObject<Snapshot>> luksLayers = LayerUtils.getChildLayerDataByKind(
-            snap.getLayerData(accCtx),
-            DeviceLayerKind.LUKS
-        );
-        if (
-            !luksLayers.isEmpty() &&
-            stltSecObj.getEncKey() != null && stltSecObj.getHash() != null && stltSecObj.getSalt() != null
-        )
-        {
-            luksPojo = new LuksLayerMetaPojo(
-                Base64.encode(stltSecObj.getEncKey()),
-                Base64.encode(stltSecObj.getHash()),
-                Base64.encode(stltSecObj.getSalt())
-            );
-        }
-
-        RscLayerDataApi layersRef = snap.getLayerData(accCtx).asPojo(accCtx);
-
-        BackupMetaDataPojo pojo = new BackupMetaDataPojo(
-            rscDfn.getName().displayValue,
-            snap.getNodeName().displayValue,
-            startTimestamp,
-            System.currentTimeMillis(),
-            basedOnMetaName,
-            layersRef,
-            rscDfnRef,
-            rscRef,
-            luksPojo,
-            backupsRef,
+        return BackupShippingUtils.fillPojo(
+            accCtx,
             clusterId,
-            snapDfn.getUuid().toString()
+            snap,
+            stltConfigAccessor.getReadonlyProps(),
+            stltSecObj.getEncKey(),
+            stltSecObj.getHash(),
+            stltSecObj.getSalt(),
+            backupsRef,
+            basedOnMetaName
         );
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.writeValueAsString(pojo);
     }
 
     public boolean alreadyStarted(AbsStorageVlmData<Snapshot> snapVlmDataRef)
