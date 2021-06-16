@@ -253,10 +253,14 @@ public class EncryptionHelper
                     .build()
             );
         }
+        return encrypt(masterKey, plainKey);
+    }
 
-        SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
+    public byte[] encrypt(byte[] key, byte[] toEncrypt) throws LinStorException
+    {
+        SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(key);
 
-        byte[] encodedData = cryptoLenPad.conceal(plainKey);
+        byte[] encodedData = cryptoLenPad.conceal(toEncrypt);
         return cipher.encrypt(encodedData);
     }
 }
