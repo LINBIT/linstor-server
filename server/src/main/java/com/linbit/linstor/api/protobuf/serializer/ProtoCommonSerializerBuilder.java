@@ -1231,6 +1231,10 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 msgApiCallResponseBuilder.setMessage(apiCallEntry.getMessage());
             }
+            else
+            {
+                msgApiCallResponseBuilder.setMessage("- no message -");
+            }
             msgApiCallResponseBuilder.addAllErrorReportIds(apiCallEntry.getErrorIds());
             msgApiCallResponseBuilder.putAllObjRefs(apiCallEntry.getObjRefs());
 
