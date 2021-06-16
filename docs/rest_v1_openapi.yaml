@@ -1469,7 +1469,6 @@ paths:
           description: external file exists on given node
         '500':
           $ref: '#/components/responses/OperationFailed'
-          description: The external file could not be deployed. See error message for more details
   /v1/resource-definitions/{resource}/undeploy/{extFileName}:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -1488,7 +1487,6 @@ paths:
           description: existence of external file requirement disabled for this resource-definition
         '500':
           $ref: '#/components/responses/OperationFailed'
-          description: An error occurred. See error message for more details
   /v1/resource-definitions/properties/info:
     get:
       tags:
@@ -2037,7 +2035,6 @@ paths:
           description: resource is either created or ensured to be available
         '500':
           $ref: '#/components/responses/OperationFailed'
-          description: A resource could not be made available. See error message for more details
       requestBody:
         content:
           application/json:
@@ -2058,7 +2055,6 @@ paths:
           description: Resource is now active
         '500':
           $ref: '#/components/responses/OperationFailed'
-          description: Resource could not be activated
   /v1/resource-definitions/{resource}/resources/{node}/deactivate:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -2074,7 +2070,6 @@ paths:
           description: Resource is now inctive
         '500':
           $ref: '#/components/responses/OperationFailed'
-          description: Resource could not be deactivated
   /v1/resource-definitions/{resource}/resources/properties/info:
     parameters:
       - $ref: '#/components/parameters/Resource'
