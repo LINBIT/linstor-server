@@ -4,6 +4,7 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
@@ -12,7 +13,7 @@ import java.util.Date;
 
 public class SatelliteSnapshotDriver implements SnapshotDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
+    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
     private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
 
     @Inject

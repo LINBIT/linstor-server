@@ -3,13 +3,14 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
 
 public class SatelliteExternalFileDriver implements ExternalFileDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
+    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
     private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
 
     @Inject

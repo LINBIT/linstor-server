@@ -7,6 +7,7 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpCollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
@@ -14,7 +15,7 @@ import javax.inject.Inject;
 
 public class SatelliteResDfnDriver implements ResourceDefinitionDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
+    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
     private final CollectionDatabaseDriver<?, ?> noOpColDriver = new NoOpCollectionDatabaseDriver<>();
     private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
     private final CoreModule.ResourceDefinitionMap resDfnMap;

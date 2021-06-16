@@ -3,13 +3,14 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.dbdrivers.interfaces.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
 
 public class SatelliteS3RemoteDriver implements S3RemoteDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
+    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
     private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
 
     @Inject

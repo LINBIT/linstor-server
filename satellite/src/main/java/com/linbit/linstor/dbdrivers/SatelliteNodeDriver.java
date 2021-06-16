@@ -4,13 +4,14 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
 
 public class SatelliteNodeDriver implements NodeDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new SatelliteFlagDriver();
+    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
     private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
     private final CoreModule.NodesMap nodesMap;
 

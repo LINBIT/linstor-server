@@ -1,8 +1,8 @@
-package com.linbit.linstor.dbdrivers;
+package com.linbit.linstor.dbdrivers.noop;
 
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
-public class SatelliteFlagDriver implements StateFlagsPersistence<Object>
+public class NoOpFlagDriver implements StateFlagsPersistence<Object>
 {
     @Override
     public void persist(Object parent, long flags)
