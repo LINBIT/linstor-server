@@ -1167,12 +1167,12 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class Backup
+    public static class BackupList
     {
         /**
          * A list containing all entries found that are or could be from linstor
          */
-        public List<BackupList> linstor = Collections.emptyList();
+        public List<Backup> linstor = Collections.emptyList();
         /**
          * A list containing all other entries found that have no relation to linstor
          */
@@ -1180,7 +1180,7 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class BackupList
+    public static class Backup
     {
         public String snap_key;
         public String meta_name;
@@ -1190,7 +1190,7 @@ public class JsonGenTypes
         public Boolean shipping;
         public Boolean success;
         public Map<String, String> vlms = Collections.emptyMap();
-        public List<BackupList> inc = Collections.emptyList();
+        public List<Backup> inc = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -250,8 +250,8 @@ public class Backups
             {
                 Pair<Collection<BackupListApi>, Set<String>> backups = backupApiCallHandler
                     .listBackups(rscName, remoteName);
-                JsonGenTypes.Backup backupList = new JsonGenTypes.Backup();
-                List<JsonGenTypes.BackupList> jsonBackups = fillJson(backups.objA);
+                JsonGenTypes.BackupList backupList = new JsonGenTypes.BackupList();
+                List<JsonGenTypes.Backup> jsonBackups = fillJson(backups.objA);
                 backupList.linstor = jsonBackups;
                 backupList.other = new JsonGenTypes.BackupOther();
                 backupList.other.files = new ArrayList<>(backups.objB);
@@ -263,12 +263,12 @@ public class Backups
         );
     }
 
-    private List<JsonGenTypes.BackupList> fillJson(Collection<BackupListApi> backups)
+    private List<JsonGenTypes.Backup> fillJson(Collection<BackupListApi> backups)
     {
-        List<JsonGenTypes.BackupList> jsonBackups = new ArrayList<>();
+        List<JsonGenTypes.Backup> jsonBackups = new ArrayList<>();
         for (BackupListApi backup : backups)
         {
-            JsonGenTypes.BackupList jsonBackup = new JsonGenTypes.BackupList();
+            JsonGenTypes.Backup jsonBackup = new JsonGenTypes.Backup();
             jsonBackup.snap_key = backup.getSnapKey();
             jsonBackup.meta_name = backup.getMetaName();
             jsonBackup.finished_time = backup.getFinishedTime();

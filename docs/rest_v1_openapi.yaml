@@ -4716,6 +4716,7 @@ paths:
             type: string
         - name: remote_name
           in: query
+          required: true
           description: The remote to list the backups from
           schema:
             type: string
@@ -6941,18 +6942,18 @@ components:
         to_nic:
           type: string
           description: NetInterface of the destination node
-    Backup:
+    BackupList:
       type: object
       properties:
         linstor:
           description: A list containing all entries found that are or could be from linstor
           type: array
           items:
-            $ref: '#/components/schemas/BackupList'
+            $ref: '#/components/schemas/Backup'
         other:
           description: A list containing all other entries found that have no relation to linstor
           $ref: '#/components/schemas/BackupOther'
-    BackupList:
+    Backup:
       type: object
       properties:
         snap_key:
@@ -6977,7 +6978,7 @@ components:
         inc:
           type: array
           items:
-            $ref: '#/components/schemas/BackupList'
+            $ref: '#/components/schemas/Backup'
     BackupOther:
       type: object
       properties:

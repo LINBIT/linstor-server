@@ -35,7 +35,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.S3Remote;
@@ -221,7 +220,7 @@ public class CtrlBackupApiCallHandler
         try
         {
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
-            Remote remote = ctrlApiDataLoader.loadRemote(remoteName, true);
+            S3Remote remote = getS3Remote(remoteName);
             Collection<SnapshotDefinition> snapDfns = getInProgressBackups(rscDfn);
             if (!snapDfns.isEmpty())
             {
@@ -430,7 +429,7 @@ public class CtrlBackupApiCallHandler
         boolean external
     ) throws AccessDeniedException, InvalidNameException
     {
-        S3Remote s3remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteName));
+        S3Remote s3remote = getS3Remote(remoteName);
         ToDeleteCollections toDelete = new ToDeleteCollections();
         if (rscName.length() != 0)
         {
@@ -678,7 +677,7 @@ public class CtrlBackupApiCallHandler
                 );
             }
         }
-        S3Remote remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteName));
+        S3Remote remote = getS3Remote(remoteName);
         byte[] targetMasterKey = getLocalMasterKey();
         // 1. list srcRscName*
         Set<String> s3keys = backupHandler.listObjects(srcRscName, remote, peerAccCtx.get(), targetMasterKey).stream()
@@ -1094,7 +1093,7 @@ public class CtrlBackupApiCallHandler
     public Pair<Collection<BackupListApi>, Set<String>> listBackups(String rscNameRef, String remoteNameRef)
         throws AccessDeniedException, InvalidNameException
     {
-        S3Remote remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteNameRef));
+        S3Remote remote = getS3Remote(remoteNameRef);
         List<S3ObjectSummary> objects = backupHandler
             .listObjects(rscNameRef, remote, peerAccCtx.get(), getLocalMasterKey());
         Set<String> s3keys = objects.stream().map(S3ObjectSummary::getKey)
@@ -1681,6 +1680,30 @@ public class CtrlBackupApiCallHandler
             );
         }
         return masterKey;
+    }
+
+    private S3Remote getS3Remote(String remoteName) throws AccessDeniedException, InvalidNameException
+    {
+        if (remoteName == null || remoteName.isEmpty())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_REMOTE_NAME | ApiConsts.MASK_BACKUP,
+                    "No remote name was given. Please provide a valid remote name."
+                )
+            );
+        }
+        S3Remote remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteName));
+        if (remote == null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_REMOTE_NAME | ApiConsts.MASK_BACKUP,
+                    "The remote " + remoteName + " does not exist. Please provide a valid remote or create a new one."
+                )
+            );
+        }
+        return remote;
     }
 
     private static class ToDeleteCollections
