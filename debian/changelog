@@ -1,3 +1,14 @@
+linstor-server (1.13.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * update reported REST-API version
+  * rest-api-doc: fix $ref with props warnings
+
+  [ Gabor Hernadi ]
+  * BCache: Allow BCache as topmost layer
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 21 Jun 2021 07:53:23 +0000
+
 linstor-server (1.13.0~rc.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
