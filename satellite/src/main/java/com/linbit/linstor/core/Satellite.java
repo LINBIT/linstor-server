@@ -16,7 +16,8 @@ import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
-import com.linbit.linstor.backupshipping.BackupShippingService;
+import com.linbit.linstor.backupshipping.AbsBackupShippingService;
+import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.StltConfig;
@@ -109,7 +110,7 @@ public final class Satellite
     private final SnapshotShippingService snapShipSvc;
     private final CloneService cloneService;
 
-    private BackupShippingService backShipSvc;
+    private final BackupShippingMgr backShipMgr;
 
     private final SatelliteNetComInitializer satelliteNetComInitializer;
     private final StltCoreObjProtInitializer stltCoreObjProtInitializer;
@@ -133,7 +134,7 @@ public final class Satellite
         FileSystemWatch fsWatchSvcRef,
         DrbdEventService drbdEventSvcRef,
         SnapshotShippingService snapShipSvcRef,
-        BackupShippingService backShipSvcRef,
+        BackupShippingMgr backShipMgrRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
         StltCoreObjProtInitializer stltCoreObjProtInitializerRef,
         StltConfig stltCfgRef,
@@ -152,7 +153,7 @@ public final class Satellite
         fsWatchSvc = fsWatchSvcRef;
         drbdEventSvc = drbdEventSvcRef;
         snapShipSvc = snapShipSvcRef;
-        backShipSvc = backShipSvcRef;
+        backShipMgr = backShipMgrRef;
         satelliteNetComInitializer = satelliteNetComInitializerRef;
         stltCoreObjProtInitializer = stltCoreObjProtInitializerRef;
         stltCfg = stltCfgRef;
@@ -234,7 +235,11 @@ public final class Satellite
                 startOrderlist.add(new ServiceStarter(drbdEventPublisher));
             }
             startOrderlist.add(new ServiceStarter(snapShipSvc));
-            startOrderlist.add(new ServiceStarter(backShipSvc));
+            for (AbsBackupShippingService absBackupSvc : backShipMgr.getAllServices())
+            {
+                startOrderlist.add(new ServiceStarter(absBackupSvc));
+            }
+
             startOrderlist.add(new ServiceStarter(devMgrService));
             startOrderlist.add(new ServiceStarter(cloneService));
             startOrderlist.add(stltCoreObjProtInitializer);

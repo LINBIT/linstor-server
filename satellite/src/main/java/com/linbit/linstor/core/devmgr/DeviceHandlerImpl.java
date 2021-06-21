@@ -10,7 +10,7 @@ import com.linbit.linstor.api.ApiCallRcImpl.EntryBuilder;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.backupshipping.BackupShippingService;
+import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltExternalFileHandler;
 import com.linbit.linstor.core.SysFsHandler;
@@ -100,7 +100,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final StltExternalFileHandler extFileHandler;
 
     private Props localNodeProps;
-    private BackupShippingService backupShippingManager;
+    private BackupShippingMgr backupShippingManager;
 
     @Inject
     public DeviceHandlerImpl(
@@ -118,7 +118,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         UdevHandler udevHandlerRef,
         SnapshotShippingService snapshotShippingManagerRef,
         StltExternalFileHandler extFileHandlerRef,
-        BackupShippingService backupShippingManagerRef
+        BackupShippingMgr backupShippingManagerRef
     )
     {
         wrkCtx = wrkCtxRef;

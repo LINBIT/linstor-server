@@ -11,7 +11,6 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
@@ -22,7 +21,7 @@ import com.linbit.linstor.core.StltConnTracker;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Remote;
-import com.linbit.linstor.core.objects.S3Remote;
+import com.linbit.linstor.core.objects.Remote.RemoteType;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -34,7 +33,6 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -48,17 +46,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import com.amazonaws.SdkClientException;
-
-@Singleton
-public class BackupShippingService implements SystemService
+public abstract class AbsBackupShippingService implements SystemService
 {
-    public static final ServiceName SERVICE_NAME;
-    public static final String SERVICE_INFO = "BackupShippingService";
-    private static final String CMD_FORMAT_SENDING =
+    public final ServiceName serviceName;
+    protected static final String CMD_FORMAT_SENDING =
         "trap 'kill -HUP 0' SIGTERM; " +
         "(" +
             "%s | " +  // thin_send prev_LV_snapshot cur_LV_snapshot
@@ -66,7 +58,7 @@ public class BackupShippingService implements SystemService
             "zstd;" +
         ")&\\wait $!";
 
-    private static final String CMD_FORMAT_RECEIVING = "trap 'kill -HUP 0' SIGTERM; " +
+    protected static final String CMD_FORMAT_RECEIVING = "trap 'kill -HUP 0' SIGTERM; " +
         "exec 7<&0 0</dev/null; " +
         "set -o pipefail; " +
         "(" +
@@ -75,40 +67,29 @@ public class BackupShippingService implements SystemService
         "%s ;" +
         ") & wait $!";
 
-    private final BackupToS3 backupHandler;
-    private final Map<Snapshot, ShippingInfo> shippingInfoMap;
+    private final RemoteType remoteType;
+    protected final Map<Snapshot, ShippingInfo> shippingInfoMap;
     private final Set<Snapshot> startedShippments;
     private final Map<Snapshot, List<String>> finishedShipments;
-    private final ThreadGroup threadGroup;
-    private final AccessContext accCtx;
-    private final RemoteMap remoteMap;
-    private final String clusterId;
+    protected final ThreadGroup threadGroup;
+    protected final AccessContext accCtx;
+    protected final RemoteMap remoteMap;
+    protected final String clusterId;
 
     private ServiceName instanceName;
     private boolean serviceStarted = false;
-    private ErrorReporter errorReporter;
-    private ExtCmdFactory extCmdFactory;
-    private ControllerPeerConnector controllerPeerConnector;
-    private CtrlStltSerializer interComSerializer;
-    private StltSecurityObjects stltSecObj;
-    private StltConfigAccessor stltConfigAccessor;
-
-    static
-    {
-        try
-        {
-            SERVICE_NAME = new ServiceName(SERVICE_INFO);
-        }
-        catch (InvalidNameException invalidNameExc)
-        {
-            throw new ImplementationError(invalidNameExc);
-        }
-    }
+    protected ErrorReporter errorReporter;
+    protected ExtCmdFactory extCmdFactory;
+    protected ControllerPeerConnector controllerPeerConnector;
+    protected CtrlStltSerializer interComSerializer;
+    protected StltSecurityObjects stltSecObj;
+    protected StltConfigAccessor stltConfigAccessor;
 
     @Inject
-    public BackupShippingService(
-        BackupToS3 backupHandlerRef,
+    public AbsBackupShippingService(
         ErrorReporter errorReporterRef,
+        String serviceNameRef,
+        RemoteType remoteTypeRef,
         ExtCmdFactory extCmdFactoryRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CtrlStltSerializer interComSerializerRef,
@@ -119,8 +100,8 @@ public class BackupShippingService implements SystemService
         RemoteMap remoteMapRef
     )
     {
-        backupHandler = backupHandlerRef;
         errorReporter = errorReporterRef;
+        remoteType = remoteTypeRef;
         extCmdFactory = extCmdFactoryRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         interComSerializer = interComSerializerRef;
@@ -131,7 +112,8 @@ public class BackupShippingService implements SystemService
 
         try
         {
-            instanceName = new ServiceName(SERVICE_INFO);
+            serviceName = new ServiceName(serviceNameRef);
+            instanceName = new ServiceName(serviceNameRef);
         }
         catch (InvalidNameException exc)
         {
@@ -164,7 +146,8 @@ public class BackupShippingService implements SystemService
     public void abort(AbsStorageVlmData<Snapshot> snapVlmData)
     {
         errorReporter.logDebug(
-            "aborting backup shipping: %s",
+            "[%s] aborting backup shipping: %s",
+            remoteType.name(),
             snapVlmData.getRscLayerObject().getAbsResource().toString()
         );
         Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
@@ -179,7 +162,10 @@ public class BackupShippingService implements SystemService
         }
         else
         {
-            errorReporter.logDebug("  backupShippingInfo is null, nothing to shutdown");
+            errorReporter.logDebug(
+                "[%s]  backupShippingInfo is null, nothing to shutdown",
+                remoteType.name()
+            );
         }
     }
 
@@ -213,7 +199,7 @@ public class BackupShippingService implements SystemService
                 },
                 snapNameRef,
                 backupName,
-                remoteName,
+                remoteMap.get(new RemoteName(remoteName, true)),
                 false,
                 success -> postShipping(
                     success,
@@ -229,38 +215,23 @@ public class BackupShippingService implements SystemService
     }
 
     public void restoreBackup(
-        String snapNameRef,
-        String rscNameRef,
-        String rscNameSuffixRef,
-        int vlmNrRef,
         String cmdRef,
         AbsStorageVlmData<Snapshot> snapVlmData
     ) throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException
     {
-        if (RscLayerSuffixes.shouldSuffixBeShipped(rscNameSuffixRef))
+        if (RscLayerSuffixes.shouldSuffixBeShipped(snapVlmData.getRscLayerObject().getResourceNameSuffix()))
         {
-            String backupName = "";
             SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-            String simpleBackupName = snapVlm.getSnapshot().getProps(accCtx).getProp(
-                InternalApiConsts.KEY_BACKUP_TO_RESTORE,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-            Pattern p = Pattern.compile("^([a-zA-Z0-9_-]{2,48})_(back_(?:inc_)?[0-9]{8}_[0-9]{6})$");
-            Matcher m = p.matcher(simpleBackupName);
-            if (m.matches())
-            {
-                backupName = String.format(BackupShippingConsts.BACKUP_KEY_FORMAT, m.group(1), rscNameSuffixRef, vlmNrRef, m.group(2));
-            }
-            else
-            {
-                throw new ImplementationError(
-                    "The simplified backup-name " + simpleBackupName + " does not conform to the expected format."
-                );
-            }
             String remoteName = snapVlm.getSnapshot().getProps(accCtx).getProp(
                 InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
+            Remote remote = remoteMap.get(new RemoteName(remoteName, true));
+
+            ensureRemoteType(remote);
+
+            String backupName = getBackupNameForRestore(snapVlmData);
+
             startDaemon(
                 cmdRef,
                 new String[]
@@ -274,9 +245,9 @@ public class BackupShippingService implements SystemService
                         cmdRef
                     )
                 },
-                snapNameRef,
+                snapVlm.getSnapshotName().displayValue,
                 backupName,
-                remoteName,
+                remote,
                 true,
                 success -> postShipping(
                     success,
@@ -352,7 +323,7 @@ public class BackupShippingService implements SystemService
         String[] fullCommand,
         String shippingDescr,
         String backupNameRef,
-        String remoteName,
+        Remote remote,
         boolean restore,
         Consumer<Boolean> postAction,
         AbsStorageVlmData<Snapshot> basedOnSnapVlmData,
@@ -360,34 +331,14 @@ public class BackupShippingService implements SystemService
     )
         throws StorageException, InvalidNameException
     {
+        ensureRemoteType(remote);
+
         if (serviceStarted)
         {
             if (!alreadyStarted(snapVlmData))
             {
                 killIfRunning(sendRecvCommand);
-                long size = snapVlmData.getAllocatedSize();
-                Remote remote = remoteMap.get(new RemoteName(remoteName));
-                if (!(remote instanceof S3Remote))
-                {
-                    throw new ImplementationError(
-                        "Unknown implementation of Remote found: " + remote.getClass().getCanonicalName()
-                    );
-                }
 
-                BackupShippingDaemon daemon = new BackupShippingDaemon(
-                    errorReporter,
-                    threadGroup,
-                    "shipping_" + shippingDescr,
-                    fullCommand,
-                    backupNameRef,
-                    (S3Remote) remote,
-                    backupHandler,
-                    restore,
-                    size,
-                    postAction,
-                    accCtx,
-                    stltSecObj.getCryptKey()
-                );
                 Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
                 ShippingInfo info = shippingInfoMap.get(snap);
                 if (info == null)
@@ -395,8 +346,23 @@ public class BackupShippingService implements SystemService
                     info = new ShippingInfo();
                     shippingInfoMap.put(snap, info);
                 }
-                info.snapVlmDataInfoMap.put(snapVlmData, new SnapVlmDataInfo(daemon, backupNameRef, snapVlmData.getVlmNr().value));
-                info.remote = (S3Remote) remote;
+                info.snapVlmDataInfoMap.put(
+                    snapVlmData,
+                    new SnapVlmDataInfo(
+                        createDaemon(
+                            snapVlmData,
+                            shippingDescr,
+                            fullCommand,
+                            backupNameRef,
+                            remote,
+                            restore,
+                            postAction
+                        ),
+                        backupNameRef,
+                        snapVlmData.getVlmNr().value
+                    )
+                );
+                info.remote = remote;
                 try
                 {
                     info.s3MetaKey = snap.getResourceName() + "_" + snap.getSnapshotName().displayValue + ".meta";
@@ -416,6 +382,24 @@ public class BackupShippingService implements SystemService
         else
         {
             throw new StorageException("BackupShippingService not started");
+        }
+    }
+
+    /**
+     * Throws an {@link ImplementationError} if <code>this.remoteType</code> does not equals to the parameter's
+     * <code>remote.getType()</code>
+     *
+     * @param remote
+     *
+     * @throws ImplementationError
+     */
+    private void ensureRemoteType(Remote remote) throws ImplementationError
+    {
+        if (!remoteType.equals(remote.getType()))
+        {
+            throw new ImplementationError(
+                "Unexpected remote type. Parameter: " + remote.getType() + ", expected: " + remoteType
+            );
         }
     }
 
@@ -447,32 +431,9 @@ public class BackupShippingService implements SystemService
                     if (updateCtrlRef)
                     {
                         boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
-                        if (success && !restoring)
-                        {
-                            try
-                            {
-                                backupHandler.putObject(
-                                    shippingInfo.s3MetaKey,
-                                    fillPojo(
-                                        snap,
-                                        shippingInfo.basedOnS3MetaKey
-                                    ),
-                                    shippingInfo.remote,
-                                    accCtx,
-                                    stltSecObj.getCryptKey()
-                                );
-                            }
-                            catch (InvalidKeyException | AccessDeniedException | IOException | ParseException exc)
-                            {
-                                errorReporter.reportError(new ImplementationError(exc));
-                                success = false;
-                            }
-                            catch (SdkClientException exc)
-                            {
-                                errorReporter.reportError(exc);
-                                success = false;
-                            }
-                        }
+
+                        preCtrlNotifyBackupShipped(successRef, restoring, snap, shippingInfo);
+
                         controllerPeerConnector.getControllerPeer().sendMessage(
                             interComSerializer.onewayBuilder(internalApiName).notifyBackupShipped(snap, success).build()
                         );
@@ -506,7 +467,7 @@ public class BackupShippingService implements SystemService
         }
     }
 
-    private String fillPojo(Snapshot snap, String basedOnMetaName)
+    protected String fillPojo(Snapshot snap, String basedOnMetaName)
         throws AccessDeniedException, IOException, ParseException
     {
         Map<Integer, BackupInfoPojo> backupsRef = new TreeMap<>();
@@ -586,13 +547,13 @@ public class BackupShippingService implements SystemService
     @Override
     public ServiceName getServiceName()
     {
-        return SERVICE_NAME;
+        return serviceName;
     }
 
     @Override
     public String getServiceInfo()
     {
-        return SERVICE_INFO;
+        return serviceName.displayValue;
     }
 
     @Override
@@ -657,24 +618,44 @@ public class BackupShippingService implements SystemService
         finishedShipments.remove(snap);
     }
 
-    private static class ShippingInfo
+    protected abstract BackupShippingDaemon createDaemon(
+        AbsStorageVlmData<Snapshot> snapVlmDataRef,
+        String shippingDescrRef,
+        String[] fullCommandRef,
+        String backupNameRef,
+        Remote remoteRef,
+        boolean restoreRef,
+        Consumer<Boolean> postActionRef
+    );
+
+    protected abstract String getBackupNameForRestore(AbsStorageVlmData<Snapshot> snapVlmDataRef)
+        throws InvalidKeyException, AccessDeniedException;
+
+    protected abstract void preCtrlNotifyBackupShipped(
+        boolean successRef,
+        boolean restoringRef,
+        Snapshot snapRef,
+        ShippingInfo shippingInfoRef
+    );
+
+    static class ShippingInfo
     {
         private boolean isStarted = false;
-        private Map<AbsStorageVlmData<Snapshot>, SnapVlmDataInfo> snapVlmDataInfoMap = new HashMap<>();
-        private S3Remote remote = null;
+        Map<AbsStorageVlmData<Snapshot>, SnapVlmDataInfo> snapVlmDataInfoMap = new HashMap<>();
+        Remote remote = null;
 
-        private String s3MetaKey;
-        private String basedOnS3MetaKey;
+        String s3MetaKey;
+        String basedOnS3MetaKey;
 
         private int snapVlmDataFinishedShipping = 0;
         private int snapVlmDataFinishedSuccessfully = 0;
     }
 
-    private static class SnapVlmDataInfo
+    static class SnapVlmDataInfo
     {
         private BackupShippingDaemon daemon;
-        private String backupName;
-        private int vlmNr;
+        String backupName;
+        int vlmNr;
 
         private long finishTimestamp;
 
@@ -685,5 +666,6 @@ public class BackupShippingService implements SystemService
             vlmNr = vlmNrRef;
         }
     }
+
 
 }

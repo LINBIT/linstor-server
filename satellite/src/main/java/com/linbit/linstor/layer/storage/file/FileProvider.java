@@ -5,7 +5,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.backupshipping.BackupShippingService;
+import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -92,7 +92,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
-        BackupShippingService backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef
     )
     {
         super(
@@ -124,7 +124,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
-        BackupShippingService backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef
     )
     {
         super(

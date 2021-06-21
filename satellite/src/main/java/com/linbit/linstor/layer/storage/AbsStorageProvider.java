@@ -13,7 +13,8 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.backupshipping.BackupShippingService;
+import com.linbit.linstor.backupshipping.AbsBackupShippingService;
+import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -98,8 +99,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private final SnapshotShippingService snapShipMgr;
     protected final CloneService cloneService;
     protected final StltExtToolsChecker extToolsChecker;
-    private final BackupShippingService backupShipMgr;
-
+    private final BackupShippingMgr backupShipMapper;
     protected final HashMap<String, INFO> infoListCache;
     protected final List<Consumer<Map<String, Long>>> postRunVolumeNotifications = new ArrayList<>();
     protected final Set<String> changedStoragePoolStrings = new HashSet<>();
@@ -124,7 +124,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         SnapshotShippingService snapShipMgrRef,
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
-        BackupShippingService backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -139,7 +139,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         snapShipMgr = snapShipMgrRef;
         extToolsChecker = extToolsCheckerRef;
         cloneService = cloneServiceRef;
-        backupShipMgr = backupShipMgrRef;
+        backupShipMapper = backupShipMgrRef;
 
         infoListCache = new HashMap<>();
         try
@@ -756,7 +756,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
                 {
                     snapShipMgr.abort(snapVlm);
-                    backupShipMgr.abort(snapVlm);
+                    backupShipMapper.getService(snapVlm).abort(snapVlm);
                 }
 
                 errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
@@ -869,17 +869,29 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
                     finishShipReceiving(vlmData, snapVlm);
                 }
+
+                /*
+                 * backupShippingService might be null if the snapshot does not have the
+                 * ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE
+                 * property set
+                 *
+                 * but in the cases where backupShippingService is null, the checked flags should
+                 * also be unset, preventing NPE
+                 */
+                AbsBackupShippingService backupShippingService = backupShipMapper.getService(snapVlm);
+
                 if (
                     snap.getSnapshotDefinition().getFlags()
                         .isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT)
                 )
                 {
-                    backupShipMgr.abort(snapVlm);
+                    backupShippingService.abort(snapVlm);
                 }
                 if (
                     snapshotExists(snapVlm) &&
                     snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                        !backupShipMgr.alreadyStarted(snapVlm) && !backupShipMgr.alreadyFinished(snapVlm)
+                        !backupShippingService.alreadyStarted(snapVlm) &&
+                        !backupShippingService.alreadyFinished(snapVlm)
                 )
                 {
                     try
@@ -1053,7 +1065,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
         LAYER_SNAP_DATA prevSnapVlmData = getPreviousSnapvlmData(snapVlmData, snapVlm.getAbsResource());
-        backupShipMgr.sendBackup(
+        backupShipMapper.getService(snapVlmData).sendBackup(
             snapVlm.getSnapshotName().displayValue,
             snapVlm.getResourceName().displayValue,
             snapVlmData.getRscLayerObject().getResourceNameSuffix(),
@@ -1330,12 +1342,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private void startBackupRestore(LAYER_SNAP_DATA snapVlmData)
         throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException, DatabaseException
     {
-        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-        backupShipMgr.restoreBackup(
-            snapVlm.getSnapshotName().displayValue,
-            snapVlm.getResourceName().displayValue,
-            snapVlmData.getRscLayerObject().getResourceNameSuffix(),
-            snapVlm.getVolumeNumber().value,
+        backupShipMapper.getService(snapVlmData).restoreBackup(
             getSnapshotShippingReceivingCommandImpl(snapVlmData),
             snapVlmData
         );
