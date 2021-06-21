@@ -6,8 +6,10 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.BackupShip;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
@@ -72,17 +74,19 @@ public class Backups
 
     private final RequestHelper requestHelper;
     private final CtrlBackupApiCallHandler backupApiCallHandler;
+    private final CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandler;
     private final ObjectMapper objectMapper;
 
     @Inject
     public Backups(
         RequestHelper requestHelperRef,
-        CtrlBackupApiCallHandler backupApiCallHandlerRef
-
+        CtrlBackupApiCallHandler backupApiCallHandlerRef,
+        CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         backupApiCallHandler = backupApiCallHandlerRef;
+        backupL2LSrcApiCallHandler = backupL2LSrcApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -309,5 +313,45 @@ public class Backups
             },
             false
         );
+    }
+
+    /*
+     * TODO: maybe rename current 'create' and 'ship' into 'create/s3' and 'create/linstor'
+     * could also be used similar for 'schedule/s3' and 'schedule/linstor', although those will definitely need
+     * different parameters / Json objects
+     */
+    @POST
+    @Path("ship")
+    public void shipBackup(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("remoteName") String remoteName,
+        String jsonData
+    )
+    {
+        Flux<ApiCallRc> responses;
+        try
+        {
+            BackupShip data = objectMapper.readValue(jsonData, JsonGenTypes.BackupShip.class);
+            responses = backupL2LSrcApiCallHandler.shipBackup(
+                data.src_node_name,
+                data.src_rsc_name,
+                remoteName,
+                data.dst_rsc_name,
+                data.dst_node_name,
+                data.dst_net_if_name,
+                data.dst_stor_pool,
+                data.stor_pool_rename
+            )
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_SHIP_BACKUP, request));
+            requestHelper.doFlux(
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
+            );
+        }
+        catch (JsonProcessingException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
     }
 }

@@ -26,6 +26,7 @@ import com.linbit.utils.Base64;
 
 import java.text.ParseException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +116,8 @@ public class BackupShippingUtils
 
         RscDfnMetaPojo rscDfnRef = new RscDfnMetaPojo(rscDfnPropsRef, rscDfnFlagsRef, vlmDfnsRef);
 
-        Map<String, String> rscPropsRef = snap.getProps(accCtx).map();
+        // wrap in new hashmap, otherwise the pojo contains the actual propsContainer
+        Map<String, String> rscPropsRef = new HashMap<>(snap.getProps(accCtx).map());
         long rscFlagsRef = 0;
 
         Map<Integer, VlmMetaPojo> vlmsRef = new TreeMap<>();

@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -49,7 +48,7 @@ public class StltRemoteControllerFactory
         String ipRef,
         Integer portRef
     )
-        throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
+        throws AccessDeniedException, DatabaseException
     {
         if (remoteRepo.get(accCtxRef, nameRef) != null)
         {

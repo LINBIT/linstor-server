@@ -442,7 +442,7 @@ public class CtrlSatelliteUpdateCaller
         );
     }
 
-    public Flux<ApiCallRc> updateSatellite(Remote remoteRef)
+    public Flux<ApiCallRc> updateSatellites(Remote remoteRef)
     {
         return Flux.merge(
             updateAllSatellites(

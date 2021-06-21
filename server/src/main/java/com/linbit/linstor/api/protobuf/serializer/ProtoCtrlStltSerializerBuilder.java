@@ -1357,12 +1357,21 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         public IntStltRemote buildStltRemoteMsg(StltRemote stltremote)
             throws AccessDeniedException
         {
-            return IntStltRemote.newBuilder()
+            IntStltRemote.Builder builder = IntStltRemote.newBuilder()
                 .setUuid(stltremote.getUuid().toString())
-                .setName(stltremote.getName().displayValue)
-                .setTargetIp(stltremote.getIp(serializerCtx))
-                .setTargetPort(stltremote.getPort(serializerCtx))
-                .build();
+                .setName(stltremote.getName().displayValue);
+
+            String ip = stltremote.getIp(serializerCtx);
+            if (ip != null)
+            {
+                builder.setTargetIp(ip);
+            }
+            Integer port = stltremote.getPort(serializerCtx);
+            if (port != null)
+            {
+                builder.setTargetPort(port);
+            }
+            return builder.build();
         }
     }
 

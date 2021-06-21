@@ -126,7 +126,7 @@ public class StltRemote extends BaseTransactionObject
         ip.set(ipRef);
     }
 
-    public int getPort(AccessContext accCtx) throws AccessDeniedException
+    public Integer getPort(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);

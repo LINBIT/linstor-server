@@ -127,6 +127,8 @@ public class InternalApiConsts
     public static final String KEY_BACKUP_TO_RESTORE = "BackupToRestore";
     public static final String KEY_BACKUP_NODE_IDS_TO_RESET = "BackupNodeIdsToReset";
     public static final String KEY_BACKUP_NODE_ID_SEPERATOR = ",";
+    public static final String API_BACKUP_REST_START_RECEIVING = "BackupRestStartReceiving";
+    public static final String KEY_BACKUP_SHIP_PORT = "BackupShipPort";
 
     public static final String KEY_BACKUP_SRC_REMOTE = "BackupSrcRemote";
     public static final String KEY_BACKUP_TARGET_REMOTE = "BackupTargetRemote";
@@ -136,6 +138,11 @@ public class InternalApiConsts
     public static final String API_APPLY_REMOTE = "ApplyRemote";
     public static final String API_CHANGED_REMOTE = "ChangedRemote";
     public static final String NAMESPC_REMOTE = "Remote";
+
+    /*
+     * Backup shipping Linstor2Linstor
+     */
+    public static final String VAL_BACKUP_L2L_TARGET = ".BackupShippingL2LTarget";
 
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;

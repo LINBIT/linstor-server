@@ -193,7 +193,13 @@ public class BackupInfoManager
     {
         synchronized (backupsToUpload)
         {
-            return backupsToUpload.get(snap).pollFirst();
+            LinkedList<Snapshot> linkedList = backupsToUpload.get(snap);
+            Snapshot ret = null;
+            if (linkedList != null)
+            {
+                ret = linkedList.pollFirst();
+            }
+            return ret;
         }
     }
 

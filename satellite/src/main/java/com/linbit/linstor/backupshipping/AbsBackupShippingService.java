@@ -50,22 +50,6 @@ import java.util.function.Consumer;
 public abstract class AbsBackupShippingService implements SystemService
 {
     public final ServiceName serviceName;
-    protected static final String CMD_FORMAT_SENDING =
-        "trap 'kill -HUP 0' SIGTERM; " +
-        "(" +
-            "%s | " +  // thin_send prev_LV_snapshot cur_LV_snapshot
-            // "pv -s 100m -bnr -i 0.1 | " +
-            "zstd;" +
-        ")&\\wait $!";
-
-    protected static final String CMD_FORMAT_RECEIVING = "trap 'kill -HUP 0' SIGTERM; " +
-        "exec 7<&0 0</dev/null; " +
-        "set -o pipefail; " +
-        "(" +
-        "exec 0<&7 7<&-; zstd -d | " +
-        // "pv -s 100m -bnr -i 0.1 | " +
-        "%s ;" +
-        ") & wait $!";
 
     private final RemoteType remoteType;
     protected final Map<Snapshot, ShippingInfo> shippingInfoMap;
@@ -192,9 +176,17 @@ public abstract class AbsBackupShippingService implements SystemService
                     "-w",
                     "bash",
                     "-c",
-                    String.format(
-                        CMD_FORMAT_SENDING,
-                        cmdRef
+                    getCommandSending(
+                        cmdRef,
+                        remoteMap.get(
+                            new RemoteName(
+                                snapVlmData.getRscLayerObject().getAbsResource().getProps(accCtx).getProp(
+                                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                ),
+                                true
+                            )
+                        )
                     )
                 },
                 snapNameRef,
@@ -240,10 +232,7 @@ public abstract class AbsBackupShippingService implements SystemService
                     "-w",
                     "bash",
                     "-c",
-                    String.format(
-                        CMD_FORMAT_RECEIVING,
-                        cmdRef
-                    )
+                    getCommandReceiving(cmdRef, remote)
                 },
                 snapVlm.getSnapshotName().displayValue,
                 backupName,
@@ -630,6 +619,10 @@ public abstract class AbsBackupShippingService implements SystemService
 
     protected abstract String getBackupNameForRestore(AbsStorageVlmData<Snapshot> snapVlmDataRef)
         throws InvalidKeyException, AccessDeniedException;
+
+    protected abstract String getCommandSending(String cmdRef, Remote remoteRef) throws AccessDeniedException;
+
+    protected abstract String getCommandReceiving(String cmdRef, Remote remoteRef) throws AccessDeniedException;
 
     protected abstract void preCtrlNotifyBackupShipped(
         boolean successRef,

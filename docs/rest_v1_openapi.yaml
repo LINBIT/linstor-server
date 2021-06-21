@@ -4875,6 +4875,24 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupAbort'
+  /v1/backups/ship:
+    post:
+      tags:
+        - developers
+      summary: ships a backup from one Linstor cluster to another
+      description: ships a backup from one Linstor cluster to another
+      responses:
+        '200':
+          description: shippment has started or error messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupShip'
   /v1/events/drbd/promotion:
     get:
       tags:
@@ -7091,6 +7109,25 @@ components:
           type: boolean
         create:
           type: boolean
+    BackupShip:
+      type: object
+      properties:
+        src_node_name:
+          type: string
+        src_rsc_name:
+          type: string
+        dst_rsc_name:
+          type: string
+        dst_node_name:
+          type: string
+        dst_net_if_name:
+          type: string
+        dst_stor_pool:
+          type: string
+        stor_pool_rename:
+          type: object
+          additionalProperties:
+            type: string
     PassPhraseCreate:
       type: object
       properties:

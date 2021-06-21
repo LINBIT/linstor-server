@@ -30,19 +30,23 @@ public class BackupShippingMgr
     private final AccessContext accCtx;
     private final RemoteMap remoteMap;
     private final Map<RemoteType, AbsBackupShippingService> services;
+    private final BackupShippingL2LService backupShippingL2L;
 
     @Inject
     public BackupShippingMgr(
         @SystemContext AccessContext accCtxRef,
         RemoteMap remoteMapRef,
-        BackupShippingS3Service backupShippingS3Ref
+        BackupShippingS3Service backupShippingS3Ref,
+        BackupShippingL2LService backupShippingL2LRef
     )
     {
         accCtx = accCtxRef;
         remoteMap = remoteMapRef;
+        backupShippingL2L = backupShippingL2LRef;
         services = new HashMap<>();
 
         services.put(RemoteType.S3, backupShippingS3Ref);
+        services.put(RemoteType.SATELLTE, backupShippingL2LRef);
     }
 
     public AbsBackupShippingService getService(RemoteType remoteType)
@@ -72,8 +76,19 @@ public class BackupShippingMgr
 
             if (remoteNameStr != null)
             {
-                Remote remote = remoteMap.get(new RemoteName(remoteNameStr, true));
-                service = getService(remote);
+                if (InternalApiConsts.VAL_BACKUP_L2L_TARGET.equals(remoteNameStr)) {
+                    service = backupShippingL2L;
+                }
+                else
+                {
+                    Remote remote = remoteMap.get(new RemoteName(remoteNameStr, true));
+                    if (remote == null)
+                    {
+                        throw new ImplementationError("Remote must not be null if the property is set");
+                    }
+
+                    service = getService(remote);
+                }
             }
         }
         catch (InvalidKeyException | InvalidNameException | AccessDeniedException exc)

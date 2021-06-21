@@ -788,9 +788,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     snapVlm.getVlmNr()
                 )
             );
+            Snapshot snap = snapVlm.getVolume().getAbsResource();
             if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
             {
-                Snapshot snap = snapVlm.getVolume().getAbsResource();
                 if (vlmData == null && !snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
                 {
                     throw new StorageException(
@@ -828,18 +828,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                             waitForSnapIfNeeded(snapVlm);
                             startReceiving(vlmData, snapVlm);
                         }
-                        else if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE))
-                        {
-                            try
-                            {
-                                waitForSnapIfNeeded(snapVlm);
-                                startBackupShipping(snapVlm);
-                            }
-                            catch (InvalidNameException exc)
-                            {
-                                throw new ImplementationError(exc);
-                            }
-                        }
                     }
                 }
                 else
@@ -856,10 +844,22 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         throw new ImplementationError(exc);
                     }
                 }
+                if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE) &&
+                    !snap.getSnapshotDefinition().getFlags().isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPED))
+                {
+                    try
+                    {
+                        waitForSnapIfNeeded(snapVlm);
+                        startBackupShipping(snapVlm);
+                    }
+                    catch (InvalidNameException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
+                }
             }
             else
             {
-                Snapshot snap = snapVlm.getVolume().getAbsResource();
                 if (
                     snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
                         snap.getSnapshotDefinition().getFlags()

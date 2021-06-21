@@ -227,7 +227,7 @@ public class CtrlRemoteApiCallHandler
         }
 
         ctrlTransactionHelper.commit();
-        return ctrlSatelliteUpdateCaller.updateSatellite(remote);
+        return ctrlSatelliteUpdateCaller.updateSatellites(remote);
     }
 
     public Flux<ApiCallRc> changeS3(
@@ -342,7 +342,7 @@ public class CtrlRemoteApiCallHandler
         }
 
         ctrlTransactionHelper.commit();
-        return ctrlSatelliteUpdateCaller.updateSatellite(remote);
+        return ctrlSatelliteUpdateCaller.updateSatellites(remote);
     }
 
     public Flux<ApiCallRc> createLinstor(
@@ -617,7 +617,7 @@ public class CtrlRemoteApiCallHandler
                     .build()
             );
             flux = Flux.<ApiCallRc> just(responses)
-                .concatWith(ctrlSatelliteUpdateCaller.updateSatellite(remote))
+                .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote))
                 .concatWith(deleteImpl(remote));
         }
         return flux;

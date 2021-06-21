@@ -41,6 +41,23 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         "^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})$"
     );
 
+    protected static final String CMD_FORMAT_SENDING =
+        "trap 'kill -HUP 0' SIGTERM; " +
+        "(" +
+            "%s | " +  // thin_send prev_LV_snapshot cur_LV_snapshot
+            // "pv -s 100m -bnr -i 0.1 | " +
+            "zstd;" +
+        ")&\\wait $!";
+
+    protected static final String CMD_FORMAT_RECEIVING = "trap 'kill -HUP 0' SIGTERM; " +
+        "exec 7<&0 0</dev/null; " +
+        "set -o pipefail; " +
+        "(" +
+        "exec 0<&7 7<&-; zstd -d | " +
+        // "pv -s 100m -bnr -i 0.1 | " +
+        "%s ;" +
+        ") & wait $!";
+
     private final BackupToS3 backupHandler;
 
     @Inject
@@ -75,6 +92,18 @@ public class BackupShippingS3Service extends AbsBackupShippingService
 
         // this causes all shippings to be aborted should the satellite lose connection to the controller
         stltConnTracker.addClosingListener(this::killAllShipping);
+    }
+
+    @Override
+    protected String getCommandReceiving(String cmdRef, Remote ignoredRemote)
+    {
+        return String.format(CMD_FORMAT_RECEIVING, cmdRef);
+    }
+
+    @Override
+    protected String getCommandSending(String cmdRef, Remote ignoredRemote)
+    {
+        return String.format(CMD_FORMAT_SENDING, cmdRef);
     }
 
     @Override
