@@ -336,7 +336,7 @@ public class BCacheLayer implements DeviceLayer
                     if (backingUuid == null)
                     {
                         backingUuid = BCacheUtils.makeBCache(extCmdFactory, backingDev, null, options);
-
+                        BCacheUtils.register(errorReporter, backingDev);
                         identifier = waitUntilBackingDeviceIsRegistered(backingDev);
                     }
                     else
@@ -358,6 +358,7 @@ public class BCacheLayer implements DeviceLayer
                     if (cacheUuid == null)
                     {
                         cacheUuid = BCacheUtils.makeBCache(extCmdFactory, null, cacheDev, options);
+                        BCacheUtils.register(errorReporter, cacheDev);
                         waitForCacheDevice(cacheUuid);
                     }
                     if (!isCacheDeviceRegistered(cacheUuid))
