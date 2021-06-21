@@ -33,7 +33,7 @@ public class LayerUtils
 
     static
     {
-        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE, CACHE, OPENFLEX);
+        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE, CACHE, BCACHE, OPENFLEX);
 
         NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE, OPENFLEX, CACHE, BCACHE);
         NODES.get(LUKS).addChildren(STORAGE, OPENFLEX);
