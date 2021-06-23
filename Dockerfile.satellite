@@ -38,7 +38,7 @@ RUN rpm -e --nodeps fakesystemd && yum install -y systemd && yum clean all -y ||
 
 RUN mkdir -p /tmp/linstor-$LINSTOR_VERSION
 # one can not comment COPY
-RUN cd /tmp && wget https://www.linbit.com/downloads/linstor/$LINSTOR_TGZ # !lbbuild
+RUN cd /tmp && wget https://pkg.linbit.com/downloads/linstor/$LINSTOR_TGZ # !lbbuild
 # =lbbuild COPY /${LINSTOR_TGZ} /tmp/
 
 # =lbbuild COPY /pkgcache/* /tmp/pkgcache/
