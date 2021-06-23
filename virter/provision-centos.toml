@@ -9,14 +9,14 @@ sed -i 's/# global_filter = \[/global_filter = \[ "r|\/dev\/drbd\.\*|", /g' /etc
 KERNEL=$(rpm -qa kernel | tail -n1 | cut -c8-)
 
 cd /tmp
-curl -O https://www.linbit.com/downloads/drbd/9.0/drbd-9.0.23-0rc1.tar.gz
+curl -O https://pkg.linbit.com/downloads/drbd/9.0/drbd-9.0.23-0rc1.tar.gz
 tar xzf drbd-9.0.23-0rc1.tar.gz
 cd /tmp/drbd-9.0.23-0rc1
 make -j2 KDIR=/usr/src/kernels/$KERNEL
 make install
 
 cd /tmp
-curl -O https://www.linbit.com/downloads/drbd/utils/drbd-utils-9.13.1.tar.gz
+curl -O https://pkg.linbit.com/downloads/drbd/utils/drbd-utils-9.13.1.tar.gz
 tar xzf drbd-utils-9.13.1.tar.gz
 cd /tmp/drbd-utils-9.13.1
 ./configure --prefix= --without-manual

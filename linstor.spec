@@ -16,7 +16,7 @@ BuildArch: noarch
 Group: System Environment/Daemons
 License: GPLv2+
 URL: https://github.com/LINBIT/linstor-server
-Source0: http://www.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.tar.gz
+Source0: http://pkg.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.tar.gz
 
 %if 0%{?suse_version} >= 1500
 BuildRequires: java-1_8_0-openjdk-headless java-1_8_0-openjdk-devel python
