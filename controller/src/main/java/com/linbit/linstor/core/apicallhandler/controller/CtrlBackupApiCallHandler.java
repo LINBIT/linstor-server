@@ -9,6 +9,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.DecryptionHelper;
@@ -1093,6 +1094,8 @@ public class CtrlBackupApiCallHandler
         String lastBackup
     ) throws AccessDeniedException, InvalidNameException
     {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
         Date targetTime = null;
         String shortTargetName = null;
         if (lastBackup != null && !lastBackup.isEmpty())
@@ -1189,7 +1192,6 @@ public class CtrlBackupApiCallHandler
         // 3. get meta-file
         try
         {
-
             /*
              * By default (or user-choice) the current metadata will be the latest version of the backup, including all
              * incremental backups.
@@ -1213,7 +1215,8 @@ public class CtrlBackupApiCallHandler
                     s3keys,
                     latestBackTs,
                     metaName,
-                    metadata
+                    metadata,
+                    responses
                 );
                 snap.getProps(peerAccCtx.get()).setProp(
                     InternalApiConsts.KEY_BACKUP_TO_RESTORE,
@@ -1282,7 +1285,8 @@ public class CtrlBackupApiCallHandler
         Set<String> s3keys,
         Date latestBackTs,
         String metaName,
-        BackupMetaDataPojo metadata
+        BackupMetaDataPojo metadata,
+        ApiCallRcImpl responses
     )
         throws AccessDeniedException, ImplementationError, DatabaseException, InvalidValueException
     {
@@ -1365,7 +1369,7 @@ public class CtrlBackupApiCallHandler
         );
         ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, metaName);
         // 9. create snapDfn
-        SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn);
+        SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses);
         // 10. create vlmDfn(s)
         // 11. create snapVlmDfn(s)
         Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
@@ -1443,7 +1447,7 @@ public class CtrlBackupApiCallHandler
         return snap;
     }
 
-    Flux<Snapshot> restoreBackupL2LInTransaction(
+    Flux<ApiCallRcWith<Snapshot>> restoreBackupL2LInTransaction(
         String nodeNameStr,
         String storPoolNameStr,
         Map<StorPool.Key, Long> thinFreeCapacities,
@@ -1454,7 +1458,8 @@ public class CtrlBackupApiCallHandler
         SnapshotName snapName
     )
     {
-        Flux<Snapshot> ret;
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        Flux<ApiCallRcWith<Snapshot>> ret;
 
         try
         {
@@ -1470,7 +1475,7 @@ public class CtrlBackupApiCallHandler
                 metadata,
                 snapName.displayValue);
             // 9. create snapDfn
-            SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn);
+            SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses);
             // 10. create vlmDfn(s)
             // 11. create snapVlmDfn(s)
             Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
@@ -1535,7 +1540,14 @@ public class CtrlBackupApiCallHandler
                 // update stlts
                 ctrlTransactionHelper.commit();
 
-                ret = snapshotCrtHandler.postCreateSnapshot(snapDfn).thenMany(Flux.just(snap));
+                ret = snapshotCrtHandler.postCreateSnapshot(snapDfn)
+                    .map(apiCallRcList ->
+                    {
+                        responses.addEntries(apiCallRcList);
+                        return responses;
+                    }
+                    )
+                    .thenMany(Flux.just(new ApiCallRcWith<>(responses, snap)));
             }
         }
         catch (AccessDeniedException exc)
@@ -1737,7 +1749,8 @@ public class CtrlBackupApiCallHandler
     private SnapshotDefinition getSnapDfnForBackupRestore(
         BackupMetaDataPojo metadata,
         SnapshotName snapName,
-        ResourceDefinition rscDfn
+        ResourceDefinition rscDfn,
+        ApiCallRcImpl responsesRef
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -1758,6 +1771,22 @@ public class CtrlBackupApiCallHandler
             SnapshotDefinition.Flags.SHIPPING,
             SnapshotDefinition.Flags.BACKUP
         );
+
+        if (rscDfn.getResourceCount() != 0)
+        {
+            responsesRef.addEntry(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.WARN_BACKUP_DL_ONLY,
+                    "The target resource-definition is already deployed on nodes. " +
+                        "After downloading the Backup Linstor will NOT restore the data to prevent unintentional data-loss."
+                )
+            );
+        }
+        else
+        {
+            snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS);
+        }
+
         return snapDfn;
     }
 
@@ -1786,15 +1815,6 @@ public class CtrlBackupApiCallHandler
                     true,
                     apiCallRcs,
                     false
-                );
-            }
-            else if (rscDfn.getResourceCount() != 0)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_RSC | ApiConsts.MASK_BACKUP,
-                        "Cannot restore to resource definition which already has resources"
-                    )
                 );
             }
             else if (rscDfn.getSnapshotDfn(peerAccCtx.get(), snapName) != null)
@@ -2376,11 +2396,27 @@ public class CtrlBackupApiCallHandler
                 if (successRef)
                 {
                     // start snap-restore
-                    flux = ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
-                        Collections.emptyList(),
-                        snapNameRef,
-                        rscNameRef
-                    );
+                    if (snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS))
+                    {
+                        // make sure to not restore it a second time
+                        snapDfn.getFlags().disableFlags(
+                            peerCtx,
+                            SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS
+                        );
+                        flux = ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
+                            Collections.emptyList(),
+                            snapNameRef,
+                            rscNameRef
+                        );
+                    }
+                    else
+                    {
+                        /*
+                         * no need for a "successfully downloaded" message, as this flux is triggered
+                         * by the satellite who does not care about this kind of ApiCallRc message
+                         */
+                        flux = Flux.empty();
+                    }
                 }
                 else
                 {

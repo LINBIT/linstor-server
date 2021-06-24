@@ -610,7 +610,8 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         SHIPPING_ABORT(1L << 6),
         SHIPPED(1L << 7),
         AUTO_SNAPSHOT(1L << 8),
-        BACKUP(1L << 9)
+        BACKUP(1L << 9),
+        RESTORE_BACKUP_ON_SUCCESS(1L << 10)
         ;
 
         public final long flagValue;

@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.LinStor;
@@ -152,7 +153,7 @@ public class CtrlBackupL2LDstApiCallHandler
         return flux;
     }
 
-    private Flux<Snapshot> startReceivingInTransaction(BackupShippingData data)
+    private Flux<ApiCallRcWith<Snapshot>> startReceivingInTransaction(BackupShippingData data)
     {
         SnapshotName snapName = LinstorParsingUtils.asSnapshotName(
             CtrlBackupApiCallHandler.generateNewSnapshotName(new Date())
@@ -200,22 +201,28 @@ public class CtrlBackupL2LDstApiCallHandler
         );
     }
 
-    private BackupShippingResponse snapshotToResponse(Snapshot snapRef, @Nullable String dstNetIfNameRef, int snapShipPortRef)
+    private BackupShippingResponse snapshotToResponse(
+        ApiCallRcWith<Snapshot> apiCallRcWithSnapRef,
+        @Nullable String dstNetIfNameRef,
+        int snapShipPortRef
+    )
     {
         try
         {
             ApiCallRcImpl responses = new ApiCallRcImpl();
+            Snapshot snap = apiCallRcWithSnapRef.extractApiCallRc(responses);
+
             NetInterface netIf = null;
             if (dstNetIfNameRef != null)
             {
-                netIf = snapRef.getNode().getNetInterface(
+                netIf = snap.getNode().getNetInterface(
                     apiCtx,
                     LinstorParsingUtils.asNetInterfaceName(dstNetIfNameRef)
                 );
             }
             if (netIf == null)
             {
-                netIf = snapRef.getNode().iterateNetInterfaces(apiCtx).next();
+                netIf = snap.getNode().iterateNetInterfaces(apiCtx).next();
             }
 
             return new BackupShippingResponse(
