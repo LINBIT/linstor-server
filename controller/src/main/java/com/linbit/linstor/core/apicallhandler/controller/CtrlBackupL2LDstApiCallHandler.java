@@ -4,6 +4,8 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -29,7 +31,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
@@ -95,8 +96,9 @@ public class CtrlBackupL2LDstApiCallHandler
             flux = Flux.just(
                 new BackupShippingResponse(
                     false,
-                    Arrays.asList(
-                    "Incompatible versions. Source version: " + srcVersionRef[0] + "." + srcVersionRef[1] + "." +
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_BACKUP_INCOMPATIBLE_VERSION,
+                        "Incompatible versions. Source version: " + srcVersionRef[0] + "." + srcVersionRef[1] + "." +
                         srcVersionRef[2] + ". Destination (local) version: " +
                         LinStor.VERSION_INFO_PROVIDER.getVersion()
                     ),
@@ -136,7 +138,10 @@ public class CtrlBackupL2LDstApiCallHandler
                 flux = Flux.just(
                     new BackupShippingResponse(
                         false,
-                        Arrays.asList("Shipping port range exhausted"),
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.FAIL_POOL_EXHAUSTED_BACKUP_SHIPPING_TCP_PORT,
+                            "Shipping port range exhausted"
+                        ),
                         null,
                         null
                     )
@@ -199,6 +204,7 @@ public class CtrlBackupL2LDstApiCallHandler
     {
         try
         {
+            ApiCallRcImpl responses = new ApiCallRcImpl();
             NetInterface netIf = null;
             if (dstNetIfNameRef != null)
             {
@@ -214,7 +220,7 @@ public class CtrlBackupL2LDstApiCallHandler
 
             return new BackupShippingResponse(
                 true,
-                Collections.emptyList(),
+                responses,
                 netIf.getAddress(apiCtx).getAddress(),
                 snapShipPortRef
             );

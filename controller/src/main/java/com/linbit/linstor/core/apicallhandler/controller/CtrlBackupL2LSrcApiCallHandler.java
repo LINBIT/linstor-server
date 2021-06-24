@@ -39,7 +39,6 @@ import com.linbit.linstor.storage.utils.RestResponse;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.utils.Pair;
-import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 
@@ -433,10 +432,9 @@ public class CtrlBackupL2LSrcApiCallHandler
             else
             {
                 flux = Flux.just(
-                    ApiCallRcImpl.singleApiCallRc(
-                        ApiConsts.FAIL_UNKNOWN_ERROR,
-                        "Target Linstor cluster refused shipment",
-                        StringUtils.join(responseRef.errorList, "\n")
+                    ApiCallRcImpl.copyAndPrefix(
+                        "Remote '" + data.linstorRemote.getName().displayValue + "': ",
+                        responseRef.responses
                     )
                 );
             }
@@ -532,30 +530,36 @@ public class CtrlBackupL2LSrcApiCallHandler
                             Arrays.asList(responseOk, notFound, badRequest, internalServerError),
                             BackupShippingResponse.class
                         );
+
                         if (response.getStatusCode() != responseOk)
                         {
+                            ApiCallRcImpl apiCallRc;
+
                             if (response.getStatusCode() == internalServerError)
                             {
-                                fluxSink.error(
-                                    new StorageException(
-                                        "Error in destination controller",
-                                        null,
-                                        "List of possible causes: " + response.getData().errorList.toString(),
-                                        null,
-                                        null
-                                    )
+                                apiCallRc = ApiCallRcImpl.copyAndPrefix(
+                                    "Remote '" + data.linstorRemote.getName().displayValue + "': ",
+                                    response.getData().responses
                                 );
                             }
-                            fluxSink.error(
-                                new StorageException(
-                                    "Destination controller incompatible",
-                                    "The destination controller does not know the backup-shipping API",
-                                    "Probably the destination controller is not recent enough",
-                                    "Make sure the destination cluster is on the same version as the current cluster (" +
-                                        LinStor.VERSION_INFO_PROVIDER.getVersion() + ")",
-                                    null
-                                )
-                            );
+                            else
+                            {
+                                apiCallRc = new ApiCallRcImpl();
+                                apiCallRc.addEntry(
+                                    ApiCallRcImpl.entryBuilder(
+                                        ApiConsts.FAIL_BACKUP_INCOMPATIBLE_VERSION,
+                                        "Destination controller incompatible"
+                                    )
+                                        .setCause("Probably the destination controller is not recent enough")
+                                        .setCorrection(
+                                            "Make sure the destination cluster is on the same version as the current cluster (" +
+                                                LinStor.VERSION_INFO_PROVIDER.getVersion() + ")"
+                                        )
+                                        .build()
+                                );
+                            }
+
+                            fluxSink.error(new ApiRcException(apiCallRc));
                         }
                         else
                         {

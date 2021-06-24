@@ -2,6 +2,8 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LDstApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
@@ -16,8 +18,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import java.util.Arrays;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -83,7 +83,11 @@ public class BackupShippingInternal
             responses = Flux.just(
                 new BackupShippingResponse(
                     false,
-                    Arrays.asList(exc.getMessage()),
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_INVLD_REQUEST,
+                        "Failed to deserialize JSON",
+                        exc.getMessage()
+                    ),
                     null,
                     null
                 )
@@ -105,9 +109,10 @@ public class BackupShippingInternal
                 String jsonResponse = responseToJson(
                     new BackupShippingResponse(
                         false,
-                        Arrays.asList(
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
                             exc.getMessage(),
-                            "Error report id on target cluster: " + reportErrorId
+                            "ErrorReport id on target cluster: " + reportErrorId
                         ),
                         null,
                         null

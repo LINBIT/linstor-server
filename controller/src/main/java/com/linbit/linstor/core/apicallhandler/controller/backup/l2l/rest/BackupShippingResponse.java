@@ -1,8 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest;
 
-import javax.annotation.Nullable;
+import com.linbit.linstor.api.ApiCallRcImpl;
 
-import java.util.List;
+import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,12 +13,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class BackupShippingResponse
 {
     public final boolean canReceive;
-    /**
-     * Should be empty if <code>canReceive</code> is true.
-     * If this list is NOT empty, all other fields (except <code>canReceive</code>) should be null
-     */
-    public final List<String> errorList;
 
+    public final ApiCallRcImpl responses;
     /**
      * The actual IP of the target satellite.
      * This means that the src-Stlt and dst-Stlt will ship p2p, not through one or both controllers!
@@ -29,13 +25,13 @@ public class BackupShippingResponse
     @JsonCreator
     public BackupShippingResponse(
         @JsonProperty("canReceive") boolean canReceiveRef,
-        @JsonProperty("errorList") List<String> errorListRef,
+        @JsonProperty("responses") ApiCallRcImpl responsesRef,
         @JsonProperty("dstStltIp") @Nullable String dstStltIpRef,
         @JsonProperty("dstStltPort") @Nullable Integer dstStltPortRef
     )
     {
         canReceive = canReceiveRef;
-        errorList = errorListRef;
+        responses = responsesRef;
         dstStltIp = dstStltIpRef;
         dstStltPort = dstStltPortRef;
     }

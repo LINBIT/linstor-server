@@ -1,14 +1,19 @@
 package com.linbit.linstor.api;
 
+import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Return codes of an API call
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
+@JsonDeserialize(as = ApiCallRcImpl.class)
 public interface ApiCallRc
 {
 
@@ -26,6 +31,7 @@ public interface ApiCallRc
     /**
      * Return code entry
      */
+    @JsonDeserialize(as = ApiCallRcEntry.class)
     interface RcEntry
     {
         /**

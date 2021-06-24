@@ -5,11 +5,15 @@ import com.linbit.linstor.LinStorException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ApiCallRcImpl implements ApiCallRc
 {
@@ -58,6 +62,7 @@ public class ApiCallRcImpl implements ApiCallRc
     }
 
     @Override
+    @JsonIgnore
     public boolean isEmpty()
     {
         return entries.isEmpty();
@@ -254,12 +259,14 @@ public class ApiCallRcImpl implements ApiCallRc
         }
 
         @Override
+        @JsonIgnore
         public boolean isError()
         {
             return (returnCode & ApiConsts.MASK_ERROR) == ApiConsts.MASK_ERROR;
         }
 
         @Override
+        @JsonGetter
         public boolean skipErrorReport()
         {
             return !isError() || skipErrorReport;
@@ -398,5 +405,31 @@ public class ApiCallRcImpl implements ApiCallRc
             entry.setDetails(linstorExc.getDetailsText());
         }
         return entry;
+    }
+
+    public static ApiCallRcEntry copyAndPrefixMessage(String prefix, RcEntry rcEntryRef)
+    {
+        ApiCallRcImpl.ApiCallRcEntry ret = new ApiCallRcEntry();
+        ret.returnCode = rcEntryRef.getReturnCode();
+        ret.message = prefix + rcEntryRef.getMessage();
+
+        ret.cause = rcEntryRef.getCause();
+        ret.correction = rcEntryRef.getCorrection();
+        ret.details = rcEntryRef.getDetails();
+        ret.skipErrorReport = rcEntryRef.skipErrorReport();
+        ret.errorIds = new HashSet<>(rcEntryRef.getErrorIds());
+        ret.objRefs = new HashMap<>(rcEntryRef.getObjRefs());
+
+        return ret;
+    }
+
+    public static ApiCallRcImpl copyAndPrefix(String prefix, ApiCallRcImpl apiCallRcImpl)
+    {
+        ApiCallRcImpl ret = new ApiCallRcImpl();
+        for (RcEntry rcEntry : apiCallRcImpl.entries)
+        {
+            ret.addEntry(copyAndPrefixMessage(prefix, rcEntry));
+        }
+        return ret;
     }
 }
