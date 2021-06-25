@@ -139,6 +139,11 @@ public class InternalApiConsts
     public static final String API_CHANGED_REMOTE = "ChangedRemote";
     public static final String NAMESPC_REMOTE = "Remote";
 
+    /*
+     * Cluster
+     */
+    public static final String KEY_CLUSTER_LOCAL_ID = "LocalID";
+
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;
 

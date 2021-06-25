@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -191,7 +192,6 @@ public class CtrlBackupL2LSrcApiCallHandler
          * update the satellite, set the corresponding "you may start sending" flag and update the satellite again.
          */
 
-
         return scopeRunner.fluxInTransactionalScope(
             "Backup shipping L2L: Creating temporary SatelliteRemote",
             lockGuardFactory.create()
@@ -232,7 +232,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                         .read(LockObj.NODES_MAP)
                         .write(LockObj.RSC_DFN_MAP).buildDeferred(),
                     () -> shipBackupInTransaction(data)
-        ));
+                )
+            );
     }
 
     /**
@@ -512,6 +513,10 @@ public class CtrlBackupL2LSrcApiCallHandler
                                     LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
                                     data.metaDataPojo,
                                     data.srcBackupName,
+                                    systemConfRepository.getCtrlConfForView(sysCtx).getProp(
+                                        InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
+                                        ApiConsts.NAMESPC_CLUSTER
+                                    ),
                                     data.dstRscName,
                                     data.dstNodeName,
                                     data.dstNetIfName,

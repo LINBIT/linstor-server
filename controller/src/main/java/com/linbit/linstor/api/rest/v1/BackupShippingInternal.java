@@ -71,6 +71,7 @@ public class BackupShippingInternal
                 shipRequest.dstRscName,
                 shipRequest.metaData,
                 shipRequest.srcBackupName,
+                shipRequest.srcClusterId,
                 shipRequest.dstNodeName,
                 shipRequest.dstNodeNetIfName,
                 shipRequest.dstStorPool,

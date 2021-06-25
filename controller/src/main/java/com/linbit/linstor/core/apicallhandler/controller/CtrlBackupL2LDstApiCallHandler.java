@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -19,9 +20,14 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StltRemote;
 import com.linbit.linstor.core.objects.StltRemoteControllerFactory;
 import com.linbit.linstor.core.repository.RemoteRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -33,8 +39,11 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import java.math.BigInteger;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 
 import reactor.core.publisher.Flux;
 
@@ -52,6 +61,7 @@ public class CtrlBackupL2LDstApiCallHandler
     private final DynamicNumberPool snapshotShippingPortPool;
     private final StltRemoteControllerFactory stltRemoteControllerFactory;
     private final RemoteRepository remoteRepo;
+    private final SystemConfRepository systemConfRepository;
 
     @Inject
     public CtrlBackupL2LDstApiCallHandler(
@@ -65,7 +75,8 @@ public class CtrlBackupL2LDstApiCallHandler
         FreeCapacityFetcher freeCapacityFetcherRef,
         @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
         StltRemoteControllerFactory stltRemoteControllerFactoryRef,
-        RemoteRepository remoteRepoRef
+        RemoteRepository remoteRepoRef,
+        SystemConfRepository systemConfRepositoryRef
     )
     {
         apiCtx = apiCtxRef;
@@ -79,6 +90,7 @@ public class CtrlBackupL2LDstApiCallHandler
         snapshotShippingPortPool = snapshotShippingPortPoolRef;
         stltRemoteControllerFactory = stltRemoteControllerFactoryRef;
         remoteRepo = remoteRepoRef;
+        systemConfRepository = systemConfRepositoryRef;
     }
 
     public Flux<BackupShippingResponse> startReceiving(
@@ -86,6 +98,7 @@ public class CtrlBackupL2LDstApiCallHandler
         String dstRscNameRef,
         BackupMetaDataPojo metaDataRef,
         String srcBackupNameRef,
+        String srcClusterIdRef,
         @Nullable String dstNodeNameRef,
         @Nullable String dstNetIfNameRef,
         @Nullable String dstStorPoolRef,
@@ -121,6 +134,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     dstRscNameRef,
                     metaDataRef,
                     srcBackupNameRef,
+                    srcClusterIdRef,
                     dstNodeNameRef,
                     dstNetIfNameRef,
                     dstStorPoolRef,
@@ -157,7 +171,9 @@ public class CtrlBackupL2LDstApiCallHandler
 
     private Flux<ApiCallRcWith<Snapshot>> startReceivingInTransaction(BackupShippingData data)
     {
-        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(data.srcBackupName);
+        String clusterHash = getSrcClusterShortId(data.srcClusterId);
+
+        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(data.srcBackupName + "_" + clusterHash);
         StltRemote stltRemote = CtrlBackupL2LSrcApiCallHandler.createStltRemote(
             stltRemoteControllerFactory,
             remoteRepo,
@@ -206,6 +222,43 @@ public class CtrlBackupL2LDstApiCallHandler
         );
     }
 
+    private String getSrcClusterShortId(String srcClusterIdRef)
+    {
+        String ret;
+        try
+        {
+            Props props = systemConfRepository.getCtrlConfForChange(apiCtx);
+            ret = props.getProp(srcClusterIdRef, ApiConsts.NAMESPC_CLUSTER_REMOTE);
+            if (ret == null)
+            {
+                ret = generateClusterShortId();
+
+                Optional<Props> namespace = props.getNamespace(ApiConsts.NAMESPC_CLUSTER_REMOTE);
+                if (namespace.isPresent())
+                {
+                    HashSet<String> existingHashes = new HashSet<>(namespace.get().values());
+
+                    while (existingHashes.contains(ret))
+                    {
+                        ret = generateClusterShortId();
+                    }
+                }
+
+                props.setProp(srcClusterIdRef, ret, ApiConsts.NAMESPC_CLUSTER_REMOTE);
+            }
+        }
+        catch (AccessDeniedException | InvalidKeyException | DatabaseException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
+    }
+
+    public static String generateClusterShortId()
+    {
+        return new BigInteger(SecretGenerator.generateSecret(5)).abs().toString(36);
+    }
+
     private BackupShippingResponse snapshotToResponse(
         ApiCallRcWith<Snapshot> apiCallRcWithSnapRef,
         @Nullable String dstNetIfNameRef,
@@ -250,7 +303,8 @@ public class CtrlBackupL2LDstApiCallHandler
         private final int[] srcVersion;
         private final String dstRscName;
         private final BackupMetaDataPojo metaData;
-        private String srcBackupName;
+        private final String srcBackupName;
+        private final String srcClusterId;
         private String dstNodeName;
         private String dstNetIfName;
         private String dstStorPool;
@@ -262,6 +316,7 @@ public class CtrlBackupL2LDstApiCallHandler
             String dstRscNameRef,
             BackupMetaDataPojo metaDataRef,
             String srcBackupNameRef,
+            String srcClusterIdRef,
             String dstNodeNameRef,
             String dstNetIfNameRef,
             String dstStorPoolRef,
@@ -273,6 +328,7 @@ public class CtrlBackupL2LDstApiCallHandler
             dstRscName = dstRscNameRef;
             metaData = metaDataRef;
             srcBackupName = srcBackupNameRef;
+            srcClusterId = srcClusterIdRef;
             dstNodeName = dstNodeNameRef;
             dstNetIfName = dstNetIfNameRef;
             dstStorPool = dstStorPoolRef;

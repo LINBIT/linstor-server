@@ -49,6 +49,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -73,6 +74,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlConfApiCallHandler
 {
+    private static final int MAX_REMOTE_NAME_LEN = 10;
 
     private final ErrorReporter errorReporter;
     private final SystemConfRepository systemConfRepository;
@@ -446,7 +448,15 @@ public class CtrlConfApiCallHandler
              * on other levels whitelisting is active
              */
             ignoredKeys.add(ApiConsts.NAMESPC_EXOS + "/");
-            if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
+
+            if (fullKey.startsWith(ApiConsts.NAMESPC_CLUSTER_REMOTE))
+            {
+                /*
+                 * special rules for "Cluster/Remote" namespace: key must be UUID and value must be unique
+                 */
+                handleClusterRemoteNamespace(apiCallRc, fullKey, value);
+            }
+            else if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
             {
                 boolean notifyStlts = false;
                 String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
@@ -588,6 +598,54 @@ public class CtrlConfApiCallHandler
             );
         }
         return apiCallRc;
+    }
+
+    private void handleClusterRemoteNamespace(ApiCallRcImpl apiCallRc, String fullKey, String value)
+        throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
+    {
+        ApiCallRcEntry entry = null;
+
+        // +1 for the trailing "/"
+        String actualKey = fullKey.substring(ApiConsts.NAMESPC_CLUSTER_REMOTE.length() + 1);
+        if (UuidUtils.isUuid(actualKey))
+        {
+            if (systemConfRepository.getCtrlConfForView(peerAccCtx.get()).values().contains(value))
+            {
+                entry = new ApiCallRcEntry();
+                entry.setMessage("The value '" + value + "' is already used for another remote cluster");
+            }
+            else if (value.length() > MAX_REMOTE_NAME_LEN)
+            {
+                entry = new ApiCallRcEntry();
+                entry.setMessage("The value '" + value + "' is longer than " + MAX_REMOTE_NAME_LEN);
+            }
+        }
+        else
+        {
+            entry = new ApiCallRcEntry();
+            entry.setMessage("The key '" + actualKey + "' must be a valid UUID");
+        }
+        if (entry != null)
+        {
+            entry.setReturnCode(ApiConsts.FAIL_INVLD_PROP | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT);
+            apiCallRc.addEntry(entry);
+        }
+        else
+        {
+            systemConfRepository.getCtrlConfForChange(peerAccCtx.get()).setProp(
+                actualKey,
+                value,
+                ApiConsts.NAMESPC_CLUSTER_REMOTE
+            );
+            // no need to update satellites
+            transMgrProvider.get().commit();
+
+            apiCallRc.addEntry(
+                "Successfully set property '" + fullKey + "' to value '" + value + "'",
+                ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT | ApiConsts.CREATED
+            );
+
+        }
     }
 
     public Map<String, String> listProps()
