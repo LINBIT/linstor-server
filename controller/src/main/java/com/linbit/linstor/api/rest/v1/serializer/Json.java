@@ -894,6 +894,12 @@ public class Json
         }
 
         @Override
+        public Boolean skipAlreadyPlacedOnAllNodeCheck()
+        {
+            return null;
+        }
+
+        @Override
         public String getDisklessType()
         {
             return autoSelectFilter.diskless_type;

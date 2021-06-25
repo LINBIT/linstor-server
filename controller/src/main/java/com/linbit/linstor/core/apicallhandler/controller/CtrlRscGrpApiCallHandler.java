@@ -933,6 +933,7 @@ public class CtrlRscGrpApiCallHandler
                     autoPlaceConfig.getProviderList(),
                     autoPlaceConfig.getDisklessOnRemaining(),
                     autoPlaceConfig.skipAlreadyPlacedOnNodeNamesCheck(),
+                    autoPlaceConfig.skipAlreadyPlacedOnAllNodeCheck(),
                     autoPlaceConfig.getDisklessType()
                 );
                 deployedResources = ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(

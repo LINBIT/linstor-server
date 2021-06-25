@@ -104,6 +104,7 @@ public class CtrlQueryMaxVlmSizeHelper
                     null,
                     null,
                     null,
+                    null,
                     null
                 ),
                 selectFilter // copy the rest from selectFilter

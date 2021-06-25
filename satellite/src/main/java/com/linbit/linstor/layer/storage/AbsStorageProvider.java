@@ -789,9 +789,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 )
             );
             Snapshot snap = snapVlm.getVolume().getAbsResource();
+            StateFlags<Snapshot.Flags> snapFlags = snap.getFlags();
+            StateFlags<SnapshotDefinition.Flags> snapDfnFlags = snap.getSnapshotDefinition().getFlags();
             if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
             {
-                if (vlmData == null && !snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
+                if (vlmData == null && !snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
                 {
                     throw new StorageException(
                         String.format(
@@ -804,7 +806,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 if (!snapshotExists(snapVlm))
                 {
                     errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
-                    if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
+                    if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                        snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
                     {
                         try
                         {
@@ -823,7 +826,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
                         addSnapCreatedMsg(snapVlm, apiCallRc);
 
-                        if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET))
+                        if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
+                            snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
                         {
                             waitForSnapIfNeeded(snapVlm);
                             startReceiving(vlmData, snapVlm);
@@ -834,7 +838,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 {
                     try
                     {
-                        if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_SOURCE_START))
+                        if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_SOURCE_START) &&
+                            snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
                         {
                             startSending(snapVlm);
                         }
@@ -844,8 +849,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         throw new ImplementationError(exc);
                     }
                 }
-                if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE) &&
-                    !snap.getSnapshotDefinition().getFlags().isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPED))
+                if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE) &&
+                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING) &&
+                    !snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPED))
                 {
                     try
                     {
@@ -860,10 +866,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
-                if (
-                    snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
-                        snap.getSnapshotDefinition().getFlags()
-                            .isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_CLEANUP)
+
+                if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
+                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_CLEANUP)
                 )
                 {
                     errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
@@ -880,18 +885,15 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                  */
                 AbsBackupShippingService backupShippingService = backupShipMapper.getService(snapVlm);
 
-                if (
-                    snap.getSnapshotDefinition().getFlags()
-                        .isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT)
-                )
+                if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
                 {
                     backupShippingService.abort(snapVlm);
                 }
-                if (
-                    snapshotExists(snapVlm) &&
-                    snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                        !backupShippingService.alreadyStarted(snapVlm) &&
-                        !backupShippingService.alreadyFinished(snapVlm)
+                if (snapshotExists(snapVlm) &&
+                    snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING) &&
+                    !backupShippingService.alreadyStarted(snapVlm) &&
+                    !backupShippingService.alreadyFinished(snapVlm)
                 )
                 {
                     try
@@ -969,7 +971,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         return prevSnapVlmData;
     }
 
-    private LAYER_SNAP_DATA getPreviousSnapvlmData(LAYER_SNAP_DATA snapVlm, Snapshot snap)
+    protected LAYER_SNAP_DATA getPreviousSnapvlmData(LAYER_SNAP_DATA snapVlm, Snapshot snap)
         throws InvalidKeyException, AccessDeniedException, InvalidNameException
     {
         LAYER_SNAP_DATA prevSnapVlmData = null;

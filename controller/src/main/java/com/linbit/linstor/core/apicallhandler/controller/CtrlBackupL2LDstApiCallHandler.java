@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import reactor.core.publisher.Flux;
 
@@ -99,6 +100,7 @@ public class CtrlBackupL2LDstApiCallHandler
         BackupMetaDataPojo metaDataRef,
         String srcBackupNameRef,
         String srcClusterIdRef,
+        Set<String> srcSnapDfnUuidsRef,
         @Nullable String dstNodeNameRef,
         @Nullable String dstNetIfNameRef,
         @Nullable String dstStorPoolRef,
@@ -118,6 +120,7 @@ public class CtrlBackupL2LDstApiCallHandler
                         LinStor.VERSION_INFO_PROVIDER.getVersion()
                     ),
                     null,
+                    null,
                     null
                 )
             );
@@ -135,6 +138,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     metaDataRef,
                     srcBackupNameRef,
                     srcClusterIdRef,
+                    srcSnapDfnUuidsRef,
                     dstNodeNameRef,
                     dstNetIfNameRef,
                     dstStorPoolRef,
@@ -148,7 +152,8 @@ public class CtrlBackupL2LDstApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP).buildDeferred(),
                     () -> startReceivingInTransaction(data)
-                ).map(snap -> snapshotToResponse(snap, dstNetIfNameRef, snapShipPort));
+                ).map(startInfo -> snapshotToResponse(startInfo, dstNetIfNameRef, snapShipPort));
+                // .onErrorResume(err -> errorToResponse(err));
             }
             catch (ExhaustedPoolException exc)
             {
@@ -160,6 +165,7 @@ public class CtrlBackupL2LDstApiCallHandler
                             "Shipping port range exhausted"
                         ),
                         null,
+                        null,
                         null
                     )
                 );
@@ -169,7 +175,7 @@ public class CtrlBackupL2LDstApiCallHandler
         return flux;
     }
 
-    private Flux<ApiCallRcWith<Snapshot>> startReceivingInTransaction(BackupShippingData data)
+    private Flux<BackupShippingStartInfo> startReceivingInTransaction(BackupShippingData data)
     {
         String clusterHash = getSrcClusterShortId(data.srcClusterId);
 
@@ -186,7 +192,10 @@ public class CtrlBackupL2LDstApiCallHandler
         data.snapName = snapName;
         data.stltRemote = stltRemote;
 
-        data.metaData.getRsc().getProps().put(
+        Map<String, String> snapPropsFromSource = data.metaData.getRsc().getProps();
+        snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_UUID, data.srcClusterId);
+        snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH, clusterHash);
+        snapPropsFromSource.put(
             ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
             stltRemote.getName().displayValue
         );
@@ -215,7 +224,8 @@ public class CtrlBackupL2LDstApiCallHandler
                             data.metaData,
                             data.storPoolRenameMap,
                             data.stltRemote,
-                            data.snapName
+                            data.snapName,
+                            data.srcSnapDfnUuids
                         )
                     )
                 )
@@ -260,7 +270,7 @@ public class CtrlBackupL2LDstApiCallHandler
     }
 
     private BackupShippingResponse snapshotToResponse(
-        ApiCallRcWith<Snapshot> apiCallRcWithSnapRef,
+        BackupShippingStartInfo startInfo,
         @Nullable String dstNetIfNameRef,
         int snapShipPortRef
     )
@@ -268,7 +278,7 @@ public class CtrlBackupL2LDstApiCallHandler
         try
         {
             ApiCallRcImpl responses = new ApiCallRcImpl();
-            Snapshot snap = apiCallRcWithSnapRef.extractApiCallRc(responses);
+            Snapshot snap = startInfo.apiCallRcWithSnapshot.extractApiCallRc(responses);
 
             NetInterface netIf = null;
             if (dstNetIfNameRef != null)
@@ -283,16 +293,55 @@ public class CtrlBackupL2LDstApiCallHandler
                 netIf = snap.getNode().iterateNetInterfaces(apiCtx).next();
             }
 
+            String srcSnapDfnUuid = null; // if not null => incremental sync
+            Snapshot incrBaseSnap = startInfo.incrBaseSnapshot;
+            if (incrBaseSnap != null)
+            {
+                srcSnapDfnUuid = incrBaseSnap.getSnapshotDefinition().getProps(apiCtx).getProp(
+                    InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID
+                );
+            }
+
             return new BackupShippingResponse(
                 true,
                 responses,
                 netIf.getAddress(apiCtx).getAddress(),
-                snapShipPortRef
+                snapShipPortRef,
+                srcSnapDfnUuid
             );
         }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
+        }
+    }
+
+    private Flux<BackupShippingResponse> errorToResponse(Throwable error)
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+
+        return Flux.just(
+            new BackupShippingResponse(
+                false,
+                responses,
+                null,
+                null,
+                null
+            )
+        ).thenMany(Flux.error(error));
+    }
+
+    static class BackupShippingStartInfo
+    {
+        private final ApiCallRcWith<Snapshot> apiCallRcWithSnapshot;
+        @Nullable
+        private final Snapshot incrBaseSnapshot;
+
+        public BackupShippingStartInfo(ApiCallRcWith<Snapshot> apiCallRcWithSnapshotRef, Snapshot incrBaseSnapshotRef)
+        {
+            super();
+            apiCallRcWithSnapshot = apiCallRcWithSnapshotRef;
+            incrBaseSnapshot = incrBaseSnapshotRef;
         }
     }
 
@@ -305,6 +354,7 @@ public class CtrlBackupL2LDstApiCallHandler
         private final BackupMetaDataPojo metaData;
         private final String srcBackupName;
         private final String srcClusterId;
+        private final Set<String> srcSnapDfnUuids;
         private String dstNodeName;
         private String dstNetIfName;
         private String dstStorPool;
@@ -317,6 +367,7 @@ public class CtrlBackupL2LDstApiCallHandler
             BackupMetaDataPojo metaDataRef,
             String srcBackupNameRef,
             String srcClusterIdRef,
+            Set<String> srcSnapDfnUuidsRef,
             String dstNodeNameRef,
             String dstNetIfNameRef,
             String dstStorPoolRef,
@@ -329,6 +380,7 @@ public class CtrlBackupL2LDstApiCallHandler
             metaData = metaDataRef;
             srcBackupName = srcBackupNameRef;
             srcClusterId = srcClusterIdRef;
+            srcSnapDfnUuids = srcSnapDfnUuidsRef;
             dstNodeName = dstNodeNameRef;
             dstNetIfName = dstNetIfNameRef;
             dstStorPool = dstStorPoolRef;

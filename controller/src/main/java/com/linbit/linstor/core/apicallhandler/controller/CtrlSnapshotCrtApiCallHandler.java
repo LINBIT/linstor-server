@@ -331,6 +331,12 @@ public class CtrlSnapshotCrtApiCallHandler
         return String.format(snapPrefix + "%05d", id);
     }
 
+    @SuppressWarnings("unchecked")
+    Flux<ApiCallRc> postCreateSnapshot(SnapshotDefinition snapshotDfn)
+    {
+        return postCreateSnapshotSuppressingErrorClasses(snapshotDfn, CtrlResponseUtils.DelayedApiRcException.class);
+    }
+
     /**
      * After Snapshots with their SnapshotDefinition were created, this method now sends the update
      * to the corresponding satellites and also takes care of resuming-io in the end.
@@ -339,7 +345,11 @@ public class CtrlSnapshotCrtApiCallHandler
      *
      * @return
      */
-    Flux<ApiCallRc> postCreateSnapshot(SnapshotDefinition snapshotDfn)
+    @SuppressWarnings("unchecked")
+    <E extends Throwable> Flux<ApiCallRc> postCreateSnapshotSuppressingErrorClasses(
+        SnapshotDefinition snapshotDfn,
+        Class<E>... suppressErrorClasses
+    )
     {
         ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
@@ -357,10 +367,14 @@ public class CtrlSnapshotCrtApiCallHandler
                 )
             );
 
-        return satelliteUpdateResponses
+        Flux<ApiCallRc> flux = satelliteUpdateResponses
             .concatWith(takeSnapshot(rscName, snapshotName))
-            .onErrorResume(exception -> abortSnapshot(rscName, snapshotName, exception))
-            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
+            .onErrorResume(exception -> abortSnapshot(rscName, snapshotName, exception));
+        for (Class<E> clazz : suppressErrorClasses)
+        {
+            flux = flux.onErrorResume(clazz, ignored -> Flux.empty());
+        }
+        return flux;
     }
 
     private Flux<ApiCallRc> abortSnapshot(

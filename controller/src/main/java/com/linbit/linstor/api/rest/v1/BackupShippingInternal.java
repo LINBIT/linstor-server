@@ -72,6 +72,7 @@ public class BackupShippingInternal
                 shipRequest.metaData,
                 shipRequest.srcBackupName,
                 shipRequest.srcClusterId,
+                shipRequest.srcSnapDfnUuids,
                 shipRequest.dstNodeName,
                 shipRequest.dstNodeNetIfName,
                 shipRequest.dstStorPool,
@@ -90,6 +91,7 @@ public class BackupShippingInternal
                         "Failed to deserialize JSON",
                         exc.getMessage()
                     ),
+                    null,
                     null,
                     null
                 )
@@ -116,6 +118,7 @@ public class BackupShippingInternal
                             exc.getMessage(),
                             "ErrorReport id on target cluster: " + reportErrorId
                         ),
+                        null,
                         null,
                         null
                     )

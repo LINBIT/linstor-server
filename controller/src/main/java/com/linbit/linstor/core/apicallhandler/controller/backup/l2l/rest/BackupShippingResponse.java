@@ -21,19 +21,22 @@ public class BackupShippingResponse
      */
     public final @Nullable String dstStltIp;
     public final @Nullable Integer dstStltPort;
+    public final @Nullable String srcSnapDfnUuid;
 
     @JsonCreator
     public BackupShippingResponse(
         @JsonProperty("canReceive") boolean canReceiveRef,
         @JsonProperty("responses") ApiCallRcImpl responsesRef,
         @JsonProperty("dstStltIp") @Nullable String dstStltIpRef,
-        @JsonProperty("dstStltPort") @Nullable Integer dstStltPortRef
+        @JsonProperty("dstStltPort") @Nullable Integer dstStltPortRef,
+        @JsonProperty("srcBaseSnapDfnUuid") @Nullable String srcSnapDfnUuidRef
     )
     {
         canReceive = canReceiveRef;
         responses = responsesRef;
         dstStltIp = dstStltIpRef;
         dstStltPort = dstStltPortRef;
+        srcSnapDfnUuid = srcSnapDfnUuidRef;
     }
 
 }

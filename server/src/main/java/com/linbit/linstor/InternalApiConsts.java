@@ -139,6 +139,10 @@ public class InternalApiConsts
     public static final String API_CHANGED_REMOTE = "ChangedRemote";
     public static final String NAMESPC_REMOTE = "Remote";
 
+    public static final String KEY_BACKUP_L2L_SRC_CLUSTER_UUID = "Backup/FromClusterUUID";
+    public static final String KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH = "Backup/FromClusterName";
+    public static final String KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID = "Backup/SourceSnapDfnUUID";
+
     /*
      * Cluster
      */

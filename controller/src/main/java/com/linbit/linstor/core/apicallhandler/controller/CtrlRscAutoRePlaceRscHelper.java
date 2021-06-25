@@ -176,6 +176,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                 null,
                                 null,
                                 disklessNodeNames,
+                                null,
                                 null
                             ),
                             rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()

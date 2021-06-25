@@ -336,6 +336,7 @@ public class ProtoDeserializationUtils
                 null,
                 null,
                 null,
+                null,
                 null
             )
         );

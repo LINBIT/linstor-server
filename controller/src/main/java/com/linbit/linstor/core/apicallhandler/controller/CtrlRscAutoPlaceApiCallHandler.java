@@ -301,6 +301,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 mergedSelectFilter.getProviderList(),
                 mergedSelectFilter.getDisklessOnRemaining(), // should be ignored anyways
                 disklessNodeNames,
+                null,
                 mergedSelectFilter.getDisklessType()
             );
 

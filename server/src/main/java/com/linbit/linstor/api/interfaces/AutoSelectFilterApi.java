@@ -33,5 +33,7 @@ public interface AutoSelectFilterApi
 
     List<String> skipAlreadyPlacedOnNodeNamesCheck();
 
+    Boolean skipAlreadyPlacedOnAllNodeCheck();
+
     String getDisklessType();
 }

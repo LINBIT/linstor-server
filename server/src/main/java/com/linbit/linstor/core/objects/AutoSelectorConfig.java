@@ -266,6 +266,7 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             Collections.unmodifiableList(allowedProviderList),
             disklessOnRemaining.get(),
             null,
+            null,
             null // no disklessType for rscGrps
         );
     }

@@ -179,6 +179,7 @@ class StorPoolFilter
         List<DeviceLayerKind> filterLayerList = selectFilter.getLayerStackList();
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
         List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilter.skipAlreadyPlacedOnNodeNamesCheck();
+        Boolean skipAlreadyPlacedOnAllNodesCheck = selectFilter.skipAlreadyPlacedOnAllNodeCheck();
 
         logIfNotEmpty("filtering mode: %s", diskful ? "diskful" : disklessTypeRef.name());
         logIfNotEmpty("filter node names: %s", filterNodeNameList);
@@ -190,6 +191,7 @@ class StorPoolFilter
         logIfNotEmpty("filter layer list: %s", filterLayerList);
         logIfNotEmpty("filter provider list: %s", filterProviderList);
         logIfNotEmpty("skip already placed on node names %s", skipAlreadyPlacedOnNodeNamesCheck);
+        logIfNotEmpty("skip already placed on ALL node: %b", skipAlreadyPlacedOnAllNodesCheck);
 
         if (disklessTypeRef != null)
         {
@@ -251,6 +253,10 @@ class StorPoolFilter
         {
             // just to prevent NPE
             skipAlreadyPlacedOnNodeNamesCheck = new ArrayList<>();
+        }
+        if (skipAlreadyPlacedOnAllNodesCheck == null)
+        {
+            skipAlreadyPlacedOnAllNodesCheck = false;
         }
 
         for (StorPool sp : availableStorPoolsRef)
@@ -399,7 +405,8 @@ class StorPoolFilter
                         matchesRegex = ignored -> false;
                     }
 
-                    if (!skipAlreadyPlacedOnNodeNamesCheck.contains(nodeDisplayValue))
+                    if (skipAlreadyPlacedOnAllNodesCheck ||
+                        !skipAlreadyPlacedOnNodeNamesCheck.contains(nodeDisplayValue))
                     {
                         Iterator<Resource> iterateResources = node.iterateResources(apiAccCtx);
                         while (nodeMatches && iterateResources.hasNext())

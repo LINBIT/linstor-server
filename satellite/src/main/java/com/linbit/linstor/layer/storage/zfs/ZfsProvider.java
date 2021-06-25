@@ -599,10 +599,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         throws StorageException, AccessDeniedException
     {
         return "zfs receive -F " + getZPool(snapVlmDataRef.getStorPool()) + "/" +
-            asLvIdentifier(
-                snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
-                ((SnapshotVolume) snapVlmDataRef.getVolume()).getSnapshotVolumeDefinition()
-            );
+            asSnapLvIdentifier(snapVlmDataRef);
     }
 
     @Override

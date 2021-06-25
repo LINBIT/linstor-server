@@ -492,6 +492,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         null,
                         null,
                         null,
+                        null,
                         Resource.Flags.DRBD_DISKLESS.name()
                     ),
                     ctx.rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),

@@ -189,6 +189,7 @@ public class ResourceGroups
                     LinstorParsingUtils.asProviderKind(select_filter.provider_list),
                 select_filter.diskless_on_remaining,
                 null,
+                null,
                 null // no disklessType on rscGrp
             );
         }

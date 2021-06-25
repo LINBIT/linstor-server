@@ -6,6 +6,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -30,6 +31,7 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LDstApiCallHandler.BackupShippingStartInfo;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
@@ -124,9 +126,13 @@ public class CtrlBackupApiCallHandler
 {
     private static final Pattern META_FILE_PATTERN = Pattern
         .compile("^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})\\.meta$");
+    private static final Pattern SNAP_DFN_TIME_PATTERN = Pattern
+        .compile("^(?:back_(?:inc_)?)([0-9]{8}_[0-9]{6})");
     private static final Pattern BACKUP_KEY_PATTERN = Pattern
         .compile("^([a-zA-Z0-9_-]{2,48})(\\..+)?_([0-9]{5})_(back_[0-9]{8}_[0-9]{6})$");
+
     private final Provider<AccessContext> peerAccCtx;
+    private final AccessContext sysCtx;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSnapshotCrtHelper snapshotCrtHelper;
     private final CtrlSnapshotCrtApiCallHandler snapshotCrtHandler;
@@ -155,6 +161,7 @@ public class CtrlBackupApiCallHandler
     @Inject
     public CtrlBackupApiCallHandler(
         @PeerContext Provider<AccessContext> peerAccCtxRef,
+        @SystemContext AccessContext sysCtxRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSnapshotCrtHelper snapCrtHelperRef,
         CtrlSnapshotCrtApiCallHandler snapshotCrtHandlerRef,
@@ -182,6 +189,7 @@ public class CtrlBackupApiCallHandler
     )
     {
         peerAccCtx = peerAccCtxRef;
+        sysCtx = sysCtxRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         snapshotCrtHelper = snapCrtHelperRef;
         snapshotCrtHandler = snapshotCrtHandlerRef;
@@ -324,26 +332,6 @@ public class CtrlBackupApiCallHandler
                 .createSnapshots(nodes, rscDfn.getName().displayValue, snapName, responses);
             snapDfn.getFlags()
                 .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
-            if (!incremental)
-            {
-                snapDfn.getProps(peerAccCtx.get())
-                    .setProp(
-                        InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP, snapName, ApiConsts.NAMESPC_BACKUP_SHIPPING
-                    );
-            }
-            else
-            {
-                // incremental == true && prevSnap == null should not be possible here
-                snapDfn.getProps(peerAccCtx.get())
-                    .setProp(
-                        InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                        prevSnap.getProps(peerAccCtx.get()).getProp(
-                            InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
-                        ),
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                    );
-            }
 
             Resource rsc = rscDfn.getResource(peerAccCtx.get(), chosenNodeName);
             List<Integer> nodeIds = new ArrayList<>();
@@ -405,14 +393,8 @@ public class CtrlBackupApiCallHandler
                 remoteName,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
-            if (incremental)
-            {
-                snapProps.setProp(
-                    InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                    prevSnapName,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
-            }
+
+            setPropsIncremantaldependendProps(snapName, incremental, prevSnap, createdSnapshot);
             ctrlTransactionHelper.commit();
 
             Flux<ApiCallRc> flux = Flux.<ApiCallRc>just(responses)
@@ -500,6 +482,43 @@ public class CtrlBackupApiCallHandler
             );
         }
         return new Pair<>(selectedNode, nodeNamesStr);
+    }
+
+    void setPropsIncremantaldependendProps(
+        String snapName,
+        boolean incremental,
+        SnapshotDefinition prevSnapDfn,
+        Snapshot snap
+    )
+        throws InvalidValueException, AccessDeniedException, DatabaseException
+    {
+        SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
+        if (!incremental)
+        {
+            snapDfn.getProps(peerAccCtx.get())
+                .setProp(
+                    InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
+                    snapName,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
+        }
+        else
+        {
+            snapDfn.getProps(peerAccCtx.get())
+                .setProp(
+                    InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
+                    prevSnapDfn.getProps(peerAccCtx.get()).getProp(
+                        InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    ),
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
+            snap.getProps(peerAccCtx.get()).setProp(
+                InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                prevSnapDfn.getName().displayValue,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+        }
     }
 
     public Flux<ApiCallRc> deleteBackup(
@@ -1244,7 +1263,9 @@ public class CtrlBackupApiCallHandler
                 );
             }
             ctrlTransactionHelper.commit();
-            return snapshotCrtHandler.postCreateSnapshot(nextBackup.getSnapshotDefinition());
+            SnapshotDefinition nextBackSnapDfn = nextBackup.getSnapshotDefinition();
+            return snapshotCrtHandler.postCreateSnapshot(nextBackSnapDfn)
+                .onErrorResume(error -> cleanupAfterFailedRestore(error, nextBackSnapDfn));
         }
         catch (IOException exc)
         {
@@ -1447,7 +1468,8 @@ public class CtrlBackupApiCallHandler
         return snap;
     }
 
-    Flux<ApiCallRcWith<Snapshot>> restoreBackupL2LInTransaction(
+    @SuppressWarnings("unchecked")
+    Flux<BackupShippingStartInfo> restoreBackupL2LInTransaction(
         String nodeNameStr,
         String storPoolNameStr,
         Map<StorPool.Key, Long> thinFreeCapacities,
@@ -1455,11 +1477,12 @@ public class CtrlBackupApiCallHandler
         BackupMetaDataPojo metadata,
         Map<String, String> renameMap,
         StltRemote remote,
-        SnapshotName snapName
+        SnapshotName snapName,
+        Set<String> srcSnapDfnUuidsForIncrementalRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
-        Flux<ApiCallRcWith<Snapshot>> ret;
+        Flux<BackupShippingStartInfo> ret;
 
         try
         {
@@ -1474,33 +1497,95 @@ public class CtrlBackupApiCallHandler
                 snapName,
                 metadata,
                 snapName.displayValue);
+            // search for incremental base
+            Snapshot incrementalBaseSnap = getIncrementalBase(
+                rscDfn,
+                srcSnapDfnUuidsForIncrementalRef
+            );
+            SnapshotDefinition snapDfn;
+            Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
+            Set<StorPool> storPools;
+            Snapshot snap = null;
+
             // 9. create snapDfn
-            SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses);
+            snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses);
             // 10. create vlmDfn(s)
             // 11. create snapVlmDfn(s)
-            Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
-            long totalSize = createSnapVlmDfnForBackupRestore(targetRscName, metadata, rscDfn, snapDfn, snapVlmDfns);
-
-            Set<StorPool> storPools = autoplacer.autoPlace(
-                new AutoSelectFilterPojo(
-                    1,
-                    null,
-                    nodeNameStr == null ? null : Arrays.asList(nodeNameStr),
-                    storPoolNameStr == null ? null : Arrays.asList(storPoolNameStr),
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    getLayerList(layers),
-                    Arrays.asList(getProviderKind(layers)),
-                    false,
-                    null,
-                    null
-                ),
+            long totalSize = createSnapVlmDfnForBackupRestore(
+                targetRscName,
+                metadata,
                 rscDfn,
-                totalSize
+                snapDfn,
+                snapVlmDfns
             );
+
+            if (incrementalBaseSnap != null)
+            {
+                for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(sysCtx))
+                {
+                    snapVlmDfns.put(snapVlmDfn.getVolumeNumber().value, snapVlmDfn);
+                }
+
+                metadata.getRsc().getProps().put(
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                    incrementalBaseSnap.getSnapshotName().displayValue
+                );
+
+                storPools = LayerVlmUtils.getStorPools(incrementalBaseSnap, sysCtx, false);
+                if (storPools.size() != 1)
+                {
+                    throw new ImplementationError("Received snapshot unexpectedly has more than one storage pool");
+                }
+
+                StorPool storPool = storPools.iterator().next();
+
+                // test if given storage pool is usable
+                long freeSpace = storPool.getFreeSpaceTracker().getFreeCapacityLastUpdated(sysCtx).orElse(0L);
+                long allocatedSizeSum = getAllocatedSizeSum(incrementalBaseSnap);
+                if (freeSpace < totalSize - allocatedSizeSum)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_ENOUGH_FREE_SPACE,
+                            "Storage pool does not have enough free space left"
+                        )
+                    );
+                }
+                if (!storPool.getDeviceProviderKind().equals(getProviderKind(layers)))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_STOR_DRIVER,
+                            "Storage pool with base snapshot is of type " + storPool.getDeviceProviderKind() +
+                                " but incremental snapshot would be of type: " + getProviderKind(layers)
+                        )
+                    );
+                }
+            }
+            else
+            {
+                storPools = autoplacer.autoPlace(
+                    new AutoSelectFilterPojo(
+                        1,
+                        null,
+                        nodeNameStr == null ? null : Arrays.asList(nodeNameStr),
+                        storPoolNameStr == null ? null : Arrays.asList(storPoolNameStr),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        getLayerList(layers),
+                        Arrays.asList(getProviderKind(layers)),
+                        false,
+                        null,
+                        true,
+                        null
+                    ),
+                    rscDfn,
+                    totalSize
+                );
+            }
             if (storPools == null || storPools.isEmpty())
             {
                 ret = Flux.error(
@@ -1514,22 +1599,26 @@ public class CtrlBackupApiCallHandler
             }
             else
             {
-                StorPool storPool = storPools.iterator().next();
-                Node node = storPool.getNode();
+                if (snap == null)
+                {
+                    // otherwise we found and reuse snapshot for incremental shipping
+                    StorPool storPool = storPools.iterator().next();
+                    Node node = storPool.getNode();
 
-                // TODO add autoSelected storPool into renameMap
+                    // TODO add autoSelected storPool into renameMap
 
-                // 12. create snapshot
-                Snapshot snap = createSnapshotAndVolumesForBackupRestore(
-                    metadata,
-                    layers,
-                    node,
-                    snapDfn,
-                    snapVlmDfns,
-                    renameMap,
-                    remote,
-                    null
-                );
+                    // 12. create snapshot
+                    snap = createSnapshotAndVolumesForBackupRestore(
+                        metadata,
+                        layers,
+                        node,
+                        snapDfn,
+                        snapVlmDfns,
+                        renameMap,
+                        remote,
+                        null
+                    );
+                }
                 snap.getProps(peerAccCtx.get()).setProp(
                     InternalApiConsts.KEY_BACKUP_TO_RESTORE,
                     snap.getResourceName().displayValue + "_" + snap.getSnapshotName().displayValue,
@@ -1540,14 +1629,19 @@ public class CtrlBackupApiCallHandler
                 // update stlts
                 ctrlTransactionHelper.commit();
 
-                ret = snapshotCrtHandler.postCreateSnapshot(snapDfn)
+                // calling ...SupressingErrorClasses without classes => do not ignore DelayedApiRcException. we want to
+                // deal with that by our self
+                ret = snapshotCrtHandler.postCreateSnapshotSuppressingErrorClasses(snapDfn)
+                    .onErrorResume(error -> cleanupAfterFailedRestore(error, snapDfn))
                     .map(apiCallRcList ->
                     {
                         responses.addEntries(apiCallRcList);
-                        return responses;
+                        return (ApiCallRc) responses;
                     }
                     )
-                    .thenMany(Flux.just(new ApiCallRcWith<>(responses, snap)));
+                    .thenMany(Flux.just(
+                        new BackupShippingStartInfo(new ApiCallRcWith<>(responses, snap), incrementalBaseSnap)
+                    ));
             }
         }
         catch (AccessDeniedException exc)
@@ -1567,6 +1661,121 @@ public class CtrlBackupApiCallHandler
             throw new ImplementationError(exc);
         }
         return ret;
+    }
+
+    private Snapshot getIncrementalBase(
+        ResourceDefinition rscDfnRef,
+        Set<String> srcSnapDfnUuidsForIncrementalRef
+    )
+        throws AccessDeniedException
+    {
+        Snapshot ret = null;
+
+        long latestTimestamp = -1;
+        for (SnapshotDefinition snapDfn : rscDfnRef.getSnapshotDfns(sysCtx))
+        {
+            String fromSrcSnapDfnUuid = snapDfn.getProps(sysCtx).getProp(
+                InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID
+            );
+            if (srcSnapDfnUuidsForIncrementalRef.contains(fromSrcSnapDfnUuid))
+            {
+                Iterator<Snapshot> snapshotIterator = snapDfn.getAllSnapshots(sysCtx).iterator();
+                if (!snapshotIterator.hasNext())
+                {
+                    throw new ImplementationError(
+                        "snapdfn: " + CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline(snapDfn) +
+                            " has no snapshots!"
+                    );
+                }
+                /*
+                 * snapshotDfn will have only one snapshot (we will certainly not have received a backup into multiple
+                 * nodes)
+                 */
+                Snapshot snap = snapshotIterator.next();
+                Matcher matcher = SNAP_DFN_TIME_PATTERN.matcher(snapDfn.getName().displayValue);
+                if (matcher.find())
+                {
+                    long timestamp;
+                    try
+                    {
+                        timestamp = BackupApi.DATE_FORMAT.parse(matcher.group(1)).getTime();
+                        if (timestamp > latestTimestamp)
+                        {
+                            latestTimestamp = timestamp;
+                            ret = snap;
+                        }
+                    }
+                    catch (ParseException ignored)
+                    {}
+                }
+            }
+        }
+        return ret;
+    }
+
+    private Flux<ApiCallRc> cleanupAfterFailedRestore(Throwable throwable, SnapshotDefinition snapDfnRef)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "cleanup after failed restore", lockGuardFactory.buildDeferred(
+                LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP
+            ),
+            () -> cleanupAfterFailedRestoreInTransaction(
+                throwable,
+                snapDfnRef
+            )
+        );
+    }
+
+    private Flux<ApiCallRc> cleanupAfterFailedRestoreInTransaction(
+        Throwable throwableRef,
+        SnapshotDefinition snapDfnRef
+    )
+    {
+        backupInfoMgr.restoreRemoveEntry(snapDfnRef.getResourceDefinition());
+        ctrlTransactionHelper.commit();
+
+        return Flux.error(throwableRef);
+    }
+
+    private long getTotalSize(ResourceDefinition rscDfn)
+    {
+        long totalSize = 0;
+        try
+        {
+            Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(sysCtx);
+            while (vlmDfnIt.hasNext())
+            {
+                VolumeDefinition vlmDfn = vlmDfnIt.next();
+                totalSize += vlmDfn.getVolumeSize(sysCtx);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return totalSize;
+    }
+
+    private long getAllocatedSizeSum(Snapshot snapRef)
+    {
+        long allocatedSizeSum = 0;
+        try
+        {
+            Set<AbsRscLayerObject<Snapshot>> rscDataByProvider = LayerRscUtils
+                .getRscDataByProvider(snapRef.getLayerData(sysCtx), DeviceLayerKind.STORAGE);
+            for (AbsRscLayerObject<Snapshot> storRscData : rscDataByProvider)
+            {
+                for (VlmProviderObject<Snapshot> storVlmData : storRscData.getVlmLayerObjects().values())
+                {
+                    allocatedSizeSum += storVlmData.getAllocatedSize();
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return allocatedSizeSum;
     }
 
     private List<DeviceLayerKind> getLayerList(RscLayerDataApi layersRef)
@@ -2475,10 +2684,14 @@ public class CtrlBackupApiCallHandler
             }
             String remoteName = "";
             Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
-            remoteName = snap.getProps(peerAccCtx.get())
-                .removeProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-            snap.getProps(peerAccCtx.get())
-                .removeProp(InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+            remoteName = snap.getProps(peerAccCtx.get()).removeProp(
+                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            snap.getProps(peerAccCtx.get()).removeProp(
+                InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
             if (successRef)
             {
                 ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);

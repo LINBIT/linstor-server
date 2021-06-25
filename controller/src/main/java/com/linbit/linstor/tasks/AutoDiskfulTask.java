@@ -343,6 +343,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                                 rscDfn.streamResource(sysCtx)
                                     .map(tmpRsc -> tmpRsc.getNode().getName().displayValue)
                                     .collect(Collectors.toList()),
+                                null,
                                 null
                             ),
                             rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()

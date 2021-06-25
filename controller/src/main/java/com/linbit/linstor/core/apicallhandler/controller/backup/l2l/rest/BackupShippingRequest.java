@@ -5,7 +5,9 @@ import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import javax.annotation.Nullable;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,6 +32,7 @@ public class BackupShippingRequest
     public final BackupMetaDataPojo metaData;
     public final String srcBackupName;
     public final String srcClusterId;
+    public final Set<String> srcSnapDfnUuids;
 
     public final @Nullable String dstNodeName;
     public final @Nullable String dstNodeNetIfName;
@@ -41,6 +44,7 @@ public class BackupShippingRequest
         @JsonProperty("metaData") BackupMetaDataPojo metaDataRef,
         @JsonProperty("srcBackupName") String srcBackupNameRef,
         @JsonProperty("srcClusterId") String srcClusterIdRef,
+        @JsonProperty("srcSnapUuids") HashSet<String> srcSnapDfnUuidsRef,
         @JsonProperty("dstRscName") String dstRscNameRef,
         @JsonProperty("dstNodeName") @Nullable String dstNodeNameRef,
         @JsonProperty("dstNodeNetIfName") @Nullable String dstNodeNetIfNameRef,
@@ -56,6 +60,9 @@ public class BackupShippingRequest
             Collections.emptyMap() :
             Collections.unmodifiableMap(storPoolRenameMapRef);
         metaData = Objects.requireNonNull(metaDataRef, "Metadata must not be null!");
+        srcSnapDfnUuids = srcSnapDfnUuidsRef == null ?
+            Collections.emptySet() :
+            Collections.unmodifiableSet(srcSnapDfnUuidsRef);
 
         dstNodeName = dstNodeNameRef;
         dstNodeNetIfName = dstNodeNetIfNameRef;

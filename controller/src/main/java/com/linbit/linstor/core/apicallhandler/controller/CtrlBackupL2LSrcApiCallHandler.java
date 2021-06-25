@@ -19,6 +19,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.LinstorRemote;
 import com.linbit.linstor.core.objects.Remote;
@@ -30,6 +31,8 @@ import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -53,7 +56,9 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import reactor.core.publisher.Flux;
@@ -164,8 +169,22 @@ public class CtrlBackupL2LSrcApiCallHandler
                 )
             );
         }
+        String srcClusterId;
+        try
+        {
+            srcClusterId = systemConfRepository.getCtrlConfForView(sysCtx).getProp(
+                InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
+                ApiConsts.NAMESPC_CLUSTER
+            );
+        }
+        catch (InvalidKeyException | AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
         String backupName = CtrlBackupApiCallHandler.generateNewSnapshotName(new Date());
         BackupShippingData data = new BackupShippingData(
+            srcClusterId,
             srcNodeNameRef,
             srcRscNameRef,
             backupName,
@@ -336,12 +355,27 @@ public class CtrlBackupL2LSrcApiCallHandler
                 null
             );
 
+            NodeName srcSendingNodeName = data.srcSnapshot.getNodeName();
             backupInfoMgr.abortAddL2LEntry(
-                data.srcSnapshot.getNodeName(),
+                srcSendingNodeName,
                 new SnapshotDefinition.Key(data.srcSnapshot.getSnapshotDefinition())
             );
 
             data.metaDataPojo = metaDataPojo;
+            data.metaDataPojo.getRscDfn().getProps().put(
+                InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID,
+                data.srcSnapshot.getSnapshotDefinition().getUuid().toString()
+            );
+
+            // build list of possible base snapshots for incremental shipping
+            for (SnapshotDefinition snapDfn : data.srcSnapshot.getResourceDefinition().getSnapshotDfns(sysCtx))
+            {
+                Snapshot snap = snapDfn.getSnapshot(sysCtx, srcSendingNodeName);
+                if (snap != null)
+                {
+                    data.srcSnapDfnUuids.add(snapDfn.getUuid().toString());
+                }
+            }
 
             flux = Flux.merge(
                 restClient.sendBackupRequest(data, peerAccCtx.get())
@@ -397,8 +431,35 @@ public class CtrlBackupL2LSrcApiCallHandler
                 flux = ctrlSatelliteUpdateCaller.updateSatellites(stltRemote);
 
                 Snapshot snap = data.srcSnapshot;
+
                 snap.getFlags().enableFlags(accCtx, Snapshot.Flags.BACKUP_SOURCE);
                 snap.setTakeSnapshot(accCtx, true);// needed by source-satellite to actually start sending
+
+                if (responseRef.srcSnapDfnUuid != null && !responseRef.srcSnapDfnUuid.isEmpty())
+                {
+                    SnapshotDefinition prevSnapDfn = null;
+                    UUID prevSnapUuid = UUID.fromString(responseRef.srcSnapDfnUuid);
+                    for (SnapshotDefinition snapDfn : snap.getResourceDefinition().getSnapshotDfns(accCtx))
+                    {
+                        if (snapDfn.getUuid().equals(prevSnapUuid)) {
+                            prevSnapDfn = snapDfn;
+                            break;
+                        }
+                    }
+                    if (prevSnapDfn == null) {
+                        throw new ImplementationError(
+                            "SnapshotDefinition selected by destination cluster not found locally: " +
+                                responseRef.srcSnapDfnUuid
+                        );
+                    }
+
+                    ctrlBackupApiCallHandler.setPropsIncremantaldependendProps(
+                        snap.getSnapshotDefinition().getName().displayValue,
+                        true,
+                        prevSnapDfn,
+                        snap
+                    );
+                }
 
                 ctrlTransactionHelper.commit();
                 flux = flux.concatWith(
@@ -443,6 +504,10 @@ public class CtrlBackupL2LSrcApiCallHandler
         catch (DatabaseException exc)
         {
             throw new ApiDatabaseException(exc);
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
         }
         return flux;
     }
@@ -513,10 +578,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                                     LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
                                     data.metaDataPojo,
                                     data.srcBackupName,
-                                    systemConfRepository.getCtrlConfForView(sysCtx).getProp(
-                                        InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
-                                        ApiConsts.NAMESPC_CLUSTER
-                                    ),
+                                    data.srcClusterId,
+                                    data.srcSnapDfnUuids,
                                     data.dstRscName,
                                     data.dstNodeName,
                                     data.dstNetIfName,
@@ -579,6 +642,8 @@ public class CtrlBackupL2LSrcApiCallHandler
 
     private class BackupShippingData
     {
+        private final HashSet<String> srcSnapDfnUuids = new HashSet<>();
+        private final String srcClusterId;
         private String srcNodeName;
         private final String srcRscName;
         private final String srcBackupName;
@@ -595,6 +660,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         private StltRemote stltRemote;
 
         public BackupShippingData(
+            String srcClusterIdRef,
             String srcNodeNameRef,
             String srcRscNameRef,
             String srcBackupNameRef,
@@ -606,6 +672,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             Map<String, String> storPoolRenameRef
         )
         {
+            srcClusterId = srcClusterIdRef;
             srcNodeName = srcNodeNameRef;
             srcRscName = srcRscNameRef;
             srcBackupName = srcBackupNameRef;

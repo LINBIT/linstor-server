@@ -84,10 +84,14 @@ class Selector
                     Node node = rsc.getNode();
 
                     List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilterRef.skipAlreadyPlacedOnNodeNamesCheck();
-                    if (
-                        skipAlreadyPlacedOnNodeNamesCheck == null ||
-                            !skipAlreadyPlacedOnNodeNamesCheck.contains(node.getName().displayValue)
-                    )
+                    Boolean skipAlreadyPlacedOnAllNodesCheck = selectFilterRef.skipAlreadyPlacedOnAllNodeCheck();
+
+                    boolean countResource = skipAlreadyPlacedOnAllNodesCheck == null ||
+                        !skipAlreadyPlacedOnAllNodesCheck;
+                    countResource &= skipAlreadyPlacedOnNodeNamesCheck == null ||
+                        !skipAlreadyPlacedOnNodeNamesCheck.contains(node.getName().displayValue);
+
+                    if (countResource)
                     {
                         alreadyDeployedOnNodes.add(node);
                         if (rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS))

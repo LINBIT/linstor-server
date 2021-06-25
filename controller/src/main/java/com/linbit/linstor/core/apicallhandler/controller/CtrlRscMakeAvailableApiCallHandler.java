@@ -863,6 +863,7 @@ public class CtrlRscMakeAvailableApiCallHandler
             null,
             null,
             null,
+            null,
             disklessFlag == null ? null : disklessFlag.name()
         );
     }

@@ -23,6 +23,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     private @Nullable List<DeviceProviderKind> providerList;
     private @Nullable Boolean disklessOnRemaining;
     private @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheck;
+    private @Nullable Boolean skipAlreadyPlacedOnAllNodeCheck;
     private @Nullable String disklessType;
 
     public AutoSelectFilterPojo(
@@ -39,6 +40,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         @Nullable List<DeviceProviderKind> deviceProviderKindsRef,
         @Nullable Boolean disklessOnRemainingRef,
         @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheckRef,
+        @Nullable Boolean skipAlreadyPlacedOnAllNodeCheckRef,
         @Nullable String disklessTypeRef
     )
     {
@@ -55,6 +57,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         layerStackList = layerStackListRef;
         providerList = deviceProviderKindsRef;
         skipAlreadyPlacedOnNodeNamesCheck = skipAlreadyPlacedOnNodeNamesCheckRef;
+        skipAlreadyPlacedOnAllNodeCheck = skipAlreadyPlacedOnAllNodeCheckRef;
         disklessType = disklessTypeRef;
     }
 
@@ -73,6 +76,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             api.getProviderList(),
             api.getDisklessOnRemaining(),
             api.skipAlreadyPlacedOnNodeNamesCheck(),
+            api.skipAlreadyPlacedOnAllNodeCheck(),
             api.getDisklessType()
         );
     }
@@ -94,6 +98,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         List<DeviceProviderKind> providerList = null;
         Boolean disklessOnRemaining = null;
         List<String> skipAlreadyPlacedOnNodeCheck = null;
+        Boolean skipAlreadyPlacedOnAllNodeCheck= null;
         String disklessType = null;
 
         for (AutoSelectFilterApi cfgApi : cfgArr)
@@ -152,6 +157,10 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
                 {
                     skipAlreadyPlacedOnNodeCheck = cfgApi.skipAlreadyPlacedOnNodeNamesCheck();
                 }
+                if (skipAlreadyPlacedOnAllNodeCheck == null)
+                {
+                    skipAlreadyPlacedOnAllNodeCheck = cfgApi.skipAlreadyPlacedOnAllNodeCheck();
+                }
                 if (disklessType == null)
                 {
                     disklessType = cfgApi.getDisklessType();
@@ -173,6 +182,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             providerList,
             disklessOnRemaining,
             skipAlreadyPlacedOnNodeCheck,
+            skipAlreadyPlacedOnAllNodeCheck,
             disklessType
         );
     }
@@ -253,6 +263,12 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     public @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheck()
     {
         return skipAlreadyPlacedOnNodeNamesCheck;
+    }
+
+    @Override
+    public Boolean skipAlreadyPlacedOnAllNodeCheck()
+    {
+        return skipAlreadyPlacedOnAllNodeCheck;
     }
 
     @Override

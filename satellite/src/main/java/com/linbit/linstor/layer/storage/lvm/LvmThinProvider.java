@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.storage.lvm;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
@@ -176,20 +177,50 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void createLvForBackupIfNeeded(LvmData<Snapshot> snapVlm) throws StorageException
+    protected void createLvForBackupIfNeeded(LvmData<Snapshot> snapVlm)
+        throws StorageException
     {
-        LvmUtils.execWithRetry(
-            extCmdFactory,
-            Collections.singleton(snapVlm.getVolumeGroup()),
-            config -> LvmCommands.createThin(
-                extCmdFactory.create(),
-                snapVlm.getVolumeGroup(),
-                ((LvmThinData<Snapshot>) snapVlm).getThinPool(),
-                snapVlm.getIdentifier(),
-                snapVlm.getUsableSize(),
-                config
-            )
-        );
+        try
+        {
+            LvmData<Snapshot> prevSnapData = getPreviousSnapvlmData(
+                snapVlm,
+                snapVlm.getRscLayerObject().getAbsResource()
+            );
+            if (prevSnapData != null)
+            {
+                LvmUtils.execWithRetry(
+                    extCmdFactory,
+                    Collections.singleton(snapVlm.getVolumeGroup()),
+                    config -> LvmCommands.createSnapshotThin(
+                        extCmdFactory.create(),
+                        snapVlm.getVolumeGroup(),
+                        ((LvmThinData<Snapshot>) snapVlm).getThinPool(),
+                        prevSnapData.getIdentifier(),
+                        snapVlm.getIdentifier(),
+                        config
+                    )
+                );
+            }
+            else
+            {
+                LvmUtils.execWithRetry(
+                    extCmdFactory,
+                    Collections.singleton(snapVlm.getVolumeGroup()),
+                    config -> LvmCommands.createThin(
+                        extCmdFactory.create(),
+                        snapVlm.getVolumeGroup(),
+                        ((LvmThinData<Snapshot>) snapVlm).getThinPool(),
+                        snapVlm.getIdentifier(),
+                        snapVlm.getUsableSize(),
+                        config
+                    )
+                );
+            }
+        }
+        catch (InvalidKeyException | AccessDeniedException | InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @Override

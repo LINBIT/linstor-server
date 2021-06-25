@@ -1944,6 +1944,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final List<String> replicasOnDifferentNodePropList = new ArrayList<>();
         private boolean disklessOnRemaining;
         private List<String> skipAlreadyPlacedOnNodeCheck;
+        private boolean skipAlreadyPlacedOnAllNodeCheck = false;
 
         private final List<DeviceLayerKind> layerStack = new ArrayList<>(Arrays.asList(DRBD, STORAGE));
         private final List<DeviceProviderKind> providerList =
@@ -2145,6 +2146,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     public List<String> skipAlreadyPlacedOnNodeNamesCheck()
                     {
                         return skipAlreadyPlacedOnNodeCheck;
+                    }
+
+                    @Override
+                    public Boolean skipAlreadyPlacedOnAllNodeCheck()
+                    {
+                        return skipAlreadyPlacedOnAllNodeCheck;
                     }
 
                     @Override
