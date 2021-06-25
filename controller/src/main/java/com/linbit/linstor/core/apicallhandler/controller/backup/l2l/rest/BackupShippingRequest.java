@@ -28,6 +28,7 @@ public class BackupShippingRequest
     public final String dstRscName;
     public final Map<String, String> storPoolRenameMap;
     public final BackupMetaDataPojo metaData;
+    public final String srcBackupName;
 
     public final @Nullable String dstNodeName;
     public final @Nullable String dstNodeNetIfName;
@@ -37,6 +38,7 @@ public class BackupShippingRequest
     public BackupShippingRequest(
         @JsonProperty("srcVersion") int[] srcVersionRef,
         @JsonProperty("metaData") BackupMetaDataPojo metaDataRef,
+        @JsonProperty("srcBackupName") String srcBackupNameRef,
         @JsonProperty("dstRscName") String dstRscNameRef,
         @JsonProperty("dstNodeName") @Nullable String dstNodeNameRef,
         @JsonProperty("dstNodeNetIfName") @Nullable String dstNodeNetIfNameRef,
@@ -46,6 +48,7 @@ public class BackupShippingRequest
     {
         srcVersion = Objects.requireNonNull(srcVersionRef, "Version must not be null!");
         dstRscName = Objects.requireNonNull(dstRscNameRef, "Target resource name must not be null!");
+        srcBackupName = Objects.requireNonNull(srcBackupNameRef, "BackupName must not be null!");
         storPoolRenameMap = storPoolRenameMapRef == null ?
             Collections.emptyMap() :
             Collections.unmodifiableMap(storPoolRenameMapRef);

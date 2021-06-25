@@ -236,6 +236,14 @@ public class CtrlBackupApiCallHandler
 
     public static String generateNewSnapshotName(Date date)
     {
+        /*
+         * TODO: Add random (parameter based?) suffix
+         * maybe base62(SecretGenerator.generateSecret(8)) resulting in [0-9A-Za-z]{1,13}
+         *
+         * this would be useful if we would allow the same linstor cluster being the target of multiple L2L sources
+         * whereas multiple sources issue a backup in the same second into the same RD, resulting in the same SD without
+         * such a randomness
+         */
         return BackupShippingConsts.SNAP_PREFIX + BackupApi.DATE_FORMAT.format(date);
     }
 

@@ -139,11 +139,6 @@ public class InternalApiConsts
     public static final String API_CHANGED_REMOTE = "ChangedRemote";
     public static final String NAMESPC_REMOTE = "Remote";
 
-    /*
-     * Backup shipping Linstor2Linstor
-     */
-    public static final String VAL_BACKUP_L2L_TARGET = ".BackupShippingL2LTarget";
-
     // Normal module shutdown, no error
     public static final int EXIT_CODE_SHUTDOWN = 0;
 

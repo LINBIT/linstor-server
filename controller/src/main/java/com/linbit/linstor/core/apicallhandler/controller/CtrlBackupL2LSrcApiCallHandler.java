@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -336,14 +335,6 @@ public class CtrlBackupL2LSrcApiCallHandler
                 null
             );
 
-            // set BackupShipping/BackupTargetRemote property to a special value so that target-satellite
-            // does not look for unknown stltRemote but instead use the L2L backupService for receiving
-            // (L2L backupService only needs remote for sending)
-            metaDataPojo.getRsc().getProps().put(
-                ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                InternalApiConsts.VAL_BACKUP_L2L_TARGET
-            );
-
             backupInfoMgr.abortAddL2LEntry(
                 data.srcSnapshot.getNodeName(),
                 new SnapshotDefinition.Key(data.srcSnapshot.getSnapshotDefinition())
@@ -520,6 +511,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                                 new BackupShippingRequest(
                                     LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
                                     data.metaDataPojo,
+                                    data.srcBackupName,
                                     data.dstRscName,
                                     data.dstNodeName,
                                     data.dstNetIfName,

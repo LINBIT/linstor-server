@@ -76,19 +76,13 @@ public class BackupShippingMgr
 
             if (remoteNameStr != null)
             {
-                if (InternalApiConsts.VAL_BACKUP_L2L_TARGET.equals(remoteNameStr)) {
-                    service = backupShippingL2L;
-                }
-                else
+                Remote remote = remoteMap.get(new RemoteName(remoteNameStr, true));
+                if (remote == null)
                 {
-                    Remote remote = remoteMap.get(new RemoteName(remoteNameStr, true));
-                    if (remote == null)
-                    {
-                        throw new ImplementationError("Remote must not be null if the property is set");
-                    }
-
-                    service = getService(remote);
+                    throw new ImplementationError("Remote must not be null if the property is set");
                 }
+
+                service = getService(remote);
             }
         }
         catch (InvalidKeyException | InvalidNameException | AccessDeniedException exc)

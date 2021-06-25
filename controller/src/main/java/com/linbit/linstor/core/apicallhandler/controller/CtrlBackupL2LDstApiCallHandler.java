@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -33,7 +34,6 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 
 import reactor.core.publisher.Flux;
@@ -85,6 +85,7 @@ public class CtrlBackupL2LDstApiCallHandler
         int[] srcVersionRef,
         String dstRscNameRef,
         BackupMetaDataPojo metaDataRef,
+        String srcBackupNameRef,
         @Nullable String dstNodeNameRef,
         @Nullable String dstNetIfNameRef,
         @Nullable String dstStorPoolRef,
@@ -119,6 +120,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     srcVersionRef,
                     dstRscNameRef,
                     metaDataRef,
+                    srcBackupNameRef,
                     dstNodeNameRef,
                     dstNetIfNameRef,
                     dstStorPoolRef,
@@ -155,9 +157,7 @@ public class CtrlBackupL2LDstApiCallHandler
 
     private Flux<ApiCallRcWith<Snapshot>> startReceivingInTransaction(BackupShippingData data)
     {
-        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(
-            CtrlBackupApiCallHandler.generateNewSnapshotName(new Date())
-        );
+        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(data.srcBackupName);
         StltRemote stltRemote = CtrlBackupL2LSrcApiCallHandler.createStltRemote(
             stltRemoteControllerFactory,
             remoteRepo,
@@ -169,6 +169,11 @@ public class CtrlBackupL2LDstApiCallHandler
 
         data.snapName = snapName;
         data.stltRemote = stltRemote;
+
+        data.metaData.getRsc().getProps().put(
+            ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+            stltRemote.getName().displayValue
+        );
 
         ctrlTransactionHelper.commit();
 
@@ -245,6 +250,7 @@ public class CtrlBackupL2LDstApiCallHandler
         private final int[] srcVersion;
         private final String dstRscName;
         private final BackupMetaDataPojo metaData;
+        private String srcBackupName;
         private String dstNodeName;
         private String dstNetIfName;
         private String dstStorPool;
@@ -255,6 +261,7 @@ public class CtrlBackupL2LDstApiCallHandler
             int[] srcVersionRef,
             String dstRscNameRef,
             BackupMetaDataPojo metaDataRef,
+            String srcBackupNameRef,
             String dstNodeNameRef,
             String dstNetIfNameRef,
             String dstStorPoolRef,
@@ -265,6 +272,7 @@ public class CtrlBackupL2LDstApiCallHandler
             srcVersion = srcVersionRef;
             dstRscName = dstRscNameRef;
             metaData = metaDataRef;
+            srcBackupName = srcBackupNameRef;
             dstNodeName = dstNodeNameRef;
             dstNetIfName = dstNetIfNameRef;
             dstStorPool = dstStorPoolRef;

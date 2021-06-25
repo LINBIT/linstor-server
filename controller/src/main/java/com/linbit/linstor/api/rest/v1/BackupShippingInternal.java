@@ -70,6 +70,7 @@ public class BackupShippingInternal
                 shipRequest.srcVersion,
                 shipRequest.dstRscName,
                 shipRequest.metaData,
+                shipRequest.srcBackupName,
                 shipRequest.dstNodeName,
                 shipRequest.dstNodeNetIfName,
                 shipRequest.dstStorPool,
