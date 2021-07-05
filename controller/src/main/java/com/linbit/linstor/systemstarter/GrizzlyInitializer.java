@@ -81,7 +81,8 @@ public class GrizzlyInitializer implements StartupInitializer
                     trustStorePath,
                     trustStorePassword,
                     ctrlCfg.getLogRestAccessLogPath(),
-                    ctrlCfg.getLogRestAccessMode()
+                    ctrlCfg.getLogRestAccessMode(),
+                    ctrlCfg.getWebUiDirectory()
                 );
                 systemServicesMap.put(grizzlyHttpService.getInstanceName(), grizzlyHttpService);
                 grizzlyHttpService.start();

@@ -154,12 +154,23 @@ public class CtrlTomlConfig
         }
     }
 
+    static class WebUi
+    {
+        private String directory;
+
+        public void applyTo(CtrlConfig cfg)
+        {
+            cfg.setWebUiDirectory(directory);
+        }
+    }
+
     private HTTP http = new HTTP();
     private HTTPS https = new HTTPS();
     private LDAP ldap = new LDAP();
     private DB db = new DB();
     private Logging logging = new Logging();
     private Encrypt encrypt = new Encrypt();
+    private WebUi webUi = new WebUi();
 
     /**
      * Getter needed by {@link LinstorConfigTool}
@@ -177,5 +188,6 @@ public class CtrlTomlConfig
         db.applyTo(cfg);
         logging.applyTo(cfg);
         encrypt.applyTo(cfg);
+        webUi.applyTo(cfg);
     }
 }

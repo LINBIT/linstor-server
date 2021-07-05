@@ -74,6 +74,11 @@ public class CtrlConfig extends LinstorConfig
      */
     private String masterPassphrase;
 
+    /*
+     * Web-UI
+     */
+    private String webUiDirectory;
+
     public CtrlConfig(String[] args)
     {
         super(args);
@@ -107,6 +112,8 @@ public class CtrlConfig extends LinstorConfig
         setLdapDn("uid={user}");
         setLdapSearchBase("");
         setLdapSearchFilter("");
+
+        setWebUiDirectory("/usr/share/linstor-server/ui");
     }
 
     @Override
@@ -128,7 +135,7 @@ public class CtrlConfig extends LinstorConfig
             }
             catch (RuntimeException tomlExc)
             {
-                System.err.printf("Error parsing '%s': %s%n", linstorConfigPath.toString(), tomlExc.getMessage());
+                System.err.printf("Error parsing '%s': %s%n", linstorConfigPath, tomlExc.getMessage());
                 System.exit(InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR);
             }
         }
@@ -380,6 +387,14 @@ public class CtrlConfig extends LinstorConfig
         }
     }
 
+    public void setWebUiDirectory(String webUiDirectoryRef)
+    {
+        if (webUiDirectoryRef != null)
+        {
+            webUiDirectory = webUiDirectoryRef;
+        }
+    }
+
     public String getDbUser()
     {
         return dbUser;
@@ -548,5 +563,10 @@ public class CtrlConfig extends LinstorConfig
     public String getMasterPassphrase()
     {
         return masterPassphrase;
+    }
+
+    public String getWebUiDirectory()
+    {
+        return webUiDirectory;
     }
 }

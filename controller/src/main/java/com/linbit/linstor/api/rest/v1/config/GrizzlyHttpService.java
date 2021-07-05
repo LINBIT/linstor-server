@@ -47,6 +47,7 @@ import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.http.server.Request;
 import org.glassfish.grizzly.http.server.Response;
+import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.grizzly.http.server.accesslog.AccessLogBuilder;
 import org.glassfish.grizzly.http.util.HttpStatus;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
@@ -72,6 +73,7 @@ public class GrizzlyHttpService implements SystemService
     private final AccessContext sysCtx;
     private final LockGuardFactory lockGuardFactory;
     private RestAccessLogMode restAccessLogMode;
+    private final String webUiDirectory;
 
     private static final int COMPRESSION_MIN_SIZE = 1000; // didn't find a good default, so lets say 1000
 
@@ -85,7 +87,8 @@ public class GrizzlyHttpService implements SystemService
         Path trustStoreFileRef,
         String trustStorePasswordRef,
         String restAccessLogPathRef,
-        CtrlConfig.RestAccessLogMode restAccessLogModeRef
+        CtrlConfig.RestAccessLogMode restAccessLogModeRef,
+        String webUiDirectoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -97,6 +100,7 @@ public class GrizzlyHttpService implements SystemService
         trustStorePassword = trustStorePasswordRef;
         restAccessLogPath = Paths.get(restAccessLogPathRef);
         restAccessLogMode = restAccessLogModeRef;
+        webUiDirectory = webUiDirectoryRef;
         restResourceConfig = new GuiceResourceConfig(injector).packages("com.linbit.linstor.api.rest");
         restResourceConfig.register(new CORSFilter());
         registerExceptionMappers(restResourceConfig);
@@ -156,6 +160,10 @@ public class GrizzlyHttpService implements SystemService
             fwdMappings.toArray(new String[0]));
     }
 
+    private void addUiStaticHandler(HttpServer httpServer) {
+        httpServer.getServerConfiguration().addHttpHandler(new StaticHttpHandler(webUiDirectory), "/ui");
+    }
+
     private void enableCompression(HttpServer httpServerRef)
     {
         CompressionConfig compressionConfig = httpServerRef.getListener("grizzly").getCompressionConfig();
@@ -208,6 +216,8 @@ public class GrizzlyHttpService implements SystemService
             }
 
             enableCompression(httpsServer);
+            addUiStaticHandler(httpsServer);
+            httpsServer.getHttpHandler().setAllowEncodedSlash(true);
         }
         else
         {
@@ -217,6 +227,8 @@ public class GrizzlyHttpService implements SystemService
                 restResourceConfig,
                 false
             );
+            addUiStaticHandler(httpServer);
+            httpServer.getHttpHandler().setAllowEncodedSlash(true);
         }
 
         // configure access logging

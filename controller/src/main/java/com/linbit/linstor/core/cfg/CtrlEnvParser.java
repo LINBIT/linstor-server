@@ -11,6 +11,8 @@ class CtrlEnvParser
     public static final String LS_REST_BIND_ADDRESS_SECURE = "LS_REST_BIND_ADDRESS_SECURE";
     public static final String MASTER_PASSPHRASE = "MASTER_PASSPHRASE";
 
+    public static final String WEBUI_DIRECTORY = "LS_WEBUI_DIRECTORY";
+
     private CtrlEnvParser()
     {
     }
@@ -28,5 +30,7 @@ class CtrlEnvParser
         cfg.setRestSecureBindPort(restSecureBind.objB);
 
         cfg.setMasterPassphrase(getEnv(MASTER_PASSPHRASE));
+
+        cfg.setWebUiDirectory(getEnv(WEBUI_DIRECTORY));
     }
 }

@@ -66,6 +66,9 @@ class CtrlCmdLineArgsParser
         description = "Disable database version version checks supported by Linstor")
     private Boolean disableDbVersionCheck;
 
+    @CommandLine.Option(names = {"--webui-directory"}, description = "Path to the webui directory")
+    private String webUiDirectory;
+
     static void parseCommandLine(String[] args, CtrlConfig linstorCfgRef)
     {
         CtrlCmdLineArgsParser linArgParser = new CtrlCmdLineArgsParser();
@@ -143,6 +146,8 @@ class CtrlCmdLineArgsParser
         linstorCfgRef.setLogLevelLinstor(linArgParser.logLevelLinstor);
 
         linstorCfgRef.setDbDisableVersionCheck(linArgParser.disableDbVersionCheck);
+
+        linstorCfgRef.setWebUiDirectory(linArgParser.webUiDirectory);
     }
 
     public static Pair<String, Integer> splitIpPort(String addrPort)
