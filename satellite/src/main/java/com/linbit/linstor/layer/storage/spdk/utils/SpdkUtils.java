@@ -1,7 +1,7 @@
 package com.linbit.linstor.layer.storage.spdk.utils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.layer.storage.utils.Commands;
@@ -16,6 +16,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SpdkUtils
 {
@@ -32,6 +35,7 @@ public class SpdkUtils
     public static final String SPDK_NSID = "nsid";
     public static final String SPDK_FREE_CLUSTERS = "free_clusters";
     public static final String SPDK_TOTAL_DATA_CLUSTERS = "total_data_clusters";
+    public static final String SPDK_CLUSTER_SIZE = "cluster_size";
     public static final String SPDK_DRIVER_SPECIFIC = "driver_specific";
     public static final String SPDK_LVOL = "lvol";
     public static final String SPDK_LVOL_STORE_UUID = "lvol_store_uuid";
@@ -168,7 +172,11 @@ public class SpdkUtils
             {
                 result.put(
                     element.path(SPDK_NAME).asText(),
-                    element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_TOTAL_DATA_CLUSTERS).asLong() // KiB
+                    SizeConv.convert(
+                        element.path(SPDK_CLUSTER_SIZE).asLong() * element.path(SPDK_TOTAL_DATA_CLUSTERS).asLong(),
+                        SizeUnit.UNIT_B,
+                        SizeUnit.UNIT_KiB
+                    )
                 );
             }
         }
@@ -187,7 +195,11 @@ public class SpdkUtils
             {
                 result.put(
                     element.path(SPDK_NAME).asText(),
-                    element.path(SPDK_BLOCK_SIZE).asLong() * element.path(SPDK_FREE_CLUSTERS).asLong() //bytes to KiB
+                    SizeConv.convert(
+                        element.path(SPDK_CLUSTER_SIZE).asLong() * element.path(SPDK_FREE_CLUSTERS).asLong(),
+                        SizeUnit.UNIT_B,
+                        SizeUnit.UNIT_KiB
+                    )
                 );
             }
         }

@@ -129,9 +129,14 @@ public class NvmeUtils
             );
             if (nvmeRscData.isSpdk())
             {
-                SpdkCommands.createTransport(extCmdFactory.create(),"RDMA");
+                String transportType = nvmePrioProps.getProp(ApiConsts.KEY_TR_TYPE, ApiConsts.NAMESPC_NVME);
+                if (transportType == null)
+                {
+                    transportType = "RDMA";
+                }
+                SpdkCommands.createTransport(extCmdFactory.create(), transportType);
 
-                String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT);
+                String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT, ApiConsts.NAMESPC_NVME);
                 if (port == null)
                 {
                     port = Integer.toString(IANA_DEFAULT_PORT);
@@ -150,7 +155,7 @@ public class NvmeUtils
                     "nvmf_subsystem_add_listener",
                     subsystemName,
                     "-t",
-                    "RDMA",
+                    transportType,
                     "-a",
                     getIpAddr(nvmeRscData.getAbsResource(), accCtx).getAddress(),
                     "-f",
@@ -208,14 +213,14 @@ public class NvmeUtils
                     Files.write(portsPath.resolve("addr_traddr"), ipAddr.getAddress().getBytes());
 
                     // set the transport type and port
-                    String transportType = nvmePrioProps.getProp(ApiConsts.KEY_TR_TYPE);
+                    String transportType = nvmePrioProps.getProp(ApiConsts.KEY_TR_TYPE, ApiConsts.NAMESPC_NVME);
                     if (transportType == null)
                     {
                         transportType = "rdma";
                     }
                     Files.write(portsPath.resolve("addr_trtype"), transportType.getBytes());
 
-                    String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT);
+                    String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT, ApiConsts.NAMESPC_NVME);
                     if (port == null)
                     {
                         port = Integer.toString(IANA_DEFAULT_PORT);
@@ -424,12 +429,12 @@ public class NvmeUtils
                 stltProps
             );
 
-            String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT);
+            String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT, ApiConsts.NAMESPC_NVME);
             if (port == null)
             {
                 port = Integer.toString(IANA_DEFAULT_PORT);
             }
-            String transportType = nvmePrioProps.getProp(ApiConsts.KEY_TR_TYPE);
+            String transportType = nvmePrioProps.getProp(ApiConsts.KEY_TR_TYPE, ApiConsts.NAMESPC_NVME);
             if (transportType == null)
             {
                 transportType = "rdma";
@@ -812,10 +817,9 @@ public class NvmeUtils
         if (!SpdkUtils.checkNamespaceExists(extCmdFactory.create(), subsystemName,
             nvmeVlmData.getVlmNr().getValue() + 1))
         {
-            byte[] backingDevice = nvmeVlmData.getBackingDevice().getBytes();
-            String spdkPath = new String(backingDevice);
+            String spdkPath = getSpdkBackingDevice(nvmeVlmData);
 
-            errorReporter.logDebug("NVMe: exposing device: " + new String(backingDevice));
+            errorReporter.logDebug("NVMe: exposing device: " + spdkPath);
 
             OutputData output = extCmdFactory.create().exec(
                 SPDK_RPC_SCRIPT,
@@ -826,6 +830,16 @@ public class NvmeUtils
             ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to create namespace!");
         }
         nvmeVlmData.setExists(true);
+    }
+
+    private String getSpdkBackingDevice(NvmeVlmData<Resource> nvmeVlmDataRef)
+    {
+        VlmProviderObject<Resource> child = nvmeVlmDataRef.getSingleChild();
+        if (!(child instanceof SpdkData))
+        {
+            throw new ImplementationError("Unexpected type between NVMe and SPDK: " + child.getLayerKind());
+        }
+        return ((SpdkData<Resource>) child).getSpdkPath();
     }
 
     /**

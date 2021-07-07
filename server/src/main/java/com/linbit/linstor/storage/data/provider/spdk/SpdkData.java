@@ -28,6 +28,7 @@ public class SpdkData<RSC extends AbsResource<RSC>>
 {
     // not persisted, not serialized, stlt only
     private transient String volumeGroup;
+    private String spdkPath;
 
     public SpdkData(
         AbsVolume<RSC> vlmRef,
@@ -83,5 +84,15 @@ public class SpdkData<RSC extends AbsResource<RSC>>
             new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
             storPool.get().getApiData(null, null, accCtxRef, null, null)
         );
+    }
+
+    public void setSpdkPath(String pathRef)
+    {
+        spdkPath = pathRef;
+    }
+
+    public String getSpdkPath()
+    {
+        return spdkPath;
     }
 }

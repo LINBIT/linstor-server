@@ -238,7 +238,13 @@ public class StltExtToolsChecker
 
     private ExtToolsInfo getSpdkInfo()
     {
-        return infoBy3MatchGroupPattern(SPDK_VERSION_PATTERN, ExtTools.SPDK, false, SPDK_RPC_SCRIPT, "get_spdk_version");
+        return infoBy3MatchGroupPattern(
+            SPDK_VERSION_PATTERN,
+            ExtTools.SPDK,
+            false,
+            SPDK_RPC_SCRIPT,
+            "spdk_get_version" // "get_spdk_version" is deprecated
+        );
     }
 
     private ExtToolsInfo getWritecacheInfo(List<String> loadedModulesRef)

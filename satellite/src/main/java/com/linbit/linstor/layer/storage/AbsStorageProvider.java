@@ -36,7 +36,6 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
-import com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands;
 import com.linbit.linstor.layer.storage.utils.DmStatCommands;
 import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
 import com.linbit.linstor.layer.storage.utils.StltProviderUtils;
@@ -59,8 +58,6 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
-
-import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import javax.inject.Provider;
 
@@ -104,6 +101,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     private final Set<StorPool> changedStorPools = new HashSet<>();
     private boolean prepared;
+    protected boolean isDevPathExpectedToBeNull = false;
 
     public AbsStorageProvider(
         ErrorReporter errorReporterRef,
@@ -470,13 +468,27 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
             if (devicePath == null)
             {
-                throw new StorageException(
-                    getClass().getSimpleName() + " failed to create local device for volume: " + vlmData.getVolume()
-                );
+                if (!isDevPathExpectedToBeNull)
+                {
+                    throw new StorageException(
+                        getClass().getSimpleName() + " failed to create local device for volume: " + vlmData.getVolume()
+                    );
+                }
             }
+            else
+            {
+                waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
 
-            waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
+                if (stltConfigAccessor.useDmStats() && updateDmStats())
+                {
+                    DmStatCommands.create(extCmdFactory.create(), devicePath);
+                }
 
+                if (!snapRestore)
+                {
+                    wipeHandler.quickWipe(devicePath);
+                }
+            }
             long allocatedSize = getAllocatedSize(vlmData);
             long minSize = kind.usesThinProvisioning() ? 0 : vlmData.getExpectedSize();
             if (allocatedSize < minSize)
@@ -487,16 +499,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
             setAllocatedSize(vlmData, allocatedSize);
             setUsableSize(vlmData, allocatedSize);
-
-            if (stltConfigAccessor.useDmStats() && updateDmStats())
-            {
-                DmStatCommands.create(extCmdFactory.create(), devicePath);
-            }
-
-            if (!snapRestore && !devicePath.startsWith(SPDK_PATH_PREFIX))
-            {
-                wipeHandler.quickWipe(devicePath);
-            }
 
             addCreatedMsg(vlmData, apiCallRc);
         }
@@ -1080,20 +1082,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void waitUntilDeviceCreated(String devicePath, long waitTimeoutAfterCreateMillis)
-        throws StorageException
-    {
-        if (!devicePath.startsWith(SPDK_PATH_PREFIX))
-        {
-            waitUntilNonSpdkCreated(devicePath, waitTimeoutAfterCreateMillis);
-        }
-        else
-        {
-            // wait not required, just confirming LV existence
-            SpdkCommands.lvsByName(extCmdFactory.create(), devicePath.split(SPDK_PATH_PREFIX)[1]);
-        }
-    }
-
-    private void waitUntilNonSpdkCreated(String devicePath, long waitTimeoutAfterCreateMillis)
         throws StorageException
     {
         final Object syncObj = new Object();

@@ -1,10 +1,12 @@
 package com.linbit.linstor.layer.storage.spdk.utils;
 
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.layer.storage.utils.Commands;
-import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
 import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
+import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.StringUtils;
 
@@ -15,7 +17,7 @@ import java.util.List;
 
 public class SpdkCommands
 {
-     // requires "/usr/bin/rpc.py" symlink to "spdk-19.07/scripts/rpc.py" script in host OS
+    // requires "/usr/bin/rpc.py" symlink to "spdk/scripts/rpc.py" script in host OS
     public static final String SPDK_RPC_SCRIPT = "rpc.py";
 
     private SpdkCommands()
@@ -29,7 +31,7 @@ public class SpdkCommands
             new String[]
             {
                 SPDK_RPC_SCRIPT,
-                "get_bdevs"
+                "bdev_get_bdevs" // get_bdevs is deprecated
             },
             "Failed to list bdevs",
             "Failed to query 'get_bdevs' info"
@@ -43,7 +45,7 @@ public class SpdkCommands
                 new String[]
                 {
                     SPDK_RPC_SCRIPT,
-                    "get_bdevs",
+                    "bdev_get_bdevs", // get_bdevs is deprecated
                     "--name",
                     name
                 },
@@ -59,7 +61,7 @@ public class SpdkCommands
             new String[]
             {
                 SPDK_RPC_SCRIPT,
-                "get_lvol_stores"
+                "bdev_lvol_get_lvstores" // get_lvol_stores is deprecated
             },
             "Failed to query lvol stores extent size",
             "Failed to query extent size of volume group(s)"
@@ -80,9 +82,11 @@ public class SpdkCommands
             new String[]
             {
                 SPDK_RPC_SCRIPT,
-                "construct_lvol_bdev",
+                "bdev_lvol_create", // construct_lvol_bdev is deprecated
                 vlmId,
-                String.valueOf(size/1024), // KiB
+                String.valueOf(
+                    SizeConv.convert(size, SizeUnit.UNIT_KiB, SizeUnit.UNIT_MiB)
+                ),
                 "--lvs-name", volumeGroup
             },
             "Failed to create lvol bdev",
@@ -107,9 +111,11 @@ public class SpdkCommands
                 new String[]
                 {
                     SPDK_RPC_SCRIPT,
-                    "construct_lvol_bdev",
+                    "bdev_lvol_create", // construct_lvol_bdev is deprecated
                     vlmId,
-                    String.valueOf(size/1024), // KiB
+                    String.valueOf(
+                        SizeConv.convert(size, SizeUnit.UNIT_KiB, SizeUnit.UNIT_MiB)
+                    ),
                     "--lvs-name", volumeGroup,
                     "--thin-provision"
                 },
@@ -129,7 +135,7 @@ public class SpdkCommands
             new String[]
             {
                 SPDK_RPC_SCRIPT,
-                "destroy_lvol_bdev",
+                "bdev_lvol_delete", // destroy_lvol_bdev is deprecated
                 volumeGroup + File.separator + vlmId
             },
             "Failed to delete lvol bdev",
@@ -146,9 +152,11 @@ public class SpdkCommands
             new String[]
             {
                 SPDK_RPC_SCRIPT,
-                "resize_lvol_bdev",
+                "bdev_lvol_resize", // resize_lvol_bdev is deprecated
                 volumeGroup + File.separator + vlmId,
-                String.valueOf(size/1024), // KiB
+                String.valueOf(
+                    SizeConv.convert(size, SizeUnit.UNIT_KiB, SizeUnit.UNIT_MiB)
+                ),
             },
             "Failed to resize lvol bdev",
             "Failed to resize lvol bdev '" + vlmId + "' in lvol store '" + volumeGroup + "' to size " + size
@@ -163,7 +171,7 @@ public class SpdkCommands
             new String[]
             {
                 SPDK_RPC_SCRIPT,
-                "rename_lvol_bdev",
+                "bdev_lvol_rename", // rename_lvol_bdev is deprecated
                 volumeGroup + File.separator + vlmCurrentId,
                 vlmNewId
             },
@@ -208,7 +216,7 @@ public class SpdkCommands
                 "--trtype",
                 type
             },
-            "Failed to create transport'" + type,
+            "Failed to create transport '" + type + "'",
             "Failed to create transport '" + type + "'",
             new Commands.SkipExitCodeRetryHandler()
             {
@@ -243,8 +251,8 @@ public class SpdkCommands
             extCmd,
             new String[]
             {
-                    SPDK_RPC_SCRIPT,
-                    "get_nvmf_subsystems"
+                SPDK_RPC_SCRIPT,
+                "nvmf_get_subsystems"// get_nvmf_subsystems is deprecated
             },
             "Failed to query nvmf subsystems",
             "Failed to query nvmf subsystems"
@@ -262,7 +270,7 @@ public class SpdkCommands
                 new String[]
                 {
                     SPDK_RPC_SCRIPT,
-                    "construct_nvme_bdev",
+                    "bdev_nvme_attach_controller", // construct_nvme_bdev is deprecate
                     "--trtype", "PCIe",
                     "--traddr", pciAddress,
                     "--name", pciAddress
@@ -284,7 +292,7 @@ public class SpdkCommands
                 new String[]
                 {
                     SPDK_RPC_SCRIPT,
-                    "construct_raid_bdev",
+                    "bdev_raid_create", // construct_raid_bdev is deprecated
                     "--name", raidBdevName,
                     "--raid-level", "0", // SPDK v19.07 supports only RAID 0
                     "--strip-size_kb", "64",
@@ -308,7 +316,7 @@ public class SpdkCommands
                 new String[]
                 {
                     SPDK_RPC_SCRIPT,
-                    "construct_lvol_store",
+                    "bdev_lvol_create_lvstore", // construct_lvol_store is deprecated
                     bdevName,
                     lvolStoreName
                 },
@@ -328,7 +336,7 @@ public class SpdkCommands
                 new String[]
                 {
                     SPDK_RPC_SCRIPT,
-                    "delete_nvme_controller",
+                    "bdev_nvme_detach_controller", // delete_nvme_controller is deprecated
                     controllerName
                 },
         "Failed to remove nvme bdev",
@@ -347,7 +355,7 @@ public class SpdkCommands
                 new String[]
                 {
                     SPDK_RPC_SCRIPT,
-                    "destroy_raid_bdev",
+                    "bdev_raid_delete", // destroy_raid_bdev is deprecated
                     raidBdevName
                 },
                 "Failed to remove RAID nvme bdev",
@@ -366,7 +374,7 @@ public class SpdkCommands
                 new String[]
                 {
                     SPDK_RPC_SCRIPT,
-                    "destroy_lvol_store",
+                    "bdev_lvol_delete_lvstore", // destroy_lvol_store is deprecated
                     "-l",
                     lvolStoreName
                 },
@@ -385,7 +393,7 @@ public class SpdkCommands
                 new String[]
                 {
                     SPDK_RPC_SCRIPT,
-                    "get_raid_bdevs",
+                    "bdev_raid_get_bdevs", // get_raid_bdevs is deprecated
                     "all"
                 },
                 "Failed to read RAID bdevs",

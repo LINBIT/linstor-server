@@ -6,11 +6,8 @@ import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdUtils;
-import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.StringUtils;
-
-import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -173,32 +170,19 @@ public class Commands
     )
         throws StorageException
     {
-        long sizeKiB;
-        if (devicePath.startsWith(SPDK_PATH_PREFIX))
-        {
-            sizeKiB = SpdkUtils.getBlockSizeByName(extCmd, devicePath.split(SPDK_PATH_PREFIX)[1]);
-        }
-        else
-        {
-            OutputData output = genericExecutor(
-                extCmd,
-                new String[]
-                {
-                    "blockdev",
-                    "--getsize64",
-                    devicePath
-                },
-                "Failed to get block size of " + devicePath,
-                "Failed to get block size of " + devicePath
-            );
-            String outRaw = new String(output.stdoutData);
-            sizeKiB = SizeConv.convert(
-                Long.parseLong(outRaw.trim()),
-                SizeUnit.UNIT_B,
-                SizeUnit.UNIT_KiB
-            );
-        }
-        return sizeKiB;
+        OutputData output = genericExecutor(
+            extCmd,
+            new String[] { "blockdev", "--getsize64", devicePath
+            },
+            "Failed to get block size of " + devicePath,
+            "Failed to get block size of " + devicePath
+        );
+        String outRaw = new String(output.stdoutData);
+        return SizeConv.convert(
+            Long.parseLong(outRaw.trim()),
+            SizeUnit.UNIT_B,
+            SizeUnit.UNIT_KiB
+        );
     }
 
     public static class NoRetryHandler implements RetryHandler

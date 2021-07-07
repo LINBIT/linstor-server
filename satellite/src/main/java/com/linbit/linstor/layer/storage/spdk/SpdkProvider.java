@@ -1,6 +1,8 @@
 package com.linbit.linstor.layer.storage.spdk;
 
 import com.linbit.ImplementationError;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
@@ -95,6 +97,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             snapShipMrgRef,
             extToolsCheckerRef
         );
+        isDevPathExpectedToBeNull = true;
     }
 
     @Inject
@@ -123,6 +126,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             snapShipMrgRef,
             extToolsCheckerRef
         );
+
+        isDevPathExpectedToBeNull = true;
     }
 
     @Override
@@ -138,7 +143,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         combinedList.addAll(vlmDataList);
         combinedList.addAll(snapshots);
 
-        for (SpdkData<?> vlmData : snapshots)
+        for (SpdkData<?> vlmData : combinedList)
         {
 
             final LvsInfo info = infoListCache.get(getFullQualifiedIdentifier(vlmData));
@@ -205,18 +210,22 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             vlmData.setExists(false);
             vlmData.setVolumeGroup(extractVolumeGroup(vlmData));
             vlmData.setDevicePath(null);
+            vlmData.setIdentifier(null);
             vlmData.setAllocatedSize(-1);
             // vlmData.setUsableSize(-1);
-            vlmData.setDevicePath(null);
         }
         else
         {
             vlmData.setExists(true);
             vlmData.setVolumeGroup(info.volumeGroup);
-            vlmData.setDevicePath(info.path);
+            vlmData.setDevicePath(null); // if devicePath != null DevHandler will ask udev to get symlinks
+            // pointing to that devPath which will fail
+            vlmData.setSpdkPath(info.path);
             vlmData.setIdentifier(info.identifier);
-            vlmData.setAllocatedSize(info.size);
-            vlmData.setUsableSize(info.size);
+
+            long size = SizeConv.convert(info.size, SizeUnit.UNIT_B, SizeUnit.UNIT_KiB);
+            vlmData.setAllocatedSize(size);
+            vlmData.setUsableSize(size);
         }
     }
 
@@ -297,7 +306,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             asLvIdentifier(vlmData)
         );
 
-        String devicePath = vlmData.getDevicePath();
+        String devicePath = vlmData.getSpdkPath();
         // devicePath is the "current" devicePath. as we will rename it right now
         // we will have to adjust the devicePath
         int lastIndexOf = devicePath.lastIndexOf(oldSpdkId);
@@ -457,6 +466,15 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         return null;
     }
 
+    @Override
+    protected long getAllocatedSize(SpdkData<Resource> vlmDataRef) throws StorageException
+    {
+        return SpdkUtils.getBlockSizeByName(
+            extCmdFactory.create(),
+            vlmDataRef.getSpdkPath().split(SPDK_PATH_PREFIX)[1]
+        );
+    }
+
     private Set<String> getAffectedVolumeGroups(
         Collection<SpdkData<Resource>> vlmDataList,
         Collection<SpdkData<Snapshot>> snapVlms
@@ -492,7 +510,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     @Override
     protected void setDevicePath(SpdkData<Resource> vlmData, String devPath) throws DatabaseException
     {
-        vlmData.setDevicePath(devPath);
+        vlmData.setSpdkPath(devPath);
     }
 
     @Override
