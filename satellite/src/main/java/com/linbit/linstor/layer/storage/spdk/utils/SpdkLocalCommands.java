@@ -4,6 +4,8 @@ import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
@@ -13,15 +15,48 @@ import com.linbit.utils.StringUtils;
 import static com.linbit.linstor.layer.storage.utils.Commands.genericExecutor;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 
-public class SpdkCommands
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class SpdkLocalCommands implements SpdkCommands<OutputData>
 {
     // requires "/usr/bin/rpc.py" symlink to "spdk/scripts/rpc.py" script in host OS
     public static final String SPDK_RPC_SCRIPT = "rpc.py";
 
-    private SpdkCommands()
+    private final ExtCmdFactory extCmdFactory;
+
+    public SpdkLocalCommands(ExtCmdFactory extCmdFactoryRef)
     {
+        extCmdFactory = extCmdFactoryRef;
+    }
+
+    @Override
+    public Iterator<JsonNode> getJsonElements(OutputData output)
+        throws StorageException
+    {
+        JsonNode rootNode = null;
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try
+        {
+            rootNode = objectMapper.readTree(output.stdoutData);
+        }
+        catch (IOException ioExc)
+        {
+            throw new StorageException("I/O error while parsing SPDK response");
+        }
+
+        return rootNode.elements();
+    }
+
+    @Override
+    public OutputData lvs() throws StorageException
+    {
+        return lvs(extCmdFactory.create());
     }
 
     public static OutputData lvs(ExtCmd extCmd) throws StorageException
@@ -36,6 +71,12 @@ public class SpdkCommands
             "Failed to list bdevs",
             "Failed to query 'get_bdevs' info"
         );
+    }
+
+    @Override
+    public OutputData lvsByName(String name) throws StorageException
+    {
+        return lvsByName(extCmdFactory.create(), name);
     }
 
     public static OutputData lvsByName(ExtCmd extCmd, String name) throws StorageException
@@ -53,6 +94,12 @@ public class SpdkCommands
         );
     }
 
+    @Override
+    public OutputData getLvolStores() throws StorageException
+    {
+        return getLvolStores(extCmdFactory.create());
+    }
+
     public static OutputData getLvolStores(ExtCmd extCmd) throws StorageException
     {
         return genericExecutor(
@@ -65,6 +112,18 @@ public class SpdkCommands
             "Failed to query lvol stores extent size",
             "Failed to query extent size of volume group(s)"
         );
+    }
+
+    @Override
+    public OutputData createFat(
+        String volumeGroup,
+        String vlmId,
+        long size,
+        String... additionalParameters
+    )
+        throws StorageException
+    {
+        return createFat(extCmdFactory.create(), volumeGroup, vlmId, size, additionalParameters);
     }
 
     public static OutputData createFat(
@@ -92,6 +151,18 @@ public class SpdkCommands
             "Failed to create new lvol bdev'" + vlmId + "' in lovl store '" + volumeGroup +
                 "' with size " + size + "mb"
         );
+    }
+
+    public OutputData createThin(
+        String volumeGroup,
+        String thinPoolName,
+        String vlmId,
+        long size,
+        String... additionalParameters
+    )
+        throws StorageException
+    {
+        return createThin(extCmdFactory.create(), volumeGroup, thinPoolName, vlmId, size, additionalParameters);
     }
 
     public static OutputData createThin(
@@ -126,6 +197,13 @@ public class SpdkCommands
         );
     }
 
+    @Override
+    public OutputData delete(String volumeGroup, String vlmId)
+        throws StorageException
+    {
+        return delete(extCmdFactory.create(), volumeGroup, vlmId);
+    }
+
     public static OutputData delete(ExtCmd extCmd, String volumeGroup, String vlmId)
         throws StorageException
     {
@@ -141,6 +219,13 @@ public class SpdkCommands
             "Failed to delete lvm volume '" + vlmId + "' from volume group '" + volumeGroup,
             new RetryIfDeviceBusy()
         );
+    }
+
+    @Override
+    public OutputData resize(String volumeGroup, String vlmId, long size)
+        throws StorageException
+    {
+        return resize(extCmdFactory.create(), volumeGroup, vlmId, size);
     }
 
     public static OutputData resize(ExtCmd extCmd, String volumeGroup, String vlmId, long size)
@@ -160,6 +245,13 @@ public class SpdkCommands
             "Failed to resize lvol bdev",
             "Failed to resize lvol bdev '" + vlmId + "' in lvol store '" + volumeGroup + "' to size " + size
         );
+    }
+
+    @Override
+    public OutputData rename(String volumeGroup, String vlmCurrentId, String vlmNewId)
+        throws StorageException
+    {
+        return rename(extCmdFactory.create(), volumeGroup, vlmCurrentId, vlmNewId);
     }
 
     public static OutputData rename(ExtCmd extCmd, String volumeGroup, String vlmCurrentId, String vlmNewId)
@@ -203,6 +295,13 @@ public class SpdkCommands
         );
     }
 
+    @Override
+    public OutputData createTransport(String type)
+        throws StorageException
+    {
+        return createTransport(extCmdFactory.create(), type);
+    }
+
     public static OutputData createTransport(ExtCmd extCmd, String type)
         throws StorageException
     {
@@ -243,6 +342,12 @@ public class SpdkCommands
         );
     }
 
+    @Override
+    public OutputData getNvmfSubsystems() throws StorageException
+    {
+        return getNvmfSubsystems(extCmdFactory.create());
+    }
+
     public static OutputData getNvmfSubsystems(ExtCmd extCmd) throws StorageException
     {
         return genericExecutor(
@@ -257,10 +362,7 @@ public class SpdkCommands
         );
     }
 
-    public static OutputData nvmeBdevCreate(
-        ExtCmd extCmd,
-        String pciAddress
-    )
+    public static OutputData nvmeBdevCreate(ExtCmd extCmd, String pciAddress)
         throws StorageException
     {
         return genericExecutor(
@@ -323,10 +425,7 @@ public class SpdkCommands
         );
     }
 
-    public static OutputData nvmeBdevRemove(
-        ExtCmd extCmd,
-        String controllerName
-    )
+    public static OutputData nvmeBdevRemove(ExtCmd extCmd, String controllerName)
         throws StorageException
     {
         return genericExecutor(
@@ -342,10 +441,7 @@ public class SpdkCommands
         );
     }
 
-    public static OutputData nvmeRaidBdevRemove(
-        ExtCmd extCmd,
-        String raidBdevName
-    )
+    public static OutputData nvmeRaidBdevRemove(ExtCmd extCmd, String raidBdevName)
         throws StorageException
     {
         return genericExecutor(
@@ -361,10 +457,7 @@ public class SpdkCommands
         );
     }
 
-    public static OutputData lvolStoreRemove(
-        ExtCmd extCmd,
-        String lvolStoreName
-    )
+    public static OutputData lvolStoreRemove(ExtCmd extCmd, String lvolStoreName)
         throws StorageException
     {
         return genericExecutor(
@@ -380,9 +473,7 @@ public class SpdkCommands
         );
     }
 
-    public static OutputData listRaidBdevsAll(
-        ExtCmd extCmd
-    )
+    public static OutputData listRaidBdevsAll(ExtCmd extCmd)
         throws StorageException
     {
         return genericExecutor(

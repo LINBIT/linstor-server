@@ -27,7 +27,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.ExceptionThrowingBiFunction;
 
-import static com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import javax.inject.Inject;

@@ -3,12 +3,11 @@ package com.linbit.linstor.layer.storage.spdk.utils;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
-import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.storage.StorageException;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SpdkUtils
 {
@@ -75,15 +73,15 @@ public class SpdkUtils
         }
     }
 
-    public static HashMap<String, LvsInfo> getLvsInfo(
-        final ExtCmd ec,
+    public static <T> HashMap<String, LvsInfo> getLvsInfo(
+        final SpdkCommands<T> spdkCommands,
         final Set<String> volumeGroups
     )
         throws StorageException
     {
         final HashMap<String, LvsInfo> infoByIdentifier = new HashMap<>();
 
-        Iterator<JsonNode> elements = getJsonElements(SpdkCommands.lvs(ec));
+        Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.lvs());
         while (elements.hasNext())
         {
             JsonNode element = elements.next();
@@ -91,7 +89,7 @@ public class SpdkUtils
             if (element.path(SPDK_PRODUCK_NAME).asText().equals(SPDK_LOGICAL_VOLUME))
             {
                 final String vgStr = SpdkUtils.getVgNameFromUuid(
-                    ec,
+                    spdkCommands,
                     element.path(SPDK_DRIVER_SPECIFIC).path(SPDK_LVOL).path(SPDK_LVOL_STORE_UUID).asText()
                 );
                 if (volumeGroups.contains(vgStr))
@@ -129,11 +127,12 @@ public class SpdkUtils
         return infoByIdentifier;
     }
 
-    public static Map<String, Long> getExtentSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
+    public static <T> Map<String, Long> getExtentSize(SpdkCommands<T> spdkCommands, Set<String> volumeGroups)
+        throws StorageException
     {
         final Map<String, Long> result = new HashMap<>();
 
-        Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
+        Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.getLvolStores());
         while (elements.hasNext())
         {
             JsonNode element = elements.next();
@@ -148,9 +147,9 @@ public class SpdkUtils
         return result;
     }
 
-    public static Long getBlockSizeByName(ExtCmd extCmd, String name) throws StorageException
+    public static <T> Long getBlockSizeByName(final SpdkCommands<T> spdkCommands, String name) throws StorageException
     {
-        Iterator<JsonNode> elements = getJsonElements(SpdkCommands.lvsByName(extCmd, name));
+        Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.lvsByName(name));
         while (elements.hasNext())
         {
             JsonNode element = elements.next();
@@ -159,11 +158,12 @@ public class SpdkUtils
         throw new StorageException("Volume not found: " + name);
     }
 
-    public static Map<String, Long> getVgTotalSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
+    public static <T> Map<String, Long> getVgTotalSize(final SpdkCommands<T> spdkCommands, Set<String> volumeGroups)
+        throws StorageException
     {
         final Map<String, Long> result = new HashMap<>();
 
-        Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
+        Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.getLvolStores());
         while (elements.hasNext())
         {
             JsonNode element = elements.next();
@@ -182,11 +182,12 @@ public class SpdkUtils
         return result;
     }
 
-    public static Map<String, Long> getVgFreeSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
+    public static <T> Map<String, Long> getVgFreeSize(final SpdkCommands<T> spdkCommands, Set<String> volumeGroups)
+        throws StorageException
     {
         final Map<String, Long> result = new HashMap<>();
 
-        Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
+        Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.getLvolStores());
         while (elements.hasNext())
         {
             JsonNode element = elements.next();
@@ -205,11 +206,11 @@ public class SpdkUtils
         return result;
     }
 
-    public static void checkVgExists(ExtCmd extCmd, String volumeGroup) throws StorageException
+    public static <T> void checkVgExists(final SpdkCommands<T> spdkCommands, String volumeGroup) throws StorageException
     {
         boolean found = false;
 
-        Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
+        Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.getLvolStores());
         while (elements.hasNext())
         {
             JsonNode element = elements.next();
@@ -226,10 +227,10 @@ public class SpdkUtils
         }
     }
 
-    public static String getVgNameFromUuid(ExtCmd extCmd, String volumeGroup) throws StorageException
+    public static <T> String getVgNameFromUuid(SpdkCommands<T> spdkCommands, String volumeGroup) throws StorageException
     {
         String vgName = null;
-        Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getLvolStores(extCmd));
+        Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.getLvolStores());
         while (elements.hasNext())
         {
             JsonNode element = elements.next();
@@ -247,10 +248,10 @@ public class SpdkUtils
         return vgName;
     }
 
-    public static boolean checkTargetExists(ExtCmd extCmd, String nqn) throws StorageException
+    public static <T> boolean checkTargetExists(final SpdkCommands<T> spdkCommands, String nqn) throws StorageException
     {
         boolean targetExists = false;
-        Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getNvmfSubsystems(extCmd));
+        Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.getNvmfSubsystems());
         while (elements.hasNext() && !targetExists)
         {
             JsonNode element = elements.next();
@@ -263,10 +264,11 @@ public class SpdkUtils
         return targetExists;
     }
 
-    public static boolean checkNamespaceExists(ExtCmd extCmd, String nqn, int nsid) throws StorageException
+    public static <T> boolean checkNamespaceExists(final SpdkCommands<T> spdkCommands, String nqn, int nsid)
+        throws StorageException
     {
         boolean namespaceExists = false;
-        Iterator<JsonNode> elements = getJsonElements(SpdkCommands.getNvmfSubsystems(extCmd));
+        Iterator<JsonNode> elements = spdkCommands.getJsonElements(spdkCommands.getNvmfSubsystems());
         while (elements.hasNext() && !namespaceExists)
         {
             JsonNode element = elements.next();
@@ -285,24 +287,6 @@ public class SpdkUtils
             }
         }
         return namespaceExists;
-    }
-
-    private static Iterator<JsonNode> getJsonElements(OutputData output)
-        throws StorageException
-    {
-        JsonNode rootNode = null;
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        try
-        {
-            rootNode = objectMapper.readTree(output.stdoutData);
-        }
-        catch (IOException ioExc)
-        {
-            throw new StorageException("I/O error while parsing SPDK response");
-        }
-
-        return rootNode.elements();
     }
 
     public static List<String> lspci(ExtCmd extCmd)

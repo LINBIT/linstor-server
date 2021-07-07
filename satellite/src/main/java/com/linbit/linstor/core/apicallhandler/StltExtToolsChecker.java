@@ -14,7 +14,7 @@ import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
-import static com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

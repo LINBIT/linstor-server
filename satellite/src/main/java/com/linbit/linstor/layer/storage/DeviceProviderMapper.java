@@ -8,7 +8,7 @@ import com.linbit.linstor.layer.storage.file.FileProvider;
 import com.linbit.linstor.layer.storage.file.FileThinProvider;
 import com.linbit.linstor.layer.storage.lvm.LvmProvider;
 import com.linbit.linstor.layer.storage.lvm.LvmThinProvider;
-import com.linbit.linstor.layer.storage.spdk.SpdkProvider;
+import com.linbit.linstor.layer.storage.spdk.SpdkLocalProvider;
 import com.linbit.linstor.layer.storage.zfs.ZfsProvider;
 import com.linbit.linstor.layer.storage.zfs.ZfsThinProvider;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -29,7 +29,7 @@ public class DeviceProviderMapper
     private final DisklessProvider disklessProvider;
     private final FileProvider fileProvider;
     private final FileThinProvider fileThinProvider;
-    private final SpdkProvider spdkProvider;
+    private final SpdkLocalProvider spdkLocalProvider;
     private final ExosProvider exosProvider;
     private final List<DeviceProvider> driverList;
 
@@ -42,7 +42,7 @@ public class DeviceProviderMapper
         DisklessProvider disklessProviderRef,
         FileProvider fileProviderRef,
         FileThinProvider fileThinProviderRef,
-        SpdkProvider spdkProviderRef,
+        SpdkLocalProvider spdkLocalProviderRef,
         ExosProvider exosProviderRef
     )
     {
@@ -53,7 +53,7 @@ public class DeviceProviderMapper
         disklessProvider = disklessProviderRef;
         fileProvider = fileProviderRef;
         fileThinProvider = fileThinProviderRef;
-        spdkProvider = spdkProviderRef;
+        spdkLocalProvider = spdkLocalProviderRef;
         exosProvider = exosProviderRef;
 
         driverList = Arrays.asList(
@@ -64,7 +64,7 @@ public class DeviceProviderMapper
             disklessProvider,
             fileProvider,
             fileThinProvider,
-            spdkProvider,
+            spdkLocalProvider,
             exosProvider
         );
     }
@@ -106,7 +106,7 @@ public class DeviceProviderMapper
                 devProvider = fileThinProvider;
                 break;
             case SPDK:
-                devProvider = spdkProvider;
+                devProvider = spdkLocalProvider;
                 break;
             case EXOS:
                 devProvider = exosProvider;

@@ -6,7 +6,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
-import com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands;
+import com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands;
+import com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
@@ -108,7 +109,7 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(createZPool(devicePaths, raidLevel, poolName));
                 break;
             case SPDK:
-                apiCallRc.addEntries(createSPDKPool(devicePaths, poolName));
+                apiCallRc.addEntries(createSpdkLocalPool(devicePaths, poolName));
                 break;
 
             case EXOS: // for now, fall-through, might change in future
@@ -361,7 +362,7 @@ public class DevicePoolHandler
         return apiCallRc;
     }
 
-    private ApiCallRc createSPDKPool(final List<String> pciAddresses, final String poolName)
+    private ApiCallRc createSpdkLocalPool(final List<String> pciAddresses, final String poolName)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
@@ -370,8 +371,12 @@ public class DevicePoolHandler
             List<String> nvmeBdevs = new ArrayList<>();
             for (final String pciAddress : pciAddresses)
             {
-                final String bdev_name = new String(SpdkCommands.nvmeBdevCreate(
-                    extCmdFactory.create(), pciAddress).stdoutData).trim();
+                final String bdev_name = new String(
+                    SpdkLocalCommands.nvmeBdevCreate(
+                        extCmdFactory.create(),
+                        pciAddress
+                    ).stdoutData
+                ).trim();
                 nvmeBdevs.add(bdev_name);
                 apiCallRc.addEntry(
                     ApiCallRcImpl.entryBuilder(
@@ -385,7 +390,7 @@ public class DevicePoolHandler
 
             if (nvmeBdevs.size() > 1)
             {
-                SpdkCommands.nvmeRaidBdevCreate(extCmdFactory.create(), poolName, nvmeBdevs);
+                SpdkLocalCommands.nvmeRaidBdevCreate(extCmdFactory.create(), poolName, nvmeBdevs);
                 lvolStoreName = poolName;
             }
             else
@@ -393,7 +398,7 @@ public class DevicePoolHandler
                 lvolStoreName = nvmeBdevs.get(0);
             }
 
-            SpdkCommands.lvolStoreCreate(extCmdFactory.create(), lvolStoreName, poolName);
+            SpdkLocalCommands.lvolStoreCreate(extCmdFactory.create(), lvolStoreName, poolName);
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -420,7 +425,7 @@ public class DevicePoolHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            SpdkCommands.lvolStoreRemove(extCmdFactory.create(), poolName);
+            SpdkLocalCommands.lvolStoreRemove(extCmdFactory.create(), poolName);
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -430,10 +435,10 @@ public class DevicePoolHandler
                     .build()
             );
 
-            if (new String(SpdkCommands.listRaidBdevsAll(
+            if (new String(SpdkLocalCommands.listRaidBdevsAll(
                 extCmdFactory.create()).stdoutData).trim().matches("(.*)\\b" + poolName + "\\b(.*)"))
             {
-                SpdkCommands.nvmeRaidBdevRemove(extCmdFactory.create(), poolName);
+                SpdkLocalCommands.nvmeRaidBdevRemove(extCmdFactory.create(), poolName);
                 apiCallRc.addEntry(
                     ApiCallRcImpl.entryBuilder(
                         ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -446,7 +451,7 @@ public class DevicePoolHandler
 
             for (final String pciAddress : pciAddresses)
             {
-                SpdkCommands.nvmeBdevRemove(extCmdFactory.create(), pciAddress);
+                SpdkLocalCommands.nvmeBdevRemove(extCmdFactory.create(), pciAddress);
                 apiCallRc.addEntry(
                     ApiCallRcImpl.entryBuilder(
                         ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,

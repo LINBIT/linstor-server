@@ -4,7 +4,7 @@ import com.linbit.Checks;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.extproc.ExtCmd;
+import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.StorageConstants;
@@ -20,7 +20,7 @@ public class SpdkConfigReader
     {
     }
 
-    public static void checkVolumeGroupEntry(ExtCmd extCmd, Props props)
+    public static <T> void checkVolumeGroupEntry(SpdkCommands<T> spdkCommandsRef, Props props)
         throws StorageException
     {
         String volumeGroup;
@@ -59,7 +59,7 @@ public class SpdkConfigReader
             }
 
             // throws an exception if volume group does not exist
-            SpdkUtils.checkVgExists(extCmd, volumeGroup);
+            SpdkUtils.checkVgExists(spdkCommandsRef, volumeGroup);
         }
     }
 

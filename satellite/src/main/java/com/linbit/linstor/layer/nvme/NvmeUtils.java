@@ -19,7 +19,9 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.types.LsIpAddress;
-import com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands;
+import com.linbit.linstor.layer.storage.DeviceProviderMapper;
+import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
+import com.linbit.linstor.layer.storage.spdk.SpdkLocalProvider;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -40,7 +42,7 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_PREF_NIC;
-import static com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands.SPDK_RPC_SCRIPT;
+import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import javax.inject.Inject;
@@ -88,17 +90,20 @@ public class NvmeUtils
     private final ExtCmdFactory extCmdFactory;
     private final Props stltProps;
     private final ErrorReporter errorReporter;
+    private final DeviceProviderMapper devProviderMapper;
 
     @Inject
     public NvmeUtils(
         ErrorReporter errorReporterRef,
         ExtCmdFactory extCmdFactoryRef,
-        @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef
+        @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef,
+        DeviceProviderMapper devProviderMapperRef
     )
     {
         errorReporter = errorReporterRef;
         extCmdFactory = extCmdFactoryRef;
         stltProps = stltPropsRef;
+        devProviderMapper = devProviderMapperRef;
     }
 
     /* compute methods */
@@ -135,7 +140,8 @@ public class NvmeUtils
                 {
                     transportType = "RDMA";
                 }
-                SpdkCommands.createTransport(extCmdFactory.create(), transportType);
+
+                getSpdkCommands(nvmeRscData).createTransport(transportType);
 
                 String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT, ApiConsts.NAMESPC_NVME);
                 if (port == null)
@@ -256,6 +262,18 @@ public class NvmeUtils
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private SpdkCommands<?> getSpdkCommands(NvmeRscData<Resource> nvmeRscData)
+    {
+        SpdkData<Resource> spdkVlmChild = getSpdkChild(
+            nvmeRscData.getVlmLayerObjects().values().iterator().next()
+        );
+
+        SpdkCommands<?> spdkCommands = ((SpdkLocalProvider) devProviderMapper
+            .getDeviceProviderByKind(spdkVlmChild.getProviderKind()))
+                .getSpdkCommands();
+        return spdkCommands;
     }
 
     /**
@@ -579,7 +597,7 @@ public class NvmeUtils
         {
             try
             {
-                isConfigured = SpdkUtils.checkTargetExists(extCmdFactory.create(), subsystemName);
+                isConfigured = SpdkUtils.checkTargetExists(getSpdkCommands(nvmeRscData), subsystemName);
             }
             catch (StorageException exc)
             {
@@ -815,12 +833,12 @@ public class NvmeUtils
         throws IOException, StorageException, ChildProcessTimeoutException
     {
         if (!SpdkUtils.checkNamespaceExists(
-            extCmdFactory.create(),
+            getSpdkCommands(nvmeVlmData.getRscLayerObject()),
             subsystemName,
             nvmeVlmData.getVlmNr().getValue() + 1
         ))
         {
-            String spdkPath = getSpdkBackingDevice(nvmeVlmData);
+            String spdkPath = getSpdkChild(nvmeVlmData).getSpdkPath();
 
             errorReporter.logDebug("NVMe: exposing device: " + spdkPath);
 
@@ -835,14 +853,14 @@ public class NvmeUtils
         nvmeVlmData.setExists(true);
     }
 
-    private String getSpdkBackingDevice(NvmeVlmData<Resource> nvmeVlmDataRef)
+    private SpdkData<Resource> getSpdkChild(NvmeVlmData<Resource> nvmeVlmDataRef)
     {
         VlmProviderObject<Resource> child = nvmeVlmDataRef.getSingleChild();
         if (!(child instanceof SpdkData))
         {
             throw new ImplementationError("Unexpected type between NVMe and SPDK: " + child.getLayerKind());
         }
-        return ((SpdkData<Resource>) child).getSpdkPath();
+        return (SpdkData<Resource>) child;
     }
 
     /**
@@ -856,7 +874,11 @@ public class NvmeUtils
     {
         final int namespaceNr = nvmeVlmData.getVlmNr().getValue() + 1;
 
-        if (!SpdkUtils.checkNamespaceExists(extCmdFactory.create(), subsystemName, namespaceNr))
+        if (!SpdkUtils.checkNamespaceExists(
+            getSpdkCommands(nvmeVlmData.getRscLayerObject()),
+            subsystemName,
+            namespaceNr
+        ))
         {
             errorReporter.logDebug("NVMe: deleting namespace: " + subsystemName);
             OutputData output = extCmdFactory.create().exec(

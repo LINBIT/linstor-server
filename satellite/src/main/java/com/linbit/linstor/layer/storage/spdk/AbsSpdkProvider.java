@@ -5,7 +5,6 @@ import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.PriorityProps;
-import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -26,7 +25,6 @@ import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.WipeHandler;
-import com.linbit.linstor.layer.storage.spdk.utils.SpdkCommands;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkConfigReader;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.LvsInfo;
@@ -45,9 +43,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
-import javax.inject.Inject;
 import javax.inject.Provider;
-import javax.inject.Singleton;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -58,8 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Singleton
-public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>, SpdkData<Snapshot>>
+public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Resource>, SpdkData<Snapshot>>
 {
     private static final int TOLERANCE_FACTOR = 3;
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
@@ -69,8 +64,9 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     private static final String SPDK_FORMAT_DEV_PATH = SPDK_PATH_PREFIX + "%s/%s";
 
     private static final String DFLT_LVCREATE_TYPE = "linear";
+    private final SpdkCommands<T> spdkCommands;
 
-    protected SpdkProvider(
+    protected AbsSpdkProvider(
         ErrorReporter errorReporter,
         ExtCmdFactoryStlt extCmdFactory,
         AccessContext storDriverAccCtx,
@@ -81,7 +77,8 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         String subTypeDescr,
         DeviceProviderKind subTypeKind,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        SpdkCommands<T> spdkCommandsRef
     )
     {
         super(
@@ -97,36 +94,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             snapShipMrgRef,
             extToolsCheckerRef
         );
-        isDevPathExpectedToBeNull = true;
-    }
-
-    @Inject
-    public SpdkProvider(
-        ErrorReporter errorReporter,
-        ExtCmdFactoryStlt extCmdFactory,
-        @DeviceManagerContext AccessContext storDriverAccCtx,
-        StltConfigAccessor stltConfigAccessor,
-        WipeHandler wipeHandler,
-        Provider<NotificationListener> notificationListenerProvider,
-        Provider<TransactionMgr> transMgrProvider,
-        SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
-    )
-    {
-        super(
-            errorReporter,
-            extCmdFactory,
-            storDriverAccCtx,
-            stltConfigAccessor,
-            wipeHandler,
-            notificationListenerProvider,
-            transMgrProvider,
-            "SPDK",
-            DeviceProviderKind.SPDK,
-            snapShipMrgRef,
-            extToolsCheckerRef
-        );
-
+        spdkCommands = spdkCommandsRef;
         isDevPathExpectedToBeNull = true;
     }
 
@@ -135,7 +103,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         throws StorageException, AccessDeniedException, DatabaseException
     {
         final Map<String, Long> extentSizes = SpdkUtils.getExtentSize(
-            extCmdFactory.create(),
+            spdkCommands,
             getAffectedVolumeGroups(vlmDataList, snapshots)
         );
 
@@ -186,6 +154,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             asIdentifierRaw(vlmDataRef);
     }
 
+    @SuppressWarnings("unchecked")
     protected String asIdentifierRaw(SpdkData<?> vlmData)
     {
         String identifier;
@@ -244,8 +213,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     protected void createLvImpl(SpdkData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
-        SpdkCommands.createFat(
-            extCmdFactory.create(),
+        spdkCommands.createFat(
             vlmData.getVolumeGroup(),
             asLvIdentifier(vlmData),
             vlmData.getExpectedSize(),
@@ -287,8 +255,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     protected void resizeLvImpl(SpdkData<Resource> vlmData)
         throws StorageException, AccessDeniedException
     {
-        SpdkCommands.resize(
-            extCmdFactory.create(),
+        spdkCommands.resize(
             vlmData.getVolumeGroup(),
             asLvIdentifier(vlmData),
             vlmData.getExpectedSize()
@@ -312,8 +279,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         devicePath = devicePath.substring(0, lastIndexOf) + newSpdkId;
         String volumeGroup = vlmData.getVolumeGroup();
 
-        SpdkCommands.rename(
-            extCmdFactory.create(),
+        spdkCommands.rename(
             volumeGroup,
             oldSpdkId,
             newSpdkId
@@ -324,8 +290,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         // SPDK by default wipes a lvol bdev during deletion, unless this option was disabled in lvol store
         try
         {
-            SpdkCommands.delete(
-                extCmdFactory.create(),
+            spdkCommands.delete(
                 volumeGroup,
                 newSpdkId
             );
@@ -346,7 +311,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        Map<String, Long> freeSizes = SpdkUtils.getVgFreeSize(extCmdFactory.create(), changedStoragePoolStrings);
+        Map<String, Long> freeSizes = SpdkUtils.getVgFreeSize(spdkCommands, changedStoragePoolStrings);
         for (String storPool : changedStoragePoolStrings)
         {
             if (!freeSizes.containsKey(storPool))
@@ -365,7 +330,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         throws StorageException, AccessDeniedException
     {
         return SpdkUtils.getLvsInfo(
-            extCmdFactory.create(),
+            spdkCommands,
             getAffectedVolumeGroups(vlmDataList, snapVlms)
         );
     }
@@ -437,11 +402,11 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             throw new StorageException("Unset volume group for " + storPool);
         }
         Long capacity = SpdkUtils.getVgTotalSize(
-            extCmdFactory.create(),
+            spdkCommands,
             Collections.singleton(vg)
         ).get(vg);
         Long freespace = SpdkUtils.getVgFreeSize(
-            extCmdFactory.create(),
+            spdkCommands,
             Collections.singleton(vg)
         ).get(vg);
 
@@ -460,7 +425,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
         );
-        SpdkConfigReader.checkVolumeGroupEntry(extCmdFactory.create(), props);
+        SpdkConfigReader.checkVolumeGroupEntry(spdkCommands, props);
         SpdkConfigReader.checkToleranceFactor(props);
         return null;
     }
@@ -469,7 +434,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     protected long getAllocatedSize(SpdkData<Resource> vlmDataRef) throws StorageException
     {
         return SpdkUtils.getBlockSizeByName(
-            extCmdFactory.create(),
+            spdkCommands,
             vlmDataRef.getSpdkPath().split(SPDK_PATH_PREFIX)[1]
         );
     }
@@ -534,5 +499,10 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     protected String getStorageName(SpdkData<Resource> vlmDataRef) throws DatabaseException
     {
         return vlmDataRef.getVolumeGroup();
+    }
+
+    public SpdkCommands<?> getSpdkCommands()
+    {
+        return spdkCommands;
     }
 }
