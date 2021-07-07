@@ -66,7 +66,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
     public static final String FORMAT_RSC_TO_SPDK_ID = "%s%s_%05d";
     public static final String FORMAT_SNAP_TO_SPDK_ID = FORMAT_RSC_TO_SPDK_ID + "_%s";
     private static final String FORMAT_SPDK_ID_WIPE_IN_PROGRESS = "%s-linstor_wiping_in_progress";
-    private static final String SPDK_FORMAT_DEV_PATH = SPDK_PATH_PREFIX+"%s/%s";
+    private static final String SPDK_FORMAT_DEV_PATH = SPDK_PATH_PREFIX + "%s/%s";
 
     private static final String DFLT_LVCREATE_TYPE = "linear";
 
@@ -163,8 +163,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
                     {
                         Size sizeState = Size.TOO_LARGE;
 
-                        final long toleratedSize =
-                            expectedSize + extentSizes.get(info.volumeGroup) * TOLERANCE_FACTOR;
+                        final long toleratedSize = expectedSize + extentSizes.get(info.volumeGroup) * TOLERANCE_FACTOR;
                         if (actualSize < toleratedSize)
                         {
                             sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
@@ -414,7 +413,7 @@ public class SpdkProvider extends AbsStorageProvider<LvsInfo, SpdkData<Resource>
             volumeGroup = DeviceLayerUtils.getNamespaceStorDriver(
                 storPool.getProps(storDriverAccCtx)
             )
-            .getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY).split("/")[0];
+                .getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY).split("/")[0];
         }
         catch (InvalidKeyException | AccessDeniedException exc)
         {

@@ -41,16 +41,15 @@ public class SpdkCommands
     public static OutputData lvsByName(ExtCmd extCmd, String name) throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[]
-                {
-                    SPDK_RPC_SCRIPT,
-                    "bdev_get_bdevs", // get_bdevs is deprecated
-                    "--name",
-                    name
-                },
-                "Failed to list bdevs",
-                "Failed to query 'get_bdevs' info"
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_get_bdevs", // get_bdevs is deprecated
+                "--name", name
+            },
+            "Failed to list bdevs",
+            "Failed to query 'get_bdevs' info"
         );
     }
 
@@ -91,7 +90,7 @@ public class SpdkCommands
             },
             "Failed to create lvol bdev",
             "Failed to create new lvol bdev'" + vlmId + "' in lovl store '" + volumeGroup +
-            "' with size " + size + "mb"
+                "' with size " + size + "mb"
         );
     }
 
@@ -123,7 +122,7 @@ public class SpdkCommands
             ),
             "Failed to create lvol bdev",
             "Failed to create new lvol bdev'" + vlmId + "' in lovl store '" + volumeGroup +
-            "' with size " + size + "mb"
+                "' with size " + size + "mb"
         );
     }
 
@@ -205,7 +204,7 @@ public class SpdkCommands
     }
 
     public static OutputData createTransport(ExtCmd extCmd, String type)
-            throws StorageException
+        throws StorageException
     {
         return genericExecutor(
             extCmd,
@@ -213,8 +212,7 @@ public class SpdkCommands
             {
                 SPDK_RPC_SCRIPT,
                 "nvmf_create_transport",
-                "--trtype",
-                type
+                "--trtype", type
             },
             "Failed to create transport '" + type + "'",
             "Failed to create transport '" + type + "'",
@@ -252,7 +250,7 @@ public class SpdkCommands
             new String[]
             {
                 SPDK_RPC_SCRIPT,
-                "nvmf_get_subsystems"// get_nvmf_subsystems is deprecated
+                "nvmf_get_subsystems" // get_nvmf_subsystems is deprecated
             },
             "Failed to query nvmf subsystems",
             "Failed to query nvmf subsystems"
@@ -260,144 +258,143 @@ public class SpdkCommands
     }
 
     public static OutputData nvmeBdevCreate(
-            ExtCmd extCmd,
-            String pciAddress
+        ExtCmd extCmd,
+        String pciAddress
     )
-            throws StorageException
+        throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[]
-                {
-                    SPDK_RPC_SCRIPT,
-                    "bdev_nvme_attach_controller", // construct_nvme_bdev is deprecate
-                    "--trtype", "PCIe",
-                    "--traddr", pciAddress,
-                    "--name", pciAddress
-                },
-                "Failed to create nvme bdev",
-                "Failed to create new nvme bdev with PCI address '" + pciAddress + "'"
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_nvme_attach_controller", // construct_nvme_bdev is deprecated
+                "--trtype", "PCIe",
+                "--traddr", pciAddress,
+                "--name", pciAddress
+            },
+            "Failed to create nvme bdev",
+            "Failed to create new nvme bdev with PCI address '" + pciAddress + "'"
         );
     }
 
     public static OutputData nvmeRaidBdevCreate(
-            ExtCmd extCmd,
-            String raidBdevName,
-            List<String> baseBdevs
+        ExtCmd extCmd,
+        String raidBdevName,
+        List<String> baseBdevs
     )
-            throws StorageException
+        throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[]
-                {
-                    SPDK_RPC_SCRIPT,
-                    "bdev_raid_create", // construct_raid_bdev is deprecated
-                    "--name", raidBdevName,
-                    "--raid-level", "0", // SPDK v19.07 supports only RAID 0
-                    "--strip-size_kb", "64",
-                    "--base-bdevs", String.join(" ", baseBdevs)
-                },
-                "Failed to create RAID nvme bdev",
-                "Failed to create new RAID nvme bdev '" + raidBdevName + "' from bdevs: " +
-                        String.join(", ", baseBdevs)
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_raid_create", // construct_raid_bdev is deprecated
+                "--name", raidBdevName,
+                "--raid-level", "0", // SPDK v19.07 supports only RAID 0
+                "--strip-size_kb", "64",
+                "--base-bdevs", String.join(" ", baseBdevs)
+            },
+            "Failed to create RAID nvme bdev",
+            "Failed to create new RAID nvme bdev '" + raidBdevName + "' from bdevs: " +
+                String.join(", ", baseBdevs)
         );
     }
 
     public static OutputData lvolStoreCreate(
-            ExtCmd extCmd,
-            String bdevName,
-            String lvolStoreName
+        ExtCmd extCmd,
+        String bdevName,
+        String lvolStoreName
     )
-            throws StorageException
+        throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[]
-                {
-                    SPDK_RPC_SCRIPT,
-                    "bdev_lvol_create_lvstore", // construct_lvol_store is deprecated
-                    bdevName,
-                    lvolStoreName
-                },
-                "Failed to create lvol store",
-                "Failed to create new lvol store '" + lvolStoreName + "' on bdev '" + bdevName + "'"
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_lvol_create_lvstore", // construct_lvol_store is deprecated
+                bdevName,
+                lvolStoreName
+            },
+            "Failed to create lvol store",
+            "Failed to create new lvol store '" + lvolStoreName + "' on bdev '" + bdevName + "'"
         );
     }
 
     public static OutputData nvmeBdevRemove(
-            ExtCmd extCmd,
-            String controllerName
+        ExtCmd extCmd,
+        String controllerName
     )
-            throws StorageException
+        throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[]
-                {
-                    SPDK_RPC_SCRIPT,
-                    "bdev_nvme_detach_controller", // delete_nvme_controller is deprecated
-                    controllerName
-                },
-        "Failed to remove nvme bdev",
-        "Failed to remove nvme bdev '" + controllerName + "'"
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_nvme_detach_controller", // delete_nvme_controller is deprecated
+                controllerName
+            },
+            "Failed to remove nvme bdev",
+            "Failed to remove nvme bdev '" + controllerName + "'"
         );
     }
 
     public static OutputData nvmeRaidBdevRemove(
-            ExtCmd extCmd,
-            String raidBdevName
+        ExtCmd extCmd,
+        String raidBdevName
     )
-            throws StorageException
+        throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[]
-                {
-                    SPDK_RPC_SCRIPT,
-                    "bdev_raid_delete", // destroy_raid_bdev is deprecated
-                    raidBdevName
-                },
-                "Failed to remove RAID nvme bdev",
-                "Failed to remove RAID nvme bdev '" + raidBdevName + "'"
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_raid_delete", // destroy_raid_bdev is deprecated
+                raidBdevName
+            },
+            "Failed to remove RAID nvme bdev",
+            "Failed to remove RAID nvme bdev '" + raidBdevName + "'"
         );
     }
 
     public static OutputData lvolStoreRemove(
-            ExtCmd extCmd,
-            String lvolStoreName
+        ExtCmd extCmd,
+        String lvolStoreName
     )
-            throws StorageException
+        throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[]
-                {
-                    SPDK_RPC_SCRIPT,
-                    "bdev_lvol_delete_lvstore", // destroy_lvol_store is deprecated
-                    "-l",
-                    lvolStoreName
-                },
-        "Failed to remove lvol store",
-        "Failed to remove lvol store '" + lvolStoreName + "'"
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_lvol_delete_lvstore", // destroy_lvol_store is deprecated
+                "-l", lvolStoreName
+            },
+            "Failed to remove lvol store",
+            "Failed to remove lvol store '" + lvolStoreName + "'"
         );
     }
 
     public static OutputData listRaidBdevsAll(
-            ExtCmd extCmd
+        ExtCmd extCmd
     )
-            throws StorageException
+        throws StorageException
     {
         return genericExecutor(
-                extCmd,
-                new String[]
-                {
-                    SPDK_RPC_SCRIPT,
-                    "bdev_raid_get_bdevs", // get_raid_bdevs is deprecated
-                    "all"
-                },
-                "Failed to read RAID bdevs",
-                "Failed to read RAID bdevs"
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_raid_get_bdevs", // get_raid_bdevs is deprecated
+                "all"
+            },
+            "Failed to read RAID bdevs",
+            "Failed to read RAID bdevs"
         );
     }
 }

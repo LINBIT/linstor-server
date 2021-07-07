@@ -129,7 +129,6 @@ public class SpdkUtils
         return infoByIdentifier;
     }
 
-
     public static Map<String, Long> getExtentSize(ExtCmd extCmd, Set<String> volumeGroups) throws StorageException
     {
         final Map<String, Long> result = new HashMap<>();
@@ -142,7 +141,7 @@ public class SpdkUtils
             {
                 result.put(
                     element.path(SPDK_NAME).asText(),
-                    element.path(SPDK_BLOCK_SIZE).asLong() //in KiB
+                    element.path(SPDK_BLOCK_SIZE).asLong() // in KiB
                 );
             }
         }
@@ -307,15 +306,19 @@ public class SpdkUtils
     }
 
     public static List<String> lspci(ExtCmd extCmd)
-            throws StorageException
+        throws StorageException
     {
         ExtCmd.OutputData outputData = Commands.genericExecutor(
-                extCmd,
-                new String[]{
-                        "lspci", "-mm", "-n", "-D"
-                },
-                "Failed to execute lspci",
-                "Failed to execute lspci"
+            extCmd,
+            new String[]
+            {
+                "lspci",
+                "-mm",
+                "-n",
+                "-D"
+            },
+            "Failed to execute lspci",
+            "Failed to execute lspci"
         );
 
         return parseNvmeDrivesAddresses(new String(outputData.stdoutData, StandardCharsets.UTF_8));

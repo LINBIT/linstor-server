@@ -66,13 +66,15 @@ import java.util.function.Function;
  * Class for processing NvmeRscData
  *
  * @author Rainer Laschober
+ *
  * @since v0.9.6
  */
 @Singleton
 public class NvmeUtils
 {
     public static final String NVME_SUBSYSTEM_PREFIX = "LS-NVMe_";
-    public static final String STANDARD_NVME_SUBSYSTEM_PREFIX = "nqn.2018-02.linbit.linstor:"; // NQN format aligned to the NVMe Spec
+    public static final String STANDARD_NVME_SUBSYSTEM_PREFIX = "nqn.2018-02.linbit.linstor:"; // NQN format aligned to
+                                                                                               // the NVMe Spec
     private static final String NVMET_PATH = "/sys/kernel/config/nvmet/";
     public static final String NVME_SUBSYSTEMS_PATH = NVMET_PATH + "subsystems/";
     private static final String NVME_PORTS_PATH = NVMET_PATH + "ports/";
@@ -99,15 +101,14 @@ public class NvmeUtils
         stltProps = stltPropsRef;
     }
 
-
     /* compute methods */
 
     /**
      * Creates the necessary directories and files for the NVMe subsystem and namespaces
      * depending on the {@link NvmeRscData} and {@link NvmeVlmData}.
      *
-     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
-     * @param accCtx        AccessContext needed to access properties and the IP address
+     * @param nvmeRscData NvmeRscData object containing all needed information for this method
+     * @param accCtx AccessContext needed to access properties and the IP address
      */
     public void createTargetRsc(NvmeRscData<Resource> nvmeRscData, AccessContext accCtx)
         throws StorageException
@@ -240,7 +241,7 @@ public class NvmeUtils
                         "-s",
                         subsystemDirectory,
                         NVME_PORTS_PATH + portIdx + "/subsystems/" + subsystemName
-                        ),
+                    ),
                     StorageException::new,
                     "Failed to create symbolic link!"
                 );
@@ -260,8 +261,8 @@ public class NvmeUtils
     /**
      * Reverses the operations executed by createTargetRsc(), thus deleting the data on the NVMe Target
      *
-     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
-     * @param accCtx        AccessContext needed to access properties and the IP address
+     * @param nvmeRscData NvmeRscData object containing all needed information for this method
+     * @param accCtx AccessContext needed to access properties and the IP address
      */
     public void deleteTargetRsc(NvmeRscData<Resource> nvmeRscData, AccessContext accCtx)
         throws StorageException
@@ -407,11 +408,13 @@ public class NvmeUtils
         );
     }
 
-    public <
-        VLM_DATA extends VlmProviderObject<Resource>,
-        RSC_DATA extends AbsRscData<Resource, VLM_DATA>>
-        void connect(RSC_DATA rscData, String subsystemName, String ipAddr, AccessContext accCtx)
-            throws StorageException
+    public <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void connect(
+        RSC_DATA rscData,
+        String subsystemName,
+        String ipAddr,
+        AccessContext accCtx
+    )
+        throws StorageException
     {
         try
         {
@@ -498,15 +501,14 @@ public class NvmeUtils
         );
     }
 
-    public <
-        VLM_DATA extends VlmProviderObject<Resource>,
-        RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void disconnect(
-            RSC_DATA rscData,
-            String subsystemName,
-            BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
-            BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
-            Function<VLM_DATA, String> getDevPathVlmFunc
-        ) throws StorageException
+    public <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void disconnect(
+        RSC_DATA rscData,
+        String subsystemName,
+        BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
+        BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
+        Function<VLM_DATA, String> getDevPathVlmFunc
+    )
+        throws StorageException
     {
         try
         {
@@ -533,12 +535,10 @@ public class NvmeUtils
         }
     }
 
-    private <
-        VLM_DATA extends VlmProviderObject<Resource>,
-        RSC_DATA extends AbsRscData<Resource, VLM_DATA>> boolean isAnyMounted(
-            RSC_DATA rscData,
-            Function<VLM_DATA, String> getDevPathVlmFunc
-        )
+    private <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> boolean isAnyMounted(
+        RSC_DATA rscData,
+        Function<VLM_DATA, String> getDevPathVlmFunc
+    )
         throws ChildProcessTimeoutException, IOException
     {
         boolean mounted = false;
@@ -564,8 +564,9 @@ public class NvmeUtils
     /**
      * Checks whether the specified subsystem directory exists
      *
-     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
-     * @return              boolean true if the subsystem directory exists and false otherwise
+     * @param nvmeRscData NvmeRscData object containing all needed information for this method
+     *
+     * @return boolean true if the subsystem directory exists and false otherwise
      */
     public boolean isTargetConfigured(NvmeRscData<Resource> nvmeRscData)
     {
@@ -578,7 +579,7 @@ public class NvmeUtils
         {
             try
             {
-                isConfigured = SpdkUtils.checkTargetExists(extCmdFactory.create(),subsystemName);
+                isConfigured = SpdkUtils.checkTargetExists(extCmdFactory.create(), subsystemName);
             }
             catch (StorageException exc)
             {
@@ -597,9 +598,10 @@ public class NvmeUtils
      * Queries NVMe-specific indices for the {@link NvmeRscData} and {@link NvmeVlmData}
      * and stores the result as the device path (for example '/dev/nvme2n1')
      *
-     * @param nvmeRscData   NvmeRscData object containing all needed information for this method
-     * @param isWaiting     boolean true if the external commands should be waited for in loop
-     * @return              boolean true if the data was found and false otherwise
+     * @param nvmeRscData NvmeRscData object containing all needed information for this method
+     * @param isWaiting boolean true if the external commands should be waited for in loop
+     *
+     * @return boolean true if the data was found and false otherwise
      */
     public boolean setDevicePaths(NvmeRscData<Resource> nvmeRscData, boolean isWaiting)
         throws StorageException
@@ -629,17 +631,15 @@ public class NvmeUtils
         );
     }
 
-    public <
-        VLM_DATA extends VlmProviderObject<Resource>,
-        RSC_DATA extends AbsRscData<Resource, VLM_DATA>> boolean setDevicePaths(
-            boolean isWaiting,
-            RSC_DATA rscData,
-            String subsystemName,
-            BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
-            BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
-            BiConsumer<VLM_DATA, String> setDevPathVlmFunc
+    public <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> boolean setDevicePaths(
+        boolean isWaiting,
+        RSC_DATA rscData,
+        String subsystemName,
+        BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
+        BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
+        BiConsumer<VLM_DATA, String> setDevPathVlmFunc
     )
-            throws StorageException
+        throws StorageException
     {
         boolean success = true;
         try
@@ -652,7 +652,9 @@ public class NvmeUtils
             }
             OutputData output = executeCmdAfterWaiting(
                 isWaiting,
-                "/bin/bash", "-c", "grep -H -r -w " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
+                "/bin/bash",
+                "-c",
+                "grep -H -r -w " + subsystemName + " " + NVME_FABRICS_PATH + "*/subsysnqn"
             );
 
             if (output == null)
@@ -675,9 +677,10 @@ public class NvmeUtils
                 {
                     output = executeCmdAfterWaiting(
                         isWaiting,
-                        "/bin/bash", "-c",
+                        "/bin/bash",
+                        "-c",
                         "grep -H -r -w " + (vlmData.getVlmNr().getValue() + 1) + " " +
-                        nvmeFabricsVlmPath + "*n*/nsid"
+                            nvmeFabricsVlmPath + "*n*/nsid"
 
                     );
                     /*
@@ -723,14 +726,12 @@ public class NvmeUtils
         return success;
     }
 
-    private <
-        VLM_DATA extends VlmProviderObject<Resource>,
-        RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void setDeepExists(
-            RSC_DATA rscData,
-            BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
-            BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
-            boolean exists
-        )
+    private <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void setDeepExists(
+        RSC_DATA rscData,
+        BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
+        BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
+        boolean exists
+    )
     {
         setExistsRscFunc.accept(rscData, exists);
         for (VLM_DATA vlmData : rscData.getVlmLayerObjects().values())
@@ -742,6 +743,7 @@ public class NvmeUtils
     /**
      * Sets the exists flag on the given {@link NvmeRscData} as well as on all its child-{@link NvmeVlmData}
      * objects
+     *
      * @param nvmeRscDataRef
      * @param existsRef
      */
@@ -753,7 +755,6 @@ public class NvmeUtils
             nvmeVlmData.setExists(existsRef);
         }
     }
-
 
     /**
      * Creates a new directory for the given file path, sets the appropriate backing device and enables the namespace
@@ -804,7 +805,6 @@ public class NvmeUtils
         nvmeVlmData.setExists(false);
     }
 
-
     /**
      * Creates a new namespace in a SPCK NVMe subsystem
      *
@@ -814,8 +814,11 @@ public class NvmeUtils
     public void createSpdkNamespace(NvmeVlmData<Resource> nvmeVlmData, String subsystemName)
         throws IOException, StorageException, ChildProcessTimeoutException
     {
-        if (!SpdkUtils.checkNamespaceExists(extCmdFactory.create(), subsystemName,
-            nvmeVlmData.getVlmNr().getValue() + 1))
+        if (!SpdkUtils.checkNamespaceExists(
+            extCmdFactory.create(),
+            subsystemName,
+            nvmeVlmData.getVlmNr().getValue() + 1
+        ))
         {
             String spdkPath = getSpdkBackingDevice(nvmeVlmData);
 
@@ -871,13 +874,13 @@ public class NvmeUtils
      * Returns NVMe subsystem prefix depending on {@param NvmeRscData}
      *
      * @param nvmeRscData NvmeRscData, Resource object containing the needed flag for this method
-     * @return          String with NVME subsystem prefix
+     *
+     * @return String with NVME subsystem prefix
      */
     public static String getNvmeSubsystemPrefix(NvmeRscData<?> nvmeRscData)
     {
         return nvmeRscData.isSpdk() ? STANDARD_NVME_SUBSYSTEM_PREFIX : NVME_SUBSYSTEM_PREFIX;
     }
-
 
     /* helper methods */
 
@@ -885,8 +888,9 @@ public class NvmeUtils
      * Executes the given command immediately or waits for its completion, depending on {@param isWaiting}
      *
      * @param isWaiting boolean true if the external commands should be waited for in loop
-     * @param command   String... command being executed
-     * @return          OutputData of the executed command or null if something went wrong
+     * @param command String... command being executed
+     *
+     * @return OutputData of the executed command or null if something went wrong
      */
     private OutputData executeCmdAfterWaiting(boolean isWaiting, String... command)
         throws IOException, ChildProcessTimeoutException, InterruptedException
@@ -903,8 +907,7 @@ public class NvmeUtils
                 Thread.sleep(NVME_GREP_SLEEP_INCREMENT);
                 tries++;
             }
-        }
-        while (!extCmdSuccess && tries < NVME_GREP_SLEEP_MAX_WAIT_TIME);
+        } while (!extCmdSuccess && tries < NVME_GREP_SLEEP_MAX_WAIT_TIME);
 
         if (isWaiting && tries >= NVME_GREP_SLEEP_MAX_WAIT_TIME || !extCmdSuccess)
         {
@@ -916,11 +919,12 @@ public class NvmeUtils
     /**
      * Executes the nvme-discover command and reads the names of available subsystems from the output
      *
-     * @param nvmeRscData   NvmeRscData, object containing needed NVMe subsystem prefix
+     * @param nvmeRscData NvmeRscData, object containing needed NVMe subsystem prefix
      * @param transportType String, only RDMA featured at the moment
-     * @param ipAddr        String, can be IPv4 or IPv6
-     * @param port          String, default: 4420
-     * @return              List<String> of discovered subsystem names
+     * @param ipAddr String, can be IPv4 or IPv6
+     * @param port String, default: 4420
+     *
+     * @return List<String> of discovered subsystem names
      */
     private List<String> discover(
         String subsystemName,
@@ -971,9 +975,10 @@ public class NvmeUtils
      * Queries the resource's net interface for its IP address.
      * If no preferred net interface is configured, the default net interface is assigned
      *
-     * @param rsc       Resource object containing all needed information for this method
-     * @param accCtx    AccessContext needed to access properties and the net interface
-     * @return          {@link LsIpAddress} of the resource's net interface
+     * @param rsc Resource object containing all needed information for this method
+     * @param accCtx AccessContext needed to access properties and the net interface
+     *
+     * @return {@link LsIpAddress} of the resource's net interface
      */
     private LsIpAddress getIpAddr(Resource rsc, AccessContext accCtx)
         throws StorageException, InvalidNameException, AccessDeniedException, InvalidKeyException
@@ -1022,8 +1027,9 @@ public class NvmeUtils
             {
                 throw new StorageException(
                     "The preferred network interface '" + netIfName + "' of node '" +
-                    rscNode.getName() + "' does not exist!"
-                ); // TODO: call checkPrefNic() when rsc.getAssignedNode().getNetInterface(accCtx, new NetInterfaceName(netIfName)) is called
+                        rscNode.getName() + "' does not exist!"
+                ); // TODO: call checkPrefNic() when rsc.getAssignedNode().getNetInterface(accCtx, new
+                   // NetInterfaceName(netIfName)) is called
             }
         }
 
@@ -1033,8 +1039,9 @@ public class NvmeUtils
     /**
      * Retrieves the NVMe-intern port directory index
      *
-     * @param ipAddr    LsIpAddress, can be IPv4 or IPv6
-     * @return          String port index
+     * @param ipAddr LsIpAddress, can be IPv4 or IPv6
+     *
+     * @return String port index
      */
     private String getPortIdx(LsIpAddress ipAddr)
         throws StorageException, IOException, ChildProcessTimeoutException
@@ -1042,7 +1049,9 @@ public class NvmeUtils
         errorReporter.logDebug("NVMe: retrieving port directory index of IP address: " + ipAddr.getAddress());
 
         OutputData output = extCmdFactory.create().exec(
-            "/bin/bash", "-c", "grep -r -H --color=never " + ipAddr.getAddress() + " " + NVME_PORTS_PATH
+            "/bin/bash",
+            "-c",
+            "grep -r -H --color=never " + ipAddr.getAddress() + " " + NVME_PORTS_PATH
         );
 
         String portIdx;
@@ -1054,8 +1063,7 @@ public class NvmeUtils
                 grepPortIdx.indexOf(File.separator, NVME_PORTS_PATH.length() + 1)
             );
         }
-        else
-        if (output.exitCode == 1)
+        else if (output.exitCode == 1)
         {
             portIdx = null;
         }
@@ -1073,6 +1081,7 @@ public class NvmeUtils
      * @param rscData
      *     resource data (of any kind, might be NvmeRscData, but also others) object containing all needed information
      *     for this method
+     *
      * @return boolean true if the resource belongs to SPDK and false otherwise
      */
     public boolean isSpdkResource(AbsRscLayerObject<Resource> rscData)
@@ -1100,9 +1109,10 @@ public class NvmeUtils
     /**
      * Returns target resource associated with initiator resource
      *
-     * @param nvmeRscData   NvmeRscData object containing information needed for this method
-     * @param accCtx        AccessContext needed to access properties
-     * @return              Resource target resource
+     * @param nvmeRscData NvmeRscData object containing information needed for this method
+     * @param accCtx AccessContext needed to access properties
+     *
+     * @return Resource target resource
      */
     public Resource getTargetResource(NvmeRscData<Resource> nvmeRscData, AccessContext accCtx)
         throws AccessDeniedException, StorageException

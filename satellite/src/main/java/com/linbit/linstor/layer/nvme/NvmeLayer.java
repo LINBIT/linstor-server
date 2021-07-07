@@ -42,6 +42,7 @@ import java.util.Set;
  * Class for managing NVMe Target and Initiator
  *
  * @author Rainer Laschober
+ *
  * @since v0.9.6
  */
 @Singleton
@@ -125,8 +126,7 @@ public class NvmeLayer implements DeviceLayer
                 nvmeUtils.disconnect(nvmeRscData);
             }
             // connect
-            else
-            if (!nvmeRscData.exists() &&
+            else if (!nvmeRscData.exists() &&
                 !rscFlags.isSet(sysCtx, Resource.Flags.DELETE) &&
                 !rscFlags.isSet(sysCtx, Resource.Flags.INACTIVE)
             )
@@ -177,8 +177,8 @@ public class NvmeLayer implements DeviceLayer
                 if (nvmeRscData.exists())
                 {
                     // Update volumes
-                    final String subsystemName = NvmeUtils.getNvmeSubsystemPrefix(nvmeRscData)
-                            + nvmeRscData.getSuffixedResourceName();
+                    final String subsystemName = NvmeUtils.getNvmeSubsystemPrefix(nvmeRscData) +
+                        nvmeRscData.getSuffixedResourceName();
                     final String subsystemDirectory = NVME_SUBSYSTEMS_PATH + subsystemName;
 
                     try
