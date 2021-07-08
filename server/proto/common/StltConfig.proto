@@ -19,4 +19,5 @@ message StltConfig
 	string net_bind_address = 10;
 	uint32 net_port = 11;
 	string net_type = 12;
+	bool remote_spdk = 13;
 }

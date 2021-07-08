@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.AccessToDeletedDataException;
@@ -62,6 +60,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.FluxSink;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  *
@@ -975,6 +975,12 @@ public class Node extends BaseTransactionObject
             5,
             Arrays.asList(
                 DeviceProviderKind.OPENFLEX_TARGET
+            )
+        ),
+        REMOTE_SPDK(
+            6,
+            Arrays.asList(
+                DeviceProviderKind.REMOTE_SPDK
             )
         );
 

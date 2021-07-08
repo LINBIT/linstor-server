@@ -64,7 +64,7 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     private static final String SPDK_FORMAT_DEV_PATH = SPDK_PATH_PREFIX + "%s/%s";
 
     private static final String DFLT_LVCREATE_TYPE = "linear";
-    private final SpdkCommands<T> spdkCommands;
+    protected final SpdkCommands<T> spdkCommands;
 
     protected AbsSpdkProvider(
         ErrorReporter errorReporter,
@@ -178,7 +178,7 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
             vlmData.setExists(false);
             vlmData.setVolumeGroup(extractVolumeGroup(vlmData));
             vlmData.setDevicePath(null);
-            vlmData.setIdentifier(null);
+            // vlmData.setIdentifier(null);
             vlmData.setAllocatedSize(-1);
             // vlmData.setUsableSize(-1);
         }
@@ -264,7 +264,7 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
 
     @Override
     protected void deleteLvImpl(SpdkData<Resource> vlmData, String oldSpdkId)
-        throws StorageException, DatabaseException
+        throws StorageException, DatabaseException, AccessDeniedException
     {
         // just make sure to not colide with any other ongoing wipe-lv-name
         String newSpdkId = String.format(
@@ -311,13 +311,21 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        Map<String, Long> freeSizes = SpdkUtils.getVgFreeSize(spdkCommands, changedStoragePoolStrings);
-        for (String storPool : changedStoragePoolStrings)
+        Map<String, Long> freeSizes;
+        try
         {
-            if (!freeSizes.containsKey(storPool))
+            freeSizes = SpdkUtils.getVgFreeSize(spdkCommands, changedStoragePoolStrings);
+            for (String storPool : changedStoragePoolStrings)
             {
-                freeSizes.put(storPool, SIZE_OF_NOT_FOUND_STOR_POOL);
+                if (!freeSizes.containsKey(storPool))
+                {
+                    freeSizes.put(storPool, SIZE_OF_NOT_FOUND_STOR_POOL);
+                }
             }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
         return freeSizes;
     }
@@ -433,10 +441,17 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     @Override
     protected long getAllocatedSize(SpdkData<Resource> vlmDataRef) throws StorageException
     {
-        return SpdkUtils.getBlockSizeByName(
-            spdkCommands,
-            vlmDataRef.getSpdkPath().split(SPDK_PATH_PREFIX)[1]
-        );
+        try
+        {
+            return SpdkUtils.getBlockSizeByName(
+                spdkCommands,
+                vlmDataRef.getSpdkPath().split(SPDK_PATH_PREFIX)[1]
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private Set<String> getAffectedVolumeGroups(

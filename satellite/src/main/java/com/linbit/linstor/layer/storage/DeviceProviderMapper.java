@@ -9,6 +9,7 @@ import com.linbit.linstor.layer.storage.file.FileThinProvider;
 import com.linbit.linstor.layer.storage.lvm.LvmProvider;
 import com.linbit.linstor.layer.storage.lvm.LvmThinProvider;
 import com.linbit.linstor.layer.storage.spdk.SpdkLocalProvider;
+import com.linbit.linstor.layer.storage.spdk.SpdkRemoteProvider;
 import com.linbit.linstor.layer.storage.zfs.ZfsProvider;
 import com.linbit.linstor.layer.storage.zfs.ZfsThinProvider;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -30,6 +31,7 @@ public class DeviceProviderMapper
     private final FileProvider fileProvider;
     private final FileThinProvider fileThinProvider;
     private final SpdkLocalProvider spdkLocalProvider;
+    private final SpdkRemoteProvider spdkRemoteProvider;
     private final ExosProvider exosProvider;
     private final List<DeviceProvider> driverList;
 
@@ -43,6 +45,7 @@ public class DeviceProviderMapper
         FileProvider fileProviderRef,
         FileThinProvider fileThinProviderRef,
         SpdkLocalProvider spdkLocalProviderRef,
+        SpdkRemoteProvider spdkRemoteProviderRef,
         ExosProvider exosProviderRef
     )
     {
@@ -54,6 +57,7 @@ public class DeviceProviderMapper
         fileProvider = fileProviderRef;
         fileThinProvider = fileThinProviderRef;
         spdkLocalProvider = spdkLocalProviderRef;
+        spdkRemoteProvider = spdkRemoteProviderRef;
         exosProvider = exosProviderRef;
 
         driverList = Arrays.asList(
@@ -65,6 +69,7 @@ public class DeviceProviderMapper
             fileProvider,
             fileThinProvider,
             spdkLocalProvider,
+            spdkRemoteProviderRef,
             exosProvider
         );
     }
@@ -107,6 +112,9 @@ public class DeviceProviderMapper
                 break;
             case SPDK:
                 devProvider = spdkLocalProvider;
+                break;
+            case REMOTE_SPDK:
+                devProvider = spdkRemoteProvider;
                 break;
             case EXOS:
                 devProvider = exosProvider;

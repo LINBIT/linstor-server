@@ -9,6 +9,7 @@ import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.StringUtils;
 
@@ -29,9 +30,12 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
 
     private final ExtCmdFactory extCmdFactory;
 
+    private final ObjectMapper objectMapper;
+
     public SpdkLocalCommands(ExtCmdFactory extCmdFactoryRef)
     {
         extCmdFactory = extCmdFactoryRef;
+        objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -39,7 +43,6 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
         throws StorageException
     {
         JsonNode rootNode = null;
-        ObjectMapper objectMapper = new ObjectMapper();
 
         try
         {
@@ -296,10 +299,26 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
     }
 
     @Override
-    public OutputData createTransport(String type)
+    public void ensureTransportExists(String type)
         throws StorageException
     {
-        return createTransport(extCmdFactory.create(), type);
+        Iterator<JsonNode> jsonElements = getJsonElements(getNvmfTransport(extCmdFactory.create()));
+        if (!SpdkRemoteCommands.typeExists(type, jsonElements))
+        {
+            createTransport(extCmdFactory.create(), type);
+        }
+    }
+
+    private OutputData getNvmfTransport(ExtCmd extCmd) throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[]
+            { SPDK_RPC_SCRIPT, "nvmf_get_transports"
+            },
+            "Failed to get nvmf transports",
+            "Failed to get nvmf transports"
+        );
     }
 
     public static OutputData createTransport(ExtCmd extCmd, String type)
@@ -361,6 +380,102 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
             "Failed to query nvmf subsystems"
         );
     }
+
+    @Override
+    public OutputData nvmSubsystemCreate(String subsystemName) throws StorageException, AccessDeniedException
+    {
+        return genericExecutor(
+            extCmdFactory.create(),
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "nvmf_subsystem_create",
+                subsystemName,
+                "--allow-any-host"
+            },
+            "Failed to create subsystem!",
+            "Failed to create subsystem!"
+        );
+    }
+
+    @Override
+    public OutputData nvmfSubsystemAddListener(
+        String subsystemName,
+        String transportType,
+        String address,
+        String addressType,
+        String port
+    )
+        throws StorageException, AccessDeniedException
+    {
+        return genericExecutor(
+            extCmdFactory.create(),
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "nvmf_subsystem_add_listener",
+                subsystemName,
+                "-t", transportType,
+                "-a", address,
+                "-f",addressType,
+                "-s", port
+            },
+            "Failed to add listener to subsystem!",
+            "Failed to add listener to subsystem!"
+        );
+    }
+
+    @Override
+    public OutputData nvmfSubsystemAddNs(String subsystemNameRef, String spdkPath)
+        throws StorageException, AccessDeniedException
+    {
+        return genericExecutor(
+            extCmdFactory.create(),
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "nvmf_subsystem_add_ns",
+                subsystemNameRef,
+                spdkPath
+            },
+            "Failed to create namespace!",
+            "Failed to create namespace!"
+        );
+    }
+
+    @Override
+    public OutputData nvmfDeleteSubsystem(String subsystemName) throws StorageException
+    {
+        return genericExecutor(
+            extCmdFactory.create(),
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "delete_nvmf_subsystem",
+                subsystemName
+            },
+            "Failed to delete subsystem!",
+            "Failed to delete subsystem!"
+        );
+    }
+
+    @Override
+    public OutputData nvmfSubsystemRemoveNamespace(String subsystemName, int namespaceNr)
+        throws StorageException, AccessDeniedException
+    {
+        return genericExecutor(
+            extCmdFactory.create(),
+            new String[] {
+                SPDK_RPC_SCRIPT,
+                "nvmf_subsystem_remove_ns",
+                subsystemName,
+                String.valueOf(namespaceNr)
+            },
+            "Failed to delete namespace!",
+            "Failed to delete namespace!"
+        );
+    }
+
 
     public static OutputData nvmeBdevCreate(ExtCmd extCmd, String pciAddress)
         throws StorageException

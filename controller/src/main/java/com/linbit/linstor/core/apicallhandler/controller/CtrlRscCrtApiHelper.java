@@ -514,6 +514,7 @@ public class CtrlRscCrtApiHelper
                                     break;
                                 case LVM: // fall-through
                                 case SPDK: // fall-through
+                                case REMOTE_SPDK: // fall-through
                                 case ZFS: // fall-through
                                 case EXOS:
                                     hasFatStorPool = true;

@@ -61,6 +61,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
             if (
                 nodeType.equals(Node.Type.SATELLITE) ||
                 nodeType.equals(Node.Type.OPENFLEX_TARGET) ||
+                    nodeType.equals(Node.Type.REMOTE_SPDK) ||
                 nodeType.equals(Node.Type.COMBINED)
             )
             {

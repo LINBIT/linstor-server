@@ -311,9 +311,11 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
                 );
                 break;
             case SPDK:
+            case REMOTE_SPDK:
                 vlmProviderObj = new SpdkData<>(
                     vlmRef,
                     rscDataRef,
+                    vlmInfo.kind,
                     vlmInfo.storPool,
                     this,
                     transObjFactory,

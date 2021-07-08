@@ -99,6 +99,7 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.FileThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.RemoteSpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
@@ -300,6 +301,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         String logLevelLinstor,
         String stltOverrideNodeName,
         boolean openflex,
+        boolean remoteSpdk,
         Pattern drbdKeepResPattern,
         String netBindAddress,
         Integer netPort,
@@ -338,6 +340,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                         logLevelLinstor,
                         stltOverrideNodeName,
                         openflex,
+                        remoteSpdk,
                         drbdKeepResPattern,
                         netBindAddress,
                         netPort,
@@ -659,6 +662,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         String logLevelLinstor,
         String stltOverrideNodeName,
         boolean openflex,
+        boolean remoteSpdk,
         Pattern drbdKeepResPattern,
         String netBindAddress,
         Integer netPort,
@@ -674,6 +678,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setLogLevelLinstor(logLevelLinstor)
             .setStltOverrideNodeName(stltOverrideNodeName)
             .setOpenflex(openflex)
+            .setRemoteSpdk(remoteSpdk)
             .setDrbdKeepResPattern(drbdKeepResPattern.toString())
             .setNetBindAddress(netBindAddress)
             .setNetPort(netPort)
@@ -1084,6 +1089,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 break;
             case OPENFLEX_TARGET:
                 type = ProviderType.OPENFLEX_TARGET;
+                break;
+            case REMOTE_SPDK:
+                type = ProviderType.REMOTE_SPDK;
                 break;
             case EXOS:
                 type = ProviderType.EXOS;
@@ -1743,6 +1751,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case SPDK:
                     builder.setSpdk(SpdkVlm.newBuilder().build());
+                    break;
+                case REMOTE_SPDK:
+                    builder.setRemoteSpdk(RemoteSpdkVlm.newBuilder().build());
                     break;
                 case EXOS:
                     builder.setExos(ExosVlm.newBuilder().build());

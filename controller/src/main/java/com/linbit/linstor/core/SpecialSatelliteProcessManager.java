@@ -11,6 +11,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Node.Type;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -37,7 +38,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Singleton
-public class OpenFlexTargetProcessManager
+public class SpecialSatelliteProcessManager
 {
     private static final String LOCALHOST = "localhost";
     private static final String SATELLITE_LOG_DIRECTORY = "ofTargets";
@@ -55,7 +56,7 @@ public class OpenFlexTargetProcessManager
     private final transient Map<String, Process> childSatellites;
 
     @Inject
-    public OpenFlexTargetProcessManager(
+    public SpecialSatelliteProcessManager(
         CoreModule.NodesMap nodesMapRef,
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext initCtxRef,
@@ -72,7 +73,11 @@ public class OpenFlexTargetProcessManager
     public void initialize()
     {
         nodesMap.values().stream()
-            .filter(node -> getNodeType(node).equals(Node.Type.OPENFLEX_TARGET))
+            .filter(node ->
+            {
+                Type nodeType = getNodeType(node);
+                return nodeType.equals(Node.Type.OPENFLEX_TARGET) || nodeType.equals(Node.Type.REMOTE_SPDK);
+            })
             .forEach(this::sneakyStart);
     }
 

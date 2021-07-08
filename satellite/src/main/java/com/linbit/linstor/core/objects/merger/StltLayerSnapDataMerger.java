@@ -927,10 +927,12 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     protected VlmProviderObject<Snapshot> createSpdkVlmData(
         AbsVolume<Snapshot> vlmRef,
         StorageRscData<Snapshot> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
         StorPool storPoolRef
-    ) throws DatabaseException
+    )
+        throws DatabaseException
     {
-        return layerDataFactory.createSpdkData(vlmRef, storRscDataRef, storPoolRef);
+        return layerDataFactory.createSpdkData(vlmRef, storRscDataRef, vlmPojoRef.getProviderKind(), storPoolRef);
     }
 
     @Override

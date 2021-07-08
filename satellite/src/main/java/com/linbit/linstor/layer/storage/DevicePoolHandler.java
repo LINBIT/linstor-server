@@ -7,7 +7,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands;
-import com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
@@ -113,6 +112,7 @@ public class DevicePoolHandler
                 break;
 
             case EXOS: // for now, fall-through, might change in future
+            case REMOTE_SPDK: // for now, fall-through, might change in future
 
             // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
@@ -496,6 +496,7 @@ public class DevicePoolHandler
                 break;
 
             case EXOS: // for now, fall-through, might change in future
+            case REMOTE_SPDK: // for now, fall-through, might change in future
 
             // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
@@ -542,6 +543,7 @@ public class DevicePoolHandler
                     break;
 
                 case EXOS: // for now, fall-through, might change in future
+                case REMOTE_SPDK: // for now, fall-through, might change in future
 
                 case SPDK: // fall-through for now
                 // the following cases make no sense, hence the fall-throughs

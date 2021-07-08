@@ -955,6 +955,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 case LVM: // fall-through
                 case LVM_THIN: // fall-through
                 case SPDK: // fall-through
+                case REMOTE_SPDK: // fall-through
                 case ZFS: // fall-through
                 case ZFS_THIN: // fall-through
                 case EXOS:

@@ -50,6 +50,7 @@ public interface CommonSerializer
             String logLevelLinstor,
             String stltOverrideNodeName,
             boolean openflex,
+            boolean remoteSpdk,
             Pattern drbdKeepResPattern,
             String netBindAddress,
             Integer netPort,

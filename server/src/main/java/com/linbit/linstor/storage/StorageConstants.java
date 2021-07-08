@@ -52,6 +52,16 @@ public class StorageConstants
     public static final String CONFIG_OF_JOB_WAIT_MAX_COUNT = ApiConsts.KEY_STOR_POOL_OPENFLEX_JOB_WAIT_MAX_COUNT;
     public static final String CONFIG_OF_JOB_WAIT_DELAY = ApiConsts.KEY_STOR_POOL_OPENFLEX_JOB_WAIT_DELAY;
 
+    /*
+     * Remote SPDK
+     */
+    public static final String CONFIG_REMOTE_SPDK_API_HOST_KEY = ApiConsts.KEY_STOR_POOL_REMOTE_SPDK_API_HOST;
+    public static final String CONFIG_REMOTE_SPDK_API_PORT_KEY = ApiConsts.KEY_STOR_POOL_REMOTE_SPDK_API_PORT;
+    public static final String CONFIG_REMOTE_SPDK_USER_NAME_KEY = ApiConsts.KEY_STOR_POOL_REMOTE_SPDK_API_USER_NAME;
+    public static final String CONFIG_REMOTE_SPDK_USER_PW_KEY = ApiConsts.KEY_STOR_POOL_REMOTE_SPDK_API_USER_PW;
+    public static final String CONFIG_REMOTE_SPDK_USER_NAME_ENV_KEY = ApiConsts.KEY_STOR_POOL_REMOTE_SPDK_API_USER_NAME_ENV;
+    public static final String CONFIG_REMOTE_SPDK_USER_PW_ENV_KEY = ApiConsts.KEY_STOR_POOL_REMOTE_SPDK_API_USER_PW_ENV;
+
     // internal
     public static final String CONFIG_OF_NQN = "NQN";
     // public static final String CONFIG_OF_POLL_TIMEOUT_VLM_CRT_KEY =

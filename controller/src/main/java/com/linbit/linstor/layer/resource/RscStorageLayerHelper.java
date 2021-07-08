@@ -9,6 +9,8 @@ import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
@@ -267,7 +269,17 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                     vlmData = layerDataFactory.createFileData(vlm, rscData, kind, storPool);
                     break;
                 case SPDK:
-                    vlmData = layerDataFactory.createSpdkData(vlm, rscData, storPool);
+                case REMOTE_SPDK:
+                    if (!rscData.getParent().getLayerKind().equals(DeviceLayerKind.NVME))
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_INVLD_LAYER_STACK,
+                                "SPDK storage requires NVME layer directly above"
+                            )
+                        );
+                    }
+                    vlmData = layerDataFactory.createSpdkData(vlm, rscData, kind, storPool);
                     break;
                 case EXOS:
                     exosNameShortener.shorten(
@@ -442,7 +454,8 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                 vlmData = layerDataFactory.createZfsData(vlmRef, storRscData, providerKind, storPool);
                 break;
             case SPDK:
-                vlmData = layerDataFactory.createSpdkData(vlmRef, storRscData, storPool);
+            case REMOTE_SPDK:
+                vlmData = layerDataFactory.createSpdkData(vlmRef, storRscData, providerKind, storPool);
                 break;
             case EXOS:
                 exosNameShortener.shorten(

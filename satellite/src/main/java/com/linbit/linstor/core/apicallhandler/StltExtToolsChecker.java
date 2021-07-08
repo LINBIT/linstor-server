@@ -215,7 +215,7 @@ public class StltExtToolsChecker
     {
         ExtToolsInfo ret;
 
-        if (stltCfg.isOpenflex())
+        if (stltCfg.isOpenflex() || stltCfg.isRemoteSpdk())
         {
             ret = new ExtToolsInfo(ExtTools.NVME, true, null, null, null, null);
         }

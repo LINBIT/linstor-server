@@ -600,14 +600,16 @@ public class LayerDataFactory
     public <RSC extends AbsResource<RSC>> SpdkData<RSC> createSpdkData(
         AbsVolume<RSC> vlm,
         StorageRscData<RSC> rscData,
-        StorPool storPoolRef
+        DeviceProviderKind kind,
+        StorPool storPool
     )
         throws DatabaseException
     {
         SpdkData<RSC> spdkData = new SpdkData<>(
             vlm,
             rscData,
-            storPoolRef,
+            kind,
+            storPool,
             storageDbDriver,
             transObjFactory,
             transMgrProvider

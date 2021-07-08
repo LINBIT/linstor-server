@@ -440,13 +440,14 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
                 }
                 break;
             case SPDK:
+            case REMOTE_SPDK:
                 if (vlmData == null || !(vlmData instanceof SpdkData))
                 {
                     if (vlmData != null)
                     {
                         removeStorageVlm(storRscData, vlmNr);
                     }
-                    vlmData = createSpdkVlmData(vlm, storRscData, storPool);
+                    vlmData = createSpdkVlmData(vlm, storRscData, vlmPojo, storPool);
                 }
                 else
                 {
@@ -957,6 +958,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     protected abstract VlmProviderObject<RSC> createSpdkVlmData(
         AbsVolume<RSC> vlm,
         StorageRscData<RSC> storRscData,
+        VlmLayerDataApi vlmPojo,
         StorPool storPool
     )
         throws DatabaseException;

@@ -147,7 +147,7 @@ public final class Controller
     private final DebugConsoleCreator debugConsoleCreator;
     private final ControllerNetComInitializer controllerNetComInitializer;
 
-    private final OpenFlexTargetProcessManager openflexTargetProcessManager;
+    private final SpecialSatelliteProcessManager openflexTargetProcessManager;
     private final WhitelistProps whitelistProps;
 
     private final RetryResourcesTask retryResourcesTask;
@@ -188,7 +188,7 @@ public final class Controller
         ExosEnclosurePingTask exosPingTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
-        OpenFlexTargetProcessManager openFlexTargetProcessManagerRef,
+        SpecialSatelliteProcessManager openFlexTargetProcessManagerRef,
         WhitelistProps whitelistPropsRef,
         CtrlConfig ctrlCfgRef,
         PassphraseInitializer passphraseInitializerRef,

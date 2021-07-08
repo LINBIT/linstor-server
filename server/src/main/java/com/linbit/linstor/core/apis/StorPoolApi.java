@@ -44,6 +44,7 @@ public interface StorPoolApi
             case LVM: return getStorPoolProps().get(StorageConstants.NAMESPACE_STOR_DRIVER +
                     "/" + ApiConsts.KEY_STOR_POOL_NAME);
             case SPDK:
+            case REMOTE_SPDK:
             case DISKLESS:
             case OPENFLEX_TARGET:
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:

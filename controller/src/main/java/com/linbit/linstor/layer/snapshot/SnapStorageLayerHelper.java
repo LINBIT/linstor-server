@@ -130,7 +130,8 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
                 snapVlmData = layerDataFactory.createZfsData(snapVlmRef, snapDataRef, providerKind, storPool);
                 break;
             case SPDK:
-                snapVlmData = layerDataFactory.createSpdkData(snapVlmRef, snapDataRef, storPool);
+            case REMOTE_SPDK:
+                snapVlmData = layerDataFactory.createSpdkData(snapVlmRef, snapDataRef, providerKind, storPool);
                 break;
             case EXOS:
                 ExosData<Snapshot> exosSnapData = layerDataFactory.createExosData(snapVlmRef, snapDataRef, storPool);

@@ -465,6 +465,8 @@ public class Nodes
                     stltConfig.log.level_linstor = stltConf.getLogLevelLinstor();
                     stltConfig.stlt_override_node_name = stltConf.getStltOverrideNodeName();
                     stltConfig.openflex = stltConf.isOpenflex();
+                    stltConfig.remote_spdk = stltConf.isRemoteSpdk();
+                    stltConfig.special_satellite = stltConf.isOpenflex() || stltConf.isRemoteSpdk();
                     stltConfig.drbd_keep_res_pattern = stltConf.getDrbdKeepResPattern().toString();
                     stltConfig.net = new JsonGenTypes.SatelliteConfigNet();
                     stltConfig.net.bind_address = stltConf.getNetBindAddress();

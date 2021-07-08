@@ -8,7 +8,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.OpenFlexTargetProcessManager;
+import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -64,7 +64,7 @@ public class CtrlNodeLostApiCallHandler
     private final ScopeRunner scopeRunner;
     private final CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifier;
     private final ReconnectorTask reconnectorTask;
-    private final OpenFlexTargetProcessManager ofTargetProcMgr;
+    private final SpecialSatelliteProcessManager ofTargetProcMgr;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeRepository nodeRepository;
@@ -79,7 +79,7 @@ public class CtrlNodeLostApiCallHandler
         ScopeRunner scopeRunnerRef,
         CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifierRef,
         ReconnectorTask reconnectorTaskRef,
-        OpenFlexTargetProcessManager ofTargetProcMgrRef,
+        SpecialSatelliteProcessManager ofTargetProcMgrRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeRepository nodeRepositoryRef,
@@ -403,7 +403,7 @@ public class CtrlNodeLostApiCallHandler
         {
             Node.Type nodeType = node.getNodeType(apiCtx);
             node.delete(peerAccCtx.get());
-            if (Node.Type.OPENFLEX_TARGET.equals(nodeType))
+            if (Node.Type.OPENFLEX_TARGET.equals(nodeType) || Node.Type.REMOTE_SPDK.equals(nodeType))
             {
                 ofTargetProcMgr.stopProcess(node);
             }

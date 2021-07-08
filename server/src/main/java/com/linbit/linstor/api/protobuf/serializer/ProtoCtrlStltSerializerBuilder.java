@@ -163,6 +163,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             stltConfig.getLogLevelLinstor(),
             stltConfig.getStltOverrideNodeName(),
             stltConfig.isOpenflex(),
+            stltConfig.isRemoteSpdk(),
             stltConfig.getDrbdKeepResPattern(),
             stltConfig.getNetBindAddress(),
             stltConfig.getNetPort(),

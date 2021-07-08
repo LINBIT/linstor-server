@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Node.Type;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -16,8 +17,8 @@ import com.linbit.linstor.systemstarter.StartupInitializer;
 
 import static com.linbit.linstor.numberpool.NumberPoolModule.LAYER_RSC_ID_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.MINOR_NUMBER_POOL;
-import static com.linbit.linstor.numberpool.NumberPoolModule.OPENFLEX_TARGET_PORT_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL;
+import static com.linbit.linstor.numberpool.NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL;
 import static com.linbit.linstor.numberpool.NumberPoolModule.TCP_PORT_POOL;
 
 import javax.inject.Inject;
@@ -43,7 +44,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
         @SystemContext AccessContext initCtxRef,
         @Named(MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @Named(TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
-        @Named(OPENFLEX_TARGET_PORT_POOL) DynamicNumberPool ofTargetPortPoolRef,
+        @Named(SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool ofTargetPortPoolRef,
         @Named(LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
         @Named(SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapShipPortPoolRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -88,7 +89,8 @@ public class DbNumberPoolInitializer implements StartupInitializer
         {
             for (Node curNode : nodesMap.values())
             {
-                if (Node.Type.OPENFLEX_TARGET.equals(curNode.getNodeType(initCtx)))
+                Type nodeType = curNode.getNodeType(initCtx);
+                if (Node.Type.OPENFLEX_TARGET.equals(nodeType) || Node.Type.REMOTE_SPDK.equals(nodeType))
                 {
                     try
                     {

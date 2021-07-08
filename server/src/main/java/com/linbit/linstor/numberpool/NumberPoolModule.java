@@ -22,7 +22,7 @@ public class NumberPoolModule extends AbstractModule
 
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String TCP_PORT_POOL = "TcpPortPool";
-    public static final String OPENFLEX_TARGET_PORT_POOL = "OpenflexTargetPortPool";
+    public static final String SPECIAL_SATELLTE_PORT_POOL = "OpenflexTargetPortPool";
     public static final String LAYER_RSC_ID_POOL = "LayerRscIdPool";
     public static final String SNAPSHOPT_SHIPPING_PORT_POOL = "SnapshotShippingPortPool";
 
@@ -100,7 +100,7 @@ public class NumberPoolModule extends AbstractModule
 
     @Provides
     @Singleton
-    @Named(OPENFLEX_TARGET_PORT_POOL)
+    @Named(SPECIAL_SATELLTE_PORT_POOL)
     public DynamicNumberPool ofTargetPortPool(
         ErrorReporter errorReporter,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef

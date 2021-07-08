@@ -417,6 +417,9 @@ public class LinstorParsingUtils
             case "SPDK":
                 kind = DeviceProviderKind.SPDK;
                 break;
+            case "REMOTE_SPDK":
+                kind = DeviceProviderKind.REMOTE_SPDK;
+                break;
             case "OPENFLEX":
             case "OPENFLEX_TARGET":
                 kind = DeviceProviderKind.OPENFLEX_TARGET;

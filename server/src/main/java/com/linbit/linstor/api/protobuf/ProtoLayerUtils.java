@@ -29,6 +29,7 @@ import com.linbit.linstor.api.pojo.StorageRscPojo.FileThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.RemoteSpdkVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SpdkVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
@@ -570,6 +571,9 @@ public class ProtoLayerUtils
             case SPDK:
                 ret = new SpdkVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
+            case REMOTE_SPDK:
+                ret = new RemoteSpdkVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                break;
             case EXOS:
                 ret = new ExosVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
                 break;
@@ -597,6 +601,7 @@ public class ProtoLayerUtils
             case LVM: // fall-trough
             case LVM_THIN: // fall-trough
             case SPDK: // fall-trough
+            case REMOTE_SPDK: // fall-trough
             case ZFS: // fall-trough
             case ZFS_THIN: // fall-trough
             case FILE: // fall-through

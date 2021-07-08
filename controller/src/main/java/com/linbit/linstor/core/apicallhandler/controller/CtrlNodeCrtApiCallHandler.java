@@ -167,10 +167,11 @@ public class CtrlNodeCrtApiCallHandler
         {
             Node.Type nodeType = LinstorParsingUtils.asNodeType(nodeTypeStr);
 
-            if (Node.Type.OPENFLEX_TARGET.equals(nodeType))
+            if (Node.Type.OPENFLEX_TARGET.equals(nodeType) || Node.Type.REMOTE_SPDK.equals(nodeType))
             {
-                node = ctrlNodeApiCallHandler.createOpenflexTargetNode(
+                node = ctrlNodeApiCallHandler.createSpecialSatellite(
                     nodeNameStr,
+                    nodeTypeStr,
                     propsMap
                 ).extractApiCallRc(responses);
             }

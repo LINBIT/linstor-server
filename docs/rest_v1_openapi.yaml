@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+       - Extended SatelliteConfig with remote_spdk boolean
     * 1.8.1
        - Added layer_stack to toggle-disk API
     * 1.8.0
@@ -144,7 +146,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.8.1
+  version: 1.9.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -6233,6 +6235,10 @@ components:
         stlt_override_node_name:
           type: string
         openflex:
+          type: boolean
+        remote_spdk:
+          type: boolean
+        special_satellite:
           type: boolean
         drbd_keep_res_pattern:
           type: string

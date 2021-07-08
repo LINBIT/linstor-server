@@ -280,11 +280,14 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     protected VlmProviderObject<Resource> createSpdkVlmData(
         AbsVolume<Resource> vlmRef,
         StorageRscData<Resource> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
         StorPool storPoolRef
     )
-            throws DatabaseException
+        throws DatabaseException
     {
-        throw new ImplementationError("Received unknown spdk storage volume from satellite");
+        throw new ImplementationError(
+            "Received unknown " + vlmPojoRef.getProviderKind() + " storage volume from satellite"
+        );
     }
 
     @Override

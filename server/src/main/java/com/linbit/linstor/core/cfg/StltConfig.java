@@ -13,6 +13,7 @@ public class StltConfig extends LinstorConfig
 {
     private String stltOverrideNodeName;
     private boolean openflex;
+    private boolean remoteSpdk;
 
     private Pattern drbdKeepResPattern;
 
@@ -92,6 +93,16 @@ public class StltConfig extends LinstorConfig
     public void setOpenflex(boolean openflexRef)
     {
         openflex = openflexRef;
+    }
+
+    public boolean isRemoteSpdk()
+    {
+        return remoteSpdk;
+    }
+
+    public void setRemoteSpdk(boolean remoteSpdkRef)
+    {
+        remoteSpdk = remoteSpdkRef;
     }
 
     public Pattern getDrbdKeepResPattern()

@@ -8,8 +8,8 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.OpenFlexTargetProcessManager;
 import com.linbit.linstor.core.SatelliteConnector;
+import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -58,7 +58,7 @@ class CtrlNetIfApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final OpenFlexTargetProcessManager ofTargetProcMgr;
+    private final SpecialSatelliteProcessManager ofTargetProcMgr;
     private final DynamicNumberPool ofTargetPortPool;
 
     @Inject
@@ -72,8 +72,8 @@ class CtrlNetIfApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        OpenFlexTargetProcessManager ofTargetProcMgrRef,
-        @Named(NumberPoolModule.OPENFLEX_TARGET_PORT_POOL) DynamicNumberPool ofTargetPortPoolRef
+        SpecialSatelliteProcessManager ofTargetProcMgrRef,
+        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool ofTargetPortPoolRef
     )
     {
         apiCtx = apiCtxRef;
@@ -111,12 +111,13 @@ class CtrlNetIfApiCallHandler
         {
             Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
 
-            if (Node.Type.OPENFLEX_TARGET.equals(node.getNodeType(apiCtx)))
+            if (Node.Type.OPENFLEX_TARGET.equals(node.getNodeType(apiCtx)) ||
+                Node.Type.REMOTE_SPDK.equals(node.getNodeType(apiCtx)))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         FAIL_INVLD_NODE_TYPE,
-                        "Only one network interface allowed for 'openflex target' nodes" // FIXME?
+                        "Only one network interface allowed for '" + node.getNodeType(apiCtx).name() + "' nodes" // FIXME?
                     )
                 );
             }
@@ -195,14 +196,15 @@ class CtrlNetIfApiCallHandler
                 !isModifyingActiveStltConn && setActive ||
                 isModifyingActiveStltConn && (addressStr != null || stltPort != null && stltEncrType != null);
 
-            if (needsReconnect && Node.Type.OPENFLEX_TARGET.equals(nodeType))
+            if (needsReconnect &&
+                (Node.Type.OPENFLEX_TARGET.equals(nodeType) || Node.Type.REMOTE_SPDK.equals(nodeType)))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.entryBuilder(
                         FAIL_INVLD_NODE_TYPE,
                         "Modifying netinterface " + getNetIfDescriptionInline(netIf) + " failed"
                     )
-                        .setCause("Changing the address of a openflex target is prohibited")
+                        .setCause("Changing the address of a " + nodeType + " is prohibited")
                         .build()
                 );
             }

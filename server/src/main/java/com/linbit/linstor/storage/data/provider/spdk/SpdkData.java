@@ -33,6 +33,7 @@ public class SpdkData<RSC extends AbsResource<RSC>>
     public SpdkData(
         AbsVolume<RSC> vlmRef,
         StorageRscData<RSC> rscDataRef,
+        DeviceProviderKind providerKindRef,
         StorPool storPoolRef,
         StorageLayerDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
@@ -44,7 +45,7 @@ public class SpdkData<RSC extends AbsResource<RSC>>
             rscDataRef,
             storPoolRef,
             dbDriverRef,
-            DeviceProviderKind.SPDK,
+            providerKindRef,
             transObjFactory,
             transMgrProvider
         );

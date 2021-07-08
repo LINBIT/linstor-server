@@ -17,4 +17,5 @@ enum ProviderType
     SPDK = 10;
     OPENFLEX_TARGET = 11;
     EXOS = 12;
+    REMOTE_SPDK = 13;
 }

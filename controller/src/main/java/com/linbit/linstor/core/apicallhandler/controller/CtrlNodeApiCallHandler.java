@@ -17,9 +17,9 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.OpenFlexTargetProcessManager;
 import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
+import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
@@ -112,8 +112,8 @@ public class CtrlNodeApiCallHandler
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final StorPoolHelper storPoolHelper;
-    private final DynamicNumberPool ofTargetPortPool;
-    private final OpenFlexTargetProcessManager ofTargetProcMgr;
+    private final DynamicNumberPool specStltPortPool;
+    private final SpecialSatelliteProcessManager specStltProcMgr;
     private final ReconnectorTask reconnectorTask;
     private final Scheduler scheduler;
     private final ScopeRunner scopeRunner;
@@ -138,8 +138,8 @@ public class CtrlNodeApiCallHandler
         Provider<Peer> peerRef,
         StorPoolHelper storPoolHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        @Named(NumberPoolModule.OPENFLEX_TARGET_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef,
-        OpenFlexTargetProcessManager ofTargetProcMgrRef,
+        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef,
+        SpecialSatelliteProcessManager ofTargetProcMgrRef,
         ReconnectorTask reconnectorTaskRef,
         Scheduler schedulerRef,
         ScopeRunner scopeRunnerRef,
@@ -163,8 +163,8 @@ public class CtrlNodeApiCallHandler
         peer = peerRef;
         storPoolHelper = storPoolHelperRef;
         peerAccCtx = peerAccCtxRef;
-        ofTargetPortPool = sfTargetPortPoolRef;
-        ofTargetProcMgr = ofTargetProcMgrRef;
+        specStltPortPool = sfTargetPortPoolRef;
+        specStltProcMgr = ofTargetProcMgrRef;
         reconnectorTask = reconnectorTaskRef;
         scheduler = schedulerRef;
         scopeRunner = scopeRunnerRef;
@@ -279,7 +279,11 @@ public class CtrlNodeApiCallHandler
         return node;
     }
 
-    public ApiCallRcWith<Node> createOpenflexTargetNode(String nodeNameStr, Map<String, String> propsMap)
+    public ApiCallRcWith<Node> createSpecialSatellite(
+        String nodeNameStr,
+        String nodeTypeStr,
+        Map<String, String> propsMap
+    )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         Node node = null;
@@ -288,17 +292,17 @@ public class CtrlNodeApiCallHandler
             nodeNameStr
         );
 
-        int ofTargetPort = 0;
+        int specStltPort = 0;
 
         boolean retry = true;
         while (retry)
         {
             try
             {
-                ofTargetPort = ofTargetPortPool.autoAllocate();
+                specStltPort = specStltPortPool.autoAllocate();
 
                 // throws PortAlreadyInUseException
-                ofTargetProcMgr.startLocalSatelliteProcess(nodeNameStr, ofTargetPort);
+                specStltProcMgr.startLocalSatelliteProcess(nodeNameStr, specStltPort);
 
                 retry = false;
             }
@@ -311,7 +315,7 @@ public class CtrlNodeApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_POOL_EXHAUSTED_SPECIAL_SATELLTE_TCP_PORT,
-                        "No TCP/IP port number could be allocated for the openflex_target node"
+                        "No TCP/IP port number could be allocated for the " + nodeTypeStr + " node"
                     ),
                     exc
                 );
@@ -335,13 +339,13 @@ public class CtrlNodeApiCallHandler
                     UUID.randomUUID(),
                     DEFAULT_NETIF,
                     "127.0.0.1",
-                    ofTargetPort,
+                    specStltPort,
                     ApiConsts.VAL_NETCOM_TYPE_PLAIN
                 )
             );
             node = createNodeImpl(
                 nodeNameStr,
-                Node.Type.OPENFLEX_TARGET.name(),
+                nodeTypeStr,
                 netIfs,
                 propsMap,
                 responses,
@@ -740,14 +744,17 @@ public class CtrlNodeApiCallHandler
                     .build()
                 );
             }
-            if (Node.Type.OPENFLEX_TARGET.equals(nodeType) && node.streamNetInterfaces(apiCtx).count() != 1)
+            if ((Node.Type.OPENFLEX_TARGET.equals(nodeType) || Node.Type.REMOTE_SPDK.equals(nodeType)) &&
+                node.streamNetInterfaces(apiCtx).count() != 1)
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.entryBuilder(
                         ApiConsts.FAIL_INVLD_NODE_TYPE,
                         "Failed to change node type"
                     )
-                        .setCause("A node with type 'openflex_target' is only allowed to have 1 network interface")
+                        .setCause(
+                            "A node with type " + nodeType.name() + " is only allowed to have 1 network interface"
+                        )
                         .build()
                 );
             }

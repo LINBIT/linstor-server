@@ -34,7 +34,6 @@ import javax.inject.Singleton;
 import java.util.List;
 
 import org.slf4j.event.Level;
-
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -149,6 +148,7 @@ public class CtrlAuthResponseApiCallHandler
                 stltCfg.setLogLevelLinstor(stltConfig.getLogLevelLinstor());
                 stltCfg.setStltOverrideNodeName(stltConfig.getStltOverrideNodeName());
                 stltCfg.setOpenflex(stltConfig.getOpenflex());
+                stltCfg.setRemoteSpdk(stltConfig.getRemoteSpdk());
                 stltCfg.setDrbdKeepResPattern(stltConfig.getDrbdKeepResPattern());
                 stltCfg.setNetBindAddress(stltConfig.getNetBindAddress());
                 stltCfg.setNetPort(stltConfig.getNetPort());

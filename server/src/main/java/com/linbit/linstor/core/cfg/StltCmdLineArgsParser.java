@@ -70,6 +70,9 @@ class StltCmdLineArgsParser
     @CommandLine.Option(names= {"--openflex"}, hidden = true)
     private boolean openflex;
 
+    @CommandLine.Option(names = { "--remote-spdk" }, hidden = true)
+    private boolean remoteSpdk;
+
     static void parseCommandLine(String[] args, StltConfig stltCfg)
     {
         StltCmdLineArgsParser linArgParser = new StltCmdLineArgsParser();
@@ -112,6 +115,7 @@ class StltCmdLineArgsParser
         }
 
         stltCfg.setOpenflex(linArgParser.openflex);
+        stltCfg.setRemoteSpdk(linArgParser.remoteSpdk);
 
         stltCfg.setLogDirectory(linArgParser.logDirectory);
 

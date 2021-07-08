@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.nvme;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
@@ -20,8 +21,8 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
+import com.linbit.linstor.layer.storage.spdk.AbsSpdkProvider;
 import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
-import com.linbit.linstor.layer.storage.spdk.SpdkLocalProvider;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -42,7 +43,6 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_PREF_NIC;
-import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
 import javax.inject.Inject;
@@ -141,7 +141,8 @@ public class NvmeUtils
                     transportType = "RDMA";
                 }
 
-                getSpdkCommands(nvmeRscData).createTransport(transportType);
+                SpdkCommands<?> spdkCommands = getSpdkCommands(nvmeRscData);
+                spdkCommands.ensureTransportExists(transportType);
 
                 String port = nvmePrioProps.getProp(ApiConsts.KEY_PORT, ApiConsts.NAMESPC_NVME);
                 if (port == null)
@@ -149,28 +150,16 @@ public class NvmeUtils
                     port = Integer.toString(IANA_DEFAULT_PORT);
                 }
 
-                OutputData output = extCmdFactory.create().exec(
-                    SPDK_RPC_SCRIPT,
-                    "nvmf_subsystem_create",
-                    subsystemName,
-                    "--allow-any-host"
-                );
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to create subsystem!");
+                spdkCommands.nvmSubsystemCreate(subsystemName);
 
-                output = extCmdFactory.create().exec(
-                    SPDK_RPC_SCRIPT,
-                    "nvmf_subsystem_add_listener",
+                LsIpAddress ipAddr = getIpAddr(nvmeRscData.getAbsResource(), accCtx);
+                spdkCommands.nvmfSubsystemAddListener(
                     subsystemName,
-                    "-t",
                     transportType,
-                    "-a",
-                    getIpAddr(nvmeRscData.getAbsResource(), accCtx).getAddress(),
-                    "-f",
-                    getIpAddr(nvmeRscData.getAbsResource(), accCtx).getAddressType().toString(),
-                    "-s",
+                    ipAddr.getAddress(),
+                    ipAddr.getAddressType().toString(),
                     port
                 );
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to add listener to subsystem!");
 
                 for (NvmeVlmData<Resource> nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
                 {
@@ -270,7 +259,7 @@ public class NvmeUtils
             nvmeRscData.getVlmLayerObjects().values().iterator().next()
         );
 
-        SpdkCommands<?> spdkCommands = ((SpdkLocalProvider) devProviderMapper
+        SpdkCommands<?> spdkCommands = ((AbsSpdkProvider<?>) devProviderMapper
             .getDeviceProviderByKind(spdkVlmChild.getProviderKind()))
                 .getSpdkCommands();
         return spdkCommands;
@@ -296,12 +285,8 @@ public class NvmeUtils
         {
             if (nvmeRscData.isSpdk())
             {
-                OutputData output = extCmdFactory.create().exec(
-                    SPDK_RPC_SCRIPT,
-                    "delete_nvmf_subsystem",
-                    subsystemName
-                );
-                ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete subsystem!");
+                SpdkCommands<?> spdkCommands = getSpdkCommands(nvmeRscData);
+                spdkCommands.nvmfDeleteSubsystem(subsystemName);
             }
             else
             {
@@ -585,8 +570,10 @@ public class NvmeUtils
      * @param nvmeRscData NvmeRscData object containing all needed information for this method
      *
      * @return boolean true if the subsystem directory exists and false otherwise
+     *
+     * @throws AccessDeniedException
      */
-    public boolean isTargetConfigured(NvmeRscData<Resource> nvmeRscData)
+    public boolean isTargetConfigured(NvmeRscData<Resource> nvmeRscData) throws AccessDeniedException
     {
         final String subsystemName = getNvmeSubsystemPrefix(nvmeRscData) + nvmeRscData.getSuffixedResourceName();
 
@@ -828,12 +815,15 @@ public class NvmeUtils
      *
      * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
      * @param subsystemName String containing NVMe subsystem name
+     *
+     * @throws AccessDeniedException
      */
     public void createSpdkNamespace(NvmeVlmData<Resource> nvmeVlmData, String subsystemName)
-        throws IOException, StorageException, ChildProcessTimeoutException
+        throws IOException, StorageException, ChildProcessTimeoutException, AccessDeniedException
     {
+        SpdkCommands<?> spdkCommands = getSpdkCommands(nvmeVlmData.getRscLayerObject());
         if (!SpdkUtils.checkNamespaceExists(
-            getSpdkCommands(nvmeVlmData.getRscLayerObject()),
+            spdkCommands,
             subsystemName,
             nvmeVlmData.getVlmNr().getValue() + 1
         ))
@@ -842,13 +832,7 @@ public class NvmeUtils
 
             errorReporter.logDebug("NVMe: exposing device: " + spdkPath);
 
-            OutputData output = extCmdFactory.create().exec(
-                SPDK_RPC_SCRIPT,
-                "nvmf_subsystem_add_ns",
-                subsystemName,
-                spdkPath.split(SPDK_PATH_PREFIX)[1]
-            );
-            ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to create namespace!");
+            spdkCommands.nvmfSubsystemAddNs(subsystemName, spdkPath.split(SPDK_PATH_PREFIX)[1]);
         }
         nvmeVlmData.setExists(true);
     }
@@ -868,26 +852,24 @@ public class NvmeUtils
      *
      * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
      * @param subsystemName
+     *
+     * @throws AccessDeniedException
      */
     public void deleteSpdkNamespace(NvmeVlmData<Resource> nvmeVlmData, String subsystemName)
-        throws IOException, ChildProcessTimeoutException, StorageException
+        throws IOException, ChildProcessTimeoutException, StorageException, AccessDeniedException
     {
         final int namespaceNr = nvmeVlmData.getVlmNr().getValue() + 1;
 
+        SpdkCommands<?> spdkCommands = getSpdkCommands(nvmeVlmData.getRscLayerObject());
         if (!SpdkUtils.checkNamespaceExists(
-            getSpdkCommands(nvmeVlmData.getRscLayerObject()),
+            spdkCommands,
             subsystemName,
             namespaceNr
         ))
         {
             errorReporter.logDebug("NVMe: deleting namespace: " + subsystemName);
-            OutputData output = extCmdFactory.create().exec(
-                SPDK_RPC_SCRIPT,
-                "nvmf_subsystem_remove_ns",
-                subsystemName,
-                String.valueOf(namespaceNr)
-            );
-            ExtCmdUtils.checkExitCode(output, StorageException::new, "Failed to delete namespace!");
+
+            spdkCommands.nvmfSubsystemRemoveNamespace(subsystemName, namespaceNr);
         }
         nvmeVlmData.setExists(false);
     }
@@ -1004,6 +986,40 @@ public class NvmeUtils
      */
     private LsIpAddress getIpAddr(Resource rsc, AccessContext accCtx)
         throws StorageException, InvalidNameException, AccessDeniedException, InvalidKeyException
+    {
+        LsIpAddress ipAddr;
+        if (rsc.getNode().getNodeType(accCtx).equals(Node.Type.REMOTE_SPDK))
+        {
+            ipAddr = getIpAddrFromSpecialStlt(rsc, accCtx);
+        }
+        else
+        {
+            ipAddr = getIpAddrFromNormalStlt(rsc, accCtx);
+        }
+        return ipAddr;
+    }
+
+    private LsIpAddress getIpAddrFromSpecialStlt(Resource rscRef, AccessContext accCtxRef)
+        throws StorageException, InvalidKeyException, AccessDeniedException
+    {
+        try
+        {
+            // TODO: should be more general
+            return new LsIpAddress(
+                rscRef.getNode().getProps(accCtxRef).getProp(
+                    ApiConsts.KEY_STOR_POOL_REMOTE_SPDK_API_HOST,
+                    ApiConsts.NAMESPC_STORAGE_DRIVER
+                )
+            );
+        }
+        catch (InvalidIpAddressException exc)
+        {
+            throw new StorageException("Invalid IP address", exc);
+        }
+    }
+
+    private LsIpAddress getIpAddrFromNormalStlt(Resource rsc, AccessContext accCtx)
+        throws AccessDeniedException, StorageException, InvalidNameException
     {
         PriorityProps prioProps = new PriorityProps();
         Iterator<Volume> iterateVolumes = rsc.iterateVolumes();

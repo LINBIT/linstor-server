@@ -329,13 +329,15 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
                 );
                 break;
             case SPDK:
+            case REMOTE_SPDK:
                 vlmProviderObj = new SpdkData<>(
-                        vlmRef,
-                        rscDataRef,
-                        vlmInfo.storPool,
-                        this,
-                        transObjFactory,
-                        transMgrProvider
+                    vlmRef,
+                    rscDataRef,
+                    vlmInfo.kind,
+                    vlmInfo.storPool,
+                    this,
+                    transObjFactory,
+                    transMgrProvider
                 );
                 break;
             case EXOS:

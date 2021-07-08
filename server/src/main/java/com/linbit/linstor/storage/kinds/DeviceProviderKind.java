@@ -7,6 +7,7 @@ import com.linbit.linstor.storage.FileThinDriverKind;
 import com.linbit.linstor.storage.LvmDriverKind;
 import com.linbit.linstor.storage.LvmThinDriverKind;
 import com.linbit.linstor.storage.OpenflexTargetDriverKind;
+import com.linbit.linstor.storage.RemoteSpdkDriverKind;
 import com.linbit.linstor.storage.SpdkDriverKind;
 import com.linbit.linstor.storage.StorageDriverKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
@@ -110,6 +111,17 @@ public enum DeviceProviderKind
         false,
         new SpdkDriverKind(),
         ExtTools.SPDK
+    ),
+    REMOTE_SPDK(
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        false,
+        true,
+        new RemoteSpdkDriverKind()
     ),
     EXOS(
         false,
@@ -254,6 +266,9 @@ public enum DeviceProviderKind
                 break;
             case SPDK:
                 allowed = kind2.equals(SPDK);
+                break;
+            case REMOTE_SPDK:
+                allowed = kind2.equals(REMOTE_SPDK);
                 break;
             case ZFS:
             case ZFS_THIN:
