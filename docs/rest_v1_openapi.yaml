@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+       - Added layer_stack to toggle-disk API
     * 1.8.0
        - Added layer BCACHE
          - Schemas BCacheResource and BCacheVolume
@@ -2256,6 +2258,14 @@ paths:
       description: |
         toggle a resource to a diskful resource using the default storage pool
 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleDiskDiskful'
+            example:
+              toggle_disk:
+                layer_list: [drbd,luks,storage]
       responses:
         '200':
           description: resource toggled to diskful
@@ -2279,6 +2289,14 @@ paths:
       operationId: resourceToggleDiskfulStoragepool
       description: toggle a resource to a diskful resource
 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleDiskDiskful'
+            example:
+              toggle_disk:
+                layer_list: [drbd,luks,storage]
       responses:
         '200':
           description: resource toggled to diskful
@@ -2308,6 +2326,14 @@ paths:
       description: |
         migrate a resource to another node without reducing the redundancy count
 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleDiskDiskful'
+            example:
+              toggle_disk:
+                layer_list: [drbd,luks,storage]
       responses:
         '200':
           description: resource migrated to another node
@@ -6724,3 +6750,11 @@ components:
           type: string
         content:
           type: string  # base64 encoded
+    ToggleDiskDiskful:
+      type: object
+      description: ToggleDisk optional payload data
+      properties:
+        layer_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'

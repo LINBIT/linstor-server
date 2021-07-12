@@ -204,6 +204,7 @@ public class CtrlRscCrtApiHelper
                         rscNameStr,
                         storPoolNameStr,
                         null,
+                        layerStackStrListRef,
                         false
                     )
                 );
@@ -257,49 +258,14 @@ public class CtrlRscCrtApiHelper
                 }
             }
 
-            List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
-
-            if (layerStack.isEmpty())
-            {
-                layerStack = getLayerStack(rscDfn);
-                if (layerStack.isEmpty())
-                {
-                    Set<List<DeviceLayerKind>> existingLayerStacks = extractExistingLayerStacks(rscDfn);
-                    switch (existingLayerStacks.size())
-                    {
-                        case 0:  // ignore, will be filled later by CtrlLayerDataHelper#createDefaultLayerStack
-                            // but that method requires the resource to already exist.
-                            break;
-                        case 1:
-                            layerStack = existingLayerStacks.iterator().next();
-                            break;
-                        default:
-                            throw new ApiRcException(
-                                ApiCallRcImpl.simpleEntry(
-                                    ApiConsts.FAIL_INVLD_LAYER_STACK,
-                                    "Could not figure out what layer-list to default to."
-                                )
-                                    .setDetails(
-                                        "Layer lists of already existing resources: \n   " +
-                                            StringUtils.join(existingLayerStacks, "\n   ")
-                                    )
-                                    .setCorrection("Please specify a layer-list")
-                            );
-
-                    }
-                }
-            }
-            else
-            {
-                if (
-                    !layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE) &&
-                    !layerStack.contains(DeviceLayerKind.OPENFLEX)
-                )
-                {
-                    layerStack.add(DeviceLayerKind.STORAGE);
-                    warnAddedStorageLayer(responses);
-                }
-            }
+            List<DeviceLayerKind> layerStack = getLayerstackOrBuildDefault(
+                peerAccCtx.get(),
+                layerDataHelper,
+                errorReporter,
+                layerStackStrListRef,
+                responses,
+                rscDfn
+            );
 
             // compatibility
             String storPoolNameStr = storPoolName;
@@ -443,7 +409,66 @@ public class CtrlRscCrtApiHelper
         return new Pair<>(autoFlux, new ApiCallRcWith<>(responses, rsc));
     }
 
-    private void warnAddedStorageLayer(ApiCallRcImpl responsesRef)
+    static List<DeviceLayerKind> getLayerstackOrBuildDefault(
+        AccessContext accCtx,
+        CtrlRscLayerDataFactory layerDataHelper,
+        ErrorReporter errorReporter,
+        List<String> layerStackStrListRef,
+        ApiCallRcImpl responses,
+        ResourceDefinition rscDfn
+    )
+    {
+        List<DeviceLayerKind> layerStack = LinstorParsingUtils.asDeviceLayerKind(layerStackStrListRef);
+
+        if (layerStack.isEmpty())
+        {
+            layerStack = getLayerStack(accCtx, rscDfn);
+            if (layerStack.isEmpty())
+            {
+                Set<List<DeviceLayerKind>> existingLayerStacks = extractExistingLayerStacks(
+                    accCtx,
+                    layerDataHelper,
+                    rscDfn
+                );
+                switch (existingLayerStacks.size())
+                {
+                    case 0: // ignore, will be filled later by CtrlLayerDataHelper#createDefaultLayerStack
+                        // but that method requires the resource to already exist.
+                        break;
+                    case 1:
+                        layerStack = existingLayerStacks.iterator().next();
+                        break;
+                    default:
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_INVLD_LAYER_STACK,
+                                "Could not figure out what layer-list to default to."
+                            )
+                                .setDetails(
+                                    "Layer lists of already existing resources: \n   " +
+                                        StringUtils.join(existingLayerStacks, "\n   ")
+                                )
+                                .setCorrection("Please specify a layer-list")
+                        );
+
+                }
+            }
+        }
+        else
+        {
+            if (
+                !layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE) &&
+                    !layerStack.contains(DeviceLayerKind.OPENFLEX)
+            )
+            {
+                layerStack.add(DeviceLayerKind.STORAGE);
+                warnAddedStorageLayer(errorReporter, responses);
+            }
+        }
+        return layerStack;
+    }
+
+    private static void warnAddedStorageLayer(ErrorReporter errorReporter, ApiCallRcImpl responsesRef)
     {
         String warnMsg = "The layerstack was extended with STORAGE kind.";
         errorReporter.logWarning(warnMsg);
@@ -701,7 +726,7 @@ public class CtrlRscCrtApiHelper
                 layerStackRef
             );
 
-            List<DeviceLayerKind> unsupportedLayers = getUnsupportedLayers(rsc);
+            List<DeviceLayerKind> unsupportedLayers = getUnsupportedLayers(peerAccCtx.get(), rsc);
             if (!unsupportedLayers.isEmpty())
             {
                 throw new ApiRcException(
@@ -779,14 +804,15 @@ public class CtrlRscCrtApiHelper
         return rsc;
     }
 
-    private List<DeviceLayerKind> getUnsupportedLayers(Resource rsc) throws AccessDeniedException
+    static List<DeviceLayerKind> getUnsupportedLayers(AccessContext accCtx, Resource rsc) throws AccessDeniedException
     {
         List<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
-            rsc.getLayerData(peerAccCtx.get()), peerAccCtx.get()
+            rsc.getLayerData(accCtx),
+            accCtx
         );
         usedDeviceLayerKinds.removeAll(
             rsc.getNode()
-                .getPeer(peerAccCtx.get())
+                .getPeer(accCtx)
                 .getExtToolsManager().getSupportedLayers()
         );
 
@@ -1002,12 +1028,12 @@ public class CtrlRscCrtApiHelper
         ));
     }
 
-    private List<DeviceLayerKind> getLayerStack(ResourceDefinition rscDfnRef)
+    static List<DeviceLayerKind> getLayerStack(AccessContext accCtx, ResourceDefinition rscDfnRef)
     {
         List<DeviceLayerKind> layerStack;
         try
         {
-            layerStack = rscDfnRef.getLayerStack(peerAccCtx.get());
+            layerStack = rscDfnRef.getLayerStack(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -1020,13 +1046,17 @@ public class CtrlRscCrtApiHelper
         return layerStack;
     }
 
-    private Set<List<DeviceLayerKind>> extractExistingLayerStacks(ResourceDefinition rscDfn)
+    static Set<List<DeviceLayerKind>> extractExistingLayerStacks(
+        AccessContext accCtx,
+        CtrlRscLayerDataFactory layerDataHelperRef,
+        ResourceDefinition rscDfn
+    )
     {
         Set<List<DeviceLayerKind>> ret;
         try
         {
-            ret = rscDfn.streamResource(peerAccCtx.get()).map(
-                layerDataHelper::getLayerStack
+            ret = rscDfn.streamResource(accCtx).map(
+                layerDataHelperRef::getLayerStack
             ).collect(Collectors.toSet());
         }
         catch (AccessDeniedException accDeniedExc)

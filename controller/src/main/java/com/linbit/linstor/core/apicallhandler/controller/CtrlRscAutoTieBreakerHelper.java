@@ -305,6 +305,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         rsc.getDefinition().getName().displayValue,
                         null,
                         null,
+                        null,
                         true
                     ).concatWith(setTiebreakerFlag(rsc))
                 );

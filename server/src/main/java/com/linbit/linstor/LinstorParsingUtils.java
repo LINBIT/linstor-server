@@ -359,9 +359,12 @@ public class LinstorParsingUtils
     public static List<DeviceLayerKind> asDeviceLayerKind(List<String> layerStackStrListRef)
     {
         List<DeviceLayerKind> ret = new ArrayList<>();
-        for (String layerStr : layerStackStrListRef)
+        if (layerStackStrListRef != null)
         {
-            ret.add(asDeviceLayerKind(layerStr));
+            for (String layerStr : layerStackStrListRef)
+            {
+                ret.add(asDeviceLayerKind(layerStr));
+            }
         }
         return ret;
     }

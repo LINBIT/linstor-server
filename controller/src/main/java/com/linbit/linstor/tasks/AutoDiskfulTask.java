@@ -367,6 +367,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                             rsc.getDefinition().getName().displayValue,
                             storPoolNameStr,
                             null,
+                            null, // TODO: could be a bad idea if not all layers from peer-resources are supported by
+                                  // the local node...
                             false
                         )
                             .concatWith(removeExcessFlux(rsc))

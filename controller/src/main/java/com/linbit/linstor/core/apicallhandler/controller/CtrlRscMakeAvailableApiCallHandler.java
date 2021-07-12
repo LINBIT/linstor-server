@@ -248,6 +248,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                         rscNameRef,
                         sp.getName().displayValue,
                         null,
+                        layerStackRef,
                         false
                     );
                 }

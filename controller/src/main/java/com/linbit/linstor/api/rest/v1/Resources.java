@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ToggleDiskDiskful;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
@@ -332,11 +333,13 @@ public class Resources
     )
     {
         Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
-                nodeName,
-                rscName,
-                disklessPool,
-                null,
-                true)
+            nodeName,
+            rscName,
+            disklessPool,
+            null,
+            null,
+            true
+        )
             .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
@@ -351,7 +354,7 @@ public class Resources
         @PathParam("rscName") String rscName
     )
     {
-        toggleDiskDiskful(request, asyncResponse, nodeName, rscName, null);
+        toggleDiskDiskful(request, asyncResponse, nodeName, rscName, null, null);
     }
 
     @PUT
@@ -361,18 +364,34 @@ public class Resources
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @PathParam("rscName") String rscName,
-        @PathParam("storagePool") String storagePool
+        @PathParam("storagePool") String storagePool,
+        String jsonData
     )
     {
-        Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
+        try
+        {
+            List<String> layerList = null;
+            if (jsonData != null)
+            {
+                ToggleDiskDiskful data = objectMapper.readValue(jsonData, JsonGenTypes.ToggleDiskDiskful.class);
+                layerList = data.layer_list;
+            }
+            Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
                 nodeName,
                 rscName,
                 storagePool,
                 null,
-                false)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+                layerList,
+                false
+            )
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 
     @PUT
@@ -385,7 +404,7 @@ public class Resources
         @PathParam("rscName") String rscName
     )
     {
-        migrateDisk(request, asyncResponse, nodeName, fromNode, rscName, null);
+        migrateDisk(request, asyncResponse, nodeName, fromNode, rscName, null, null);
     }
 
     @PUT
@@ -396,18 +415,34 @@ public class Resources
         @PathParam("nodeName") String nodeName,
         @PathParam("fromNode") String fromNode,
         @PathParam("rscName") String rscName,
-        @PathParam("storagePool") String storagePool
+        @PathParam("storagePool") String storagePool,
+        String jsonData
     )
     {
-        Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
-            nodeName,
-            rscName,
-            storagePool,
-            fromNode,
-            false)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+        try
+        {
+            List<String> layerList = null;
+            if (jsonData != null)
+            {
+                ToggleDiskDiskful data = objectMapper.readValue(jsonData, JsonGenTypes.ToggleDiskDiskful.class);
+                layerList = data.layer_list;
+            }
+            Flux<ApiCallRc> flux = ctrlRscToggleDiskApiCallHandler.resourceToggleDisk(
+                nodeName,
+                rscName,
+                storagePool,
+                fromNode,
+                layerList,
+                false
+            )
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 
     @POST

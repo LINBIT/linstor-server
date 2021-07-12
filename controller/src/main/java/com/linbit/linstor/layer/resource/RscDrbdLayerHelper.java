@@ -380,8 +380,9 @@ public class RscDrbdLayerHelper extends
 
     private boolean isDrbdDiskless(AbsRscLayerObject<Resource> childRscDataRef) throws AccessDeniedException
     {
-        return childRscDataRef.getAbsResource().getStateFlags()
-            .isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
+        StateFlags<Flags> rscFlags = childRscDataRef.getAbsResource().getStateFlags();
+        return rscFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) &&
+            !rscFlags.isSomeSet(apiCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING);
     }
 
     @Override

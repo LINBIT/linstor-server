@@ -42,6 +42,7 @@ import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.layer.resource.RscDrbdLayerHelper;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -118,6 +119,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<CtrlRscAutoHelper> rscAutoHelper;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -137,7 +139,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         EventWaiter eventWaiterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        Provider<CtrlRscAutoHelper> rscAutoHelperRef
+        Provider<CtrlRscAutoHelper> rscAutoHelperRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -158,6 +161,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         rscAutoHelper = rscAutoHelperRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -209,6 +213,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String rscNameStr,
         String storPoolNameStr,
         String migrateFromNodeNameStr,
+        List<String> layerListRef,
         boolean removeDisk
     )
     {
@@ -227,6 +232,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     rscNameStr,
                     storPoolNameStr,
                     migrateFromNodeNameStr,
+                    layerListRef,
                     removeDisk,
                     context
                 )
@@ -239,6 +245,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String rscNameStr,
         String storPoolNameStr,
         String migrateFromNodeNameStr,
+        List<String> layerListStr,
         boolean removeDisk,
         ResponseContext context
     )
@@ -360,6 +367,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             }
         }
 
+        List<DeviceLayerKind> layerList = null;
         if (removeDisk)
         {
             // diskful -> diskless
@@ -403,11 +411,46 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                  * We also have to remove the currently diskless DrbdRscData and free up the node-id as now we must
                  * use the shared resource's node-id
                  */
-                removeLayerData(rsc);
             }
-            // rebuilds the layerdata in case we just removed it..
+            /*
+             * rebuilds the layerdata in case we just removed it..
+             * doing so, we need to rebuild the layerstack instead of taking the previous one, as a diskless resource
+             * might be "DRBD,storage" while its diskfull peers actually have "DRBD,LUKS,storage".
+             */
+            removeLayerData(rsc);
+            layerList = CtrlRscCrtApiHelper.getLayerstackOrBuildDefault(
+                peerAccCtx.get(),
+                ctrlLayerStackHelper,
+                errorReporter,
+                layerListStr,
+                responses,
+                rsc.getDefinition()
+            );
         }
-        ctrlLayerStackHelper.ensureStackDataExists(rsc, null, payload);
+        ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
+        try
+        {
+            List<DeviceLayerKind> unsupportedLayers = CtrlRscCrtApiHelper.getUnsupportedLayers(peerAccCtx.get(), rsc);
+            if (!unsupportedLayers.isEmpty())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_STLT_DOES_NOT_SUPPORT_LAYER,
+                        "Satellite '" + rsc.getNode().getName() + "' does not support the following layers: " +
+                            unsupportedLayers
+                    )
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "toggle disk resource " + rsc.getDefinition().getName().displayValue + " on node " +
+                    rsc.getNode().getName(),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
 
         ctrlTransactionHelper.commit();
 

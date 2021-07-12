@@ -1364,6 +1364,15 @@ public class JsonGenTypes
         public String content;
     }
 
+    /**
+     * ToggleDisk optional payload data
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ToggleDiskDiskful
+    {
+        public List<String> layer_list = Collections.emptyList();
+    }
+
     private JsonGenTypes()
     {
     }
