@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.8.1
        - Added layer_stack to toggle-disk API
     * 1.8.0
        - Added layer BCACHE
@@ -144,7 +144,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.8.0
+  version: 1.8.1
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com

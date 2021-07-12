@@ -1,3 +1,17 @@
+linstor-server (1.13.1-1) experimental; urgency=medium
+
+  [ Matt Kereczman ]
+  * subdomain update for download URLs from www to pkg
+
+  [ Gabor Hernadi ]
+  * BCache: Always register devices
+  * ToggleDisk: Recreate correct layerData
+
+  [ Rene Peinthor ]
+  * grizzly: add a /ui static web handler for a configurable dir
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 12 Jul 2021 08:13:41 +0000
+
 linstor-server (1.13.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
