@@ -5,6 +5,7 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'application'
 apply plugin: 'checkstyle'
+apply plugin: 'jacoco'
 
 sourceCompatibility = 1.8
 
@@ -362,6 +363,53 @@ sourceSets {
             srcDirs = ["src/test/java"]
         }
     }
+}
+
+test {
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+jacocoTestReport {
+    if (project.hasProperty('CoverageReport')) {
+        dependsOn = subprojects.test
+        additionalSourceDirs.setFrom(files(subprojects.sourceSets.main.allSource.srcDirs))
+        sourceDirectories.setFrom(files(subprojects.sourceSets.main.allSource.srcDirs))
+        classDirectories.setFrom(files(subprojects.sourceSets.main.output))
+        reports {
+            html.enabled = true
+            xml.enabled = true
+            csv.enabled = true
+        }
+        onlyIf = {
+            true
+        }
+        doFirst {
+            executionData.setFrom(files(executionData.findAll {
+                it.exists()
+            }))
+        }
+        afterEvaluate {
+            excludedClassFilesForReport(classDirectories)
+        }
+    }
+}
+
+jacocoTestCoverageVerification {
+    if (project.hasProperty('CoverageReport')) {
+        afterEvaluate {
+            excludedClassFilesForReport(classDirectories)
+        }
+    }
+}
+
+private excludedClassFilesForReport(classDirectories) {
+    classDirectories.setFrom(files(classDirectories.files.collect {
+        fileTree(dir: it,
+                exclude: [
+                        'com/linbit/linstor/proto/**'
+                ]
+        )
+    }))
 }
 
 dependencies {

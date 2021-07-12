@@ -54,10 +54,12 @@ test:
   script:
     - ./gradlew -PversionOverride= checkstyleMain
     - ./gradlew -PversionOverride= assemble
-    - JAVA_OPTS="-ea" ./gradlew -PversionOverride= check
+    - JAVA_OPTS="-ea" ./gradlew -PversionOverride= -PCoverageReport=true test
+    - awk -F"," '{ instructions += $4 + $5; covered += $5 } END { print "Total", 100*covered/instructions, "% covered" }' build/reports/jacoco/test/jacocoTestReport.csv
   artifacts:
     reports:
       junit: build/test-results/test/TEST-*.xml
+      cobertura: build/reports/jacoco/test/jacocoTestReport.xml
     paths:
       - build/distributions/linstor-server.tar
     expire_in: 4 days
