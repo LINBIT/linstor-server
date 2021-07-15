@@ -67,6 +67,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuter
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntSnapshotShippedOuterClass.MsgIntSnapshotShipped;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntCloneUpdateOuterClass.MsgIntCloneUpdate;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateFreeSpaceOuterClass.MsgIntUpdateFreeSpace;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateLocalNodeChangeOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass;
@@ -726,6 +727,25 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setSnapName(snapRef.getSnapshotName().displayValue)
                 .setSuccess(success)
                 .addAllVlmNrsWithBlockedPort(vlmNrsWithBlockedPort)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder notifyCloneUpdate(String rscName, int vlmNr, boolean successRef)
+    {
+        try
+        {
+            MsgIntCloneUpdate.newBuilder()
+                .setRscName(rscName)
+                .setVlmNr(vlmNr)
+                .setSuccess(successRef)
                 .build()
                 .writeDelimitedTo(baos);
         }

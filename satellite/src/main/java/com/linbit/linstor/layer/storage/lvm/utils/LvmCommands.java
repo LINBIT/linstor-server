@@ -27,6 +27,8 @@ public class LvmCommands
     public static final int LVS_COL_DATA_PERCENT = 5;
     public static final int LVS_COL_ATTRIBUTES = 6;
 
+    public static final String LVM_TAG_CLONE_SNAPSHOT = "linstor_clone_snapshot";
+
     private static String[] buildCmd(
         String baseCmd,
         String lvmConfig,
@@ -267,6 +269,37 @@ public class LvmCommands
         );
     }
 
+    public static OutputData createSnapshot(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String identifier,
+        String snapshotIdentifier,
+        String lvmConfig,
+        long size
+    )
+        throws StorageException
+    {
+        String failMsg = "Failed to create snapshot " + snapshotIdentifier + " from " + identifier +
+            " within volume group " + volumeGroup;
+        return genericExecutor(
+            extCmd.setSaveWithoutSharedLocks(false),
+            buildCmd(
+                "lvcreate",
+                lvmConfig,
+                (Collection<String>) null,
+                "--size", size + "k",
+                "--snapshot",
+                "--setactivationskip", "y", // snapshot needs to be active from the beginning
+                "--ignoreactivationskip",
+                "--activate", "y",
+                "--name", snapshotIdentifier,
+                volumeGroup + File.separator + identifier
+            ),
+            failMsg,
+            failMsg
+        );
+    }
+
     public static OutputData createSnapshotThin(
         ExtCmd extCmd,
         String volumeGroup,
@@ -460,6 +493,25 @@ public class LvmCommands
                 lvmConfig,
                 (Collection<String>) null,
                 "-an",  // deactivate volume
+                volumeGroup + File.separator + targetId
+            ),
+            failMsg,
+            failMsg
+        );
+    }
+
+    public static OutputData addTag(
+        ExtCmd extCmd, String volumeGroup, String targetId, String tagname, String lvmConfig)
+        throws StorageException
+    {
+        String failMsg = "Failed to set tag on volume " + volumeGroup + File.separator + targetId;
+        return genericExecutor(
+            extCmd.setSaveWithoutSharedLocks(false),
+            buildCmd(
+                "lvchange",
+                lvmConfig,
+                (Collection<String>) null,
+                "--addtag", tagname,
                 volumeGroup + File.separator + targetId
             ),
             failMsg,

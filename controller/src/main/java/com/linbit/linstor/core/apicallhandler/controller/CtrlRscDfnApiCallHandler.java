@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbd.md.GidGenerator;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -39,12 +40,15 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceControllerFactory;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
@@ -60,14 +64,21 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
+import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller.notConnectedError;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
@@ -77,13 +88,15 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -96,6 +109,8 @@ public class CtrlRscDfnApiCallHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final CtrlVlmDfnApiCallHandler vlmDfnHandler;
+    private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
+    private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -108,7 +123,6 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlSecurityObjects secObjs;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscLayerDataFactory ctrlLayerStackHelper;
@@ -117,6 +131,9 @@ public class CtrlRscDfnApiCallHandler
     private final AutoDiskfulTask autoDiskfulTask;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
+    private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
+    private final FreeCapacityFetcher freeCapacityFetcher;
+    private final ResourceControllerFactory resourceControllerFactory;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -137,13 +154,17 @@ public class CtrlRscDfnApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
         CtrlRscLayerDataFactory ctrlLayerStackHelperRef,
         EncryptionHelper encHelperRef,
         AutoSnapshotTask autoSnapshotTaskRef,
         AutoDiskfulTask autoDiskfulTaskRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
-        CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef
+        CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef,
+        CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
+        CtrlRscCrtApiHelper CtrlRscCrtApiHelperRef,
+        FreeCapacityFetcher freeCapacityFetcherRef,
+        ResourceControllerFactory resourceControllerFactoryRef,
+        CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -162,7 +183,6 @@ public class CtrlRscDfnApiCallHandler
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
         ctrlLayerStackHelper = ctrlLayerStackHelperRef;
-        ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         encHelper = encHelperRef;
@@ -170,6 +190,11 @@ public class CtrlRscDfnApiCallHandler
         autoDiskfulTask = autoDiskfulTaskRef;
         ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
         ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
+        ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
+        ctrlRscCrtApiHelper = CtrlRscCrtApiHelperRef;
+        freeCapacityFetcher = freeCapacityFetcherRef;
+        resourceControllerFactory = resourceControllerFactoryRef;
+        ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
     }
 
     public ResourceDefinition createResourceDefinition(
@@ -643,6 +668,307 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return rscdfns;
+    }
+
+    private ApiCallRc copyVlmDfn(final ResourceDefinition srcRscDfn, final ResourceDefinition destRscDfn)
+        throws AccessDeniedException, DatabaseException, GidGenerator.GidGeneratorException
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        for (VolumeDefinition srcVlmDfn :
+            srcRscDfn.streamVolumeDfn(peerAccCtx.get()).collect(Collectors.toList()))
+        {
+            VolumeDefinition vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
+                peerAccCtx.get(),
+                destRscDfn,
+                srcVlmDfn.getVolumeNumber(),
+                null,
+                srcVlmDfn.getVolumeSize(peerAccCtx.get()),
+                VolumeDefinition.Flags.restoreFlags(srcVlmDfn.getFlags().getFlagsBits(peerAccCtx.get()))
+            );
+
+            Map<String, String> srcVlmDfnProps = srcVlmDfn.getProps(peerAccCtx.get()).map();
+            Map<String, String> vlmDfnProps = vlmDfn.getProps(peerAccCtx.get()).map();
+            vlmDfnProps.putAll(srcVlmDfnProps);
+            // create new initial drbd GI
+            vlmDfnProps.put(
+                ApiConsts.KEY_DRBD_CURRENT_GI,
+                GidGenerator.generateRandomGid()
+            );
+        }
+
+        return responses;
+    }
+
+    public Flux<ApiCallRc> cloneRscDfn (String srcRscName, String clonedRscName, byte[] clonedExtName) {
+        ResponseContext context = makeResourceDefinitionContext(
+            ApiOperation.makeCreateOperation(),
+            clonedRscName
+        );
+        // TODO optimize: only fetch involved nodes
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
+            .flatMapMany(thinFreeCapacities ->
+                scopeRunner
+                    .fluxInTransactionalScope(
+                        "Clone resource-definition",
+                        lockGuardFactory.buildDeferred(LockGuardFactory.LockType.WRITE, NODES_MAP, RSC_DFN_MAP),
+                        () -> cloneRscDfnInTransaction(
+                            srcRscName, clonedRscName, clonedExtName, context, thinFreeCapacities)
+                    )
+                    .transform(responses -> responseConverter.reportingExceptions(context, responses)));
+    }
+
+    private Flux<ApiCallRc> resumeIO(ResourceDefinition rscDfn)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Resume resource",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> resumeIOInTransaction(rscDfn)
+            );
+    }
+
+    private Flux<ApiCallRc> resumeIOInTransaction(ResourceDefinition rscDfn)
+    {
+        resumeIOPrivileged(rscDfn);
+
+        ctrlTransactionHelper.commit();
+
+        return ctrlSatelliteUpdateCaller
+            .updateSatellites(rscDfn, notConnectedError(), Flux.empty())
+            .transform(
+                responses -> CtrlResponseUtils.combineResponses(
+                    responses,
+                    rscDfn.getName(),
+                    "Resumed IO of {1} on {0} after clone"
+                )
+            );
+    }
+
+    private void setSuspendIO(Resource rsc)
+    {
+        try
+        {
+            rsc.getLayerData(peerAccCtx.get()).setSuspendIo(true);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "set resource suspension for " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private void resumeIOPrivileged(ResourceDefinition rscDfn)
+    {
+        try
+        {
+            Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                rsc.getLayerData(apiCtx).setSuspendIo(false);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
+        }
+    }
+
+    private Flux<ApiCallRc> removeStartCloning(ResourceDefinition rscDfn) {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Disabled start cloning flag",
+                lockGuardFactory.create()
+                    .write(LockObj.RSC_DFN_MAP, LockObj.NODES_MAP)
+                    .buildDeferred(),
+                () -> removeStartCloningInTransaction(rscDfn)
+            );
+    }
+
+    private Flux<ApiCallRc> removeStartCloningInTransaction(ResourceDefinition rscDfn)
+        throws AccessDeniedException, DatabaseException
+    {
+        Iterator<Resource> it = rscDfn.iterateResource(peerAccCtx.get());
+        while(it.hasNext()) {
+            Resource rsc = it.next();
+
+            // remove start cloning flag from vlms
+            if (!rsc.isDiskless(peerAccCtx.get())) {
+                for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList())) {
+                    vlm.getFlags().disableFlags(peerAccCtx.get(), Volume.Flags.CLONING_START);
+                }
+            }
+        }
+        ctrlTransactionHelper.commit();
+        return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty())
+            .transform(
+                updateResponses -> CtrlResponseUtils.combineResponses(
+                    updateResponses,
+                    rscDfn.getName(),
+                    "Disabled start cloning flag " + rscDfn.getName()
+                )
+            );
+    }
+
+    public Flux<ApiCallRc> cloneRscDfnInTransaction(
+        String srcRscName,
+        String clonedRscName,
+        byte[] clonedExtName,
+        ResponseContext context,
+        Map<StorPool.Key, Long> thinFreeCapacities)
+    {
+        Flux<ApiCallRc> flux;
+
+        try
+        {
+            ApiCallRcImpl responses = new ApiCallRcImpl();
+            requireRscDfnMapChangeAccess();
+
+            final ResourceDefinition srcRscDfn = ctrlApiDataLoader.loadRscDfn(srcRscName, true);
+
+            final ResourceDefinition clonedRscDfn = createRscDfn(
+                clonedRscName,
+                clonedExtName,
+                null,
+                null,
+                null,
+                srcRscDfn.getLayerStack(peerAccCtx.get()),
+                null,
+                srcRscDfn.getResourceGroup().getName().displayValue);
+
+            Map<String, String> clonedRscDfnProps = clonedRscDfn.getProps(peerAccCtx.get()).map();
+            clonedRscDfnProps.putAll(srcRscDfn.getProps(peerAccCtx.get()).map());
+            clonedRscDfnProps.put(InternalApiConsts.KEY_CLONED_FROM, srcRscDfn.getName().displayValue);
+            clonedRscDfn.getFlags().enableFlags(peerAccCtx.get(), ResourceDefinition.Flags.CLONING);
+
+            resourceDefinitionRepository.put(apiCtx, clonedRscDfn);
+
+            responses.addEntries(copyVlmDfn(srcRscDfn, clonedRscDfn));
+
+            Set<Resource> deployedResources = new TreeSet<>();
+            List<Flux<ApiCallRc>> createClonedRscsFlux = new ArrayList<>();
+            Iterator<Resource> it = srcRscDfn.iterateResource(peerAccCtx.get());
+            while(it.hasNext()) {
+                Resource rsc = it.next();
+
+                setSuspendIO(rsc);
+
+                Resource newRsc = resourceControllerFactory.create(
+                    peerAccCtx.get(),
+                    clonedRscDfn,
+                    rsc.getNode(),
+                    rsc.getLayerData(peerAccCtx.get()),
+                    Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())));
+
+                ctrlPropsHelper.copy(
+                    ctrlPropsHelper.getProps(rsc),
+                    ctrlPropsHelper.getProps(newRsc)
+                );
+
+                Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(clonedRscDfn);
+                while (toVlmDfnIter.hasNext())
+                {
+                    VolumeDefinition toVlmDfn = toVlmDfnIter.next();
+                    VolumeNumber volumeNumber = toVlmDfn.getVolumeNumber();
+
+                    Volume srcVlm = rsc.getVolume(volumeNumber);
+
+                    Map<String, StorPool> storPool = LayerVlmUtils.getStorPoolMap(rsc, volumeNumber, peerAccCtx.get());
+                    Volume cloneVlm = ctrlVlmCrtApiHelper
+                        .createVolumeFromAbsVolume(newRsc, toVlmDfn, storPool, thinFreeCapacities, srcVlm);
+
+                    ctrlPropsHelper.copy(
+                        ctrlPropsHelper.getProps(srcVlm),
+                        ctrlPropsHelper.getProps(cloneVlm)
+                    );
+                }
+
+                Set<AbsRscLayerObject<Resource>> rscLayerSet = LayerRscUtils.getRscDataByProvider(
+                    newRsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
+                for (AbsRscLayerObject<Resource> rscLayer : rscLayerSet) {
+                    DrbdRscData<Resource> drbdRscData = ((DrbdRscData<Resource>) rscLayer);
+                    drbdRscData.getFlags().disableFlags(peerAccCtx.get(), DrbdRscObject.DrbdRscFlags.INITIALIZED);
+                }
+
+                // mark all volumes as cloning
+                for (Volume vlm : newRsc.streamVolumes().collect(Collectors.toList())) {
+                    if (!newRsc.isDiskless(peerAccCtx.get()))
+                    {
+                        Set<StorPool> storPools = LayerVlmUtils.getStorPoolSet(vlm, peerAccCtx.get(), false);
+                        boolean allSupportCloning = storPools.stream()
+                            .allMatch(storPool -> storPool.getDeviceProviderKind().isCloneSupported());
+
+                        if (!allSupportCloning)
+                        {
+                            throw new ApiRcException(
+                                ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.FAIL_INVLD_PROVIDER, "Clone source contains unsupported storage pools"));
+                        }
+                        vlm.getFlags().enableFlags(peerAccCtx.get(), Volume.Flags.CLONING_START, Volume.Flags.CLONING);
+                    }
+                    else
+                    {
+                        vlm.getFlags().enableFlags(peerAccCtx.get(), Volume.Flags.CLONING_FINISHED);
+                    }
+                }
+
+                deployedResources.add(newRsc);
+            }
+
+            ctrlTransactionHelper.commit();
+
+            for (Resource rsc : deployedResources)
+            {
+                responseConverter.addWithOp(responses, context,
+                    ApiSuccessUtils.defaultRegisteredEntry(rsc.getUuid(), getRscDescriptionInline(rsc)));
+
+                responses.addEntries(CtrlRscCrtApiCallHandler.makeVolumeRegisteredEntries(rsc));
+            }
+
+            Flux<ApiCallRc> deploymentResponses = ctrlRscCrtApiHelper.deployResources(context, deployedResources, false);
+
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(srcRscDfn, Flux.empty())
+                .transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        srcRscDfn.getName(),
+                        "Suspend IO on clone source " + srcRscName
+                    )
+                )
+                .concatWith(Flux.just(responses))
+                .concatWith(deploymentResponses)
+                .concatWith(Flux.merge(createClonedRscsFlux))
+                .concatWith(resumeIO(srcRscDfn))
+                .concatWith(removeStartCloning(clonedRscDfn))
+                .onErrorResume(exception -> resumeIO(srcRscDfn));
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            if (exc instanceof ApiRcException)
+            {
+                throw (ApiRcException) exc;
+            }
+            else
+            {
+                throw new ApiException(exc);
+            }
+        }
+
+        return flux;
     }
 
     private void requireRscDfnMapChangeAccess()

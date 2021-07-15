@@ -119,6 +119,12 @@ public interface CtrlStltSerializer extends CommonSerializer
             Set<Integer> vlmNrsWithBlockedPort
         );
 
+        CtrlStltSerializerBuilder notifyCloneUpdate(
+            String rscName,
+            int vlmNr,
+            boolean successRef
+        );
+
         CtrlStltSerializerBuilder requestControllerUpdate();
         CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);

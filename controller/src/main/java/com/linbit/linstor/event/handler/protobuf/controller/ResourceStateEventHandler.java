@@ -113,6 +113,15 @@ public class ResourceStateEventHandler implements EventHandler
                 )
             );
 
+            satelliteStateHelper.onSatelliteState(
+                eventIdentifier.getNodeName(),
+                satelliteState -> satelliteState.setOnResource(
+                    eventIdentifier.getResourceName(),
+                    SatelliteResourceState::setIsReady,
+                    eventRscState.getReady()
+                )
+            );
+
             final Integer promotionScore = eventRscState.hasPromotionScore() ?
                 eventRscState.getPromotionScore() : null;
             final Boolean mayPromote = eventRscState.hasMayPromote() ?

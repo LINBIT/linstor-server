@@ -1024,7 +1024,12 @@ public class DeviceHandlerImpl implements DeviceHandler
                 .getLayerData(wrkCtx)
                 .getVlmProviderObject(vlmRef.getVolumeNumber());
 
-            List<String> symlinks = udevHandler.getSymlinks(vlmProviderObject.getDevicePath());
+            List<String> symlinks = null;
+            if (!vlmRef.getFlags().isSet(wrkCtx, Volume.Flags.CLONING))
+            {
+                symlinks = udevHandler.getSymlinks(vlmProviderObject.getDevicePath());
+            }
+
             if (symlinks != null)
             {
                 // elements of symlinks usually do not start with "/dev/"

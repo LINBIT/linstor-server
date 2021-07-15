@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.9.0";
+    public static final String REST_API_VERSION = "1.10.0";
 
     /**
      * Common api reply structure
@@ -207,11 +207,6 @@ public class JsonGenTypes
     public static class ResourceDefinition
     {
         public String name = "";
-        /**
-         * External name can be used to have native resource names.
-         * If you need to store a non Linstor compatible resource name use this field
-         * and Linstor will generate a compatible name.
-         */
         public String external_name;
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
@@ -702,11 +697,6 @@ public class JsonGenTypes
          * name of the resulting resource-definition
          */
         public String resource_definition_name;
-        /**
-         * External name can be used to have native resource names.
-         * If you need to store a non Linstor compatible resource name use this field
-         * and Linstor will generate a compatible name.
-         */
         public String resource_definition_external_name;
         /**
          * sizes (in kib) of the resulting volume-definitions
@@ -1379,6 +1369,61 @@ public class JsonGenTypes
     public static class ToggleDiskDiskful
     {
         public List<String> layer_list = Collections.emptyList();
+    }
+
+//    /**
+//     * External name can be used to have native resource names.
+//     * If you need to store a non Linstor compatible resource name use this field
+//     * and Linstor will generate a compatible name.
+//     */
+//    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+//    public static class ExternalName
+//    {
+//    }
+
+    /**
+     * Clone request object
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceDefinitionCloneRequest
+    {
+        public String name;
+        public String external_name;
+    }
+
+    /**
+     * Clone request started object
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceDefinitionCloneStarted
+    {
+        /**
+         * Path for clone status
+         */
+        public String location;
+        /**
+         * name of the source resource
+         */
+        public String source_name;
+        /**
+         * name of the clone resource
+         */
+        public String clone_name;
+        public List<ApiCallRc> messages = Collections.emptyList();
+    }
+
+    /**
+     * Clone status object
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceDefinitionCloneStatus
+    {
+        /**
+         * CLONING -> indicates the resource is currently copying data
+         * FAILED -> error occured while cloning, resource not usable
+         * COMPLETE -> resource is ready to use
+         */
+        public String status;
     }
 
     private JsonGenTypes()

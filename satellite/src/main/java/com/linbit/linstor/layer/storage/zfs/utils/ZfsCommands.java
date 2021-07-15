@@ -343,6 +343,23 @@ public class ZfsCommands
         );
     }
 
+    public static OutputData setUserProperty(ExtCmd extCmd, String zPool, String zfsId, String name, String value)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            new String[]
+                {
+                    "zfs",
+                    "set",
+                    "linstor:" + name + "=" + value,
+                    zPool + "/" + zfsId
+                },
+            "Failed to set user property",
+            "Failed to set user property"
+        );
+    }
+
     private ZfsCommands()
     {
     }

@@ -13,6 +13,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
@@ -26,6 +27,7 @@ import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
@@ -47,20 +49,22 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nonnull;
 import javax.inject.Provider;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -90,6 +94,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected final StltConfigAccessor stltConfigAccessor;
     protected Props localNodeProps;
     private final SnapshotShippingService snapShipMgr;
+    protected final CloneService cloneService;
     protected final StltExtToolsChecker extToolsChecker;
 
     protected final HashMap<String, INFO> infoListCache;
@@ -114,7 +119,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         String typeDescrRef,
         DeviceProviderKind kindRef,
         SnapshotShippingService snapShipMgrRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         errorReporter = errorReporterRef;
@@ -128,6 +134,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         kind = kindRef;
         snapShipMgr = snapShipMgrRef;
         extToolsChecker = extToolsCheckerRef;
+        cloneService = cloneServiceRef;
 
         infoListCache = new HashMap<>();
         try
@@ -257,6 +264,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             String lvId = vlmData.getIdentifier();
             if (vlmData.exists())
             {
+                if (cloneService.isRunning(vlmData.getRscLayerObject().getResourceName(), vlmData.getVlmNr()))
+                {
+                    errorReporter.logTrace("Cloning in process for %s", lvId);
+                    continue;
+                }
                 errorReporter.logTrace("Lv %s found", lvId);
                 if (!vlmShouldExist)
                 {
@@ -324,6 +336,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             {
                 if (vlmShouldExist)
                 {
+                    if (cloneService.isRunning(vlmData.getRscLayerObject().getResourceName(), vlmData.getVlmNr())) {
+                        errorReporter.logTrace("Cloning in process for %s", lvId);
+                        continue;
+                    }
                     errorReporter.logTrace("Lv %s will be created", lvId);
                     vlmsToCreate.add(vlmData);
                 }
@@ -428,11 +444,31 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         return copy;
     }
 
+    private boolean isCloneVolume(LAYER_DATA vlmData) throws AccessDeniedException
+    {
+        final Resource rsc = vlmData.getRscLayerObject().getAbsResource();
+        return rsc.getVolume(vlmData.getVlmNr()).getFlags().isSet(storDriverAccCtx, Volume.Flags.CLONING_START);
+    }
+
+    private void createLvWithCopy(LAYER_DATA vlmData)
+        throws AccessDeniedException, StorageException
+    {
+        final Props rscDfnProps = vlmData.getRscLayerObject().getAbsResource()
+            .getResourceDefinition().getProps(storDriverAccCtx);
+        final String srcRscName = rscDfnProps.getProp(InternalApiConsts.KEY_CLONED_FROM);
+        final String dstRscName = vlmData.getRscLayerObject().getResourceName().displayValue;
+        final String cloneSnapshotName = "clone_for_" + dstRscName;
+        final Resource srcRsc = getResource(vlmData, srcRscName);
+
+        createLvWithCopyImpl(vlmData, srcRsc, cloneSnapshotName);
+    }
+
     private void createVolumes(List<LAYER_DATA> vlmsToCreate, ApiCallRcImpl apiCallRc)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         for (LAYER_DATA vlmData : vlmsToCreate)
         {
+            final boolean cloneVolume = isCloneVolume(vlmData);
             String sourceLvId = computeRestoreFromResourceName(vlmData);
             // sourceLvId ends with "_00000"
 
@@ -446,7 +482,17 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
-                createLvImpl(vlmData);
+                if (RscLayerSuffixes.SUFFIX_DATA.equals(vlmData.getRscLayerObject().getResourceNameSuffix())
+                        && cloneVolume) {
+                    if (!cloneService.isRunning(vlmData.getRscLayerObject().getResourceName(), vlmData.getVlmNr()) &&
+                        !vlmData.getRscLayerObject().getAbsResource().getResourceDefinition()
+                            .getFlags().isSet(storDriverAccCtx, ResourceDefinition.Flags.FAILED))
+                    {
+                        createLvWithCopy(vlmData);
+                    }
+                } else {
+                    createLvImpl(vlmData);
+                }
             }
             vlmData.setExists(true);
 
@@ -456,19 +502,22 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             // some providers cannot construct a device path in the next call and therefore return null here
             String devicePath = getDevicePath(storageName, lvId);
 
-            // those providers will most likely also skip setting the (null) devicePath.
-            setDevicePath(vlmData, devicePath);
+            if (!cloneVolume) {
+                // those providers will most likely also skip setting the (null) devicePath.
+                setDevicePath(vlmData, devicePath);
+            } else {
+                // volumes will be cloned in a background thread, and we don't want other layers try to read/write to it
+                // while we currently dd/send/recv, it will be set after cloning finished
+                setDevicePath(vlmData, null);
+            }
 
             // however, those providers have to have a different method in getting the device path which means
             // the correct device path was already set since the "createLvImpl" or "restoreSnapshot" call.
             devicePath = vlmData.getDevicePath();
 
-            StorPool storPool = vlmData.getStorPool();
-            long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
-
             if (devicePath == null)
             {
-                if (!isDevPathExpectedToBeNull)
+                if (!(isDevPathExpectedToBeNull || cloneVolume))
                 {
                     throw new StorageException(
                         getClass().getSimpleName() + " failed to create local device for volume: " + vlmData.getVolume()
@@ -477,31 +526,40 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
-                waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
-
-                if (stltConfigAccessor.useDmStats() && updateDmStats())
-                {
-                    DmStatCommands.create(extCmdFactory.create(), devicePath);
-                }
-
-                if (!snapRestore)
-                {
-                    wipeHandler.quickWipe(devicePath);
-                }
+                postCreate(vlmData, snapRestore);
             }
-            long allocatedSize = getAllocatedSize(vlmData);
-            long minSize = kind.usesThinProvisioning() ? 0 : vlmData.getExpectedSize();
-            if (allocatedSize < minSize)
-            {
-                throw new StorageException("Size of create volume is too low. Expected " +
-                    minSize + ". Actual: " + allocatedSize + ". Volume: " + vlmData);
-            }
-
-            setAllocatedSize(vlmData, allocatedSize);
-            setUsableSize(vlmData, allocatedSize);
 
             addCreatedMsg(vlmData, apiCallRc);
         }
+    }
+
+    public void postCreate(LAYER_DATA vlmData, boolean wipeData)
+        throws AccessDeniedException, StorageException, DatabaseException
+    {
+        StorPool storPool = vlmData.getStorPool();
+        long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
+        waitUntilDeviceCreated(vlmData.getDevicePath(), waitTimeoutAfterCreate);
+
+        if (stltConfigAccessor.useDmStats() && updateDmStats())
+        {
+            DmStatCommands.create(extCmdFactory.create(), vlmData.getDevicePath());
+        }
+
+        if (!wipeData)
+        {
+            wipeHandler.quickWipe(vlmData.getDevicePath());
+        }
+
+        long allocatedSize = getAllocatedSize(vlmData);
+        long minSize = kind.usesThinProvisioning() ? 0 : vlmData.getExpectedSize();
+        if (allocatedSize < minSize)
+        {
+            throw new StorageException("Size of create volume is too low. Expected " +
+                minSize + ". Actual: " + allocatedSize + ". Volume: " + vlmData);
+        }
+
+        setAllocatedSize(vlmData, allocatedSize);
+        setUsableSize(vlmData, allocatedSize);
     }
 
     protected abstract boolean waitForSnapshotDevice();
@@ -1148,6 +1206,37 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
     }
 
+    final protected @Nonnull Resource getResource(LAYER_DATA vlmData, String rscName)
+        throws AccessDeniedException, StorageException
+    {
+        try
+        {
+            ResourceName tmpName = new ResourceName(rscName);
+            Resource rsc = vlmData.getRscLayerObject().getAbsResource()
+                .getNode().getResource(storDriverAccCtx, tmpName);
+            if (rsc == null) {
+                throw new StorageException("Couldn't find resource: " + rscName);
+            }
+            return rsc;
+        } catch(InvalidNameException exc) {
+            throw new ImplementationError("Couldn't create resource name from: " + rscName);
+        }
+    }
+
+    final protected @Nonnull LAYER_DATA getVlmDataFromResource(Resource rsc, String rscNameSuffix, VolumeNumber vlmNr)
+        throws AccessDeniedException, StorageException
+    {
+        List<AbsRscLayerObject<Resource>> storageRscDataList = LayerUtils.getChildLayerDataByKind(
+            rsc.getLayerData(storDriverAccCtx), DeviceLayerKind.STORAGE);
+        for (AbsRscLayerObject<Resource> storageRscData : storageRscDataList)
+        {
+            if (storageRscData.getResourceNameSuffix().equals(rscNameSuffix)) {
+                return storageRscData.getVlmProviderObject(vlmNr);
+            }
+        }
+        throw new ImplementationError("Couldn't find VlmData for resource: " + rsc.getResourceDefinition().getName());
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public void updateGrossSize(VlmProviderObject<Resource> vlmData)
@@ -1258,6 +1347,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected abstract void deactivateLvImpl(LAYER_DATA vlmData, String lvId)
         throws StorageException, AccessDeniedException, DatabaseException;
 
+    protected void createLvWithCopyImpl(LAYER_DATA vlmData, Resource srcRsc, String cloneSnapshotName)
+        throws StorageException, AccessDeniedException
+    {
+        throw new StorageException("Clone volume is not supported by " + getClass().getSimpleName());
+    }
 
     protected String asLvIdentifier(LAYER_DATA vlmData)
     {
@@ -1335,7 +1429,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         int vlmNr
     );
 
-    protected abstract String getDevicePath(String storageName, String lvId);
+    public abstract String getDevicePath(String storageName, String lvId);
 
     protected abstract String getStorageName(LAYER_DATA vlmData) throws DatabaseException, AccessDeniedException;
 
@@ -1347,4 +1441,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     protected abstract void setExpectedUsableSize(LAYER_DATA vlmData, long size)
         throws DatabaseException, StorageException;
+
+    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
+    {
+        return null;
+    }
+
+    public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
+    {
+    }
 }

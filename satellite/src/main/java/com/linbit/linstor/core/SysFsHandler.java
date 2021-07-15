@@ -325,10 +325,10 @@ public class SysFsHandler
         }
     }
 
-    private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws StorageException
+    private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws StorageException, AccessDeniedException
     {
         String majMin = deviceMajorMinorMap.get(vlmDataRef);
-        if (vlmDataRef.exists())
+        if (vlmDataRef.exists() && !((Volume)vlmDataRef.getVolume()).getFlags().isSet(apiCtx, Volume.Flags.CLONING))
         {
             if (majMin == null)
             {

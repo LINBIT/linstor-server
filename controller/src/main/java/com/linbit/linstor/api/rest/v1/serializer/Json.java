@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
@@ -75,6 +76,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.google.common.net.UrlEscapers;
 
 public class Json
 {
@@ -1104,6 +1107,23 @@ public class Json
             json.content = Base64.encode(pojo.getContent());
         }
         return json;
+    }
+
+    public static JsonGenTypes.ResourceDefinitionCloneStarted resourceDefCloneStarted(
+        String srcRscName,
+        String clonedName,
+        ApiCallRc messages
+    )
+    {
+        JsonGenTypes.ResourceDefinitionCloneStarted response = new JsonGenTypes.ResourceDefinitionCloneStarted();
+        response.location = String.format(
+            "/v1/resource-definitions/%s/clone/%s",
+            srcRscName,
+            UrlEscapers.urlPathSegmentEscaper().escape(clonedName));
+        response.source_name = srcRscName;
+        response.clone_name = clonedName;
+        response.messages = Json.apiCallRcToJson(messages);
+        return response;
     }
 
     private Json()

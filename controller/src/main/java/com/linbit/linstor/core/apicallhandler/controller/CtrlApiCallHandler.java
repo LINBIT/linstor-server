@@ -1,12 +1,18 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.InvalidNameException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.ControllerConfigApi;
 import com.linbit.linstor.core.apis.KvsApi;
 import com.linbit.linstor.core.apis.NodeApi;
+import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
@@ -15,12 +21,19 @@ import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
+import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 
+import static com.linbit.linstor.core.objects.ResourceDefinition.Flags.CLONING;
+import static com.linbit.linstor.core.objects.ResourceDefinition.Flags.FAILED;
 import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
 import static com.linbit.locks.LockGuardFactory.LockObj.KVS_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -35,12 +48,15 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
 
@@ -1339,5 +1355,121 @@ public class CtrlApiCallHandler
             apiCallRc = vlmGrpApiCallHandler.delete(rscGrpNameRef, vlmNrRef);
         }
         return apiCallRc;
+    }
+
+    private boolean containsLayerKind(ResourceDefinitionApi rscDfnApi, ApiConsts.DeviceLayerKind kind) {
+        return rscDfnApi.getLayerData().stream().anyMatch(pair -> pair.objA.equalsIgnoreCase(kind.getValue()));
+    }
+
+    public ApiConsts.CloneStatus isCloneReady(
+        String cloneName
+    )
+    {
+        ApiConsts.CloneStatus status = ApiConsts.CloneStatus.CLONING;
+        try (LockGuard ignored = lockGuardFactory.build(READ, NODES_MAP, RSC_DFN_MAP))
+        {
+            ResourceName rscCloneName = new ResourceName(cloneName);
+            ArrayList<ResourceDefinitionApi> clonedResources = this.listResourceDefinitions(
+                Collections.singletonList(cloneName),
+                Collections.singletonList(InternalApiConsts.KEY_CLONED_FROM));
+
+            if (clonedResources != null && clonedResources.size() == 1)
+            {
+                final ResourceDefinitionApi cloneRscDfn = clonedResources.get(0);
+                final ResourceList rscs = this.listResource(
+                    cloneRscDfn.getResourceName(), Collections.emptyList());
+
+                List<NodeApi> nodes = this.listNodes(rscs.getResources().stream()
+                    .map(ResourceApi::getNodeName).collect(Collectors.toList()), Collections.emptyList());
+                boolean anyNodesOffline = nodes.stream()
+                    .anyMatch(node -> node.connectionStatus() != ApiConsts.ConnectionStatus.ONLINE);
+
+                if ((cloneRscDfn.getFlags() & FAILED.flagValue) == FAILED.flagValue || anyNodesOffline)
+                {
+                    status = ApiConsts.CloneStatus.FAILED;
+                }
+                else
+                {
+                    if ((cloneRscDfn.getFlags() & CLONING.flagValue) != CLONING.flagValue)
+                    {
+                        boolean isReady = true;
+                        boolean anyFailed = false;
+
+                        // if DRBD is involved wait for all resources to be ready
+                        if (containsLayerKind(cloneRscDfn, ApiConsts.DeviceLayerKind.DRBD))
+                        {
+                            if (rscs.getSatelliteStates().size() == rscs.getResources().size())
+                            {
+                                for (SatelliteState stltState : rscs.getSatelliteStates().values())
+                                {
+                                    SatelliteResourceState rscState = stltState.getResourceStates().get(rscCloneName);
+
+                                    if (rscState == null)
+                                    {
+                                        isReady = false;
+                                        break;
+
+                                    }
+                                    if (!rscState.isReady())
+                                    {
+                                        isReady = false;
+
+                                        anyFailed = rscState.getConnectionStates().values()
+                                            .stream()
+                                            .flatMap(f -> f.values().stream())
+                                            .anyMatch("StandAlone"::equalsIgnoreCase);
+
+                                        if (anyFailed)
+                                        {
+                                            break;
+                                        }
+
+                                        boolean allDrbdConnected = rscState.getConnectionStates().values()
+                                            .stream()
+                                            .flatMap(f -> f.values().stream())
+                                            .allMatch("Connected"::equalsIgnoreCase);
+
+                                        if (allDrbdConnected)
+                                        {
+                                            anyFailed = rscState.getVolumeStates().values().stream().anyMatch(
+                                                vlmState -> vlmState.getDiskState().equalsIgnoreCase("Inconsistent") ||
+                                                    vlmState.getDiskState().equalsIgnoreCase("Outdated"));
+                                            if (anyFailed)
+                                            {
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            } else
+                            {
+                                isReady = false;
+                            }
+                        }
+
+                        if (isReady)
+                        {
+                            status = ApiConsts.CloneStatus.COMPLETE;
+                        } else
+                        {
+                            if (anyFailed)
+                            {
+                                status = ApiConsts.CloneStatus.FAILED;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_NOT_FOUND_RSC_DFN, "Cloned resource not found."));
+            }
+        } catch (InvalidNameException exc) {
+            throw new ApiRcException(
+                ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_INVLD_RSC_NAME, "Invalid resource name provided.")
+            );
+        }
+        return status;
     }
 }

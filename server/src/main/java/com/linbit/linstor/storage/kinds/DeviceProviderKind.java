@@ -26,6 +26,7 @@ public enum DeviceProviderKind
         false,
         true, // very thin :)
         true, // no disk, nothing to worry about
+        true, // implicit
         new DisklessDriverKind() // compatibility - will be removed
     ),
     LVM(
@@ -36,6 +37,7 @@ public enum DeviceProviderKind
         true,
         true,
         false,
+        true,
         true,
         new LvmDriverKind(),
         ExtTools.LVM
@@ -49,6 +51,7 @@ public enum DeviceProviderKind
         true,
         true,
         false,
+        true,
         new LvmThinDriverKind(),
         ExtTools.LVM_THIN
     ),
@@ -61,6 +64,7 @@ public enum DeviceProviderKind
         true,
         false,
         false,
+        true,
         new ZfsDriverKind(),
         ExtTools.ZFS
     ),
@@ -73,6 +77,7 @@ public enum DeviceProviderKind
         true,
         true,
         false,
+        true,
         new ZfsThinDriverKind(),
         ExtTools.ZFS
     ),
@@ -85,6 +90,7 @@ public enum DeviceProviderKind
         true,
         false,
         false,
+        false,  // might be technically possible but FILE is more for quick testing, so skip for now
         new FileDriverKind(),
         ExtTools.LOSETUP
     ),
@@ -97,6 +103,7 @@ public enum DeviceProviderKind
         true,
         true,
         false,
+        false,
         new FileThinDriverKind(),
         ExtTools.LOSETUP
     ),
@@ -107,6 +114,7 @@ public enum DeviceProviderKind
         true,
         true,
         true,
+        false,
         false,
         false,
         new SpdkDriverKind(),
@@ -121,6 +129,7 @@ public enum DeviceProviderKind
         true,
         false,
         true,
+        false,
         new RemoteSpdkDriverKind()
     ),
     EXOS(
@@ -132,6 +141,7 @@ public enum DeviceProviderKind
         true,
         false,
         true,
+        false,
         new ExosDriverKind(),
         ExtTools.LSSCSI, ExtTools.SAS_PHY, ExtTools.SAS_DEVICE
     ),
@@ -145,9 +155,11 @@ public enum DeviceProviderKind
         true,
         false,
         true, // OpenFlex provides nvmeTarget, nothing to worry about
+        false,
         new OpenflexTargetDriverKind()
     ),
     FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER(
+        false,
         false,
         false,
         false,
@@ -168,6 +180,7 @@ public enum DeviceProviderKind
     private final boolean hasBackingDevice;
     private final boolean usesThinProvisioning;
     private final boolean isSharedVolumeSupported;
+    private final boolean isCloneSupported;
     @Deprecated
     private final StorageDriverKind storageDriverKind;
     private final ExtTools[] startupVerifications;
@@ -181,6 +194,7 @@ public enum DeviceProviderKind
         boolean hasBackingDeviceRef,
         boolean usesThinProvisioningRef,
         boolean isSharedVolumeSupportedRef,
+        boolean isCloneSupportedRef,
         StorageDriverKind storageDriverKindRef,
         ExtTools... startupVerificationsRef
     )
@@ -193,6 +207,7 @@ public enum DeviceProviderKind
         hasBackingDevice = hasBackingDeviceRef;
         usesThinProvisioning = usesThinProvisioningRef;
         isSharedVolumeSupported = isSharedVolumeSupportedRef;
+        isCloneSupported = isCloneSupportedRef;
         storageDriverKind = storageDriverKindRef;
         startupVerifications = startupVerificationsRef;
     }
@@ -230,6 +245,11 @@ public enum DeviceProviderKind
     public boolean isSharedVolumeSupported()
     {
         return isSharedVolumeSupported;
+    }
+
+    public boolean isCloneSupported()
+    {
+        return isCloneSupported;
     }
 
     @Deprecated

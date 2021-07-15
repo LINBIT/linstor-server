@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
@@ -30,7 +31,6 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -42,9 +42,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Path("v1/resource-definitions")
 @Produces(MediaType.APPLICATION_JSON)
@@ -279,5 +281,72 @@ public class ResourceDefinitions
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private Mono<Response> mapToCloneStarted(String srcName, String clonedName, Flux<ApiCallRc> flux)
+    {
+        return flux
+            .collectList()
+            .map(apiCallRcList -> {
+                    Response.ResponseBuilder builder = Response.status(Response.Status.CREATED);
+                    ApiCallRcImpl flatApiCallRc = new ApiCallRcImpl(apiCallRcList.stream().flatMap(
+                        apiCallRc -> apiCallRc.getEntries().stream()
+                    ).collect(Collectors.toList()));
+                try
+                {
+                    builder.entity(objectMapper.writeValueAsString(Json.resourceDefCloneStarted(
+                        srcName, clonedName, flatApiCallRc)));
+                } catch (JsonProcessingException e)
+                {
+                    e.printStackTrace();
+                    return Response.serverError().build();
+                }
+                return builder.build();
+                }
+            );
+    }
+
+    @POST
+    @Path("{rscDfnName}/clone")
+    public void clone(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("rscDfnName") String srcName,
+        String jsonData
+    ) throws IOException
+    {
+        JsonGenTypes.ResourceDefinitionCloneRequest requestData =
+            objectMapper.readValue(jsonData, JsonGenTypes.ResourceDefinitionCloneRequest.class);
+
+        Flux<ApiCallRc> flux = ctrlRscDfnApiCallHandler.cloneRscDfn(
+            srcName,
+            requestData.name,
+            requestData.external_name != null ? requestData.external_name.getBytes(StandardCharsets.UTF_8) : null
+        )
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN, request));
+
+        requestHelper.doFlux(asyncResponse, mapToCloneStarted(srcName, requestData.name, flux));
+    }
+
+    @GET
+    @Path("{rscDfnName}/clone/{cloneName}")
+    public Response getCloneStatus(
+        @Context Request request,
+        @PathParam("rscDfnName") String srcName,
+        @PathParam("cloneName") String cloneName
+    )
+    {
+        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN_STATUS, request), () ->
+            {
+                JsonGenTypes.ResourceDefinitionCloneStatus status =
+                    new JsonGenTypes.ResourceDefinitionCloneStatus();
+
+                status.status = ctrlApiCallHandler.isCloneReady(cloneName).getValue();
+
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(status))
+                    .build();
+            }, false);
     }
 }

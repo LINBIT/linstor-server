@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+message MsgIntCloneUpdate
+{
+    string rsc_name = 1;
+    sint32 vlm_nr = 2;
+    bool success = 3;
+}

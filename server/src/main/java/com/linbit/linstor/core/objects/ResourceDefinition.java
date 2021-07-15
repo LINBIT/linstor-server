@@ -671,7 +671,9 @@ public class ResourceDefinition extends BaseTransactionObject
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),
-        FROM_SHIPPED_SNAPSHOT(1L << 1);
+        RESTORE_TARGET(1L << 1),
+        CLONING(1L << 2),
+        FAILED(1L << 3);
 
         public final long flagValue;
 

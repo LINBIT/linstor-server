@@ -2,8 +2,10 @@ package com.linbit.linstor.layer.storage.lvm;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Resource;
@@ -18,6 +20,7 @@ import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -31,7 +34,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -49,7 +51,8 @@ public class LvmThinProvider extends LvmProvider
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         super(
@@ -63,7 +66,8 @@ public class LvmThinProvider extends LvmProvider
             "LVM-Thin",
             DeviceProviderKind.LVM_THIN,
             snapShipMrgRef,
-            extToolsCheckerRef
+            extToolsCheckerRef,
+            cloneServiceRef
         );
     }
 
@@ -423,5 +427,89 @@ public class LvmThinProvider extends LvmProvider
             throw new ImplementationError("Invalid hardcoded key exception", exc);
         }
         return thinPool;
+    }
+
+    @Override
+    protected void createLvWithCopyImpl(
+        LvmData<Resource> lvmVlmData,
+        Resource srcRsc,
+        String cloneSnapshotName)
+        throws StorageException, AccessDeniedException
+    {
+        final LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
+        final LvmThinData<Resource> srcVlmData = (LvmThinData<Resource>) getVlmDataFromResource(
+            srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
+
+        final String srcId = asLvIdentifier(srcVlmData);
+        final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
+        final String dstId = asLvIdentifier(vlmData);
+
+        if (!infoListCache.containsKey(srcVlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
+        {
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(srcVlmData.getVolumeGroup()),
+                config -> LvmCommands.createSnapshotThin(
+                    extCmdFactory.create(),
+                    srcVlmData.getVolumeGroup(),
+                    srcVlmData.getThinPool(),
+                    srcId,
+                    srcFullSnapshotName,
+                    config
+                )
+            );
+
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(srcVlmData.getVolumeGroup()),
+                config -> LvmCommands.addTag(
+                    extCmdFactory.create(),
+                    srcVlmData.getVolumeGroup(),
+                    srcFullSnapshotName,
+                    LvmCommands.LVM_TAG_CLONE_SNAPSHOT,
+                    config
+                )
+            );
+
+            // restore
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(vlmData.getVolumeGroup()),
+                config -> LvmCommands.restoreFromSnapshot(
+                    extCmdFactory.create(),
+                    srcFullSnapshotName,
+                    srcVlmData.getVolumeGroup(),
+                    dstId,
+                    config
+                )
+            );
+
+            // activate
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(vlmData.getVolumeGroup()),
+                config -> LvmCommands.activateVolume(
+                    extCmdFactory.create(),
+                    vlmData.getVolumeGroup(),
+                    dstId,
+                    config
+                )
+            );
+        }
+        else
+        {
+            errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
+        }
+
+        cloneService.startClone(
+            srcVlmData,
+            vlmData,
+            this);
+    }
+
+    @Override
+    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
+        // LVM_THIN doesn't have a long run operation, empty array skips this
+        return new String[] {};
     }
 }

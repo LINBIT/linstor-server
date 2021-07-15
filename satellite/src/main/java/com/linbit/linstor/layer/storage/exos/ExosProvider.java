@@ -6,6 +6,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
@@ -60,7 +61,6 @@ import com.linbit.utils.Triple;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -121,7 +121,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         super(
@@ -135,7 +136,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             "EXOS",
             DeviceProviderKind.EXOS,
             snapShipMrgRef,
-            extToolsCheckerRef
+            extToolsCheckerRef,
+            cloneServiceRef
         );
         restClientMap = new HashMap<>();
 
@@ -793,7 +795,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
-    protected String getDevicePath(String storageName, String lvId)
+    public String getDevicePath(String storageName, String lvId)
     {
         return null;
     }

@@ -2,10 +2,12 @@ package com.linbit.linstor.layer.storage.lvm;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
@@ -82,7 +84,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         String subTypeDescr,
         DeviceProviderKind subTypeKind,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         super(
@@ -96,7 +99,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             subTypeDescr,
             subTypeKind,
             snapShipMrgRef,
-            extToolsCheckerRef
+            extToolsCheckerRef,
+            cloneServiceRef
         );
     }
 
@@ -110,7 +114,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         super(
@@ -124,7 +129,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             "LVM",
             DeviceProviderKind.LVM,
             snapShipMrgRef,
-            extToolsCheckerRef
+            extToolsCheckerRef,
+            cloneServiceRef
         );
     }
 
@@ -228,7 +234,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             vlmDataRef.setDevicePath(null);
             vlmDataRef.setAllocatedSize(-1);
             // vlmData.setUsableSize(-1);
-            vlmDataRef.setDevicePath(null);
             vlmDataRef.setAttributes(null);
         }
         else
@@ -502,7 +507,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    protected String getDevicePath(String storageName, String lvId)
+    public String getDevicePath(String storageName, String lvId)
     {
         return String.format(FORMAT_DEV_PATH, storageName, lvId);
     }
@@ -664,6 +669,58 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
+    protected void createLvWithCopyImpl(
+        LvmData<Resource> vlmData,
+        Resource srcRsc,
+        String cloneSnapshotName)
+        throws StorageException, AccessDeniedException
+    {
+        final LvmData<Resource> srcVlmData = getVlmDataFromResource(
+            srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
+
+        final String srcId = asLvIdentifier(srcVlmData);
+        final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
+
+        if (!infoListCache.containsKey(srcVlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
+        {
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(srcVlmData.getVolumeGroup()),
+                config -> LvmCommands.createSnapshot(
+                    extCmdFactory.create(),
+                    srcVlmData.getVolumeGroup(),
+                    srcId,
+                    srcFullSnapshotName,
+                    config,
+                    srcVlmData.getAllocatedSize()
+                )
+            );
+
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(srcVlmData.getVolumeGroup()),
+                config -> LvmCommands.addTag(
+                    extCmdFactory.create(),
+                    srcVlmData.getVolumeGroup(),
+                    srcFullSnapshotName,
+                    LvmCommands.LVM_TAG_CLONE_SNAPSHOT,
+                    config
+                )
+            );
+            createLvImpl(vlmData);
+        }
+        else
+        {
+            errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
+        }
+
+        cloneService.startClone(
+            srcVlmData,
+            vlmData,
+            this);
+    }
+
+    @Override
     protected void setAllocatedSize(LvmData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setAllocatedSize(size);
@@ -685,5 +742,44 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected String getStorageName(LvmData<Resource> vlmDataRef) throws DatabaseException
     {
         return vlmDataRef.getVolumeGroup();
+    }
+
+    @Override
+    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
+        LvmData<Resource> srcData = (LvmData<Resource>)cloneInfo.getSrcVlmData();
+        LvmData<Resource> dstData = (LvmData<Resource>)cloneInfo.getDstVlmData();
+        final String cloneSnapshotName = "clone_for_" + cloneInfo.getResourceName().getDisplayName();
+        final String srcId = asLvIdentifier(srcData);
+        final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
+
+        return new String[]
+            {
+                "dd",
+                "if=" + getDevicePath(srcData.getVolumeGroup(), srcFullSnapshotName),
+                "of=" + getDevicePath(dstData.getVolumeGroup(), asLvIdentifier(dstData)),
+                "bs=64k", // According to the internet this seems currently to be a better default
+                "conv=fsync"
+            };
+    }
+
+    @Override
+    public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
+    {
+        LvmData<Resource> srcData = (LvmData<Resource>)cloneInfo.getSrcVlmData();
+        final String cloneSnapshotName = "clone_for_" + cloneInfo.getResourceName().getDisplayName();
+        final String srcId = asLvIdentifier(srcData);
+        final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
+
+        final String vlmGroup = getVolumeGroup(srcData.getStorPool());
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmGroup),
+            config -> LvmCommands.delete(
+                extCmdFactory.create(),
+                vlmGroup,
+                srcFullSnapshotName,
+                config
+            )
+        );
     }
 }

@@ -12,6 +12,7 @@ import java.util.function.Function;
 public class SatelliteResourceState
 {
     private Boolean inUse;
+    private boolean isReady;
 
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
     private final Map<NodeName, Map<NodeName, String>> connectionStates = new HashMap<>();
@@ -23,6 +24,7 @@ public class SatelliteResourceState
     public SatelliteResourceState(SatelliteResourceState other)
     {
         inUse = other.inUse;
+        isReady = other.isReady;
         for (Map.Entry<VolumeNumber, SatelliteVolumeState> volumeStateEntry : other.volumeStates.entrySet())
         {
             volumeStates.put(volumeStateEntry.getKey(), new SatelliteVolumeState(volumeStateEntry.getValue()));
@@ -41,6 +43,16 @@ public class SatelliteResourceState
     public void setInUse(Boolean value)
     {
         inUse = value;
+    }
+
+    public boolean isReady()
+    {
+        return isReady;
+    }
+
+    public void setIsReady(Boolean value)
+    {
+        isReady = value;
     }
 
     public Map<VolumeNumber, SatelliteVolumeState> getVolumeStates()

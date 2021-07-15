@@ -159,6 +159,10 @@ public class InternalApiConsts
     // external files consts
     public static final String NAMESPC_FILES = "files";
 
+    // cloning
+    public static final String KEY_CLONED_FROM = "cloned-from";
+    public static final String API_NOTIFY_CLONE_UPDATE  = "NotifyCloneUpdate";
+
     private InternalApiConsts()
     {
     }

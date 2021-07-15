@@ -36,6 +36,8 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import javax.inject.Inject;
@@ -267,6 +269,8 @@ public class WritecacheLayer implements DeviceLayer
             }
         }
 
+        final boolean hasDrbd = LayerUtils.hasLayer(rscLayerDataRef, DeviceLayerKind.DRBD);
+
         if (rscLayerDataRef.getAbsResource().getLayerData(storDriverAccCtx).getSuspendIo())
         {
             /*
@@ -284,24 +288,36 @@ public class WritecacheLayer implements DeviceLayer
 
                     if (!isSuspended)
                     {
-                        // send flush on suspend, so we flush before suspend \o/
-                        // and afterwards suspend the device, we can only hope that in between none writes
-                        DmSetupUtils.flushOnSuspend(extCmdFactory, vlmData.getDevicePath());
-                        DmSetupUtils.suspend(extCmdFactory.create(), vlmData.getDevicePath());
+                        // only suspend if drbd isn't involved (drbd will suspend otherwise)
+                        if (!hasDrbd)
+                        {
+                            // send flush on suspend, so we flush before suspend \o/
+                            // and afterwards suspend the device
+                            DmSetupUtils.flushOnSuspend(extCmdFactory, vlmData.getDevicePath());
+                            DmSetupUtils.suspend(extCmdFactory.create(), vlmData.getDevicePath());
+                        }
+                        else
+                        {
+                            // only flush if drbd is involved
+                            DmSetupUtils.flush(extCmdFactory, vlmData.getDevicePath());
+                        }
                     }
                 }
             }
         } else {
-            // resumeIO if necessary
-            for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
+            if (!hasDrbd)
             {
-                if (vlmData.exists())
+                // resumeIO if necessary
+                for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
                 {
-                    boolean isSuspended = DmSetupUtils.isSuspended(extCmdFactory.create(), vlmData.getDevicePath());
-
-                    if (isSuspended)
+                    if (vlmData.exists())
                     {
-                        DmSetupUtils.resume(extCmdFactory.create(), vlmData.getDevicePath());
+                        boolean isSuspended = DmSetupUtils.isSuspended(extCmdFactory.create(), vlmData.getDevicePath());
+
+                        if (isSuspended)
+                        {
+                            DmSetupUtils.resume(extCmdFactory.create(), vlmData.getDevicePath());
+                        }
                     }
                 }
             }

@@ -188,7 +188,7 @@ public class CtrlSnapshotRestoreApiCallHandler
 
             if (isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPED))
             {
-                setFlags(toRscDfn, ResourceDefinition.Flags.FROM_SHIPPED_SNAPSHOT);
+                setFlags(toRscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
             }
 
             ctrlSnapshotHelper.ensureSnapshotSuccessful(fromSnapshotDfn);
@@ -364,7 +364,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             if (!restoredResourcesRef.isEmpty())
             {
                 ResourceDefinition rscDfn = restoredResourcesRef.iterator().next().getResourceDefinition();
-                unsetFlags(rscDfn, ResourceDefinition.Flags.FROM_SHIPPED_SNAPSHOT);
+                unsetFlags(rscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
             }
             ctrlTransactionHelper.commit();
         }

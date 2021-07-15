@@ -327,7 +327,12 @@ public class StorageLayer implements DeviceLayer
         LayerProcessResult result;
         if (
             rscLayerData != null &&
-            rscLayerData.getAbsResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.INACTIVE)
+                (rscLayerData.getAbsResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.INACTIVE) ||
+                    rscLayerData.getAbsResource().streamVolumes()
+                        .anyMatch(
+                            vlm -> isVolumeFlagSetPrivileged(vlm, Volume.Flags.CLONING) ||
+                                isVolumeFlagSetPrivileged(vlm, Volume.Flags.CLONING_START)
+                        ))
         )
         {
             result = LayerProcessResult.NO_DEVICES_PROVIDED;
@@ -441,5 +446,12 @@ public class StorageLayer implements DeviceLayer
         }
 
         return setLocalNodePojo;
+    }
+
+    private boolean isVolumeFlagSetPrivileged(Volume vlm, Volume.Flags flag) {
+        try {
+            return vlm.getFlags().isSet(storDriverAccCtx, flag);
+        } catch (AccessDeniedException ignored) {}
+        return false;
     }
 }

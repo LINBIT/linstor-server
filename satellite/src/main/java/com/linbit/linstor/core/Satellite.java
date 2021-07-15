@@ -16,6 +16,7 @@ import com.linbit.linstor.api.ApiType;
 import com.linbit.linstor.api.BaseApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.api.protobuf.ProtobufApiType;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.devmgr.DevMgrModule;
@@ -104,13 +105,11 @@ public final class Satellite
     private final FileSystemWatch fsWatchSvc;
 
     private final DrbdEventService drbdEventSvc;
-
     private final SnapshotShippingService snapShipSvc;
+    private final CloneService cloneService;
 
     private final SatelliteNetComInitializer satelliteNetComInitializer;
-
     private final StltCoreObjProtInitializer stltCoreObjProtInitializer;
-
     private final StltConfig stltCfg;
 
 
@@ -132,7 +131,8 @@ public final class Satellite
         SnapshotShippingService snapShipSvcRef,
         SatelliteNetComInitializer satelliteNetComInitializerRef,
         StltCoreObjProtInitializer stltCoreObjProtInitializerRef,
-        StltConfig stltCfgRef
+        StltConfig stltCfgRef,
+        CloneService cloneServiceRef
     )
     {
         errorReporter = errorReporterRef;
@@ -150,6 +150,7 @@ public final class Satellite
         satelliteNetComInitializer = satelliteNetComInitializerRef;
         stltCoreObjProtInitializer = stltCoreObjProtInitializerRef;
         stltCfg = stltCfgRef;
+        cloneService = cloneServiceRef;
     }
 
     public void start()
@@ -228,6 +229,7 @@ public final class Satellite
             }
             startOrderlist.add(new ServiceStarter(snapShipSvc));
             startOrderlist.add(new ServiceStarter(devMgrService));
+            startOrderlist.add(new ServiceStarter(cloneService));
             startOrderlist.add(stltCoreObjProtInitializer);
             errorReporter.logInfo("Initializing main network communications service");
             startOrderlist.add(netComInitializer);
@@ -241,6 +243,7 @@ public final class Satellite
             }
             systemServicesMap.put(snapShipSvc.getInstanceName(), snapShipSvc);
             systemServicesMap.put(devMgrService.getInstanceName(), devMgrService);
+            systemServicesMap.put(cloneService.getInstanceName(), cloneService);
 
             applicationLifecycleManager.startSystemServices(startOrderlist);
 
@@ -345,7 +348,7 @@ public final class Satellite
                 catch (IOException ioExc)
                 {
                     throw new ImplementationError(
-                        "Unable to write linstor drbd include file to: " + linstorInclude.toString(),
+                        "Unable to write linstor drbd include file to: " + linstorInclude,
                         ioExc
                     );
                 }

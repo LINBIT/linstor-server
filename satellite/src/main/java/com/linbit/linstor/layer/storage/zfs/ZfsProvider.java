@@ -4,10 +4,12 @@ import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
@@ -34,11 +36,13 @@ import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils.ZfsInfo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -47,7 +51,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,7 +77,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
 
     private static final Pattern PATTERN_EXTENT_SIZE = Pattern.compile("(\\d+)\\s*(.*)");
 
-    private Map<StorPool, Long> extentSizes = new TreeMap<>();
+    private  Map<StorPool, Long> extentSizes = new TreeMap<>();
 
     protected ZfsProvider(
         ErrorReporter errorReporter,
@@ -87,7 +90,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         String subTypeDescr,
         DeviceProviderKind kind,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         super(
@@ -101,7 +105,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             subTypeDescr,
             kind,
             snapShipMrgRef,
-            extToolsCheckerRef
+            extToolsCheckerRef,
+            cloneServiceRef
         );
     }
 
@@ -115,7 +120,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         super(
@@ -129,7 +135,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             "ZFS",
             DeviceProviderKind.ZFS,
             snapShipMrgRef,
-            extToolsCheckerRef
+            extToolsCheckerRef,
+            cloneServiceRef
         );
     }
 
@@ -435,7 +442,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected String getDevicePath(String zPool, String identifier)
+    public String getDevicePath(String zPool, String identifier)
     {
         return String.format(FORMAT_ZFS_DEV_PATH, zPool, identifier);
     }
@@ -446,7 +453,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return getZPool(storPoolRef);
     }
 
-    protected String getZPool(StorPool storPool) throws AccessDeniedException
+    protected String getZPool(StorPool storPool)
     {
         String zPool;
         try
@@ -455,7 +462,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 storPool.getProps(storDriverAccCtx)
             ).getProp(StorageConstants.CONFIG_ZFS_POOL_KEY);
         }
-        catch (InvalidKeyException exc)
+        catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -749,5 +756,87 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected String getStorageName(ZfsData<Resource> vlmDataRef) throws DatabaseException
     {
         return vlmDataRef.getZPool();
+    }
+
+    @Override
+    protected void createLvWithCopyImpl(
+        ZfsData<Resource> vlmData,
+        Resource srcRsc,
+        String cloneSnapshotName)
+        throws StorageException, AccessDeniedException
+    {
+        final ZfsData<Resource> srcVlmData = getVlmDataFromResource(
+            srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
+
+        final String dstRscName = vlmData.getRscLayerObject().getResourceName().displayValue;
+        final String srcId = asLvIdentifier(srcVlmData);
+        final String srcFullSnapshotName = srcId + "@" + cloneSnapshotName;
+
+
+        if (!infoListCache.containsKey(srcVlmData.getZPool() + "/" + srcFullSnapshotName))
+        {
+            ZfsCommands.createSnapshot(
+                extCmdFactory.create(),
+                srcVlmData.getZPool(),
+                srcId,
+                cloneSnapshotName
+            );
+            // mark snapshot as temporary clone
+            ZfsCommands.setUserProperty(
+                extCmdFactory.create(),
+                srcVlmData.getZPool(),
+                srcFullSnapshotName,
+                "clone_for",
+                dstRscName
+            );
+        }
+        else
+        {
+            errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
+        }
+
+        cloneService.startClone(
+            srcVlmData,
+            vlmData,
+            this);
+    }
+
+    @Override
+    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
+        ZfsData<Resource> srcData = (ZfsData<Resource>)cloneInfo.getSrcVlmData();
+        ZfsData<Resource> dstData = (ZfsData<Resource>)cloneInfo.getDstVlmData();
+        final String cloneSnapshotName = "clone_for_" + cloneInfo.getResourceName();
+        final String srcId = asLvIdentifier(srcData);
+        final String srcFullSnapshotName = srcId + "@" + cloneSnapshotName;
+        final String dstId = asLvIdentifier(dstData);
+        return new String[]
+            {
+                "setsid", "-w",
+                "bash",
+                "-c",
+                String.format(
+                    "trap 'kill -HUP 0' SIGTERM; " +
+                        "set -o pipefail; " +
+                        "(" +
+                        "zfs send --embed --dedup --large-block %s/%s | " +
+                        // if send/recv fails no new volume will be there, so destroy isn't needed
+                        "zfs receive -F %s/%s && zfs destroy -r %s/%s@%% ;" +
+                        ")& wait $!",
+                    srcData.getZPool(),
+                    srcFullSnapshotName,
+                    dstData.getZPool(),
+                    dstId,
+                    dstData.getZPool(),
+                    dstId)
+            };
+    }
+
+    public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
+    {
+        ZfsData<Resource> srcData = (ZfsData<Resource>)cloneInfo.getSrcVlmData();
+        final String cloneSnapshotName = "clone_for_" + cloneInfo.getResourceName();
+        final String srcId = asLvIdentifier(srcData);
+        final String srcFullSnapshotName = srcId + "@" + cloneSnapshotName;
+        ZfsCommands.delete(extCmdFactory.create(), getZPool(srcData.getStorPool()), srcFullSnapshotName);
     }
 }

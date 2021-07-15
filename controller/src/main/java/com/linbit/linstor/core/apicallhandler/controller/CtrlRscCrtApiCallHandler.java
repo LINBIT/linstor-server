@@ -214,7 +214,7 @@ public class CtrlRscCrtApiCallHandler
 
         return Flux.<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
-            .concatWith(setInitialized(deployedResources, context))
+            .concatWith(setInitialized(deployedResources))
             .concatWith(Flux.merge(autoFlux))
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,
@@ -223,7 +223,7 @@ public class CtrlRscCrtApiCallHandler
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
     }
 
-    private Flux<ApiCallRc> setInitialized(Set<Resource> deployedResourcesRef, ResponseContext context)
+    public Flux<ApiCallRc> setInitialized(Set<Resource> deployedResourcesRef)
     {
         return scopeRunner
             .fluxInTransactionalScope(
@@ -232,11 +232,11 @@ public class CtrlRscCrtApiCallHandler
                     LockType.WRITE,
                     LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP
                 ),
-                () -> setInitializedInTransaction(deployedResourcesRef, context)
+                () -> setInitializedInTransaction(deployedResourcesRef)
             );
     }
 
-    private Flux<ApiCallRc> setInitializedInTransaction(Set<Resource> deployedResourcesRef, ResponseContext contextRef)
+    private Flux<ApiCallRc> setInitializedInTransaction(Set<Resource> deployedResourcesRef)
     {
         try
         {
@@ -263,7 +263,7 @@ public class CtrlRscCrtApiCallHandler
         return Flux.empty();
     }
 
-    private ApiCallRc makeVolumeRegisteredEntries(Resource rsc)
+    static ApiCallRc makeVolumeRegisteredEntries(Resource rsc)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         Iterator<Volume> vlmIt = rsc.iterateVolumes();

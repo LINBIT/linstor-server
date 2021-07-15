@@ -437,7 +437,10 @@ public class Volume extends AbsVolume<Resource>
     {
         DELETE(1L << 1),
         RESIZE(1L << 2),
-        DRBD_RESIZE(1L << 3);
+        DRBD_RESIZE(1L << 3),
+        CLONING_START(1L << 4),
+        CLONING(1L << 5),
+        CLONING_FINISHED(1L << 6);
 
         public final long flagValue;
 

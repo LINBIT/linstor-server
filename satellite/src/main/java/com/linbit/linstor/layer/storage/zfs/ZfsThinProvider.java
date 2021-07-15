@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
@@ -30,7 +31,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.Collections;
 import java.util.HashMap;
 
@@ -47,7 +47,8 @@ public class ZfsThinProvider extends ZfsProvider
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         super(
@@ -61,7 +62,8 @@ public class ZfsThinProvider extends ZfsProvider
             "ZFS-Thin",
             DeviceProviderKind.ZFS_THIN,
             snapShipMrgRef,
-            extToolsCheckerRef
+            extToolsCheckerRef,
+            cloneServiceRef
         );
     }
 
@@ -80,7 +82,7 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
-    protected String getZPool(StorPool storPool) throws AccessDeniedException
+    protected String getZPool(StorPool storPool)
     {
         String zPool;
         try
@@ -89,7 +91,7 @@ public class ZfsThinProvider extends ZfsProvider
                 storPool.getProps(storDriverAccCtx)
             ).getProp(StorageConstants.CONFIG_ZFS_THIN_POOL_KEY);
         }
-        catch (InvalidKeyException exc)
+        catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }

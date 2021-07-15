@@ -5,6 +5,7 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -44,7 +45,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -88,7 +88,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         String subTypeDescr,
         DeviceProviderKind subTypeKind,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         super(
@@ -102,7 +103,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             subTypeDescr,
             subTypeKind,
             snapShipMrgRef,
-            extToolsCheckerRef
+            extToolsCheckerRef,
+            cloneServiceRef
         );
     }
 
@@ -116,7 +118,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         Provider<NotificationListener> notificationListenerProvider,
         Provider<TransactionMgr> transMgrProvider,
         SnapshotShippingService snapShipMrgRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        CloneService cloneServiceRef
     )
     {
         super(
@@ -130,7 +133,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             "FILE",
             DeviceProviderKind.FILE,
             snapShipMrgRef,
-            extToolsCheckerRef
+            extToolsCheckerRef,
+            cloneServiceRef
         );
     }
 
@@ -537,7 +541,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    protected String getDevicePath(String storageName, String lvId)
+    public String getDevicePath(String storageName, String lvId)
     {
         return null; // we cannot construct it from the given data. however, the devicePath is already
         // set on the corresponding FileData object

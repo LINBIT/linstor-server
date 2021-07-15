@@ -617,10 +617,12 @@ public class DrbdLayer implements DeviceLayer
                 List<DrbdVlmData<Resource>> createMetaData = new ArrayList<>();
                 if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx))
                 {
+                    boolean isCloning = drbdRscData.getAbsResource().getResourceDefinition()
+                        .getFlags().isSet(workerCtx, ResourceDefinition.Flags.CLONING);
                     // do not try to create meta data while the resource is diskless....
                     for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
                     {
-                        if (!hasMetaData(drbdVlmData))
+                        if (!(drbdRscData.exists() && isCloning) && !hasMetaData(drbdVlmData))
                         {
                             createMetaData.add(drbdVlmData);
                         }
@@ -1015,9 +1017,9 @@ public class DrbdLayer implements DeviceLayer
 
         StateFlags<ResourceDefinition.Flags> rscDfnFlags = drbdVlmData.getRscLayerObject().getAbsResource()
             .getDefinition().getFlags();
-        if (rscDfnFlags.isSet(workerCtx, ResourceDefinition.Flags.FROM_SHIPPED_SNAPSHOT))
+        if (rscDfnFlags.isSet(workerCtx, ResourceDefinition.Flags.RESTORE_TARGET))
         {
-            errorReporter.logTrace("FROM_SHIPPED_SNAPSHOT flag is set. Ignoring existing metadata");
+            errorReporter.logTrace("RESTORE_TARGET flag is set. Ignoring existing metadata");
             hasMetaData = false;
         }
         else
@@ -1087,7 +1089,9 @@ public class DrbdLayer implements DeviceLayer
             );
             drbdVlmData.setMetaDataIsNew(true);
 
-            boolean skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true);
+            final boolean isCloned = drbdVlmData.getRscLayerObject().getAbsResource()
+                .getResourceDefinition().getProps(workerCtx).getProp(InternalApiConsts.KEY_CLONED_FROM) != null;
+            boolean skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true) || isCloned;
             if (!skipInitSync)
             {
                 skipInitSync = VolumeUtils.getStorageDevices(
