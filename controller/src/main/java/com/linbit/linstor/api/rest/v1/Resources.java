@@ -371,7 +371,7 @@ public class Resources
         try
         {
             List<String> layerList = null;
-            if (jsonData != null)
+            if (jsonData != null && !jsonData.trim().isEmpty())
             {
                 ToggleDiskDiskful data = objectMapper.readValue(jsonData, JsonGenTypes.ToggleDiskDiskful.class);
                 layerList = data.layer_list;
@@ -422,7 +422,7 @@ public class Resources
         try
         {
             List<String> layerList = null;
-            if (jsonData != null)
+            if (jsonData != null && !jsonData.trim().isEmpty())
             {
                 ToggleDiskDiskful data = objectMapper.readValue(jsonData, JsonGenTypes.ToggleDiskDiskful.class);
                 layerList = data.layer_list;
