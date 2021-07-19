@@ -49,6 +49,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -412,6 +413,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                  * use the shared resource's node-id
                  */
             }
+            else
+            {
+                copyDrbdNodeIdIfExists(rsc, payload);
+            }
             /*
              * rebuilds the layerdata in case we just removed it..
              * doing so, we need to rebuild the layerstack instead of taking the previous one, as a diskless resource
@@ -464,6 +469,28 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, context));
+    }
+
+    /**
+     * Although we need to rebuild the layerData as the layerList might have changed, if we do not
+     * deactivate (i.e. down) the current resource, we need to make sure that deleting DrbdRscData
+     * and recreating a new DrbdRscData ends up with the same node-id as before.
+     */
+    private void copyDrbdNodeIdIfExists(Resource rsc, LayerPayload payload) throws ImplementationError
+    {
+        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+            getLayerData(apiCtx, rsc),
+            DeviceLayerKind.DRBD
+        );
+        if (drbdRscDataSet.size() >= 2)
+        {
+            throw new ImplementationError("Unexpected layer tree");
+        }
+        if (!drbdRscDataSet.isEmpty())
+        {
+            DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) drbdRscDataSet.iterator().next();
+            payload.drbdRsc.nodeId = drbdRscData.getNodeId().value;
+        }
     }
 
     private List<DeviceLayerKind> removeLayerData(Resource rscRef)
@@ -737,6 +764,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, true);
 
         List<DeviceLayerKind> layerList = null;
+        LayerPayload payload = new LayerPayload();
         if (removeDisk)
         {
             markDiskRemoved(rsc);
@@ -744,8 +772,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             activateIfPossible(rsc);
             /*
              * We also have to remove the possible meta-children of previous StorageRscData.
-             * LayerData will be recreated with ensureStackDataExists
+             * LayerData will be recreated with ensureStackDataExists.
+             * However, we still need to remember our node-id if we had / have DRBD in the list
              */
+            copyDrbdNodeIdIfExists(rsc, payload);
             layerList = removeLayerData(rsc);
         }
         else
@@ -753,7 +783,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             markDiskAdded(rsc);
             ctrlLayerStackHelper.resetStoragePools(rsc);
         }
-        ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, new LayerPayload());
+        ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
 
         Flux<ApiCallRc> autoFlux = rscAutoHelper.get().manage(
             new AutoHelperContext(responses, context, rsc.getDefinition())
