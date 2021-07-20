@@ -193,6 +193,36 @@ public class DbSQLPersistence implements DbAccessor<ControllerSQLDatabase>
     }
 
     @Override
+    public void createSignInEntry(
+        ControllerSQLDatabase   ctrlDb,
+        IdentityName            idName,
+        RoleName                dfltRlName,
+        SecTypeName             dmnName,
+        long                    privileges,
+        byte[]                  password
+    )
+        throws DatabaseException
+    {
+        Connection dbConn = null;
+        try
+        {
+            dbConn = ctrlDb.getConnection();
+
+            // TODO: Register a new identity in the database
+
+            dbConn.commit();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
+        finally
+        {
+            ctrlDb.returnConnection(dbConn);
+        }
+    }
+
+    @Override
     public IdentityRoleEntryPojo getIdRoleMapEntry(
         ControllerSQLDatabase ctrlDatabase,
         IdentityName idName,

@@ -37,6 +37,19 @@ public class EmptySecurityDbDriver implements DbAccessor
     }
 
     @Override
+    public void createSignInEntry(
+        ControllerDatabase  ctrlDb,
+        IdentityName        idName,
+        RoleName            dfltRlName,
+        SecurityType        dmnName,
+        long                privileges,
+        byte[]              password
+    )
+        throws DatabaseException
+    {
+    }
+
+    @Override
     public IdentityRoleEntryPojo getIdRoleMapEntry(ControllerDatabase ctrlDb, IdentityName idName, RoleName rlName)
     {
         return null;

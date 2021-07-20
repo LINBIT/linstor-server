@@ -89,6 +89,19 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
     }
 
     @Override
+    public void createSignInEntry(
+        ControllerETCDDatabase  ctrlDb,
+        IdentityName            idName,
+        RoleName                dfltRlName,
+        SecTypeName             dmnName,
+        long                    privileges,
+        byte[]                  password
+    )
+        throws DatabaseException
+    {
+    }
+
+    @Override
     public IdentityRoleEntryPojo getIdRoleMapEntry(
         ControllerETCDDatabase etcdDb,
         IdentityName idName,

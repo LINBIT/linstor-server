@@ -18,6 +18,16 @@ public interface DbAccessor<DB_TYPE extends ControllerDatabase>
     SignInEntryPojo getSignInEntry(DB_TYPE ctrlDb, IdentityName idName)
         throws DatabaseException;
 
+    void createSignInEntry(
+        DB_TYPE         ctrlDb,
+        IdentityName    idName,
+        RoleName        dfltRlName,
+        SecTypeName     dmnName,
+        long            privileges,
+        byte[]          password
+    )
+        throws DatabaseException;
+
     IdentityRoleEntryPojo getIdRoleMapEntry(DB_TYPE ctrlDb, IdentityName idName, RoleName rlName)
         throws DatabaseException;
 
