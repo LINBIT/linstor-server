@@ -41,7 +41,7 @@ public class EmptySecurityDbDriver implements DbAccessor
         ControllerDatabase  ctrlDb,
         IdentityName        idName,
         RoleName            dfltRlName,
-        SecurityType        dmnName,
+        SecTypeName         dmnName,
         long                privileges,
         byte[]              password
     )
