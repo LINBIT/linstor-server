@@ -61,6 +61,7 @@ public class ControllerSecurityModule extends AbstractModule
         {
             authentication = new CtrlAuthentication(
                 initCtx,
+                initCtx,
                 publicCtx,
                 dbConnPool,
                 securityDbDriver,
