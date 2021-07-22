@@ -35,6 +35,7 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -68,6 +69,7 @@ public class SnapshotShippingInternalApiCallHandler
     private final CtrlSnapshotDeleteApiCallHandler snapshotDeleteApiCallHandler;
     private final CtrlSnapshotShippingApiCallHandler snapshotShippingApiCallHandler;
     private final List<Integer> blacklistPorts = new ArrayList<>();
+    private final AutoSnapshotTask autoSnapshotTask;
 
     @Inject
     public SnapshotShippingInternalApiCallHandler(
@@ -81,7 +83,8 @@ public class SnapshotShippingInternalApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
         CtrlSnapshotDeleteApiCallHandler snapshotDeleteApiCallHandlerRef,
-        CtrlSnapshotShippingApiCallHandler snapshotShippingApiCallHandlerRef
+        CtrlSnapshotShippingApiCallHandler snapshotShippingApiCallHandlerRef,
+        AutoSnapshotTask autoSnapshotTaskRef
     )
     {
         apiCtx = apiCtxRef;
@@ -95,6 +98,7 @@ public class SnapshotShippingInternalApiCallHandler
         snapshotShippingPortPool = snapshotShippingPortPoolRef;
         snapshotDeleteApiCallHandler = snapshotDeleteApiCallHandlerRef;
         snapshotShippingApiCallHandler = snapshotShippingApiCallHandlerRef;
+        autoSnapshotTask = autoSnapshotTaskRef;
     }
 
     public boolean startShipping(Snapshot targetSnapRef)
@@ -169,6 +173,8 @@ public class SnapshotShippingInternalApiCallHandler
         updateRscConPropsAfterReceived(snapSource, snapTarget, successRef);
 
         disableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
+
+        autoSnapshotTask.shippingFinished(rscNameRef);
 
         Flux<ApiCallRc> flux;
         if (!successRef)
