@@ -137,7 +137,7 @@ class Selector
             if (alreadyDeployedOnNodes.isEmpty())
             {
                 errorReporter.logTrace(
-                    "Auoplacer.Selector: Resource '%s' not deployed yet.",
+                    "Autoplacer.Selector: Resource '%s' not deployed yet.",
                     rscDfnRef.getName().displayValue
                 );
             }
