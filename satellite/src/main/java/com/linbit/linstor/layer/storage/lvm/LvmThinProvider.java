@@ -350,14 +350,6 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected long getAllocatedSize(LvmData<Resource> vlmDataRef) throws StorageException
-    {
-        LvmThinData<Resource> lvmThinData = (LvmThinData<Resource>) vlmDataRef;
-        long allocatedSize = super.getAllocatedSize(vlmDataRef);
-        return (long) (allocatedSize * lvmThinData.getDataPercent());
-    }
-
-    @Override
     protected String getSnapshotShippingReceivingCommandImpl(LvmData<Snapshot> snapVlmDataRef) throws StorageException
     {
         return "thin_recv " + snapVlmDataRef.getVolumeGroup() + "/" + asSnapLvIdentifier(snapVlmDataRef);
@@ -531,5 +523,16 @@ public class LvmThinProvider extends LvmProvider
         // LVM_THIN doesn't have a long run operation, but it is vital that the device manager runs
         // through before getting updated flags, so keep the clone daemon a bit busy
         return new String[] {"sleep", "1"};
+    }
+
+    /**
+     * Instead of overriding getAllocatedSize() method (which is also used for setting usable size by the
+     * AbsStorageProvider), we simply store in our LvmThinData the actual allocated size
+     */
+    @Override
+    protected void setAllocatedSize(LvmData<Resource> vlmDataRef, long allocatedSize) throws DatabaseException
+    {
+        LvmThinData<Resource> lvmThinData = (LvmThinData<Resource>) vlmDataRef;
+        super.setAllocatedSize(vlmDataRef, (long) (allocatedSize * lvmThinData.getDataPercent()));
     }
 }
