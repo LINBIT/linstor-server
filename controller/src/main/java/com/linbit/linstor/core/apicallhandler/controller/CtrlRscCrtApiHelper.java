@@ -1059,6 +1059,12 @@ public class CtrlRscCrtApiHelper
             ret = rscDfn.streamResource(accCtx).map(
                 layerDataHelperRef::getLayerStack
             ).collect(Collectors.toSet());
+
+            /*
+             * We might have a toggle-disk here were we just removed the layer-data.
+             * Otherwise an empty layer list should not be possible anyways
+             */
+            ret.remove(Collections.emptyList());
         }
         catch (AccessDeniedException accDeniedExc)
         {
