@@ -70,6 +70,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.ExceptionThrowingPredicate;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
@@ -231,32 +232,6 @@ public class CtrlBackupApiCallHandler
                     )
                 );
             }
-            Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx.get());
-            List<String> nodes = new ArrayList<>();
-            while (rscIt.hasNext())
-            {
-                Resource rsc = rscIt.next();
-                if (
-                    !rsc.getStateFlags()
-                        .isSomeSet(peerAccCtx.get(), Resource.Flags.DRBD_DISKLESS, Resource.Flags.NVME_INITIATOR) &&
-                        backupShippingSupported(rsc).isEmpty()
-                )
-                {
-                    nodes.add(rsc.getNode().getName().displayValue);
-                }
-            }
-            if (nodes.size() == 0)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_NOT_ENOUGH_NODES,
-                        "Backup shipping of resource '" + rscDfn.getName().displayValue +
-                            "' cannot be started since there is no node available that supports backup shipping."
-                    )
-                );
-            }
-            // TODO: actually choose node - needs to always be the same storage type
-            NodeName chosenNode = new NodeName(nodes.get(0));
             SnapshotDefinition prevSnap = null;
             String prevSnapName = rscDfn.getProps(peerAccCtx.get()).getProp(
                 InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
@@ -291,6 +266,11 @@ public class CtrlBackupApiCallHandler
                 }
             }
             ApiCallRcImpl responses = new ApiCallRcImpl();
+
+            Pair<Node, List<String>> chooseNodeResult = chooseNode(rscDfn, prevSnap);
+            NodeName chosenNodeName = chooseNodeResult.objA.getName();
+            List<String> nodes = chooseNodeResult.objB;
+
             SnapshotDefinition snapDfn = snapshotCrtHelper
                 .createSnapshots(nodes, rscDfn.getName().displayValue, snapName, responses);
             snapDfn.getFlags()
@@ -315,7 +295,7 @@ public class CtrlBackupApiCallHandler
                     );
             }
 
-            Resource rsc = rscDfn.getResource(peerAccCtx.get(), chosenNode);
+            Resource rsc = rscDfn.getResource(peerAccCtx.get(), chosenNodeName);
             List<Integer> nodeIds = new ArrayList<>();
             Set<AbsRscLayerObject<Resource>> drbdLayers = LayerRscUtils
                 .getRscDataByProvider(rsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
@@ -358,9 +338,9 @@ public class CtrlBackupApiCallHandler
                 }
             }
 
-            snapDfn.getSnapshot(peerAccCtx.get(), chosenNode).getFlags()
+            snapDfn.getSnapshot(peerAccCtx.get(), chosenNodeName).getFlags()
                 .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
-            Props snapProps = snapDfn.getSnapshot(peerAccCtx.get(), chosenNode).getProps(peerAccCtx.get());
+            Props snapProps = snapDfn.getSnapshot(peerAccCtx.get(), chosenNodeName).getProps(peerAccCtx.get());
             snapProps.setProp(
                 InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                 StringUtils.join(nodeIds, ","),
@@ -399,6 +379,71 @@ public class CtrlBackupApiCallHandler
             throw new ImplementationError(exc);
         }
         return Flux.empty();
+    }
+
+    /**
+     * In case we already shipped a backup (full or incremental), we need to make sure that the chosen node
+     * also has that snapshot created, otherwise we are not able to send incremental backup.
+     * This method could also be used to verify if the backed up DeviceProviderKind match with the node's snapshot
+     * DeviceProviderKind, but as we are currently not supporting mixed DeviceProviderKinds we also neglect
+     * this check here.
+     *
+     * @param rscDfn
+     * @param prevSnapDfnRef
+     *
+     * @return
+     *
+     * @throws AccessDeniedException
+     */
+    private Pair<Node, List<String>> chooseNode(ResourceDefinition rscDfn, SnapshotDefinition prevSnapDfnRef)
+        throws AccessDeniedException
+    {
+        Node selectedNode = null;
+        List<String> nodeNamesStr = new ArrayList<>();
+
+        ExceptionThrowingPredicate<Node, AccessDeniedException> shouldNodeCreateSnapshot;
+        if (prevSnapDfnRef == null)
+        {
+            shouldNodeCreateSnapshot = ignored -> true;
+        }
+        else
+        {
+            shouldNodeCreateSnapshot = node -> prevSnapDfnRef.getAllSnapshots(peerAccCtx.get()).stream()
+                .anyMatch(snap -> snap.getNode().equals(node));
+        }
+
+        Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx.get());
+        while (rscIt.hasNext())
+        {
+            Resource rsc = rscIt.next();
+            if (
+                !rsc.getStateFlags()
+                    .isSomeSet(peerAccCtx.get(), Resource.Flags.DRBD_DISKLESS, Resource.Flags.NVME_INITIATOR) &&
+                    backupShippingSupported(rsc).isEmpty()
+            )
+            {
+                Node node = rsc.getNode();
+                if (shouldNodeCreateSnapshot.test(node))
+                {
+                    if (selectedNode == null)
+                    {
+                        selectedNode = node;
+                    }
+                    nodeNamesStr.add(node.getName().displayValue);
+                }
+            }
+        }
+        if (nodeNamesStr.size() == 0)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_ENOUGH_NODES,
+                    "Backup shipping of resource '" + rscDfn.getName().displayValue +
+                        "' cannot be started since there is no node available that supports backup shipping."
+                )
+            );
+        }
+        return new Pair<>(selectedNode, nodeNamesStr);
     }
 
     public Flux<ApiCallRc> deleteBackup(
