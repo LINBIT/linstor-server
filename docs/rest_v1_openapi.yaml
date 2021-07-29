@@ -1457,7 +1457,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
-  /v1/resource-definitions/{resource}/deploy/{extFileName}:
+  /v1/resource-definitions/{resource}/files/{extFileName}:
     parameters:
       - $ref: '#/components/parameters/Resource'
       - $ref: '#/components/parameters/ExternalFileName'
@@ -1467,28 +1467,26 @@ paths:
       summary: enables deployment of an external file for the given resource
       operationId: resourceDeploy
       description: |
-        Makes sure the given external file is deployed with the given resource.
+        Enables deployment of a previously created external file for a resource definition.
+        This has the effect that the external file will be created in a host's file
+        system whenever `resource` is deployed on that host.
       responses:
         '200':
-          description: external file exists on given node
+          description: deployment of the external file enabled
         '500':
           $ref: '#/components/responses/OperationFailed'
-  /v1/resource-definitions/{resource}/undeploy/{extFileName}:
-    parameters:
-      - $ref: '#/components/parameters/Resource'
-      - $ref: '#/components/parameters/ExternalFileName'
-    post:
+    delete:
       tags:
         - developers
       summary: disables deployment of an external file for the given resource
       operationId: resourceUndeploy
       description: |
-        Removes the requirement from this resource-definition to create the given external file.
-        If nothing requires the external file to exist on a satellite, the satellite will delete the
-        external file
+        Removes the requirement from this resource definition to create the given external file.
+        If nothing requires the external file to exist on a satellite, the satellite also will delete the
+        external file from the host's file system.
       responses:
         '200':
-          description: existence of external file requirement disabled for this resource-definition
+          description: deployment of external file disabled
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/properties/info:
@@ -4771,8 +4769,11 @@ paths:
     get:
       tags:
         - developers
-      summary: list of registered external files
-      description: List of previously registered external files. Content is intentionally skipped
+      summary: list registered external files
+      description: |
+          Get a list of previously registered external files.
+          File contents are not included, unless the "content" query parameter
+          is explicitly set to true.
       responses:
         '200':
           description: List of registered external files
@@ -4817,13 +4818,13 @@ paths:
     delete:
       tags:
         - developers
-      summary: delets the given external file
+      summary: delete the given external file
       description: |
-        Delets the given external file. This effectively also deletes the file
+        Deletes the given external file. This effectively also deletes the file
         on all satellites
       responses:
         '200':
-          description: Enclosure successfully deleted
+          description: File successfully deleted
           content:
             application/json:
               schema:
@@ -4940,7 +4941,8 @@ components:
       name: extFileName
       in: path
       required: true
-      description: Name of an external file
+      description: Name of an external file. Must be an absolute path in URL-encoding
+      example: '%2Fetc%2Fsome.conf'
       schema:
         type: string
 
@@ -6760,9 +6762,13 @@ components:
       description: External file which can be configured to be deployed by Linstor
       properties:
         path:
+          description: The path where the external file should be deployed on the node
           type: string
+          example: '/etc/some.conf'
         content:
-          type: string  # base64 encoded
+          description: The contents of the file, in base64 encoding
+          type: string
+          example: 'SGVsbG8sIFdvcmxkIQo='
     ToggleDiskDiskful:
       type: object
       description: ToggleDisk optional payload data
