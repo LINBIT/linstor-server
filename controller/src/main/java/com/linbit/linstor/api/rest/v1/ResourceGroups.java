@@ -4,9 +4,9 @@ import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
@@ -173,25 +173,22 @@ public class ResourceGroups
             {
                 storPoolList = Collections.singletonList(select_filter.storage_pool);
             }
-            autoSelectFilter = new AutoSelectFilterPojo(
-                select_filter.place_count,
-                select_filter.additional_place_count,
-                select_filter.node_name_list,
-                storPoolList,
-                select_filter.storage_pool_diskless_list,
-                select_filter.not_place_with_rsc,
-                select_filter.not_place_with_rsc_regex,
-                select_filter.replicas_on_same,
-                select_filter.replicas_on_different,
-                select_filter.layer_stack == null ? null :
-                    LinstorParsingUtils.asDeviceLayerKind(select_filter.layer_stack),
-                select_filter.provider_list == null ? null :
-                    LinstorParsingUtils.asProviderKind(select_filter.provider_list),
-                select_filter.diskless_on_remaining,
-                null,
-                null,
-                null // no disklessType on rscGrp
-            );
+            autoSelectFilter = new AutoSelectFilterBuilder()
+                .setPlaceCount(select_filter.place_count)
+                .setAdditionalPlaceCount(select_filter.additional_place_count)
+                .setNodeNameList(select_filter.node_name_list)
+                .setStorPoolNameList(storPoolList)
+                .setStorPoolDisklessNameList(select_filter.storage_pool_diskless_list)
+                .setDoNotPlaceWithRscList(select_filter.not_place_with_rsc)
+                .setDoNotPlaceWithRegex(select_filter.not_place_with_rsc_regex)
+                .setReplicasOnSameList(select_filter.replicas_on_same)
+                .setReplicasOnDifferentList(select_filter.replicas_on_different)
+                .setLayerStackList(select_filter.layer_stack == null ? null :
+                    LinstorParsingUtils.asDeviceLayerKind(select_filter.layer_stack))
+                .setDeviceProviderKinds(select_filter.provider_list == null ? null :
+                    LinstorParsingUtils.asProviderKind(select_filter.provider_list))
+                .setDisklessOnRemaining(select_filter.diskless_on_remaining)
+                .build();
         }
 
         return autoSelectFilter;

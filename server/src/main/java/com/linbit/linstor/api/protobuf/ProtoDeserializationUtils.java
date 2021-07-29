@@ -3,10 +3,10 @@ package com.linbit.linstor.api.protobuf;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.objects.VolumeGroup;
@@ -322,23 +322,7 @@ public class ProtoDeserializationUtils
             rscGrpProto.getRscDfnPropsMap(),
             parseVlmGrpList(rscGrpProto.getVlmGrpList()),
             // satellite does not need the autoSelectFilter anyways
-            new AutoSelectFilterPojo(
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-            )
+            new AutoSelectFilterBuilder().build()
         );
     }
 

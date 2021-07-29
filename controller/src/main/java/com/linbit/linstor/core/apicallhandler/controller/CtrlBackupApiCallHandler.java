@@ -16,7 +16,6 @@ import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo;
@@ -26,6 +25,7 @@ import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVolumePojo;
 import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.backupshipping.BackupShippingConsts;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -1565,23 +1565,15 @@ public class CtrlBackupApiCallHandler
             else
             {
                 storPools = autoplacer.autoPlace(
-                    new AutoSelectFilterPojo(
-                        1,
-                        null,
-                        nodeNameStr == null ? null : Arrays.asList(nodeNameStr),
-                        storPoolNameStr == null ? null : Arrays.asList(storPoolNameStr),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        getLayerList(layers),
-                        Arrays.asList(getProviderKind(layers)),
-                        false,
-                        null,
-                        true,
-                        null
-                    ),
+                    new AutoSelectFilterBuilder()
+                        .setPlaceCount(1)
+                        .setNodeNameList(nodeNameStr == null ? null : Arrays.asList(nodeNameStr))
+                        .setStorPoolNameList(storPoolNameStr == null ? null : Arrays.asList(storPoolNameStr))
+                        .setLayerStackList(getLayerList(layers))
+                        .setDeviceProviderKinds(Arrays.asList(getProviderKind(layers)))
+                        .setDisklessOnRemaining(false)
+                        .setSkipAlreadyPlacedOnAllNodeCheck(true)
+                        .build(),
                     rscDfn,
                     totalSize
                 );

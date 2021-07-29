@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -90,23 +91,10 @@ public class CtrlQueryMaxVlmSizeHelper
         for (String storPoolNameStr : storPoolNameList)
         {
             AutoSelectFilterPojo currentFilter = AutoSelectFilterPojo.merge(
-                new AutoSelectFilterPojo(
-                    null,
-                    null,
-                    null,
-                    Collections.singletonList(storPoolNameStr), // only consider this one storpoolname
-                    null, // query max vlm size does not make sense with diskless storpools
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-                ),
+                new AutoSelectFilterBuilder()
+                    // only consider this one storpoolname
+                    .setStorPoolNameList(Collections.singletonList(storPoolNameStr))
+                    .build(),
                 selectFilter // copy the rest from selectFilter
             );
 

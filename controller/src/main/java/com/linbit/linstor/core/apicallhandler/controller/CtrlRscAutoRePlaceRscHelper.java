@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
@@ -162,23 +163,12 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                     if (curReplicaCount < minReplicaCount)
                     {
                         AutoSelectFilterApi selectFilter = AutoSelectFilterPojo.merge(
-                            new AutoSelectFilterPojo(
-                                null,
-                                minReplicaCount - curReplicaCount,
-                                null,
-                                null,
-                                null,
-                                Collections.singletonList(rscDfn.getName().displayValue),
-                                null,
-                                null,
-                                null,
-                                Collections.singletonList(DeviceLayerKind.DRBD),
-                                null,
-                                null,
-                                disklessNodeNames,
-                                null,
-                                null
-                            ),
+                            new AutoSelectFilterBuilder()
+                                .setAdditionalPlaceCount(minReplicaCount - curReplicaCount)
+                                .setDoNotPlaceWithRscList(Collections.singletonList(rscDfn.getName().displayValue))
+                                .setLayerStackList(Collections.singletonList(DeviceLayerKind.DRBD))
+                                .setSkipAlreadyPlacedOnNodeNamesCheck(disklessNodeNames)
+                                .build(),
                             rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
                         );
                         try

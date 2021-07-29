@@ -20,6 +20,7 @@ import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmDfnWithCreationPayloadPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -919,23 +920,9 @@ public class CtrlRscGrpApiCallHandler
 
             if (autoPlaceConfig != null && autoPlaceConfig.getReplicaCount() != null && !definitionsOnlyRef)
             {
-                AutoSelectFilterApi autoSelectFilterPojo = new AutoSelectFilterPojo(
-                    autoPlaceConfig.getReplicaCount(),
-                    autoPlaceConfig.getAdditionalReplicaCount(),
-                    autoPlaceConfig.getNodeNameList(),
-                    autoPlaceConfig.getStorPoolNameList(),
-                    autoPlaceConfig.getStorPoolDisklessNameList(),
-                    autoPlaceConfig.getDoNotPlaceWithRscList(),
-                    autoPlaceConfig.getDoNotPlaceWithRscRegex(),
-                    autoPlaceConfig.getReplicasOnSameList(),
-                    autoPlaceConfig.getReplicasOnDifferentList(),
-                    layerStackDevLayerKind,
-                    autoPlaceConfig.getProviderList(),
-                    autoPlaceConfig.getDisklessOnRemaining(),
-                    autoPlaceConfig.skipAlreadyPlacedOnNodeNamesCheck(),
-                    autoPlaceConfig.skipAlreadyPlacedOnAllNodeCheck(),
-                    autoPlaceConfig.getDisklessType()
-                );
+                AutoSelectFilterApi autoSelectFilterPojo = new AutoSelectFilterBuilder(autoPlaceConfig)
+                    .setLayerStackList(layerStackDevLayerKind)
+                    .build();
                 deployedResources = ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
                     /*
                      * do not use rscDfnNameRef here as the actual name of the rscDfn might have been

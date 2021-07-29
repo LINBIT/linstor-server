@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -327,25 +328,15 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
 
                     Set<StorPool> autoPlace = autoplacer.autoPlace(
                         AutoSelectFilterPojo.merge(
-                            new AutoSelectFilterPojo(
-                                1,
-                                null,
-                                Collections.singletonList(rsc.getNode().getName().displayValue),
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                rscDfn.streamResource(sysCtx)
+                            new AutoSelectFilterBuilder()
+                                .setPlaceCount(1)
+                                .setNodeNameList(Collections.singletonList(rsc.getNode().getName().displayValue))
+                                .setSkipAlreadyPlacedOnNodeNamesCheck(
+                                    rscDfn.streamResource(sysCtx)
                                     .map(tmpRsc -> tmpRsc.getNode().getName().displayValue)
-                                    .collect(Collectors.toList()),
-                                null,
-                                null
-                            ),
+                                        .collect(Collectors.toList())
+                                )
+                                .build(),
                             rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
                         ),
                         rscDfn,

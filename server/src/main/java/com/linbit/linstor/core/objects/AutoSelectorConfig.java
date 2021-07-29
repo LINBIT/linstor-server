@@ -2,7 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
-import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -252,23 +252,19 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
 
     public AutoSelectFilterApi getApiData()
     {
-        return new AutoSelectFilterPojo(
-            replicaCount.get(),
-            null, // no "additional" placeCounts for rscGrps
-            Collections.unmodifiableList(nodeNameList),
-            Collections.unmodifiableList(storPoolNameList),
-            Collections.unmodifiableList(storPoolDisklessNameList),
-            Collections.unmodifiableList(doNotPlaceWithRscList),
-            doNotPlaceWithRscRegex.get(),
-            Collections.unmodifiableList(replicasOnSameList),
-            Collections.unmodifiableList(replicasOnDifferentList),
-            Collections.unmodifiableList(layerStack),
-            Collections.unmodifiableList(allowedProviderList),
-            disklessOnRemaining.get(),
-            null,
-            null,
-            null // no disklessType for rscGrps
-        );
+        return new AutoSelectFilterBuilder()
+            .setPlaceCount(replicaCount.get())// no "additional" placeCounts for rscGrps
+            .setNodeNameList(nodeNameList)
+            .setStorPoolNameList(Collections.unmodifiableList(storPoolNameList))
+            .setStorPoolDisklessNameList(Collections.unmodifiableList(storPoolDisklessNameList))
+            .setDoNotPlaceWithRscList(Collections.unmodifiableList(doNotPlaceWithRscList))
+            .setDoNotPlaceWithRegex(doNotPlaceWithRscRegex.get())
+            .setReplicasOnSameList(Collections.unmodifiableList(replicasOnSameList))
+            .setReplicasOnDifferentList(Collections.unmodifiableList(replicasOnDifferentList))
+            .setLayerStackList(Collections.unmodifiableList(layerStack))
+            .setDeviceProviderKinds(Collections.unmodifiableList(allowedProviderList))
+            .setDisklessOnRemaining(disklessOnRemaining.get())
+            .build();
     }
 
     public void applyChanges(AutoSelectFilterApi autoPlaceConfigRef) throws DatabaseException

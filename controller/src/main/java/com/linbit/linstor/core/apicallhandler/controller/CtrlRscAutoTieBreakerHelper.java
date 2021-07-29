@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
@@ -478,23 +479,14 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
             while (storPool == null)
             {
                 AutoSelectFilterPojo mergedAutoSelectFilterPojo = AutoSelectFilterPojo.merge(
-                    new AutoSelectFilterPojo(
-                        0,
-                        1,
-                        filterNodeNamesList,
-                        null,
-                        null,
-                        Collections.singletonList(ctx.rscDfn.getName().displayValue),
-                        null,
-                        null,
-                        null,
-                        Collections.singletonList(DeviceLayerKind.DRBD),
-                        null,
-                        null,
-                        null,
-                        null,
-                        Resource.Flags.DRBD_DISKLESS.name()
-                    ),
+                    new AutoSelectFilterBuilder()
+                        .setPlaceCount(0)
+                        .setAdditionalPlaceCount(1)
+                        .setNodeNameList(filterNodeNamesList)
+                        .setDoNotPlaceWithRscList(Collections.singletonList(ctx.rscDfn.getName().displayValue))
+                        .setLayerStackList(Collections.singletonList(DeviceLayerKind.DRBD))
+                        .setDisklessType(Resource.Flags.DRBD_DISKLESS.name())
+                        .build(),
                     ctx.rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),
                     ctx.selectFilter
                 );

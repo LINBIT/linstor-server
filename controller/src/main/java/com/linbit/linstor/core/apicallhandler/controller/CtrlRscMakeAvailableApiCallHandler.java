@@ -11,6 +11,7 @@ import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.ResourceWithPayloadPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
@@ -849,23 +850,13 @@ public class CtrlRscMakeAvailableApiCallHandler
         Resource.Flags disklessFlag
     )
     {
-        return new AutoSelectFilterPojo(
-            0,
-            1,
-            Collections.singletonList(nodeName),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            layerStack,
-            null,
-            null,
-            null,
-            null,
-            disklessFlag == null ? null : disklessFlag.name()
-        );
+        return new AutoSelectFilterBuilder()
+            .setPlaceCount(0)
+            .setAdditionalPlaceCount(1)
+            .setNodeNameList(Collections.singletonList(nodeName))
+            .setLayerStackList(layerStack)
+            .setDisklessType(disklessFlag == null ? null : disklessFlag.name())
+            .build();
     }
 
     private StorPool getStorPoolOrFail(Set<StorPool> storPoolSetRef, String nodeNameRef, boolean disklessRef)

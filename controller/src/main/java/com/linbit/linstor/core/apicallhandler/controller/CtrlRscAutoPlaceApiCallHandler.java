@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -281,29 +282,27 @@ public class CtrlRscAutoPlaceApiCallHandler
             List<String> disklessNodeNames = alreadyPlacedDisklessNotDeleting.stream()
                 .map(rsc -> rsc.getNode().getName().displayValue).collect(Collectors.toList());
 
-            AutoSelectFilterPojo autoStorConfig = new AutoSelectFilterPojo(
-                null,
-                additionalPlaceCount,
-                mergedSelectFilter.getNodeNameList(),
-                storPoolNameList,
-                storPoolDisklessNameList,
-                Stream.concat(
+            AutoSelectFilterPojo autoStorConfig = new AutoSelectFilterBuilder()
+                .setAdditionalPlaceCount(additionalPlaceCount) // no forced place count, only additional place count
+                .setNodeNameList(mergedSelectFilter.getNodeNameList())
+                .setStorPoolNameList(storPoolNameList)
+                .setStorPoolDisklessNameList(storPoolDisklessNameList)
+                .setDoNotPlaceWithRscList(Stream.concat(
                     mergedSelectFilter.getDoNotPlaceWithRscList().stream(),
                     // Do not attempt to re-use nodes that already have this resource
                     Stream.of(rscNameStr)
                 ).collect(
                     Collectors.toList()
-                ),
-                mergedSelectFilter.getDoNotPlaceWithRscRegex(),
-                mergedSelectFilter.getReplicasOnSameList(),
-                mergedSelectFilter.getReplicasOnDifferentList(),
-                mergedSelectFilter.getLayerStackList(),
-                mergedSelectFilter.getProviderList(),
-                mergedSelectFilter.getDisklessOnRemaining(), // should be ignored anyways
-                disklessNodeNames,
-                null,
-                mergedSelectFilter.getDisklessType()
-            );
+                ))
+                .setDoNotPlaceWithRegex(mergedSelectFilter.getDoNotPlaceWithRscRegex())
+                .setReplicasOnSameList(mergedSelectFilter.getReplicasOnSameList())
+                .setReplicasOnDifferentList(mergedSelectFilter.getReplicasOnDifferentList())
+                .setLayerStackList(mergedSelectFilter.getLayerStackList())
+                .setDeviceProviderKinds(mergedSelectFilter.getProviderList())
+                .setDisklessOnRemaining(mergedSelectFilter.getDisklessOnRemaining())
+                .setSkipAlreadyPlacedOnNodeNamesCheck(disklessNodeNames)
+                .setDisklessType(mergedSelectFilter.getDisklessType())
+                .build();
 
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);
 
