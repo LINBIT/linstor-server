@@ -881,6 +881,10 @@ public class CtrlBackupApiCallHandler
             rscDfn.getProps(peerAccCtx.get()).clear();
             rscDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
 
+            // force the node to become primary afterwards in case we needed to recreate
+            // the metadata
+            rscDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+
             // 9. create snapDfn
             SnapshotDefinition snapDfn = snapshotCrtHelper.createSnapshotDfnData(
                 rscDfn,
@@ -889,6 +893,11 @@ public class CtrlBackupApiCallHandler
             );
             snapDfn.getProps(peerAccCtx.get()).clear();
             snapDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
+
+            // force the node to become primary afterwards in case we needed to recreate
+            // the metadata
+            snapDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+
             snapDfn.getFlags().enableFlags(
                 peerAccCtx.get(),
                 SnapshotDefinition.Flags.SHIPPING,
