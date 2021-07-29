@@ -70,6 +70,8 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
@@ -903,6 +905,12 @@ public class Json
         public String getDisklessType()
         {
             return autoSelectFilter.diskless_type;
+        }
+
+        @Override
+        public Map<ExtTools, ExtToolsInfo.Version> getRequiredExtTools()
+        {
+            return null;
         }
     }
 

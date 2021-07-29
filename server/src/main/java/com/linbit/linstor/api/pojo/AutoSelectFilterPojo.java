@@ -3,10 +3,14 @@ package com.linbit.linstor.api.pojo;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
 import javax.annotation.Nullable;
 
 import java.util.List;
+import java.util.Map;
 
 public class AutoSelectFilterPojo implements AutoSelectFilterApi
 {
@@ -25,6 +29,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     private @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheck;
     private @Nullable Boolean skipAlreadyPlacedOnAllNodeCheck;
     private @Nullable String disklessType;
+    private @Nullable Map<ExtTools, Version> requiredExtTools;
 
     public AutoSelectFilterPojo(
         @Nullable Integer placeCountRef,
@@ -41,7 +46,8 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         @Nullable Boolean disklessOnRemainingRef,
         @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheckRef,
         @Nullable Boolean skipAlreadyPlacedOnAllNodeCheckRef,
-        @Nullable String disklessTypeRef
+        @Nullable String disklessTypeRef,
+        @Nullable Map<ExtTools, Version> requiredExtToolsRef
     )
     {
         placeCount = placeCountRef;
@@ -59,6 +65,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         skipAlreadyPlacedOnNodeNamesCheck = skipAlreadyPlacedOnNodeNamesCheckRef;
         skipAlreadyPlacedOnAllNodeCheck = skipAlreadyPlacedOnAllNodeCheckRef;
         disklessType = disklessTypeRef;
+        requiredExtTools = requiredExtToolsRef;
     }
 
     public static AutoSelectFilterPojo copy(AutoSelectFilterApi api) {
@@ -77,7 +84,8 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             api.getDisklessOnRemaining(),
             api.skipAlreadyPlacedOnNodeNamesCheck(),
             api.skipAlreadyPlacedOnAllNodeCheck(),
-            api.getDisklessType()
+            api.getDisklessType(),
+            api.getRequiredExtTools()
         );
     }
 
@@ -100,6 +108,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         List<String> skipAlreadyPlacedOnNodeCheck = null;
         Boolean skipAlreadyPlacedOnAllNodeCheck= null;
         String disklessType = null;
+        Map<ExtTools, ExtToolsInfo.Version> requiredExtTools = null;
 
         for (AutoSelectFilterApi cfgApi : cfgArr)
         {
@@ -165,6 +174,10 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
                 {
                     disklessType = cfgApi.getDisklessType();
                 }
+                if (requiredExtTools == null)
+                {
+                    requiredExtTools = cfgApi.getRequiredExtTools();
+                }
             }
         }
 
@@ -183,7 +196,8 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             disklessOnRemaining,
             skipAlreadyPlacedOnNodeCheck,
             skipAlreadyPlacedOnAllNodeCheck,
-            disklessType
+            disklessType,
+            requiredExtTools
         );
     }
 
@@ -275,6 +289,12 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     public @Nullable String getDisklessType()
     {
         return disklessType;
+    }
+
+    @Override
+    public @Nullable Map<ExtTools, Version> getRequiredExtTools()
+    {
+        return requiredExtTools;
     }
 
     public void setPlaceCount(@Nullable Integer placeCountRef)

@@ -37,6 +37,7 @@ public class BackupShippingRequest
     public final @Nullable String dstNodeName;
     public final @Nullable String dstNodeNetIfName;
     public final @Nullable String dstStorPool;
+    public final boolean useZstd;
 
     @JsonCreator
     public BackupShippingRequest(
@@ -49,7 +50,8 @@ public class BackupShippingRequest
         @JsonProperty("dstNodeName") @Nullable String dstNodeNameRef,
         @JsonProperty("dstNodeNetIfName") @Nullable String dstNodeNetIfNameRef,
         @JsonProperty("dstStorPool") @Nullable String dstStorPoolRef,
-        @JsonProperty("storPoolRenameMap") @Nullable Map<String, String> storPoolRenameMapRef
+        @JsonProperty("storPoolRenameMap") @Nullable Map<String, String> storPoolRenameMapRef,
+        @JsonProperty("useZstd") boolean useZstdRef
     )
     {
         srcVersion = Objects.requireNonNull(srcVersionRef, "Version must not be null!");
@@ -67,5 +69,6 @@ public class BackupShippingRequest
         dstNodeName = dstNodeNameRef;
         dstNodeNetIfName = dstNodeNetIfNameRef;
         dstStorPool = dstStorPoolRef;
+        useZstd = useZstdRef;
     }
 }

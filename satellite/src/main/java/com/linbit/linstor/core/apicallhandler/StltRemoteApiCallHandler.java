@@ -119,7 +119,8 @@ public class StltRemoteApiCallHandler
                 new RemoteName(stltRemotePojo.getRemoteName(), true),
                 stltRemotePojo.getFlags(),
                 stltRemotePojo.getIp(),
-                stltRemotePojo.getPort()
+                stltRemotePojo.getPort(),
+                stltRemotePojo.useZstd()
             );
 
             localStltRemote.applyApiData(apiCtx, stltRemotePojo);

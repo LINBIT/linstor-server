@@ -36,9 +36,13 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.utils.Pair;
@@ -56,6 +60,7 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
@@ -266,13 +271,19 @@ public class CtrlBackupL2LSrcApiCallHandler
      */
     private Flux<ApiCallRc> shipBackupInTransaction(BackupShippingData data)
     {
+        Map<ExtTools, Version> requiredExtTools = new HashMap<>();
+        requiredExtTools.put(ExtTools.SOCAT, null);
+        Map<ExtTools, Version> optionalExtTools = new HashMap<>();
+        optionalExtTools.put(ExtTools.ZSTD, null);
         Pair<Flux<ApiCallRc>, Snapshot> createSnapshot = ctrlBackupApiCallHandler.backupSnapshot(
             data.srcRscName,
             data.stltRemote.getName().displayValue,
             data.dstNodeName,
             data.srcBackupName,
             false,
-            false // TODO add incremental support
+            false,
+            requiredExtTools,
+            optionalExtTools
         );
         data.srcSnapshot = createSnapshot.objB;
         data.srcNodeName = data.srcSnapshot.getNode().getName().displayValue;
@@ -361,6 +372,10 @@ public class CtrlBackupL2LSrcApiCallHandler
                 new SnapshotDefinition.Key(data.srcSnapshot.getSnapshotDefinition())
             );
 
+            ExtToolsManager extToolsMgr = data.srcSnapshot.getNode().getPeer(sysCtx).getExtToolsManager();
+            ExtToolsInfo zstd = extToolsMgr.getExtToolInfo(ExtTools.ZSTD);
+            data.useZstd = zstd != null && zstd.isSupported();
+
             data.metaDataPojo = metaDataPojo;
             data.metaDataPojo.getRscDfn().getProps().put(
                 InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID,
@@ -426,6 +441,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 StltRemote stltRemote = data.stltRemote;
                 stltRemote.setIp(accCtx, responseRef.dstStltIp);
                 stltRemote.setPort(accCtx, responseRef.dstStltPort);
+
+                stltRemote.useZstd(accCtx, responseRef.useZstd && data.useZstd);
 
                 ctrlTransactionHelper.commit();
                 flux = ctrlSatelliteUpdateCaller.updateSatellites(stltRemote);
@@ -584,7 +601,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                                     data.dstNodeName,
                                     data.dstNetIfName,
                                     data.dstStorPool,
-                                    data.storPoolRename
+                                    data.storPoolRename,
+                                    data.useZstd
                                 )
                             ),
                             Arrays.asList(responseOk, notFound, badRequest, internalServerError),
@@ -649,6 +667,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         private final String srcBackupName;
         private Snapshot srcSnapshot;
         private final LinstorRemote linstorRemote;
+        private boolean useZstd;
 
         private BackupMetaDataPojo metaDataPojo;
         private final String dstRscName;

@@ -78,6 +78,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
@@ -85,6 +86,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.ExceptionThrowingBiFunction;
 import com.linbit.utils.ExceptionThrowingPredicate;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -100,6 +102,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -236,7 +239,10 @@ public class CtrlBackupApiCallHandler
                 nodeNameRef,
                 generateNewSnapshotName(new Date()),
                 true,
-                incremental).objA
+                incremental,
+                null,
+                null
+            ).objA
         );
 
         return response;
@@ -253,7 +259,9 @@ public class CtrlBackupApiCallHandler
         String nodeName,
         String snapName,
         boolean setShippingFlag,
-        boolean incremental
+        boolean incremental,
+        Map<ExtTools, ExtToolsInfo.Version> requiredExtTools,
+        Map<ExtTools, ExtToolsInfo.Version> optionalExtTools
     )
     {
         try
@@ -302,7 +310,12 @@ public class CtrlBackupApiCallHandler
             }
             ApiCallRcImpl responses = new ApiCallRcImpl();
 
-            Pair<Node, List<String>> chooseNodeResult = chooseNode(rscDfn, prevSnap);
+            Pair<Node, List<String>> chooseNodeResult = chooseNode(
+                rscDfn,
+                prevSnap,
+                requiredExtTools,
+                optionalExtTools
+            );
             NodeName chosenNodeName = chooseNodeResult.objA.getName();
             List<String> nodes = chooseNodeResult.objB;
 
@@ -395,6 +408,7 @@ public class CtrlBackupApiCallHandler
             );
 
             setPropsIncremantaldependendProps(snapName, incremental, prevSnap, createdSnapshot);
+
             ctrlTransactionHelper.commit();
 
             Flux<ApiCallRc> flux = Flux.<ApiCallRc>just(responses)
@@ -428,15 +442,23 @@ public class CtrlBackupApiCallHandler
      *
      * @param rscDfn
      * @param prevSnapDfnRef
+     * @param optionalExtToolsRef
+     * @param requiredExtToolsRef
      *
      * @return
      *
      * @throws AccessDeniedException
      */
-    private Pair<Node, List<String>> chooseNode(ResourceDefinition rscDfn, SnapshotDefinition prevSnapDfnRef)
+    private Pair<Node, List<String>> chooseNode(
+        ResourceDefinition rscDfn,
+        SnapshotDefinition prevSnapDfnRef,
+        Map<ExtTools, ExtToolsInfo.Version> requiredExtToolsMap,
+        Map<ExtTools, ExtToolsInfo.Version> optionalExtToolsMap
+    )
         throws AccessDeniedException
     {
         Node selectedNode = null;
+        Node preferredNode = null;
         List<String> nodeNamesStr = new ArrayList<>();
 
         ExceptionThrowingPredicate<Node, AccessDeniedException> shouldNodeCreateSnapshot;
@@ -450,6 +472,29 @@ public class CtrlBackupApiCallHandler
                 .anyMatch(snap -> snap.getNode().equals(node));
         }
 
+        ExceptionThrowingBiFunction<Node, Map<ExtTools, ExtToolsInfo.Version>, Boolean, AccessDeniedException> hasNodeAllExtTools = (
+            node,
+            extTools) ->
+        {
+            boolean ret = true;
+            if (extTools != null)
+            {
+                ExtToolsManager extToolsMgr = node.getPeer(sysCtx).getExtToolsManager();
+                for (Entry<ExtTools, Version> extTool : extTools.entrySet())
+                {
+                    ExtToolsInfo extToolInfo = extToolsMgr.getExtToolInfo(extTool.getKey());
+                    Version requiredVersion = extTool.getValue();
+                    if (extToolInfo == null || !extToolInfo.isSupported() ||
+                        (requiredVersion != null && !extToolInfo.hasVersionOrHigher(requiredVersion)))
+                    {
+                        ret = false;
+                        break;
+                    }
+                }
+            }
+            return ret;
+        };
+
         Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx.get());
         while (rscIt.hasNext())
         {
@@ -461,10 +506,18 @@ public class CtrlBackupApiCallHandler
             )
             {
                 Node node = rsc.getNode();
-                if (shouldNodeCreateSnapshot.test(node))
+                boolean takeSnapshot = shouldNodeCreateSnapshot.test(node) &&
+                    hasNodeAllExtTools.accept(node, requiredExtToolsMap);
+
+                if (takeSnapshot)
                 {
                     if (selectedNode == null)
                     {
+                        selectedNode = node;
+                    }
+                    if (preferredNode == null && hasNodeAllExtTools.accept(node, optionalExtToolsMap))
+                    {
+                        preferredNode = node;
                         selectedNode = node;
                     }
                     nodeNamesStr.add(node.getName().displayValue);
@@ -1478,7 +1531,8 @@ public class CtrlBackupApiCallHandler
         Map<String, String> renameMap,
         StltRemote remote,
         SnapshotName snapName,
-        Set<String> srcSnapDfnUuidsForIncrementalRef
+        Set<String> srcSnapDfnUuidsForIncrementalRef,
+        boolean useZstd
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -1564,19 +1618,37 @@ public class CtrlBackupApiCallHandler
             }
             else
             {
+                Map<ExtTools, ExtToolsInfo.Version> extTools = new HashMap<>();
+                extTools.put(ExtTools.SOCAT, null);
+                if (useZstd)
+                {
+                    extTools.put(ExtTools.ZSTD, null);
+                }
+                AutoSelectFilterBuilder autoSelectBuilder = new AutoSelectFilterBuilder()
+                    .setPlaceCount(1)
+                    .setNodeNameList(nodeNameStr == null ? null : Arrays.asList(nodeNameStr))
+                    .setStorPoolNameList(storPoolNameStr == null ? null : Arrays.asList(storPoolNameStr))
+                    .setLayerStackList(getLayerList(layers))
+                    .setDeviceProviderKinds(Arrays.asList(getProviderKind(layers)))
+                    .setDisklessOnRemaining(false)
+                    .setSkipAlreadyPlacedOnAllNodeCheck(true)
+                    .setRequireExtTools(extTools);
                 storPools = autoplacer.autoPlace(
-                    new AutoSelectFilterBuilder()
-                        .setPlaceCount(1)
-                        .setNodeNameList(nodeNameStr == null ? null : Arrays.asList(nodeNameStr))
-                        .setStorPoolNameList(storPoolNameStr == null ? null : Arrays.asList(storPoolNameStr))
-                        .setLayerStackList(getLayerList(layers))
-                        .setDeviceProviderKinds(Arrays.asList(getProviderKind(layers)))
-                        .setDisklessOnRemaining(false)
-                        .setSkipAlreadyPlacedOnAllNodeCheck(true)
-                        .build(),
+                    autoSelectBuilder.build(),
                     rscDfn,
                     totalSize
                 );
+                if ((storPools == null || storPools.isEmpty()) && useZstd)
+                {
+                    // try not using it..
+                    useZstd = false;
+                    extTools.remove(ExtTools.ZSTD);
+                    storPools = autoplacer.autoPlace(
+                        autoSelectBuilder.build(),
+                        rscDfn,
+                        totalSize
+                    );
+                }
             }
             if (storPools == null || storPools.isEmpty())
             {
@@ -1618,22 +1690,32 @@ public class CtrlBackupApiCallHandler
                 );
                 snap.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
 
+                remote.useZstd(sysCtx, useZstd);
+
                 // update stlts
                 ctrlTransactionHelper.commit();
 
                 // calling ...SupressingErrorClasses without classes => do not ignore DelayedApiRcException. we want to
                 // deal with that by our self
-                ret = snapshotCrtHandler.postCreateSnapshotSuppressingErrorClasses(snapDfn)
-                    .onErrorResume(error -> cleanupAfterFailedRestore(error, snapDfn))
-                    .map(apiCallRcList ->
-                    {
-                        responses.addEntries(apiCallRcList);
-                        return (ApiCallRc) responses;
-                    }
-                    )
-                    .thenMany(Flux.just(
-                        new BackupShippingStartInfo(new ApiCallRcWith<>(responses, snap), incrementalBaseSnap)
-                    ));
+                ret = ctrlSatelliteUpdateCaller.updateSatellites(remote)
+                    .thenMany(
+                        snapshotCrtHandler.postCreateSnapshotSuppressingErrorClasses(snapDfn)
+                            .onErrorResume(error -> cleanupAfterFailedRestore(error, snapDfn))
+                            .map(apiCallRcList ->
+                            {
+                                responses.addEntries(apiCallRcList);
+                                return (ApiCallRc) responses;
+                            }
+                            )
+                            .thenMany(
+                                Flux.just(
+                                    new BackupShippingStartInfo(
+                                        new ApiCallRcWith<>(responses, snap),
+                                        incrementalBaseSnap
+                                    )
+                                )
+                            )
+                    );
             }
         }
         catch (AccessDeniedException exc)
@@ -2737,7 +2819,15 @@ public class CtrlBackupApiCallHandler
                 continue;
             }
             ExtToolsManager extToolsManager = rsc.getNode().getPeer(peerAccCtx.get()).getExtToolsManager();
-            errors.addEntry(getErrorRcIfNotSupported(deviceProviderKind, extToolsManager, ExtTools.ZSTD, "zstd", null));
+            errors.addEntry(
+                getErrorRcIfNotSupported(
+                    deviceProviderKind,
+                    extToolsManager,
+                    ExtTools.SOCAT,
+                    "socat",
+                    null
+                )
+            );
             errors.addEntry(
                 getErrorRcIfNotSupported(
                     deviceProviderKind,

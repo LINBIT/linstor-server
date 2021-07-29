@@ -20,6 +20,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import javax.inject.Inject;
@@ -180,6 +183,7 @@ class StorPoolFilter
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
         List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilter.skipAlreadyPlacedOnNodeNamesCheck();
         Boolean skipAlreadyPlacedOnAllNodesCheck = selectFilter.skipAlreadyPlacedOnAllNodeCheck();
+        Map<ExtTools, ExtToolsInfo.Version> requiredVersion = selectFilter.getRequiredExtTools();
 
         logIfNotEmpty("filtering mode: %s", diskful ? "diskful" : disklessTypeRef.name());
         logIfNotEmpty("filter node names: %s", filterNodeNameList);
@@ -192,6 +196,7 @@ class StorPoolFilter
         logIfNotEmpty("filter provider list: %s", filterProviderList);
         logIfNotEmpty("skip already placed on node names %s", skipAlreadyPlacedOnNodeNamesCheck);
         logIfNotEmpty("skip already placed on ALL node: %b", skipAlreadyPlacedOnAllNodesCheck);
+        logIfNotEmpty("required external tools on node: %s", requiredVersion);
 
         if (disklessTypeRef != null)
         {
@@ -427,6 +432,29 @@ class StorPoolFilter
                                     );
                                 }
                             }
+                        }
+                    }
+                }
+                if (nodeMatches && requiredVersion != null)
+                {
+                    ExtToolsManager extToolsMgr = node.getPeer(apiAccCtx).getExtToolsManager();
+                    for (Entry<ExtTools, ExtToolsInfo.Version> entry : requiredVersion.entrySet())
+                    {
+                        ExtTools extTool = entry.getKey();
+                        ExtToolsInfo extToolInfo = extToolsMgr.getExtToolInfo(extTool);
+                        Version version = entry.getValue();
+                        if (extToolInfo == null || !extToolInfo.isSupported() ||
+                            (version != null && !extToolInfo.hasVersionOrHigher(version)))
+                        {
+                            errorReporter.logTrace(
+                                "Autoplacer.Filter: Disqualifying node '%s' as it does not have extTool %s installed",
+                                nodeDisplayValue,
+                                version == null ?
+                                    extTool.name() :
+                                    extTool.name() + " (>= " + version + ")"
+                            );
+                            nodeMatches = false;
+                            // no break to log all missing extTools if necessary
                         }
                     }
                 }

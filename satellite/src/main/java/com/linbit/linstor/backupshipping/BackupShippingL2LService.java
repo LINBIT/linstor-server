@@ -8,6 +8,7 @@ import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltConnTracker;
 import com.linbit.linstor.core.StltSecurityObjects;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Remote.RemoteType;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -27,30 +28,13 @@ import java.util.function.Consumer;
 public class BackupShippingL2LService extends AbsBackupShippingService
 {
     public static final String SERVICE_INFO = "BackupShippingL2LService";
-
-    private static final String CMD_FORMAT_RECEIVING =
-        "trap 'kill -HUP 0' SIGTERM; " +
-        "set -o pipefail; " +
-        "(" +
-            "socat TCP-LISTEN:%s STDOUT | " +
-            "zstd -d | " +
-            // "pv -s 100m -bnr -i 0.1 | " +
-            "%s ;" +
-        ")& wait $!";
-    private static final String CMD_FORMAT_SENDING =
-        "trap 'kill -HUP 0' SIGTERM; " +
-        "(" +
-            "%s | " +
-            // "pv -s 100m -bnr -i 0.1 | " +
-            "zstd | " +
-            "socat STDIN TCP:%s:%s ;" +
-        ")&\\wait $!";
-
+    private StltExtToolsChecker extToolsChecker;
 
     @Inject
     public BackupShippingL2LService(
         ErrorReporter errorReporterRef,
         ExtCmdFactory extCmdFactoryRef,
+        StltExtToolsChecker extToolsCheckerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CtrlStltSerializer interComSerializerRef,
         @SystemContext AccessContext accCtxRef,
@@ -73,28 +57,57 @@ public class BackupShippingL2LService extends AbsBackupShippingService
             stltConnTrackerRef,
             remoteMapRef
         );
+        extToolsChecker = extToolsCheckerRef;
     }
 
     @Override
     protected String getCommandReceiving(String cmdRef, Remote remoteRef) throws AccessDeniedException
     {
-        return String.format(
-            CMD_FORMAT_RECEIVING,
-            ((StltRemote) remoteRef).getPort(accCtx),
-            cmdRef
-        );
+        StltRemote stltRemote = (StltRemote) remoteRef;
+
+        boolean useZstd = stltRemote.useZstd(accCtx);
+
+        StringBuilder cmdBuilder = new StringBuilder()
+            .append("trap 'kill -HUP 0' SIGTERM; ")
+            .append("set -o pipefail; ")
+            .append("(")
+            .append("socat TCP-LISTEN:")
+            .append(stltRemote.getPort(accCtx))
+            .append(" STDOUT | ");
+        if (useZstd)
+        {
+            cmdBuilder.append("zstd -d | ");
+        }
+        // "pv -s 100m -bnr -i 0.1 | " +
+        cmdBuilder.append(cmdRef).append(" ;)& wait $!");
+
+        return cmdBuilder.toString();
     }
 
     @Override
     protected String getCommandSending(String cmdRef, Remote remoteRef) throws AccessDeniedException
     {
         StltRemote stltRemote = (StltRemote) remoteRef;
-        return String.format(
-            CMD_FORMAT_SENDING,
-            cmdRef,
-            stltRemote.getIp(accCtx),
-            stltRemote.getPort(accCtx)
-        );
+
+        boolean useZstd = stltRemote.useZstd(accCtx);
+
+        StringBuilder cmdBuilder = new StringBuilder()
+            .append("trap 'kill -HUP 0' SIGTERM; ")
+            .append("(")
+            .append(cmdRef)
+            .append(" | ");
+        if (useZstd)
+        {
+            cmdBuilder.append("zstd | ");
+        }
+        // "pv -s 100m -bnr -i 0.1 | " +
+        cmdBuilder.append("socat STDIN TCP:")
+            .append(stltRemote.getIp(accCtx))
+            .append(":")
+            .append(stltRemote.getPort(accCtx))
+            .append(" ;)&\\wait $!");
+
+        return cmdBuilder.toString();
     }
 
     @Override

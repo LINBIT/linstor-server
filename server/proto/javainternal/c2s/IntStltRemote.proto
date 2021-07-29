@@ -10,4 +10,5 @@ message IntStltRemote
     sint64  flags = 3;
     string  target_ip = 4;
     sint32  target_port = 5;
+    bool    use_zstd = 6;
 }

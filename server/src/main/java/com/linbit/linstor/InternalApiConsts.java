@@ -143,6 +143,7 @@ public class InternalApiConsts
     public static final String KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH = "Backup/FromClusterName";
     public static final String KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID = "Backup/SourceSnapDfnUUID";
 
+    public static final String NAMSPC_BACKUP_SRC_STOR_POOL_KINDS = "Backup/SourceStorPoolKinds";
     /*
      * Cluster
      */

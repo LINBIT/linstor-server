@@ -3,8 +3,11 @@ package com.linbit.linstor.api.pojo.builder;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
 import java.util.List;
+import java.util.Map;
 
 public class AutoSelectFilterBuilder
 {
@@ -23,6 +26,7 @@ public class AutoSelectFilterBuilder
     private List<String> skipAlreadyPlacedOnNodeNamesCheck = null;
     private Boolean skipAlreadyPlacedOnAllNodeCheck = null;
     private String disklessType = null;
+    private Map<ExtTools, Version> extTools = null;
 
     public AutoSelectFilterBuilder(AutoSelectFilterPojo pojo)
     {
@@ -41,6 +45,7 @@ public class AutoSelectFilterBuilder
         skipAlreadyPlacedOnNodeNamesCheck = pojo.skipAlreadyPlacedOnNodeNamesCheck();
         skipAlreadyPlacedOnAllNodeCheck = pojo.skipAlreadyPlacedOnAllNodeCheck();
         disklessType = pojo.getDisklessType();
+        extTools = pojo.getRequiredExtTools();
     }
 
     public AutoSelectFilterBuilder()
@@ -155,7 +160,14 @@ public class AutoSelectFilterBuilder
             disklessOnRemaining,
             skipAlreadyPlacedOnNodeNamesCheck,
             skipAlreadyPlacedOnAllNodeCheck,
-            disklessType
+            disklessType,
+            extTools
         );
+    }
+
+    public AutoSelectFilterBuilder setRequireExtTools(Map<ExtTools, Version> extToolsRef)
+    {
+        extTools = extToolsRef;
+        return this;
     }
 }

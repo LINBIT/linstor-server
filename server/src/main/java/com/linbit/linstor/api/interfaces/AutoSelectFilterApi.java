@@ -2,8 +2,11 @@ package com.linbit.linstor.api.interfaces;
 
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import java.util.List;
+import java.util.Map;
 
 public interface AutoSelectFilterApi
 {
@@ -36,4 +39,6 @@ public interface AutoSelectFilterApi
     Boolean skipAlreadyPlacedOnAllNodeCheck();
 
     String getDisklessType();
+
+    Map<ExtTools, ExtToolsInfo.Version> getRequiredExtTools();
 }

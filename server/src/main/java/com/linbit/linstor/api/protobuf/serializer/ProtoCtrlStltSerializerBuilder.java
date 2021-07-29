@@ -1371,6 +1371,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 builder.setTargetPort(port);
             }
+            Boolean useZstd = stltremote.useZstd(serializerCtx);
+            if (useZstd != null)
+            {
+                builder.setUseZstd(useZstd);
+            }
             return builder.build();
         }
     }

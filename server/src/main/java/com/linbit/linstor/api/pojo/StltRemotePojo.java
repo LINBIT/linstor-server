@@ -9,6 +9,7 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
     private final long flags;
     private final String ip;
     private final Integer port;
+    private final Boolean useZstd;
     private final Long fullSyncId;
     private final Long updateId;
 
@@ -18,6 +19,7 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
         long flagsRef,
         String ipRet,
         Integer portRef,
+        Boolean useZstdRef,
         Long fullSyncIdRef,
         Long updateIdRef
     )
@@ -27,6 +29,7 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
         flags = flagsRef;
         ip = ipRet;
         port = portRef;
+        useZstd = useZstdRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
     }
@@ -54,6 +57,11 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
     public Integer getPort()
     {
         return port;
+    }
+
+    public Boolean useZstd()
+    {
+        return useZstd;
     }
 
     public Long getFullSyncId()

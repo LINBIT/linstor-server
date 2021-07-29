@@ -282,9 +282,8 @@ public class CtrlRscAutoPlaceApiCallHandler
             List<String> disklessNodeNames = alreadyPlacedDisklessNotDeleting.stream()
                 .map(rsc -> rsc.getNode().getName().displayValue).collect(Collectors.toList());
 
-            AutoSelectFilterPojo autoStorConfig = new AutoSelectFilterBuilder()
+            AutoSelectFilterPojo autoStorConfig = new AutoSelectFilterBuilder(mergedSelectFilter)
                 .setAdditionalPlaceCount(additionalPlaceCount) // no forced place count, only additional place count
-                .setNodeNameList(mergedSelectFilter.getNodeNameList())
                 .setStorPoolNameList(storPoolNameList)
                 .setStorPoolDisklessNameList(storPoolDisklessNameList)
                 .setDoNotPlaceWithRscList(Stream.concat(
@@ -294,14 +293,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                 ).collect(
                     Collectors.toList()
                 ))
-                .setDoNotPlaceWithRegex(mergedSelectFilter.getDoNotPlaceWithRscRegex())
-                .setReplicasOnSameList(mergedSelectFilter.getReplicasOnSameList())
-                .setReplicasOnDifferentList(mergedSelectFilter.getReplicasOnDifferentList())
-                .setLayerStackList(mergedSelectFilter.getLayerStackList())
-                .setDeviceProviderKinds(mergedSelectFilter.getProviderList())
-                .setDisklessOnRemaining(mergedSelectFilter.getDisklessOnRemaining())
                 .setSkipAlreadyPlacedOnNodeNamesCheck(disklessNodeNames)
-                .setDisklessType(mergedSelectFilter.getDisklessType())
                 .build();
 
             final long rscSize = calculateResourceDefinitionSize(rscNameStr);

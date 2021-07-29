@@ -47,7 +47,8 @@ public class StltRemoteSatelliteFactory
         RemoteName remoteNameRef,
         long initflags,
         String ipRef,
-        Integer portRef
+        Integer portRef,
+        Boolean useZstdRef
     )
         throws ImplementationError
     {
@@ -64,6 +65,7 @@ public class StltRemoteSatelliteFactory
                     initflags,
                     ipRef,
                     portRef,
+                    useZstdRef,
                     (StateFlagsPersistence<StltRemote>) noopFlagDriver,
                     transObjFactory,
                     transMgrProvider

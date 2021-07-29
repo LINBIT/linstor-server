@@ -42,6 +42,7 @@ public class StltRemote extends BaseTransactionObject
     private final RemoteName remoteName;
     private final TransactionSimpleObject<StltRemote, String> ip;
     private final TransactionSimpleObject<StltRemote, Integer> port;
+    private final TransactionSimpleObject<StltRemote, Boolean> useZstd;
     private final TransactionSimpleObject<StltRemote, Boolean> deleted;
     private final StateFlags<Flags> flags;
 
@@ -52,6 +53,7 @@ public class StltRemote extends BaseTransactionObject
         long initialFlags,
         String ipRef,
         Integer portRef,
+        Boolean useZstdRef,
         StateFlagsPersistence<StltRemote> stateFlagsDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
@@ -65,6 +67,7 @@ public class StltRemote extends BaseTransactionObject
 
         ip = transObjFactory.createTransactionSimpleObject(this, ipRef, null);
         port = transObjFactory.createTransactionSimpleObject(this, portRef, null);
+        useZstd = transObjFactory.createTransactionSimpleObject(this, useZstdRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
@@ -80,6 +83,7 @@ public class StltRemote extends BaseTransactionObject
             objProt,
             ip,
             port,
+            useZstd,
             flags,
             deleted
         );
@@ -140,6 +144,20 @@ public class StltRemote extends BaseTransactionObject
         port.set(portRef);
     }
 
+    public Boolean useZstd(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return useZstd.get();
+    }
+
+    public void useZstd(AccessContext accCtx, Boolean useZstdRef) throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        useZstd.set(useZstdRef);
+    }
+
     @Override
     public StateFlags<Flags> getFlags()
     {
@@ -163,6 +181,7 @@ public class StltRemote extends BaseTransactionObject
             flags.getFlagsBits(accCtx),
             ip.get(),
             port.get(),
+            useZstd.get(),
             fullSyncId,
             updateId
         );
@@ -175,6 +194,7 @@ public class StltRemote extends BaseTransactionObject
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         ip.set(apiData.getIp());
         port.set(apiData.getPort());
+        useZstd.set(apiData.useZstd());
     }
 
     public boolean isDeleted()

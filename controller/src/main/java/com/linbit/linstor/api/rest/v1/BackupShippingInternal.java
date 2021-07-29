@@ -76,7 +76,8 @@ public class BackupShippingInternal
                 shipRequest.dstNodeName,
                 shipRequest.dstNodeNetIfName,
                 shipRequest.dstStorPool,
-                shipRequest.storPoolRenameMap
+                shipRequest.storPoolRenameMap,
+                shipRequest.useZstd
             ).subscriberContext(
                 requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
             );
@@ -91,6 +92,7 @@ public class BackupShippingInternal
                         "Failed to deserialize JSON",
                         exc.getMessage()
                     ),
+                    null,
                     null,
                     null,
                     null
@@ -118,6 +120,7 @@ public class BackupShippingInternal
                             exc.getMessage(),
                             "ErrorReport id on target cluster: " + reportErrorId
                         ),
+                        null,
                         null,
                         null,
                         null

@@ -84,6 +84,7 @@ public class ApplyRemote implements ApiCall
             proto.getFlags(),
             proto.getTargetIp(),
             proto.getTargetPort(),
+            proto.getUseZstd(),
             fullSyncId,
             updateId
         );

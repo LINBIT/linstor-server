@@ -66,6 +66,7 @@ public class StltRemoteControllerFactory
             0,
             ipRef,
             portRef,
+            null,
             (StateFlagsPersistence<StltRemote>) stateFlagsDriver,
             transObjFactory,
             transMgrProvider

@@ -34,6 +34,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
@@ -49,6 +50,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -1845,6 +1847,38 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         assertEquals("stlt5", deployedRscs.get(1).getNode().getName().displayValue);
     }
 
+    @Test
+    public void extToolsTest() throws Exception
+    {
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            1,
+            true,
+            ApiConsts.CREATED,
+            ApiConsts.CREATED
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+            .addStorPool("sp1", 100 * GB, ZFS)
+            .setExtToolSupported(ExtTools.ZSTD, true, 1, 0, 0)
+            .build()
+            .stltBuilder("stlt2")
+            .addStorPool("sp1", 200 * GB, ZFS) // larger but no ZSTD support
+            .build()
+            .addRequiredExtTools(ExtTools.ZSTD, 0, 0, 0);
+        evaluateTest(call);
+
+        List<Resource> deployedRscs = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .sorted()
+            .collect(Collectors.toList());
+        assertEquals(1, deployedRscs.size());
+        assertEquals("stlt1", deployedRscs.get(0).getNode().getName().displayValue);
+    }
+
     private void expectDeployed(
         String storPoolNameStr,
         String rscNameStr,
@@ -1950,6 +1984,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final List<DeviceProviderKind> providerList =
             new ArrayList<>(Arrays.asList(DeviceProviderKind.values()));
         private String disklessType;
+        private Map<ExtTools, ExtToolsInfo.Version> requiredExtTools = null;
 
         RscAutoPlaceApiCall(
             String rscNameStrRef,
@@ -1973,6 +2008,16 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             );
             rscNameStr = rscNameStrRef;
             placeCount = placeCountRef;
+        }
+
+        public RscAutoPlaceApiCall addRequiredExtTools(ExtTools extTool, Integer major, Integer minor, Integer patch)
+        {
+            if (requiredExtTools == null)
+            {
+                requiredExtTools = new HashMap<>();
+            }
+            requiredExtTools.put(extTool, new Version(major, minor, patch));
+            return this;
         }
 
         RscAutoPlaceApiCall setPlaceCount(Integer placeCountRef)
@@ -2158,6 +2203,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     public String getDisklessType()
                     {
                         return disklessType;
+                    }
+
+                    @Override
+                    public Map<ExtTools, Version> getRequiredExtTools()
+                    {
+                        return requiredExtTools;
                     }
                 }
             ).subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);
