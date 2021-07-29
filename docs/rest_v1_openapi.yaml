@@ -4761,6 +4761,13 @@ paths:
                   $ref: '#/components/schemas/ExosConnectionMap'
 
   /v1/files:
+    parameters:
+      - in: query
+        name: content
+        description: Include file content in response. If not given, defaults to false.
+        schema:
+          type: boolean
+          default: false
     get:
       tags:
         - developers
