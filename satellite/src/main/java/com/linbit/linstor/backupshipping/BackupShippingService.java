@@ -52,6 +52,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -488,7 +489,7 @@ public class BackupShippingService implements SystemService
                         }
                         else
                         {
-                            finishedShipments.put(snap, Arrays.asList(simpleBackupName));
+                            finishedShipments.put(snap, new ArrayList<>(Arrays.asList(simpleBackupName)));
                         }
                     }
                     catch (InvalidKeyException | AccessDeniedException exc)
