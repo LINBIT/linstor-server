@@ -370,22 +370,26 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
         // intentional type erasure
         Object typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(true);
+        List<LAYER_SNAP_DATA> snapDataToDelete = (List<LAYER_SNAP_DATA>) typeErasedList;
+
+        // intentional type erasure
+        typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(false);
+        List<LAYER_SNAP_DATA> snapDataToKeepOrCreate = (List<LAYER_SNAP_DATA>) typeErasedList;
+
         deleteSnapshots(
             volumesLut,
-            (List<LAYER_SNAP_DATA>) typeErasedList,
+            snapDataToDelete,
             apiCallRc
         );
 
-        createVolumes(vlmsToCreate, apiCallRc);
+        createVolumes(vlmsToCreate, snapDataToKeepOrCreate, apiCallRc);
         resizeVolumes(vlmsToResize, apiCallRc);
         deleteVolumes(vlmsToDelete, apiCallRc);
         deactivateVolumes(vlmsToDeactivate, apiCallRc);
 
-        // intentional type erasure
-        typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(false);
         takeSnapshots(
             volumesLut,
-            (List<LAYER_SNAP_DATA>) typeErasedList,
+            snapDataToKeepOrCreate,
             apiCallRc
         );
 
@@ -468,7 +472,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         createLvWithCopyImpl(vlmData, srcRsc, cloneSnapshotName);
     }
 
-    private void createVolumes(List<LAYER_DATA> vlmsToCreate, ApiCallRcImpl apiCallRc)
+    private void createVolumes(
+        List<LAYER_DATA> vlmsToCreate,
+        List<LAYER_SNAP_DATA> snapVlmDataList,
+        ApiCallRcImpl apiCallRc
+    )
         throws StorageException, AccessDeniedException, DatabaseException
     {
         for (LAYER_DATA vlmData : vlmsToCreate)
@@ -483,7 +491,67 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             if (snapRestore)
             {
                 errorReporter.logTrace("Restoring from lv: %s, snapshot: %s", sourceLvId, sourceSnapshotName);
-                restoreSnapshot(sourceLvId, sourceSnapshotName, vlmData);
+
+                SnapshotName snapshotName;
+                try
+                {
+                    snapshotName = new SnapshotName(sourceSnapshotName);
+                }
+                catch (InvalidNameException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+
+                AbsRscLayerObject<Resource> rscData = vlmData.getRscLayerObject();
+                SnapshotDefinition snapshotDfn = rscData.getAbsResource().getDefinition()
+                    .getSnapshotDfn(storDriverAccCtx, snapshotName);
+
+                boolean localRestore = false;
+                if (snapshotDfn != null)
+                {
+                    // snapDfn might be null if we are restoring from a different resource
+                    // that use case is local only and has nothing to do with backup shipping
+                    Snapshot snap = snapshotDfn.getSnapshot(
+                        storDriverAccCtx,
+                        rscData.getAbsResource().getNode().getName()
+                    );
+
+                    if (snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                        !RscLayerSuffixes.shouldSuffixBeShipped(rscData.getResourceNameSuffix()))
+                    {
+                        /*
+                         * Backup did purposely not contain this device, so we have to assume that we simply need to
+                         * create an empty volume instead
+                         */
+                        createLvImpl(vlmData);
+
+                        /*
+                         * and make a snapshot from it to behave similarly as usually creating a snapshot of a volume
+                         */
+                        for (LAYER_SNAP_DATA snapVlmData : snapVlmDataList)
+                        {
+                            AbsRscLayerObject<Snapshot> snapRscDat = snapVlmData.getRscLayerObject();
+                            if (snapRscDat.getAbsResource().equals(snap) &&
+                                snapRscDat.getResourceNameSuffix().equals(rscData.getResourceNameSuffix()))
+                            {
+                                createSnapshot(vlmData, snapVlmData);
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        localRestore = true;
+                    }
+                }
+                else
+                {
+                    localRestore = true;
+                }
+                if (localRestore)
+                {
+                    restoreSnapshot(sourceLvId, sourceSnapshotName, vlmData);
+                }
             }
             else
             {
@@ -1261,7 +1329,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void startBackupRestore(LAYER_SNAP_DATA snapVlmData)
-        throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException
+        throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException, DatabaseException
     {
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
         backupShipMgr.restoreBackup(

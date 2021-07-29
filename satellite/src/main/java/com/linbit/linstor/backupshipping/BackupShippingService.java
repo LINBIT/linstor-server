@@ -208,7 +208,7 @@ public class BackupShippingService implements SystemService
         AbsStorageVlmData<Snapshot> snapVlmData
     ) throws StorageException, InvalidNameException, InvalidKeyException, AccessDeniedException
     {
-        if (!rscNameSuffixRef.equals(RscLayerSuffixes.SUFFIX_DRBD_META))
+        if (RscLayerSuffixes.shouldSuffixBeShipped(rscNameSuffixRef))
         {
             String backupName = String.format(BACKUP_KEY_FORMAT, rscNameRef, rscNameSuffixRef, vlmNrRef, snapNameRef);
             String remoteName = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot().getProps(accCtx)
@@ -251,50 +251,57 @@ public class BackupShippingService implements SystemService
         AbsStorageVlmData<Snapshot> snapVlmData
     ) throws StorageException, AccessDeniedException, InvalidKeyException, InvalidNameException
     {
-        String backupName = "";
-        SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-        String simpleBackupName = snapVlm.getSnapshot().getProps(accCtx)
-            .getProp(InternalApiConsts.KEY_BACKUP_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-        Pattern p = Pattern.compile("^([a-zA-Z0-9_-]{2,48})_(back_(?:inc_)?[0-9]{8}_[0-9]{6})$");
-        Matcher m = p.matcher(simpleBackupName);
-        if (m.matches())
+        if (RscLayerSuffixes.shouldSuffixBeShipped(rscNameSuffixRef))
         {
-            backupName = String.format(BACKUP_KEY_FORMAT, m.group(1), rscNameSuffixRef, vlmNrRef, m.group(2));
-        }
-        else
-        {
-            throw new ImplementationError(
-                "The simplified backup-name " + simpleBackupName + " does not conform to the expected format."
+            String backupName = "";
+            SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
+            String simpleBackupName = snapVlm.getSnapshot().getProps(accCtx).getProp(
+                InternalApiConsts.KEY_BACKUP_TO_RESTORE,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            Pattern p = Pattern.compile("^([a-zA-Z0-9_-]{2,48})_(back_(?:inc_)?[0-9]{8}_[0-9]{6})$");
+            Matcher m = p.matcher(simpleBackupName);
+            if (m.matches())
+            {
+                backupName = String.format(BACKUP_KEY_FORMAT, m.group(1), rscNameSuffixRef, vlmNrRef, m.group(2));
+            }
+            else
+            {
+                throw new ImplementationError(
+                    "The simplified backup-name " + simpleBackupName + " does not conform to the expected format."
+                );
+            }
+            String remoteName = snapVlm.getSnapshot().getProps(accCtx).getProp(
+                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            startDaemon(
+                cmdRef,
+                new String[]
+                {
+                    "setsid",
+                    "-w",
+                    "bash",
+                    "-c",
+                    String.format(
+                        CMD_FORMAT_RECEIVING,
+                        cmdRef
+                    )
+                },
+                snapNameRef,
+                backupName,
+                remoteName,
+                true,
+                success -> postShipping(
+                    success,
+                    snapVlmData,
+                    InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_RECEIVED,
+                    true,
+                    true
+                ),
+                snapVlmData
             );
         }
-        String remoteName = snapVlm.getSnapshot().getProps(accCtx)
-            .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-        startDaemon(
-            cmdRef,
-            new String[]
-            {
-                "setsid",
-                "-w",
-                "bash",
-                "-c",
-                String.format(
-                    CMD_FORMAT_RECEIVING,
-                    cmdRef
-                )
-            },
-            snapNameRef,
-            backupName,
-            remoteName,
-            true,
-            success -> postShipping(
-                success,
-                snapVlmData,
-                InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_RECEIVED,
-                true,
-                true
-            ),
-            snapVlmData
-        );
     }
 
     public void allBackupPartsRegistered(Snapshot snap)

@@ -30,4 +30,11 @@ public final class RscLayerSuffixes
         return SUFFIX_DATA.equalsIgnoreCase(layerSuffix);
     }
 
+    /**
+     * For now, ship all rscLayerSuffixes EXCEPT SUFFIX_DRBD_META
+     */
+    public static boolean shouldSuffixBeShipped(String rscNameSuffixRef)
+    {
+        return !SUFFIX_DRBD_META.equals(rscNameSuffixRef);
+    }
 }
