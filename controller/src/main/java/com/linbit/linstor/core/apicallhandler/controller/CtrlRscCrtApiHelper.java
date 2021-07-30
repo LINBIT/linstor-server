@@ -579,10 +579,18 @@ public class CtrlRscCrtApiHelper
         }
     }
 
+    public Flux<ApiCallRc> deployResources(ResponseContext context, Set<Resource> deployedResources)
+    {
+        return deployResources(context, deployedResources, true);
+    }
+
     /**
      * Deploy at least one resource of a resource definition to the satellites and wait for them to be ready.
      */
-    public Flux<ApiCallRc> deployResources(ResponseContext context, Set<Resource> deployedResources)
+    public Flux<ApiCallRc> deployResources(
+        ResponseContext context,
+        Set<Resource> deployedResources,
+        boolean waitForReady)
     {
         long rscDfnCount = deployedResources.stream()
             .map(Resource::getDefinition)
@@ -607,54 +615,54 @@ public class CtrlRscCrtApiHelper
             .map(displayName -> "''" + displayName + "''")
             .collect(Collectors.joining(", "));
 
-        Publisher<ApiCallRc> readyResponses;
-        if (getVolumeDfnCountPrivileged(rscDfn) == 0)
+        Publisher<ApiCallRc> readyResponses = Flux.empty();
+        if (waitForReady)
         {
-            // No DRBD resource is created when no volumes are present, so do not wait for it to be ready
-            readyResponses = Mono.just(responseConverter.addContextAll(
-                makeNoVolumesMessage(rscName), context, false));
-        }
-        else
-        if (allDiskless(rscDfn))
-        {
-            readyResponses = Mono.just(makeAllDisklessMessage(rscName));
-        }
-        else
-        {
-            List<Mono<ApiCallRc>> resourceReadyResponses = new ArrayList<>();
-            for (Resource rsc : deployedResources)
+            if (getVolumeDfnCountPrivileged(rscDfn) == 0)
             {
-                if (
-                    AccessUtils.execPrivileged(
-                        () -> DrbdLayerUtils.isAnyDrbdResourceExpected(apiCtx, rsc)
-                    )
-                )
+                // No DRBD resource is created when no volumes are present, so do not wait for it to be ready
+                readyResponses = Mono.just(responseConverter.addContextAll(
+                    makeNoVolumesMessage(rscName), context, false));
+            } else if (allDiskless(rscDfn))
+            {
+                readyResponses = Mono.just(makeAllDisklessMessage(rscName));
+            } else
+            {
+                List<Mono<ApiCallRc>> resourceReadyResponses = new ArrayList<>();
+                for (Resource rsc : deployedResources)
                 {
-                    NodeName nodeName = rsc.getNode().getName();
-                    if (containsDrbdLayerData(rsc))
+                    if (
+                        AccessUtils.execPrivileged(
+                            () -> DrbdLayerUtils.isAnyDrbdResourceExpected(apiCtx, rsc)
+                        )
+                    )
                     {
-                        resourceReadyResponses.add(
-                            eventWaiter
-                                .waitForStream(
-                                    resourceStateEvent.get(),
-                                    // TODO if anything is allowed above DRBD, this resource-name must be adjusted
-                                    ObjectIdentifier.resource(nodeName, rscName)
-                                )
-                                .skipUntil(ResourceState::getResourceReady)
-                                .timeout(Duration.ofMillis(ExtCmd.dfltWaitTimeout))
-                                .next()
-                                .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
-                                .onErrorResume(
-                                    PeerNotConnectedException.class, ignored -> Mono.just(
-                                        ApiCallRcImpl.singletonApiCallRc(ResponseUtils.makeNotConnectedWarning(nodeName))
+                        NodeName nodeName = rsc.getNode().getName();
+                        if (containsDrbdLayerData(rsc))
+                        {
+                            resourceReadyResponses.add(
+                                eventWaiter
+                                    .waitForStream(
+                                        resourceStateEvent.get(),
+                                        // TODO if anything is allowed above DRBD, this resource-name must be adjusted
+                                        ObjectIdentifier.resource(nodeName, rscName)
                                     )
-                                )
-                                .onErrorResume(TimeoutException.class, te -> makeRdyTimeoutApiRc(nodeName))
-                        );
+                                    .skipUntil(ResourceState::getResourceReady)
+                                    .timeout(Duration.ofMillis(ExtCmd.dfltWaitTimeout))
+                                    .next()
+                                    .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
+                                    .onErrorResume(
+                                        PeerNotConnectedException.class, ignored -> Mono.just(
+                                            ApiCallRcImpl.singletonApiCallRc(ResponseUtils.makeNotConnectedWarning(nodeName))
+                                        )
+                                    )
+                                    .onErrorResume(TimeoutException.class, te -> makeRdyTimeoutApiRc(nodeName))
+                            );
+                        }
                     }
                 }
+                readyResponses = Flux.merge(resourceReadyResponses);
             }
-            readyResponses = Flux.merge(resourceReadyResponses);
         }
 
         return ctrlSatelliteUpdateCaller.updateSatellites(
