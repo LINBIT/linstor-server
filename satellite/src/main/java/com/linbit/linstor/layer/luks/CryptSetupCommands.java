@@ -5,10 +5,14 @@ import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdUtils;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.Luks;
 
 import javax.inject.Inject;
@@ -26,19 +30,33 @@ public class CryptSetupCommands implements Luks
 {
     private static final String CRYPTSETUP = "cryptsetup";
     private static final String CRYPT_PREFIX = "Linstor-Crypt-";
+    private static final Version V2_1_0 = new Version(2, 1, 0);
 
     @SuppressWarnings("unused")
     private final ErrorReporter errorReporter;
     private final ExtCmdFactory extCmdFactory;
+    private final Version version;
 
     @Inject
     public CryptSetupCommands(
         ExtCmdFactory extCmdFactoryRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        StltExtToolsChecker extToolsCheckerRef
     )
     {
         extCmdFactory = extCmdFactoryRef;
         errorReporter = errorReporterRef;
+
+        ExtToolsInfo cryptSetupInfo = extToolsCheckerRef.getExternalTools(false).get(ExtTools.CRYPT_SETUP);
+        if (cryptSetupInfo != null)
+        {
+            version = cryptSetupInfo.getVersion();
+        }
+        else
+        {
+            version = null;
+        }
+
     }
 
     @Override
@@ -271,24 +289,27 @@ public class CryptSetupCommands implements Luks
         return open;
     }
 
-    public void grow(LuksVlmData<Resource> vlmDataRef) throws StorageException
+    public void grow(LuksVlmData<Resource> vlmDataRef, byte[] passphrase) throws StorageException
     {
-        resize(vlmDataRef, null);
+        resize(vlmDataRef, null, passphrase);
     }
 
-    public void shrink(LuksVlmData<Resource> vlmDataRef) throws StorageException
+    public void shrink(LuksVlmData<Resource> vlmDataRef, byte[] passphrase) throws StorageException
     {
         resize(
             vlmDataRef,
-            vlmDataRef.getUsableSize() * 2 // usableSize is in KiB, cryptsetup needs size in 512 byte-sectors
+            vlmDataRef.getUsableSize() * 2, // usableSize is in KiB, cryptsetup needs size in 512 byte-sectors
+            passphrase
         );
     }
 
-    private void resize(LuksVlmData<Resource> vlmDataRef, Long sizeRef) throws StorageException
+    private void resize(LuksVlmData<Resource> vlmDataRef, Long sizeRef, byte[] passphraseRef) throws StorageException
     {
         ExtCmd extCmd = extCmdFactory.create();
         try
         {
+            final ExtCmd extCommand = extCmdFactory.create();
+
             List<String> cmd = new ArrayList<>();
             cmd.add(CRYPTSETUP);
             cmd.add("resize");
@@ -298,7 +319,33 @@ public class CryptSetupCommands implements Luks
                 cmd.add(Long.toString(sizeRef));
             }
             cmd.add(CRYPT_PREFIX + vlmDataRef.getIdentifier());
-            extCmd.exec(cmd.toArray(new String[0]));
+
+            String[] cmdArr = cmd.toArray(new String[0]);
+
+            if (version.greaterOrEqual(V2_1_0))
+            {
+                OutputStream outputStream = extCommand.exec(
+                    ProcessBuilder.Redirect.PIPE,
+                    null,
+                    cmdArr
+                );
+                outputStream.write(passphraseRef);
+                outputStream.write('\n');
+                outputStream.flush();
+
+                OutputData output = extCommand.syncProcess();
+                outputStream.close(); // just to be sure and get rid of the java warning
+
+                ExtCmdUtils.<StorageException>checkExitCode(
+                    output,
+                    StorageException::new,
+                    "Luks resize failed"
+                );
+            }
+            else
+            {
+                extCmd.exec(cmdArr);
+            }
         }
         catch (ChildProcessTimeoutException exc)
         {

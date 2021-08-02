@@ -243,7 +243,7 @@ public class LuksLayer implements DeviceLayer
 
                         if (isOpen && alreadyLuks)
                         {
-                            cryptSetup.shrink(vlmData);
+                            cryptSetup.shrink(vlmData, vlmData.getDecryptedPassword());
                             // do not set Size.AS_EXPECTED as we will need to grow as much as we can
                             // once the layers below us are done shrinking
                             // vlmData.setSizeState(Size.AS_EXPECTED);
@@ -299,8 +299,11 @@ public class LuksLayer implements DeviceLayer
 
                         if (!isOpen)
                         {
-                            cryptSetup
-                                .openLuksDevice(vlmData.getBackingDevice(), identifier, vlmData.getDecryptedPassword());
+                            cryptSetup.openLuksDevice(
+                                vlmData.getBackingDevice(),
+                                identifier,
+                                vlmData.getDecryptedPassword()
+                            );
                         }
 
                         if (
@@ -308,7 +311,7 @@ public class LuksLayer implements DeviceLayer
                                 !vlmData.getSizeState().equals(Size.AS_EXPECTED)
                         )
                         {
-                            cryptSetup.grow(vlmData);
+                            cryptSetup.grow(vlmData, vlmData.getDecryptedPassword());
                         }
 
                         vlmData.setAllocatedSize(
