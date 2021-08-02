@@ -361,7 +361,22 @@ public class BCacheLayer implements DeviceLayer
                     }
                     if (!isCacheDeviceRegistered(cacheUuid))
                     {
-                        BCacheUtils.register(errorReporter, cacheDev);
+                        try
+                        {
+                            BCacheUtils.register(errorReporter, cacheDev);
+                        }
+                        catch (StorageException storExc)
+                        {
+                            /*
+                             * after creating a cache device and there is a small timeframe where the device might have
+                             * been registered already, but is not shown in the 'isCacheDeviceRegistered', which makes
+                             * Linstor to try to register it, but that might fail due to the race condition
+                             */
+                            if (!isCacheDeviceRegistered(cacheUuid))
+                            {
+                                throw storExc;
+                            }
+                        }
                         waitForCacheDevice(cacheUuid);
                     }
 
