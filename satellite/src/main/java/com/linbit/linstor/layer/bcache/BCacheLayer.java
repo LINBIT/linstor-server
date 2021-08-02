@@ -358,12 +358,11 @@ public class BCacheLayer implements DeviceLayer
                     if (cacheUuid == null)
                     {
                         cacheUuid = BCacheUtils.makeBCache(extCmdFactory, null, cacheDev, options);
-                        BCacheUtils.register(errorReporter, cacheDev);
-                        waitForCacheDevice(cacheUuid);
                     }
                     if (!isCacheDeviceRegistered(cacheUuid))
                     {
                         BCacheUtils.register(errorReporter, cacheDev);
+                        waitForCacheDevice(cacheUuid);
                     }
 
                     if (!backingUuid.equals(cacheUuid))
