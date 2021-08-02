@@ -193,8 +193,13 @@ public final class Satellite
 
             try
             {
-                // make sure /var/lib/linstor exists
+                /*
+                 * make sure that the following folders exist
+                 * /var/lib/linstor
+                 * /var/lib/linstor.d
+                 */
                 Files.createDirectories(Paths.get("/var/lib/linstor"));
+                Files.createDirectories(Paths.get(CoreModule.CONFIG_PATH));
             }
             catch (IOException ioExc)
             {
@@ -275,7 +280,6 @@ public final class Satellite
         try
         {
             Path varDrbdPath = Paths.get(CoreModule.CONFIG_PATH);
-            Files.createDirectories(varDrbdPath);
             Files.createDirectories(Paths.get(CoreModule.BACKUP_PATH));
 
             final Pattern keepResPattern = stltCfg.getDrbdKeepResPattern();
