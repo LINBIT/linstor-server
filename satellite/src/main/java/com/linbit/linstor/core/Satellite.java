@@ -194,11 +194,9 @@ public final class Satellite
             try
             {
                 /*
-                 * make sure that the following folders exist
-                 * /var/lib/linstor
+                 * make sure that the following folder exist:
                  * /var/lib/linstor.d
                  */
-                Files.createDirectories(Paths.get("/var/lib/linstor"));
                 Files.createDirectories(Paths.get(CoreModule.CONFIG_PATH));
             }
             catch (IOException ioExc)
