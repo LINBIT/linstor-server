@@ -1362,7 +1362,13 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ExternalFile
     {
+        /**
+         * The path where the external file should be deployed on the node
+         */
         public String path;
+        /**
+         * The contents of the file, in base64 encoding
+         */
         public String content;
     }
 
