@@ -175,6 +175,69 @@ public class DmSetupUtils
         );
     }
 
+    public static boolean isSuspended(
+        ExtCmd extCmd,
+        String device
+    )
+        throws StorageException
+    {
+        OutputData outputData = Commands.genericExecutor(
+            extCmd,
+            new String[]
+                {
+                    "dmsetup",
+                    "info",
+                    "-C",
+                    "-o", "suspended",
+                    "--noheadings",
+                    device
+                },
+            "'dmsetup suspend' returned unexpected exit code",
+            "Failed to suspend device " + device
+        );
+
+        String stdOut = new String(outputData.stdoutData);
+        return stdOut.trim().equalsIgnoreCase("suspended");
+    }
+
+    public static void suspend(
+        ExtCmd extCmd,
+        String device
+    )
+        throws StorageException
+    {
+        Commands.genericExecutor(
+            extCmd,
+            new String[]
+                {
+                    "dmsetup",
+                    "suspend",
+                    device
+                },
+            "'dmsetup suspend' returned unexpected exit code",
+            "Failed to suspend device " + device
+        );
+    }
+
+    public static void resume(
+        ExtCmd extCmd,
+        String device
+    )
+        throws StorageException
+    {
+        Commands.genericExecutor(
+            extCmd,
+            new String[]
+                {
+                    "dmsetup",
+                    "resume",
+                    device
+                },
+            "'dmsetup resume' returned unexpected exit code",
+            "Failed to resume device " + device
+        );
+    }
+
     public static void flush(
         ExtCmdFactory extCmdFactory,
         String device

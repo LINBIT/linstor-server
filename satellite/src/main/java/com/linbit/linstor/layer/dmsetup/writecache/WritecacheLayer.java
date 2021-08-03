@@ -23,7 +23,6 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
-import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -41,7 +40,6 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,12 +59,11 @@ public class WritecacheLayer implements DeviceLayer
 
     private final ErrorReporter errorReporter;
     private final AccessContext storDriverAccCtx;
-    private final DeviceProviderMapper deviceProviderMapper;
     private final ExtCmdFactory extCmdFactory;
     private final Provider<DeviceHandler> resourceProcessorProvider;
 
     private Props localNodeProps;
-    private StltConfigAccessor stltConfAccessor;
+    private final StltConfigAccessor stltConfAccessor;
 
     static
     {
@@ -84,7 +81,6 @@ public class WritecacheLayer implements DeviceLayer
     public WritecacheLayer(
         ErrorReporter errorReporterRef,
         @DeviceManagerContext AccessContext storDriverAccCtxRef,
-        DeviceProviderMapper deviceProviderMapperRef,
         ExtCmdFactory extCmdFactoryRef,
         Provider<DeviceHandler> resourceProcessorProviderRef,
         StltConfigAccessor stltConfAccessorRef
@@ -92,7 +88,6 @@ public class WritecacheLayer implements DeviceLayer
     {
         errorReporter = errorReporterRef;
         storDriverAccCtx = storDriverAccCtxRef;
-        deviceProviderMapper = deviceProviderMapperRef;
         extCmdFactory = extCmdFactoryRef;
         resourceProcessorProvider = resourceProcessorProviderRef;
         stltConfAccessor = stltConfAccessorRef;
@@ -285,7 +280,27 @@ public class WritecacheLayer implements DeviceLayer
             {
                 if (vlmData.exists())
                 {
-                    DmSetupUtils.flush(extCmdFactory, vlmData.getDevicePath());
+                    boolean isSuspended = DmSetupUtils.isSuspended(extCmdFactory.create(), vlmData.getDevicePath());
+
+                    // suspend will also flush before
+                    if (!isSuspended)
+                    {
+                        DmSetupUtils.suspend(extCmdFactory.create(), vlmData.getDevicePath());
+                    }
+                }
+            }
+        } else {
+            // resumeIO if necessary
+            for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
+            {
+                if (vlmData.exists())
+                {
+                    boolean isSuspended = DmSetupUtils.isSuspended(extCmdFactory.create(), vlmData.getDevicePath());
+
+                    if (isSuspended)
+                    {
+                        DmSetupUtils.resume(extCmdFactory.create(), vlmData.getDevicePath());
+                    }
                 }
             }
         }
