@@ -1,3 +1,25 @@
+linstor-server (1.14.0-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * ToggleDisk: Reuse node-id if possible
+  * Autoplacer: fixed small typo
+  * AutoSnapshotShipping: properly call finish method
+  * ToggleDisk: Fixed missing layerstack bug
+  * LoopDev: Change folder
+  * BCache: Check if registered before registering
+  * JsonGenTypes: Regenerated
+  * Luks: Fixed resize with newer cryptsetup version
+  * BCache: Ignore exception in race-condition
+  * Satellite: Removed creation of unnecessary /var/lib/linstor
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * rest-api-doc: add missing parameter for external files api
+
+  [ Christoph Böhmwalder ]
+  * rest-api-doc: fix docs regarding external files
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 03 Aug 2021 07:26:46 +0000
+
 linstor-server (1.14.0~rc.1-1) experimental; urgency=medium
 
   * Spdk: Various fixes
