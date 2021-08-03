@@ -652,6 +652,9 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         if (writecacheRscData == null)
         {
             writecacheRscData = createWritecacheRscData(rsc, parent, writecacheRscPojo);
+        } else
+        {
+            mergeWritecacheRscData(parent, writecacheRscPojo, writecacheRscData);
         }
 
         // do not iterate over rsc.volumes as those might have changed in the meantime
@@ -782,6 +785,10 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         if (bcacheRscData == null)
         {
             bcacheRscData = createBCacheRscData(rsc, parent, bcacheRscPojo);
+        }
+        else
+        {
+            mergeBCacheRscData(parent, bcacheRscPojo, bcacheRscData);
         }
 
         // do not iterate over rsc.volumes as those might have changed in the meantime
@@ -1066,6 +1073,13 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws DatabaseException, AccessDeniedException;
 
+    protected abstract void mergeWritecacheRscData(
+        AbsRscLayerObject<RSC> parent,
+        WritecacheRscPojo writecacheRscPojo,
+        WritecacheRscData<RSC> writecacheRscData
+    )
+        throws AccessDeniedException, DatabaseException;
+
     protected abstract void removeWritecacheVlm(WritecacheRscData<RSC> writecacheRscData, VolumeNumber vlmNr)
         throws DatabaseException, AccessDeniedException;
 
@@ -1116,6 +1130,13 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         BCacheRscPojo bcacheRscPojo
     )
         throws DatabaseException, AccessDeniedException;
+
+    protected abstract void mergeBCacheRscData(
+        AbsRscLayerObject<RSC> parent,
+        BCacheRscPojo bCacheRscPojo,
+        BCacheRscData<RSC> bCacheRscData
+    )
+        throws AccessDeniedException, DatabaseException;
 
     protected abstract void removeBCacheVlm(BCacheRscData<RSC> bcacheRscData, VolumeNumber vlmNr)
         throws DatabaseException, AccessDeniedException;

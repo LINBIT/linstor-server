@@ -728,6 +728,15 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     }
 
     @Override
+    protected void mergeWritecacheRscData(
+        AbsRscLayerObject<Snapshot> parent,
+        WritecacheRscPojo writecacheRscPojo,
+        WritecacheRscData<Snapshot> writecacheRscData) throws AccessDeniedException, DatabaseException
+    {
+
+    }
+
+    @Override
     protected void removeWritecacheVlm(
         WritecacheRscData<Snapshot> writecacheRscDataRef,
         VolumeNumber vlmNrRef
@@ -876,6 +885,16 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             updateParent(writecacheSnapData, parentRef);
         }
         return writecacheSnapData;
+    }
+
+    @Override
+    protected void mergeBCacheRscData(
+        AbsRscLayerObject<Snapshot> parent,
+        BCacheRscPojo bCacheRscPojo,
+        BCacheRscData<Snapshot> bCacheRscData)
+        throws AccessDeniedException, DatabaseException
+    {
+
     }
 
     @Override

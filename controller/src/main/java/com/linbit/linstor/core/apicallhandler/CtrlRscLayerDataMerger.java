@@ -489,6 +489,16 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
+    protected void mergeWritecacheRscData(
+        AbsRscLayerObject<Resource> parent,
+        WritecacheRscPojo writecacheRscPojo,
+        WritecacheRscData<Resource> writecacheRscData)
+        throws AccessDeniedException, DatabaseException
+    {
+        // nothing
+    }
+
+    @Override
     protected void createWritecacheVlm(
         AbsVolume<Resource> vlmRef,
         WritecacheRscData<Resource> writecacheRscDataRef,
@@ -567,6 +577,16 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         throws DatabaseException, AccessDeniedException
     {
         throw new ImplementationError("Received unknown bcache resource from satellite");
+    }
+
+    @Override
+    protected void mergeBCacheRscData(
+        AbsRscLayerObject<Resource> parent,
+        BCacheRscPojo bCacheRscPojo,
+        BCacheRscData<Resource> bCacheRscData)
+        throws AccessDeniedException, DatabaseException
+    {
+        // nothing
     }
 
     @Override

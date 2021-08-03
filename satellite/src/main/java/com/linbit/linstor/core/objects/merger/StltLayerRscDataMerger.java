@@ -690,6 +690,16 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
+    protected void mergeWritecacheRscData(
+        AbsRscLayerObject<Resource> parent,
+        WritecacheRscPojo writecacheRscPojo,
+        WritecacheRscData<Resource> writecacheRscData)
+        throws AccessDeniedException, DatabaseException
+    {
+        writecacheRscData.setSuspendIo(writecacheRscPojo.getSuspend());
+    }
+
+    @Override
     protected void removeWritecacheVlm(WritecacheRscData<Resource> writecacheRscDataRef, VolumeNumber vlmNrRef)
         throws DatabaseException, AccessDeniedException
     {
@@ -846,6 +856,16 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             updateParent(bcacheRscData, parentRef);
         }
         return bcacheRscData;
+    }
+
+    @Override
+    protected void mergeBCacheRscData(
+        AbsRscLayerObject<Resource> parent,
+        BCacheRscPojo bCacheRscPojo,
+        BCacheRscData<Resource> bCacheRscData)
+        throws AccessDeniedException, DatabaseException
+    {
+        bCacheRscData.setSuspendIo(bCacheRscPojo.getSuspend());
     }
 
     @Override
