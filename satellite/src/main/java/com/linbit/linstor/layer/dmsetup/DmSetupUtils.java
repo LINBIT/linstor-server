@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 public class DmSetupUtils
 {
     private static final String DM_SETUP_MESSAGE_FLUSH = "flush";
+    private static final String DM_SETUP_MESSAGE_FLUSH_ON_SUSPEND = "flush_on_suspend";
 
     private static final Pattern DM_SETUP_LS_PATTERN = Pattern.compile(
         "^([^\\s]+)\\s+\\(([0-9]+)(?::\\s|,\\s)([0-9]+)\\)$",
@@ -245,6 +246,15 @@ public class DmSetupUtils
         throws StorageException
     {
         message(extCmdFactory, device, 0L, DM_SETUP_MESSAGE_FLUSH);
+    }
+
+    public static void flushOnSuspend(
+        ExtCmdFactory extCmdFactory,
+        String device
+    )
+        throws StorageException
+    {
+        message(extCmdFactory, device, 0L, DM_SETUP_MESSAGE_FLUSH_ON_SUSPEND);
     }
 
     public static void message(

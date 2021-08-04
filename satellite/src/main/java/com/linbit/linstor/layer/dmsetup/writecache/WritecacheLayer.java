@@ -282,9 +282,11 @@ public class WritecacheLayer implements DeviceLayer
                 {
                     boolean isSuspended = DmSetupUtils.isSuspended(extCmdFactory.create(), vlmData.getDevicePath());
 
-                    // suspend will also flush before
                     if (!isSuspended)
                     {
+                        // send flush on suspend, so we flush before suspend \o/
+                        // and afterwards suspend the device, we can only hope that in between none writes
+                        DmSetupUtils.flushOnSuspend(extCmdFactory, vlmData.getDevicePath());
                         DmSetupUtils.suspend(extCmdFactory.create(), vlmData.getDevicePath());
                     }
                 }
