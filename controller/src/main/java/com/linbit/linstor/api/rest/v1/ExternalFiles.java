@@ -32,7 +32,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -65,30 +64,11 @@ public class ExternalFiles
     @GET
     public Response getFiles(@Context Request request, @QueryParam("content") Boolean showContent)
     {
-        return getFilesImpl(request, showContent, includeAll -> true);
-    }
-
-    @GET
-    @Path("{extFileName}")
-    public Response getFiles(@Context Request request, @PathParam("extFileName") String extFileName)
-    {
-        try
-        {
-            String decodedExtFileName = URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName());
-            return getFilesImpl(request, true, arg -> arg.equalsIgnoreCase(decodedExtFileName));
-        }
-        catch (UnsupportedEncodingException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-    }
-
-    private Response getFilesImpl(Request request, Boolean showContent, Predicate<String> includeExtFile)
-    {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_LST_EXT_FILES, request),
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_LST_EXT_FILES, request),
             () ->
             {
-                List<ExternalFilePojo> extFilePojoList = extFilesHandler.listFiles(includeExtFile);
+                List<ExternalFilePojo> extFilePojoList = extFilesHandler.listFiles(includeAll -> true);
                 List<ExternalFile> extFiles = extFilePojoList.stream()
                     .map(pojo -> Json.apiToExternalFile(pojo, showContent != null && showContent))
                     .collect(Collectors.toList());
@@ -102,6 +82,41 @@ public class ExternalFiles
             },
             false
         );
+    }
+
+    @GET
+    @Path("{extFileName}")
+    public Response getFiles(@Context Request request, @PathParam("extFileName") String extFileName)
+    {
+        try
+        {
+            String decodedExtFileName = URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName());
+
+            return requestHelper.doInScope(
+                requestHelper.createContext(ApiConsts.API_LST_EXT_FILES, request),
+                () ->
+                {
+                    List<ExternalFilePojo> extFilePojoList = extFilesHandler
+                        .listFiles(arg -> arg.equalsIgnoreCase(decodedExtFileName));
+
+                    List<ExternalFile> extFiles = extFilePojoList.stream()
+                        .map(pojo -> Json.apiToExternalFile(pojo, true))
+                        .collect(Collectors.toList());
+                    return RequestHelper.queryRequestResponse(
+                        objectMapper,
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        "External file",
+                        decodedExtFileName,
+                        extFiles
+                    );
+                },
+                false
+            );
+        }
+        catch (UnsupportedEncodingException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     @PUT
