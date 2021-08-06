@@ -18,16 +18,14 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Hashtable;
+import javax.crypto.SecretKeyFactory;
 
 import org.slf4j.event.Level;
 
 public class CtrlAuthentication
 {
-    private MessageDigest hashAlgo;
-
     private final ControllerDatabase ctrlDb;
     private final DbAccessor dbDriver;
     private final ErrorReporter errorLog;
@@ -35,6 +33,8 @@ public class CtrlAuthentication
     private final AccessContext sysCtx;
 
     private CtrlConfig ctrlCfg;
+
+    private SecretKeyFactory keyFact;
 
     public CtrlAuthentication(
         AccessContext initCtx,
@@ -52,7 +52,6 @@ public class CtrlAuthentication
         ErrorCheck.ctorNotNull(CtrlAuthentication.class, DbAccessor.class, dbDriverRef);
 
         initCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        hashAlgo = MessageDigest.getInstance(Authentication.HASH_ALGORITHM);
 
         ctrlDb = ctrlDbRef;
         dbDriver = dbDriverRef;
@@ -61,6 +60,8 @@ public class CtrlAuthentication
         publicCtx = publicCtxRef;
 
         ctrlCfg = ctrlCfgRef;
+
+        keyFact = SecretKeyFactory.getInstance("PBKDF2WITHHMACSHA512");
     }
 
     private AccessContext signInLinstor(IdentityName idName, byte[] password)
@@ -85,7 +86,7 @@ public class CtrlAuthentication
                     throw new SignInException("Invalid password salt or hash value in database", exc);
                 }
 
-                if (Authentication.passwordMatches(hashAlgo, password, storedSalt, storedHash))
+                if (Authentication.passwordMatches(keyFact, password, storedSalt, storedHash))
                 {
                     final IdentityName storedIdName = idIntegrityCheck(signInEntry, idName);
                     final Identity signInId = getIdentity(storedIdName);

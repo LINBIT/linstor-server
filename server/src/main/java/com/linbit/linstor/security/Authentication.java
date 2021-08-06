@@ -1,12 +1,17 @@
 package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.utils.UnicodeConversion;
+import java.security.spec.InvalidKeySpecException;
 
-import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 /**
  * Identity authentication
@@ -16,8 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class Authentication
 {
     public static final String HASH_ALGORITHM = "SHA-512";
-    public static final int HASH_SIZE = 64;
-    public static final int SALT_SIZE = 16;
+    public static final int ITERATIONS  = 5000;
+    public static final int HASH_SIZE   = 64;
+    public static final int SALT_SIZE   = 16;
 
     private static final AtomicBoolean GLOBAL_AUTH_REQUIRED =
         new AtomicBoolean(true);
@@ -88,46 +94,73 @@ public final class Authentication
      * @return True if the password matches (is correct), false otherwise
      */
     static boolean passwordMatches(
-        MessageDigest dgstAlgo,
+        SecretKeyFactory keyFact,
         byte[] password,
         byte[] storedSalt,
         byte[] storedHash
     )
+        throws SignInException
     {
         boolean matchFlag = false;
 
-        if (password != null && storedSalt != null && storedHash != null)
+        byte[] enteredPasswordHash = null;
+        try
         {
-            byte[] enteredPasswordHash = null;
-            // Hash the password that was supplied for the signin
-            synchronized (dgstAlgo)
+            if (password != null && storedSalt != null && storedHash != null)
             {
-                dgstAlgo.update(storedSalt);
-                enteredPasswordHash = dgstAlgo.digest(password);
-            }
-
-            if (enteredPasswordHash != null)
-            {
-                if (enteredPasswordHash.length == storedHash.length)
+                final char[] passwordChars;
+                try
                 {
-                    int idx = 0;
-                    while (idx < storedHash.length)
+                    passwordChars = UnicodeConversion.utf8BytesToUtf16Chars(password);
+                }
+                catch (UnicodeConversion.InvalidSequenceException exc)
+                {
+                    throw new SignInException("The password contains a byte sequence that is not a valid UTF-8 sequence");
+                }
+                PBEKeySpec keySpec = new PBEKeySpec(passwordChars, storedSalt, ITERATIONS, HASH_SIZE);
+
+                // Hash the password that was supplied for the signin
+                synchronized (keyFact)
+                {
+                    try
                     {
-                        if (enteredPasswordHash[idx] != storedHash[idx])
-                        {
-                            break;
-                        }
-                        ++idx;
+                        final SecretKey derivedKey = keyFact.generateSecret(keySpec);
+                        enteredPasswordHash = derivedKey.getEncoded();
                     }
-                    if (idx == storedHash.length)
+                    catch (InvalidKeySpecException exc)
                     {
-                        matchFlag = true;
+                        throw new ImplementationError(
+                            "The PBKDF2 key derivation generated an InvalidKeySpecException", exc
+                        );
+                    }
+                }
+
+                if (enteredPasswordHash != null)
+                {
+                    if (enteredPasswordHash.length == storedHash.length)
+                    {
+                        int idx = 0;
+                        while (idx < storedHash.length)
+                        {
+                            if (enteredPasswordHash[idx] != storedHash[idx])
+                            {
+                                break;
+                            }
+                            ++idx;
+                        }
+                        if (idx == storedHash.length)
+                        {
+                            matchFlag = true;
+                        }
                     }
                 }
             }
-            clearDataFields(enteredPasswordHash);
         }
-        clearDataFields(password, storedSalt, storedHash);
+        finally
+        {
+            clearDataFields(enteredPasswordHash);
+            clearDataFields(password, storedSalt, storedHash);
+        }
 
         return matchFlag;
     }
@@ -146,6 +179,24 @@ public final class Authentication
             if (dataField != null)
             {
                 Arrays.fill(dataField, (byte) 0);
+            }
+        }
+    }
+
+    /**
+     * Clears the specified char arrays by setting all elements to zero.
+     *
+     * Any element of {@code dataFieldList} may be a null reference.
+     * The {@code dataFieldList} argument itself may NOT be a null reference.
+     * @param dataFieldList The list of byte arrays to clear
+     */
+    static void clearDataFields(char[]... dataFieldList)
+    {
+        for (char[] dataField : dataFieldList)
+        {
+            if (dataField != null)
+            {
+                Arrays.fill(dataField, (char) 0);
             }
         }
     }
