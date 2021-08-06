@@ -27,7 +27,7 @@ info:
          - GET /v1/resource-definitions/{rscname}/clone/{clonedrsc}
        - Added /v1/resource-groups/{resource_group}/adjust
        - Added /v1/resource-groups/adjustall
-       - Added Backup and BackupList, as well as the entrypoint /v1/backups
+       - Added Backup and BackupList, as well as the entrypoint /v1/remotes/{remote_name}/backups
        - Added S3Remote and the corresponding entrypoint /v1/remotes
     * 1.9.0
        - Extended SatelliteConfig with remote_spdk boolean
@@ -4702,22 +4702,22 @@ paths:
                 format: binary
         '500':
           $ref: '#/components/responses/OperationFailed'
-  /v1/backups:
+  /v1/remotes/{remote_name}/backups:
     get:
       tags:
         - developers
       summary: list all backups
       description: list all backups in a single bucket
       parameters:
+        - name: remote_name
+          in: path
+          required: true
+          description: The remote to list the backups from
+          schema:
+            type: string
         - name: rsc_name
           in: query
           description: Only show backups of this resource
-          schema:
-            type: string
-        - name: remote_name
-          in: query
-          required: true
-          description: The remote to list the backups from
           schema:
             type: string
       responses:
@@ -4732,6 +4732,68 @@ paths:
         - developers
       summary: delete backups
       description: delete the specified backups
+      parameters:
+        - name: remote_name
+          in: path
+          required: true
+          description: The remote to delete the backups from
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: ID of the specific backup to be deleted
+          schema:
+            type: string
+        - name: id_prefix
+          in: query
+          description: ID prefix of possibly multiple backups to be deleted
+          schema:
+            type: string
+        - name: cascading
+          in: query
+          description: deletes the specified backup(s) and all backups depending on it
+          schema:
+            type: boolean
+        - name: timestamp
+          in: query
+          description: deletes all backups that were made before the given timestamp
+          schema:
+            type: string
+        - name: resource_name
+          in: query
+          description: deletes all backups made from the specified resource
+          schema:
+            type: string
+        - name: node_name
+          in: query
+          description: deletes all backups made from the specified node
+          schema:
+            type: string
+        - name: all_local_cluster
+          in: query
+          description: deletes all backups made from the current cluster
+          schema:
+            type: boolean
+        - name: all
+          in: query
+          description: deletes ALL backups
+          schema:
+            type: boolean
+        - name: s3key
+          in: query
+          description: deletes the backup associated with the s3key if it fits the naming-criteria
+          schema:
+            type: string
+        - name: s3key_force
+          in: query
+          description: deletes the s3key - regardless of whether it is a backup or not
+          schema:
+            type: string
+        - name: dryrun
+          in: query
+          description: does not delete anything but returns an ApiCallRc with all entries that would be deleted
+          schema:
+            type: boolean
       responses:
         '200':
           description: backups deleted or error messages
@@ -4739,16 +4801,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BackupDelete'
     post:
       tags:
         - developers
-      summary: create a full or incremential backup
+      summary: create a full or incremental backup
       description: create and ship a full backup to the target system
+      parameters:
+        - name: remote_name
+          required: true
+          in: path
+          description: The remote to ship the backups to
+          schema:
+            type: string
       responses:
         '200':
            description: backup created and shipping started
@@ -4761,50 +4825,19 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupCreate'
-  /v1/backups/{resource}:
-    delete:
-      tags:
-        - developers
-      summary: delete backups
-      description: delete either the specified backup, or all backups before the specified timestamp, or all backups of the given resource
-      parameters:
-        - $ref: '#/components/parameters/Resource'
-        - name: snap_name
-          in: query
-          description: delete this specific backup
-          schema:
-            type: string
-        - name: timestamp
-          in: query
-          description: format of the timestamp is yyyyMMdd_HHmmss, delete all backups before this timestamp (not inclusive)
-          schema:
-            type: string
-        - name: remote_name
-          in: query
-          required: true
-          description: remote to delete the backups from
-          schema:
-            type: string
-      responses:
-        '200':
-          description: backups deleted or error messages
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiCallRcList'
-        '400':
-          description: too many parameters given, this request needs either snapName, or timestamp, or neither of them
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiCallRcList'
+  /v1/remotes/{remote_name}/backups/restore:
     post:
       tags:
         - developers
       summary: restore backups
       description: restore the specified backups
       parameters:
-        - $ref: '#/components/parameters/Resource'
+        - name: remote_name
+          in: path
+          required: true
+          description: The remote to restore the backup from
+          schema:
+            type: string
       responses:
         '200':
           description: backup restore started or error messages
@@ -4817,14 +4850,19 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupRestore'
-  /v1/backups/{resource}/abort:
+  /v1/remotes/{remote_name}/backups/abort:
     post:
       tags:
         - developers
       summary: abort backups
       description: abort all backups of the given resource
       parameters:
-        - $ref: '#/components/parameters/Resource'
+        - name: remote_name
+          in: path
+          required: true
+          description: The remote to list the backups from
+          schema:
+            type: string
       responses:
         '200':
           description: backups aborted or error messages
@@ -6945,8 +6983,8 @@ components:
       properties:
         linstor:
           description: A list containing all entries found that are or could be from linstor
-          type: array
-          items:
+          type: object
+          additionalProperties:
             $ref: '#/components/schemas/Backup'
         other:
           description: A list containing all other entries found that have no relation to linstor
@@ -6954,29 +6992,57 @@ components:
     Backup:
       type: object
       properties:
-        snap_key:
+        id:
           type: string
-        meta_name:
+        start_time:
           type: string
+        start_timestamp:
+          type: integer
+          format: int64
         finished_time:
           type: string
         finished_timestamp:
           type: integer
           format: int64
-        node:
+        origin_rsc:
           type: string
-        shipping:
-          type: boolean
-        success:
-          type: boolean
+        origin_node:
+          type: string
+        fail_messages:
+          type: string
         vlms:
-          type: object
-          additionalProperties:
-            type: string
-        inc:
           type: array
           items:
-            $ref: '#/components/schemas/Backup'
+            $ref: '#/components/schemas/BackupVolumes'
+        s3:
+          $ref: '#/components/schemas/BackupS3'
+        based_on_id:
+          type: string
+    BackupVolumes:
+      type: object
+      properties:
+        vlm_nr:
+          type: integer
+          format: int64
+        finished_time:
+          type: string
+        finished_timestamp:
+          type: integer
+          format: int64
+        s3:
+          $ref: '#/components/schemas/BackupVolumesS3'
+    BackupVolumesS3:
+      type: object
+      properties:
+        key:
+          type: string
+
+    BackupS3:
+      type: object
+      properties:
+        meta_name:
+          type: string
+
     BackupOther:
       type: object
       properties:
@@ -6984,29 +7050,20 @@ components:
           type: array
           items:
             type: string
-    BackupDelete:
-      type: object
-      properties:
-        external:
-          type: boolean
-        s3keys:
-          type: array
-          items:
-            type: string
-        remote_name:
-          type: string
     BackupRestore:
       type: object
       properties:
         src_rsc_name:
           type: string
-        stor_pool_name:
+        last_backup:
           type: string
-        remote_name:
+        stor_pool_map:
+          type: object
+          additionalProperties:
+            type: string
+        target_rsc_name:
           type: string
         passphrase:
-          type: string
-        last_backup:
           type: string
         node_name:
           type: string
@@ -7015,13 +7072,15 @@ components:
       properties:
         rsc_name:
           type: string
-        remote_name:
+        node_name:
           type: string
-        incremential:
+        incremental:
           type: boolean
     BackupAbort:
       type: object
       properties:
+        rsc_name:
+          type: string
         restore:
           type: boolean
         create:

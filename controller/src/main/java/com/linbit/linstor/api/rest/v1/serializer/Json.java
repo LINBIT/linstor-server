@@ -31,6 +31,10 @@ import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ExosDefaults;
+import com.linbit.linstor.core.apis.BackupApi;
+import com.linbit.linstor.core.apis.BackupApi.BackupS3Api;
+import com.linbit.linstor.core.apis.BackupApi.BackupVlmApi;
+import com.linbit.linstor.core.apis.BackupApi.BackupVlmS3Api;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceApi;
@@ -76,6 +80,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import com.google.common.net.UrlEscapers;
@@ -1125,6 +1130,55 @@ public class Json
         response.clone_name = clonedName;
         response.messages = Json.apiCallRcToJson(messages);
         return response;
+    }
+
+    public static Map<String, JsonGenTypes.Backup> apiToBackup(Map<String, BackupApi> backups)
+    {
+        Map<String, JsonGenTypes.Backup> jsonBackups = new TreeMap<>();
+        for (BackupApi backup : backups.values())
+        {
+            JsonGenTypes.Backup jsonBackup = new JsonGenTypes.Backup();
+
+            jsonBackup.id = backup.getId();
+            jsonBackup.start_time = backup.getStartTime();
+            jsonBackup.start_timestamp = backup.getStartTimestamp();
+            jsonBackup.finished_time = backup.getFinishedTime();
+            jsonBackup.finished_timestamp = backup.getFinishedTimestamp();
+            jsonBackup.origin_rsc = backup.getResourceName();
+            jsonBackup.origin_node = backup.getOriginNodeName();
+            // jsonBackup.fail_messages = backup.getfail_messages();
+
+            jsonBackup.vlms = new ArrayList<>();
+            for (BackupVlmApi backupVlmApi : backup.getVlms().values())
+            {
+                JsonGenTypes.BackupVolumes backupVlm = new JsonGenTypes.BackupVolumes();
+                backupVlm.vlm_nr = backupVlmApi.getVlmNr();
+                backupVlm.finished_time = backupVlmApi.getFinishedTime();
+                backupVlm.finished_timestamp = backupVlmApi.getFinishedTimestamp();
+                BackupVlmS3Api s3VlmApi = backupVlmApi.getS3();
+                if (s3VlmApi != null)
+                {
+                    backupVlm.s3 = new JsonGenTypes.BackupVolumesS3();
+                    backupVlm.s3.key = s3VlmApi.getS3Key();
+                }
+                jsonBackup.vlms.add(backupVlm);
+            }
+
+            BackupS3Api s3Api = backup.getS3();
+            if (s3Api != null)
+            {
+                jsonBackup.s3 = new JsonGenTypes.BackupS3();
+                jsonBackup.s3.meta_name = s3Api.getMetaName();
+            }
+
+            String basedOn = backup.getBasedOnId();
+            if (basedOn != null)
+            {
+                jsonBackup.based_on_id = basedOn;
+            }
+            jsonBackups.put(backup.getId(), jsonBackup);
+        }
+        return jsonBackups;
     }
 
     public static JsonGenTypes.S3Remote apiToS3Remote(S3RemotePojo pojo)

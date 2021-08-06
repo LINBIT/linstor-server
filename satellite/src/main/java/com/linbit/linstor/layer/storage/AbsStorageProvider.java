@@ -98,7 +98,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private final SnapshotShippingService snapShipMgr;
     protected final CloneService cloneService;
     protected final StltExtToolsChecker extToolsChecker;
-    private BackupShippingService backupShipMgr;
+    private final BackupShippingService backupShipMgr;
 
     protected final HashMap<String, INFO> infoListCache;
     protected final List<Consumer<Map<String, Long>>> postRunVolumeNotifications = new ArrayList<>();
@@ -859,7 +859,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
-                System.out.println("wooops");
                 Snapshot snap = snapVlm.getVolume().getAbsResource();
                 if (
                     snap.getFlags().isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
@@ -883,7 +882,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         !backupShipMgr.alreadyStarted(snapVlm) && !backupShipMgr.alreadyFinished(snapVlm)
                 )
                 {
-                    System.out.println("start restore");
                     try
                     {
                         startBackupRestore(snapVlm);
@@ -1061,6 +1059,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             snapVlmData.getRscLayerObject().getResourceNameSuffix(),
             snapVlm.getVolumeNumber().value,
             getSnapshotShippingSendingCommandImpl(prevSnapVlmData, snapVlmData),
+            prevSnapVlmData,
             snapVlmData
         );
     }

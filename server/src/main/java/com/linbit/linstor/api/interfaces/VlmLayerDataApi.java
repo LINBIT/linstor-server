@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.interfaces;
 
+import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
@@ -45,7 +46,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @Type(value = DrbdVlmPojo.class, name = "drbd"),
         @Type(value = LuksVlmPojo.class, name = "luks"),
         @Type(value = NvmeVlmPojo.class, name = "nvme"),
-        @Type(value = WritecacheVlmPojo.class, name = "writecache")
+        @Type(value = WritecacheVlmPojo.class, name = "writecache"),
+        @Type(value = BCacheVlmPojo.class, name = "bcache")
     }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)

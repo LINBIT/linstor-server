@@ -8,18 +8,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class BackupInfoPojo
 {
     private final String name;
-    private final String finishedTime;
+    private final long finishedTimestamp;
     private final String node;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public BackupInfoPojo(
         @JsonProperty("name") String nameRef,
-        @JsonProperty("finishedTime") String finishedTimeRef,
+        @JsonProperty("finishedTimestamp") long finishedTimestampRef,
         @JsonProperty("node") String nodeRef
     )
     {
         name = nameRef;
-        finishedTime = finishedTimeRef;
+        finishedTimestamp = finishedTimestampRef;
         node = nodeRef;
     }
 
@@ -28,9 +28,9 @@ public class BackupInfoPojo
         return name;
     }
 
-    public String getFinishedTime()
+    public long getFinishedTimestamp()
     {
-        return finishedTime;
+        return finishedTimestamp;
     }
 
     public String getNode()

@@ -114,6 +114,8 @@ public class BackupToS3
         String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
+        // make the buffer size (part size) as big as possible, without going over the limit of Integer.MAX_VALUE
+        // while making sure to stay above the minimum part size of 5 MB and below 10000 parts
         long bufferSize = Math.max(5 << 20, (long) (Math.ceil(maxSize / 10000.0) + 1.0));
         if (bufferSize > Integer.MAX_VALUE)
         {
@@ -279,7 +281,7 @@ public class BackupToS3
         return obj.getObjectContent();
     }
 
-    public List<S3ObjectSummary> listObjects(String rsc, S3Remote remote, AccessContext accCtx, byte[] masterKey)
+    public List<S3ObjectSummary> listObjects(String withPrefix, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
@@ -301,9 +303,9 @@ public class BackupToS3
             .withSdkClientExecutionTimeout(
                 Integer.parseInt(backupProps.getPropWithDefault(ApiConsts.KEY_BACKUP_TIMEOUT, "5")) * 1000
         );
-        if (rsc != null && rsc.length() != 0)
+        if (withPrefix != null && withPrefix.length() != 0)
         {
-            req.withPrefix(rsc);
+            req.withPrefix(withPrefix);
         }
         ListObjectsV2Result result = s3.listObjectsV2(req);
         List<S3ObjectSummary> objects = result.getObjectSummaries();

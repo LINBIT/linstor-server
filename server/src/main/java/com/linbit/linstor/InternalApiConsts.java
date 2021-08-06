@@ -126,6 +126,7 @@ public class InternalApiConsts
     public static final String KEY_BACKUP_LAST_SNAPSHOT = "BackupLastSnapshot";
     public static final String KEY_BACKUP_TO_RESTORE = "BackupToRestore";
     public static final String KEY_BACKUP_NODE_IDS_TO_RESET = "BackupNodeIdsToReset";
+    public static final String KEY_BACKUP_NODE_ID_SEPERATOR = ",";
 
     public static final String KEY_BACKUP_SRC_REMOTE = "BackupSrcRemote";
     public static final String KEY_BACKUP_TARGET_REMOTE = "BackupTargetRemote";

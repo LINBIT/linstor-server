@@ -21,7 +21,7 @@ public class LayerPayload
 
     public OpenflexRscDfnPayload ofRscDfn;
 
-    public Map<Integer, String> volumePasswords;
+    public Map<Integer, String> luksVlmPasswords;
 
     public Map<Pair<String, Integer>, StorageVlmPayload> storagePayload;
 
@@ -33,7 +33,7 @@ public class LayerPayload
 
         ofRscDfn = new OpenflexRscDfnPayload();
 
-        volumePasswords = new TreeMap<>();
+        luksVlmPasswords = new TreeMap<>();
 
         storagePayload = new TreeMap<>();
     }

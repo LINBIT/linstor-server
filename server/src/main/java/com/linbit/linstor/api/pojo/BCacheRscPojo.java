@@ -2,6 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -10,11 +11,17 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class BCacheRscPojo implements RscLayerDataApi
 {
+    @JsonIgnore
     private final int id;
     private final List<RscLayerDataApi> children;
     private final String rscNameSuffix;
+    @JsonIgnore
     private final boolean suspend;
 
     private final List<BCacheVlmPojo> vlms;
@@ -33,6 +40,21 @@ public class BCacheRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = suspendRef;
+    }
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public BCacheRscPojo(
+        @JsonProperty("children") List<RscLayerDataApi> childrenRef,
+        @JsonProperty("rscNameSuffix") String rscNameSuffixRef,
+        @JsonProperty("volumeList") List<BCacheVlmPojo> vlmsRef
+    )
+    {
+        super();
+        id = BACK_DFLT_ID;
+        children = childrenRef;
+        rscNameSuffix = rscNameSuffixRef;
+        vlms = vlmsRef;
+        suspend = false;
     }
 
     @Override
@@ -75,12 +97,18 @@ public class BCacheRscPojo implements RscLayerDataApi
     public static class BCacheVlmPojo implements VlmLayerDataApi
     {
         private final int vlmNr;
+        @JsonIgnore
         private final String devicePathData;
+        @JsonIgnore
         private final String devicePathCache;
         private final String cacheStorPoolName;
+        @JsonIgnore
         private final long allocatedSize;
+        @JsonIgnore
         private final long usableSize;
+        @JsonIgnore
         private final String diskState;
+        @JsonIgnore
         private final @Nullable UUID deviceUuid;
 
         public BCacheVlmPojo(
@@ -103,6 +131,23 @@ public class BCacheRscPojo implements RscLayerDataApi
             usableSize = usableSizeRef;
             diskState = diskStateRef;
             deviceUuid = deviceUuidRef;
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public BCacheVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("cacheStorPoolName") String cacheStorPoolNameRef
+        )
+        {
+            super();
+            vlmNr = vlmNrRef;
+            devicePathData = null;
+            devicePathCache = null;
+            cacheStorPoolName = cacheStorPoolNameRef;
+            allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
+            usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
+            diskState = null;
+            deviceUuid = null;
         }
 
         @Override

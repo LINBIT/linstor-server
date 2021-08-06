@@ -15,8 +15,11 @@ import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
-import com.linbit.linstor.api.pojo.backups.BackupListPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
+import com.linbit.linstor.api.pojo.backups.BackupPojo;
+import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupS3Pojo;
+import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVlmS3Pojo;
+import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVolumePojo;
 import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
@@ -30,7 +33,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
-import com.linbit.linstor.core.apis.BackupListApi;
+import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -79,9 +82,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -95,6 +96,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -102,22 +104,17 @@ import java.util.stream.Collectors;
 import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import com.amazonaws.services.s3.model.MultiObjectDeleteException;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 
 @Singleton
 public class CtrlBackupApiCallHandler
 {
-    private static final DateFormat SDF = new SimpleDateFormat("yyyyMMdd_HHmmss");
     private static final String SNAP_PREFIX = "back_";
-    private static final String INC_PREFIX = "inc_";
     private static final Pattern META_FILE_PATTERN = Pattern
         .compile("^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})\\.meta$");
     private static final Pattern BACKUP_KEY_PATTERN = Pattern
-        .compile("^([a-zA-Z0-9_-]{2,48})(\\..+)?_([0-9]{5})_(back_(?:inc_)?)([0-9]{8}_[0-9]{6})$");
-    private static final Pattern BACKUP_INC_KEY_PATTERN = Pattern
-        .compile("^([a-zA-Z0-9_-]{2,48})(\\..+)?_([0-9]{5})_(back_inc_)([0-9]{8}_[0-9]{6})$");
-    private static final Pattern BACKUP_FULL_KEY_PATTERN = Pattern
         .compile("^([a-zA-Z0-9_-]{2,48})(\\..+)?_([0-9]{5})_(back_[0-9]{8}_[0-9]{6})$");
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -192,12 +189,14 @@ public class CtrlBackupApiCallHandler
         remoteRepo = remoteRepoRef;
     }
 
-    public Flux<ApiCallRc> createBackup(String rscNameRef, String remoteNameRef, boolean incremential)
+    public Flux<ApiCallRc> createBackup(
+        String rscNameRef,
+        String remoteNameRef,
+        String nodeNameRef,
+        boolean incremental
+    )
         throws AccessDeniedException
     {
-        Date now = new Date();
-        String snapName = incremential ? SNAP_PREFIX + INC_PREFIX + SDF.format(now) : SNAP_PREFIX + SDF.format(now);
-
         Flux<ApiCallRc> response = scopeRunner.fluxInTransactionalScope(
             "Backup snapshot",
             lockGuardFactory.create()
@@ -206,18 +205,20 @@ public class CtrlBackupApiCallHandler
                 .buildDeferred(),
             () -> backupSnapshot(
                 rscNameRef,
-                snapName,
                 remoteNameRef,
-                incremential
+                nodeNameRef,
+                incremental
             )
         );
 
         return response;
     }
 
-    private Flux<ApiCallRc> backupSnapshot(String rscNameRef, String snapName, String remoteName, boolean incremential)
+    private Flux<ApiCallRc> backupSnapshot(String rscNameRef, String remoteName, String nodeName, boolean incremental)
         throws AccessDeniedException
     {
+        Date now = new Date();
+        String snapName = SNAP_PREFIX + BackupApi.DATE_FORMAT.format(now);
         try
         {
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
@@ -236,16 +237,16 @@ public class CtrlBackupApiCallHandler
             String prevSnapName = rscDfn.getProps(peerAccCtx.get()).getProp(
                 InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
             );
-            if (incremential)
+            if (incremental)
             {
                 if (prevSnapName == null)
                 {
                     errorReporter.logWarning(
-                        "Could not create an incremential backup for resource %s as there is no previous full backup. Creating a full backup instead.",
+                        "Could not create an incremental backup for resource %s as there is no previous full backup. Creating a full backup instead.",
                         rscNameRef
                     );
                     snapName = snapName.substring(0, 5) + snapName.substring(9);
-                    incremential = false;
+                    incremental = false;
                 }
                 else
                 {
@@ -257,10 +258,10 @@ public class CtrlBackupApiCallHandler
                     if (prevSnap == null)
                     {
                         errorReporter.logWarning(
-                            "Could not create an incremential backup for resource %s as the previous snapshot %s needed for the incremential backup has already been deleted. Creating a full backup instead.",
+                            "Could not create an incremental backup for resource %s as the previous snapshot %s needed for the incremental backup has already been deleted. Creating a full backup instead.",
                             rscNameRef, prevSnapName
                         );
-                        incremential = false;
+                        incremental = false;
                         snapName = snapName.substring(0, 5) + snapName.substring(9);
                     }
                 }
@@ -271,11 +272,23 @@ public class CtrlBackupApiCallHandler
             NodeName chosenNodeName = chooseNodeResult.objA.getName();
             List<String> nodes = chooseNodeResult.objB;
 
+            if (nodeName != null && !nodeName.isEmpty())
+            {
+                for (String possibleNodeName : nodes)
+                {
+                    if (nodeName.equalsIgnoreCase(possibleNodeName))
+                    {
+                        chosenNodeName = new NodeName(possibleNodeName);
+                        break;
+                    }
+                }
+            }
+
             SnapshotDefinition snapDfn = snapshotCrtHelper
                 .createSnapshots(nodes, rscDfn.getName().displayValue, snapName, responses);
             snapDfn.getFlags()
                 .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
-            if (!incremential)
+            if (!incremental)
             {
                 snapDfn.getProps(peerAccCtx.get())
                     .setProp(
@@ -284,6 +297,7 @@ public class CtrlBackupApiCallHandler
             }
             else
             {
+                // incremental == true && prevSnap == null should not be possible here
                 snapDfn.getProps(peerAccCtx.get())
                     .setProp(
                         InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
@@ -343,7 +357,7 @@ public class CtrlBackupApiCallHandler
             Props snapProps = snapDfn.getSnapshot(peerAccCtx.get(), chosenNodeName).getProps(peerAccCtx.get());
             snapProps.setProp(
                 InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
-                StringUtils.join(nodeIds, ","),
+                StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             snapProps.setProp(
@@ -351,7 +365,7 @@ public class CtrlBackupApiCallHandler
                 remote.getName().displayValue,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
-            if (incremential)
+            if (incremental)
             {
                 snapProps.setProp(
                     InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
@@ -448,11 +462,17 @@ public class CtrlBackupApiCallHandler
 
     public Flux<ApiCallRc> deleteBackup(
         String rscName,
-        String snapName,
+        String id,
+        String idPrefix,
         String timestamp,
+        String nodeName,
+        boolean cascading,
+        boolean allCluster,
+        boolean all,
+        String s3key,
+        String s3keyForce,
         String remoteName,
-        List<String> s3keys,
-        boolean external
+        boolean dryRunRef
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -461,203 +481,563 @@ public class CtrlBackupApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .buildDeferred(),
-            () -> deleteBackupInTransaction(rscName, snapName, timestamp, remoteName, s3keys, external)
+            () -> deleteBackupInTransaction(
+                id,
+                idPrefix,
+                cascading,
+                s3key,
+                s3keyForce,
+                rscName,
+                nodeName,
+                timestamp,
+                allCluster,
+                all,
+                remoteName,
+                dryRunRef
+            )
         );
     }
 
     private Flux<ApiCallRc> deleteBackupInTransaction(
+        String id,
+        String idPrefix,
+        boolean cascading,
+        String s3Key,
+        String s3keyForce,
         String rscName,
-        String snapName,
+        String nodeName,
         String timestamp,
+        boolean allLocalCluster,
+        boolean all,
         String remoteName,
-        List<String> s3keys,
-        boolean external
+        boolean dryRunRef
     ) throws AccessDeniedException, InvalidNameException
     {
-        S3Remote s3remote = getS3Remote(remoteName);
+        S3Remote s3Remote = getS3Remote(remoteName);
         ToDeleteCollections toDelete = new ToDeleteCollections();
-        if (rscName.length() != 0)
+
+        /*
+         * Currently the following cases are allowed:
+         * 1) id [cascading]
+         * 2) idPrefix [cascading]
+         * 3) s3Key [cascading]
+         * 4) (time|rsc|node)+ [cascading]
+         * 5) all // force cascading
+         * 6) allCluster // forced cascading
+         * 7) forced s3 key [cascading]
+         */
+
+        List<S3ObjectSummary> objects = backupHandler.listObjects(
+            null,
+            s3Remote,
+            peerAccCtx.get(),
+            getLocalMasterKey()
+        );
+        // get ALL s3 keys of the given bucket, including possibly not linstor related ones
+        Set<String> allS3Keys = objects.stream()
+            .map(S3ObjectSummary::getKey)
+            .collect(Collectors.toCollection(TreeSet::new));
+
+        Map<String, S3ObjectInfo> s3LinstorObjects = loadAllLinstorS3Objects(
+            allS3Keys,
+            s3Remote,
+            toDelete.apiCallRcs
+        );
+
+        if (id != null && !id.isEmpty()) // case 1
         {
-            if (snapName.length() != 0 && !backupInfoMgr.restoreContainsMetaFile(rscName, snapName))
+            if (!id.endsWith(".meta"))
             {
-                toDelete.s3keys = getKeysFromMeta(rscName + "_" + snapName + ".meta", s3remote);
-                toDelete.snapKeys = Collections.singleton(
-                    toSnapDfnKey(rscName, snapName)
-                );
+                id += ".meta";
             }
-            else
-            {
-                toDelete = getDeleteList(rscName, timestamp, s3remote);
-            }
+            deleteByIdPrefix(
+                id,
+                false,
+                cascading,
+                s3LinstorObjects,
+                s3Remote,
+                toDelete
+            );
         }
-        else if (s3keys.size() != 0)
+        if (idPrefix != null && !idPrefix.isEmpty()) // case 2
         {
-            if (external)
+            deleteByIdPrefix(
+                idPrefix,
+                true,
+                cascading,
+                s3LinstorObjects,
+                s3Remote,
+                toDelete
+            );
+        }
+        else if (s3Key != null && !s3Key.isEmpty()) // case 3
+        {
+            deleteByS3Key(
+                s3LinstorObjects,
+                Collections.singleton(s3Key),
+                cascading,
+                toDelete
+            );
+        }
+        else if (timestamp != null && !timestamp.isEmpty() ||
+            rscName != null && !rscName.isEmpty() ||
+            nodeName != null && !nodeName.isEmpty()) // case 4
+        {
+            deleteByTimeRscNode(
+                s3LinstorObjects,
+                timestamp,
+                rscName,
+                nodeName,
+                cascading,
+                s3Remote,
+                toDelete
+            );
+        }
+        else if (all) // case 5
+        {
+            deleteByS3Key(
+                s3LinstorObjects,
+                s3LinstorObjects.keySet(),
+                true,
+                toDelete
+            );
+        }
+        else if (allLocalCluster) // case 6
+        {
+            deleteAllLocalCluster(
+                s3Remote,
+                toDelete
+            );
+        }
+        else if (s3keyForce != null && !s3keyForce.isEmpty()) // case 7
+        {
+            deleteByS3Key(s3LinstorObjects, Collections.singleton(s3keyForce), cascading, toDelete);
+            toDelete.s3keys.add(s3keyForce);
+        }
+
+        Flux<ApiCallRc> deleteSnapFlux = Flux.empty();
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        if (dryRunRef)
+        {
+            boolean nothingToDelete = true;
+            if (!toDelete.s3keys.isEmpty())
             {
-                toDelete.s3keys = new TreeSet<>(s3keys);
+                StringBuilder sb = new StringBuilder("Would delete s3 keys:\n");
+                nothingToDelete = false;
+                for (String s3KeyToDelete : toDelete.s3keys)
+                {
+                    sb.append("  ").append(s3KeyToDelete).append("\n");
+                }
+                apiCallRc.addEntry(sb.toString(), 0); // retCode 0 as nothing actually happened..
             }
-            else
+            if (!toDelete.snapKeys.isEmpty())
             {
-                toDelete = getDeleteList(s3keys, s3remote);
+                nothingToDelete = false;
+                StringBuilder sb = new StringBuilder("Would delete Snapshots:\n");
+                for (SnapshotDefinition.Key snapKey : toDelete.snapKeys)
+                {
+                    sb.append("  Resource: ").append(snapKey.getResourceName().displayValue).append(", Snapshot: ")
+                        .append(snapKey.getSnapshotName().displayValue).append("\n");
+                }
+                apiCallRc.addEntry(sb.toString(), 0); // retCode 0 as nothing actually happened..
+            }
+            if (nothingToDelete)
+            {
+                // retCode 0 as nothing actually happened..
+                apiCallRc.addEntry("Dryrun mode. Although nothing selected for deletion", 0);
             }
         }
         else
         {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_REQUEST | ApiConsts.MASK_BACKUP,
-                    "Missing parameters to complete deletion. Either specify a resource name or an s3key."
-                )
-            );
-        }
-        Flux<ApiCallRc> deleteSnapFlux = Flux.empty();
-        for (SnapshotDefinition.Key snapKey : toDelete.snapKeys)
-        {
-            deleteSnapFlux = deleteSnapFlux.concatWith(
-                ctrlSnapDeleteApiCallHandler
-                    .deleteSnapshot(snapKey.getResourceName().displayValue, snapKey.getSnapshotName().displayValue)
-            );
-        }
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        try
-        {
-            if (!toDelete.s3keys.isEmpty())
+            for (SnapshotDefinition.Key snapKey : toDelete.snapKeys)
             {
-                backupHandler.deleteObjects(toDelete.s3keys, s3remote, peerAccCtx.get(), getLocalMasterKey());
-            }
-            else
-            {
-                apiCallRc.addEntry(
-                    "Could not find any backups to delete.",
-                    ApiConsts.FAIL_INVLD_REQUEST | ApiConsts.MASK_BACKUP
+                deleteSnapFlux = deleteSnapFlux.concatWith(
+                    ctrlSnapDeleteApiCallHandler
+                        .deleteSnapshot(snapKey.getResourceName().displayValue, snapKey.getSnapshotName().displayValue)
                 );
-                return Flux.just(apiCallRc);
             }
-        }
-        catch (MultiObjectDeleteException exc)
-        {
-            Set<String> deletedKeys = new TreeSet<>();
-            for (DeletedObject obj : exc.getDeletedObjects())
+            try
             {
-                deletedKeys.add(obj.getKey());
+                if (!toDelete.s3keys.isEmpty())
+                {
+                    backupHandler.deleteObjects(toDelete.s3keys, s3Remote, peerAccCtx.get(), getLocalMasterKey());
+                }
+                else
+                {
+                    apiCallRc.addEntry(
+                        "Could not find any backups to delete.",
+                        ApiConsts.FAIL_INVLD_REQUEST | ApiConsts.MASK_BACKUP
+                    );
+                    return Flux.just(apiCallRc);
+                }
             }
-            toDelete.s3keys.removeAll(deletedKeys);
+            catch (MultiObjectDeleteException exc)
+            {
+                Set<String> deletedKeys = new TreeSet<>();
+                for (DeletedObject obj : exc.getDeletedObjects())
+                {
+                    deletedKeys.add(obj.getKey());
+                }
+                toDelete.s3keys.removeAll(deletedKeys);
+                apiCallRc.addEntry(
+                    "Could not delete " + toDelete.s3keys.toString(),
+                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP
+                );
+                toDelete.s3keys = deletedKeys;
+            }
             apiCallRc.addEntry(
-                "Could not delete " + toDelete.s3keys.toString(), ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP
+                "Successfully deleted " + toDelete.s3keys.toString(),
+                ApiConsts.MASK_SUCCESS | ApiConsts.MASK_BACKUP
             );
-            toDelete.s3keys = deletedKeys;
         }
-        apiCallRc.addEntry(
-            "Successfully deleted " + toDelete.s3keys.toString(), ApiConsts.MASK_SUCCESS | ApiConsts.MASK_BACKUP
-        );
+        if (!toDelete.s3KeysNotFound.isEmpty())
+        {
+            StringBuilder sb = new StringBuilder("The following S3 keys were not found in the given remote:\n");
+            for (String s3KeyNotFound : toDelete.s3KeysNotFound)
+            {
+                sb.append("  ").append(s3KeyNotFound).append("\n");
+            }
+            apiCallRc.addEntry(sb.toString(), ApiConsts.WARN_NOT_FOUND);
+        }
+
         apiCallRc.addEntries(toDelete.apiCallRcs);
         return Flux.<ApiCallRc> just(apiCallRc).concatWith(deleteSnapFlux);
     }
 
-    private ToDeleteCollections getDeleteList(List<String> s3keysRef, S3Remote s3remote) throws AccessDeniedException
+    private void deleteByIdPrefix(
+        String idPrefixRef,
+        boolean allowMultiSelectionRef,
+        boolean cascadingRef,
+        Map<String, S3ObjectInfo> s3LinstorObjects,
+        S3Remote s3RemoteRef,
+        ToDeleteCollections toDeleteRef
+    )
+        throws AccessDeniedException
     {
-        ToDeleteCollections ret = new ToDeleteCollections();
-        for (String s3keyRef : s3keysRef)
+        TreeSet<String> matchingS3Keys = new TreeSet<>();
+        for (String s3Key : s3LinstorObjects.keySet())
         {
-            Matcher mBack = BACKUP_FULL_KEY_PATTERN.matcher(s3keyRef);
-            Matcher mMeta = META_FILE_PATTERN.matcher(s3keyRef);
-            if (mBack.matches() && !backupInfoMgr.restoreContainsMetaFile(mBack.group(1), mBack.group(4)))
+            if (s3Key.startsWith(idPrefixRef))
             {
-                ret.s3keys.addAll(getKeysFromMeta(mBack.group(1) + "_" + mBack.group(4) + ".meta", s3remote));
-                ret.snapKeys.add(toSnapDfnKey(mBack.group(1), mBack.group(4)));
+                matchingS3Keys.add(s3Key);
             }
-            else if (mMeta.matches() && !backupInfoMgr.restoreContainsMetaFile(s3keyRef))
+        }
+
+        int s3KeyCount = matchingS3Keys.size();
+        if (s3KeyCount == 0)
+        {
+            toDeleteRef.apiCallRcs.addEntry(
+                "No backup with id " + (allowMultiSelectionRef ? "prefix " : "") + "'" + idPrefixRef +
+                    "' not found on remote '" +
+                    s3RemoteRef.getName().displayValue + "'",
+                ApiConsts.WARN_NOT_FOUND
+            );
+        }
+        else
+        {
+            if (s3KeyCount > 1 && !allowMultiSelectionRef)
             {
-                ret.s3keys.addAll(getKeysFromMeta(s3keyRef, s3remote));
-                ret.snapKeys.add(toSnapDfnKey(mMeta.group(1), mMeta.group(2)));
+                StringBuilder sb = new StringBuilder("Ambigious id '");
+                sb.append(idPrefixRef).append("' for remote '").append(s3RemoteRef.getName().displayValue)
+                    .append("':\n");
+                for (String s3Key : matchingS3Keys)
+                {
+                    sb.append("  ").append(s3Key).append("\n");
+                }
+                toDeleteRef.apiCallRcs.addEntry(
+                    sb.toString(),
+                    ApiConsts.FAIL_NOT_FOUND_BACKUP
+                );
             }
             else
             {
-                ret.apiCallRcs.addEntry(
-                    "The key " + s3keyRef +
-                        " is not a valid backup name. Please check your input or consider using the external-option.",
-                    ApiConsts.FAIL_INVLD_REQUEST | ApiConsts.MASK_BACKUP
+                deleteByS3Key(s3LinstorObjects, matchingS3Keys, cascadingRef, toDeleteRef);
+            }
+        }
+    }
+
+    private void deleteByS3Key(
+        Map<String, S3ObjectInfo> s3LinstorObjects,
+        Set<String> s3KeysToDeleteRef,
+        boolean cascadingRef,
+        ToDeleteCollections toDeleteRef
+    )
+        throws AccessDeniedException
+    {
+        for (String s3Key : s3KeysToDeleteRef)
+        {
+            S3ObjectInfo s3ObjectInfo = s3LinstorObjects.get(s3Key);
+            if (s3ObjectInfo != null && s3ObjectInfo.exists)
+            {
+                addToDeleteList(s3LinstorObjects, s3ObjectInfo, cascadingRef, toDeleteRef);
+            }
+            else
+            {
+                toDeleteRef.s3KeysNotFound.add(s3Key);
+            }
+        }
+    }
+
+    private static void addToDeleteList(
+        Map<String, S3ObjectInfo> s3Map,
+        S3ObjectInfo s3ObjectInfo,
+        boolean cascading,
+        ToDeleteCollections toDelete
+    )
+    {
+        if (s3ObjectInfo.isMetaFile())
+        {
+            toDelete.s3keys.add(s3ObjectInfo.s3Key);
+            for (S3ObjectInfo childObj : s3ObjectInfo.references)
+            {
+                if (childObj.exists)
+                {
+                    if (!childObj.isMetaFile())
+                    {
+                        toDelete.s3keys.add(childObj.s3Key);
+                    }
+                    // we do not want to cascade upwards. only delete child / data keys
+                }
+                else
+                {
+                    toDelete.s3KeysNotFound.add(childObj.s3Key);
+                }
+            }
+            for (S3ObjectInfo childObj : s3ObjectInfo.referencedBy)
+            {
+                if (childObj.exists)
+                {
+                    if (childObj.isMetaFile())
+                    {
+                        if (cascading)
+                        {
+                            addToDeleteList(s3Map, childObj, cascading, toDelete);
+                        }
+                        else
+                        {
+                            throw new ApiRcException(
+                                ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.FAIL_DEPENDEND_BACKUP,
+                                    s3ObjectInfo.s3Key + " should be deleted, but at least " + childObj.s3Key +
+                                        " is referencing it. Use --cascading to delete recursively"
+                                )
+                            );
+                        }
+                    }
+                    // we should not be referenced by something other than a metaFile
+                }
+                else
+                {
+                    toDelete.s3KeysNotFound.add(childObj.s3Key);
+                }
+            }
+
+            if (s3ObjectInfo.snapDfn != null)
+            {
+                toDelete.snapKeys.add(new SnapshotDefinition.Key(s3ObjectInfo.snapDfn));
+            }
+        }
+    }
+
+    private void deleteByTimeRscNode(
+        Map<String, S3ObjectInfo> s3LinstorObjectsRef,
+        String timestampRef,
+        String rscNameRef,
+        String nodeNameRef,
+        boolean cascadingRef,
+        S3Remote s3RemoteRef,
+        ToDeleteCollections toDeleteRef
+    )
+        throws AccessDeniedException
+    {
+
+        Predicate<String> nodeNameCheck = nodeNameRef == null || nodeNameRef.isEmpty() ?
+            ignore -> true :
+            nodeNameRef::equalsIgnoreCase;
+        Predicate<String> rscNameCheck = rscNameRef == null || rscNameRef.isEmpty() ?
+            ignore -> true :
+            rscNameRef::equalsIgnoreCase;
+        Predicate<Long> timestampCheck;
+        if (timestampRef == null || timestampRef.isEmpty())
+        {
+            timestampCheck = ignore -> true;
+        }
+        else
+        {
+            try
+            {
+                Date date = BackupApi.DATE_FORMAT.parse(timestampRef);
+                timestampCheck = timestamp -> date.after(new Date(timestamp));
+            }
+            catch (ParseException exc)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_TIME_PARAM,
+                        "Failed to parse '" + timestampRef + "'. Expected format: YYYYMMDD_HHMMSS"
+                    ),
+                    exc
                 );
             }
         }
-        return ret;
+
+        TreeSet<String> s3KeysToDelete = new TreeSet<>();
+        for (S3ObjectInfo s3Obj : s3LinstorObjectsRef.values())
+        {
+            if (s3Obj.isMetaFile())
+            {
+                String node = s3Obj.metaFile.getNodeName();
+                String rsc = s3Obj.metaFile.getRscName();
+                long startTimestamp = s3Obj.metaFile.getStartTimestamp();
+
+                if (nodeNameCheck.test(node) && rscNameCheck.test(rsc) && timestampCheck.test(startTimestamp))
+                {
+                    s3KeysToDelete.add(s3Obj.s3Key);
+                }
+            }
+        }
+        deleteByS3Key(s3LinstorObjectsRef, s3KeysToDelete, cascadingRef, toDeleteRef);
     }
 
-    private ToDeleteCollections getDeleteList(String rscName, String timestamp, S3Remote s3remote)
+    private void deleteAllLocalCluster(S3Remote s3RemoteRef, ToDeleteCollections toDeleteRef)
+    {
+        // TODO Auto-generated method stub
+
+    }
+
+    private Map<String, S3ObjectInfo> loadAllLinstorS3Objects(
+        Set<String> allS3KeyRef,
+        S3Remote s3RemoteRef,
+        ApiCallRcImpl apiCallRc
+    )
         throws AccessDeniedException
     {
-        Set<String> metaKeys = new HashSet<>();
-        Set<String> s3keys = backupHandler
-            .listObjects(rscName, s3remote, peerAccCtx.get(), getLocalMasterKey()).stream()
-            .map(S3ObjectSummary::getKey)
-            .collect(Collectors.toCollection(TreeSet::new));
-        ToDeleteCollections ret = new ToDeleteCollections();
-        for (String s3key : s3keys)
+        Map<String, S3ObjectInfo> ret = new TreeMap<>();
+
+        // add all backups to the list that have useable metadata-files
+        for (String s3Key : allS3KeyRef)
         {
-            Matcher m = META_FILE_PATTERN.matcher(s3key);
-            if (m.matches())
+            Matcher metaFileMatcher = META_FILE_PATTERN.matcher(s3Key);
+            if (metaFileMatcher.matches())
             {
-                // get rid of the "back_" prefix
-                String ts = m.group(2).substring(5);
+                // s3 key at least has linstor's meta file format
+                // we still need to check if it is valid though
                 try
                 {
-                    if (
-                        (timestamp.isEmpty() || SDF.parse(timestamp).after(SDF.parse(ts))) &&
-                        !backupInfoMgr.restoreContainsMetaFile(s3key)
-                    )
+                    // throws parse exception if not linstor json
+                    BackupMetaDataPojo s3MetaFile = backupHandler.getMetaFile(
+                        s3Key,
+                        s3RemoteRef,
+                        peerAccCtx.get(),
+                        getLocalMasterKey()
+                    );
+
+                    S3ObjectInfo metaInfo = ret.get(s3Key);
+                    if (metaInfo == null)
                     {
-                        metaKeys.add(s3key);
-                        ret.snapKeys.add(toSnapDfnKey(m.group(1), m.group(2)));
+                        metaInfo = new S3ObjectInfo(s3Key);
+                        ret.put(s3Key, metaInfo);
+                    }
+                    metaInfo.exists = true;
+                    metaInfo.metaFile = s3MetaFile;
+
+                    for (BackupInfoPojo backupInfoPojo : s3MetaFile.getBackups().values())
+                    {
+                        String childS3Key = backupInfoPojo.getName();
+                        S3ObjectInfo childS3Obj = ret.get(childS3Key);
+                        if (childS3Obj == null)
+                        {
+                            childS3Obj = new S3ObjectInfo(childS3Key);
+                            ret.put(childS3Key, childS3Obj);
+                        }
+                        childS3Obj.referencedBy.add(metaInfo);
+                        metaInfo.references.add(childS3Obj);
+                    }
+
+                    String rscName = metaFileMatcher.group(1);
+                    String snapName = metaFileMatcher.group(2);
+
+                    metaInfo.snapDfn = loadSnapDfnIfExists(rscName, snapName);
+
+                    String basedOnS3Key = s3MetaFile.getBasedOn();
+                    if (basedOnS3Key != null)
+                    {
+                        S3ObjectInfo basedOnS3MetaInfo = ret.get(basedOnS3Key);
+                        if (basedOnS3MetaInfo == null)
+                        {
+                            basedOnS3MetaInfo = new S3ObjectInfo(basedOnS3Key);
+                            ret.put(basedOnS3Key, basedOnS3MetaInfo);
+                        }
+                        basedOnS3MetaInfo.referencedBy.add(metaInfo);
+                        metaInfo.references.add(basedOnS3MetaInfo);
                     }
                 }
-                catch (ParseException exc)
+                catch (MismatchedInputException exc)
                 {
-                    errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + s3key);
+                    // ignore, most likely an older format of linstor's backup .meta json
+                }
+                catch (IOException exc)
+                {
+                    String errRepId = errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + s3Key);
+                    apiCallRc.addEntry(
+                        "IO exception while parsing metafile " + s3Key + ". Details in error report " + errRepId,
+                        ApiConsts.FAIL_UNKNOWN_ERROR
+                    );
+                }
+            }
+            else
+            {
+                Matcher s3BackupKeyMatcher = BACKUP_KEY_PATTERN.matcher(s3Key);
+                if (s3BackupKeyMatcher.matches())
+                {
+                    S3ObjectInfo s3DataInfo = ret.get(s3Key);
+                    if (s3DataInfo == null)
+                    {
+                        s3DataInfo = new S3ObjectInfo(s3Key);
+                        ret.put(s3Key, s3DataInfo);
+                    }
+                    s3DataInfo.exists = true;
+                    String rscName = s3BackupKeyMatcher.group(1);
+                    String snapName = s3BackupKeyMatcher.group(4);
+
+                    s3DataInfo.snapDfn = loadSnapDfnIfExists(rscName, snapName);
                 }
             }
         }
-        for (String metaName : metaKeys)
-        {
-            ret.s3keys.addAll(getKeysFromMeta(metaName, s3remote));
-        }
+
         return ret;
     }
-
-    private Set<String> getKeysFromMeta(String metaName, S3Remote s3remote) throws AccessDeniedException
+    private static class S3ObjectInfo
     {
-        Set<String> keys = new TreeSet<>();
-        try
-        {
-            BackupMetaDataPojo metadata = backupHandler
-                .getMetaFile(metaName, s3remote, peerAccCtx.get(), getLocalMasterKey());
-            Map<Integer, List<BackupInfoPojo>> backInfoLists = metadata.getBackups();
-            for (List<BackupInfoPojo> backInfoList : backInfoLists.values())
-            {
-                for (BackupInfoPojo backInfo : backInfoList)
-                {
-                    keys.add(backInfo.getName());
-                }
-            }
-            keys.add(metaName);
-        }
-        catch (IOException exc)
-        {
-            errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + metaName);
-        }
-        return keys;
-    }
+        private String s3Key;
+        private boolean exists = false;
+        private BackupMetaDataPojo metaFile;
+        private SnapshotDefinition snapDfn = null;
 
-    private SnapshotDefinition.Key toSnapDfnKey(String rscName, String snapName)
-    {
-        return new SnapshotDefinition.Key(
-            LinstorParsingUtils.asRscName(rscName),
-            LinstorParsingUtils.asSnapshotName(snapName)
-        );
+        private HashSet<S3ObjectInfo> referencedBy = new HashSet<>();
+        private HashSet<S3ObjectInfo> references = new HashSet<>();
+
+        private S3ObjectInfo(String s3KeyRef)
+        {
+            s3Key = s3KeyRef;
+        }
+
+        public boolean isMetaFile()
+        {
+            return metaFile != null;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "S3ObjectInfo [s3Key=" + s3Key + "]";
+        }
     }
 
     public Flux<ApiCallRc> restoreBackup(
         String srcRscName,
-        String storPoolName,
+        Map<String, String> storPoolMapRef,
         String nodeName,
         String targetRscName,
         String remoteName,
@@ -674,7 +1054,8 @@ public class CtrlBackupApiCallHandler
                         LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP
                     ),
                     () -> restoreBackupInTransaction(
-                        srcRscName, storPoolName, nodeName, thinFreeCapacities, targetRscName, remoteName, passphrase,
+                        srcRscName, storPoolMapRef, nodeName, thinFreeCapacities, targetRscName, remoteName,
+                        passphrase,
                         lastBackup
                     )
                 )
@@ -683,7 +1064,7 @@ public class CtrlBackupApiCallHandler
 
     private Flux<ApiCallRc> restoreBackupInTransaction(
         String srcRscName,
-        String storPoolName,
+        Map<String, String> storPoolMap,
         String nodeName,
         Map<StorPool.Key, Long> thinFreeCapacities,
         String targetRscName,
@@ -700,10 +1081,10 @@ public class CtrlBackupApiCallHandler
             if (targetMatcher.matches())
             {
                 srcRscName = targetMatcher.group(1);
-                shortTargetName = targetMatcher.group(1) + "_" + targetMatcher.group(4) + targetMatcher.group(5);
+                shortTargetName = targetMatcher.group(1) + "_" + targetMatcher.group(4);
                 try
                 {
-                    targetTime = SDF.parse(targetMatcher.group(5));
+                    targetTime = BackupApi.DATE_FORMAT.parse(targetMatcher.group(4));
                 }
                 catch (ParseException exc)
                 {
@@ -716,7 +1097,7 @@ public class CtrlBackupApiCallHandler
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
                         "The target backup " + lastBackup +
-                            " is invalid since it does not match the pattern of rscName_vlmNr_JJJJMMDD_HHMMSS. " +
+                            " is invalid since it does not match the pattern of rscName_vlmNr_YYYYMMDD_HHMMSS. " +
                             "Please provide a valid target backup, or provide only the source resource name to restore to the latest backup of that resource."
                     )
                 );
@@ -750,7 +1131,7 @@ public class CtrlBackupApiCallHandler
                 {
                     // remove "back_" prefix
                     String ts = m.group(2).substring(5);
-                    Date curTs = SDF.parse(ts);
+                    Date curTs = BackupApi.DATE_FORMAT.parse(ts);
                     if (targetTime != null)
                     {
                         if (
@@ -775,7 +1156,7 @@ public class CtrlBackupApiCallHandler
                 }
             }
         }
-        String metaName = srcRscName + "_back_" + SDF.format(latestBackTs) + ".meta";
+        String metaName = srcRscName + "_back_" + BackupApi.DATE_FORMAT.format(latestBackTs) + ".meta";
         if (backupInfoMgr.restoreContainsMetaFile(metaName))
         {
             throw new ApiRcException(
@@ -788,313 +1169,65 @@ public class CtrlBackupApiCallHandler
         // 3. get meta-file
         try
         {
-            BackupMetaDataPojo metadata = backupHandler
-                .getMetaFile(metaName, remote, peerAccCtx.get(), targetMasterKey);
-            // 4. meta ok?
-            for (List<BackupInfoPojo> backupList : metadata.getBackups().values())
+            /*
+             * By default (or user-choice) the current metadata will be the latest version of the backup, including all
+             * incremental backups.
+             * In order to restore that, we need to start with the full backup, continue with the first, second ,... and
+             * finally the last incremental backup
+             */
+
+            Snapshot nextBackup = null;
+            String lastMetaName = metaName;
+            BackupMetaDataPojo metadata;
+            do
             {
-                for (BackupInfoPojo backup : backupList)
-                {
-                    if (!s3keys.contains(backup.getName()))
-                    {
-                        throw new ApiRcException(
-                            ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_NOT_FOUND_SNAPSHOT | ApiConsts.MASK_BACKUP,
-                                "Failed to find backup " + backup.getName()
-                            )
-                        );
-                    }
-                }
-            }
-            // 5. create layerPayload
-            RscLayerDataApi layers = metadata.getLayerData();
-            Node node = ctrlApiDataLoader.loadNode(nodeName, true);
-            if (!node.getPeer(peerAccCtx.get()).isConnected())
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.FAIL_NOT_CONNECTED,
-                            "No active connection to satellite '" + node.getName() + "'."
-                        )
-                        .setDetails("Backups cannot be restored when the corresponding satellite is not connected.")
-                        .build()
-                );
-            }
-            // 6. do luks-stuff if needed
-            LuksLayerMetaPojo luksInfo = metadata.getLuksInfo();
-            byte[] srcMasterKey = null;
-            if (luksInfo != null)
-            {
-                if (passphrase == null || passphrase.isEmpty())
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY | ApiConsts.MASK_BACKUP,
-                            "The resource " + srcRscName +
-                                " to be restored seems to have luks configured, but no passphrase was given."
-                        )
-                    );
-                }
-                try
-                {
-                    srcMasterKey = encHelper.getDecryptedMasterKey(
-                        luksInfo.getMasterCryptHash(),
-                        luksInfo.getMasterPassword(),
-                        luksInfo.getMasterCryptSalt(),
-                        passphrase
-                    );
-                }
-                catch (MissingKeyPropertyException exc)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
-                            "Some of the needed properties were not set in the metadata-file " + metaName +
-                                ". The metadata-file is probably corrupted and therefore unusable."
-                        ),
-                        exc
-                    );
-                }
-                catch (LinStorException exc)
-                {
-                    errorReporter.reportError(exc);
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
-                            "Decrypting the master password failed."
-                        )
-                    );
-                }
-            }
-            // 8. create rscDfn
-            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(targetRscName, false);
-            ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
-            SnapshotName snapName = LinstorParsingUtils.asSnapshotName("back_" + SDF.format(latestBackTs));
-            if (rscDfn == null)
-            {
-                rscDfn = ctrlRscDfnApiCallHandler.createResourceDefinition(
+                metadata = backupHandler.getMetaFile(metaName, remote, peerAccCtx.get(), targetMasterKey);
+                Snapshot snap = createSnapshotByS3Meta(
+                    srcRscName,
+                    storPoolMap,
+                    nodeName,
                     targetRscName,
-                    null,
-                    Collections.emptyMap(),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    null,
-                    null,
-                    true,
-                    apiCallRcs,
-                    false
+                    passphrase,
+                    shortTargetName,
+                    remote,
+                    s3keys,
+                    latestBackTs,
+                    metaName,
+                    metadata
                 );
-            }
-            else if (rscDfn.getResourceCount() != 0)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_RSC | ApiConsts.MASK_BACKUP,
-                        "Cannot restore to resource definition which already has resources"
-                    )
+                snap.getProps(peerAccCtx.get()).setProp(
+                    InternalApiConsts.KEY_BACKUP_TO_RESTORE,
+                    srcRscName + "_" + snap.getSnapshotName().displayValue,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
                 );
-            }
-            else if (rscDfn.getSnapshotDfn(peerAccCtx.get(), snapName) != null)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
-                        "Snapshot " + snapName.displayValue + " already exists, please use snapshot restore instead."
-                    )
-                );
-            }
-            else if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_IN_USE | ApiConsts.MASK_BACKUP,
-                        "A backup is currently being restored to resource definition " + targetRscName + "."
-                    )
-                );
-            }
-            if (!backupInfoMgr.restoreAddEntry(rscDfn, metaName))
+
+                LinkedList<Snapshot> list = new LinkedList<>();
+                backupInfoMgr.backupsToUploadAddEntry(snap, list);
+                if (nextBackup != null)
+                {
+                    list.add(nextBackup);
+                }
+                nextBackup = snap;
+
+                metaName = metadata.getBasedOn();
+            } while (metaName != null);
+
+            /*
+             * we went through the snapshots from the newest to the oldest.
+             * That means "nextBackup" now is the base-/full-backup which we want to start restore with
+             */
+            nextBackup.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
+
+            if (!backupInfoMgr.restoreAddEntry(nextBackup.getResourceDefinition(), lastMetaName))
             {
                 throw new ImplementationError(
                     "Tried to overwrite existing backup-info-mgr entry for rscDfn " + targetRscName
                 );
             }
-            rscDfn.getFlags()
-                .resetFlagsTo(
-                    peerAccCtx.get(), ResourceDefinition.Flags.restoreFlags(metadata.getRscDfn().getFlags())
-                );
-            rscDfn.getProps(peerAccCtx.get()).clear();
-            rscDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
 
-            // force the node to become primary afterwards in case we needed to recreate
-            // the metadata
-            rscDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
-
-            // 9. create snapDfn
-            SnapshotDefinition snapDfn = snapshotCrtHelper.createSnapshotDfnData(
-                rscDfn,
-                snapName,
-                new SnapshotDefinition.Flags[] {}
-            );
-            snapDfn.getProps(peerAccCtx.get()).clear();
-            snapDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
-
-            // force the node to become primary afterwards in case we needed to recreate
-            // the metadata
-            snapDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
-
-            snapDfn.getFlags().enableFlags(
-                peerAccCtx.get(),
-                SnapshotDefinition.Flags.SHIPPING,
-                SnapshotDefinition.Flags.BACKUP
-            );
-            // 10. create vlmDfn(s)
-            // 11. create snapVlmDfn(s)
-            Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
-            long totalSize = 0;
-            for (Entry<Integer, VlmDfnMetaPojo> vlmDfnMetaEntry : metadata.getRscDfn().getVlmDfns().entrySet())
-            {
-                VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(targetRscName, vlmDfnMetaEntry.getKey(), false);
-                if (vlmDfn == null)
-                {
-                    vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
-                        peerAccCtx.get(),
-                        rscDfn,
-                        LinstorParsingUtils.asVlmNr(vlmDfnMetaEntry.getKey()),
-                        null,
-                        vlmDfnMetaEntry.getValue().getSize(),
-                        VolumeDefinition.Flags.restoreFlags(vlmDfnMetaEntry.getValue().getFlags())
-                    );
-                }
-                else
-                {
-                    vlmDfn.getFlags().resetFlagsTo(
-                        peerAccCtx.get(), VolumeDefinition.Flags.restoreFlags(vlmDfnMetaEntry.getValue().getFlags())
-                    );
-                    vlmDfn.setVolumeSize(peerAccCtx.get(), vlmDfnMetaEntry.getValue().getSize());
-                }
-                vlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
-                totalSize += vlmDfnMetaEntry.getValue().getSize();
-                SnapshotVolumeDefinition snapVlmDfn = snapshotCrtHelper.createSnapshotVlmDfnData(snapDfn, vlmDfn);
-                snapVlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
-                snapVlmDfns.put(vlmDfnMetaEntry.getKey(), snapVlmDfn);
-            }
-            StorPool storPool = ctrlApiDataLoader.loadStorPool(storPoolName, nodeName, true);
-            boolean storPoolUsable = FreeCapacityAutoPoolSelectorUtils.isStorPoolUsable(
-                totalSize,
-                thinFreeCapacities,
-                storPool.getDeviceProviderKind().usesThinProvisioning(),
-                storPool.getName(),
-                node,
-                peerAccCtx.get()
-            ).orElse(true);
-            if (!storPoolUsable)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_VLM_SIZE,
-                        "Not enough space in storage pool " + storPoolName + " to restore the backup."
-                    )
-                );
-            }
-            // 12. create snapshot
-            Map<String, String> renameMap = createRenameMap(layers, storPoolName);
-            Snapshot snap = snapshotCrtHelper
-                .restoreSnapshot(snapDfn, node, layers, renameMap);
-            Props snapProps = snap.getProps(peerAccCtx.get());
-
-            LinkedList<String> backupNames = new LinkedList<>();
-            for (List<BackupInfoPojo> backupList : metadata.getBackups().values())
-            {
-                for (BackupInfoPojo backup : backupList)
-                {
-                    String name = backup.getName();
-                    Matcher m = BACKUP_KEY_PATTERN.matcher(name);
-                    m.matches();
-                    String shortName = m.group(1) + "_" + m.group(4) + m.group(5);
-                    backupNames.add(shortName);
-                    if (shortTargetName != null && shortTargetName.equals(shortName))
-                    {
-                        break;
-                    }
-                }
-                break; // only iterate over the first list, the other lists should be the same anyways except for vlmNr
-            }
-            backupInfoMgr.backupsToUploadAddEntry(snap, backupNames);
-
-            snapProps.map().putAll(metadata.getRsc().getProps());
-            snapProps.setProp(
-                InternalApiConsts.KEY_BACKUP_TO_RESTORE,
-                backupInfoMgr.getNextBackupToUpload(snap),
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-            snapProps.setProp(
-                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                remote.getName().displayValue,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-            snap.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
-            List<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
-                snap.getLayerData(peerAccCtx.get()), peerAccCtx.get()
-            );
-            usedDeviceLayerKinds.removeAll(
-                node.getPeer(peerAccCtx.get())
-                    .getExtToolsManager().getSupportedLayers()
-            );
-            if (!usedDeviceLayerKinds.isEmpty())
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_LAYER_STACK | ApiConsts.MASK_BACKUP,
-                        "The node does not support the following needed layers: " + usedDeviceLayerKinds.toString()
-                    )
-                );
-            }
-            // 13. create snapshotVlm(s)
-            for (Entry<Integer, VlmMetaPojo> vlmMetaEntry : metadata.getRsc().getVlms().entrySet())
-            {
-                SnapshotVolume snapVlm = snapshotCrtHelper
-                    .restoreSnapshotVolume(layers, snap, snapVlmDfns.get(vlmMetaEntry.getKey()), renameMap);
-                snapVlm.getProps(peerAccCtx.get()).map()
-                    .putAll(metadata.getRsc().getVlms().get(vlmMetaEntry.getKey()).getProps());
-            }
-            // LUKS
-            if (srcMasterKey != null)
-            {
-                List<AbsRscLayerObject<Snapshot>> luksLayers = LayerUtils.getChildLayerDataByKind(
-                    snap.getLayerData(peerAccCtx.get()),
-                    DeviceLayerKind.LUKS
-                );
-                try
-                {
-                    for (AbsRscLayerObject<Snapshot> layer : luksLayers)
-                    {
-                        for (VlmProviderObject<Snapshot> vlm : layer.getVlmLayerObjects().values())
-                        {
-                            LuksVlmData<Snapshot> luksVlm = (LuksVlmData<Snapshot>) vlm;
-                            byte[] vlmKey = luksVlm.getEncryptedKey();
-                            byte[] decryptedKey = decHelper.decrypt(srcMasterKey, vlmKey);
-
-                            byte[] encVlmKey = encHelper.encrypt(decryptedKey);
-                            luksVlm.setEncryptedKey(encVlmKey);
-                        }
-                    }
-                }
-                catch (LinStorException exc)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
-                            "De- or encrypting the volume passwords failed."
-                        ),
-                        exc
-                    );
-                }
-            }
-            // update stlts
             ctrlTransactionHelper.commit();
 
-            return snapshotCrtHandler.postCreateSnapshot(snapDfn);
+            return snapshotCrtHandler.postCreateSnapshot(nextBackup.getSnapshotDefinition());
         }
         catch (IOException exc)
         {
@@ -1123,6 +1256,308 @@ public class CtrlBackupApiCallHandler
         }
     }
 
+    private Snapshot createSnapshotByS3Meta(
+        String srcRscName,
+        Map<String, String> storPoolMap,
+        String nodeName,
+        String targetRscName,
+        String passphrase,
+        String shortTargetName,
+        S3Remote remote,
+        Set<String> s3keys,
+        Date latestBackTs,
+        String metaName,
+        BackupMetaDataPojo metadata
+    )
+        throws AccessDeniedException, ImplementationError, DatabaseException, InvalidValueException
+    {
+        for (BackupInfoPojo backup : metadata.getBackups().values())
+        {
+            if (!s3keys.contains(backup.getName()))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_FOUND_SNAPSHOT | ApiConsts.MASK_BACKUP,
+                        "Failed to find backup " + backup.getName()
+                    )
+                );
+            }
+        }
+        // 5. create layerPayload
+        RscLayerDataApi layers = metadata.getLayerData();
+        Node node = ctrlApiDataLoader.loadNode(nodeName, true);
+        if (!node.getPeer(peerAccCtx.get()).isConnected())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_CONNECTED,
+                        "No active connection to satellite '" + node.getName() + "'."
+                    )
+                    .setDetails("Backups cannot be restored when the corresponding satellite is not connected.")
+                    .build()
+            );
+        }
+        // 6. do luks-stuff if needed
+        LuksLayerMetaPojo luksInfo = metadata.getLuksInfo();
+        byte[] srcMasterKey = null;
+        if (luksInfo != null)
+        {
+            if (passphrase == null || passphrase.isEmpty())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY | ApiConsts.MASK_BACKUP,
+                        "The resource " + srcRscName +
+                            " to be restored seems to have luks configured, but no passphrase was given."
+                    )
+                );
+            }
+            try
+            {
+                srcMasterKey = encHelper.getDecryptedMasterKey(
+                    luksInfo.getMasterCryptHash(),
+                    luksInfo.getMasterPassword(),
+                    luksInfo.getMasterCryptSalt(),
+                    passphrase
+                );
+            }
+            catch (MissingKeyPropertyException exc)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                        "Some of the needed properties were not set in the metadata-file " + metaName +
+                            ". The metadata-file is probably corrupted and therefore unusable."
+                    ),
+                    exc
+                );
+            }
+            catch (LinStorException exc)
+            {
+                errorReporter.reportError(exc);
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                        "Decrypting the master password failed."
+                    )
+                );
+            }
+        }
+        // 8. create rscDfn
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(targetRscName, false);
+        ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
+        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(
+            "back_" + BackupApi.DATE_FORMAT.format(metadata.getStartTimestamp())
+        );
+        if (rscDfn == null)
+        {
+            rscDfn = ctrlRscDfnApiCallHandler.createResourceDefinition(
+                targetRscName,
+                null,
+                Collections.emptyMap(),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                null,
+                null,
+                true,
+                apiCallRcs,
+                false
+            );
+        }
+        else if (rscDfn.getResourceCount() != 0)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_RSC | ApiConsts.MASK_BACKUP,
+                    "Cannot restore to resource definition which already has resources"
+                )
+            );
+        }
+        else if (rscDfn.getSnapshotDfn(peerAccCtx.get(), snapName) != null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
+                    "Snapshot " + snapName.displayValue + " already exists, please use snapshot restore instead."
+                )
+            );
+        }
+        else if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE | ApiConsts.MASK_BACKUP,
+                    "A backup is currently being restored to resource definition " + targetRscName + "."
+                )
+            );
+        }
+        rscDfn.getFlags()
+            .resetFlagsTo(
+                peerAccCtx.get(), ResourceDefinition.Flags.restoreFlags(metadata.getRscDfn().getFlags())
+            );
+        rscDfn.getProps(peerAccCtx.get()).clear();
+        rscDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
+
+        // force the node to become primary afterwards in case we needed to recreate
+        // the metadata
+        rscDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+
+        // 9. create snapDfn
+        SnapshotDefinition snapDfn = snapshotCrtHelper.createSnapshotDfnData(
+            rscDfn,
+            snapName,
+            new SnapshotDefinition.Flags[] {}
+        );
+        snapDfn.getProps(peerAccCtx.get()).clear();
+        snapDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
+
+        // force the node to become primary afterwards in case we needed to recreate
+        // the metadata
+        snapDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+
+        snapDfn.getFlags().enableFlags(
+            peerAccCtx.get(),
+            SnapshotDefinition.Flags.SHIPPING,
+            SnapshotDefinition.Flags.BACKUP
+        );
+        // 10. create vlmDfn(s)
+        // 11. create snapVlmDfn(s)
+        Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
+        long totalSize = 0;
+        for (Entry<Integer, VlmDfnMetaPojo> vlmDfnMetaEntry : metadata.getRscDfn().getVlmDfns().entrySet())
+        {
+            VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(targetRscName, vlmDfnMetaEntry.getKey(), false);
+            if (vlmDfn == null)
+            {
+                vlmDfn = ctrlVlmDfnCrtApiHelper.createVlmDfnData(
+                    peerAccCtx.get(),
+                    rscDfn,
+                    LinstorParsingUtils.asVlmNr(vlmDfnMetaEntry.getKey()),
+                    null,
+                    vlmDfnMetaEntry.getValue().getSize(),
+                    VolumeDefinition.Flags.restoreFlags(vlmDfnMetaEntry.getValue().getFlags())
+                );
+            }
+            else
+            {
+                vlmDfn.getFlags().resetFlagsTo(
+                    peerAccCtx.get(), VolumeDefinition.Flags.restoreFlags(vlmDfnMetaEntry.getValue().getFlags())
+                );
+                vlmDfn.setVolumeSize(peerAccCtx.get(), vlmDfnMetaEntry.getValue().getSize());
+            }
+            vlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
+            totalSize += vlmDfnMetaEntry.getValue().getSize();
+            SnapshotVolumeDefinition snapVlmDfn = snapshotCrtHelper.createSnapshotVlmDfnData(snapDfn, vlmDfn);
+            snapVlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
+            snapVlmDfns.put(vlmDfnMetaEntry.getKey(), snapVlmDfn);
+        }
+        // check if all storPools have enough space for restore
+        // StorPool storPool = ctrlApiDataLoader.loadStorPool(storPoolName, nodeName, true);
+        // boolean storPoolUsable = FreeCapacityAutoPoolSelectorUtils.isStorPoolUsable(
+        // totalSize,
+        // thinFreeCapacities,
+        // storPool.getDeviceProviderKind().usesThinProvisioning(),
+        // storPool.getName(),
+        // node,
+        // peerAccCtx.get()
+        // ).orElse(true);
+        // if (!storPoolUsable)
+        // {
+        // throw new ApiRcException(
+        // ApiCallRcImpl.simpleEntry(
+        // ApiConsts.FAIL_INVLD_VLM_SIZE,
+        // "Not enough space in storage pool " + storPoolName + " to restore the backup."
+        // )
+        // );
+        // }
+        // // 12. create snapshot
+        // Map<String, String> renameMap = createRenameMap(layers, storPoolName);
+        Snapshot snap = snapshotCrtHelper
+            .restoreSnapshot(snapDfn, node, layers, storPoolMap);
+        Props snapProps = snap.getProps(peerAccCtx.get());
+
+        LinkedList<String> backups = new LinkedList<>();
+        for (BackupInfoPojo backup : metadata.getBackups().values())
+        {
+            String name = backup.getName();
+            Matcher m = BACKUP_KEY_PATTERN.matcher(name);
+            m.matches();
+            String shortName = m.group(1) + "_" + m.group(4);
+            backups.add(shortName);
+            if (shortTargetName != null && shortTargetName.equals(shortName))
+            {
+                break;
+            }
+        }
+
+        snapProps.map().putAll(metadata.getRsc().getProps());
+        snapProps.setProp(
+            InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+            remote.getName().displayValue,
+            ApiConsts.NAMESPC_BACKUP_SHIPPING
+        );
+
+        List<DeviceLayerKind> usedDeviceLayerKinds = LayerUtils.getUsedDeviceLayerKinds(
+            snap.getLayerData(peerAccCtx.get()), peerAccCtx.get()
+        );
+        usedDeviceLayerKinds.removeAll(
+            node.getPeer(peerAccCtx.get())
+                .getExtToolsManager().getSupportedLayers()
+        );
+        if (!usedDeviceLayerKinds.isEmpty())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_LAYER_STACK | ApiConsts.MASK_BACKUP,
+                    "The node does not support the following needed layers: " + usedDeviceLayerKinds.toString()
+                )
+            );
+        }
+        // 13. create snapshotVlm(s)
+        for (Entry<Integer, VlmMetaPojo> vlmMetaEntry : metadata.getRsc().getVlms().entrySet())
+        {
+            SnapshotVolume snapVlm = snapshotCrtHelper
+                .restoreSnapshotVolume(layers, snap, snapVlmDfns.get(vlmMetaEntry.getKey()), storPoolMap);
+            snapVlm.getProps(peerAccCtx.get()).map()
+                .putAll(metadata.getRsc().getVlms().get(vlmMetaEntry.getKey()).getProps());
+        }
+        // LUKS
+        if (srcMasterKey != null)
+        {
+            List<AbsRscLayerObject<Snapshot>> luksLayers = LayerUtils.getChildLayerDataByKind(
+                snap.getLayerData(peerAccCtx.get()),
+                DeviceLayerKind.LUKS
+            );
+            try
+            {
+                for (AbsRscLayerObject<Snapshot> layer : luksLayers)
+                {
+                    for (VlmProviderObject<Snapshot> vlm : layer.getVlmLayerObjects().values())
+                    {
+                        LuksVlmData<Snapshot> luksVlm = (LuksVlmData<Snapshot>) vlm;
+                        byte[] vlmKey = luksVlm.getEncryptedKey();
+                        byte[] decryptedKey = decHelper.decrypt(srcMasterKey, vlmKey);
+
+                        byte[] encVlmKey = encHelper.encrypt(decryptedKey);
+                        luksVlm.setEncryptedKey(encVlmKey);
+                    }
+                }
+            }
+            catch (LinStorException exc)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                        "De- or encrypting the volume passwords failed."
+                    ),
+                    exc
+                );
+            }
+        }
+        return snap;
+    }
+
     private Map<String, String> createRenameMap(RscLayerDataApi layers, String targetStorPool)
     {
         Map<String, String> renameMap = new TreeMap<>();
@@ -1144,170 +1579,224 @@ public class CtrlBackupApiCallHandler
         return renameMap;
     }
 
-    public Pair<Collection<BackupListApi>, Set<String>> listBackups(String rscNameRef, String remoteNameRef)
+    /**
+     * @return
+     * <code>Pair.objA</code>: Map of s3Key -> backupApi <br />
+     * <code>Pair.objB</code>: Set of s3Keys that are either corrupt metafiles or not known to linstor
+     */
+    public Pair<Map<String, BackupApi>, Set<String>> listBackups(String rscNameRef, String remoteNameRef)
         throws AccessDeniedException, InvalidNameException
     {
         S3Remote remote = getS3Remote(remoteNameRef);
-        List<S3ObjectSummary> objects = backupHandler
-            .listObjects(rscNameRef, remote, peerAccCtx.get(), getLocalMasterKey());
-        Set<String> s3keys = objects.stream().map(S3ObjectSummary::getKey)
+        List<S3ObjectSummary> objects = backupHandler.listObjects(
+            rscNameRef,
+            remote,
+            peerAccCtx.get(),
+            getLocalMasterKey()
+        );
+        // get ALL s3 keys of the given bucket, including possibly not linstor related ones
+        Set<String> s3keys = objects.stream()
+            .map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
-        Map<String, BackupListApi> backups = new TreeMap<>();
-        Set<String> usedKeys = new TreeSet<>();
+
+        Map<String, BackupApi> retIdToBackupsApiMap = new TreeMap<>();
+
+        /*
+         * helper map. If we have "full", "inc1" (based on "full"), "inc2" (based on "inc1"), "inc3" (also based on
+         * "full", i.e. if user deleted local inc1+inc2 before creating inc3)
+         *
+         * This map will look like follows:
+         * "" -> [full]
+         * "full" -> [inc1, inc3]
+         * "inc1" -> [inc2]
+         *
+         * "" is a special id for full backups
+         */
+        Map<String, List<BackupApi>> idToUsedByBackupApiMap = new TreeMap<>();
+        final String fullBackupKey = "";
+
+        Set<String> linstorBackupsS3Keys = new TreeSet<>();
 
         // add all backups to the list that have useable metadata-files
         for (String s3key : s3keys)
         {
-            Matcher m = META_FILE_PATTERN.matcher(s3key);
-            if (m.matches())
+            Matcher metaFileMatcher = META_FILE_PATTERN.matcher(s3key);
+            if (metaFileMatcher.matches())
             {
+                // s3 key at least has linstor's meta file format
+                // we still need to check if it is valid though
                 try
                 {
-                    BackupMetaDataPojo metadata = backupHandler
-                        .getMetaFile(s3key, remote, peerAccCtx.get(), getLocalMasterKey());
-                    Map<Integer, List<BackupInfoPojo>> backInfoLists = metadata.getBackups();
-                    BackupInfoPojo firstBackInfo = backInfoLists.get(0).get(0);
-                    Map<String, String> vlms = new TreeMap<>(); // vlmNr, backupName
-                    Map<String, Map<String, String>> incVlms = new TreeMap<>(); // timestamp, vlmNr, backupName
-                    Map<String, BackupInfoPojo> incInfo = new TreeMap<>();
-                    List<BackupListApi> incs = new ArrayList<>();
-                    boolean restoreable = true;
+                    // throws parse exception if not linstor json
+                    BackupMetaDataPojo s3MetaFile = backupHandler.getMetaFile(
+                        s3key,
+                        remote,
+                        peerAccCtx.get(),
+                        getLocalMasterKey()
+                    );
 
-                    for (List<BackupInfoPojo> backInfoList : backInfoLists.values())
+                    Map<Integer, BackupInfoPojo> s3MetaVlmMap = s3MetaFile.getBackups();
+                    Map<Integer, BackupVolumePojo> retVlmPojoMap = new TreeMap<>(); // vlmNr, vlmPojo
+                    boolean restorable = true;
+
+                    for (Entry<Integer, BackupInfoPojo> entry: s3MetaVlmMap.entrySet())
                     {
-                        for (BackupInfoPojo backInfo : backInfoList)
+                        Integer s3MetaVlmNr = entry.getKey();
+                        BackupInfoPojo s3BackVlmInfo  = entry.getValue();
+                        if (!s3keys.contains(s3BackVlmInfo.getName()))
                         {
-                            Matcher fullKey = BACKUP_FULL_KEY_PATTERN.matcher(backInfo.getName());
-                            Matcher incKey = BACKUP_INC_KEY_PATTERN.matcher(backInfo.getName());
-                            if (fullKey.matches() && s3keys.contains(backInfo.getName()))
+                            /*
+                             * The metafile is referring to a data-file that is not known in the given bucket
+                             */
+                            restorable = false;
+                        }
+                        else
+                        {
+                            Matcher s3BackupKeyMatcher = BACKUP_KEY_PATTERN.matcher(s3BackVlmInfo.getName());
+                            if (s3BackupKeyMatcher.matches())
                             {
-                                vlms.put("" + Integer.parseInt(fullKey.group(3)), backInfo.getName());
-                                usedKeys.add(backInfo.getName());
-                            }
-                            else if (incKey.matches() && s3keys.contains(backInfo.getName()))
-                            {
-                                String timestamp = incKey.group(5);
-                                if (!incVlms.containsKey(timestamp))
+                                Integer s3VlmNrFromBackupName = Integer.parseInt(s3BackupKeyMatcher.group(3));
+                                if (s3MetaVlmNr == s3VlmNrFromBackupName)
                                 {
-                                    incVlms.put(timestamp, new TreeMap<>());
+                                    long vlmFinishedTime = s3BackVlmInfo.getFinishedTimestamp();
+
+                                    BackupVolumePojo retVlmPojo = new BackupVolumePojo(
+                                        s3MetaVlmNr,
+                                        BackupApi.DATE_FORMAT.format(new Date(vlmFinishedTime)),
+                                        vlmFinishedTime,
+                                        new BackupVlmS3Pojo(s3BackVlmInfo.getName())
+                                    );
+
+                                    retVlmPojoMap.put(s3MetaVlmNr, retVlmPojo);
+                                    linstorBackupsS3Keys.add(s3BackVlmInfo.getName());
                                 }
-                                incVlms.get(timestamp).put("" + Integer.parseInt(incKey.group(3)), backInfo.getName());
-                                if (!incInfo.containsKey(timestamp))
+                                else
                                 {
-                                    incInfo.put(timestamp, backInfo);
+                                    // meta-file vlmNr index corruption
+                                    restorable = false;
                                 }
-                                usedKeys.add(backInfo.getName());
                             }
                             else
                             {
                                 // meta-file corrupt
-                                restoreable = false;
+                                // s3Key does not match backup name pattern
+                                restorable = false;
                             }
                         }
                     }
-                    // fill inc-list
-                    for (Entry<String, Map<String, String>> incVlmEntry : incVlms.entrySet())
-                    {
-                        BackupInfoPojo incPojo = incInfo.get(incVlmEntry.getKey());
-                        incs.add(
-                            new BackupListPojo(
-                                m.group(2),
-                                s3key,
-                                incPojo.getFinishedTime(),
-                                SDF.parse(incPojo.getFinishedTime()).getTime(),
-                                incPojo.getNode(),
-                                false,
-                                true,
-                                restoreable,
-                                incVlmEntry.getValue(),
-                                null
-                            )
-                        );
-                    }
-                    BackupListApi back = new BackupListPojo(
-                        m.group(2),
-                        s3key,
-                        firstBackInfo.getFinishedTime(),
-                        SDF.parse(firstBackInfo.getFinishedTime()).getTime(),
-                        firstBackInfo.getNode(),
+                    // get rid of ".meta"
+                    String id = s3key.substring(0, s3key.length() - 5);
+                    String basedOn = s3MetaFile.getBasedOn();
+                    BackupApi back = new BackupPojo(
+                        id,
+                        metaFileMatcher.group(1),
+                        metaFileMatcher.group(2),
+                        BackupApi.DATE_FORMAT.format(new Date(s3MetaFile.getStartTimestamp())),
+                        s3MetaFile.getStartTimestamp(),
+                        BackupApi.DATE_FORMAT.format(new Date(s3MetaFile.getFinishTimestamp())),
+                        s3MetaFile.getFinishTimestamp(),
+                        s3MetaFile.getNodeName(),
                         false,
                         true,
-                        restoreable,
-                        vlms,
-                        incs
+                        restorable,
+                        retVlmPojoMap,
+                        basedOn,
+                        new BackupS3Pojo(s3key)
                     );
-                    // get rid of ".meta"
-                    backups.put(s3key.substring(0, s3key.length() - 5), back);
-                    usedKeys.add(s3key);
+                    retIdToBackupsApiMap.put(id, back);
+                    if (basedOn == null)
+                    {
+                        basedOn = fullBackupKey;
+                    }
+                    List<BackupApi> usedByList = idToUsedByBackupApiMap.get(basedOn);
+                    if (usedByList == null)
+                    {
+                        usedByList = new ArrayList<>();
+                        idToUsedByBackupApiMap.put(basedOn, usedByList);
+                    }
+                    usedByList.add(back);
+
+                    linstorBackupsS3Keys.add(s3key);
                 }
-                catch (IOException | ParseException exc)
+                catch (MismatchedInputException exc)
+                {
+                    errorReporter.logWarning(
+                        "Could not parse metafile %s. Possibly created with older Linstor version",
+                        s3key
+                    );
+                }
+                catch (IOException exc)
                 {
                     errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + s3key);
                 }
             }
         }
-        s3keys.removeAll(usedKeys);
-        usedKeys.clear();
+        s3keys.removeAll(linstorBackupsS3Keys);
+        linstorBackupsS3Keys.clear();
 
         // add all backups to the list that look like backups, and maybe even have a rscDfn/snapDfn, but are not in a
         // metadata-file
         for (String s3key : s3keys)
         {
-            if (!usedKeys.contains(s3key))
+            if (!linstorBackupsS3Keys.contains(s3key))
             {
                 Matcher m = BACKUP_KEY_PATTERN.matcher(s3key);
                 if (m.matches())
                 {
                     String rscName = m.group(1);
-                    String snapName = m.group(4) + m.group(5);
-                    ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
-                    if (rscDfn != null)
-                    {
-                        try
-                        {
-                            SnapshotDefinition snapDfn = rscDfn
-                                .getSnapshotDfn(peerAccCtx.get(), new SnapshotName(snapName));
-                            if (snapDfn != null)
-                            {
-                                BackupListApi back = fillBackupListPojo(
-                                    s3key, rscName, snapName, m, BACKUP_FULL_KEY_PATTERN, s3keys, usedKeys, snapDfn
-                                );
-                                backups.put(s3key, back);
-                            }
-                            else
-                            {
-                                BackupListApi back = fillBackupListPojo(
-                                    s3key, rscName, snapName, m, BACKUP_FULL_KEY_PATTERN, s3keys, usedKeys, null
-                                );
-                                backups.put(s3key, back);
-                            }
-                        }
-                        catch (InvalidNameException exc)
-                        {
-                            throw new ImplementationError(exc);
-                        }
-                        catch (AccessDeniedException exc)
-                        {
-                            // no access to snapDfn
-                        }
-                    }
-                    else
-                    {
-                        BackupListApi back = fillBackupListPojo(
-                            s3key, rscName, snapName, m, BACKUP_FULL_KEY_PATTERN, s3keys, usedKeys, null
-                        );
-                        backups.put(s3key, back);
-                    }
+                    String snapName = m.group(4);
+                    SnapshotDefinition snapDfn = loadSnapDfnIfExists(rscName, snapName);
 
-                    usedKeys.add(s3key);
+                    BackupApi back = fillBackupListPojo(
+                        s3key,
+                        rscName,
+                        snapName,
+                        m,
+                        BACKUP_KEY_PATTERN,
+                        s3keys,
+                        linstorBackupsS3Keys,
+                        snapDfn
+                    );
+                    if (back != null)
+                    {
+                        retIdToBackupsApiMap.put(s3key, back);
+                        linstorBackupsS3Keys.add(s3key);
+                    }
                 }
             }
         }
-        s3keys.removeAll(usedKeys);
-        return new Pair<>(backups.values(), s3keys);
+        s3keys.removeAll(linstorBackupsS3Keys);
+        return new Pair<>(retIdToBackupsApiMap, s3keys);
     }
 
-    private BackupListApi fillBackupListPojo(
+    /**
+     * Unlike {@link CtrlApiDataLoader#loadSnapshotDfn(String, String, boolean)} this method does not expect rscDfn to
+     * exist when trying to load snapDfn
+     * @param rscName
+     * @param snapName
+     *
+     * @return
+     */
+    private SnapshotDefinition loadSnapDfnIfExists(String rscName, String snapName)
+    {
+        SnapshotDefinition snapDfn = null;
+        try
+        {
+            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
+            if (rscDfn != null)
+            {
+                snapDfn = rscDfn.getSnapshotDfn(
+                    peerAccCtx.get(),
+                    new SnapshotName(snapName)
+                );
+            }
+        }
+        catch (InvalidNameException | AccessDeniedException ignored)
+        {}
+        return snapDfn;
+    }
+
+    private BackupApi fillBackupListPojo(
         String s3key,
         String rscName,
         String snapName,
@@ -1318,76 +1807,105 @@ public class CtrlBackupApiCallHandler
         SnapshotDefinition snapDfn
     )
     {
-        Map<String, String> vlms = new TreeMap<>();
-        vlms.put("" + Integer.parseInt(m.group(3)), s3key);
-        // get all other keys that start with rscName & contain snapName
-        // add them to vlms
-        // add them to usedKeys
-        for (String otherKey : s3keys)
-        {
-            if (!usedKeys.contains(otherKey) && !otherKey.equals(s3key))
+        BackupApi back = null;
+
+        try {
+            String startTime = snapName.substring("back_".length());
+            long startTimestamp = BackupApi.DATE_FORMAT.parse(startTime).getTime(); // fail fast
+
+            Map<Integer, BackupVolumePojo> vlms = new TreeMap<>();
             {
-                Matcher matcher = pattern.matcher(otherKey);
-                if (
-                    matcher.matches() && otherKey.startsWith(rscName) &&
-                        otherKey.contains(snapName)
-                )
+                int vlmNr = Integer.parseInt(m.group(3));
+                vlms.put(vlmNr, new BackupVolumePojo(vlmNr, null, null, new BackupVlmS3Pojo(s3key)));
+            }
+            // get all other keys that start with rscName & contain snapName
+            // add them to vlms
+            // add them to usedKeys
+            for (String otherKey : s3keys)
+            {
+                if (!usedKeys.contains(otherKey) && !otherKey.equals(s3key))
                 {
-                    vlms.put("" + Integer.parseInt(matcher.group(3)), otherKey);
-                    usedKeys.add(otherKey);
+                    Matcher matcher = pattern.matcher(otherKey);
+                    if (
+                        matcher.matches() && otherKey.startsWith(rscName) &&
+                            otherKey.contains(snapName)
+                    )
+                    {
+                        int vlmNr = Integer.parseInt(matcher.group(3));
+                        vlms.put(vlmNr, new BackupVolumePojo(vlmNr, null, null, new BackupVlmS3Pojo(s3key)));
+                        usedKeys.add(otherKey);
+                    }
                 }
             }
-        }
-        Boolean shipping;
-        Boolean success;
-        try
-        {
-            if (snapDfn != null && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.BACKUP))
+            Boolean shipping;
+            Boolean success;
+            String nodeName = null;
+            try
             {
-                if (snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING))
+                AccessContext peerCtx = peerAccCtx.get();
+                if (snapDfn != null && snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.BACKUP))
                 {
-                    shipping = true;
-                    success = null;
-                }
-                else if (
-                    snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED)
-                )
-                {
-                    shipping = false;
-                    success = true;
+                    boolean isShipping = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPING);
+                    boolean isShipped = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPED);
+                    if (isShipping || isShipped)
+                    {
+                        for (Snapshot snap : snapDfn.getAllSnapshots(peerCtx))
+                        {
+                            if (snap.getFlags().isSet(peerCtx, Snapshot.Flags.BACKUP_SOURCE))
+                            {
+                                nodeName = snap.getNodeName().displayValue;
+                            }
+                        }
+                        if (isShipping)
+                        {
+                            shipping = true;
+                            success = null;
+                        }
+                        else // if (isShipped)
+                        {
+                            shipping = false;
+                            success = true;
+                        }
+                    }
+                    else
+                    {
+                        shipping = false;
+                        success = false;
+                    }
                 }
                 else
                 {
-                    shipping = false;
-                    success = false;
+                    shipping = null;
+                    success = null;
                 }
             }
-            else
+            catch (AccessDeniedException exc)
             {
+                // no access to snapDfn
                 shipping = null;
                 success = null;
             }
+            back = new BackupPojo(
+                rscName + "_" + snapName,
+                rscName,
+                snapName,
+                startTime,
+                startTimestamp,
+                null,
+                null, // TODO: should not be null if success == true
+                nodeName,
+                shipping,
+                success,
+                false,
+                vlms,
+                null,
+                null
+            );
         }
-        catch (AccessDeniedException exc)
+        catch (ParseException exc)
         {
-            // no access to snapDfn
-            shipping = null;
-            success = null;
+            errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + s3key);
         }
-
-        BackupListApi back = new BackupListPojo(
-            snapName,
-            rscName + "_" + snapName + ".meta",
-            null,
-            null,
-            null,
-            shipping,
-            success,
-            false,
-            vlms,
-            null
-        );
-        // get rid of ".meta"
         return back;
     }
 
@@ -1497,15 +2015,28 @@ public class CtrlBackupApiCallHandler
         SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true);
         try
         {
-            Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), peerProvider.get().getNode().getName());
-            String nextBackupName = backupInfoMgr.getNextBackupToUpload(snap);
-            if (successRef && nextBackupName != null)
+            AccessContext peerCtx = peerAccCtx.get();
+
+            Snapshot snap = snapDfn.getSnapshot(peerCtx, peerProvider.get().getNode().getName());
+            snapDfn.getFlags().disableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
+            snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
+            snap.getProps(peerCtx).removeProp(
+                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            snap.getProps(peerCtx).removeProp(
+                InternalApiConsts.KEY_BACKUP_TO_RESTORE,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            snap.getFlags().disableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
+
+            Snapshot nextSnap = backupInfoMgr.getNextBackupToUpload(snap);
+            if (successRef && nextSnap != null)
             {
-                snap.getProps(peerAccCtx.get()).setProp(
-                    InternalApiConsts.KEY_BACKUP_TO_RESTORE,
-                    nextBackupName,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
+                SnapshotDefinition nextSnapDfn = nextSnap.getSnapshotDefinition();
+                nextSnapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
+                nextSnap.getFlags().enableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
+
                 flux = ctrlSatelliteUpdateCaller.updateSatellites(
                     snapDfn,
                     CtrlSatelliteUpdateCaller.notConnectedWarn()
@@ -1515,26 +2046,15 @@ public class CtrlBackupApiCallHandler
                         LinstorParsingUtils.asRscName(rscNameRef),
                         "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
                     )
-                );
+                )
+                    .concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn));
             }
             else
             {
-                snapDfn.getFlags().disableFlags(
-                    peerAccCtx.get(),
-                    SnapshotDefinition.Flags.SHIPPING
-                );
                 backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
                 if (successRef)
                 {
                     // start snap-restore
-                    snapDfn.getFlags().enableFlags(
-                        peerAccCtx.get(),
-                        SnapshotDefinition.Flags.SHIPPED
-                    );
-                    snap.getProps(peerAccCtx.get())
-                        .removeProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                    snap.getFlags().disableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
-
                     flux = ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
                         Collections.emptyList(),
                         snapNameRef,
@@ -1551,7 +2071,7 @@ public class CtrlBackupApiCallHandler
             ctrlTransactionHelper.commit();
             return flux;
         }
-        catch (AccessDeniedException | InvalidValueException | InvalidKeyException exc)
+        catch (AccessDeniedException | InvalidKeyException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -1586,6 +2106,7 @@ public class CtrlBackupApiCallHandler
             backupInfoMgr.abortDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
             if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
             {
+                // re-enable shipping-flag to make sure the abort-logic gets triggered later on
                 snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                 ctrlTransactionHelper.commit();
                 return ctrlSnapShipAbortHandler.abortBackupShippingPrivileged(snapDfn.getResourceDefinition());
@@ -1760,17 +2281,24 @@ public class CtrlBackupApiCallHandler
         return remote;
     }
 
+    private String buildMetaName(String rscName, String snapName)
+    {
+        return rscName + "_" + snapName + ".meta";
+    }
+
     private static class ToDeleteCollections
     {
         Set<String> s3keys;
         Set<SnapshotDefinition.Key> snapKeys;
         ApiCallRcImpl apiCallRcs;
+        Set<String> s3KeysNotFound;
 
         ToDeleteCollections()
         {
             s3keys = new TreeSet<>();
             snapKeys = new TreeSet<>();
             apiCallRcs = new ApiCallRcImpl();
+            s3KeysNotFound = new TreeSet<>();
         }
     }
 }

@@ -748,7 +748,8 @@ public class DrbdLayer implements DeviceLayer
                             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
-                        String[] nodeIds = ids == null || ids.isEmpty() ? new String[0] : ids.split(",");
+                        String[] nodeIds = ids == null || ids.isEmpty() ? new String[0]
+                            : ids.split(InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR);
                         for (int i = 0; i < nodeIds.length; i++)
                         {
                             int nodeId = Integer.parseInt(nodeIds[i]);

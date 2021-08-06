@@ -19,7 +19,7 @@ public class BackupInfoManager
 {
     private Map<ResourceDefinition, String> restoreMap;
     private Map<String, Map<Pair<String, String>, List<AbortInfo>>> abortMap;
-    private Map<Snapshot, LinkedList<String>> backupsToUpload;
+    private Map<Snapshot, LinkedList<Snapshot>> backupsToUpload;
 
     @Inject
     public BackupInfoManager(TransactionObjectFactory transObjFactoryRef)
@@ -49,7 +49,7 @@ public class BackupInfoManager
     {
         synchronized (restoreMap)
         {
-            String val = restoreMap.remove(rscDfn);
+            restoreMap.remove(rscDfn);
         }
     }
 
@@ -88,25 +88,28 @@ public class BackupInfoManager
     {
         Pair<String, String> pair = new Pair<>(rscName, snapName);
 
-        Map<Pair<String, String>, List<AbortInfo>> map = abortMap.get(nodeName);
-        if (map != null)
+        synchronized (abortMap)
         {
-            if (map.containsKey(pair))
+            Map<Pair<String, String>, List<AbortInfo>> map = abortMap.get(nodeName);
+            if (map != null)
             {
-                map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
+                if (map.containsKey(pair))
+                {
+                    map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
+                }
+                else
+                {
+                    map.put(pair, new ArrayList<>());
+                    map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
+                }
             }
             else
             {
+                abortMap.put(nodeName, new HashMap<>());
+                map = abortMap.get(nodeName);
                 map.put(pair, new ArrayList<>());
                 map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
             }
-        }
-        else
-        {
-            abortMap.put(nodeName, new HashMap<>());
-            map = abortMap.get(nodeName);
-            map.put(pair, new ArrayList<>());
-            map.get(pair).add(new AbortInfo(backupName, uploadId, remoteName));
         }
     }
 
@@ -114,36 +117,51 @@ public class BackupInfoManager
     {
         Pair<String, String> pair = new Pair<>(rscName, snapName);
 
-        Map<Pair<String, String>, List<AbortInfo>> map = abortMap.get(nodeName);
-        if (map != null)
+        synchronized (abortMap)
         {
-            map.remove(pair);
+            Map<Pair<String, String>, List<AbortInfo>> map = abortMap.get(nodeName);
+            if (map != null)
+            {
+                map.remove(pair);
+            }
         }
     }
 
     public Map<Pair<String, String>, List<AbortInfo>> abortGetEntries(String nodeName)
     {
-        return abortMap.get(nodeName);
-    }
-
-    public boolean backupsToUploadAddEntry(Snapshot snap, LinkedList<String> backupNames)
-    {
-        if (backupsToUpload.containsKey(snap))
+        synchronized (abortMap)
         {
-            return false;
+            return abortMap.get(nodeName);
         }
-        backupsToUpload.put(snap, backupNames);
-        return true;
     }
 
-    public String getNextBackupToUpload(Snapshot snap)
+    public boolean backupsToUploadAddEntry(Snapshot snap, LinkedList<Snapshot> backups)
     {
-        return backupsToUpload.get(snap).pollFirst();
+        synchronized (backupsToUpload)
+        {
+            if (backupsToUpload.containsKey(snap))
+            {
+                return false;
+            }
+            backupsToUpload.put(snap, backups);
+            return true;
+        }
+    }
+
+    public Snapshot getNextBackupToUpload(Snapshot snap)
+    {
+        synchronized (backupsToUpload)
+        {
+            return backupsToUpload.get(snap).pollFirst();
+        }
     }
 
     public void backupsToUploadRemoveEntry(Snapshot snap)
     {
-        backupsToUpload.remove(snap);
+        synchronized (backupsToUpload)
+        {
+            backupsToUpload.remove(snap);
+        }
     }
 
     public class AbortInfo

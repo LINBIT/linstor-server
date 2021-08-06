@@ -1172,7 +1172,7 @@ public class JsonGenTypes
         /**
          * A list containing all entries found that are or could be from linstor
          */
-        public List<Backup> linstor = Collections.emptyList();
+        public Map<String, Backup> linstor = Collections.emptyMap();
         /**
          * A list containing all other entries found that have no relation to linstor
          */
@@ -1182,15 +1182,38 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class Backup
     {
-        public String snap_key;
-        public String meta_name;
+        public String id;
+        public String start_time;
+        public Long start_timestamp;
         public String finished_time;
         public Long finished_timestamp;
-        public String node;
-        public Boolean shipping;
-        public Boolean success;
-        public Map<String, String> vlms = Collections.emptyMap();
-        public List<Backup> inc = Collections.emptyList();
+        public String origin_rsc;
+        public String origin_node;
+        public String fail_messages;
+        public List<BackupVolumes> vlms = Collections.emptyList();
+        public BackupS3 s3;
+        public String based_on_id;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupVolumes
+    {
+        public Long vlm_nr;
+        public String finished_time;
+        public Long finished_timestamp;
+        public BackupVolumesS3 s3;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupVolumesS3
+    {
+        public String key;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupS3
+    {
+        public String meta_name;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1200,21 +1223,13 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class BackupDelete
-    {
-        public Boolean external;
-        public List<String> s3keys = Collections.emptyList();
-        public String remote_name;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class BackupRestore
     {
         public String src_rsc_name;
-        public String stor_pool_name;
-        public String remote_name;
-        public String passphrase;
         public String last_backup;
+        public Map<String, String> stor_pool_map = Collections.emptyMap();
+        public String target_rsc_name;
+        public String passphrase;
         public String node_name;
     }
 
@@ -1222,13 +1237,14 @@ public class JsonGenTypes
     public static class BackupCreate
     {
         public String rsc_name;
-        public String remote_name;
-        public Boolean incremential;
+        public String node_name;
+        public Boolean incremental;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class BackupAbort
     {
+        public String rsc_name;
         public Boolean restore;
         public Boolean create;
     }
