@@ -42,6 +42,7 @@ public abstract class LinStor
     public static final String SATELLITE_MODULE = "Satellite";
 
     public static final String KEY_NODE_NAME = "NodeName";
+    public static final String PROP_KEY_CLUSTER_ID = "Cluster/LocalID";
 
     public static void printRunTimeInfo(PrintStream out)
     {

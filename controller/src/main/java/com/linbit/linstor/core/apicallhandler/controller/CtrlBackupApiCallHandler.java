@@ -25,6 +25,7 @@ import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
@@ -48,6 +49,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.RemoteRepository;
+import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -138,6 +140,7 @@ public class CtrlBackupApiCallHandler
     private final Provider<Peer> peerProvider;
     private final CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandler;
     private final RemoteRepository remoteRepo;
+    private final SystemConfProtectionRepository sysCfgRepo;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -162,7 +165,8 @@ public class CtrlBackupApiCallHandler
         BackupInfoManager backupInfoMgrRef,
         Provider<Peer> peerProviderRef,
         CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandlerRef,
-        RemoteRepository remoteRepoRef
+        RemoteRepository remoteRepoRef,
+        SystemConfProtectionRepository sysCfgRepoRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -187,6 +191,7 @@ public class CtrlBackupApiCallHandler
         peerProvider = peerProviderRef;
         ctrlSnapShipAbortHandler = ctrlSnapShipAbortHandlerRef;
         remoteRepo = remoteRepoRef;
+        sysCfgRepo = sysCfgRepoRef;
     }
 
     public Flux<ApiCallRc> createBackup(
@@ -544,7 +549,7 @@ public class CtrlBackupApiCallHandler
             toDelete.apiCallRcs
         );
 
-        if (id != null && !id.isEmpty()) // case 1
+        if (id != null && !id.isEmpty()) // case 1: id [cascading]
         {
             if (!id.endsWith(".meta"))
             {
@@ -559,7 +564,7 @@ public class CtrlBackupApiCallHandler
                 toDelete
             );
         }
-        if (idPrefix != null && !idPrefix.isEmpty()) // case 2
+        if (idPrefix != null && !idPrefix.isEmpty()) // case 2: idPrefix [cascading]
         {
             deleteByIdPrefix(
                 idPrefix,
@@ -570,7 +575,7 @@ public class CtrlBackupApiCallHandler
                 toDelete
             );
         }
-        else if (s3Key != null && !s3Key.isEmpty()) // case 3
+        else if (s3Key != null && !s3Key.isEmpty()) // case 3: s3Key [cascading]
         {
             deleteByS3Key(
                 s3LinstorObjects,
@@ -581,7 +586,7 @@ public class CtrlBackupApiCallHandler
         }
         else if (timestamp != null && !timestamp.isEmpty() ||
             rscName != null && !rscName.isEmpty() ||
-            nodeName != null && !nodeName.isEmpty()) // case 4
+            nodeName != null && !nodeName.isEmpty()) // case 4: (time|rsc|node)+ [cascading]
         {
             deleteByTimeRscNode(
                 s3LinstorObjects,
@@ -593,7 +598,7 @@ public class CtrlBackupApiCallHandler
                 toDelete
             );
         }
-        else if (all) // case 5
+        else if (all) // case 5: all // force cascading
         {
             deleteByS3Key(
                 s3LinstorObjects,
@@ -602,14 +607,14 @@ public class CtrlBackupApiCallHandler
                 toDelete
             );
         }
-        else if (allLocalCluster) // case 6
+        else if (allLocalCluster) // case 6: allCluster // forced cascading
         {
             deleteAllLocalCluster(
-                s3Remote,
+                s3LinstorObjects,
                 toDelete
             );
         }
-        else if (s3keyForce != null && !s3keyForce.isEmpty()) // case 7
+        else if (s3keyForce != null && !s3keyForce.isEmpty()) // case 7: forced s3 key [cascading]
         {
             deleteByS3Key(s3LinstorObjects, Collections.singleton(s3keyForce), cascading, toDelete);
             toDelete.s3keys.add(s3keyForce);
@@ -900,10 +905,22 @@ public class CtrlBackupApiCallHandler
         deleteByS3Key(s3LinstorObjectsRef, s3KeysToDelete, cascadingRef, toDeleteRef);
     }
 
-    private void deleteAllLocalCluster(S3Remote s3RemoteRef, ToDeleteCollections toDeleteRef)
+    private void deleteAllLocalCluster(
+        Map<String, S3ObjectInfo> s3LinstorObjectsRef,
+        ToDeleteCollections toDeleteRef
+    )
+        throws InvalidKeyException, AccessDeniedException
     {
-        // TODO Auto-generated method stub
-
+        String localClusterId = sysCfgRepo.getCtrlConfForView(peerAccCtx.get()).getProp(LinStor.PROP_KEY_CLUSTER_ID);
+        Set<String> s3KeysToDelete = new TreeSet<>();
+        for (S3ObjectInfo s3Obj : s3LinstorObjectsRef.values())
+        {
+            if (s3Obj.metaFile != null && localClusterId.equals(s3Obj.metaFile.getClusterId()))
+            {
+                s3KeysToDelete.add(s3Obj.s3Key);
+            }
+        }
+        deleteByS3Key(s3LinstorObjectsRef, s3KeysToDelete, true, toDeleteRef);
     }
 
     private Map<String, S3ObjectInfo> loadAllLinstorS3Objects(
@@ -958,7 +975,22 @@ public class CtrlBackupApiCallHandler
                     String rscName = metaFileMatcher.group(1);
                     String snapName = metaFileMatcher.group(2);
 
-                    metaInfo.snapDfn = loadSnapDfnIfExists(rscName, snapName);
+                    SnapshotDefinition snapDfn = loadSnapDfnIfExists(rscName, snapName);
+                    if (snapDfn != null)
+                    {
+                        if (snapDfn.getUuid().toString().equals(s3MetaFile.getSnapDfnUuid()))
+                        {
+                            metaInfo.snapDfn = snapDfn;
+                        }
+                        else
+                        {
+                            apiCallRc.addEntry(
+                                "Not marking SnapshotDefinition " + rscName + " / " +
+                                    snapName + " for deletion as the UUID does not match with the backup",
+                                ApiConsts.WARN_NOT_FOUND
+                            );
+                        }
+                    }
 
                     String basedOnS3Key = s3MetaFile.getBasedOn();
                     if (basedOnS3Key != null)

@@ -23,6 +23,9 @@ public class BackupMetaDataPojo
     private final LuksLayerMetaPojo luksInfo;
     private final Map<Integer, BackupInfoPojo> backups; // vlmNr -> backupInfo
 
+    private final String clusterId;
+    private final String snapDfnUuid;
+
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public BackupMetaDataPojo(
         @JsonProperty("rscName") String rscNameRef,
@@ -34,7 +37,9 @@ public class BackupMetaDataPojo
         @JsonProperty("rscDfn") RscDfnMetaPojo rscDfnRef,
         @JsonProperty("rsc") RscMetaPojo rscRef,
         @JsonProperty("luksInfo") LuksLayerMetaPojo luksInfoRef,
-        @JsonProperty("backups") Map<Integer, BackupInfoPojo> backupsRef
+        @JsonProperty("backups") Map<Integer, BackupInfoPojo> backupsRef,
+        @JsonProperty("clusterId") String clusterIdRef,
+        @JsonProperty("snapDfnUuid") String snapDfnUuidRef
     )
     {
         rscName = rscNameRef;
@@ -47,6 +52,8 @@ public class BackupMetaDataPojo
         rsc = rscRef;
         luksInfo = luksInfoRef;
         backups = backupsRef;
+        clusterId = clusterIdRef;
+        snapDfnUuid = snapDfnUuidRef;
     }
 
     public String getNodeName()
@@ -97,5 +104,15 @@ public class BackupMetaDataPojo
     public Map<Integer, BackupInfoPojo> getBackups()
     {
         return backups;
+    }
+
+    public String getClusterId()
+    {
+        return clusterId;
+    }
+
+    public String getSnapDfnUuid()
+    {
+        return snapDfnUuid;
     }
 }

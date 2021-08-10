@@ -24,6 +24,7 @@ import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltConnTracker;
 import com.linbit.linstor.core.StltSecurityObjects;
@@ -105,6 +106,7 @@ public class BackupShippingService implements SystemService
     private final ThreadGroup threadGroup;
     private final AccessContext accCtx;
     private final RemoteMap remoteMap;
+    private final String clusterId;
 
     private ServiceName instanceName;
     private boolean serviceStarted = false;
@@ -164,6 +166,8 @@ public class BackupShippingService implements SystemService
         startedShippments = Collections.synchronizedSet(new TreeSet<>());
         finishedShipments = Collections.synchronizedMap(new TreeMap<>());
         threadGroup = new ThreadGroup("SnapshotShippingSerivceThreadGroup");
+
+        clusterId = stltConfigAccessorRef.getReadonlyProps().getProp(LinStor.PROP_KEY_CLUSTER_ID);
 
         // this causes all shippings to be aborted should the satellite lose connection to the controller
         stltConnTracker.addClosingListener(this::killAllShipping);
@@ -626,7 +630,9 @@ public class BackupShippingService implements SystemService
             rscDfnRef,
             rscRef,
             luksPojo,
-            backupsRef
+            backupsRef,
+            clusterId,
+            snapDfn.getUuid().toString()
         );
         ObjectMapper mapper = new ObjectMapper();
         return mapper.writeValueAsString(pojo);
