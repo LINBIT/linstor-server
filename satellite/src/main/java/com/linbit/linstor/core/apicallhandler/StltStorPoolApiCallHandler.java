@@ -236,7 +236,7 @@ class StltStorPoolApiCallHandler
 
             storPoolSet.add(storPoolName);
 
-            SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool);
+            SpaceInfo spaceInfo = apiCallHandlerUtils.getStoragePoolSpaceInfo(storPool, true);
             DeviceProviderKind kind = storPool.getDeviceProviderKind();
             boolean isFileKind = kind.equals(DeviceProviderKind.FILE) || kind.equals(DeviceProviderKind.FILE_THIN);
             if (spaceInfo != null && (!kind.usesThinProvisioning() || isFileKind))

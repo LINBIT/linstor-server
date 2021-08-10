@@ -262,7 +262,7 @@ public class StltApiCallHandlerUtils
         Either<SpaceInfo, ApiRcException> result;
         try
         {
-            result = Either.left(getStoragePoolSpaceInfo(storPool));
+            result = Either.left(getStoragePoolSpaceInfo(storPool, false));
         }
         catch (StorageException storageExc)
         {
@@ -276,9 +276,9 @@ public class StltApiCallHandlerUtils
         return result;
     }
 
-    public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
+    public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool, boolean update)
         throws StorageException
     {
-        return devMgr.get().getSpaceInfo(storPool);
+        return devMgr.get().getSpaceInfo(storPool, update);
     }
 }

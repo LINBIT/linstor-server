@@ -419,14 +419,17 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public LocalNodePropsChangePojo checkStorPool(StorPool storPool)
+    public LocalNodePropsChangePojo checkStorPool(StorPool storPool, boolean update)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         LocalNodePropsChangePojo setLocalNodePojo;
 
         DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
         setLocalNodePojo = deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
-        deviceProvider.update(storPool);
+        if (update)
+        {
+            deviceProvider.update(storPool);
+        }
         LocalNodePropsChangePojo checkCfgPropsPojo = deviceProvider.checkConfig(storPool);
 
         LocalNodePropsChangePojo ret;

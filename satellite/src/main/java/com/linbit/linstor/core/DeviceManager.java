@@ -39,7 +39,7 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     StltUpdateTracker getUpdateTracker();
     void forceWakeUpdateNotifications();
 
-    SpaceInfo getSpaceInfo(StorPool storPoolRef) throws StorageException;
+    SpaceInfo getSpaceInfo(StorPool storPoolRef, boolean update) throws StorageException;
 
     void sharedStorPoolLocksGranted(List<String> sharedStorPoolLocksListRef);
 

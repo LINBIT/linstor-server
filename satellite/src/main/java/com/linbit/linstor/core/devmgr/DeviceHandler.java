@@ -68,7 +68,7 @@ public interface DeviceHandler
 
     void fullSyncApplied(Node localNodeRef) throws StorageException;
 
-    SpaceInfo getSpaceInfo(StorPool storPoolRef) throws StorageException;
+    SpaceInfo getSpaceInfo(StorPool storPoolRef, boolean update) throws StorageException;
 
     /**
      * Method called right from within the DeviceManagerImpl's constructor - i.e. at a time

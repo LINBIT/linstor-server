@@ -938,7 +938,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException
+    public SpaceInfo getSpaceInfo(StorPool storPool, boolean update) throws StorageException
     {
         SpaceInfo spaceInfo;
         try
@@ -966,7 +966,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     throw new ImplementationError("Unknown provider kind: " + storPool.getDeviceProviderKind());
             }
 
-            LocalNodePropsChangePojo pojo = layer.checkStorPool(storPool);
+            LocalNodePropsChangePojo pojo = layer.checkStorPool(storPool, update);
             spaceInfo = layer.getStoragePoolSpaceInfo(storPool);
 
             if (pojo != null)

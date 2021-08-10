@@ -110,7 +110,7 @@ public interface DeviceLayer
      * @throws AccessDeniedException
      * @throws StorageException
      */
-    default LocalNodePropsChangePojo checkStorPool(StorPool storPoolRef)
+    default LocalNodePropsChangePojo checkStorPool(StorPool storPoolRef, boolean update)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op, no change in props

@@ -1674,10 +1674,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPoolRef) throws StorageException
+    public SpaceInfo getSpaceInfo(StorPool storPoolRef, boolean update) throws StorageException
     {
         // TODO: maybe we should synchronize with sched?
-        return devHandler.getSpaceInfo(storPoolRef);
+        return devHandler.getSpaceInfo(storPoolRef, update);
     }
 
     private void requestControllerUpdates(boolean updateController)
