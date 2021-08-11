@@ -10,14 +10,19 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -51,9 +56,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Singleton
 public class BackupToS3
 {
+    private final static ObjectMapper OBJ_MAPPER = new ObjectMapper();
+
     private final StltConfigAccessor stltConfigAccessor;
     private final DecryptionHelper decHelper;
     private final ErrorReporter errorReporter;
+    /**
+     * Caches the .metafile content from s3. cache structure:
+     * Map<Remote, Map<S3Key, Pair<Etag, content of .meta file>>>
+     * The content of the .meta file is stored as String and is re-parsed as BackupMetaDataPojo with each request to
+     * ensure immutability
+     */
+    private final HashMap<S3Remote, HashMap<String, Pair<String, String>>> cache;
 
     @Inject
     public BackupToS3(
@@ -65,6 +79,8 @@ public class BackupToS3
         stltConfigAccessor = stltConfigAccessorRef;
         decHelper = decHelperRef;
         errorReporter = errorReporterRef;
+
+        cache = new HashMap<>();
     }
 
     public String initMultipart(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)
@@ -240,24 +256,87 @@ public class BackupToS3
     public BackupMetaDataPojo getMetaFile(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
     {
-        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
+        String metaFileContent = null;
+        if (key.endsWith(".meta"))
+        {
+            HashMap<String, Pair<String, String>> remoteCache;
+            synchronized (cache)
+            {
+                remoteCache = lazyGet(cache, remote);
+            }
+            synchronized (remoteCache)
+            {
+                Pair<String, String> pair = remoteCache.get(key);
+                if (pair != null && pair.objB != null)
+                {
+                    metaFileContent = pair.objB;
+                }
+            }
+        }
+        if (metaFileContent == null)
+        {
+            BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
 
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-            new EndpointConfiguration(
-                remote.getUrl(accCtx),
-                remote.getRegion(accCtx)
-            )
-        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .build();
+            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
+                new EndpointConfiguration(
+                    remote.getUrl(accCtx),
+                    remote.getRegion(accCtx)
+                )
+            ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+                .build();
 
-        String bucket = remote.getBucket(accCtx);
-        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+            String bucket = remote.getBucket(accCtx);
+            boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
-        GetObjectRequest req = new GetObjectRequest(bucket, key, reqPays);
-        S3Object obj = s3.getObject(req);
-        S3ObjectInputStream s3is = obj.getObjectContent();
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(s3is, BackupMetaDataPojo.class);
+            GetObjectRequest req = new GetObjectRequest(bucket, key, reqPays);
+            S3Object obj = s3.getObject(req);
+            S3ObjectInputStream s3is = obj.getObjectContent();
+
+            {
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                int nRead;
+                byte[] data = new byte[1024];
+                while ((nRead = s3is.read(data, 0, data.length)) != -1)
+                {
+                    buffer.write(data, 0, nRead);
+                }
+
+                buffer.flush();
+                byte[] byteArray = buffer.toByteArray();
+
+                metaFileContent = new String(byteArray, StandardCharsets.UTF_8);
+            }
+            {
+                HashMap<String, Pair<String, String>> remoteCache;
+                synchronized (cache)
+                {
+                    remoteCache = lazyGet(cache, remote);
+                }
+                synchronized (remoteCache)
+                {
+                    Pair<String, String> pair = remoteCache.get(key);
+                    if (pair != null)
+                    {
+                        pair.objB = metaFileContent;
+                    }
+                }
+            }
+        }
+        return OBJ_MAPPER.readValue(metaFileContent, BackupMetaDataPojo.class);
+    }
+
+    private HashMap<String, Pair<String, String>> lazyGet(
+        HashMap<S3Remote, HashMap<String, Pair<String, String>>> mapRef,
+        S3Remote remote
+    )
+    {
+        HashMap<String, Pair<String, String>> ret = mapRef.get(remote);
+        if (ret == null)
+        {
+            ret = new HashMap<>();
+            mapRef.put(remote, ret);
+        }
+        return ret;
     }
 
     public InputStream getObject(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)
@@ -314,6 +393,47 @@ public class BackupToS3
             result = s3.listObjectsV2(req.withContinuationToken(result.getContinuationToken()));
             objects.addAll(result.getObjectSummaries());
         }
+
+        // update local cache
+        HashMap<String, Pair<String, String>> remoteCache;
+        synchronized (cache)
+        {
+            remoteCache = lazyGet(cache, remote);
+        }
+        synchronized (remoteCache)
+        {
+            HashSet<String> keysToRemoveFromCache = new HashSet<>(remoteCache.keySet());
+            for (S3ObjectSummary objSummary : objects)
+            {
+                String key = objSummary.getKey();
+
+                // only cache .meta files, not data files
+                if (key.endsWith(".meta"))
+                {
+                    keysToRemoveFromCache.remove(key);
+                    String eTag = objSummary.getETag();
+
+                    Pair<String, String> pair = remoteCache.get(key);
+                    if (pair == null)
+                    {
+                        pair = new Pair<>(eTag, null);
+                        remoteCache.put(key, pair);
+                    }
+                    else
+                    {
+                        if (!eTag.equals(pair.objA))
+                        {
+                            pair.objB = null; // clear the content
+                        }
+                    }
+                }
+            }
+            for (String keyToRemove : keysToRemoveFromCache)
+            {
+                remoteCache.remove(keyToRemove);
+            }
+        }
+
         return objects;
     }
 
