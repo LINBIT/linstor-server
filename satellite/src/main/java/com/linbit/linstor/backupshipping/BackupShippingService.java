@@ -424,14 +424,10 @@ public class BackupShippingService implements SystemService
                     {
                         Snapshot basedOnSnap = basedOnSnapVlmData.getRscLayerObject().getAbsResource();
                         info.basedOnS3MetaKey = basedOnSnap.getResourceName() + "_" +
-                            basedOnSnap.getSnapshotDefinition().getProps(accCtx).getProp(
-                                InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                                ApiConsts.NAMESPC_BACKUP_SHIPPING
-                            ) +
-                            ".meta";
+                            basedOnSnap.getSnapshotDefinition().getName().displayValue + ".meta";
                     }
                 }
-                catch (InvalidKeyException | AccessDeniedException exc)
+                catch (InvalidKeyException exc)
                 {
                     throw new ImplementationError(exc);
                 }

@@ -256,7 +256,6 @@ public class CtrlBackupApiCallHandler
                         "Could not create an incremental backup for resource %s as there is no previous full backup. Creating a full backup instead.",
                         rscNameRef
                     );
-                    snapName = snapName.substring(0, 5) + snapName.substring(9);
                     incremental = false;
                 }
                 else
@@ -273,7 +272,6 @@ public class CtrlBackupApiCallHandler
                             rscNameRef, prevSnapName
                         );
                         incremental = false;
-                        snapName = snapName.substring(0, 5) + snapName.substring(9);
                     }
                 }
             }
