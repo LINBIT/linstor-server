@@ -93,11 +93,12 @@ public class ResourceControllerFactory
         return rscData;
     }
 
-    public Resource create(
+    public <RSC extends AbsResource<RSC>> Resource create(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         Node node,
-        AbsRscLayerObject<Snapshot> snapLayerData
+        AbsRscLayerObject<RSC> absLayerData,
+        Resource.Flags[] flags
     )
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
@@ -105,10 +106,10 @@ public class ResourceControllerFactory
             accCtx,
             rscDfn,
             node,
-            new Resource.Flags[0],
-            LayerRscUtils.getLayerStack(snapLayerData, accCtx)
+            flags,
+            LayerRscUtils.getLayerStack(absLayerData, accCtx)
         );
-        layerStackHelper.copyLayerData(snapLayerData, rscData);
+        layerStackHelper.copyLayerData(absLayerData, rscData);
 
         return rscData;
     }

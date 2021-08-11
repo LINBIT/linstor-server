@@ -7,6 +7,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -232,39 +233,54 @@ public class RscOpenflexLayerHelper
     }
 
     @Override
-    protected OpenflexRscDfnData<Resource> restoreRscDfnData(
+    protected <RSC extends AbsResource<RSC>> OpenflexRscDfnData<Resource> restoreRscDfnData(
         ResourceDefinition rscDfnRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef
+        AbsRscLayerObject<RSC> fromSnapDataRef
     ) throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException, LinStorException
     {
         String resourceNameSuffix = fromSnapDataRef.getResourceNameSuffix();
-        OpenflexRscDfnData<Snapshot> snapDfnData = fromSnapDataRef.getAbsResource().getSnapshotDefinition()
-            .getLayerData(
-                apiCtx,
-                DeviceLayerKind.OPENFLEX,
-                resourceNameSuffix
-            );
+        OpenflexRscDfnData<RSC> dfnData;
+        RSC absRsc = fromSnapDataRef.getAbsResource();
+        if (absRsc instanceof Snapshot)
+        {
+            dfnData = ((Snapshot)absRsc).getSnapshotDefinition()
+                .getLayerData(
+                    apiCtx,
+                    DeviceLayerKind.OPENFLEX,
+                    resourceNameSuffix
+                );
+        } else if (absRsc instanceof Resource)
+        {
+            dfnData = absRsc.getResourceDefinition()
+                .getLayerData(
+                    apiCtx,
+                    DeviceLayerKind.OPENFLEX,
+                    resourceNameSuffix
+                );
+        } else {
+            throw new ImplementationError("Unexpected AbsRsc Type");
+        }
         String shortName = nameShortener.shorten(rscDfnRef, resourceNameSuffix);
         return layerDataFactory.createOpenflexRscDfnData(
             rscDfnRef.getName(),
             resourceNameSuffix,
             shortName,
-            snapDfnData.getNqn()
+            dfnData.getNqn()
         );
     }
 
     @Override
-    protected OpenflexRscData<Resource> restoreRscData(
+    protected <RSC extends AbsResource<RSC>> OpenflexRscData<Resource> restoreRscData(
         Resource rscRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
     ) throws DatabaseException, AccessDeniedException, ExhaustedPoolException
     {
         OpenflexRscDfnData<Resource> ofRscDfnData = rscRef.getDefinition().getLayerData(
             apiCtx,
             DeviceLayerKind.OPENFLEX,
-            fromSnapDataRef.getResourceNameSuffix()
+            fromAbsRscDataRef.getResourceNameSuffix()
         );
 
         OpenflexRscData<Resource> ofRscData = layerDataFactory.createOpenflexRscData(
@@ -278,9 +294,9 @@ public class RscOpenflexLayerHelper
     }
 
     @Override
-    protected VlmDfnLayerObject restoreVlmDfnData(
+    protected <RSC extends AbsResource<RSC>> VlmDfnLayerObject restoreVlmDfnData(
         VolumeDefinition vlmDfnRef,
-        VlmProviderObject<Snapshot> fromSnapVlmDataRef
+        VlmProviderObject<RSC> fromSnapVlmDataRef
     ) throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
@@ -289,10 +305,10 @@ public class RscOpenflexLayerHelper
     }
 
     @Override
-    protected OpenflexVlmData<Resource> restoreVlmData(
+    protected <RSC extends AbsResource<RSC>> OpenflexVlmData<Resource> restoreVlmData(
         Volume vlmRef,
         OpenflexRscData<Resource> rscDataRef,
-        VlmProviderObject<Snapshot> snapVlmData
+        VlmProviderObject<RSC> snapVlmData
     ) throws DatabaseException, AccessDeniedException
     {
         return layerDataFactory.createOpenflexVlmData(vlmRef, rscDataRef, snapVlmData.getStorPool());

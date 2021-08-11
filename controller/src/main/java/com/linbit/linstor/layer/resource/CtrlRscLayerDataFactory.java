@@ -469,14 +469,14 @@ public class CtrlRscLayerDataFactory
         return storPools;
     }
 
-    public void copyLayerData(
-        AbsRscLayerObject<Snapshot> fromSnapshot,
+    public <RSC extends AbsResource<RSC>> void copyLayerData(
+        AbsRscLayerObject<RSC> fromAbsRsc,
         Resource toResource
     )
     {
         try
         {
-            AbsRscLayerObject<Resource> rscData = copyRec(toResource, fromSnapshot, null);
+            AbsRscLayerObject<Resource> rscData = copyRec(toResource, fromAbsRsc, null);
             toResource.setLayerData(apiCtx, rscData);
         }
         catch (AccessDeniedException exc)
@@ -533,19 +533,19 @@ public class CtrlRscLayerDataFactory
         }
     }
 
-    private AbsRscLayerObject<Resource> copyRec(
+    private <RSC extends AbsResource<RSC>> AbsRscLayerObject<Resource> copyRec(
         Resource rsc,
-        AbsRscLayerObject<Snapshot> fromSnapData,
+        AbsRscLayerObject<RSC> fromRscData,
         AbsRscLayerObject<Resource> rscParentRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException, LinStorException
     {
-        AbsRscLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(fromSnapData.getLayerKind());
+        AbsRscLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(fromRscData.getLayerKind());
 
-        AbsRscLayerObject<Resource> rscData = layerHelper.restoreFromSnapshot(rsc, fromSnapData, rscParentRef);
+        AbsRscLayerObject<Resource> rscData = layerHelper.restoreFromAbsRsc(rsc, fromRscData, rscParentRef);
 
-        for (AbsRscLayerObject<Snapshot> snapChild : fromSnapData.getChildren())
+        for (AbsRscLayerObject<RSC> snapChild : fromRscData.getChildren())
         {
             rscData.getChildren().add(copyRec(rsc, snapChild, rscData));
         }

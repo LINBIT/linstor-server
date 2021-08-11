@@ -11,9 +11,12 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -93,23 +96,23 @@ public class CtrlVlmCrtApiHelper
         return createVlmImpl(rsc, vlmDfn, storPoolMapRef, thinFreeCapacities, null);
     }
 
-    public Volume createVolumeFromSnapshot(
+    public <RSC extends AbsResource<RSC>> Volume createVolumeFromAbsVolume(
         Resource rscRef,
         VolumeDefinition toVlmDfnRef,
         Map<String, StorPool> storPoolRef,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        SnapshotVolume fromSnapshotVolumeRef
+        AbsVolume<RSC> fromAbsVolumeRef
     )
     {
-        return createVlmImpl(rscRef, toVlmDfnRef, storPoolRef, thinFreeCapacities, fromSnapshotVolumeRef);
+        return createVlmImpl(rscRef, toVlmDfnRef, storPoolRef, thinFreeCapacities, fromAbsVolumeRef);
     }
 
-    private Volume createVlmImpl(
+    private <RSC extends AbsResource<RSC>> Volume createVlmImpl(
         Resource rsc,
         VolumeDefinition vlmDfn,
         Map<String, StorPool> storPoolMapRef,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        SnapshotVolume snapVlmRef
+        AbsVolume<RSC> snapVlmRef
     )
     {
         checkIfStorPoolsAreUsable(rsc, vlmDfn, storPoolMapRef, thinFreeCapacities);

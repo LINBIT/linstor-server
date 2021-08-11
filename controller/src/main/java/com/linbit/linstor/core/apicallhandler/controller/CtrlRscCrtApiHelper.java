@@ -784,7 +784,8 @@ public class CtrlRscCrtApiHelper
                 peerAccCtx.get(),
                 toRscDfn,
                 toNode,
-                fromSnapshotRef.getLayerData(peerAccCtx.get())
+                fromSnapshotRef.getLayerData(peerAccCtx.get()),
+                new Resource.Flags[0]
             );
         }
         catch (AccessDeniedException accDeniedExc)

@@ -19,6 +19,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
@@ -696,40 +697,57 @@ public class RscDrbdLayerHelper extends
     }
 
     @Override
-    protected DrbdRscDfnData<Resource> restoreRscDfnData(
+    protected <RSC extends AbsResource<RSC>> DrbdRscDfnData<Resource> restoreRscDfnData(
         ResourceDefinition rscDfnRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef
+        AbsRscLayerObject<RSC> fromSnapDataRef
     ) throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
         String resourceNameSuffix = fromSnapDataRef.getResourceNameSuffix();
-        DrbdRscDfnData<Snapshot> snapDfnData = fromSnapDataRef.getAbsResource().getSnapshotDefinition().getLayerData(
-            apiCtx,
-            DeviceLayerKind.DRBD,
-            resourceNameSuffix
-        );
+        DrbdRscDfnData<RSC> dfnData;
+        RSC absRsc = fromSnapDataRef.getAbsResource();
+        if (absRsc instanceof Snapshot)
+        {
+            dfnData = ((Snapshot)absRsc).getSnapshotDefinition().getLayerData(
+                apiCtx,
+                DeviceLayerKind.DRBD,
+                resourceNameSuffix
+            );
+        }
+        else if (absRsc instanceof Resource)
+        {
+            dfnData = absRsc.getResourceDefinition().getLayerData(
+                apiCtx,
+                DeviceLayerKind.DRBD,
+                resourceNameSuffix
+            );
+        }
+        else
+        {
+            throw new ImplementationError("Unexpected AbsRsc Type");
+        }
 
         return layerDataFactory.createDrbdRscDfnData(
             rscDfnRef.getName(),
             null,
             resourceNameSuffix,
-            snapDfnData.getPeerSlots(),
-            snapDfnData.getAlStripes(),
-            snapDfnData.getAlStripeSize(),
+            dfnData.getPeerSlots(),
+            dfnData.getAlStripes(),
+            dfnData.getAlStripeSize(),
             null,
-            snapDfnData.getTransportType(),
+            dfnData.getTransportType(),
             SecretGenerator.generateSharedSecret()
         );
     }
 
     @Override
-    protected DrbdRscData<Resource> restoreRscData(
+    protected <RSC extends AbsResource<RSC>> DrbdRscData<Resource> restoreRscData(
         Resource rscRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
     ) throws DatabaseException, AccessDeniedException, ExhaustedPoolException
     {
-        DrbdRscData<Snapshot> drbdSnapData = (DrbdRscData<Snapshot>) fromSnapDataRef;
+        DrbdRscData<Snapshot> drbdSnapData = (DrbdRscData<Snapshot>) fromAbsRscDataRef;
         String resourceNameSuffix = drbdSnapData.getResourceNameSuffix();
         DrbdRscDfnData<Resource> drbdRscDfnData = rscRef.getDefinition().getLayerData(
             apiCtx,
@@ -754,13 +772,13 @@ public class RscDrbdLayerHelper extends
     }
 
     @Override
-    protected DrbdVlmDfnData<Resource> restoreVlmDfnData(
+    protected <RSC extends AbsResource<RSC>> DrbdVlmDfnData<Resource> restoreVlmDfnData(
         VolumeDefinition vlmDfnRef,
-        VlmProviderObject<Snapshot> fromSnapVlmDataRef
+        VlmProviderObject<RSC> fromAbsRscVlmDataRef
     ) throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
-        String resourceNameSuffix = fromSnapVlmDataRef.getRscLayerObject().getResourceNameSuffix();
+        String resourceNameSuffix = fromAbsRscVlmDataRef.getRscLayerObject().getResourceNameSuffix();
         return layerDataFactory.createDrbdVlmDfnData(
             vlmDfnRef,
             vlmDfnRef.getResourceDefinition().getName(),
@@ -777,14 +795,14 @@ public class RscDrbdLayerHelper extends
     }
 
     @Override
-    protected DrbdVlmData<Resource> restoreVlmData(
+    protected <RSC extends AbsResource<RSC>> DrbdVlmData<Resource> restoreVlmData(
         Volume vlmRef,
         DrbdRscData<Resource> rscDataRef,
-        VlmProviderObject<Snapshot> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef
     )
         throws DatabaseException, AccessDeniedException
     {
-        DrbdVlmData<Snapshot> drbdSnapVlmData = (DrbdVlmData<Snapshot>) vlmProviderObjectRef;
+        DrbdVlmData<RSC> drbdSnapVlmData = (DrbdVlmData<RSC>) vlmProviderObjectRef;
         return layerDataFactory.createDrbdVlmData(
             vlmRef,
             drbdSnapVlmData.getExternalMetaDataStorPool(),

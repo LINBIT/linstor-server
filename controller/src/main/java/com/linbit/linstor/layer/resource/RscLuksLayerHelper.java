@@ -15,6 +15,7 @@ import com.linbit.linstor.core.SecretGenerator;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -306,9 +307,9 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected RscDfnLayerObject restoreRscDfnData(
+    protected <RSC extends AbsResource<RSC>> RscDfnLayerObject restoreRscDfnData(
         ResourceDefinition rscDfnRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef
+        AbsRscLayerObject<RSC> fromSnapDataRef
     )
     {
         // LuksLayer does not have resource-definition specific data
@@ -316,9 +317,9 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected LuksRscData<Resource> restoreRscData(
+    protected <RSC extends AbsResource<RSC>> LuksRscData<Resource> restoreRscData(
         Resource rscRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
     )
         throws DatabaseException, ExhaustedPoolException
@@ -326,15 +327,15 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         return layerDataFactory.createLuksRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,
-            fromSnapDataRef.getResourceNameSuffix(),
+            fromAbsRscDataRef.getResourceNameSuffix(),
             rscParentRef
         );
     }
 
     @Override
-    protected VlmDfnLayerObject restoreVlmDfnData(
+    protected <RSC extends AbsResource<RSC>> VlmDfnLayerObject restoreVlmDfnData(
         VolumeDefinition vlmDfnRef,
-        VlmProviderObject<Snapshot> fromSnapVlmDataRef
+        VlmProviderObject<RSC> fromSnapVlmDataRef
     )
     {
         // LuksLayer does not have volume-definition specific data
@@ -342,14 +343,14 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected LuksVlmData<Resource> restoreVlmData(
+    protected <RSC extends AbsResource<RSC>> LuksVlmData<Resource> restoreVlmData(
         Volume vlmRef,
         LuksRscData<Resource> rscDataRef,
-        VlmProviderObject<Snapshot> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef
     )
         throws DatabaseException
     {
-        LuksVlmData<Snapshot> snapLuksVlmData = (LuksVlmData<Snapshot>) vlmProviderObjectRef;
+        LuksVlmData<RSC> snapLuksVlmData = (LuksVlmData<RSC>) vlmProviderObjectRef;
         return layerDataFactory.createLuksVlmData(
             vlmRef,
             rscDataRef,

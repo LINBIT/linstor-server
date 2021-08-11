@@ -13,6 +13,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -380,9 +381,9 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected RscDfnLayerObject restoreRscDfnData(
+    protected <RSC extends AbsResource<RSC>> RscDfnLayerObject restoreRscDfnData(
         ResourceDefinition rscDfnRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef
+        AbsRscLayerObject<RSC> fromSnapDataRef
     )
     {
         // StorageLayer does not have resource-definition specific data
@@ -390,9 +391,9 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected VlmDfnLayerObject restoreVlmDfnData(
+    protected <RSC extends AbsResource<RSC>> VlmDfnLayerObject restoreVlmDfnData(
         VolumeDefinition vlmDfnRef,
-        VlmProviderObject<Snapshot> fromSnapVlmDataRef
+        VlmProviderObject<RSC> fromSnapVlmDataRef
     )
     {
         // StorageLayer does not have volume-definition specific data
@@ -400,9 +401,9 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected StorageRscData<Resource> restoreRscData(
+    protected <RSC extends AbsResource<RSC>> StorageRscData<Resource> restoreRscData(
         Resource rscRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
     )
         throws DatabaseException, ExhaustedPoolException
@@ -411,15 +412,15 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             layerRscIdPool.autoAllocate(),
             rscParentRef,
             rscRef,
-            fromSnapDataRef.getResourceNameSuffix()
+            fromAbsRscDataRef.getResourceNameSuffix()
         );
     }
 
     @Override
-    protected VlmProviderObject<Resource> restoreVlmData(
+    protected <RSC extends AbsResource<RSC>> VlmProviderObject<Resource> restoreVlmData(
         Volume vlmRef,
         StorageRscData<Resource> storRscData,
-        VlmProviderObject<Snapshot> snapVlmData
+        VlmProviderObject<RSC> snapVlmData
     )
         throws DatabaseException, AccessDeniedException, LinStorException
     {

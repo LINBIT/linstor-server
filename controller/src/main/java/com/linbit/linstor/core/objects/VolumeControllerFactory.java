@@ -47,13 +47,13 @@ public class VolumeControllerFactory
         layerStackHelper = layerStackHelperRef;
     }
 
-    public Volume create(
+    public <RSC extends AbsResource<RSC>> Volume create(
         AccessContext accCtx,
         Resource rsc,
         VolumeDefinition vlmDfn,
         Volume.Flags[] flags,
         Map<String, StorPool> storPoolMapRef,
-        @Nullable AbsRscLayerObject<Snapshot> snapLayerData
+        @Nullable AbsRscLayerObject<RSC> absLayerData
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -89,14 +89,14 @@ public class VolumeControllerFactory
         {
             payload.putStorageVlmPayload(entry.getKey(), vlmNr, entry.getValue().getName().displayValue);
         }
-        if (snapLayerData == null)
+        if (absLayerData == null)
         {
             layerStackHelper.ensureStackDataExists(rsc, null, payload);
         }
         else
         {
             // ignore payload if we have snapLayerData
-            layerStackHelper.copyLayerData(snapLayerData, rsc);
+            layerStackHelper.copyLayerData(absLayerData, rsc);
         }
 
         return volData;

@@ -12,6 +12,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -401,9 +402,9 @@ class RscBCacheLayerHelper
     }
 
     @Override
-    protected RscDfnLayerObject restoreRscDfnData(
+    protected <RSC extends AbsResource<RSC>> RscDfnLayerObject restoreRscDfnData(
         ResourceDefinition rscDfnRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef
+        AbsRscLayerObject<RSC> fromSnapDataRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
@@ -413,9 +414,9 @@ class RscBCacheLayerHelper
     }
 
     @Override
-    protected BCacheRscData<Resource> restoreRscData(
+    protected <RSC extends AbsResource<RSC>> BCacheRscData<Resource> restoreRscData(
         Resource rscRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
     )
         throws DatabaseException, AccessDeniedException, ExhaustedPoolException
@@ -423,15 +424,15 @@ class RscBCacheLayerHelper
         return layerDataFactory.createBCacheRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,
-            fromSnapDataRef.getResourceNameSuffix(),
+            fromAbsRscDataRef.getResourceNameSuffix(),
             rscParentRef
         );
     }
 
     @Override
-    protected VlmDfnLayerObject restoreVlmDfnData(
+    protected <RSC extends AbsResource<RSC>> VlmDfnLayerObject restoreVlmDfnData(
         VolumeDefinition vlmDfnRef,
-        VlmProviderObject<Snapshot> fromSnapVlmDataRef
+        VlmProviderObject<RSC> fromSnapVlmDataRef
     ) throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
@@ -440,16 +441,16 @@ class RscBCacheLayerHelper
     }
 
     @Override
-    protected BCacheVlmData<Resource> restoreVlmData(
+    protected <RSC extends AbsResource<RSC>> BCacheVlmData<Resource> restoreVlmData(
         Volume vlmRef,
         BCacheRscData<Resource> rscDataRef,
-        VlmProviderObject<Snapshot> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef
     )
         throws DatabaseException, AccessDeniedException
     {
         return layerDataFactory.createBCacheVlmData(
             vlmRef,
-            ((WritecacheVlmData<Snapshot>) vlmProviderObjectRef).getCacheStorPool(),
+            ((WritecacheVlmData<RSC>) vlmProviderObjectRef).getCacheStorPool(),
             rscDataRef
         );
     }

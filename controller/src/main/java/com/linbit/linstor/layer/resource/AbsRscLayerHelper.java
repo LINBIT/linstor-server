@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -285,17 +286,17 @@ public abstract class AbsRscLayerHelper<
         );
     }
 
-    public RSC_LO restoreFromSnapshot(
+    public <RSC extends AbsResource<RSC>> RSC_LO restoreFromAbsRsc(
         Resource rsc,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException, LinStorException
     {
-        ensureResourceDefinitionDataCopiedFromSnapshot(
+        ensureResourceDefinitionDataCopiedFromAbsRsc(
             rsc.getDefinition(),
-            fromSnapDataRef
+            fromAbsRscDataRef
         );
 
         // resource might already have root data, as this method is called from resourceFactory as well as from
@@ -307,12 +308,12 @@ public abstract class AbsRscLayerHelper<
         }
         else
         {
-            layerData = rscParentRef.getChildBySuffix(fromSnapDataRef.getResourceNameSuffix());
+            layerData = rscParentRef.getChildBySuffix(fromAbsRscDataRef.getResourceNameSuffix());
         }
         RSC_LO rscData;
         if (layerData == null)
         {
-            rscData = restoreRscData(rsc, fromSnapDataRef, rscParentRef);
+            rscData = restoreRscData(rsc, fromAbsRscDataRef, rscParentRef);
         }
         else
         {
@@ -327,14 +328,14 @@ public abstract class AbsRscLayerHelper<
         }
 
         Map<VolumeNumber, VLM_LO> vlmMap = (Map<VolumeNumber, VLM_LO>) rscData.getVlmLayerObjects();
-        for (VlmProviderObject<Snapshot> snapVlmData : fromSnapDataRef.getVlmLayerObjects().values())
+        for (VlmProviderObject<RSC> snapVlmData : fromAbsRscDataRef.getVlmLayerObjects().values())
         {
             VolumeNumber vlmNr = snapVlmData.getVlmNr();
             Volume vlm = rsc.getVolume(vlmNr);
 
             if (vlm != null && vlmMap.get(vlmNr) == null)
             {
-                ensureVolumeDefinitonDataCopiedFromSnapshot(
+                ensureVolumeDefinitonDataCopiedFromAbsRsc(
                     vlm.getVolumeDefinition(),
                     snapVlmData
                 );
@@ -342,7 +343,7 @@ public abstract class AbsRscLayerHelper<
                 VLM_LO vlmData = restoreVlmData(
                     vlm,
                     rscData,
-                    fromSnapDataRef.getVlmProviderObject(vlmNr)
+                    fromAbsRscDataRef.getVlmProviderObject(vlmNr)
                 );
                 vlmMap.put(vlmNr, vlmData);
             }
@@ -351,17 +352,17 @@ public abstract class AbsRscLayerHelper<
         return rscData;
     }
 
-    private RSC_DFN_LO ensureResourceDefinitionDataCopiedFromSnapshot(
+    private <RSC extends AbsResource<RSC>> RSC_DFN_LO ensureResourceDefinitionDataCopiedFromAbsRsc(
         ResourceDefinition rscDfn,
-        AbsRscLayerObject<Snapshot> fromSnapData
+        AbsRscLayerObject<RSC> fromAbsRscData
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException, LinStorException
     {
-        RSC_DFN_LO rscDfnData = rscDfn.getLayerData(apiCtx, kind, fromSnapData.getResourceNameSuffix());
+        RSC_DFN_LO rscDfnData = rscDfn.getLayerData(apiCtx, kind, fromAbsRscData.getResourceNameSuffix());
         if (rscDfnData == null)
         {
-            rscDfnData = restoreRscDfnData(rscDfn, fromSnapData);
+            rscDfnData = restoreRscDfnData(rscDfn, fromAbsRscData);
             if (rscDfnData != null)
             {
                 rscDfn.setLayerData(apiCtx, rscDfnData);
@@ -370,20 +371,20 @@ public abstract class AbsRscLayerHelper<
         return rscDfnData;
     }
 
-    private VLM_DFN_LO ensureVolumeDefinitonDataCopiedFromSnapshot(
+    private <RSC extends AbsResource<RSC>> VLM_DFN_LO ensureVolumeDefinitonDataCopiedFromAbsRsc(
         VolumeDefinition vlmDfn,
-        VlmProviderObject<Snapshot> snapVlmData
+        VlmProviderObject<RSC> absRscVlmData
     ) throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
         VLM_DFN_LO vlmDfnData = vlmDfn.getLayerData(
             apiCtx,
             kind,
-            snapVlmData.getRscLayerObject().getResourceNameSuffix()
+            absRscVlmData.getRscLayerObject().getResourceNameSuffix()
         );
         if (vlmDfnData == null)
         {
-            vlmDfnData = restoreVlmDfnData(vlmDfn, snapVlmData);
+            vlmDfnData = restoreVlmDfnData(vlmDfn, absRscVlmData);
             if (vlmDfnData != null)
             {
                 vlmDfn.setLayerData(apiCtx, vlmDfnData);
@@ -552,31 +553,31 @@ public abstract class AbsRscLayerHelper<
 
     // abstract methods used for restoring data from snapshot
 
-    protected abstract RSC_DFN_LO restoreRscDfnData(
+    protected abstract <RSC extends AbsResource<RSC>> RSC_DFN_LO restoreRscDfnData(
         ResourceDefinition rscDfn,
-        AbsRscLayerObject<Snapshot> fromSnapData
+        AbsRscLayerObject<RSC> fromAbsRscData
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException, LinStorException;
 
-    protected abstract RSC_LO restoreRscData(
+    protected abstract <RSC extends AbsResource<RSC>> RSC_LO restoreRscData(
         Resource rsc,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
     )
         throws DatabaseException, AccessDeniedException, ExhaustedPoolException;
 
-    protected abstract VLM_DFN_LO restoreVlmDfnData(
+    protected abstract <RSC extends AbsResource<RSC>> VLM_DFN_LO restoreVlmDfnData(
         VolumeDefinition vlmDfn,
-        VlmProviderObject<Snapshot> fromSnapVlmData
+        VlmProviderObject<RSC> fromAbsRscVlmData
     )
         throws DatabaseException, AccessDeniedException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException;
 
-    protected abstract VLM_LO restoreVlmData(
+    protected abstract <RSC extends AbsResource<RSC>> VLM_LO restoreVlmData(
         Volume vlm,
         RSC_LO rscDataRef,
-        VlmProviderObject<Snapshot> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef
     )
         throws DatabaseException, AccessDeniedException, LinStorException;
 

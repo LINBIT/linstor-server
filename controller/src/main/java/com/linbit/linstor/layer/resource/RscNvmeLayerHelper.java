@@ -10,6 +10,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -274,9 +275,9 @@ class RscNvmeLayerHelper
     }
 
     @Override
-    protected RscDfnLayerObject restoreRscDfnData(
+    protected <RSC extends AbsResource<RSC>> RscDfnLayerObject restoreRscDfnData(
         ResourceDefinition rscDfnRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef
+        AbsRscLayerObject<RSC> fromSnapDataRef
     )
     {
         // NvmeLayer does not have resource-definition specific data
@@ -284,9 +285,9 @@ class RscNvmeLayerHelper
     }
 
     @Override
-    protected NvmeRscData<Resource> restoreRscData(
+    protected <RSC extends AbsResource<RSC>> NvmeRscData<Resource> restoreRscData(
         Resource rscRef,
-        AbsRscLayerObject<Snapshot> fromSnapDataRef,
+        AbsRscLayerObject<RSC> fromAbsRscDataRef,
         AbsRscLayerObject<Resource> rscParentRef
     )
         throws DatabaseException, ExhaustedPoolException
@@ -294,15 +295,15 @@ class RscNvmeLayerHelper
        return layerDataFactory.createNvmeRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,
-            fromSnapDataRef.getResourceNameSuffix(),
+            fromAbsRscDataRef.getResourceNameSuffix(),
             rscParentRef
        );
     }
 
     @Override
-    protected VlmDfnLayerObject restoreVlmDfnData(
+    protected <RSC extends AbsResource<RSC>> VlmDfnLayerObject restoreVlmDfnData(
         VolumeDefinition vlmDfnRef,
-        VlmProviderObject<Snapshot> fromSnapVlmDataRef
+        VlmProviderObject<RSC> fromSnapVlmDataRef
     )
     {
         // NvmeLayer does not have volume-definition specific data
@@ -310,10 +311,10 @@ class RscNvmeLayerHelper
     }
 
     @Override
-    protected NvmeVlmData<Resource> restoreVlmData(
+    protected <RSC extends AbsResource<RSC>> NvmeVlmData<Resource> restoreVlmData(
         Volume vlmRef,
         NvmeRscData<Resource> rscDataRef,
-        VlmProviderObject<Snapshot> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef
     )
         throws DatabaseException, AccessDeniedException
     {
