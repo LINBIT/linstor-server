@@ -23,6 +23,7 @@ import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVolumePojo;
 import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
+import com.linbit.linstor.backupshipping.BackupShippingConsts;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
@@ -44,11 +45,13 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.RemoteRepository;
+import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -58,6 +61,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
@@ -113,7 +117,6 @@ import reactor.util.function.Tuple2;
 @Singleton
 public class CtrlBackupApiCallHandler
 {
-    private static final String SNAP_PREFIX = "back_";
     private static final Pattern META_FILE_PATTERN = Pattern
         .compile("^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})\\.meta$");
     private static final Pattern BACKUP_KEY_PATTERN = Pattern
@@ -141,6 +144,7 @@ public class CtrlBackupApiCallHandler
     private final CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandler;
     private final RemoteRepository remoteRepo;
     private final SystemConfProtectionRepository sysCfgRepo;
+    private final ResourceDefinitionRepository rscDfnRepo;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -166,7 +170,8 @@ public class CtrlBackupApiCallHandler
         Provider<Peer> peerProviderRef,
         CtrlSnapshotShippingAbortHandler ctrlSnapShipAbortHandlerRef,
         RemoteRepository remoteRepoRef,
-        SystemConfProtectionRepository sysCfgRepoRef
+        SystemConfProtectionRepository sysCfgRepoRef,
+        ResourceDefinitionRepository rscDfnRepoRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -192,6 +197,7 @@ public class CtrlBackupApiCallHandler
         ctrlSnapShipAbortHandler = ctrlSnapShipAbortHandlerRef;
         remoteRepo = remoteRepoRef;
         sysCfgRepo = sysCfgRepoRef;
+        rscDfnRepo = rscDfnRepoRef;
     }
 
     public Flux<ApiCallRc> createBackup(
@@ -223,7 +229,7 @@ public class CtrlBackupApiCallHandler
         throws AccessDeniedException
     {
         Date now = new Date();
-        String snapName = SNAP_PREFIX + BackupApi.DATE_FORMAT.format(now);
+        String snapName = BackupShippingConsts.SNAP_PREFIX + BackupApi.DATE_FORMAT.format(now);
         try
         {
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
@@ -1162,7 +1168,7 @@ public class CtrlBackupApiCallHandler
                 try
                 {
                     // remove "back_" prefix
-                    String ts = m.group(2).substring(5);
+                    String ts = m.group(2).substring(BackupShippingConsts.SNAP_PREFIX_LEN);
                     Date curTs = BackupApi.DATE_FORMAT.parse(ts);
                     if (targetTime != null)
                     {
@@ -1380,7 +1386,7 @@ public class CtrlBackupApiCallHandler
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(targetRscName, false);
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         SnapshotName snapName = LinstorParsingUtils.asSnapshotName(
-            "back_" + BackupApi.DATE_FORMAT.format(metadata.getStartTimestamp())
+            BackupShippingConsts.SNAP_PREFIX + BackupApi.DATE_FORMAT.format(metadata.getStartTimestamp())
         );
         if (rscDfn == null)
         {
@@ -1620,10 +1626,11 @@ public class CtrlBackupApiCallHandler
         throws AccessDeniedException, InvalidNameException
     {
         S3Remote remote = getS3Remote(remoteNameRef);
+        AccessContext peerCtx = peerAccCtx.get();
         List<S3ObjectSummary> objects = backupHandler.listObjects(
             rscNameRef,
             remote,
-            peerAccCtx.get(),
+            peerCtx,
             getLocalMasterKey()
         );
         // get ALL s3 keys of the given bucket, including possibly not linstor related ones
@@ -1663,7 +1670,7 @@ public class CtrlBackupApiCallHandler
                     BackupMetaDataPojo s3MetaFile = backupHandler.getMetaFile(
                         s3key,
                         remote,
-                        peerAccCtx.get(),
+                        peerCtx,
                         getLocalMasterKey()
                     );
 
@@ -1759,7 +1766,7 @@ public class CtrlBackupApiCallHandler
                 }
                 catch (IOException exc)
                 {
-                    errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + s3key);
+                    errorReporter.reportError(exc, peerCtx, null, "used s3 key: " + s3key);
                 }
             }
         }
@@ -1797,6 +1804,60 @@ public class CtrlBackupApiCallHandler
                 }
             }
         }
+
+        // also check local snapDfns is anything is being uploaded but not yet visible in the s3 list (an upload might
+        // only be shown in the list when it is completed)
+        for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(peerCtx).values())
+        {
+            for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerCtx))
+            {
+                String rscName = rscDfn.getName().displayValue;
+                String snapName = snapDfn.getName().displayValue;
+
+                StateFlags<Flags> snapDfnFlags = snapDfn.getFlags();
+                if (snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.BACKUP) &&
+                    // ignore already shipped backups
+                    !snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.SUCCESSFUL)
+                )
+                {
+                    Set<String> futureS3Keys = new TreeSet<>();
+                    for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(peerCtx))
+                    {
+                        futureS3Keys.add(
+                            String.format(
+                                BackupShippingConsts.BACKUP_KEY_FORMAT,
+                                rscName,
+                                "",
+                                snapVlmDfn.getVolumeNumber().value,
+                                snapName
+                            )
+                        );
+                    }
+
+                    String s3KeyShouldLookLikeThis = futureS3Keys.iterator().next();
+                    Matcher m = BACKUP_KEY_PATTERN.matcher(s3KeyShouldLookLikeThis);
+                    if (m.find())
+                    {
+                        BackupApi back = fillBackupListPojo(
+                            s3KeyShouldLookLikeThis,
+                            rscName,
+                            snapName,
+                            m,
+                            BACKUP_KEY_PATTERN,
+                            s3keys,
+                            linstorBackupsS3Keys,
+                            snapDfn
+                        );
+                        if (back != null)
+                        {
+                            retIdToBackupsApiMap.put(s3KeyShouldLookLikeThis, back);
+                            linstorBackupsS3Keys.add(s3KeyShouldLookLikeThis);
+                        }
+                    }
+                }
+            }
+        }
+
         s3keys.removeAll(linstorBackupsS3Keys);
         return new Pair<>(retIdToBackupsApiMap, s3keys);
     }
@@ -1842,7 +1903,7 @@ public class CtrlBackupApiCallHandler
         BackupApi back = null;
 
         try {
-            String startTime = snapName.substring("back_".length());
+            String startTime = snapName.substring(BackupShippingConsts.SNAP_PREFIX_LEN);
             long startTimestamp = BackupApi.DATE_FORMAT.parse(startTime).getTime(); // fail fast
 
             Map<Integer, BackupVolumePojo> vlms = new TreeMap<>();

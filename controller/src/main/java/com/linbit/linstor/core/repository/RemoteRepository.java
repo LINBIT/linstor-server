@@ -27,7 +27,7 @@ public interface RemoteRepository extends ProtectedObject
     default S3Remote getS3(AccessContext accCtx, RemoteName remoteName) throws AccessDeniedException
     {
         Remote remote = get(accCtx, remoteName);
-        if (!(remote instanceof S3Remote))
+        if (remote != null && !(remote instanceof S3Remote))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(

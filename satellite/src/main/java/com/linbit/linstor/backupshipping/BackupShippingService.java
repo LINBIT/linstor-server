@@ -54,9 +54,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.io.IOException;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -80,8 +78,6 @@ public class BackupShippingService implements SystemService
 {
     public static final ServiceName SERVICE_NAME;
     public static final String SERVICE_INFO = "BackupShippingService";
-    private static final DateFormat SDF = new SimpleDateFormat("yyyyMMdd_HHmmss");
-    private static final String BACKUP_KEY_FORMAT = "%s%s_%05d_%s";
     private static final String CMD_FORMAT_SENDING =
         "trap 'kill -HUP 0' SIGTERM; " +
         "(" +
@@ -219,7 +215,7 @@ public class BackupShippingService implements SystemService
     {
         if (RscLayerSuffixes.shouldSuffixBeShipped(rscNameSuffixRef))
         {
-            String backupName = String.format(BACKUP_KEY_FORMAT, rscNameRef, rscNameSuffixRef, vlmNrRef, snapNameRef);
+            String backupName = String.format(BackupShippingConsts.BACKUP_KEY_FORMAT, rscNameRef, rscNameSuffixRef, vlmNrRef, snapNameRef);
             String remoteName = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot().getProps(accCtx)
                 .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
             startDaemon(
@@ -273,7 +269,7 @@ public class BackupShippingService implements SystemService
             Matcher m = p.matcher(simpleBackupName);
             if (m.matches())
             {
-                backupName = String.format(BACKUP_KEY_FORMAT, m.group(1), rscNameSuffixRef, vlmNrRef, m.group(2));
+                backupName = String.format(BackupShippingConsts.BACKUP_KEY_FORMAT, m.group(1), rscNameSuffixRef, vlmNrRef, m.group(2));
             }
             else
             {
@@ -543,7 +539,7 @@ public class BackupShippingService implements SystemService
         ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
 
-        String startTime = snapDfn.getName().displayValue.substring("back_".length());
+        String startTime = snapDfn.getName().displayValue.substring(BackupShippingConsts.SNAP_PREFIX_LEN);
         long startTimestamp = BackupApi.DATE_FORMAT.parse(startTime).getTime();
 
         PriorityProps rscDfnPrio = new PriorityProps(
