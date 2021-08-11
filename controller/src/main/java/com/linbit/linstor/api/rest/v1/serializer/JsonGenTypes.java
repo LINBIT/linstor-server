@@ -1191,6 +1191,9 @@ public class JsonGenTypes
         public String origin_node;
         public String fail_messages;
         public List<BackupVolumes> vlms = Collections.emptyList();
+        public Boolean success;
+        public Boolean shipping;
+        public Boolean restorable;
         public BackupS3 s3;
         public String based_on_id;
     }

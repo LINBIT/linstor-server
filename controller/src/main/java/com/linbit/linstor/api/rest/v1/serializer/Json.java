@@ -1146,6 +1146,9 @@ public class Json
             jsonBackup.finished_timestamp = backup.getFinishedTimestamp();
             jsonBackup.origin_rsc = backup.getResourceName();
             jsonBackup.origin_node = backup.getOriginNodeName();
+            jsonBackup.success = backup.successful();
+            jsonBackup.shipping = backup.isShipping();
+            jsonBackup.restorable = backup.isRestoreable();
             // jsonBackup.fail_messages = backup.getfail_messages();
 
             jsonBackup.vlms = new ArrayList<>();

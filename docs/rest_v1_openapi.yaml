@@ -7014,6 +7014,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BackupVolumes'
+        success:
+           type: boolean
+        shipping:
+           type: boolean
+        restorable:
+           type: boolean
         s3:
           $ref: '#/components/schemas/BackupS3'
         based_on_id:

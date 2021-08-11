@@ -102,7 +102,8 @@ public class Backups
         try
         {
             JsonGenTypes.BackupCreate data = objectMapper.readValue(jsonData, JsonGenTypes.BackupCreate.class);
-            responses = backupApiCallHandler.createBackup(data.rsc_name, remoteName, data.node_name, data.incremental)
+            boolean incremental = data.incremental != null && data.incremental;
+            responses = backupApiCallHandler.createBackup(data.rsc_name, remoteName, data.node_name, incremental)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
