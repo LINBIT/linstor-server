@@ -49,7 +49,6 @@ public class Backups
     private static final int DEL_OPT_TIME_RSC_NODE = 1 << 4;
     private static final int DEL_OPT_ALL = 1 << 5;
     private static final int DEL_OPT_ALL_LOCALCLUSTER = 1 << 6;
-    private static final int DEL_OPT_S3_KEY_FORCE = 1 << 7;
 
     private static final List<Integer> DEL_OPT_ALLOWED_COMBINATIONS = Arrays.asList(
         DEL_OPT_ID,
@@ -68,10 +67,7 @@ public class Backups
         DEL_OPT_ALL | DEL_OPT_CASCADE,
 
         DEL_OPT_ALL_LOCALCLUSTER, // forced cascade
-        DEL_OPT_ALL_LOCALCLUSTER | DEL_OPT_CASCADE,
-
-        DEL_OPT_S3_KEY_FORCE,
-        DEL_OPT_S3_KEY_FORCE | DEL_OPT_CASCADE
+        DEL_OPT_ALL_LOCALCLUSTER | DEL_OPT_CASCADE
     );
 
     private final RequestHelper requestHelper;
@@ -188,7 +184,6 @@ public class Backups
         @DefaultValue("false") @QueryParam("all_local_cluster") boolean allLocalCluster,
         @DefaultValue("false") @QueryParam("all") boolean all,
         @DefaultValue("") @QueryParam("s3key") String s3key,
-        @DefaultValue("") @QueryParam("s3key_force") String s3keyForce,
         @DefaultValue("") @QueryParam("timestamp") String timestamp,
         @DefaultValue("") @QueryParam("resource_name") String rscName,
         @DefaultValue("false") @QueryParam("dryrun") boolean dryRun
@@ -208,7 +203,6 @@ public class Backups
         combination |= timestamp.isEmpty() && rscName.isEmpty() && nodeName.isEmpty() ? 0 : DEL_OPT_TIME_RSC_NODE;
         combination |= !all ? 0 : DEL_OPT_ALL;
         combination |= !allLocalCluster ? 0 : DEL_OPT_ALL_LOCALCLUSTER;
-        combination |= s3keyForce.isEmpty() ? 0 : DEL_OPT_S3_KEY_FORCE;
         // dryRun is allowed with all combinations, no need to check
 
         if (!DEL_OPT_ALLOWED_COMBINATIONS.contains(combination))
@@ -246,7 +240,6 @@ public class Backups
                 allLocalCluster,
                 all,
                 s3key,
-                s3keyForce,
                 remoteName,
                 dryRun
             ).subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
@@ -276,7 +269,7 @@ public class Backups
                 data.rsc_name,
                 data.restore,
                 data.create
-            ).subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
+            ).subscriberContext(requestHelper.createContext(ApiConsts.API_ABORT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(

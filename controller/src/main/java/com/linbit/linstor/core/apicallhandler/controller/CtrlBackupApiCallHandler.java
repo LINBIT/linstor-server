@@ -281,6 +281,7 @@ public class CtrlBackupApiCallHandler
             NodeName chosenNodeName = chooseNodeResult.objA.getName();
             List<String> nodes = chooseNodeResult.objB;
 
+            boolean nodeNameFound = false;
             if (nodeName != null && !nodeName.isEmpty())
             {
                 for (String possibleNodeName : nodes)
@@ -288,9 +289,18 @@ public class CtrlBackupApiCallHandler
                     if (nodeName.equalsIgnoreCase(possibleNodeName))
                     {
                         chosenNodeName = new NodeName(possibleNodeName);
+                        nodeNameFound = true;
                         break;
                     }
                 }
+            }
+            if (!nodeNameFound && nodeName != null)
+            {
+                responses.addEntry(
+                    "Preferred node '" + nodeName + "' could not be selected. Choosing '" + chosenNodeName +
+                        "' instead.",
+                    ApiConsts.MASK_WARN
+                );
             }
 
             SnapshotDefinition snapDfn = snapshotCrtHelper
@@ -383,7 +393,8 @@ public class CtrlBackupApiCallHandler
                 );
             }
             ctrlTransactionHelper.commit();
-            return snapshotCrtHandler.postCreateSnapshot(snapDfn);
+            return Flux.<ApiCallRc>just(responses)
+                .concatWith(snapshotCrtHandler.postCreateSnapshot(snapDfn));
         }
         catch (InvalidNameException exc)
         {
@@ -479,7 +490,6 @@ public class CtrlBackupApiCallHandler
         boolean allCluster,
         boolean all,
         String s3key,
-        String s3keyForce,
         String remoteName,
         boolean dryRunRef
     )
@@ -495,7 +505,6 @@ public class CtrlBackupApiCallHandler
                 idPrefix,
                 cascading,
                 s3key,
-                s3keyForce,
                 rscName,
                 nodeName,
                 timestamp,
@@ -512,7 +521,6 @@ public class CtrlBackupApiCallHandler
         String idPrefix,
         boolean cascading,
         String s3Key,
-        String s3keyForce,
         String rscName,
         String nodeName,
         String timestamp,
@@ -533,7 +541,6 @@ public class CtrlBackupApiCallHandler
          * 4) (time|rsc|node)+ [cascading]
          * 5) all // force cascading
          * 6) allCluster // forced cascading
-         * 7) forced s3 key [cascading]
          */
 
         List<S3ObjectSummary> objects = backupHandler.listObjects(
@@ -581,12 +588,9 @@ public class CtrlBackupApiCallHandler
         }
         else if (s3Key != null && !s3Key.isEmpty()) // case 3: s3Key [cascading]
         {
-            deleteByS3Key(
-                s3LinstorObjects,
-                Collections.singleton(s3Key),
-                cascading,
-                toDelete
-            );
+            deleteByS3Key(s3LinstorObjects, Collections.singleton(s3Key), cascading, toDelete);
+            toDelete.s3keys.add(s3Key);
+            toDelete.s3KeysNotFound.remove(s3Key); // ignore this
         }
         else if (timestamp != null && !timestamp.isEmpty() ||
             rscName != null && !rscName.isEmpty() ||
@@ -618,11 +622,6 @@ public class CtrlBackupApiCallHandler
                 toDelete
             );
         }
-        else if (s3keyForce != null && !s3keyForce.isEmpty()) // case 7: forced s3 key [cascading]
-        {
-            deleteByS3Key(s3LinstorObjects, Collections.singleton(s3keyForce), cascading, toDelete);
-            toDelete.s3keys.add(s3keyForce);
-        }
 
         Flux<ApiCallRc> deleteSnapFlux = Flux.empty();
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -632,7 +631,7 @@ public class CtrlBackupApiCallHandler
             boolean nothingToDelete = true;
             if (!toDelete.s3keys.isEmpty())
             {
-                StringBuilder sb = new StringBuilder("Would delete s3 keys:\n");
+                StringBuilder sb = new StringBuilder("Would delete s3 objects:\n");
                 nothingToDelete = false;
                 for (String s3KeyToDelete : toDelete.s3keys)
                 {
