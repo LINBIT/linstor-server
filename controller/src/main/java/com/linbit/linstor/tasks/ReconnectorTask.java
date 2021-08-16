@@ -278,24 +278,29 @@ public class ReconnectorTask implements Task
                             .build()
                         )
                         {
-                            reconnScope.enter();
-                            hasEnteredScope = true;
-                            transMgr = transactionMgrGenerator.startTransaction();
-                            TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
-
-                            // look for another netIf configured as satellite connection and set it as active
-                            setNetIf(node, config);
-
-                            transMgr.commit();
-                            synchronized (syncObj)
+                            // another check needed to detect race conditions (someone could have called node.delete()
+                            // while we were waiting for the lock)
+                            if (!node.isDeleted())
                             {
-                                reconnectorConfigSet.add(
-                                    new ReconnectConfig(
-                                        config,
-                                        config.peer.getConnector().reconnect(config.peer)
-                                    )
-                                );
-                                reconnectorConfigSet.remove(config);
+                                reconnScope.enter();
+                                hasEnteredScope = true;
+                                transMgr = transactionMgrGenerator.startTransaction();
+                                TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
+
+                                // look for another netIf configured as satellite connection and set it as active
+                                setNetIf(node, config);
+
+                                transMgr.commit();
+                                synchronized (syncObj)
+                                {
+                                    reconnectorConfigSet.add(
+                                        new ReconnectConfig(
+                                            config,
+                                            config.peer.getConnector().reconnect(config.peer)
+                                        )
+                                    );
+                                    reconnectorConfigSet.remove(config);
+                                }
                             }
                         }
                         catch (AccessDeniedException | DatabaseException exc)
