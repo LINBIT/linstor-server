@@ -92,7 +92,7 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
 
-        urlDriver = generateSingleColumnDriver(URL, remote -> remote.getUrl(dbCtx).toString(), Function.identity());
+        urlDriver = generateSingleColumnDriver(URL, remote -> remote.getUrl(dbCtx).toString(), java.net.URL::toString);
 
         switch (getDbType())
         {

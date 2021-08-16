@@ -25,9 +25,11 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.core.objects.KeyValueStore;
+import com.linbit.linstor.core.objects.LinstorRemote;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -48,6 +50,7 @@ import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LinstorRemoteCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
@@ -159,6 +162,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final BCacheLayerCtrlDatabaseDriver bcacheLayerDriver;
     private final ExternalFileCtrlDatabaseDriver extFileDriver;
     private final S3RemoteCtrlDatabaseDriver s3remoteDriver;
+    private final LinstorRemoteCtrlDatabaseDriver linstorRemoteDriver;
     private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
     private final Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelper;
 
@@ -207,6 +211,7 @@ public class DatabaseLoader implements DatabaseDriver
         BCacheLayerCtrlDatabaseDriver bcacheLayerDriverRef,
         ExternalFileCtrlDatabaseDriver extFilesDriverRef,
         S3RemoteCtrlDatabaseDriver s3remoteDriverRef,
+        LinstorRemoteCtrlDatabaseDriver linstorRemoteDriverRef,
         Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
         Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelperRef,
         CoreModule.NodesMap nodesMapRef,
@@ -252,6 +257,7 @@ public class DatabaseLoader implements DatabaseDriver
         bcacheLayerDriver = bcacheLayerDriverRef;
         extFileDriver = extFilesDriverRef;
         s3remoteDriver = s3remoteDriverRef;
+        linstorRemoteDriver = linstorRemoteDriverRef;
         ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
         ctrlSnapLayerDataHelper = ctrlSnapLayerDataHelperRef;
 
@@ -310,8 +316,10 @@ public class DatabaseLoader implements DatabaseDriver
                 Collections.unmodifiableMap(storPoolDfnDriver.loadAll(null));
             Map<ExternalFile, ExternalFile.InitMaps> loadedExtFilesMap =
                 Collections.unmodifiableMap(extFileDriver.loadAll(null));
-            Map<S3Remote, S3Remote.InitMaps> loadedRemotesMap = Collections
+            Map<S3Remote, S3Remote.InitMaps> loadedS3RemotesMap = Collections
                 .unmodifiableMap(s3remoteDriver.loadAll(null));
+            Map<LinstorRemote, LinstorRemote.InitMaps> loadedLinstorRemotesMap = Collections
+                .unmodifiableMap(linstorRemoteDriver.loadAll(null));
 
             // add the rscDfns into the corresponding rscGroup rscDfn-map
             for (ResourceDefinition rscDfn : loadedRscDfnsMap.keySet())
@@ -329,7 +337,9 @@ public class DatabaseLoader implements DatabaseDriver
                 mapByName(loadedStorPoolDfnsMap, StorPoolDefinition::getName);
             Map<ExternalFileName, ExternalFile> tmpExtFileMap =
                 mapByName(loadedExtFilesMap, ExternalFile::getName);
-            Map<RemoteName, S3Remote> tmpRemoteMap = mapByName(loadedRemotesMap, S3Remote::getName);
+            Map<RemoteName, Remote> tmpRemoteMap = mapByName(loadedS3RemotesMap, S3Remote::getName);
+            tmpRemoteMap.putAll(mapByName(loadedLinstorRemotesMap, LinstorRemote::getName));
+
 
             // loading net interfaces
             List<NetInterface> loadedNetIfs = netIfDriver.loadAllAsList(tmpNodesMap);
@@ -623,8 +633,9 @@ public class DatabaseLoader implements DatabaseDriver
         }
     }
 
-    private <NAME, DATA> TreeMap<NAME, DATA> mapByName(
-        Map<DATA, ?> map, Function<? super DATA, NAME> nameMapper
+    private <NAME, DATA, IN_DATA extends DATA> TreeMap<NAME, DATA> mapByName(
+        Map<IN_DATA, ?> map,
+        Function<IN_DATA, NAME> nameMapper
     )
     {
         return map.keySet().stream().collect(

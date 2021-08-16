@@ -178,6 +178,7 @@ public class CtrlRemoteApiCallHandler
         String secretKeyRef
     )
     {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStr);
         if (ctrlApiDataLoader.loadRemote(remoteName, false) != null)
         {
@@ -225,9 +226,12 @@ public class CtrlRemoteApiCallHandler
                 )
             );
         }
-
         ctrlTransactionHelper.commit();
-        return ctrlSatelliteUpdateCaller.updateSatellites(remote);
+        responses.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.CREATED | ApiConsts.MASK_REMOTE, "Remote created"));
+
+        return Flux
+            .<ApiCallRc>just(responses)
+            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote));
     }
 
     public Flux<ApiCallRc> changeS3(
