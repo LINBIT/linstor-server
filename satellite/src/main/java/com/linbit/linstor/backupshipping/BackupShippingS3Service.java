@@ -121,7 +121,7 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         if (m.matches())
         {
             ret = String.format(
-                BackupShippingConsts.BACKUP_KEY_FORMAT,
+                S3Consts.BACKUP_KEY_FORMAT,
                 m.group(1),
                 snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
                 snapVlmDataRef.getVlmNr().value,

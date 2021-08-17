@@ -26,7 +26,7 @@ import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
-import com.linbit.linstor.backupshipping.BackupShippingConsts;
+import com.linbit.linstor.backupshipping.S3Consts;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
@@ -91,7 +91,7 @@ import com.linbit.utils.ExceptionThrowingPredicate;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
-import static com.linbit.linstor.backupshipping.BackupShippingConsts.META_SUFFIX;
+import static com.linbit.linstor.backupshipping.S3Consts.META_SUFFIX;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -133,7 +133,7 @@ public class CtrlBackupApiCallHandler
         .compile("^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})\\.meta$");
     private static final Pattern SNAP_DFN_TIME_PATTERN = Pattern
         .compile("^(?:back_(?:inc_)?)([0-9]{8}_[0-9]{6})");
-    private static final Pattern BACKUP_KEY_PATTERN = Pattern
+    private static final Pattern BACKUP_VOLUME_PATTERN = Pattern
         .compile("^([a-zA-Z0-9_-]{2,48})(\\..+)?_([0-9]{5})_(back_[0-9]{8}_[0-9]{6})$");
 
     private final Provider<AccessContext> peerAccCtx;
@@ -252,7 +252,7 @@ public class CtrlBackupApiCallHandler
 
     public static String generateNewSnapshotName(Date date)
     {
-        return BackupShippingConsts.SNAP_PREFIX + BackupShippingConsts.DATE_FORMAT.format(date);
+        return S3Consts.SNAP_PREFIX + S3Consts.DATE_FORMAT.format(date);
     }
 
     Pair<Flux<ApiCallRc>, Snapshot> backupSnapshot(
@@ -965,7 +965,7 @@ public class CtrlBackupApiCallHandler
         {
             try
             {
-                Date date = BackupShippingConsts.DATE_FORMAT.parse(timestampRef);
+                Date date = S3Consts.DATE_FORMAT.parse(timestampRef);
                 timestampCheck = timestamp -> date.after(new Date(timestamp));
             }
             catch (ParseException exc)
@@ -1106,7 +1106,7 @@ public class CtrlBackupApiCallHandler
             }
             else
             {
-                Matcher s3BackupKeyMatcher = BACKUP_KEY_PATTERN.matcher(s3Key);
+                Matcher s3BackupKeyMatcher = BACKUP_VOLUME_PATTERN.matcher(s3Key);
                 if (s3BackupKeyMatcher.matches())
                 {
                     S3ObjectInfo s3DataInfo = ret.get(s3Key);
@@ -1186,7 +1186,7 @@ public class CtrlBackupApiCallHandler
                 shortTargetName = targetMatcher.group(1) + "_" + snapName;
                 try
                 {
-                    targetTime = BackupShippingConsts.DATE_FORMAT.parse(snapName.substring(BackupShippingConsts.SNAP_PREFIX_LEN));
+                    targetTime = S3Consts.DATE_FORMAT.parse(snapName.substring(S3Consts.SNAP_PREFIX_LEN));
                 }
                 catch (ParseException exc)
                 {
@@ -1233,8 +1233,8 @@ public class CtrlBackupApiCallHandler
                 try
                 {
                     // remove "back_" prefix
-                    String ts = m.group(2).substring(BackupShippingConsts.SNAP_PREFIX_LEN);
-                    Date curTs = BackupShippingConsts.DATE_FORMAT.parse(ts);
+                    String ts = m.group(2).substring(S3Consts.SNAP_PREFIX_LEN);
+                    Date curTs = S3Consts.DATE_FORMAT.parse(ts);
                     if (targetTime != null)
                     {
                         if (
@@ -1259,7 +1259,7 @@ public class CtrlBackupApiCallHandler
                 }
             }
         }
-        String metaName = srcRscName + "_back_" + BackupShippingConsts.DATE_FORMAT.format(latestBackTs) + META_SUFFIX;
+        String metaName = srcRscName + "_back_" + S3Consts.DATE_FORMAT.format(latestBackTs) + META_SUFFIX;
         if (backupInfoMgr.restoreContainsMetaFile(metaName))
         {
             throw new ApiRcException(
@@ -1447,7 +1447,7 @@ public class CtrlBackupApiCallHandler
         }
         // 8. create rscDfn
         SnapshotName snapName = LinstorParsingUtils.asSnapshotName(
-            BackupShippingConsts.SNAP_PREFIX + BackupShippingConsts.DATE_FORMAT.format(metadata.getStartTimestamp())
+            S3Consts.SNAP_PREFIX + S3Consts.DATE_FORMAT.format(metadata.getStartTimestamp())
         );
         ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, metaName);
         // 9. create snapDfn
@@ -1780,7 +1780,7 @@ public class CtrlBackupApiCallHandler
                     long timestamp;
                     try
                     {
-                        timestamp = BackupShippingConsts.DATE_FORMAT.parse(matcher.group(1)).getTime();
+                        timestamp = S3Consts.DATE_FORMAT.parse(matcher.group(1)).getTime();
                         if (timestamp > latestTimestamp)
                         {
                             latestTimestamp = timestamp;
@@ -1944,7 +1944,7 @@ public class CtrlBackupApiCallHandler
         for (BackupInfoPojo backup : metadata.getBackups().values())
         {
             String name = backup.getName();
-            Matcher m = BACKUP_KEY_PATTERN.matcher(name);
+            Matcher m = BACKUP_VOLUME_PATTERN.matcher(name);
             m.matches();
             String shortName = m.group(1) + "_" + m.group(4);
             backups.add(shortName);
@@ -2229,7 +2229,7 @@ public class CtrlBackupApiCallHandler
                         else
                         {
 
-                            Matcher s3BackupKeyMatcher = BACKUP_KEY_PATTERN.matcher(s3BackVlmInfo.getName());
+                            Matcher s3BackupKeyMatcher = BACKUP_VOLUME_PATTERN.matcher(s3BackVlmInfo.getName());
                             if (s3BackupKeyMatcher.matches())
                             {
                                 Integer s3VlmNrFromBackupName = Integer.parseInt(s3BackupKeyMatcher.group(3));
@@ -2238,7 +2238,7 @@ public class CtrlBackupApiCallHandler
                                     long vlmFinishedTime = s3BackVlmInfo.getFinishedTimestamp();
                                     BackupVolumePojo retVlmPojo = new BackupVolumePojo(
                                         s3MetaVlmNr,
-                                        BackupShippingConsts.DATE_FORMAT.format(new Date(vlmFinishedTime)),
+                                        S3Consts.DATE_FORMAT.format(new Date(vlmFinishedTime)),
                                         vlmFinishedTime,
                                         new BackupVlmS3Pojo(s3BackVlmInfo.getName())
                                     );
@@ -2267,9 +2267,9 @@ public class CtrlBackupApiCallHandler
                         id,
                         metaFileMatcher.group(1),
                         metaFileMatcher.group(2),
-                        BackupShippingConsts.DATE_FORMAT.format(new Date(s3MetaFile.getStartTimestamp())),
+                        S3Consts.DATE_FORMAT.format(new Date(s3MetaFile.getStartTimestamp())),
                         s3MetaFile.getStartTimestamp(),
-                        BackupShippingConsts.DATE_FORMAT.format(new Date(s3MetaFile.getFinishTimestamp())),
+                        S3Consts.DATE_FORMAT.format(new Date(s3MetaFile.getFinishTimestamp())),
                         s3MetaFile.getFinishTimestamp(),
                         s3MetaFile.getNodeName(),
                         false,
@@ -2315,7 +2315,7 @@ public class CtrlBackupApiCallHandler
         {
             if (!linstorBackupsS3Keys.contains(s3key))
             {
-                Matcher m = BACKUP_KEY_PATTERN.matcher(s3key);
+                Matcher m = BACKUP_VOLUME_PATTERN.matcher(s3key);
                 if (m.matches())
                 {
                     String rscName = m.group(1);
@@ -2328,7 +2328,7 @@ public class CtrlBackupApiCallHandler
                         rscName,
                         snapName,
                         m,
-                        BACKUP_KEY_PATTERN,
+                        BACKUP_VOLUME_PATTERN,
                         s3keys,
                         linstorBackupsS3Keys,
                         snapDfn
@@ -2360,7 +2360,7 @@ public class CtrlBackupApiCallHandler
                     {
                         futureS3Keys.add(
                             String.format(
-                                BackupShippingConsts.BACKUP_KEY_FORMAT,
+                                S3Consts.BACKUP_KEY_FORMAT,
                                 rscName,
                                 "",
                                 snapVlmDfn.getVolumeNumber().value,
@@ -2369,7 +2369,7 @@ public class CtrlBackupApiCallHandler
                         );
                     }
                     String s3KeyShouldLookLikeThis = futureS3Keys.iterator().next();
-                    Matcher m = BACKUP_KEY_PATTERN.matcher(s3KeyShouldLookLikeThis);
+                    Matcher m = BACKUP_VOLUME_PATTERN.matcher(s3KeyShouldLookLikeThis);
                     if (m.find())
                     {
                         BackupApi back = fillBackupListPojo(
@@ -2377,7 +2377,7 @@ public class CtrlBackupApiCallHandler
                             rscName,
                             snapName,
                             m,
-                            BACKUP_KEY_PATTERN,
+                            BACKUP_VOLUME_PATTERN,
                             s3keys,
                             linstorBackupsS3Keys,
                             snapDfn
@@ -2440,8 +2440,8 @@ public class CtrlBackupApiCallHandler
 
         try
         {
-            String startTime = snapName.substring(BackupShippingConsts.SNAP_PREFIX_LEN);
-            long startTimestamp = BackupShippingConsts.DATE_FORMAT.parse(startTime).getTime(); // fail fast
+            String startTime = snapName.substring(S3Consts.SNAP_PREFIX_LEN);
+            long startTimestamp = S3Consts.DATE_FORMAT.parse(startTime).getTime(); // fail fast
 
             Map<Integer, BackupVolumePojo> vlms = new TreeMap<>();
             {

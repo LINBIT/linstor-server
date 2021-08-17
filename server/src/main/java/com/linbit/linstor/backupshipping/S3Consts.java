@@ -3,7 +3,7 @@ package com.linbit.linstor.backupshipping;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-public class BackupShippingConsts
+public class S3Consts
 {
     public static final String BACKUP_KEY_FORMAT = "%s%s_%05d_%s";
     public static final String SNAP_PREFIX = "back_";

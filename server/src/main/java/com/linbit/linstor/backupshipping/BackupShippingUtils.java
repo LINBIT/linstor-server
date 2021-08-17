@@ -10,6 +10,8 @@ import com.linbit.linstor.api.pojo.backups.RscMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -82,8 +84,9 @@ public class BackupShippingUtils
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
 
         String clusterId = stltProps.getProp(LinStor.PROP_KEY_CLUSTER_ID);
-        String startTime = snapDfn.getName().displayValue.substring(BackupShippingConsts.SNAP_PREFIX_LEN);
-        long startTimestamp = BackupShippingConsts.DATE_FORMAT.parse(startTime).getTime();
+
+        String startTime = snapDfn.getName().displayValue.substring(S3Consts.SNAP_PREFIX_LEN);
+        long startTimestamp = S3Consts.DATE_FORMAT.parse(startTime).getTime();
 
         PriorityProps rscDfnPrio = new PriorityProps(
             snapDfn.getProps(accCtx),
@@ -159,6 +162,38 @@ public class BackupShippingUtils
             backupsRef,
             clusterId,
             snapDfn.getUuid().toString()
+        );
+    }
+
+    public static String buildS3MetaKey(String rscName, String snapName, String clusterSuffix)
+    {
+        return rscName + "_" + snapName + (clusterSuffix == null ? "" : clusterSuffix) + S3Consts.META_SUFFIX;
+    }
+
+    public static String buildS3MetaKey(
+        ResourceName resourceNameRef,
+        SnapshotName snapshotNameRef,
+        String clusterSuffix
+    )
+    {
+        return buildS3MetaKey(resourceNameRef.displayValue, snapshotNameRef.displayValue, clusterSuffix);
+    }
+
+    public static String buildS3MetaKey(SnapshotDefinition snapDfn, String clusterSuffix)
+    {
+        return buildS3MetaKey(
+            snapDfn.getResourceName().displayValue,
+            snapDfn.getName().displayValue,
+            clusterSuffix
+        );
+    }
+
+    public static String buildS3MetaKey(Snapshot snap, String clusterSuffix)
+    {
+        return buildS3MetaKey(
+            snap.getResourceName().displayValue,
+            snap.getSnapshotName().displayValue,
+            clusterSuffix
         );
     }
 }

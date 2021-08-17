@@ -161,7 +161,8 @@ public abstract class AbsBackupShippingService implements SystemService
     {
         if (RscLayerSuffixes.shouldSuffixBeShipped(rscNameSuffixRef))
         {
-            String backupName = String.format(BackupShippingConsts.BACKUP_KEY_FORMAT, rscNameRef, rscNameSuffixRef, vlmNrRef, snapNameRef);
+            String backupName = String
+                .format(S3Consts.BACKUP_KEY_FORMAT, rscNameRef, rscNameSuffixRef, vlmNrRef, snapNameRef);
             String remoteName = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot().getProps(accCtx)
                 .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
             startDaemon(
@@ -350,12 +351,14 @@ public abstract class AbsBackupShippingService implements SystemService
                 info.remote = remote;
                 try
                 {
-                    info.s3MetaKey = snap.getResourceName() + "_" + snap.getSnapshotName().displayValue + ".meta";
+                    info.s3MetaKey = BackupShippingUtils.buildS3MetaKey(
+                        snap.getSnapshotDefinition(),
+                        null
+                    );
                     if (basedOnSnapVlmData != null && basedOnSnapVlmData != snapVlmData)
                     {
                         Snapshot basedOnSnap = basedOnSnapVlmData.getRscLayerObject().getAbsResource();
-                        info.basedOnS3MetaKey = basedOnSnap.getResourceName() + "_" +
-                            basedOnSnap.getSnapshotDefinition().getName().displayValue + ".meta";
+                        info.basedOnS3MetaKey = BackupShippingUtils.buildS3MetaKey(basedOnSnap, null);
                     }
                 }
                 catch (InvalidKeyException exc)
