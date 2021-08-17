@@ -15,7 +15,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
-import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltConnTracker;
 import com.linbit.linstor.core.StltSecurityObjects;
@@ -58,7 +57,6 @@ public abstract class AbsBackupShippingService implements SystemService
     protected final ThreadGroup threadGroup;
     protected final AccessContext accCtx;
     protected final RemoteMap remoteMap;
-    protected final String clusterId;
 
     private ServiceName instanceName;
     private boolean serviceStarted = false;
@@ -108,8 +106,6 @@ public abstract class AbsBackupShippingService implements SystemService
         startedShippments = Collections.synchronizedSet(new TreeSet<>());
         finishedShipments = Collections.synchronizedMap(new TreeMap<>());
         threadGroup = new ThreadGroup("SnapshotShippingSerivceThreadGroup");
-
-        clusterId = stltConfigAccessorRef.getReadonlyProps().getProp(LinStor.PROP_KEY_CLUSTER_ID);
 
         // this causes all shippings to be aborted should the satellite lose connection to the controller
         stltConnTracker.addClosingListener(this::killAllShipping);
@@ -472,7 +468,6 @@ public abstract class AbsBackupShippingService implements SystemService
 
         return BackupShippingUtils.fillPojo(
             accCtx,
-            clusterId,
             snap,
             stltConfigAccessor.getReadonlyProps(),
             stltSecObj.getEncKey(),

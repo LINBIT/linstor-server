@@ -9,6 +9,7 @@ import com.linbit.linstor.api.pojo.backups.RscDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.RscMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -40,7 +41,6 @@ public class BackupShippingUtils
 
     public static String fillPojo(
         AccessContext accCtx,
-        String clusterId,
         Snapshot snap,
         Props stltProps,
         byte[] encKey,
@@ -54,7 +54,6 @@ public class BackupShippingUtils
         return OBJECT_MAPPER.writeValueAsString(
             getBackupMetaDataPojo(
                 accCtx,
-                clusterId,
                 snap,
                 stltProps,
                 encKey,
@@ -68,7 +67,6 @@ public class BackupShippingUtils
 
     public static BackupMetaDataPojo getBackupMetaDataPojo(
         AccessContext accCtx,
-        String clusterId,
         Snapshot snap,
         Props stltProps,
         byte[] encKey,
@@ -83,6 +81,7 @@ public class BackupShippingUtils
         ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
 
+        String clusterId = stltProps.getProp(LinStor.PROP_KEY_CLUSTER_ID);
         String startTime = snapDfn.getName().displayValue.substring(BackupShippingConsts.SNAP_PREFIX_LEN);
         long startTimestamp = BackupShippingConsts.DATE_FORMAT.parse(startTime).getTime();
 

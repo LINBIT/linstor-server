@@ -356,7 +356,6 @@ public class CtrlBackupL2LSrcApiCallHandler
         {
             BackupMetaDataPojo metaDataPojo = BackupShippingUtils.getBackupMetaDataPojo(
                 peerAccCtx.get(),
-                systemConfRepository.getCtrlConfForView(sysCtx).getProp(LinStor.PROP_KEY_CLUSTER_ID),
                 data.srcSnapshot,
                 systemConfRepository.getStltConfForView(sysCtx),
                 null, // TODO
