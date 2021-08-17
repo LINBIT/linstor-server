@@ -1360,7 +1360,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         {
             IntStltRemote.Builder builder = IntStltRemote.newBuilder()
                 .setUuid(stltremote.getUuid().toString())
-                .setName(stltremote.getName().displayValue);
+                .setName(stltremote.getName().displayValue)
+                .setFlags(stltremote.getFlags().getFlagsBits(serializerCtx));
 
             String ip = stltremote.getIp(serializerCtx);
             if (ip != null)

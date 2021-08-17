@@ -2800,6 +2800,8 @@ public class CtrlBackupApiCallHandler
             );
             snap.getFlags().disableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
 
+            boolean keepGoing;
+
             Snapshot nextSnap = backupInfoMgr.getNextBackupToUpload(snap);
             if (successRef && nextSnap != null)
             {
@@ -2818,6 +2820,7 @@ public class CtrlBackupApiCallHandler
                     )
                 )
                     .concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn));
+                keepGoing = true;
             }
             else
             {
@@ -2846,18 +2849,51 @@ public class CtrlBackupApiCallHandler
                          */
                         flux = Flux.empty();
                     }
+                    keepGoing = false; // we received the last backup
                 }
                 else
                 {
                     flux = ctrlSnapDeleteApiCallHandler.deleteSnapshot(
                         snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue
                     );
+                    keepGoing = false; // last backup failed.
                 }
             }
+
+            Flux<ApiCallRc> l2lCleanupFlux = Flux.empty();
+            if (!keepGoing)
+            {
+                String remoteName = snap.getProps(peerAccCtx.get()).getProp(
+                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
+                Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                if (remote != null && remote instanceof StltRemote)
+                {
+                    snap.getProps(peerAccCtx.get()).removeProp(
+                        InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    );
+                    l2lCleanupFlux = cleanupStltRemote((StltRemote) remote)
+                        .concatWith(
+                            ctrlSatelliteUpdateCaller.updateSatellites(
+                                snapDfn,
+                                CtrlSatelliteUpdateCaller.notConnectedWarn()
+                            ).transform(
+                                responses -> CtrlResponseUtils.combineResponses(
+                                    responses,
+                                    LinstorParsingUtils.asRscName(rscNameRef),
+                                    "Removing remote property from snapshot '" + snapNameRef + "' of {1} on {0}"
+                                )
+                            )
+                        );
+                }
+            }
+
             ctrlTransactionHelper.commit();
-            return flux;
+            return l2lCleanupFlux.concatWith(flux);
         }
-        catch (AccessDeniedException | InvalidKeyException exc)
+        catch (AccessDeniedException | InvalidKeyException | InvalidNameException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -2888,6 +2924,7 @@ public class CtrlBackupApiCallHandler
         SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true);
         try
         {
+            Flux<ApiCallRc> cleanupFlux = Flux.empty();
             NodeName nodeName = peerProvider.get().getNode().getName();
             backupInfoMgr.abortDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
             if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
@@ -2902,9 +2939,8 @@ public class CtrlBackupApiCallHandler
             {
                 snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
             }
-            String remoteName = "";
             Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
-            remoteName = snap.getProps(peerAccCtx.get()).removeProp(
+            String remoteName = snap.getProps(peerAccCtx.get()).removeProp(
                 InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
@@ -2920,17 +2956,25 @@ public class CtrlBackupApiCallHandler
                     snapNameRef,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
                 );
+
+                Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                if (remote != null && remote instanceof StltRemote)
+                {
+                    cleanupFlux = cleanupStltRemote((StltRemote) remote);
+                }
             }
             ctrlTransactionHelper.commit();
 
-            return ctrlSatelliteUpdateCaller.updateSatellites(
-                snapDfn,
-                CtrlSatelliteUpdateCaller.notConnectedWarn()
-            ).transform(
-                responses -> CtrlResponseUtils.combineResponses(
-                    responses,
-                    LinstorParsingUtils.asRscName(rscNameRef),
-                    "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+            return cleanupFlux.concatWith(
+                ctrlSatelliteUpdateCaller.updateSatellites(
+                    snapDfn,
+                    CtrlSatelliteUpdateCaller.notConnectedWarn()
+                ).transform(
+                    responses -> CtrlResponseUtils.combineResponses(
+                        responses,
+                        LinstorParsingUtils.asRscName(rscNameRef),
+                        "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                    )
                 )
             );
         }
@@ -2942,6 +2986,51 @@ public class CtrlBackupApiCallHandler
         {
             throw new ApiDatabaseException(exc);
         }
+    }
+
+    private Flux<ApiCallRc> cleanupStltRemote(StltRemote remote)
+    {
+        Flux<ApiCallRc> flux;
+        try
+        {
+            remote.getFlags().enableFlags(sysCtx, StltRemote.Flags.DELETE);
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(remote)
+                .concatWith(
+                    scopeRunner.fluxInTransactionalScope(
+                        "Removing temporary satellite remote",
+                        lockGuardFactory.create()
+                            .write(LockObj.REMOTE_MAP).buildDeferred(),
+                        () -> deleteStltRemoteInTransaction(remote.getName().displayValue)
+                    )
+                );
+        }
+        catch (AccessDeniedException | DatabaseException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return flux;
+    }
+
+    private Flux<ApiCallRc> deleteStltRemoteInTransaction(String remoteNameRef)
+    {
+        Remote remote;
+        try
+        {
+            remote = remoteRepo.get(sysCtx, new RemoteName(remoteNameRef, true));
+            if (!(remote instanceof StltRemote))
+            {
+                throw new ImplementationError("This method should only be called for satellite remotes");
+            }
+            remoteRepo.remove(sysCtx, remote.getName());
+            remote.delete(sysCtx);
+
+            ctrlTransactionHelper.commit();
+        }
+        catch (AccessDeniedException | InvalidNameException | DatabaseException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return Flux.empty();
     }
 
     private ApiCallRcImpl backupShippingSupported(Resource rsc) throws AccessDeniedException

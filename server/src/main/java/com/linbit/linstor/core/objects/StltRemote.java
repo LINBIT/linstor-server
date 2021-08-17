@@ -195,6 +195,8 @@ public class StltRemote extends BaseTransactionObject
         ip.set(apiData.getIp());
         port.set(apiData.getPort());
         useZstd.set(apiData.useZstd());
+
+        flags.resetFlagsTo(accCtx, Flags.restoreFlags(apiData.getFlags()));
     }
 
     public boolean isDeleted()

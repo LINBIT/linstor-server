@@ -130,6 +130,11 @@ public class StltRemoteApiCallHandler
                 ctrlPeerConnector.getLocalNodeName()
             );
 
+            if (localStltRemote.getFlags().isSet(apiCtx, StltRemote.Flags.DELETE))
+            {
+                remoteMap.remove(localStltRemote.getName());
+            }
+
             transMgrProvider.get().commit();
         }
         catch (Exception | ImplementationError exc)
