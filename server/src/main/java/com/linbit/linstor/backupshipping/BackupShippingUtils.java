@@ -165,35 +165,53 @@ public class BackupShippingUtils
         );
     }
 
-    public static String buildS3MetaKey(String rscName, String snapName, String clusterSuffix)
+    public static String buildS3MetaKey(String rscName, String snapName, String s3Suffix)
     {
-        return rscName + "_" + snapName + (clusterSuffix == null ? "" : clusterSuffix) + S3Consts.META_SUFFIX;
+        return rscName + "_" + snapName + (s3Suffix == null ? "" : s3Suffix) + S3Consts.META_SUFFIX;
     }
 
     public static String buildS3MetaKey(
         ResourceName resourceNameRef,
         SnapshotName snapshotNameRef,
-        String clusterSuffix
+        String s3Suffix
     )
     {
-        return buildS3MetaKey(resourceNameRef.displayValue, snapshotNameRef.displayValue, clusterSuffix);
+        return buildS3MetaKey(resourceNameRef.displayValue, snapshotNameRef.displayValue, s3Suffix);
     }
 
-    public static String buildS3MetaKey(SnapshotDefinition snapDfn, String clusterSuffix)
+    public static String buildS3MetaKey(SnapshotDefinition snapDfn, String s3Suffix)
     {
         return buildS3MetaKey(
             snapDfn.getResourceName().displayValue,
             snapDfn.getName().displayValue,
-            clusterSuffix
+            s3Suffix
         );
     }
 
-    public static String buildS3MetaKey(Snapshot snap, String clusterSuffix)
+    public static String buildS3MetaKey(Snapshot snap, String s3Suffix)
     {
         return buildS3MetaKey(
             snap.getResourceName().displayValue,
             snap.getSnapshotName().displayValue,
-            clusterSuffix
+            s3Suffix
+        );
+    }
+
+    public static String buildS3VolumeName(
+        String rscName,
+        String rscNameSuffix,
+        int vlmNr,
+        String snapName,
+        String s3Suffix
+    )
+    {
+        return String.format(
+            S3Consts.BACKUP_KEY_FORMAT,
+            rscName,
+            rscNameSuffix,
+            vlmNr,
+            snapName,
+            s3Suffix == null ? "" : s3Suffix
         );
     }
 }

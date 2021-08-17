@@ -161,8 +161,16 @@ public abstract class AbsBackupShippingService implements SystemService
     {
         if (RscLayerSuffixes.shouldSuffixBeShipped(rscNameSuffixRef))
         {
-            String backupName = String
-                .format(S3Consts.BACKUP_KEY_FORMAT, rscNameRef, rscNameSuffixRef, vlmNrRef, snapNameRef);
+            String backupName = BackupShippingUtils.buildS3VolumeName(
+                rscNameRef,
+                rscNameSuffixRef,
+                vlmNrRef,
+                snapNameRef,
+                stltConfigAccessor.getReadonlyProps().getProp(
+                    ApiConsts.KEY_BACKUP_S3_SUFFIX,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                )
+            );
             String remoteName = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot().getProps(accCtx)
                 .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
             startDaemon(
@@ -351,14 +359,16 @@ public abstract class AbsBackupShippingService implements SystemService
                 info.remote = remote;
                 try
                 {
-                    info.s3MetaKey = BackupShippingUtils.buildS3MetaKey(
-                        snap.getSnapshotDefinition(),
-                        null
+                    String s3Suffix = stltConfigAccessor.getReadonlyProps().getProp(
+                        ApiConsts.KEY_BACKUP_S3_SUFFIX,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
                     );
+
+                    info.s3MetaKey = BackupShippingUtils.buildS3MetaKey(snap, s3Suffix);
                     if (basedOnSnapVlmData != null && basedOnSnapVlmData != snapVlmData)
                     {
                         Snapshot basedOnSnap = basedOnSnapVlmData.getRscLayerObject().getAbsResource();
-                        info.basedOnS3MetaKey = BackupShippingUtils.buildS3MetaKey(basedOnSnap, null);
+                        info.basedOnS3MetaKey = BackupShippingUtils.buildS3MetaKey(basedOnSnap, s3Suffix);
                     }
                 }
                 catch (InvalidKeyException exc)

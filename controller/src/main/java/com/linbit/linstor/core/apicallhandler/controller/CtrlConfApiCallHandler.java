@@ -696,7 +696,7 @@ public class CtrlConfApiCallHandler
             {
                 boolean notifyStlts = false;
                 String oldValue = systemConfRepository.removeCtrlProp(peerAccCtx.get(), key, namespace);
-                systemConfRepository.removeStltProp(peerAccCtx.get(), key, namespace);
+                notifyStlts = systemConfRepository.removeStltProp(peerAccCtx.get(), key, namespace) != null;
 
                 if (oldValue != null)
                 {

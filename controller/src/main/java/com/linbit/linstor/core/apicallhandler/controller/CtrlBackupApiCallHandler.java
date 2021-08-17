@@ -26,6 +26,7 @@ import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
+import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.backupshipping.S3Consts;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -130,11 +131,11 @@ import reactor.util.function.Tuple2;
 public class CtrlBackupApiCallHandler
 {
     private static final Pattern META_FILE_PATTERN = Pattern
-        .compile("^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})\\.meta$");
+        .compile("^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})(:?.*)\\.meta$");
     private static final Pattern SNAP_DFN_TIME_PATTERN = Pattern
         .compile("^(?:back_(?:inc_)?)([0-9]{8}_[0-9]{6})");
     private static final Pattern BACKUP_VOLUME_PATTERN = Pattern
-        .compile("^([a-zA-Z0-9_-]{2,48})(\\..+)?_([0-9]{5})_(back_[0-9]{8}_[0-9]{6})$");
+        .compile("^([a-zA-Z0-9_-]{2,48})(\\..+)?_([0-9]{5})_(back_[0-9]{8}_[0-9]{6})(:?.*)$");
 
     private final Provider<AccessContext> peerAccCtx;
     private final AccessContext sysCtx;
@@ -347,6 +348,21 @@ public class CtrlBackupApiCallHandler
                 .createSnapshots(nodes, rscDfn.getName().displayValue, snapName, responses);
             snapDfn.getFlags()
                 .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
+
+            // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name (s3 suffix
+            // is NOT part of snapshot name)
+            String s3Suffix = sysCfgRepo.getStltConfForView(peerAccCtx.get()).getProp(
+                ApiConsts.KEY_BACKUP_S3_SUFFIX,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            if (s3Suffix != null)
+            {
+                snapDfn.getProps(peerAccCtx.get()).setProp(
+                    ApiConsts.KEY_BACKUP_S3_SUFFIX,
+                    s3Suffix,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
+            }
 
             Resource rsc = rscDfn.getResource(peerAccCtx.get(), chosenNodeName);
             List<Integer> nodeIds = new ArrayList<>();
@@ -1224,6 +1240,7 @@ public class CtrlBackupApiCallHandler
             );
         }
         // 2. find meta-file
+        String metaName = null;
         Date latestBackTs = null;
         for (String s3key : s3keys)
         {
@@ -1242,6 +1259,7 @@ public class CtrlBackupApiCallHandler
                             (targetTime.after(curTs) || targetTime.equals(curTs))
                         )
                         {
+                            metaName = m.group();
                             latestBackTs = curTs;
                         }
                     }
@@ -1249,6 +1267,7 @@ public class CtrlBackupApiCallHandler
                     {
                         if (latestBackTs == null || latestBackTs.before(curTs))
                         {
+                            metaName = m.group();
                             latestBackTs = curTs;
                         }
                     }
@@ -1259,7 +1278,16 @@ public class CtrlBackupApiCallHandler
                 }
             }
         }
-        String metaName = srcRscName + "_back_" + S3Consts.DATE_FORMAT.format(latestBackTs) + META_SUFFIX;
+        if (metaName == null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
+                    "Could not find backups with the given resource name '" + srcRscName + "' in remote '" +
+                        remoteName + "'"
+                )
+            );
+        }
         if (backupInfoMgr.restoreContainsMetaFile(metaName))
         {
             throw new ApiRcException(
@@ -2349,6 +2377,12 @@ public class CtrlBackupApiCallHandler
             {
                 String rscName = rscDfn.getName().displayValue;
                 String snapName = snapDfn.getName().displayValue;
+
+                String s3Suffix = snapDfn.getProps(peerCtx).getProp(
+                    ApiConsts.KEY_BACKUP_S3_SUFFIX,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
+
                 StateFlags<SnapshotDefinition.Flags> snapDfnFlags = snapDfn.getFlags();
                 if (snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.BACKUP) &&
                     // ignore already shipped backups
@@ -2359,12 +2393,12 @@ public class CtrlBackupApiCallHandler
                     for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(peerCtx))
                     {
                         futureS3Keys.add(
-                            String.format(
-                                S3Consts.BACKUP_KEY_FORMAT,
+                            BackupShippingUtils.buildS3VolumeName(
                                 rscName,
                                 "",
                                 snapVlmDfn.getVolumeNumber().value,
-                                snapName
+                                snapName,
+                                s3Suffix
                             )
                         );
                     }

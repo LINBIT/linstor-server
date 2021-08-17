@@ -38,7 +38,7 @@ public class BackupShippingS3Service extends AbsBackupShippingService
 {
     public static final String SERVICE_INFO = "BackupShippingS3Service";
     private static final Pattern S3_BACKUP_NAME_PATTERN = Pattern.compile(
-        "^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})$"
+        "^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})(:?.*)$"
     );
 
     protected static final String CMD_FORMAT_SENDING =
@@ -112,7 +112,8 @@ public class BackupShippingS3Service extends AbsBackupShippingService
     {
         String ret;
 
-        String simpleBackupName = snapVlmDataRef.getVolume().getAbsResource().getProps(accCtx).getProp(
+        Snapshot snap = snapVlmDataRef.getVolume().getAbsResource();
+        String simpleBackupName = snap.getProps(accCtx).getProp(
             InternalApiConsts.KEY_BACKUP_TO_RESTORE,
             ApiConsts.NAMESPC_BACKUP_SHIPPING
         );
@@ -120,12 +121,15 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         Matcher m = S3_BACKUP_NAME_PATTERN.matcher(simpleBackupName);
         if (m.matches())
         {
-            ret = String.format(
-                S3Consts.BACKUP_KEY_FORMAT,
+            ret = BackupShippingUtils.buildS3VolumeName(
                 m.group(1),
                 snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
                 snapVlmDataRef.getVlmNr().value,
-                m.group(2)
+                m.group(2),
+                snap.getSnapshotDefinition().getProps(accCtx).getProp(
+                    ApiConsts.KEY_BACKUP_S3_SUFFIX,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                )
             );
         }
         else
