@@ -12,10 +12,21 @@ public class CtrlSecurityObjects
      * Satellites will also need this masterKey to decrypt the key they need for dm-crypt.
      */
     private byte[] cryptKey;
+    private byte[] cryptHash;
+    private byte[] cryptSalt;
+    private byte[] encKey;
 
     @Inject
     public CtrlSecurityObjects()
     {
+    }
+
+    public void setCryptKey(byte[] cryptKeyRef, byte[] cryptHashRef, byte[] cryptSaltRef, byte[] encKeyRef)
+    {
+        cryptKey = cryptKeyRef;
+        cryptHash = cryptHashRef;
+        cryptSalt = cryptSaltRef;
+        encKey = encKeyRef;
     }
 
     public byte[] getCryptKey()
@@ -23,8 +34,23 @@ public class CtrlSecurityObjects
         return cryptKey;
     }
 
-    public void setCryptKey(byte[] cryptKeyRef)
+    public byte[] getCryptHash()
     {
-        cryptKey = cryptKeyRef;
+        return cryptHash;
+    }
+
+    public byte[] getCryptSalt()
+    {
+        return cryptSalt;
+    }
+
+    public byte[] getEncKey()
+    {
+        return encKey;
+    }
+
+    public boolean areAllSet()
+    {
+        return cryptKey != null && cryptHash != null && cryptSalt != null && encKey != null;
     }
 }

@@ -204,7 +204,10 @@ public class EncryptionHelper
 
     public void setCryptKey(byte[] cryptKey, Props namespace)
     {
-        ctrlSecObj.setCryptKey(cryptKey);
+        byte[] cryptHash = Base64.decode(namespace.getProp(KEY_CRYPT_HASH));
+        byte[] cryptSalt = Base64.decode(namespace.getProp(KEY_PASSPHRASE_SALT));
+        byte[] encKey = Base64.decode(namespace.getProp(KEY_CRYPT_KEY));
+        ctrlSecObj.setCryptKey(cryptKey, cryptHash, cryptSalt, encKey);
 
         for (Node node : nodesMap.values())
         {
@@ -216,9 +219,9 @@ public class EncryptionHelper
                     ctrlStltSrzl.onewayBuilder(InternalApiConsts.API_CRYPT_KEY)
                         .cryptKey(
                             cryptKey,
-                            Base64.decode(namespace.getProp(KEY_CRYPT_HASH)),
-                            Base64.decode(namespace.getProp(KEY_PASSPHRASE_SALT)),
-                            Base64.decode(namespace.getProp(KEY_CRYPT_KEY)),
+                            cryptHash,
+                            cryptSalt,
+                            encKey,
                             peer.getFullSyncId(),
                             peer.getNextSerializerId()
                         )

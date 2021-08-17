@@ -535,13 +535,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 }
             }
 
-            String encodedMasterKey = "";
-            byte[] cryptKey = secObjs.getCryptKey();
-            if (cryptKey != null)
-            {
-                encodedMasterKey = Base64.encode(cryptKey);
-            }
-            MsgIntApplyFullSync.newBuilder()
+            MsgIntApplyFullSync.Builder builder = MsgIntApplyFullSync.newBuilder()
                 .addAllNodes(serializedNodes)
                 .addAllStorPools(serializedStorPools)
                 .addAllRscs(serializedRscs)
@@ -549,9 +543,16 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllExternalFiles(serializedExtFiles)
                 .addAllS3Remotes(serializedS3Remotes)
                 .setFullSyncTimestamp(fullSyncTimestamp)
-                .setMasterKey(encodedMasterKey)
-                .setCtrl(serializedCtrl)
-                .build()
+                .setCtrl(serializedCtrl);
+
+            if (secObjs.areAllSet())
+            {
+                builder.setMasterKey(Base64.encode(secObjs.getCryptKey()))
+                    .setCryptHash(ByteString.copyFrom(secObjs.getCryptHash()))
+                    .setCryptSalt(ByteString.copyFrom(secObjs.getCryptSalt()))
+                    .setEncCryptKey(ByteString.copyFrom(secObjs.getEncKey()));
+            }
+            builder.build()
                 .writeDelimitedTo(baos);
         }
         catch (IOException exc)
