@@ -91,6 +91,8 @@ import com.linbit.utils.ExceptionThrowingPredicate;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
+import static com.linbit.linstor.backupshipping.BackupShippingConsts.META_SUFFIX;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -653,9 +655,9 @@ public class CtrlBackupApiCallHandler
         );
         if (id != null && !id.isEmpty()) // case 1: id [cascading]
         {
-            if (!id.endsWith(".meta"))
+            if (!id.endsWith(META_SUFFIX))
             {
-                id += ".meta";
+                id += META_SUFFIX;
             }
             deleteByIdPrefix(
                 id,
@@ -1172,14 +1174,19 @@ public class CtrlBackupApiCallHandler
         String shortTargetName = null;
         if (lastBackup != null && !lastBackup.isEmpty())
         {
-            Matcher targetMatcher = BACKUP_KEY_PATTERN.matcher(lastBackup);
+            if (!lastBackup.endsWith(META_SUFFIX))
+            {
+                lastBackup = lastBackup + META_SUFFIX;
+            }
+            Matcher targetMatcher = META_FILE_PATTERN.matcher(lastBackup);
             if (targetMatcher.matches())
             {
                 srcRscName = targetMatcher.group(1);
-                shortTargetName = targetMatcher.group(1) + "_" + targetMatcher.group(4);
+                String snapName = targetMatcher.group(2);
+                shortTargetName = targetMatcher.group(1) + "_" + snapName;
                 try
                 {
-                    targetTime = BackupApi.DATE_FORMAT.parse(targetMatcher.group(5));
+                    targetTime = BackupApi.DATE_FORMAT.parse(snapName.substring(BackupShippingConsts.SNAP_PREFIX_LEN));
                 }
                 catch (ParseException exc)
                 {
@@ -1191,8 +1198,9 @@ public class CtrlBackupApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
-                        "The target backup " + lastBackup +
-                            " is invalid since it does not match the pattern of rscName_vlmNr_YYYYMMDD_HHMMSS. " +
+                        "The target backup " + lastBackup + META_SUFFIX +
+                            " is invalid since it does not match the pattern of '<rscName>_back_YYYYMMDD_HHMMSS" +
+                            META_FILE_PATTERN + "'. " +
                             "Please provide a valid target backup, or provide only the source resource name to restore to the latest backup of that resource."
                     )
                 );
@@ -1251,7 +1259,7 @@ public class CtrlBackupApiCallHandler
                 }
             }
         }
-        String metaName = srcRscName + "_back_" + BackupApi.DATE_FORMAT.format(latestBackTs) + ".meta";
+        String metaName = srcRscName + "_back_" + BackupApi.DATE_FORMAT.format(latestBackTs) + META_SUFFIX;
         if (backupInfoMgr.restoreContainsMetaFile(metaName))
         {
             throw new ApiRcException(

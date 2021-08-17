@@ -30,7 +30,6 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -534,8 +533,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
 
     private void createOrMergeNvmeVlm(AbsVolume<RSC> vlm, NvmeRscData<RSC> nvmeRscData, NvmeVlmPojo vlmPojo)
     {
-        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+        VolumeNumber vlmNr = vlm.getVolumeNumber();
 
         NvmeVlmData<RSC> nvmeVlmData = nvmeRscData.getVlmLayerObjects().get(vlmNr);
         if (nvmeVlmData == null)
@@ -604,8 +602,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws AccessDeniedException, DatabaseException
     {
-        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+        VolumeNumber vlmNr = vlm.getVolumeNumber();
 
         OpenflexVlmData<RSC> nvmeVlmData = ofRscData.getVlmLayerObjects().get(vlmNr);
         try
@@ -688,8 +685,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException
     {
-        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+        VolumeNumber vlmNr = vlm.getVolumeNumber();
 
         WritecacheVlmData<RSC> writecacheVlmData = writecacheRscData.getVlmLayerObjects().get(vlmNr);
         if (writecacheVlmData == null)
@@ -753,8 +749,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException
     {
-        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+        VolumeNumber vlmNr = vlm.getVolumeNumber();
 
         CacheVlmData<RSC> cacheVlmData = cacheRscData.getVlmLayerObjects().get(vlmNr);
         if (cacheVlmData == null)
@@ -822,8 +817,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException
     {
-        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-        VolumeNumber vlmNr = vlmDfn.getVolumeNumber();
+        VolumeNumber vlmNr = vlm.getVolumeNumber();
 
         BCacheVlmData<RSC> bcacheVlmData = bcacheRscData.getVlmLayerObjects().get(vlmNr);
         if (bcacheVlmData == null)
