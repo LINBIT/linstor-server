@@ -49,7 +49,8 @@ public class LinstorRemoteControllerFactory
         AccessContext accCtxRef,
         RemoteName nameRef,
         URL url,
-        @Nullable byte[] encryptedPassphraseRef
+        @Nullable byte[] encryptedPassphraseRef,
+        @Nullable UUID remoteClusterId
     )
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
@@ -70,6 +71,7 @@ public class LinstorRemoteControllerFactory
             0,
             url,
             encryptedPassphraseRef,
+            remoteClusterId,
             transObjFactory,
             transMgrProvider
         );

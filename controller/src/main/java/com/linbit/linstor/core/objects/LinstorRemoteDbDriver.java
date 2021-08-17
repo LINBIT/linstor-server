@@ -26,6 +26,7 @@ import com.linbit.linstor.utils.ByteUtils;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.CLUSTER_ID;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.DSP_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.ENCRYPTED_PASSPHRASE;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.FLAGS;
@@ -39,6 +40,7 @@ import javax.inject.Singleton;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Singleton
@@ -53,6 +55,7 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
     protected final SingleColumnDatabaseDriver<LinstorRemote, byte[]> encryptedPassphraseDriver;
     protected final StateFlagsPersistence<LinstorRemote> flagsDriver;
     protected final AccessContext dbCtx;
+    protected final SingleColumnDatabaseDriver<LinstorRemote, UUID> clusterIdDriver;
 
     @Inject
     public LinstorRemoteDbDriver(
@@ -76,17 +79,21 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
         setColumnSetter(DSP_NAME, remote -> remote.getName().displayValue);
         setColumnSetter(FLAGS, remote -> remote.getFlags().getFlagsBits(dbCtx));
         setColumnSetter(URL, remote -> remote.getUrl(dbCtx).toString());
+        setColumnSetter(
+            CLUSTER_ID,
+            remote -> remote.getClusterId(dbCtxRef) == null ? null : remote.getClusterId(dbCtxRef).toString()
+        );
 
         switch (getDbType())
         {
             case ETCD:
                 setColumnSetter(
                     ENCRYPTED_PASSPHRASE,
-                    remote -> Base64.encode(remote.getEncryptedTargetPassphrase(dbCtx))
+                    remote -> Base64.encode(remote.getEncryptedRemotePassphrase(dbCtx))
                 );
                 break;
             case SQL:
-                setColumnSetter(ENCRYPTED_PASSPHRASE, remote -> remote.getEncryptedTargetPassphrase(dbCtx));
+                setColumnSetter(ENCRYPTED_PASSPHRASE, remote -> remote.getEncryptedRemotePassphrase(dbCtx));
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
@@ -99,14 +106,14 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
             case ETCD:
                 encryptedPassphraseDriver = generateSingleColumnDriver(
                     ENCRYPTED_PASSPHRASE,
-                    remote -> ByteUtils.bytesToHex(remote.getEncryptedTargetPassphrase(dbCtx)),
+                    remote -> ByteUtils.bytesToHex(remote.getEncryptedRemotePassphrase(dbCtx)),
                     byteArr -> ByteUtils.bytesToHex(byteArr)
                 );
                 break;
             case SQL:
                 encryptedPassphraseDriver = generateSingleColumnDriver(
                     ENCRYPTED_PASSPHRASE,
-                    remote -> ByteUtils.bytesToHex(remote.getEncryptedTargetPassphrase(dbCtx)),
+                    remote -> ByteUtils.bytesToHex(remote.getEncryptedRemotePassphrase(dbCtx)),
                     Function.identity()
                 );
                 break;
@@ -115,6 +122,11 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
         }
 
         flagsDriver = generateFlagDriver(FLAGS, LinstorRemote.Flags.class);
+        clusterIdDriver = generateSingleColumnDriver(
+            CLUSTER_ID,
+            remote -> remote.getClusterId(dbCtxRef) == null ? null : remote.getClusterId(dbCtxRef).toString(),
+            uuid -> uuid == null ? null : uuid.toString()
+        );
 
     }
 
@@ -125,7 +137,7 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
     }
 
     @Override
-    public SingleColumnDatabaseDriver<LinstorRemote, byte[]> getEncryptedPassphraseDriver()
+    public SingleColumnDatabaseDriver<LinstorRemote, byte[]> getEncryptedRemotePassphraseDriver()
     {
         return encryptedPassphraseDriver;
     }
@@ -134,6 +146,12 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
     public StateFlagsPersistence<LinstorRemote> getStateFlagsPersistence()
     {
         return flagsDriver;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<LinstorRemote, UUID> getClusterIdDriver()
+    {
+        return clusterIdDriver;
     }
 
     @Override
@@ -168,6 +186,7 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
                     initFlags,
                     new URL(raw.get(URL)),
                     encryptedPassphrase,
+                    raw.build(CLUSTER_ID, java.util.UUID::fromString),
                     transObjFactory,
                     transMgrProvider
                 ),

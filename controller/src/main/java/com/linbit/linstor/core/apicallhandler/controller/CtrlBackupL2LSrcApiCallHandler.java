@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequest;
@@ -86,6 +87,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     private final SystemConfRepository systemConfRepository;
     private final BackupInfoManager backupInfoMgr;
     private final RemoteRepository remoteRepo;
+    private final CtrlSecurityObjects ctrlSecObjs;
 
     @Inject
     public CtrlBackupL2LSrcApiCallHandler(
@@ -101,7 +103,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         CtrlBackupApiCallHandler ctrlBackupApiCallHandlerRef,
         SystemConfRepository systemConfRepositoryRef,
         RemoteRepository remoteRepoRef,
-        BackupInfoManager backupInfoMgrRef
+        BackupInfoManager backupInfoMgrRef,
+        CtrlSecurityObjects ctrlSecObjsRef
     )
     {
         sysCtx = sysCtxRef;
@@ -117,6 +120,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         systemConfRepository = systemConfRepositoryRef;
         remoteRepo = remoteRepoRef;
         backupInfoMgr = backupInfoMgrRef;
+        ctrlSecObjs = ctrlSecObjsRef;
 
         restClient = new BackupShippingRestClient(errorReporterRef);
     }
@@ -147,7 +151,6 @@ public class CtrlBackupL2LSrcApiCallHandler
                 dstStorPoolRef,
                 storPoolRenameRef
             )
-
         );
     }
 
@@ -358,9 +361,9 @@ public class CtrlBackupL2LSrcApiCallHandler
                 peerAccCtx.get(),
                 data.srcSnapshot,
                 systemConfRepository.getStltConfForView(sysCtx),
-                null, // TODO
-                null, // TODO
-                null, // TODO
+                ctrlSecObjs.getEncKey(),
+                ctrlSecObjs.getCryptHash(),
+                ctrlSecObjs.getCryptSalt(),
                 Collections.emptyMap(),
                 null
             );

@@ -586,6 +586,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
         public static final ColumnImpl URL = new ColumnImpl("URL", Types.VARCHAR, false, false);
         public static final ColumnImpl ENCRYPTED_PASSPHRASE = new ColumnImpl("ENCRYPTED_PASSPHRASE", Types.BLOB, false, true);
+        public static final ColumnImpl CLUSTER_ID = new ColumnImpl("CLUSTER_ID", Types.CHAR, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -594,7 +595,8 @@ public class GeneratedDatabaseTables
             DSP_NAME,
             FLAGS,
             URL,
-            ENCRYPTED_PASSPHRASE
+            ENCRYPTED_PASSPHRASE,
+            CLUSTER_ID
         };
 
         @Override
@@ -1849,6 +1851,7 @@ public class GeneratedDatabaseTables
         LinstorRemotes.FLAGS.table = LINSTOR_REMOTES;
         LinstorRemotes.URL.table = LINSTOR_REMOTES;
         LinstorRemotes.ENCRYPTED_PASSPHRASE.table = LINSTOR_REMOTES;
+        LinstorRemotes.CLUSTER_ID.table = LINSTOR_REMOTES;
         Nodes.UUID.table = NODES;
         Nodes.NODE_NAME.table = NODES;
         Nodes.NODE_DSP_NAME.table = NODES;

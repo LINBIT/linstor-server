@@ -6,6 +6,7 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import java.net.URL;
+import java.util.UUID;
 
 public interface LinstorRemoteDatabaseDriver
 {
@@ -29,7 +30,9 @@ public interface LinstorRemoteDatabaseDriver
 
     SingleColumnDatabaseDriver<LinstorRemote, URL> getUrlDriver();
 
-    SingleColumnDatabaseDriver<LinstorRemote, byte[]> getEncryptedPassphraseDriver();
+    SingleColumnDatabaseDriver<LinstorRemote, byte[]> getEncryptedRemotePassphraseDriver();
 
     StateFlagsPersistence<LinstorRemote> getStateFlagsPersistence();
+
+    SingleColumnDatabaseDriver<LinstorRemote, UUID> getClusterIdDriver();
 }

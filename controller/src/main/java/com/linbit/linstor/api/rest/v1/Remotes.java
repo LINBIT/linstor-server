@@ -22,6 +22,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -194,7 +195,8 @@ public class Remotes
             Flux<ApiCallRc> flux = remoteHandler.createLinstor(
                 remoteJson.remote_name,
                 remoteJson.url,
-                remoteJson.passphrase
+                remoteJson.passphrase,
+                remoteJson.cluster_id
             ).subscriberContext(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
@@ -223,7 +225,8 @@ public class Remotes
             Flux<ApiCallRc> flux = remoteHandler.changeLinstor(
                 remoteName,
                 remoteJson.url,
-                remoteJson.passphrase
+                remoteJson.passphrase,
+                remoteJson.cluster_id
             ).subscriberContext(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );

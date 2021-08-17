@@ -40,7 +40,8 @@ public class LinstorRemote extends BaseTransactionObject
     private final LinstorRemoteDatabaseDriver driver;
     private final RemoteName remoteName;
     private final TransactionSimpleObject<LinstorRemote, URL> url;
-    private final TransactionSimpleObject<LinstorRemote, byte[]> encryptedTargetPassphrase;
+    private final TransactionSimpleObject<LinstorRemote, byte[]> encryptedRemotePassphrase;
+    private final TransactionSimpleObject<LinstorRemote, UUID> clusterId;
     private final TransactionSimpleObject<LinstorRemote, Boolean> deleted;
     private final StateFlags<Flags> flags;
 
@@ -52,6 +53,7 @@ public class LinstorRemote extends BaseTransactionObject
         long initialFlags,
         URL urlRef,
         @Nullable byte[] encryptedTargetPassphraseRef,
+        UUID clusterIdRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -64,11 +66,12 @@ public class LinstorRemote extends BaseTransactionObject
         driver = driverRef;
 
         url = transObjFactory.createTransactionSimpleObject(this, urlRef, driver.getUrlDriver());
-        encryptedTargetPassphrase = transObjFactory.createTransactionSimpleObject(
+        encryptedRemotePassphrase = transObjFactory.createTransactionSimpleObject(
             this,
             encryptedTargetPassphraseRef,
-            driver.getEncryptedPassphraseDriver()
+            driver.getEncryptedRemotePassphraseDriver()
         );
+        clusterId = transObjFactory.createTransactionSimpleObject(this, clusterIdRef, driver.getClusterIdDriver());
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
@@ -83,7 +86,8 @@ public class LinstorRemote extends BaseTransactionObject
         transObjs = Arrays.asList(
             objProt,
             url,
-            encryptedTargetPassphrase,
+            encryptedRemotePassphrase,
+            clusterId,
             deleted
         );
     }
@@ -129,20 +133,33 @@ public class LinstorRemote extends BaseTransactionObject
         url.set(urlRef);
     }
 
-
-    public byte[] getEncryptedTargetPassphrase(AccessContext accCtx) throws AccessDeniedException
+    public byte[] getEncryptedRemotePassphrase(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return encryptedTargetPassphrase.get();
+        return encryptedRemotePassphrase.get();
     }
 
-    public void setEncryptedTargetPassphase(AccessContext accCtx, byte[] encryptedTargetPassphraseRef)
+    public void setEncryptedRemotePassphase(AccessContext accCtx, byte[] encryptedRemotePassphraseRef)
         throws DatabaseException, AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        encryptedTargetPassphrase.set(encryptedTargetPassphraseRef);
+        encryptedRemotePassphrase.set(encryptedRemotePassphraseRef);
+    }
+
+    public void setClusterId(AccessContext accCtx, UUID clusterIdRef) throws DatabaseException, AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        clusterId.set(clusterIdRef);
+    }
+
+    public UUID getClusterId(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return clusterId.get();
     }
 
     @Override
@@ -157,6 +174,7 @@ public class LinstorRemote extends BaseTransactionObject
     {
         return RemoteType.LINSTOR;
     }
+
 
     public LinstorRemotePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException

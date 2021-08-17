@@ -45,6 +45,7 @@ import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.objects.LinstorRemote;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
@@ -99,6 +100,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,9 +114,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1559,6 +1563,7 @@ public class CtrlBackupApiCallHandler
 
     @SuppressWarnings("unchecked")
     Flux<BackupShippingStartInfo> restoreBackupL2LInTransaction(
+        String sourceClusterIdStr,
         String nodeNameStr,
         String storPoolNameStr,
         Map<StorPool.Key, Long> thinFreeCapacities,
@@ -1726,6 +1731,54 @@ public class CtrlBackupApiCallHandler
                 );
                 snap.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
 
+                // LUKS
+                Set<AbsRscLayerObject<Snapshot>> luksLayerData = LayerRscUtils.getRscDataByProvider(
+                    snap.getLayerData(sysCtx),
+                    DeviceLayerKind.LUKS
+                );
+                if (!luksLayerData.isEmpty())
+                {
+                    LuksLayerMetaPojo luksInfo = metadata.getLuksInfo();
+                    if (luksInfo == null)
+                    {
+                        throw new ImplementationError("Cannot receive LUKS data without LuksInfo");
+                    }
+                    byte[] remoteMasterKey = getRemoteMasterKey(sourceClusterIdStr, luksInfo);
+                    if (remoteMasterKey == null)
+                    {
+                        throw new ImplementationError(
+                            "Source cluster master key could not be restored. Is the passphrase correct?"
+                        );
+                    }
+                    try
+                    {
+                        for (AbsRscLayerObject<Snapshot> luksRscData : luksLayerData)
+                        {
+                            for (VlmProviderObject<Snapshot> vlm : luksRscData.getVlmLayerObjects().values())
+                            {
+                                LuksVlmData<Snapshot> luksVlm = (LuksVlmData<Snapshot>) vlm;
+                                byte[] vlmKey = luksVlm.getEncryptedKey();
+                                byte[] decryptedKey = decHelper.decrypt(remoteMasterKey, vlmKey);
+
+                                byte[] encVlmKey = encHelper.encrypt(decryptedKey);
+                                luksVlm.setEncryptedKey(encVlmKey);
+                            }
+                        }
+                    }
+                    catch (LinStorException exc)
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                                "De- or encrypting the volume passwords failed."
+                            ),
+                            exc
+                        );
+                    }
+                }
+
+                // remoteMasterKey = getRemoteMasterKey(sourceClusterIdStr, luksInfo);
+
                 remote.useZstd(sysCtx, useZstd);
 
                 // update stlts
@@ -1771,6 +1824,57 @@ public class CtrlBackupApiCallHandler
             throw new ImplementationError(exc);
         }
         return ret;
+    }
+
+    private byte[] getRemoteMasterKey(String sourceClusterIdStr, LuksLayerMetaPojo luksInfo)
+        throws AccessDeniedException
+    {
+        byte[] remoteMasterKey = null;
+        UUID srcClusterId = UUID.fromString(sourceClusterIdStr);
+        for (Remote sourceRemote : remoteRepo.getMapForView(sysCtx).values())
+        {
+            if (sourceRemote instanceof LinstorRemote)
+            {
+                LinstorRemote linstorSrcRemote = (LinstorRemote) sourceRemote;
+                UUID remoteClusterId = linstorSrcRemote.getClusterId(sysCtx);
+                if (Objects.equals(remoteClusterId, srcClusterId))
+                {
+                    byte[] encryptedRemotePassphrase = linstorSrcRemote.getEncryptedRemotePassphrase(sysCtx);
+                    if (encryptedRemotePassphrase == null)
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY | ApiConsts.MASK_BACKUP,
+                                "The resource to be shipped seems to have luks configured, but no passphrase was given."
+                            )
+                        );
+                    }
+                    try
+                    {
+                        byte[] remotePassphrase = decHelper.decrypt(getLocalMasterKey(), encryptedRemotePassphrase);
+                        remoteMasterKey = encHelper.getDecryptedMasterKey(
+                            luksInfo.getMasterCryptHash(),
+                            luksInfo.getMasterPassword(),
+                            luksInfo.getMasterCryptSalt(),
+                            new String(remotePassphrase, Charset.forName("UTF-8"))
+                        );
+                    }
+                    catch (LinStorException exc)
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                                "De- or encrypting the volume passwords failed."
+                            ),
+                            exc
+                        );
+                    }
+                    break;
+                }
+            }
+        }
+
+        return remoteMasterKey;
     }
 
     private Snapshot getIncrementalBase(

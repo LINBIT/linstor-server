@@ -1558,6 +1558,7 @@ public class JsonGenTypes
         public String remote_name;
         public String url;
         public String passphrase;
+        public String cluster_id;
     }
 
     private JsonGenTypes()

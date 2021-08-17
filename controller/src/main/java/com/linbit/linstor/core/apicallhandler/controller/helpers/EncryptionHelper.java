@@ -158,46 +158,60 @@ public class EncryptionHelper
         );
     }
 
-    public byte[] getDecryptedMasterKey(String masterHash, String encKey, String passSalt, String passphrase)
+    public byte[] getDecryptedMasterKey(
+        String masterHashBase64,
+        String encKeyBase64,
+        String passSaltBase64,
+        String passphraseUtf8
+    )
         throws LinStorException
     {
-        byte[] ret = null;
 
-        if (
-            masterHash == null ||
-                encKey == null ||
-                passSalt == null
-        )
+        if (masterHashBase64 == null || encKeyBase64 == null || passSaltBase64 == null)
         {
             throw new MissingKeyPropertyException("Could not restore crypt passphrase as a property is not set");
         }
         else
         {
-            byte[] passphraseSalt = Base64.decode(passSalt);
-            byte[] encryptedMasterKey = Base64.decode(encKey);
-
-            SymmetricKeyCipher ciper = SymmetricKeyCipher.getInstanceWithPassword(
-                passphraseSalt,
-                passphrase.getBytes(StandardCharsets.UTF_8),
-                CipherStrength.KEY_LENGTH_128
+            return getDecryptedMasterKey(
+                Base64.decode(masterHashBase64),
+                Base64.decode(encKeyBase64),
+                Base64.decode(passSaltBase64),
+                passphraseUtf8.getBytes(StandardCharsets.UTF_8)
             );
-            // TODO: if MASTER_KEY_BYTES is configurable, the CipherStrength also has to be configurable
+        }
+    }
 
-            byte[] decryptedData = ciper.decrypt(encryptedMasterKey);
+    public byte[] getDecryptedMasterKey(
+        byte[] masterHash,
+        byte[] encryptedMasterKey,
+        byte[] passphraseSalt,
+        byte[] passphrase
+    )
+        throws LinStorException
+    {
+        byte[] ret = null;
+        SymmetricKeyCipher ciper = SymmetricKeyCipher.getInstanceWithPassword(
+            passphraseSalt,
+            passphrase,
+            CipherStrength.KEY_LENGTH_128
+        );
+        // TODO: if MASTER_KEY_BYTES is configurable, the CipherStrength also has to be configurable
 
-            sha512.reset();
-            byte[] hashedMasterKey = sha512.digest(decryptedData);
+        byte[] decryptedData = ciper.decrypt(encryptedMasterKey);
 
-            if (Arrays.equals(hashedMasterKey, Base64.decode(masterHash)))
-            {
-                ret = cryptoLenPad.retrieve(decryptedData);
-            }
-            else
-            {
-                throw new IncorrectPassphraseException(
-                    "Could not restore master passphrase as the given old passphrase was incorrect"
-                );
-            }
+        sha512.reset();
+        byte[] hashedMasterKey = sha512.digest(decryptedData);
+
+        if (Arrays.equals(hashedMasterKey, masterHash))
+        {
+            ret = cryptoLenPad.retrieve(decryptedData);
+        }
+        else
+        {
+            throw new IncorrectPassphraseException(
+                "Could not restore master passphrase as the given old passphrase was incorrect"
+            );
         }
         return ret;
     }

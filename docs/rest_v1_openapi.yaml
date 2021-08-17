@@ -7470,3 +7470,5 @@ components:
           type: string
         passphrase:
           type: string
+        cluster_id:
+          type: string

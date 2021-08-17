@@ -35,6 +35,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.UuidUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -352,7 +353,8 @@ public class CtrlRemoteApiCallHandler
     public Flux<ApiCallRc> createLinstor(
         String remoteNameRef,
         String urlRef,
-        String passphraseRef
+        String passphraseRef,
+        String remoteClusterId
     )
     {
         ResponseContext context = makeRemoteContext(
@@ -366,7 +368,8 @@ public class CtrlRemoteApiCallHandler
             () -> createLinstorInTransaction(
                 remoteNameRef,
                 urlRef,
-                passphraseRef
+                passphraseRef,
+                remoteClusterId
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -374,7 +377,8 @@ public class CtrlRemoteApiCallHandler
     private Flux<ApiCallRc> createLinstorInTransaction(
         String remoteNameRef,
         String urlRef,
-        String passphraseRef
+        String passphraseRef,
+        String remoteClusterIdStr
     )
     {
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameRef);
@@ -390,6 +394,21 @@ public class CtrlRemoteApiCallHandler
         }
         LinstorRemote remote = null;
 
+        UUID remoteClusterId = null;
+        if (remoteClusterIdStr != null && !remoteClusterIdStr.isEmpty())
+        {
+            if (!UuidUtils.isUuid(remoteClusterIdStr))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_CONF,
+                        "The given cluster id is not a valid UUID"
+                    )
+                );
+            }
+            remoteClusterId = UUID.fromString(remoteClusterIdStr);
+        }
+
         try
         {
             byte[] encryptedTargetPassphrase = null;
@@ -402,7 +421,8 @@ public class CtrlRemoteApiCallHandler
                 peerAccCtx.get(),
                 remoteName,
                 createUrlWithDefaults(urlRef),
-                encryptedTargetPassphrase
+                encryptedTargetPassphrase,
+                remoteClusterId
             );
             remoteRepository.put(apiCtx, remote);
         }
@@ -495,7 +515,8 @@ public class CtrlRemoteApiCallHandler
     public Flux<ApiCallRc> changeLinstor(
         String remoteName,
         String urlStrRef,
-        String passphraseRef
+        String passphraseRef,
+        String clusterIidRef
     )
     {
         ResponseContext context = makeRemoteContext(
@@ -509,7 +530,8 @@ public class CtrlRemoteApiCallHandler
             () -> changeLinstorInTransaction(
                 remoteName,
                 urlStrRef,
-                passphraseRef
+                passphraseRef,
+                clusterIidRef
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -517,7 +539,8 @@ public class CtrlRemoteApiCallHandler
     private Flux<ApiCallRc> changeLinstorInTransaction(
         String remoteNameStr,
         String urlStrRef,
-        String passphraseRef
+        String passphraseRef,
+        String clusterIidRef
     )
     {
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStr);
@@ -537,11 +560,24 @@ public class CtrlRemoteApiCallHandler
         {
             if (urlStrRef != null && !urlStrRef.isEmpty())
             {
-                linstorRemote.setUrl(apiCtx, createUrlWithDefaults(urlStrRef));
+                linstorRemote.setUrl(peerAccCtx.get(), createUrlWithDefaults(urlStrRef));
             }
             if (passphraseRef != null && !passphraseRef.isEmpty())
             {
-                linstorRemote.setEncryptedTargetPassphase(peerAccCtx.get(), encryptionHelper.encrypt(passphraseRef));
+                linstorRemote.setEncryptedRemotePassphase(peerAccCtx.get(), encryptionHelper.encrypt(passphraseRef));
+            }
+            if (clusterIidRef != null && !clusterIidRef.isEmpty())
+            {
+                if (!UuidUtils.isUuid(clusterIidRef))
+            {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_CONF,
+                            "The given cluster id is not a valid UUID"
+                        )
+                    );
+                }
+                linstorRemote.setClusterId(peerAccCtx.get(), UUID.fromString(clusterIidRef));
             }
         }
         catch (AccessDeniedException exc)

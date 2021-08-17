@@ -222,6 +222,7 @@ public class CtrlBackupL2LDstApiCallHandler
                             LockObj.RSC_DFN_MAP
                         ),
                         () -> backupApiCallHandler.restoreBackupL2LInTransaction(
+                            data.srcClusterId,
                             data.dstNodeName,
                             data.dstStorPool,
                             thinFreeCapacities,
