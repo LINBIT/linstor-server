@@ -1,13 +1,9 @@
 package com.linbit.linstor.core.apis;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Map;
 
 public interface BackupApi
 {
-    DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss");
-
     /**
      * Unique ID of this backup within this cluster.
      * Something like concatenating resourceName and snapKey should be enough

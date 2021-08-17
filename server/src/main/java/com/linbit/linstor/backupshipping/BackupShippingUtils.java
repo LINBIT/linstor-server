@@ -9,7 +9,6 @@ import com.linbit.linstor.api.pojo.backups.RscDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.RscMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
-import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -85,7 +84,7 @@ public class BackupShippingUtils
         ResourceGroup rscGrp = rscDfn.getResourceGroup();
 
         String startTime = snapDfn.getName().displayValue.substring(BackupShippingConsts.SNAP_PREFIX_LEN);
-        long startTimestamp = BackupApi.DATE_FORMAT.parse(startTime).getTime();
+        long startTimestamp = BackupShippingConsts.DATE_FORMAT.parse(startTime).getTime();
 
         PriorityProps rscDfnPrio = new PriorityProps(
             snapDfn.getProps(accCtx),
