@@ -44,6 +44,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.LinstorRemote;
 import com.linbit.linstor.core.objects.Node;
@@ -1343,6 +1344,7 @@ public class CtrlBackupApiCallHandler
              * finally the last incremental backup
              */
             Snapshot nextBackup = null;
+            boolean resetData = true; // reset data based on the final snapshot
             String lastMetaName = metaName;
             BackupMetaDataPojo metadata;
             do
@@ -1360,8 +1362,11 @@ public class CtrlBackupApiCallHandler
                     latestBackTs,
                     metaName,
                     metadata,
-                    responses
+                    responses,
+                    resetData
                 );
+                // all other "basedOn" snapshots should not change props / size / etc..
+                resetData = false;
                 snap.getProps(peerAccCtx.get()).setProp(
                     InternalApiConsts.KEY_BACKUP_TO_RESTORE,
                     srcRscName + "_" + snap.getSnapshotName().displayValue,
@@ -1432,7 +1437,8 @@ public class CtrlBackupApiCallHandler
         Date latestBackTs,
         String metaName,
         BackupMetaDataPojo metadata,
-        ApiCallRcImpl responses
+        ApiCallRcImpl responses,
+        boolean resetData
     )
         throws AccessDeniedException, ImplementationError, DatabaseException, InvalidValueException
     {
@@ -1513,13 +1519,20 @@ public class CtrlBackupApiCallHandler
         SnapshotName snapName = LinstorParsingUtils.asSnapshotName(
             S3Consts.SNAP_PREFIX + S3Consts.DATE_FORMAT.format(metadata.getStartTimestamp())
         );
-        ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, metaName);
+        ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, metaName, resetData);
         // 9. create snapDfn
         SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses);
         // 10. create vlmDfn(s)
         // 11. create snapVlmDfn(s)
         Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
-        long totalSize = createSnapVlmDfnForBackupRestore(targetRscName, metadata, rscDfn, snapDfn, snapVlmDfns);
+        long totalSize = createSnapVlmDfnForBackupRestore(
+            targetRscName,
+            metadata,
+            rscDfn,
+            snapDfn,
+            snapVlmDfns,
+            resetData
+        );
 
         // TODO: check if all storPools have enough space for restore
 
@@ -1618,16 +1631,36 @@ public class CtrlBackupApiCallHandler
 
             // 6. do luks-stuff if needed (is converted by L2L-source)
 
+            // search for incremental base
+            Snapshot incrementalBaseSnap = null;
+            boolean resetData = false;
+            try
+            {
+                /*
+                 * DO NOT use getRscDfnForBackupRestore here. We need to know if we are choosing incremental or full backup before calling
+                 *
+                 */
+                ResourceDefinition targetRscDfn = rscDfnRepo.get(sysCtx, new ResourceName(targetRscName));
+                if (targetRscDfn != null)
+                {
+                    incrementalBaseSnap = getIncrementalBase(
+                        targetRscDfn,
+                        srcSnapDfnUuidsForIncrementalRef
+                    );
+                }
+                resetData = targetRscDfn == null || targetRscDfn.getResourceCount() == 0;
+            }
+            catch (InvalidNameException exc)
+            {
+                throw new ImplementationError(exc);
+            }
             // 8. create rscDfn
             ResourceDefinition rscDfn = getRscDfnForBackupRestore(
                 targetRscName,
                 snapName,
                 metadata,
-                snapName.displayValue);
-            // search for incremental base
-            Snapshot incrementalBaseSnap = getIncrementalBase(
-                rscDfn,
-                srcSnapDfnUuidsForIncrementalRef
+                snapName.displayValue,
+                resetData
             );
             SnapshotDefinition snapDfn;
             Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
@@ -1643,7 +1676,8 @@ public class CtrlBackupApiCallHandler
                 metadata,
                 rscDfn,
                 snapDfn,
-                snapVlmDfns
+                snapVlmDfns,
+                resetData
             );
 
             if (incrementalBaseSnap != null)
@@ -2165,7 +2199,8 @@ public class CtrlBackupApiCallHandler
         BackupMetaDataPojo metadata,
         ResourceDefinition rscDfn,
         SnapshotDefinition snapDfn,
-        Map<Integer, SnapshotVolumeDefinition> snapVlmDfns
+        Map<Integer, SnapshotVolumeDefinition> snapVlmDfns,
+        boolean resetData
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -2184,7 +2219,7 @@ public class CtrlBackupApiCallHandler
                     VolumeDefinition.Flags.restoreFlags(vlmDfnMetaEntry.getValue().getFlags())
                 );
             }
-            else
+            else if (resetData)
             {
                 vlmDfn.getFlags().resetFlagsTo(
                     peerAccCtx.get(),
@@ -2249,7 +2284,8 @@ public class CtrlBackupApiCallHandler
         String targetRscName,
         SnapshotName snapName,
         BackupMetaDataPojo metadata,
-        String metaName
+        String metaName,
+        boolean resetData
     )
     {
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(targetRscName, false);
@@ -2290,17 +2326,20 @@ public class CtrlBackupApiCallHandler
                     )
                 );
             }
-            rscDfn.getFlags()
-                .resetFlagsTo(
-                    peerAccCtx.get(),
-                    ResourceDefinition.Flags.restoreFlags(metadata.getRscDfn().getFlags())
-                );
-            rscDfn.getProps(peerAccCtx.get()).clear();
-            rscDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
+            if (resetData)
+            {
+                rscDfn.getFlags()
+                    .resetFlagsTo(
+                        peerAccCtx.get(),
+                        ResourceDefinition.Flags.restoreFlags(metadata.getRscDfn().getFlags())
+                    );
+                rscDfn.getProps(peerAccCtx.get()).clear();
+                rscDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
 
-            // force the node to become primary afterwards in case we needed to recreate
-            // the metadata
-            rscDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+                // force the node to become primary afterwards in case we needed to recreate
+                // the metadata
+                rscDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
+            }
         }
         catch (AccessDeniedException exc)
         {
