@@ -57,7 +57,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
 {
     private static final String STATUS_CONNECTED = "Connected";
 
-    private final Provider<AccessContext> accCtx;
+    private final Provider<AccessContext> peerAccCtxProvider;
     private final SystemConfRepository systemConfRepo;
     private final HashSet<ResourceDefinition> needRePlaceRsc = new HashSet<>();
     private final HashSet<ResourceDefinition> needDiskfulRsc = new HashSet<>();
@@ -72,7 +72,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
 
     @Inject
     public CtrlRscAutoRePlaceRscHelper(
-        @PeerContext Provider<AccessContext> accCtxRef,
+        @PeerContext Provider<AccessContext> peerAccCtxProviderRef,
         SystemConfRepository systemConfRepoRef,
         CtrlRscAutoPlaceApiCallHandler autoPlaceHandlerRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
@@ -83,7 +83,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
         Autoplacer autoplacerRef
     )
     {
-        accCtx = accCtxRef;
+        peerAccCtxProvider = peerAccCtxProviderRef;
         systemConfRepo = systemConfRepoRef;
         autoPlaceHandler = autoPlaceHandlerRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
@@ -119,12 +119,13 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                 int curReplicaCount = 0;
                 try
                 {
+                    AccessContext peerAccCtx = peerAccCtxProvider.get();
                     props = new PriorityProps(
-                        rscDfn.getProps(accCtx.get()),
-                        rscDfn.getResourceGroup().getProps(accCtx.get()),
-                        systemConfRepo.getCtrlConfForView(accCtx.get())
+                        rscDfn.getProps(peerAccCtx),
+                        rscDfn.getResourceGroup().getProps(peerAccCtx),
+                        systemConfRepo.getCtrlConfForView(peerAccCtx)
                     );
-                    placeCount = rscDfn.getResourceGroup().getAutoPlaceConfig().getReplicaCount(accCtx.get());
+                    placeCount = rscDfn.getResourceGroup().getAutoPlaceConfig().getReplicaCount(peerAccCtx);
                     minReplicaCount = Integer.parseInt(
                         props.getProp(
                             ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT,
@@ -136,21 +137,26 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                     {
                         minReplicaCount = placeCount;
                     }
-                    Iterator<Resource> itres = rscDfn.iterateResource(accCtx.get());
+                    List<String> disklessNodeNames = new ArrayList<>();
+                    Iterator<Resource> itres = rscDfn.iterateResource(peerAccCtx);
                     while (itres.hasNext())
                     {
                         Resource res = itres.next();
-                        StateFlags<Flags> flags = res.getStateFlags();
-                        if (
-                            !flags.isSomeSet(
-                                accCtx.get(), Resource.Flags.DELETE, Resource.Flags.TIE_BREAKER,
-                                Resource.Flags.DRBD_DISKLESS
-                            ) &&
-                                LayerRscUtils.getLayerStack(res, accCtx.get()).contains(DeviceLayerKind.DRBD) &&
-                                !res.getNode().getFlags().isSet(accCtx.get(), Node.Flags.EVICTED)
+                        if (LayerRscUtils.getLayerStack(res, peerAccCtx).contains(DeviceLayerKind.DRBD) &&
+                            !res.getNode().getFlags().isSet(peerAccCtx, Node.Flags.EVICTED)
                         )
                         {
-                            curReplicaCount++;
+                            StateFlags<Flags> flags = res.getStateFlags();
+                            boolean isDeleting = flags.isSet(peerAccCtx, Resource.Flags.DELETE);
+                            boolean isDiskless = flags.isSet(peerAccCtx, Resource.Flags.DRBD_DISKLESS);
+                            if (isDiskless)
+                            {
+                                disklessNodeNames.add(res.getNode().getName().displayValue);
+                            }
+                            else if (!isDeleting)
+                            {
+                                curReplicaCount++;
+                            }
                         }
                     }
                     if (curReplicaCount < minReplicaCount)
@@ -169,7 +175,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                 Collections.singletonList(DeviceLayerKind.DRBD),
                                 null,
                                 null,
-                                null,
+                                disklessNodeNames,
                                 null
                             ),
                             rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
@@ -181,14 +187,14 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                 lockGuardFactory.createDeferred().write(LockObj.RSC_DFN_MAP).build(),
                                 () ->
                                 {
-                                    Iterator<Resource> itr = rscDfn.iterateResource(accCtx.get());
+                                    Iterator<Resource> itr = rscDfn.iterateResource(peerAccCtx);
                                     List<NodeName> nodeNameOfEvictedResources = new ArrayList<>();
                                     while (itr.hasNext())
                                     {
                                         Resource rsc = itr.next();
-                                        if (rsc.getNode().getFlags().isSet(accCtx.get(), Node.Flags.EVICTED))
+                                        if (rsc.getNode().getFlags().isSet(peerAccCtx, Node.Flags.EVICTED))
                                         {
-                                            rsc.markDeleted(accCtx.get());
+                                            rsc.markDeleted(peerAccCtx);
                                             nodeNameOfEvictedResources.add(rsc.getNode().getName());
                                         }
                                     }
@@ -279,10 +285,10 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
         try
         {
             int ct = 0;
-            for (Resource rsc : rscDfn.streamResource(accCtx.get()).collect(Collectors.toList()))
+            for (Resource rsc : rscDfn.streamResource(peerAccCtxProvider.get()).collect(Collectors.toList()))
             {
-                if (rsc.getNode().getPeer(accCtx.get()).isConnected() &&
-                    !rsc.getStateFlags().isSet(accCtx.get(), Resource.Flags.DRBD_DISKLESS))
+                if (rsc.getNode().getPeer(peerAccCtxProvider.get()).isConnected() &&
+                    !rsc.getStateFlags().isSet(peerAccCtxProvider.get(), Resource.Flags.DRBD_DISKLESS))
                 {
                     ct++;
                 }
@@ -298,11 +304,11 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
     private long getVlmSize(ResourceDefinition rscDfn) throws AccessDeniedException
     {
         long size = 0;
-        Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(accCtx.get());
+        Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(peerAccCtxProvider.get());
         while (vlmDfnIt.hasNext())
         {
             VolumeDefinition vlmDfn = vlmDfnIt.next();
-            size += vlmDfn.getVolumeSize(accCtx.get());
+            size += vlmDfn.getVolumeSize(peerAccCtxProvider.get());
         }
         return size;
     }

@@ -150,7 +150,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         while (rscIt.hasNext())
                         {
                             Resource rsc = rscIt.next();
-                            if (isFlagSet(rsc, Resource.Flags.DELETE))
+                            if (isFlagSet(rsc, Resource.Flags.DELETE) && !isFlagSet(rsc.getNode(), Node.Flags.EVICTED))
                             {
                                 if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
                                 {
@@ -567,6 +567,24 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 accDeniedExc,
                 "checking flag state of " + rsc,
                 ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return isFlagSet;
+    }
+
+    private boolean isFlagSet(Node node, Node.Flags... flags)
+    {
+        boolean isFlagSet;
+        try
+        {
+            isFlagSet = node.getFlags().isSet(peerCtx.get(), flags);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "checking flag state of " + node,
+                ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
         return isFlagSet;
