@@ -2035,6 +2035,10 @@ paths:
       responses:
         '200':
           description: resource is either created or ensured to be available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
       requestBody:
@@ -2055,6 +2059,10 @@ paths:
       responses:
         '200':
           description: Resource is now active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/resources/{node}/deactivate:
@@ -2070,6 +2078,10 @@ paths:
       responses:
         '200':
           description: Resource is now inctive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions/{resource}/resources/properties/info:
