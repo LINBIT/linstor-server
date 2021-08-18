@@ -273,6 +273,8 @@ public class CtrlBackupApiCallHandler
     {
         try
         {
+            ApiCallRcImpl responses = new ApiCallRcImpl();
+
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
             Collection<SnapshotDefinition> snapDfns = getInProgressBackups(rscDfn);
             if (!snapDfns.isEmpty())
@@ -284,7 +286,7 @@ public class CtrlBackupApiCallHandler
                     )
                 );
             }
-            SnapshotDefinition prevSnap = null;
+            SnapshotDefinition prevSnapDfn = null;
             String prevSnapName = rscDfn.getProps(peerAccCtx.get()).getProp(
                 InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
             );
@@ -300,12 +302,12 @@ public class CtrlBackupApiCallHandler
                 }
                 else
                 {
-                    prevSnap = ctrlApiDataLoader.loadSnapshotDfn(
+                    prevSnapDfn = ctrlApiDataLoader.loadSnapshotDfn(
                         rscDfn,
                         new SnapshotName(prevSnapName),
                         false
                     );
-                    if (prevSnap == null)
+                    if (prevSnapDfn == null)
                     {
                         errorReporter.logWarning(
                             "Could not create an incremental backup for resource %s as the previous snapshot %s needed for the incremental backup has already been deleted. Creating a full backup instead.",
@@ -313,13 +315,43 @@ public class CtrlBackupApiCallHandler
                         );
                         incremental = false;
                     }
+                    else
+                    {
+                        boolean sizeMatches = true;
+                        for (SnapshotVolumeDefinition snapVlmDfn : prevSnapDfn.getAllSnapshotVolumeDefinitions(sysCtx))
+                        {
+                            long vlmDfnSize = snapVlmDfn.getVolumeDefinition().getVolumeSize(sysCtx);
+                            long prevSnapVlmDfnSize = snapVlmDfn.getVolumeSize(sysCtx);
+                            if (prevSnapVlmDfnSize != vlmDfnSize)
+                            {
+                                errorReporter.logDebug(
+                                    "Current vlmDfn size (%d) does not match with prev snapDfn (%s) size (%d). Forcing full backup.",
+                                    vlmDfnSize,
+                                    snapVlmDfn,
+                                    prevSnapVlmDfnSize
+                                );
+                                sizeMatches = false;
+                                break;
+                            }
+                        }
+                        if (!sizeMatches)
+                        {
+                            prevSnapDfn = null; // force full backup
+                            incremental = false;
+                            responses.addEntry(
+                                ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.MASK_WARN,
+                                    "Forcing full backup as volume sizes changed since last backup"
+                                )
+                            );
+                        }
+                    }
                 }
             }
-            ApiCallRcImpl responses = new ApiCallRcImpl();
 
             Pair<Node, List<String>> chooseNodeResult = chooseNode(
                 rscDfn,
-                prevSnap,
+                prevSnapDfn,
                 requiredExtTools,
                 optionalExtTools
             );
@@ -429,7 +461,7 @@ public class CtrlBackupApiCallHandler
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
 
-            setPropsIncremantaldependendProps(snapName, incremental, prevSnap, createdSnapshot);
+            setPropsIncremantaldependendProps(snapName, incremental, prevSnapDfn, createdSnapshot);
 
             ctrlTransactionHelper.commit();
 
