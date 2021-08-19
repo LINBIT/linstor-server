@@ -69,8 +69,19 @@ public class BackupShippingMgr
         AbsBackupShippingService service = null;
         try
         {
+            String key;
+            if (snapshotRef.getFlags().isSet(accCtx, Snapshot.Flags.BACKUP_SOURCE))
+            {
+                // if the snapshot is the source, the remote is the target
+                key = InternalApiConsts.KEY_BACKUP_TARGET_REMOTE;
+            }
+            else
+            {
+                key = InternalApiConsts.KEY_BACKUP_SRC_REMOTE;
+            }
+
             String remoteNameStr = snapshotRef.getProps(accCtx).getProp(
-                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                key,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
 
