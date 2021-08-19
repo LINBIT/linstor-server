@@ -368,10 +368,14 @@ public abstract class AbsBackupShippingService implements SystemService
                     if (basedOnSnapVlmData != null && basedOnSnapVlmData != snapVlmData)
                     {
                         Snapshot basedOnSnap = basedOnSnapVlmData.getRscLayerObject().getAbsResource();
-                        info.basedOnS3MetaKey = BackupShippingUtils.buildS3MetaKey(basedOnSnap, s3Suffix);
+                        String basedOnSnapSuffix = basedOnSnap.getSnapshotDefinition().getProps(accCtx).getProp(
+                            ApiConsts.KEY_BACKUP_S3_SUFFIX,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                        info.basedOnS3MetaKey = BackupShippingUtils.buildS3MetaKey(basedOnSnap, basedOnSnapSuffix);
                     }
                 }
-                catch (InvalidKeyException exc)
+                catch (InvalidKeyException | AccessDeniedException exc)
                 {
                     throw new ImplementationError(exc);
                 }
