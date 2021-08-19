@@ -1,10 +1,13 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -14,10 +17,14 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.repository.ResourceDefinitionProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -40,6 +47,10 @@ public class CtrlRscAutoHelper
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
     private final List<AutoHelper> autohelperList;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
+    private final ResourceDefinitionProtectionRepository rscDfnRepo;
+    private final AccessContext sysCtx;
 
     public static class AutoHelperResult
     {
@@ -72,27 +83,78 @@ public class CtrlRscAutoHelper
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscCrtApiHelper rscCrtHelperRef,
         CtrlRscDeleteApiHelper rscDelHelperRef,
-        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef,
+        @SystemContext AccessContext sysCtxRef,
+        ResourceDefinitionProtectionRepository rscDfnRepoRef
     )
     {
         autohelperList = Arrays
             .asList(
-                autoTieBreakerRef,
-                autoQuorumHelperRef,
                 autoDrbdProxyHelperRef,
                 autoRePlaceRscHelperRef,
-                autoVerfiyAlgoHelperRef);
+                autoVerfiyAlgoHelperRef,
+                // run autotiebreaker + autoquorum as last
+                autoTieBreakerRef,
+                autoQuorumHelperRef
+            );
 
         dataLoader = dataLoaderRef;
         peerAccCtx = peerAccCtxRef;
         rscCrtHelper = rscCrtHelperRef;
         rscDelHelper = rscDelHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
+        sysCtx = sysCtxRef;
+        rscDfnRepo = rscDfnRepoRef;
     }
 
     public AutoHelperResult manage(ApiCallRcImpl apiCallRcImplRef, ResponseContext context, String rscNameStrRef)
     {
         return manage(new AutoHelperContext(apiCallRcImplRef, context, dataLoader.loadRscDfn(rscNameStrRef, true)));
+    }
+
+    public Flux<ApiCallRc> manageAll(AutoHelperContext autoCtxWithoutRscDfn)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Create storage pool",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
+            () -> manageAllInTransaction(autoCtxWithoutRscDfn)
+        );
+    }
+
+    private Flux<ApiCallRc> manageAllInTransaction(AutoHelperContext autoCtxWithoutRscDfn){
+        List<Flux<ApiCallRc>> fluxList = new ArrayList<>();
+        try
+        {
+            for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(sysCtx).values())
+            {
+                AutoHelperResult result = manage(
+                    new AutoHelperContext(
+                        autoCtxWithoutRscDfn.responses,
+                        autoCtxWithoutRscDfn.responseContext,
+                        rscDfn
+                    )
+                );
+                fluxList.add(result.flux);
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return Flux.merge(fluxList);
+    }
+
+    public Flux<ApiCallRc> manageInOwnTransaction(AutoHelperContext autoCtx)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Create storage pool",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
+            () -> manage(autoCtx).flux
+        );
     }
 
     public AutoHelperResult manage(AutoHelperContext ctx)

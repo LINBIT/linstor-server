@@ -1074,6 +1074,82 @@ public class CtrlRscGrpApiCallHandler
         return flux;
     }
 
+    public Flux<ApiCallRc> adjust(
+        String rscGrpNameRef,
+        AutoSelectFilterApi adjustAutoSelectFilterRef
+    )
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_RSC_GRP, rscGrpNameRef);
+
+        ResponseContext context = new ResponseContext(
+            ApiOperation.makeRegisterOperation(),
+            getRscGrpDescription(rscGrpNameRef),
+            getRscGrpDescriptionInline(rscGrpNameRef),
+            ApiConsts.MASK_RSC_GRP,
+            objRefs
+        );
+
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet()).flatMapMany(
+            // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
+            // the freeCapacities parameter here
+            ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
+                "Adjust resource-group",
+                lockGuardFactory.buildDeferred(
+                    WRITE,
+                    NODES_MAP,
+                    RSC_DFN_MAP,
+                    STOR_POOL_DFN_MAP,
+                    RSC_GRP_MAP
+                ),
+                () -> adjustInTransaction(
+                    rscGrpNameRef,
+                    adjustAutoSelectFilterRef,
+                    context
+                )
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> adjustInTransaction(
+        String rscGrpNameRef,
+        AutoSelectFilterApi adjustAutoSelectFilterRef,
+        ResponseContext contextRef
+    )
+    {
+        List<Flux<ApiCallRc>> fluxList = new ArrayList<>();
+        try
+        {
+            ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(rscGrpNameRef, true);
+
+            AutoSelectorConfig rgAutoPlaceConfig = rscGrp.getAutoPlaceConfig();
+            AutoSelectFilterPojo autoPlaceConfig = AutoSelectFilterPojo.merge(
+                adjustAutoSelectFilterRef,
+                rgAutoPlaceConfig == null ? null : rgAutoPlaceConfig.getApiData()
+            );
+
+            for (ResourceDefinition rscDfn : rscGrp.getRscDfns(peerAccCtx.get()))
+            {
+                fluxList.add(
+                    ctrlRscAutoPlaceApiCallHandler.autoPlaceInTransaction(
+                        rscDfn.getName().displayValue,
+                        autoPlaceConfig,
+                        contextRef
+                    )
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access resource group " + getRscGrpDescriptionInline(rscGrpNameRef),
+                ApiConsts.FAIL_ACC_DENIED_RSC_GRP
+            );
+        }
+        return Flux.merge(fluxList);
+    }
+
     static VolumeNumber getVlmNr(VolumeGroupApi vlmGrpApi, ResourceGroup rscGrp, AccessContext accCtx)
         throws LinStorException, ValueOutOfRangeException
     {

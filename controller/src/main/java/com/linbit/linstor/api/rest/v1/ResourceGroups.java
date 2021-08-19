@@ -350,4 +350,31 @@ public class ResourceGroups
         );
     }
 
+    @POST
+    @Path("{rscGrpName}/adjust")
+    public void adjust(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        @PathParam("rscGrpName") String rscGrpName,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.ResourceGroupAdjust data = objectMapper.readValue(
+                jsonData,
+                JsonGenTypes.ResourceGroupAdjust.class
+            );
+            AutoSelectFilterApi adjustAutoSelectFilter = selectFilterToApi(data.select_filter);
+            Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler
+                .adjust(rscGrpName, adjustAutoSelectFilter)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_ADJUST_RSC_GRP, request));
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+    }
 }

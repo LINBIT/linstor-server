@@ -751,6 +751,12 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceGroupAdjust
+    {
+        public AutoSelectFilter select_filter;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class AutoPlaceRequest
     {
         public boolean diskless_on_remaining = false;
@@ -775,6 +781,10 @@ public class JsonGenTypes
         public List<String> provider_list = null;
         public Boolean diskless_on_remaining;
         public String diskless_type;
+        /**
+         * Multiplier of thin storage pool's free space
+         */
+        public Double overprovision;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

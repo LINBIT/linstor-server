@@ -25,6 +25,7 @@ info:
        - Added resource-definition clone API
          - POST /v1/resource-definitions/{rscname}/clone
          - GET /v1/resource-definitions/{rscname}/clone/{clonedrsc}
+       - Added /v1/resource-groups/{resource_group}/adjust
     * 1.9.0
        - Extended SatelliteConfig with remote_spdk boolean
     * 1.8.1
@@ -3380,6 +3381,32 @@ paths:
                 $ref: '#/components/schemas/MaxVolumeSizes'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/resource-groups/{resource_group}/adjust:
+    parameters:
+      - $ref: '#/components/parameters/ResourceGroupName'
+    post:
+      tags:
+        - developers
+      summary: adjusts (calls autoplace for) all resource-definitions of the given resource-group
+      operationId: resourceGroupAdjust
+      description: |
+        Adjusts (calls autoplace for) all resource-definitions of the given resource-group
+      responses:
+        '200':
+          description: resource-definitions adjusted as configured. Might have created new resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceGroupAdjust'
 
   /v1/controller/properties:
     get:
@@ -6059,6 +6086,11 @@ components:
           type: array
           items:
             type: string
+    ResourceGroupAdjust:
+      type: object
+      properties:
+        select_filter:
+          $ref: '#/components/schemas/AutoSelectFilter'
     AutoPlaceRequest:
       type: object
       required:
@@ -6133,6 +6165,10 @@ components:
           type: boolean
         diskless_type:
           type: string
+        overprovision:
+          type: number
+          format: double
+          description: Multiplier of thin storage pool's free space
     Candidate:
       type: object
       properties:
