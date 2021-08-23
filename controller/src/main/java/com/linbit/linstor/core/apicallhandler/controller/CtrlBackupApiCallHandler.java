@@ -281,6 +281,17 @@ public class CtrlBackupApiCallHandler
         {
             ApiCallRcImpl responses = new ApiCallRcImpl();
 
+            // test if master key is unlocked
+            if (!ctrlSecObj.areAllSet())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_CRYPT_PASSPHRASE,
+                        "Backup shipping requires a set up encryption. Please use 'linstor encryption create-passphrase' or '... enter-passphrase'"
+                    )
+                );
+            }
+
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
             Collection<SnapshotDefinition> snapDfns = getInProgressBackups(rscDfn);
             if (!snapDfns.isEmpty())
