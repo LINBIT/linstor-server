@@ -192,30 +192,24 @@ public class CloneService implements SystemService {
 
                     String[] cmd = cloneInfo.getCloneCommand();
 
-                    if (cmd == null)
+                    if (cmd == null || cmd.length == 0)
                     {
                         throw new StorageException("Clone not supported for DeviceProviderKind: " + cloneInfo.getKind());
                     }
                     activeClones.add(cloneInfo);
-                    if (cmd.length > 0)
-                    {
-                        CloneDaemon cloneDaemon = new CloneDaemon(
-                            errorReporter,
-                            threadGroup,
-                            "clone_" + cloneInfo,
-                            cmd,
-                            success -> postClone(
-                                success,
-                                cloneInfo
-                            )
-                        );
-                        cloneInfo.setCloneDaemon(cloneDaemon);
-                        cloneDaemon.start();
-                    } else
-                    {
-                        // LVM_THIN doesn't have a long background clone operation, so just start the post action
-                        postClone(true, cloneInfo);
-                    }
+
+                    CloneDaemon cloneDaemon = new CloneDaemon(
+                        errorReporter,
+                        threadGroup,
+                        "clone_" + cloneInfo,
+                        cmd,
+                        success -> postClone(
+                            success,
+                            cloneInfo
+                        )
+                    );
+                    cloneInfo.setCloneDaemon(cloneDaemon);
+                    cloneDaemon.start();
                 }
             }
         } else {

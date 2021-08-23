@@ -509,7 +509,8 @@ public class LvmThinProvider extends LvmProvider
 
     @Override
     public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
-        // LVM_THIN doesn't have a long run operation, empty array skips this
-        return new String[] {};
+        // LVM_THIN doesn't have a long run operation, but it is vital that the device manager runs
+        // through before getting updated flags, so keep the clone daemon a bit busy
+        return new String[] {"sleep", "1"};
     }
 }
