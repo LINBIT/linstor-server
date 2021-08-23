@@ -26,6 +26,7 @@ info:
          - POST /v1/resource-definitions/{rscname}/clone
          - GET /v1/resource-definitions/{rscname}/clone/{clonedrsc}
        - Added /v1/resource-groups/{resource_group}/adjust
+       - Added /v1/resource-groups/adjustall
     * 1.9.0
        - Extended SatelliteConfig with remote_spdk boolean
     * 1.8.1
@@ -3391,6 +3392,30 @@ paths:
       operationId: resourceGroupAdjust
       description: |
         Adjusts (calls autoplace for) all resource-definitions of the given resource-group
+      responses:
+        '200':
+          description: resource-definitions adjusted as configured. Might have created new resources.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceGroupAdjust'
+  /v1/resource-groups/adjustall:
+    post:
+      tags:
+        - developers
+      summary: adjusts (calls autoplace for) all resource-definitions of all resource-groups
+      operationId: resourceGroupAdjustAll
+      description: |
+        Adjusts (calls autoplace for) all resource-definitions of all resource-groups
       responses:
         '200':
           description: resource-definitions adjusted as configured. Might have created new resources.

@@ -377,4 +377,30 @@ public class ResourceGroups
             ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
     }
+
+    @POST
+    @Path("adjustall")
+    public void adjustAll(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.ResourceGroupAdjust data = objectMapper.readValue(
+                jsonData,
+                JsonGenTypes.ResourceGroupAdjust.class
+            );
+            AutoSelectFilterApi adjustAutoSelectFilter = selectFilterToApi(data.select_filter);
+            Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.adjustAll(adjustAutoSelectFilter)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_ADJUST_RSC_GRP, request));
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+    }
 }

@@ -1111,6 +1111,63 @@ public class CtrlRscGrpApiCallHandler
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
+    public Flux<ApiCallRc> adjustAll(AutoSelectFilterApi adjustAutoSelectFilterRef)
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+
+        ResponseContext context = new ResponseContext(
+            ApiOperation.makeRegisterOperation(),
+            "All resource groups",
+            "all resource groups",
+            ApiConsts.MASK_RSC_GRP,
+            objRefs
+        );
+
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet()).flatMapMany(
+            // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
+            // the freeCapacities parameter here
+            ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
+                "Adjust all resource-group",
+                lockGuardFactory.buildDeferred(
+                    WRITE,
+                    NODES_MAP,
+                    RSC_DFN_MAP,
+                    STOR_POOL_DFN_MAP,
+                    RSC_GRP_MAP
+                ),
+                () -> adjustAllInTransaction(
+                    adjustAutoSelectFilterRef,
+                    context
+                )
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> adjustAllInTransaction(
+        AutoSelectFilterApi adjustAutoSelectFilterRef,
+        ResponseContext contextRef
+    )
+    {
+        Flux<ApiCallRc> ret = Flux.empty();
+        try
+        {
+            for (ResourceGroup rg : resourceGroupRepository.getMapForView(peerAccCtx.get()).values())
+            {
+                ret = ret
+                    .concatWith(adjustInTransaction(rg.getName().displayValue, adjustAutoSelectFilterRef, contextRef));
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "iterate through resource groups",
+                ApiConsts.FAIL_ACC_DENIED_RSC_GRP
+            );
+        }
+        return null;
+    }
+
     private Flux<ApiCallRc> adjustInTransaction(
         String rscGrpNameRef,
         AutoSelectFilterApi adjustAutoSelectFilterRef,
