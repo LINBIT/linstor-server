@@ -236,6 +236,11 @@ class StltRscApiCallHandler
             Props rscDfnProps = rscDfn.getProps(apiCtx);
             rscDfnProps.map().putAll(rscRawData.getRscDfnProps());
             rscDfnProps.keySet().retainAll(rscRawData.getRscDfnProps().keySet());
+            errorReporter.logTrace(
+                "resetting flags of local rscdfn (%s) to %s",
+                rscDfn,
+                FlagsHelper.toStringList(ResourceDefinition.Flags.class, rscRawData.getRscDfnFlags())
+            );
             rscDfn.getFlags().resetFlagsTo(apiCtx, rscDfnFlags);
 
             // merge vlmDfns
