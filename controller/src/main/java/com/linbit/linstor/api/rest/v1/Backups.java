@@ -207,7 +207,7 @@ public class Backups
         combination |= timestamp.isEmpty() && rscName.isEmpty() && nodeName.isEmpty() ? 0 : DEL_OPT_TIME_RSC_NODE;
         combination |= !all ? 0 : DEL_OPT_ALL;
         combination |= !allLocalCluster ? 0 : DEL_OPT_ALL_LOCALCLUSTER;
-        // dryRun is allowed with all combinations, no need to check
+        // dryRun is combinable with all allowed combinations, no need to check
 
         if (!DEL_OPT_ALLOWED_COMBINATIONS.contains(combination))
         {

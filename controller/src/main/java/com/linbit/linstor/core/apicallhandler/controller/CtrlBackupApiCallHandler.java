@@ -466,7 +466,7 @@ public class CtrlBackupApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            Flux<ApiCallRc> flux = Flux.<ApiCallRc>just(responses)
+            Flux<ApiCallRc> flux = Flux.<ApiCallRc> just(responses)
                 .concatWith(snapshotCrtHandler.postCreateSnapshot(snapDfn));
             return new Pair<>(flux, createdSnapshot);
         }
@@ -529,7 +529,8 @@ public class CtrlBackupApiCallHandler
 
         ExceptionThrowingBiFunction<Node, Map<ExtTools, ExtToolsInfo.Version>, Boolean, AccessDeniedException> hasNodeAllExtTools = (
             node,
-            extTools) ->
+            extTools
+        ) ->
         {
             boolean ret = true;
             if (extTools != null)
@@ -539,8 +540,10 @@ public class CtrlBackupApiCallHandler
                 {
                     ExtToolsInfo extToolInfo = extToolsMgr.getExtToolInfo(extTool.getKey());
                     Version requiredVersion = extTool.getValue();
-                    if (extToolInfo == null || !extToolInfo.isSupported() ||
-                        (requiredVersion != null && !extToolInfo.hasVersionOrHigher(requiredVersion)))
+                    if (
+                        extToolInfo == null || !extToolInfo.isSupported() ||
+                            (requiredVersion != null && !extToolInfo.hasVersionOrHigher(requiredVersion))
+                    )
                     {
                         ret = false;
                         break;
@@ -738,9 +741,11 @@ public class CtrlBackupApiCallHandler
             toDelete.s3keys.add(s3Key);
             toDelete.s3KeysNotFound.remove(s3Key); // ignore this
         }
-        else if (timestamp != null && !timestamp.isEmpty() ||
-            rscName != null && !rscName.isEmpty() ||
-            nodeName != null && !nodeName.isEmpty()) // case 4: (time|rsc|node)+ [cascading]
+        else if (
+            timestamp != null && !timestamp.isEmpty() ||
+                rscName != null && !rscName.isEmpty() ||
+                nodeName != null && !nodeName.isEmpty()
+        ) // case 4: (time|rsc|node)+ [cascading]
         {
             deleteByTimeRscNode(
                 s3LinstorObjects,
@@ -868,25 +873,25 @@ public class CtrlBackupApiCallHandler
         ToDeleteCollections toDeleteRef
     )
         throws AccessDeniedException
-                 {
+    {
         TreeSet<String> matchingS3Keys = new TreeSet<>();
         for (String s3Key : s3LinstorObjects.keySet())
-                     {
+        {
             if (s3Key.startsWith(idPrefixRef))
             {
                 matchingS3Keys.add(s3Key);
-                }
+            }
         }
         int s3KeyCount = matchingS3Keys.size();
         if (s3KeyCount == 0)
         {
-                toDeleteRef.apiCallRcs.addEntry(
+            toDeleteRef.apiCallRcs.addEntry(
                 "No backup with id " + (allowMultiSelectionRef ? "prefix " : "") + "'" + idPrefixRef +
                     "' not found on remote '" +
                     s3RemoteRef.getName().displayValue + "'",
                 ApiConsts.WARN_NOT_FOUND
             );
-                     }
+        }
         else
         {
             if (s3KeyCount > 1 && !allowMultiSelectionRef)
@@ -1003,12 +1008,10 @@ public class CtrlBackupApiCallHandler
     )
         throws AccessDeniedException
     {
-        Predicate<String> nodeNameCheck = nodeNameRef == null || nodeNameRef.isEmpty() ?
-            ignore -> true :
-            nodeNameRef::equalsIgnoreCase;
-        Predicate<String> rscNameCheck = rscNameRef == null || rscNameRef.isEmpty() ?
-            ignore -> true :
-            rscNameRef::equalsIgnoreCase;
+        Predicate<String> nodeNameCheck = nodeNameRef == null || nodeNameRef.isEmpty() ? ignore -> true
+            : nodeNameRef::equalsIgnoreCase;
+        Predicate<String> rscNameCheck = rscNameRef == null || rscNameRef.isEmpty() ? ignore -> true
+            : rscNameRef::equalsIgnoreCase;
         Predicate<Long> timestampCheck;
         if (timestampRef == null || timestampRef.isEmpty())
         {
@@ -1293,7 +1296,7 @@ public class CtrlBackupApiCallHandler
                     {
                         if (
                             (latestBackTs == null || latestBackTs.before(curTs)) &&
-                            (targetTime.after(curTs) || targetTime.equals(curTs))
+                                (targetTime.after(curTs) || targetTime.equals(curTs))
                         )
                         {
                             metaName = m.group();
@@ -1380,7 +1383,8 @@ public class CtrlBackupApiCallHandler
                 }
                 nextBackup = snap;
                 metaName = metadata.getBasedOn();
-            } while (metaName != null);
+            }
+            while (metaName != null);
             /*
              * we went through the snapshots from the newest to the oldest.
              * That means "nextBackup" now is the base-/full-backup which we want to start restore with
@@ -1637,8 +1641,8 @@ public class CtrlBackupApiCallHandler
             try
             {
                 /*
-                 * DO NOT use getRscDfnForBackupRestore here. We need to know if we are choosing incremental or full backup before calling
-                 *
+                 * DO NOT use getRscDfnForBackupRestore here. We need to know if we are choosing incremental or full
+                 * backup before calling
                  */
                 ResourceDefinition targetRscDfn = rscDfnRepo.get(sysCtx, new ResourceName(targetRscName));
                 if (targetRscDfn != null)
@@ -1986,7 +1990,8 @@ public class CtrlBackupApiCallHandler
                         }
                     }
                     catch (ParseException ignored)
-                    {}
+                    {
+                    }
                 }
             }
         }
@@ -2074,7 +2079,8 @@ public class CtrlBackupApiCallHandler
                     current = child;
                 }
             }
-        } while (current != null);
+        }
+        while (current != null);
 
         return ret;
     }
@@ -2383,12 +2389,10 @@ public class CtrlBackupApiCallHandler
         /*
          * helper map. If we have "full", "inc1" (based on "full"), "inc2" (based on "inc1"), "inc3" (also based on
          * "full", i.e. if user deleted local inc1+inc2 before creating inc3)
-         *
          * This map will look like follows:
          * "" -> [full]
          * "full" -> [inc1, inc3]
          * "inc1" -> [inc2]
-         *
          * "" is a special id for full backups
          */
         Map<String, List<BackupApi>> idToUsedByBackupApiMap = new TreeMap<>();
@@ -2418,10 +2422,10 @@ public class CtrlBackupApiCallHandler
                     Map<Integer, BackupVolumePojo> retVlmPojoMap = new TreeMap<>(); // vlmNr, vlmPojo
                     boolean restorable = true;
 
-                    for (Entry<Integer, BackupInfoPojo> entry: s3MetaVlmMap.entrySet())
+                    for (Entry<Integer, BackupInfoPojo> entry : s3MetaVlmMap.entrySet())
                     {
                         Integer s3MetaVlmNr = entry.getKey();
-                        BackupInfoPojo s3BackVlmInfo  = entry.getValue();
+                        BackupInfoPojo s3BackVlmInfo = entry.getValue();
                         if (!s3keys.contains(s3BackVlmInfo.getName()))
                         {
                             /*
@@ -2561,7 +2565,7 @@ public class CtrlBackupApiCallHandler
                 StateFlags<SnapshotDefinition.Flags> snapDfnFlags = snapDfn.getFlags();
                 if (snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.BACKUP) &&
                     // ignore already shipped backups
-                    !snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.SUCCESSFUL)
+                        !snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.SUCCESSFUL)
                 )
                 {
                     Set<String> futureS3Keys = new TreeSet<>();
@@ -2601,7 +2605,6 @@ public class CtrlBackupApiCallHandler
             }
         }
 
-
         s3keys.removeAll(linstorBackupsS3Keys);
         return new Pair<>(retIdToBackupsApiMap, s3keys);
     }
@@ -2630,7 +2633,8 @@ public class CtrlBackupApiCallHandler
             }
         }
         catch (InvalidNameException | AccessDeniedException ignored)
-        {}
+        {
+        }
         return snapDfn;
     }
 
@@ -2740,7 +2744,7 @@ public class CtrlBackupApiCallHandler
                 vlms,
                 null,
                 null
-             );
+            );
         }
         catch (ParseException exc)
         {
@@ -2750,7 +2754,8 @@ public class CtrlBackupApiCallHandler
         return back;
     }
 
-    public Flux<ApiCallRc> backupAbort(String rscNameRef, boolean restore, boolean create) {
+    public Flux<ApiCallRc> backupAbort(String rscNameRef, boolean restore, boolean create)
+    {
         return scopeRunner.fluxInTransactionalScope(
             "abort backup",
             lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
@@ -2810,12 +2815,12 @@ public class CtrlBackupApiCallHandler
 
         ctrlTransactionHelper.commit();
         return updateStlts.transform(
-                responses -> CtrlResponseUtils.combineResponses(
-                    responses,
-                    LinstorParsingUtils.asRscName(rscNameRef),
+            responses -> CtrlResponseUtils.combineResponses(
+                responses,
+                LinstorParsingUtils.asRscName(rscNameRef),
                 "Abort backups of {1} on {0} started"
-                )
-            );
+            )
+        );
     }
 
     private Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn) throws AccessDeniedException
