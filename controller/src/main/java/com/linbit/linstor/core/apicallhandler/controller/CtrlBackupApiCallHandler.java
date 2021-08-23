@@ -91,8 +91,6 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
-import com.linbit.utils.ExceptionThrowingBiFunction;
-import com.linbit.utils.ExceptionThrowingPredicate;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.backupshipping.S3Consts.META_SUFFIX;
@@ -252,7 +250,7 @@ public class CtrlBackupApiCallHandler
                 now,
                 true,
                 incremental,
-                null,
+                Collections.singletonMap(ExtTools.ZSTD, null),
                 null,
                 RemoteType.S3
             ).objA
@@ -535,46 +533,10 @@ public class CtrlBackupApiCallHandler
     )
         throws AccessDeniedException
     {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         Node selectedNode = null;
         Node preferredNode = null;
         List<String> nodeNamesStr = new ArrayList<>();
-
-        ExceptionThrowingPredicate<Node, AccessDeniedException> shouldNodeCreateSnapshot;
-        if (prevSnapDfnRef == null)
-        {
-            shouldNodeCreateSnapshot = ignored -> true;
-        }
-        else
-        {
-            shouldNodeCreateSnapshot = node -> prevSnapDfnRef.getAllSnapshots(peerAccCtx.get()).stream()
-                .anyMatch(snap -> snap.getNode().equals(node));
-        }
-
-        ExceptionThrowingBiFunction<Node, Map<ExtTools, ExtToolsInfo.Version>, Boolean, AccessDeniedException> hasNodeAllExtTools = (
-            node,
-            extTools
-        ) ->
-        {
-            boolean ret = true;
-            if (extTools != null)
-            {
-                ExtToolsManager extToolsMgr = node.getPeer(sysCtx).getExtToolsManager();
-                for (Entry<ExtTools, Version> extTool : extTools.entrySet())
-                {
-                    ExtToolsInfo extToolInfo = extToolsMgr.getExtToolInfo(extTool.getKey());
-                    Version requiredVersion = extTool.getValue();
-                    if (
-                        extToolInfo == null || !extToolInfo.isSupported() ||
-                            (requiredVersion != null && !extToolInfo.hasVersionOrHigher(requiredVersion))
-                    )
-                    {
-                        ret = false;
-                        break;
-                    }
-                }
-            }
-            return ret;
-        };
 
         Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx.get());
         while (rscIt.hasNext())
@@ -582,40 +544,108 @@ public class CtrlBackupApiCallHandler
             Resource rsc = rscIt.next();
             if (
                 !rsc.getStateFlags()
-                    .isSomeSet(peerAccCtx.get(), Resource.Flags.DRBD_DISKLESS, Resource.Flags.NVME_INITIATOR) &&
-                    backupShippingSupported(rsc).isEmpty()
-            )
+                    .isSomeSet(peerAccCtx.get(), Resource.Flags.DRBD_DISKLESS, Resource.Flags.NVME_INITIATOR))
             {
-                Node node = rsc.getNode();
-                boolean takeSnapshot = shouldNodeCreateSnapshot.test(node) &&
-                    hasNodeAllExtTools.accept(node, requiredExtToolsMap);
-
-                if (takeSnapshot)
+                ApiCallRcImpl backupShippingSupported = backupShippingSupported(rsc);
+                if (backupShippingSupported.isEmpty())
                 {
-                    if (selectedNode == null)
+                    Node node = rsc.getNode();
+                    boolean takeSnapshot = true;
+                    if (prevSnapDfnRef != null)
                     {
-                        selectedNode = node;
+                        takeSnapshot = prevSnapDfnRef.getAllSnapshots(peerAccCtx.get()).stream()
+                            .anyMatch(snap -> snap.getNode().equals(node));
                     }
-                    if (preferredNode == null && hasNodeAllExtTools.accept(node, optionalExtToolsMap))
+                    if (!takeSnapshot)
                     {
-                        preferredNode = node;
-                        selectedNode = node;
+                        apiCallRc.addEntries(
+                            ApiCallRcImpl.singleApiCallRc(
+                                ApiConsts.MASK_INFO,
+                                "Cannot create snapshot on node '" + node.getName().displayValue +
+                                    "', as the node does not have the required base snapshot for incremental backup"
+                            )
+                        );
                     }
-                    nodeNamesStr.add(node.getName().displayValue);
+                    else
+                    {
+                        takeSnapshot = hasNodeAllExtTools(
+                            node,
+                            requiredExtToolsMap,
+                            apiCallRc,
+                            "Cannot use node '" + node.getName().displayValue + "' as it does not support the tool(s): "
+                        );
+                    }
+
+                    if (takeSnapshot)
+                    {
+                        if (selectedNode == null)
+                        {
+                            selectedNode = node;
+                        }
+                        if (preferredNode == null && hasNodeAllExtTools(node, optionalExtToolsMap, null, null))
+                        {
+                            preferredNode = node;
+                            selectedNode = node;
+                        }
+                        nodeNamesStr.add(node.getName().displayValue);
+                    }
+                }
+                else
+                {
+                    apiCallRc.addEntries(backupShippingSupported);
                 }
             }
         }
         if (nodeNamesStr.size() == 0)
         {
-            throw new ApiRcException(
+            apiCallRc.addEntry(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_NOT_ENOUGH_NODES,
                     "Backup shipping of resource '" + rscDfn.getName().displayValue +
                         "' cannot be started since there is no node available that supports backup shipping."
                 )
             );
+            throw new ApiRcException(apiCallRc);
         }
         return new Pair<>(selectedNode, nodeNamesStr);
+    }
+
+    private boolean hasNodeAllExtTools(
+        Node node,
+        Map<ExtTools, ExtToolsInfo.Version> extTools,
+        ApiCallRcImpl apiCallRcRef,
+        String errorMsgPrefix
+    )
+        throws AccessDeniedException
+    {
+        boolean ret = true;
+        if (extTools != null)
+        {
+            ExtToolsManager extToolsMgr = node.getPeer(sysCtx).getExtToolsManager();
+            StringBuilder sb = new StringBuilder();
+            for (Entry<ExtTools, Version> extTool : extTools.entrySet())
+            {
+                ExtToolsInfo extToolInfo = extToolsMgr.getExtToolInfo(extTool.getKey());
+                Version requiredVersion = extTool.getValue();
+                if (extToolInfo == null || !extToolInfo.isSupported() ||
+                    (requiredVersion != null && !extToolInfo.hasVersionOrHigher(requiredVersion)))
+                {
+                    ret = false;
+                    sb.append(extTool.getKey());
+                    if (requiredVersion != null)
+                    {
+                        sb.append(" (").append(requiredVersion.toString()).append(")");
+                    }
+                    sb.append(", ");
+                }
+            }
+            if (sb.length() > 0 && apiCallRcRef != null)
+            {
+                sb.setLength(sb.length() - 2);
+                apiCallRcRef.addEntry(errorMsgPrefix + sb.toString(), ApiConsts.MASK_INFO);
+            }
+        }
+        return ret;
     }
 
     void setPropsIncremantaldependendProps(
@@ -3198,15 +3228,6 @@ public class CtrlBackupApiCallHandler
                 continue;
             }
             ExtToolsManager extToolsManager = rsc.getNode().getPeer(peerAccCtx.get()).getExtToolsManager();
-            errors.addEntry(
-                getErrorRcIfNotSupported(
-                    deviceProviderKind,
-                    extToolsManager,
-                    ExtTools.SOCAT,
-                    "socat",
-                    null
-                )
-            );
             errors.addEntry(
                 getErrorRcIfNotSupported(
                     deviceProviderKind,
