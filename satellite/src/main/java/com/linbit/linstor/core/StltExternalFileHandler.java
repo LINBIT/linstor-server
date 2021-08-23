@@ -99,11 +99,13 @@ public class StltExternalFileHandler
             for (ResourceDefinition rscDfn : rscDfnMap.values())
             {
                 Resource localRsc = rscDfn.getResource(wrkCtx, localNodeRef.getName());
-                if (localRsc == null)
+                if (localRsc != null)
                 {
-                    throw new ImplementationError("Local resource of a resource-definition must not be null");
+                    /*
+                     * we might have an RD with an SPD with a local snapshot but NO resource
+                     */
+                    getRequestedExternalFiles(localRsc, false);
                 }
-                getRequestedExternalFiles(localRsc, false);
             }
         }
         catch (AccessDeniedException | InvalidNameException | DatabaseException exc)
