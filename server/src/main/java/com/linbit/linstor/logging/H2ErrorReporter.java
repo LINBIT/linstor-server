@@ -51,7 +51,7 @@ public class H2ErrorReporter {
     H2ErrorReporter(ErrorReporter errorReporterRef)
     {
         errorReporter = errorReporterRef;
-        dataSource.setUrl("jdbc:h2:" + errorReporter.getLogDirectory().toAbsolutePath().toString() +
+        dataSource.setUrl("jdbc:h2:" + errorReporter.getLogDirectory().toAbsolutePath() +
             "/error-report;COMPRESS=TRUE");
 
         dataSource.setMinIdle(5);
@@ -152,12 +152,12 @@ public class H2ErrorReporter {
 
         if (since != null)
         {
-            where += " AND DATETIME >= '" + since.toString() + "'";
+            where += " AND DATETIME >= '" + new java.sql.Date(since.getTime()) + "'";
         }
 
         if (to != null)
         {
-            where += " AND DATETIME <= '" + to.toString() + "'";
+            where += " AND DATETIME <= '" + new java.sql.Date(to.getTime()) + "'";
         }
 
         final String stmtStr = "SELECT" +
