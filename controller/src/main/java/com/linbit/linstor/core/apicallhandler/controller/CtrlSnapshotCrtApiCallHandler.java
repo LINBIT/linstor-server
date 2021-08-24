@@ -31,6 +31,9 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
+import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -102,10 +105,10 @@ public class CtrlSnapshotCrtApiCallHandler
      * <p>
      * Snapshots are created in a multi-stage process:
      * <ol>
-     *     <li>Add the snapshot objects (definition and instances), marked with the suspend flag</li>
-     *     <li>When all resources are suspended, send out a snapshot request</li>
-     *     <li>When all snapshots have been created, mark the resource as resuming by removing the suspend flag</li>
-     *     <li>When all resources have been resumed, remove the in-progress snapshots</li>
+     * <li>Add the snapshot objects (definition and instances), marked with the suspend flag</li>
+     * <li>When all resources are suspended, send out a snapshot request</li>
+     * <li>When all snapshots have been created, mark the resource as resuming by removing the suspend flag</li>
+     * <li>When all resources have been resumed, remove the in-progress snapshots</li>
      * </ol>
      */
     public Flux<ApiCallRc> createSnapshot(
@@ -343,17 +346,16 @@ public class CtrlSnapshotCrtApiCallHandler
         ResourceName rscName = rscDfn.getName();
         SnapshotName snapshotName = snapshotDfn.getName();
 
-
-        Flux<ApiCallRc> satelliteUpdateResponses =
-            ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
-                .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
-                .transform(
-                    updateResponses -> CtrlResponseUtils.combineResponses(
-                        updateResponses,
-                        rscName,
-                        "Suspended IO of {1} on {0} for snapshot"
-            )
-        );
+        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
+            .updateSatellites(snapshotDfn, notConnectedError())
+            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
+            .transform(
+                updateResponses -> CtrlResponseUtils.combineResponses(
+                    updateResponses,
+                    rscName,
+                    "Suspended IO of {1} on {0} for snapshot"
+                )
+            );
 
         return satelliteUpdateResponses
             .concatWith(takeSnapshot(rscName, snapshotName))
@@ -411,7 +413,7 @@ public class CtrlSnapshotCrtApiCallHandler
                         rscName,
                         "Aborted snapshot of {1} on {0}"
                     )
-                    )
+                )
                 .concatWith(
                     ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                         .transform(
@@ -421,7 +423,7 @@ public class CtrlSnapshotCrtApiCallHandler
                                 "Resumed IO of {1} on {0} after failed snapshot"
                             )
                         )
-                    )
+                )
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
 
             retFlux = satelliteUpdateResponses
@@ -446,31 +448,123 @@ public class CtrlSnapshotCrtApiCallHandler
 
     private Flux<ApiCallRc> takeSnapshotInTransaction(ResourceName rscName, SnapshotName snapshotName)
     {
+        Flux<ApiCallRc> ret;
+
         SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
-        for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
+        Collection<Snapshot> snapshots = getAllSnapshotsPrivileged(snapshotDfn);
+        boolean allUpToDate = true;
+        for (Snapshot snapshot : snapshots)
         {
-            setTakeSnapshotPrivileged(snapshot, true);
+            try
+            {
+                SatelliteState stltState = snapshot.getNode().getPeer(apiCtx).getSatelliteState();
+                if (stltState == null)
+                {
+                    continue;
+                }
+                SatelliteResourceState rscState = stltState.getResourceStates().get(snapshotDfn.getResourceName());
+                if (rscState == null)
+                {
+                    continue;
+                }
+                Collection<SatelliteVolumeState> vlmStates = rscState.getVolumeStates().values();
+                if (vlmStates == null)
+                {
+                    continue;
+                }
+                for (SatelliteVolumeState stltVlmStates : vlmStates)
+                {
+                    if (!stltVlmStates.getDiskState().equalsIgnoreCase("uptodate"))
+                    {
+                        allUpToDate = false;
+                    }
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
         }
 
-        ctrlTransactionHelper.commit();
+        if (allUpToDate)
+        {
+            for (Snapshot snapshot : snapshots)
+            {
+                setTakeSnapshotPrivileged(snapshot, true);
+            }
+            ctrlTransactionHelper.commit();
 
-        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
-            .updateSatellites(snapshotDfn, notConnectedError())
-            .transform(
-                responses -> CtrlResponseUtils.combineResponses(
-                    responses,
-                    rscName,
-                    "Took snapshot of {1} on {0}"
+            Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
+                .updateSatellites(snapshotDfn, notConnectedError())
+                .transform(
+                    responses -> CtrlResponseUtils.combineResponses(
+                        responses,
+                        rscName,
+                        "Took snapshot of {1} on {0}"
+                    )
+                );
+
+            ret = satelliteUpdateResponses
+                .timeout(
+                    Duration.ofMinutes(2),
+                    abortSnapshot(rscName, snapshotName, new TimeoutException())
                 )
-            );
+                .concatWith(resumeResource(rscName, snapshotName));
+        }
+        else
+        {
+            enableFlagPrivileged(snapshotDfn, SnapshotDefinition.Flags.DELETE);
+            unsetInCreationPrivileged(snapshotDfn);
+            ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
+            resumeIoPrivileged(rscDfn);
 
-        return satelliteUpdateResponses
-            .timeout(
-                Duration.ofMinutes(2),
-                abortSnapshot(rscName, snapshotName, new TimeoutException())
-            )
-            .concatWith(resumeResource(rscName, snapshotName));
+            ctrlTransactionHelper.commit();
+
+            ret = ctrlSatelliteUpdateCaller
+                .updateSatellites(snapshotDfn, notConnectedCannotAbort())
+                .transform(
+                    responses -> CtrlResponseUtils.combineResponses(
+                        responses,
+                        rscName,
+                        "Aborted snapshot of {1} on {0}"
+                    )
+                )
+                .concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+                        .transform(
+                            responses -> CtrlResponseUtils.combineResponses(
+                                responses,
+                                rscName,
+                                "Resumed IO of {1} on {0} after failed snapshot"
+                            )
+                        )
+                )
+                .concatWith(
+                    ctrlSnapshotDeleteApiCallHandler
+                        .deleteSnapshot(snapshotDfn.getResourceName().displayValue, snapshotDfn.getName().displayValue)
+                )
+                .concatWith(
+                    Flux.<ApiCallRc>just(
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.FAIL_SNAPSHOT_NOT_UPTODATE,
+                        "Cannot take snapshot from non-UpToDate DRBD device. Snapshot creation aborted"
+                    ))
+                )
+                .concatWith(
+                    Flux.error(
+                        new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_SNAPSHOT_NOT_UPTODATE,
+                                "Cannot take snapshot from non-UpToDate DRBD device. Snapshot creation aborted"
+                            )
+                        )
+                    )
+                )
+                .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
+
+        }
+        return ret;
     }
 
     private Flux<ApiCallRc> resumeResource(ResourceName rscName, SnapshotName snapshotName)
@@ -662,10 +756,10 @@ public class CtrlSnapshotCrtApiCallHandler
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.WARN_NOT_CONNECTED,
                     "Unable to abort snapshot process on disconnected satellite '" + nodeName + "'"
-                    ).setDetails(
-                        "IO may be suspended until the connection to the satellite is re-established"
-                        ).build()
-                )
-            );
+                ).setDetails(
+                    "IO may be suspended until the connection to the satellite is re-established"
+                ).build()
+            )
+        );
     }
 }
