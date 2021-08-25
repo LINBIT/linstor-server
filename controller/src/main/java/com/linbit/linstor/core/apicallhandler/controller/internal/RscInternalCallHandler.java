@@ -321,8 +321,6 @@ public class RscInternalCallHandler
             if (rsc.getStateFlags().isSet(apiCtx, Resource.Flags.BACKUP_RESTORE))
             {
                 rsc.getStateFlags().disableFlags(apiCtx, Resource.Flags.BACKUP_RESTORE);
-                rsc.getProps(apiCtx)
-                    .removeProp(InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET, ApiConsts.NAMESPC_BACKUP_SHIPPING);
             }
 
             retryResourceTask.remove(rsc);
