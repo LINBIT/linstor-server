@@ -16,6 +16,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
@@ -230,7 +231,12 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             Flux<ApiCallRc> nextStep = deleteRemaining(rscName);
             if (hasDisklessResources)
             {
-                satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
+                satelliteUpdateResponses = ctrlSatelliteUpdateCaller
+                    .updateSatellites(
+                        rscDfn,
+                        nodeName -> Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))),
+                        nextStep
+                    )
                     .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                         updateResponses,
                         rscName,
@@ -313,7 +319,12 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             ctrlTransactionHelper.commit();
 
             Flux<ApiCallRc> nextStep = deleteData(rscName);
-            flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
+            flux = ctrlSatelliteUpdateCaller
+                .updateSatellites(
+                    rscDfn,
+                    nodeName -> Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))),
+                    nextStep
+                )
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
