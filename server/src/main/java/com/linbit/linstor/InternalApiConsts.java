@@ -127,6 +127,7 @@ public class InternalApiConsts
     public static final String KEY_BACKUP_TO_RESTORE = "BackupToRestore";
     public static final String API_BACKUP_REST_START_RECEIVING = "BackupRestStartReceiving";
     public static final String KEY_BACKUP_SHIP_PORT = "BackupShipPort";
+    public static final String KEY_BACKUP_START_TIMESTAMP = "BackupStartTimestamp";
 
     public static final String KEY_BACKUP_SRC_REMOTE = "BackupSrcRemote";
     public static final String KEY_BACKUP_TARGET_REMOTE = "BackupTargetRemote";

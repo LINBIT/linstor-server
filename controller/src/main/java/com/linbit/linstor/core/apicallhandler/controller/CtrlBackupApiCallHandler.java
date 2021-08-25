@@ -235,6 +235,8 @@ public class CtrlBackupApiCallHandler
     )
         throws AccessDeniedException
     {
+        long now = System.currentTimeMillis();
+        String snapName = generateNewSnapshotName(new Date(now));
         Flux<ApiCallRc> response = scopeRunner.fluxInTransactionalScope(
             "Backup snapshot",
             lockGuardFactory.create()
@@ -245,7 +247,8 @@ public class CtrlBackupApiCallHandler
                 rscNameRef,
                 remoteNameRef,
                 nodeNameRef,
-                generateNewSnapshotName(new Date()),
+                snapName,
+                now,
                 true,
                 incremental,
                 null,
@@ -266,6 +269,7 @@ public class CtrlBackupApiCallHandler
         String remoteName,
         String nodeName,
         String snapName,
+        long nowRef,
         boolean setShippingFlag,
         boolean incremental,
         Map<ExtTools, ExtToolsInfo.Version> requiredExtTools,
@@ -392,6 +396,12 @@ public class CtrlBackupApiCallHandler
                 .createSnapshots(nodes, rscDfn.getName().displayValue, snapName, responses);
             snapDfn.getFlags()
                 .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
+
+            snapDfn.getProps(peerAccCtx.get()).setProp(
+                InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                Long.toString(nowRef),
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
 
             // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name (s3 suffix
             // is NOT part of snapshot name)
@@ -1048,7 +1058,33 @@ public class CtrlBackupApiCallHandler
             {
                 String node = s3Obj.metaFile.getNodeName();
                 String rsc = s3Obj.metaFile.getRscName();
-                long startTimestamp = s3Obj.metaFile.getStartTimestamp();
+                /*
+                 * DO NOT use s3Obj.metaFile.getStartTimestamp()
+                 *
+                 * DATE_FORMAT.parse might return a timestamp within a different timezome than the timestamp of the
+                 * metafile.
+                 * We need to make sure to use the same timezone. Therefore another parse of metaFile.getStartTime
+                 * (string based)
+                 * is needed.
+                 */
+                String timeStr;
+                {
+                    Matcher m = META_FILE_PATTERN.matcher(s3Obj.s3Key);
+                    if (!m.find())
+                    {
+                        throw new ImplementationError("Unexpected meta filename");
+                    }
+                    timeStr = m.group(2).substring(S3Consts.SNAP_PREFIX_LEN);
+                }
+                long startTimestamp;
+                try
+                {
+                    startTimestamp = S3Consts.DATE_FORMAT.parse(timeStr).getTime();
+                }
+                catch (ParseException exc)
+                {
+                    throw new ImplementationError("Unexpected date format: " + timeStr);
+                }
                 if (nodeNameCheck.test(node) && rscNameCheck.test(rsc) && timestampCheck.test(startTimestamp))
                 {
                     s3KeysToDelete.add(s3Obj.s3Key);
@@ -1991,22 +2027,16 @@ public class CtrlBackupApiCallHandler
                  * nodes)
                  */
                 Snapshot snap = snapshotIterator.next();
-                Matcher matcher = SNAP_DFN_TIME_PATTERN.matcher(snapDfn.getName().displayValue);
-                if (matcher.find())
+                long timestamp = Long.parseLong(
+                    snapDfn.getProps(sysCtx).getProp(
+                        InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    )
+                );
+                if (timestamp > latestTimestamp)
                 {
-                    long timestamp;
-                    try
-                    {
-                        timestamp = S3Consts.DATE_FORMAT.parse(matcher.group(1)).getTime();
-                        if (timestamp > latestTimestamp)
-                        {
-                            latestTimestamp = timestamp;
-                            ret = snap;
-                        }
-                    }
-                    catch (ParseException ignored)
-                    {
-                    }
+                    latestTimestamp = timestamp;
+                    ret = snap;
                 }
             }
         }
@@ -2678,12 +2708,22 @@ public class CtrlBackupApiCallHandler
     {
         BackupApi back = null;
 
+        String startTime = null;
+        Boolean shipping;
+        Boolean success;
+        Long startTimestamp = null;
+        String nodeName = null;
+        Map<Integer, BackupVolumePojo> vlms = new TreeMap<>();
         try
         {
-            String startTime = snapName.substring(S3Consts.SNAP_PREFIX_LEN);
-            long startTimestamp = S3Consts.DATE_FORMAT.parse(startTime).getTime(); // fail fast
+            AccessContext peerCtx = peerAccCtx.get();
 
-            Map<Integer, BackupVolumePojo> vlms = new TreeMap<>();
+            startTime = snapName.substring(S3Consts.SNAP_PREFIX_LEN);
+            startTimestamp = Long.parseLong(
+                snapDfn.getProps(peerCtx)
+                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING)
+            ); // fail fast
+
             {
                 int vlmNr = Integer.parseInt(m.group(3));
                 vlms.put(vlmNr, new BackupVolumePojo(vlmNr, null, null, new BackupVlmS3Pojo(s3key)));
@@ -2707,76 +2747,65 @@ public class CtrlBackupApiCallHandler
                     }
                 }
             }
-            Boolean shipping;
-            Boolean success;
-            String nodeName = null;
-            try
+            if (snapDfn != null && snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.BACKUP))
             {
-                AccessContext peerCtx = peerAccCtx.get();
-                if (snapDfn != null && snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.BACKUP))
+                boolean isShipping = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPING);
+                boolean isShipped = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPED);
+                if (isShipping || isShipped)
                 {
-                    boolean isShipping = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPING);
-                    boolean isShipped = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPED);
-                    if (isShipping || isShipped)
+                    for (Snapshot snap : snapDfn.getAllSnapshots(peerCtx))
                     {
-                        for (Snapshot snap : snapDfn.getAllSnapshots(peerCtx))
+                        if (snap.getFlags().isSet(peerCtx, Snapshot.Flags.BACKUP_SOURCE))
                         {
-                            if (snap.getFlags().isSet(peerCtx, Snapshot.Flags.BACKUP_SOURCE))
-                            {
-                                nodeName = snap.getNodeName().displayValue;
-                            }
-                        }
-                        if (isShipping)
-                        {
-                            shipping = true;
-                            success = null;
-                        }
-                        else // if (isShipped)
-                        {
-                            shipping = false;
-                            success = true;
+                            nodeName = snap.getNodeName().displayValue;
                         }
                     }
-                    else
+                    if (isShipping)
+                    {
+                        shipping = true;
+                        success = null;
+                    }
+                    else // if (isShipped)
                     {
                         shipping = false;
-                        success = false;
+                        success = true;
                     }
                 }
                 else
                 {
-                    shipping = null;
-                    success = null;
+                    shipping = false;
+                    success = false;
                 }
             }
-            catch (AccessDeniedException exc)
+            else
             {
-                // no access to snapDfn
                 shipping = null;
                 success = null;
             }
-
-            back = new BackupPojo(
-                rscName + "_" + snapName,
-                rscName,
-                snapName,
-                startTime,
-                startTimestamp,
-                null,
-                null, // TODO: should not be null if success == true
-                nodeName,
-                shipping,
-                success,
-                false,
-                vlms,
-                null,
-                null
-            );
         }
-        catch (ParseException exc)
+        catch (AccessDeniedException exc)
         {
-            errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + s3key);
+            // no access to snapDfn
+            shipping = null;
+            success = null;
         }
+
+        back = new BackupPojo(
+            rscName + "_" + snapName,
+            rscName,
+            snapName,
+            startTime,
+            startTimestamp,
+            null,
+            null, // TODO: should not be null if success == true
+            nodeName,
+            shipping,
+            success,
+            false,
+            vlms,
+            null,
+            null
+        );
 
         return back;
     }

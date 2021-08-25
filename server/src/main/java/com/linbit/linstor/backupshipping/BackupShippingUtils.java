@@ -1,6 +1,8 @@
 package com.linbit.linstor.backupshipping;
 
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
@@ -85,8 +87,11 @@ public class BackupShippingUtils
 
         String clusterId = stltProps.getProp(LinStor.PROP_KEY_CLUSTER_ID);
 
-        String startTime = snapDfn.getName().displayValue.substring(S3Consts.SNAP_PREFIX_LEN);
-        long startTimestamp = S3Consts.DATE_FORMAT.parse(startTime).getTime();
+        String startTime = snapDfn.getProps(accCtx).getProp(
+            InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+            ApiConsts.NAMESPC_BACKUP_SHIPPING
+        );
+        long startTimestamp = Long.parseLong(startTime);
 
         PriorityProps rscDfnPrio = new PriorityProps(
             snapDfn.getProps(accCtx),

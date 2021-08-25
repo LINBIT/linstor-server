@@ -190,12 +190,14 @@ public class CtrlBackupL2LSrcApiCallHandler
             throw new ImplementationError(exc);
         }
 
-        String backupName = CtrlBackupApiCallHandler.generateNewSnapshotName(new Date());
+        long now = System.currentTimeMillis();
+        String backupName = CtrlBackupApiCallHandler.generateNewSnapshotName(new Date(now));
         BackupShippingData data = new BackupShippingData(
             srcClusterId,
             srcNodeNameRef,
             srcRscNameRef,
             backupName,
+            now,
             (LinstorRemote) remote,
             dstRscNameRef,
             dstNodeNameRef,
@@ -283,6 +285,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             data.stltRemote.getName().displayValue,
             data.dstNodeName,
             data.srcBackupName,
+            data.now,
             false,
             false,
             requiredExtTools,
@@ -668,6 +671,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         private String srcNodeName;
         private final String srcRscName;
         private final String srcBackupName;
+        private final long now;
         private Snapshot srcSnapshot;
         private final LinstorRemote linstorRemote;
         private boolean useZstd;
@@ -686,6 +690,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             String srcNodeNameRef,
             String srcRscNameRef,
             String srcBackupNameRef,
+            long nowRef,
             LinstorRemote linstorRemoteRef,
             String dstRscNameRef,
             String dstNodeNameRef,
@@ -698,6 +703,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             srcNodeName = srcNodeNameRef;
             srcRscName = srcRscNameRef;
             srcBackupName = srcBackupNameRef;
+            now = nowRef;
             linstorRemote = linstorRemoteRef;
             dstRscName = dstRscNameRef;
             dstNodeName = dstNodeNameRef;
