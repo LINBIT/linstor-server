@@ -9,8 +9,10 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.pojo.LinstorRemotePojo;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -52,6 +54,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.amazonaws.SdkClientException;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -72,6 +75,8 @@ public class CtrlRemoteApiCallHandler
     private final RemoteRepository remoteRepository;
     private final EncryptionHelper encryptionHelper;
     private final ErrorReporter errorReporter;
+    private final BackupToS3 backupHandler;
+    private final CtrlSecurityObjects ctrlSecObj;
 
     @Inject
     public CtrlRemoteApiCallHandler(
@@ -87,7 +92,9 @@ public class CtrlRemoteApiCallHandler
         LinstorRemoteControllerFactory linstorRemoteFactoryRef,
         RemoteRepository remoteRepositoryRef,
         EncryptionHelper encryptionHelperRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        BackupToS3 backupHandlerRef,
+        CtrlSecurityObjects ctrlSecObjRef
     )
     {
         apiCtx = apiCtxRef;
@@ -103,6 +110,8 @@ public class CtrlRemoteApiCallHandler
         remoteRepository = remoteRepositoryRef;
         encryptionHelper = encryptionHelperRef;
         errorReporter = errorReporterRef;
+        backupHandler = backupHandlerRef;
+        ctrlSecObj = ctrlSecObjRef;
     }
 
     public List<S3RemotePojo> listS3()
@@ -200,6 +209,22 @@ public class CtrlRemoteApiCallHandler
             remote = s3remoteFactory
                 .create(peerAccCtx.get(), remoteName, endpointRef, bucketRef, regionRef, accessKey, secretKey);
             remoteRepository.put(apiCtx, remote);
+
+            // check if url and keys work together
+            byte[] masterKey = ctrlSecObj.getCryptKey();
+            backupHandler.listObjects("", remote, peerAccCtx.get(), masterKey);
+        }
+        catch (SdkClientException exc)
+        {
+            String errRepNr = errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                    "The remote could not be reached with the given parameters and therefore wasn't created.\n" +
+                        "Please check for spelling errors and that you have the correct access-key and secret-key.\n" +
+                        "For more information on the error, please check the following error-report: " + errRepNr
+                )
+            );
         }
         catch (AccessDeniedException exc)
         {
