@@ -114,8 +114,11 @@ public class BackupShippingMgr
 
     public void snapshotDeleted(Snapshot snapshotRef)
     {
-        AbsBackupShippingService backupShippingService = getService(snapshotRef);
-        if (backupShippingService != null)
+        /*
+         * Try to delete snapshot from every backupShippingService, as the remoteKey identifying the "correct" service
+         * might already have been deleted
+         */
+        for (AbsBackupShippingService backupShippingService : services.values())
         {
             backupShippingService.snapshotDeleted(snapshotRef);
         }
