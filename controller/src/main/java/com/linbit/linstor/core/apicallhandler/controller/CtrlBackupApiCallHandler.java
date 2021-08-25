@@ -287,6 +287,10 @@ public class CtrlBackupApiCallHandler
                     )
                 );
             }
+
+            // check if remote exists
+            getS3Remote(remoteName);
+
             SnapshotDefinition prevSnapDfn = null;
             String prevSnapName = rscDfn.getProps(peerAccCtx.get()).getProp(
                 InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
@@ -753,7 +757,6 @@ public class CtrlBackupApiCallHandler
                 rscName,
                 nodeName,
                 cascading,
-                s3Remote,
                 toDelete
             );
         }
@@ -887,7 +890,7 @@ public class CtrlBackupApiCallHandler
         {
             toDeleteRef.apiCallRcs.addEntry(
                 "No backup with id " + (allowMultiSelectionRef ? "prefix " : "") + "'" + idPrefixRef +
-                    "' not found on remote '" +
+                    "' found on remote '" +
                     s3RemoteRef.getName().displayValue + "'",
                 ApiConsts.WARN_NOT_FOUND
             );
@@ -1003,7 +1006,6 @@ public class CtrlBackupApiCallHandler
         String rscNameRef,
         String nodeNameRef,
         boolean cascadingRef,
-        S3Remote s3RemoteRef,
         ToDeleteCollections toDeleteRef
     )
         throws AccessDeniedException
@@ -1029,7 +1031,8 @@ public class CtrlBackupApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_TIME_PARAM,
-                        "Failed to parse '" + timestampRef + "'. Expected format: YYYYMMDD_HHMMSS"
+                        "Failed to parse '" + timestampRef +
+                            "'. Expected format: YYYYMMDD_HHMMSS (e.g. 20210824_072543)"
                     ),
                     exc
                 );
@@ -1255,7 +1258,7 @@ public class CtrlBackupApiCallHandler
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
                         "The target backup " + lastBackup + META_SUFFIX +
-                            " is invalid since it does not match the pattern of '<rscName>_back_YYYYMMDD_HHMMSS" +
+                            " is invalid since it does not match the pattern of '<rscName>_back_YYYYMMDD_HHMMSS<optional-backup-s3-suffix> (e.g. my-rsc_back_20210824_072543)" +
                             META_FILE_PATTERN + "'. " +
                             "Please provide a valid target backup, or provide only the source resource name to restore to the latest backup of that resource."
                     )

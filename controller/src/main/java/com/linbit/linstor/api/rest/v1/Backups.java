@@ -146,7 +146,7 @@ public class Backups
                             Flux.just(
                                 ApiCallRcImpl.singleApiCallRc(
                                     ApiConsts.FAIL_INVLD_REQUEST,
-                                    "Too many or too few parameters given. Either last_backup or src_rsc_name is required, but not both!"
+                                    "Too many or too few parameters given. Either --id or -r is required, but not both!"
                                 )
                             ),
                             Response.Status.BAD_REQUEST
