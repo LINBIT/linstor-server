@@ -288,6 +288,9 @@ public class CtrlBackupApiCallHandler
                 );
             }
 
+            // check if encryption is possible
+            getLocalMasterKey();
+
             // check if remote exists
             getS3Remote(remoteName);
 
@@ -465,8 +468,13 @@ public class CtrlBackupApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            Flux<ApiCallRc> flux = Flux.<ApiCallRc> just(responses)
-                .concatWith(snapshotCrtHandler.postCreateSnapshot(snapDfn));
+            responses.addEntry(
+                "Shipping of resource " + rscNameRef + " to remote " + remoteName + " in progress.",
+                ApiConsts.MASK_INFO
+            );
+
+            Flux<ApiCallRc> flux = snapshotCrtHandler.postCreateSnapshot(snapDfn)
+                .concatWith(Flux.<ApiCallRc> just(responses));
             return new Pair<>(flux, createdSnapshot);
         }
         catch (AccessDeniedException exc)
@@ -1395,8 +1403,14 @@ public class CtrlBackupApiCallHandler
                 );
             }
             ctrlTransactionHelper.commit();
+            responses.addEntry(
+                "Restoring backup of resource " + srcRscName + " from remote " + remoteName +
+                    " into resource " + targetRscName + " in progress.",
+                ApiConsts.MASK_INFO
+            );
             SnapshotDefinition nextBackSnapDfn = nextBackup.getSnapshotDefinition();
             return snapshotCrtHandler.postCreateSnapshot(nextBackSnapDfn)
+                .concatWith(Flux.just(responses))
                 .onErrorResume(error -> cleanupAfterFailedRestore(error, nextBackSnapDfn));
         }
         catch (IOException exc)
