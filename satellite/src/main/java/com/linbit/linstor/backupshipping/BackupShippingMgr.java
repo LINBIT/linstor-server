@@ -14,6 +14,7 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import javax.annotation.Nullable;
@@ -30,7 +31,6 @@ public class BackupShippingMgr
     private final AccessContext accCtx;
     private final RemoteMap remoteMap;
     private final Map<RemoteType, AbsBackupShippingService> services;
-    private final BackupShippingL2LService backupShippingL2L;
 
     @Inject
     public BackupShippingMgr(
@@ -42,7 +42,6 @@ public class BackupShippingMgr
     {
         accCtx = accCtxRef;
         remoteMap = remoteMapRef;
-        backupShippingL2L = backupShippingL2LRef;
         services = new HashMap<>();
 
         services.put(RemoteType.S3, backupShippingS3Ref);
@@ -121,6 +120,14 @@ public class BackupShippingMgr
         for (AbsBackupShippingService backupShippingService : services.values())
         {
             backupShippingService.snapshotDeleted(snapshotRef);
+        }
+    }
+
+    public void killAllShipping() throws StorageException
+    {
+        for (AbsBackupShippingService backupShippingService : services.values())
+        {
+            backupShippingService.killAllShipping();
         }
     }
 

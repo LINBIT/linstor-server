@@ -925,6 +925,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             extFileHandler.clear();
             extFileHandler.rebuildExtFilesToRscDfnMaps(localNodeProps, localNode);
 
+            backupShippingManager.killAllShipping();
             snapshotShippingManager.killAllShipping();
         }
         catch (AccessDeniedException exc)
