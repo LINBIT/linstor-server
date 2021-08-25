@@ -49,6 +49,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.LinstorRemote;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Remote;
+import com.linbit.linstor.core.objects.Remote.RemoteType;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.S3Remote;
@@ -252,7 +253,8 @@ public class CtrlBackupApiCallHandler
                 true,
                 incremental,
                 null,
-                null
+                null,
+                RemoteType.S3
             ).objA
         );
 
@@ -273,7 +275,8 @@ public class CtrlBackupApiCallHandler
         boolean setShippingFlag,
         boolean incremental,
         Map<ExtTools, ExtToolsInfo.Version> requiredExtTools,
-        Map<ExtTools, ExtToolsInfo.Version> optionalExtTools
+        Map<ExtTools, ExtToolsInfo.Version> optionalExtTools,
+        RemoteType remoteTypeRef
     )
     {
         try
@@ -292,11 +295,14 @@ public class CtrlBackupApiCallHandler
                 );
             }
 
-            // check if encryption is possible
-            getLocalMasterKey();
+            if (remoteTypeRef.equals(RemoteType.S3))
+            {
+                // check if encryption is possible
+                getLocalMasterKey();
 
-            // check if remote exists
-            getS3Remote(remoteName);
+                // check if remote exists
+                getS3Remote(remoteName);
+            }
 
             SnapshotDefinition prevSnapDfn = null;
             String prevSnapName = rscDfn.getProps(peerAccCtx.get()).getProp(

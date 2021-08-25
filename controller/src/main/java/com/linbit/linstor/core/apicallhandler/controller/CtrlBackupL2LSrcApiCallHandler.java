@@ -24,6 +24,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.LinstorRemote;
 import com.linbit.linstor.core.objects.Remote;
+import com.linbit.linstor.core.objects.Remote.RemoteType;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StltRemote;
@@ -289,7 +290,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             false,
             false,
             requiredExtTools,
-            optionalExtTools
+            optionalExtTools,
+            RemoteType.LINSTOR
         );
         data.srcSnapshot = createSnapshot.objB;
         data.srcNodeName = data.srcSnapshot.getNode().getName().displayValue;
