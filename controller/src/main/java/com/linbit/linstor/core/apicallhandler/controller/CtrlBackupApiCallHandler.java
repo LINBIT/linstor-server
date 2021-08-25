@@ -1518,9 +1518,12 @@ public class CtrlBackupApiCallHandler
             }
         }
         // 8. create rscDfn
-        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(
-            S3Consts.SNAP_PREFIX + S3Consts.DATE_FORMAT.format(metadata.getStartTimestamp())
-        );
+        Matcher m = META_FILE_PATTERN.matcher(metaName);
+        if (!m.find())
+        {
+            throw new ImplementationError("not a meta file: " + metaName);
+        }
+        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(m.group(2));
         ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, metaName, resetData);
         // 9. create snapDfn
         SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses);

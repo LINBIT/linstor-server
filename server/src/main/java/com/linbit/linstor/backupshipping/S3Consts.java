@@ -2,7 +2,6 @@ package com.linbit.linstor.backupshipping;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.TimeZone;
 
 public class S3Consts
 {
@@ -12,9 +11,4 @@ public class S3Consts
     public static final String META_SUFFIX = ".meta";
     public static final int META_SUFFIX_LEN = META_SUFFIX.length();
     public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss");
-
-    static
-    {
-        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
 }
