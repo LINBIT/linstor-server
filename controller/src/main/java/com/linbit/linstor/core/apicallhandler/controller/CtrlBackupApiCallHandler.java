@@ -2724,12 +2724,6 @@ public class CtrlBackupApiCallHandler
         {
             AccessContext peerCtx = peerAccCtx.get();
 
-            startTime = snapName.substring(S3Consts.SNAP_PREFIX_LEN);
-            startTimestamp = Long.parseLong(
-                snapDfn.getProps(peerCtx)
-                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING)
-            ); // fail fast
-
             {
                 int vlmNr = Integer.parseInt(m.group(3));
                 vlms.put(vlmNr, new BackupVolumePojo(vlmNr, null, null, new BackupVlmS3Pojo(s3key)));
@@ -2755,6 +2749,17 @@ public class CtrlBackupApiCallHandler
             }
             if (snapDfn != null && snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.BACKUP))
             {
+                startTime = snapName.substring(S3Consts.SNAP_PREFIX_LEN);
+                String ts = snapDfn.getProps(peerCtx)
+                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                if (ts == null || ts.isEmpty())
+                {
+                    throw new ImplementationError(
+                        "Snapshot " + snapDfn.getName().displayValue +
+                            " has the BACKUP-flag set, but does not have a required internal property set."
+                    );
+                }
+                startTimestamp = Long.parseLong(ts); // fail fast
                 boolean isShipping = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPING);
                 boolean isShipped = snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.SHIPPED);
                 if (isShipping || isShipped)
