@@ -29,6 +29,7 @@ import com.linbit.linstor.core.objects.LinstorRemoteControllerFactory;
 import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.S3RemoteControllerFactory;
+import com.linbit.linstor.core.objects.Remote.Flags;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -162,7 +163,8 @@ public class CtrlRemoteApiCallHandler
         String bucketRef,
         String regionRef,
         String accessKeyRef,
-        String secretKeyRef
+        String secretKeyRef,
+        boolean usePathStyleRef
     )
     {
         ResponseContext context = makeRemoteContext(
@@ -174,7 +176,7 @@ public class CtrlRemoteApiCallHandler
             "Create s3 remote",
             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.REMOTE_MAP),
             () -> createS3InTransaction(
-                remoteName, endpointRef, bucketRef, regionRef, accessKeyRef, secretKeyRef
+                remoteName, endpointRef, bucketRef, regionRef, accessKeyRef, secretKeyRef, usePathStyleRef
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -185,7 +187,8 @@ public class CtrlRemoteApiCallHandler
         String bucketRef,
         String regionRef,
         String accessKeyRef,
-        String secretKeyRef
+        String secretKeyRef,
+        boolean usePathStyleRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -200,19 +203,30 @@ public class CtrlRemoteApiCallHandler
                 )
             );
         }
-        S3Remote remote = null;
 
         try
         {
             byte[] accessKey = encryptionHelper.encrypt(accessKeyRef);
             byte[] secretKey = encryptionHelper.encrypt(secretKeyRef);
-            remote = s3remoteFactory
+            S3Remote remote = s3remoteFactory
                 .create(peerAccCtx.get(), remoteName, endpointRef, bucketRef, regionRef, accessKey, secretKey);
             remoteRepository.put(apiCtx, remote);
+
+            if (usePathStyleRef)
+            {
+                remote.getFlags().enableFlags(peerAccCtx.get(), Flags.S3_USE_PATH_STYLE);
+            }
 
             // check if url and keys work together
             byte[] masterKey = ctrlSecObj.getCryptKey();
             backupHandler.listObjects("", remote, peerAccCtx.get(), masterKey);
+
+            ctrlTransactionHelper.commit();
+            responses.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.CREATED | ApiConsts.MASK_REMOTE, "Remote created"));
+
+            return Flux
+                .<ApiCallRc>just(responses)
+                .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote));
         }
         catch (SdkClientException exc)
         {
@@ -252,12 +266,6 @@ public class CtrlRemoteApiCallHandler
                 )
             );
         }
-        ctrlTransactionHelper.commit();
-        responses.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.CREATED | ApiConsts.MASK_REMOTE, "Remote created"));
-
-        return Flux
-            .<ApiCallRc>just(responses)
-            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote));
     }
 
     public Flux<ApiCallRc> changeS3(

@@ -1550,6 +1550,7 @@ public class JsonGenTypes
         public String region;
         public String access_key;
         public String secret_key;
+        public boolean use_path_style = false;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -114,7 +114,8 @@ public class Remotes
                 remoteJson.bucket,
                 remoteJson.region,
                 remoteJson.access_key,
-                remoteJson.secret_key
+                remoteJson.secret_key,
+                remoteJson.use_path_style
             ).subscriberContext(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );

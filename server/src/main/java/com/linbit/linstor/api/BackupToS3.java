@@ -4,6 +4,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -86,15 +87,7 @@ public class BackupToS3
     public String initMultipart(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException
     {
-        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
-
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-            new EndpointConfiguration(
-                remote.getUrl(accCtx),
-                remote.getRegion(accCtx)
-            )
-        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .build();
+        final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
         String bucket = remote.getBucket(accCtx);
 
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
@@ -117,15 +110,7 @@ public class BackupToS3
         byte[] masterKey
     ) throws AccessDeniedException, SdkClientException, AmazonServiceException, IOException, StorageException
     {
-        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
-
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-            new EndpointConfiguration(
-                remote.getUrl(accCtx),
-                remote.getRegion(accCtx)
-            )
-        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .build();
+        final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
 
         String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
@@ -191,15 +176,7 @@ public class BackupToS3
     public void abortMultipart(String key, String uploadId, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException, SdkClientException, AmazonServiceException
     {
-        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
-
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-            new EndpointConfiguration(
-                remote.getUrl(accCtx),
-                remote.getRegion(accCtx)
-            )
-        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .build();
+        final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
 
         String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
@@ -215,15 +192,7 @@ public class BackupToS3
     public void putObject(String key, String content, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException, SdkClientException, AmazonServiceException
     {
-        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
-
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-            new EndpointConfiguration(
-                remote.getUrl(accCtx),
-                remote.getRegion(accCtx)
-            )
-        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .build();
+        final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
         String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
         ObjectMetadata meta = new ObjectMetadata();
@@ -236,15 +205,7 @@ public class BackupToS3
     public void deleteObjects(Set<String> keys, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException
     {
-        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
-
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-            new EndpointConfiguration(
-                remote.getUrl(accCtx),
-                remote.getRegion(accCtx)
-            )
-        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .build();
+        final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
         String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
         DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucket);
@@ -275,15 +236,7 @@ public class BackupToS3
         }
         if (metaFileContent == null)
         {
-            BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
-
-            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-                new EndpointConfiguration(
-                    remote.getUrl(accCtx),
-                    remote.getRegion(accCtx)
-                )
-            ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-                .build();
+            final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
 
             String bucket = remote.getBucket(accCtx);
             boolean reqPays = s3.isRequesterPaysEnabled(bucket);
@@ -342,15 +295,7 @@ public class BackupToS3
     public InputStream getObject(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException
     {
-        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
-
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-            new EndpointConfiguration(
-                remote.getUrl(accCtx),
-                remote.getRegion(accCtx)
-            )
-        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .build();
+        final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
 
         String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
@@ -364,15 +309,7 @@ public class BackupToS3
         throws AccessDeniedException
     {
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
-        BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
-
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withEndpointConfiguration(
-            new EndpointConfiguration(
-                remote.getUrl(accCtx),
-                remote.getRegion(accCtx)
-            )
-        ).withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .build();
+        final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
         String bucket = remote.getBucket(accCtx);
         boolean reqPays = s3.isRequesterPaysEnabled(bucket);
 
@@ -460,5 +397,19 @@ public class BackupToS3
             accessKey,
             secretKey
         );
+    }
+
+    private AmazonS3 getS3Client(S3Remote remote, AccessContext accCtx, byte[] masterKey) throws AccessDeniedException
+    {
+        final BasicAWSCredentials awsCreds = getCredentials(remote, accCtx, masterKey);
+
+        final EndpointConfiguration endpointConfiguration = new EndpointConfiguration(
+            remote.getUrl(accCtx), remote.getRegion(accCtx));
+
+        return AmazonS3ClientBuilder.standard()
+            .withEndpointConfiguration(endpointConfiguration)
+            .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+            .withPathStyleAccessEnabled(remote.getFlags().isSet(accCtx, Remote.Flags.S3_USE_PATH_STYLE))
+            .build();
     }
 }

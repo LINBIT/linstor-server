@@ -1346,6 +1346,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             IntS3Remote.Builder builder = IntS3Remote.newBuilder()
                 .setUuid(s3remote.getUuid().toString())
                 .setName(s3remote.getName().displayValue)
+                .setFlags(s3remote.getFlags().getFlagsBits(serializerCtx))
                 .setEndpoint(s3remote.getUrl(serializerCtx))
                 .setBucket(s3remote.getBucket(serializerCtx))
                 .setRegion(s3remote.getRegion(serializerCtx))

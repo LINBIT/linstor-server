@@ -7461,6 +7461,9 @@ components:
           type: string
         secret_key:
           type: string
+        use_path_style:
+          type: boolean
+          default: false
     LinstorRemote:
       type: object
       properties:

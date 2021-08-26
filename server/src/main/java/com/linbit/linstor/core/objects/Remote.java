@@ -25,7 +25,8 @@ public interface Remote
 
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
-        DELETE(1L);
+        DELETE(1L),
+        S3_USE_PATH_STYLE(1L << 1);
 
         public final long flagValue;
 
