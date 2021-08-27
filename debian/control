@@ -15,8 +15,6 @@ Depends: ${misc:Depends},
          default-jre-headless
 Description: DRBD distributed resource management utility
  This is the linstor common packages containing shared deps.
- .
- TODO: provide more information.
 
 Package: linstor-controller
 Architecture: all
@@ -25,9 +23,8 @@ Pre-Depends: default-jre-headless
 Depends: ${misc:Depends},
          linstor-common (= ${binary:Version}),
 Description: DRBD distributed resource management utility
- This is the linstor controller.
- .
- TODO: provide more information.
+ LINSTOR controller manages the configuration of the LINSTOR cluster
+ and all of its managed storage resources.
 
 Package: linstor-satellite
 Architecture: all
@@ -39,6 +36,6 @@ Suggests: drbd-utils (>= 9.7.0),
           zstd,
           thin-send-recv
 Description: DRBD distributed resource management utility
- This is the linstor satellite.
- .
- TODO: provide more information.
+ LINSTOR satellite component manages creation, modification and deletion
+ of storage resources on each node that provides
+ or uses storage resources managed by LINSTOR.
