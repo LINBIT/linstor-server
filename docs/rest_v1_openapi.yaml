@@ -7005,7 +7005,6 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/Backup'
         other:
-          description: A list containing all other entries found that have no relation to linstor
           $ref: '#/components/schemas/BackupOther'
     Backup:
       type: object
@@ -7069,6 +7068,7 @@ components:
 
     BackupOther:
       type: object
+      description: A map containing all other entries found that have no relation to linstor
       properties:
         files:
           type: array
