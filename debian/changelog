@@ -1,3 +1,117 @@
+linstor-server (1.15.0~rc.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rscdata-merger: merge suspendIO for writecache and bcache
+  * write-cache: suspend and resume IO if requested
+  * fix missing OK returns for make-available/activate/deactivate
+  * writecache: send flush_on_suspend before suspend
+  * rsccrthelper: add deployResources waitForReady variant
+  * checkstorpool: only update storage pool info on notify calls
+  * generalize create Resource/Volume from layerdata
+  * clone-api: Introduce a way of cloning complete rscdfn + data
+  * error-reporter: fix dateformat for error-report query
+  * stlt: log rscdfn flags setter
+  * lvmthin-clone: delay lvmthin clone action to allow device manager to finish
+  * rsc-dfn: fix npe while deleting
+  * rest-api-doc: fix BackupList usage
+  * debian: update description
+
+  [ Gabor Hernadi ]
+  * Autoplacer: Fixed MinReservedSpace strategy
+  * ExtFilesApi: Fixed single obj return
+  * ReconnectorTask: Added check to detect race condition
+  * Snapshot: Reject snapshots if not all DRBD peers are uptodate
+  * RscGrp: Added adjust
+  * RscGrp: Added adjustall
+  * AutoReplace: Ignore evicted resources
+  * RscDfn,delete: Restore original bahavior when node is offline
+  * RestClient: Added support for response arrays
+  * Added LinstorRemote
+  * backup-shipping: return remoteName when starting upload
+  * backup-shipping: set ABORT flag when aborting all backups
+  * BackupShipping: Fixed ext metadata restore
+  * BackupShipping: Clear DrbdPrimarySetOn property before restore
+  * BackupShipping: Prevent UnsupportedOperationException
+  * BackupShipping: Choose proper node for sending
+  * BackupShipping: Added cluster id
+  * BackupShipping: Add status booleans to response
+  * BackupShipping: Add in progress snapshots to backup list response
+  * BackupShipping: Added cache for s3 list
+  * BackupShipping: fixed incorrect "basedOn" property
+  * BackupShipping: Removed s3KeyForce
+  * BackupShipping: Fixed NPE
+  * Proto: Added default message for ApiRcResponses
+  * RemoteName: Allow internally bypass nodename-check
+  * EncryptionHelper: Add method to use remote key
+  * SatelliteFlagDriver: Renamed to NoOpFlagDriver
+  * Added StltRemote objects
+  * BackupInfoMgr: Add support for L2L backups
+  * BackupShippingUtils: Extracted fillPojo method
+  * BackupShippingService: Split into abstract class
+  * BackupShipping: Linstor2Linstor, first version
+  * backup-shipping,l2l: Return ApiCallRc instead of String-list
+  * backup-shipping: Allow download only in used RscDfn
+  * backup-shipping: Use same backupname in src and dst cluster
+  * backup-shipping: Added cluster ID to snapshot name
+  * LvmThin: Changed allocated size calculation
+  * BackupShipping: Added support for incremental l2l
+  * Added AutoSelectFilterBuilder
+  * BackupShipping: add checks for socat and zstd
+  * BackupShipping,l2l: Fixed DB loading
+  * BackupShipping: Fixed some NPEs
+  * BackupShipping: Moved DATE_FORMAT to BackupShippingConsts
+  * BackupShipping: Removed unnecessary parameter
+  * BackupShipping: Refactored consts class
+  * BackupShipping: Added optional s3 name suffix
+  * LUKS: fixed sending keys on fullsync
+  * BackupShipping: Added L2L support for LUKS
+  * BackupShipping: l2l cleanup of tmp stltRemote
+  * BackupShipping: Force full backup after resize
+  * BackupShipping: Only reset data based on last Backup
+  * BackupShipping: Choose remote from correct property
+  * BackupShipping: Read the suffix from the snapshot
+  * BackupShipping,DrbdLayer: Recreate MD after restore
+  * BackupShipping: Fix hidden Access to deleted SnapDfn bug
+  * BackupShipping: Kill all shipping on FullSyncApplied
+  * BackupShipping: Do not rebuild snapName on restore
+  * BackupShipping: Do not parse time from snapName
+  * BackupShipping: only enforce masterkey + s3Remote for s3 backups
+  * BackupShipping: Add usePathStyle for S3Remotes
+
+  [ Johanna Kucera ]
+  * backupShipping: ship full backups to s3
+  * backup-shipping: implement backup list
+  * rscDfn: creating a rscDfn now needs a LayerPayload
+  * vlm: creating a vlm now needs a LayerPayload
+  * backup-shipping: implement backup delete
+  * backup-shipping: change meta-file format
+  * backup-shipping: implement first version backup restore
+  * backup-shipping: add support for luks
+  * backup-shipping: add support for drbd with external metadata
+  * TxMap: implement transaction map with primitive values
+  * backup-shipping: don't allow access to target-rsc-dfn (and children) w [...]
+  * backup-shipping: use multipart uploads for creating backups
+  * backup-shipping: correctly abort in-progress-shippings
+  * backup-shipping: allow DELETE-requests with json-data
+  * backup-shipping: add endpoint for manual abort
+  * backup-shipping: change entrypoints urls
+  * backup-shipping: add support for requester-pays-buckets
+  * backup-shipping: add new remote object
+  * backup-shipping: use remotes instead of properties
+  * Encryption: add DecryptionHelper class
+  * backup-shipping: encrypt s3 access-key and secret-key
+  * backup-shipping: implement incremential backups
+  * backup-shipping: add changes from review
+  * BackupShipping: Implemented review
+  * BackupShipping: fix wrong snapshot-names when timezones differ
+  * BackupShipping: remove unneccessary ImplementationError
+  * backup-shipping: change some error-messages
+  * BackupShipping: fail remote creation if remote is not reachable
+  * BackupShipping: add info-message to tell user shipping/restoring is in [...]
+  * BackupShipping: add missing null-check
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Fri, 27 Aug 2021 08:30:00 +0000
+
 linstor-server (1.14.0-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]

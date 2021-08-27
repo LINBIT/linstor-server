@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.10.0
        - Added resource-definition clone API
          - POST /v1/resource-definitions/{rscname}/clone
          - GET /v1/resource-definitions/{rscname}/clone/{clonedrsc}
