@@ -1,5 +1,9 @@
 package com.linbit.linstor.storage.data;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 public final class RscLayerSuffixes
 {
     public static final String SUFFIX_DATA = "";
@@ -21,6 +25,13 @@ public final class RscLayerSuffixes
     // BCache
     public static final String SUFFIX_BCACHE_CACHE = ".bcache";
 
+    private static final List<String> SUFFIXES_TO_SHIP;
+
+    static
+    {
+        SUFFIXES_TO_SHIP = Collections.unmodifiableList(Arrays.asList(SUFFIX_DATA, SUFFIX_DRBD_META));
+    }
+
     private RscLayerSuffixes()
     {
     }
@@ -35,6 +46,6 @@ public final class RscLayerSuffixes
      */
     public static boolean shouldSuffixBeShipped(String rscNameSuffixRef)
     {
-        return !SUFFIX_DRBD_META.equals(rscNameSuffixRef);
+        return SUFFIXES_TO_SHIP.contains(rscNameSuffixRef);
     }
 }
