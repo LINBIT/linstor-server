@@ -471,7 +471,14 @@ public class CtrlBackupApiCallHandler
                 {
                     for (DrbdRscData<Resource> rscData : drbdLayer.getRscDfnLayerObject().getDrbdRscDataList())
                     {
-                        nodeIds.add(rscData.getNodeId().value);
+                        if (!rscData.isDiskless(sysCtx))
+                        {
+                            /*
+                             * diskless nodes do reserve a node-id for themselves, but the peer-slot is not used in the
+                             * metadata of diskfull peers
+                             */
+                            nodeIds.add(rscData.getNodeId().value);
+                        }
                     }
                 }
             }

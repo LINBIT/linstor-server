@@ -741,7 +741,6 @@ public class DrbdLayer implements DeviceLayer
                         // If a backup is restored, the bitmask is restored as well. When restored, no other peers exist
                         // at first. As soon as new peers are added, things go wrong if we leave the bitmask as it is
                         // since it most likely contains old tracking data.
-                        ExtCmdFailedException forgetPeerExc = null;
                         String ids = drbdRscData.getAbsResource().getProps(workerCtx).getProp(
                             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -759,21 +758,9 @@ public class DrbdLayer implements DeviceLayer
                                 }
                                 catch (ExtCmdFailedException exc)
                                 {
-                                    if (forgetPeerExc == null)
-                                    {
-                                        forgetPeerExc = exc;
-                                    }
-                                    errorReporter.logError(
-                                        "Error while drbdsetup forget-peer for peer %d of %s",
-                                        nodeId,
-                                        drbdRscData.getSuffixedResourceName()
-                                    );
+                                    errorReporter.logDebug("ignoring error in forget-peer %d after restoring", nodeId);
                                 }
                             }
-                        }
-                        if (forgetPeerExc != null)
-                        {
-                            throw forgetPeerExc;
                         }
 
                         drbdUtils.adjust(
