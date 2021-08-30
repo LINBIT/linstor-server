@@ -206,7 +206,10 @@ public class RscDfnInternalCallHandler
                     .write(LockGuardFactory.LockObj.RSC_DFN_MAP, LockGuardFactory.LockObj.NODES_MAP).buildDeferred(),
                 () -> handleCloneUpdateInTransaction(rscName, vlmNr, success)
             )
-            .onErrorResume(exc -> markRscDfnFailed(rscName));
+            .onErrorResume(exc -> {
+                errorReporter.reportError(exc);
+                return markRscDfnFailed(rscName);
+            });
     }
 
     public Flux<ApiCallRc> handleCloneUpdateInTransaction(String rscName, int vlmNr, boolean success) {
@@ -235,6 +238,8 @@ public class RscDfnInternalCallHandler
                     }
                 } else
                 {
+                    errorReporter.logError("Clone update for non cloning Volume: %s/%d from node %s",
+                        rscName, vlmNr, currentPeer.getNode().getName());
                     throw new ImplementationError(
                         String.format("Clone update for non cloning Volume: %s/%d from node %s",
                             rscName, vlmNr, currentPeer.getNode().getName()));
