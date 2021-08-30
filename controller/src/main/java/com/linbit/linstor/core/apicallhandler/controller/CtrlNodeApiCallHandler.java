@@ -44,6 +44,8 @@ import com.linbit.linstor.core.objects.NetInterfaceFactory;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -60,6 +62,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyConfigResponseOuterC
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -1129,15 +1132,48 @@ public class CtrlNodeApiCallHandler
                                 res.getDefinition()
                             );
 
-                            res.markDeleted(apiCtx);
-                            Iterator<Volume> vlmIt = res.iterateVolumes();
-                            while (vlmIt.hasNext())
+                            boolean isLastNonDeletedDiskful = true;
                             {
-                                Volume vlm = vlmIt.next();
-                                vlm.markDeleted(apiCtx);
+                                ResourceDefinition rscDfn = res.getResourceDefinition();
+                                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+                                while (rscIt.hasNext())
+                                {
+                                    Resource rsc = rscIt.next();
+                                    if (!rsc.equals(res))
+                                    {
+                                        StateFlags<Flags> rscFlags = rsc.getStateFlags();
+                                        if (!rscFlags.isSet(apiCtx, Resource.Flags.DISKLESS) &&
+                                            !rscFlags.isSet(apiCtx, Resource.Flags.DELETE))
+                                        {
+                                            isLastNonDeletedDiskful = false;
+                                            break;
+                                        }
+                                    }
+                                }
                             }
-                            autoRePlaceRscHelper.addNeedRePlaceRsc(res);
-                            autoRePlaceRscHelper.manage(autoHelperCtx);
+
+                            if (!isLastNonDeletedDiskful)
+                            {
+                                res.markDeleted(apiCtx);
+                                Iterator<Volume> vlmIt = res.iterateVolumes();
+                                while (vlmIt.hasNext())
+                                {
+                                    Volume vlm = vlmIt.next();
+                                    vlm.markDeleted(apiCtx);
+                                }
+                                autoRePlaceRscHelper.addNeedRePlaceRsc(res);
+                                autoRePlaceRscHelper.manage(autoHelperCtx);
+
+                                flux = flux.concatWith(Flux.concat(autoHelperCtx.additionalFluxList));
+                            }
+                            else
+                            {
+                                errorReporter.logDebug(
+                                    "Auto-evict: ignoring resource %s since it is the last non-deleting diskful resource",
+                                    res.getDefinition().getName()
+                                );
+                            }
+
 
                             flux = flux.concatWith(Flux.concat(autoHelperCtx.additionalFluxList));
                         }
