@@ -125,6 +125,8 @@ public class InternalApiConsts
     public static final String KEY_LAST_FULL_BACKUP_TIMESTAMP = "LastFullBackupTimestamp";
     public static final String KEY_BACKUP_LAST_SNAPSHOT = "BackupLastSnapshot";
     public static final String KEY_BACKUP_TO_RESTORE = "BackupToRestore";
+    public static final String KEY_BACKUP_NODE_IDS_TO_RESET = "BackupNodeIdsToReset";
+    public static final String KEY_BACKUP_NODE_ID_SEPERATOR = ",";
     public static final String API_BACKUP_REST_START_RECEIVING = "BackupRestStartReceiving";
     public static final String KEY_BACKUP_SHIP_PORT = "BackupShipPort";
     public static final String KEY_BACKUP_START_TIMESTAMP = "BackupStartTimestamp";

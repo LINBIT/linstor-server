@@ -78,7 +78,6 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -92,6 +91,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.backupshipping.S3Consts.META_SUFFIX;
 
@@ -483,6 +483,11 @@ public class CtrlBackupApiCallHandler
                     .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
             }
             Props snapProps = createdSnapshot.getProps(peerAccCtx.get());
+            snapProps.setProp(
+                InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
+                StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
             snapProps.setProp(
                 InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                 remoteName,
@@ -2237,18 +2242,6 @@ public class CtrlBackupApiCallHandler
     {
         Snapshot snap = snapshotCrtHelper
             .restoreSnapshot(snapDfn, node, layers, renameMap);
-
-        // unset initialized as new metadata will be createdwhen this snapshot is restored
-        Set<AbsRscLayerObject<Snapshot>> rscLayerSet = LayerRscUtils.getRscDataByProvider(
-            snap.getLayerData(peerAccCtx.get()),
-            DeviceLayerKind.DRBD
-        );
-        for (AbsRscLayerObject<Snapshot> rscLayer : rscLayerSet)
-        {
-            DrbdRscData<Snapshot> drbdRscData = ((DrbdRscData<Snapshot>) rscLayer);
-            drbdRscData.getFlags().disableFlags(peerAccCtx.get(), DrbdRscObject.DrbdRscFlags.INITIALIZED);
-        }
-
         Props snapProps = snap.getProps(peerAccCtx.get());
 
         LinkedList<String> backups = new LinkedList<>();
@@ -3131,6 +3124,10 @@ public class CtrlBackupApiCallHandler
             Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
             String remoteName = snap.getProps(peerAccCtx.get()).removeProp(
                 InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            snap.getProps(peerAccCtx.get()).removeProp(
+                InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             if (successRef)
