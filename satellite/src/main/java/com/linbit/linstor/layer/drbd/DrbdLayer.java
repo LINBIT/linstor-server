@@ -617,12 +617,10 @@ public class DrbdLayer implements DeviceLayer
                 List<DrbdVlmData<Resource>> createMetaData = new ArrayList<>();
                 if (!drbdRscData.getAbsResource().isDrbdDiskless(workerCtx))
                 {
-                    boolean isCloning = drbdRscData.getAbsResource().getResourceDefinition()
-                        .getFlags().isSet(workerCtx, ResourceDefinition.Flags.CLONING);
                     // do not try to create meta data while the resource is diskless....
                     for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
                     {
-                        if (!(drbdRscData.exists() && isCloning) && !hasMetaData(drbdVlmData))
+                        if (!hasMetaData(drbdVlmData))
                         {
                             createMetaData.add(drbdVlmData);
                         }
@@ -1096,9 +1094,7 @@ public class DrbdLayer implements DeviceLayer
             );
             drbdVlmData.setMetaDataIsNew(true);
 
-            final boolean isCloned = drbdVlmData.getRscLayerObject().getAbsResource()
-                .getResourceDefinition().getProps(workerCtx).getProp(InternalApiConsts.KEY_CLONED_FROM) != null;
-            boolean skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true) || isCloned;
+            boolean skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true);
             if (!skipInitSync)
             {
                 skipInitSync = VolumeUtils.getStorageDevices(

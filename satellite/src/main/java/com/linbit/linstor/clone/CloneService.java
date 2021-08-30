@@ -26,9 +26,11 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.stream.Collectors;
 
 @Singleton
 public class CloneService implements SystemService {
@@ -165,9 +167,10 @@ public class CloneService implements SystemService {
         return serviceStarted;
     }
 
-    public boolean isRunning(@Nonnull ResourceName rscName, @Nonnull VolumeNumber vlmNr) {
+    public boolean isRunning(@Nonnull ResourceName rscName, @Nonnull VolumeNumber vlmNr, @Nonnull String suffix) {
         return activeClones.stream().anyMatch(cloneInfo ->
-            cloneInfo.getResourceName() == rscName && cloneInfo.getVlmNr() == vlmNr);
+            cloneInfo.getResourceName().equals(rscName) && cloneInfo.getVlmNr().equals(vlmNr) &&
+                cloneInfo.getSuffix().equals(suffix));
     }
 
     public <VLM_DATA extends AbsStorageVlmData<Resource>> void startClone(
@@ -217,32 +220,68 @@ public class CloneService implements SystemService {
         }
     }
 
+    /**
+     * Returns all clones belonging to the same resource/volume
+     * @param ci
+     * @return
+     */
+    private Set<CloneInfo> volumeClones(final CloneInfo cloneInfo) {
+        return activeClones.stream()
+            .filter(ci -> ci.getResourceName().equals(
+                cloneInfo.getResourceName()) && ci.getVlmNr().equals(cloneInfo.getVlmNr()))
+            .collect(Collectors.toSet());
+    }
+
     private void postClone(
         boolean successRef,
         CloneInfo cloneInfo
     )
     {
         cleanupDevices(cloneInfo);
-        volumeDiskStateEvent.get().triggerEvent(
-            ObjectIdentifier.volumeDefinition(cloneInfo.getResourceName(), cloneInfo.getVlmNr()),
-            successRef ? "CloningDone" : "CloningFailed");
 
-        controllerPeerConnector.getControllerPeer().sendMessage(
-            ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_NOTIFY_CLONE_UPDATE)
-                .notifyCloneUpdate(cloneInfo.getResourceName().getDisplayName(), cloneInfo.getVlmNr().value, successRef)
-                .build()
-        );
+        synchronized (activeClones)
+        {
+            cloneInfo.setCloneStatus(successRef); // do not move this out of the synchronized block
+            Set<CloneInfo> volClones = volumeClones(cloneInfo);
+            boolean allDone = volClones.stream().allMatch(ci -> ci.getStatus() == CloneInfo.CloneStatus.FINISH
+                || ci.getStatus() == CloneInfo.CloneStatus.FAILED);
 
-        activeClones.remove(cloneInfo);
+            if (allDone) {
+                boolean anyFailed = volClones.stream().anyMatch(ci -> ci.getStatus() == CloneInfo.CloneStatus.FAILED);
+
+                volumeDiskStateEvent.get().triggerEvent(
+                    ObjectIdentifier.volumeDefinition(cloneInfo.getResourceName(), cloneInfo.getVlmNr()),
+                    anyFailed ? "CloningFailed" : "CloningDone");
+
+                controllerPeerConnector.getControllerPeer().sendMessage(
+                    ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_NOTIFY_CLONE_UPDATE)
+                        .notifyCloneUpdate(
+                            cloneInfo.getResourceName().getDisplayName(),
+                            cloneInfo.getVlmNr().value,
+                            !anyFailed)
+                        .build()
+                );
+
+                volClones.forEach(activeClones::remove);
+            }
+        }
     }
 
     public static class CloneInfo implements Comparable<CloneInfo> {
         private final ResourceName rscName;
+        private final String suffix;
         private final AbsStorageVlmData<Resource> srcVlmData;
         private final AbsStorageVlmData<Resource> dstVlmData;
         private final AbsStorageProvider<?, ?, ?> deviceProvider;
 
         private CloneDaemon cloneDaemon;
+        private CloneStatus status;
+
+        public enum CloneStatus {
+            PROGRESS,
+            FAILED,
+            FINISH
+        }
 
         CloneInfo(
             @Nonnull AbsStorageVlmData<Resource> srcVlmDataRef,
@@ -251,9 +290,11 @@ public class CloneService implements SystemService {
         )
         {
             rscName = dstVlmDataRef.getRscLayerObject().getResourceName();
+            suffix = dstVlmDataRef.getRscLayerObject().getResourceNameSuffix();
             srcVlmData = srcVlmDataRef;
             dstVlmData = dstVlmDataRef;
             deviceProvider = providerRef;
+            status = CloneStatus.PROGRESS;
         }
 
         public AbsStorageVlmData<Resource> getSrcVlmData() {
@@ -286,6 +327,11 @@ public class CloneService implements SystemService {
             return dstVlmData.getVlmNr();
         }
 
+        public String getSuffix()
+        {
+            return suffix;
+        }
+
         public void setCloneDaemon(CloneDaemon cloneDaemonRef)
         {
             cloneDaemon = cloneDaemonRef;
@@ -296,33 +342,46 @@ public class CloneService implements SystemService {
             return cloneDaemon;
         }
 
+        public void setCloneStatus(boolean success)
+        {
+            this.status = success ? CloneStatus.FINISH : CloneStatus.FAILED;
+        }
+
+        public CloneStatus getStatus()
+        {
+            return status;
+        }
+
         @Override
         public boolean equals(Object o)
         {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             CloneInfo cloneInfo = (CloneInfo) o;
-            return getVlmNr() == cloneInfo.getVlmNr() && getResourceName().equals(cloneInfo.getResourceName());
+            return getVlmNr() == cloneInfo.getVlmNr() && getResourceName().equals(cloneInfo.getResourceName()) &&
+                getSuffix().equals(cloneInfo.getSuffix());
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(getResourceName(), getVlmNr());
+            return Objects.hash(getResourceName(), getSuffix(), getVlmNr());
         }
 
         @Override
         public int compareTo(CloneInfo o)
         {
-            return (getResourceName().getName() + getVlmNr()).compareTo(o.getResourceName().getName() + getVlmNr());
+            return (getResourceName().getName() + getSuffix() + getVlmNr())
+                .compareTo(o.getResourceName().getName() + o.getSuffix() + o.getVlmNr());
         }
 
         @Override
         public String toString()
         {
             return getKind().name() + "(" +
-                srcVlmData.getRscLayerObject().getResourceName() + "/" + srcVlmData.getVlmNr() + "->" +
-                getResourceName() + "/" + dstVlmData.getVlmNr() + ")";
+                srcVlmData.getRscLayerObject().getResourceName() +
+                srcVlmData.getRscLayerObject().getResourceNameSuffix() + "/" + srcVlmData.getVlmNr() + "->" +
+                getResourceName() + getSuffix() + "/" + dstVlmData.getVlmNr() + ")";
         }
     }
 }

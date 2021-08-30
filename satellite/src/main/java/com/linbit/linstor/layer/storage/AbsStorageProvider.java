@@ -269,7 +269,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             String lvId = vlmData.getIdentifier();
             if (vlmData.exists())
             {
-                if (cloneService.isRunning(vlmData.getRscLayerObject().getResourceName(), vlmData.getVlmNr()))
+                if (cloneService.isRunning(
+                    vlmData.getRscLayerObject().getResourceName(),
+                    vlmData.getVlmNr(),
+                    vlmData.getRscLayerObject().getResourceNameSuffix()))
                 {
                     errorReporter.logTrace("Cloning in process for %s", lvId);
                     continue;
@@ -341,7 +344,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             {
                 if (vlmShouldExist)
                 {
-                    if (cloneService.isRunning(vlmData.getRscLayerObject().getResourceName(), vlmData.getVlmNr())) {
+                    if (cloneService.isRunning(
+                            vlmData.getRscLayerObject().getResourceName(),
+                            vlmData.getVlmNr(),
+                            vlmData.getRscLayerObject().getResourceNameSuffix())) {
                         errorReporter.logTrace("Cloning in process for %s", lvId);
                         continue;
                     }
@@ -465,8 +471,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         final Props rscDfnProps = vlmData.getRscLayerObject().getAbsResource()
             .getResourceDefinition().getProps(storDriverAccCtx);
         final String srcRscName = rscDfnProps.getProp(InternalApiConsts.KEY_CLONED_FROM);
-        final String dstRscName = vlmData.getRscLayerObject().getResourceName().displayValue;
-        final String cloneSnapshotName = "clone_for_" + dstRscName;
+        final String cloneSnapshotName = "clone_for_" + asLvIdentifier(vlmData);
         final Resource srcRsc = getResource(vlmData, srcRscName);
 
         createLvWithCopyImpl(vlmData, srcRsc, cloneSnapshotName);
@@ -555,9 +560,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
-                if (RscLayerSuffixes.SUFFIX_DATA.equals(vlmData.getRscLayerObject().getResourceNameSuffix())
-                        && cloneVolume) {
-                    if (!cloneService.isRunning(vlmData.getRscLayerObject().getResourceName(), vlmData.getVlmNr()) &&
+                if (cloneVolume) {
+                    if (!cloneService.isRunning(
+                            vlmData.getRscLayerObject().getResourceName(),
+                            vlmData.getVlmNr(),
+                            vlmData.getRscLayerObject().getResourceNameSuffix()) &&
                         !vlmData.getRscLayerObject().getAbsResource().getResourceDefinition()
                             .getFlags().isSet(storDriverAccCtx, ResourceDefinition.Flags.FAILED))
                     {

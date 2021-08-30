@@ -809,10 +809,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
         ZfsData<Resource> srcData = (ZfsData<Resource>)cloneInfo.getSrcVlmData();
         ZfsData<Resource> dstData = (ZfsData<Resource>)cloneInfo.getDstVlmData();
-        final String cloneSnapshotName = "clone_for_" + cloneInfo.getResourceName();
+        final String dstId = asLvIdentifier(dstData);
+        final String cloneSnapshotName = "clone_for_" + dstId;
         final String srcId = asLvIdentifier(srcData);
         final String srcFullSnapshotName = srcId + "@" + cloneSnapshotName;
-        final String dstId = asLvIdentifier(dstData);
         return new String[]
             {
                 "setsid", "-w",
@@ -839,7 +839,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
     {
         ZfsData<Resource> srcData = (ZfsData<Resource>)cloneInfo.getSrcVlmData();
-        final String cloneSnapshotName = "clone_for_" + cloneInfo.getResourceName();
+        final String cloneSnapshotName = "clone_for_" + asLvIdentifier((ZfsData<Resource>)cloneInfo.getDstVlmData());
         final String srcId = asLvIdentifier(srcData);
         final String srcFullSnapshotName = srcId + "@" + cloneSnapshotName;
         ZfsCommands.delete(extCmdFactory.create(), getZPool(srcData.getStorPool()), srcFullSnapshotName);

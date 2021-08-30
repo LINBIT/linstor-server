@@ -703,11 +703,6 @@ public class CtrlRscDfnApiCallHandler
             Map<String, String> srcVlmDfnProps = srcVlmDfn.getProps(peerAccCtx.get()).map();
             Map<String, String> vlmDfnProps = vlmDfn.getProps(peerAccCtx.get()).map();
             vlmDfnProps.putAll(srcVlmDfnProps);
-            // create new initial drbd GI
-            vlmDfnProps.put(
-                ApiConsts.KEY_DRBD_CURRENT_GI,
-                GidGenerator.generateRandomGid()
-            );
         }
 
         return responses;

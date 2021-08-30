@@ -752,7 +752,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
         LvmData<Resource> srcData = (LvmData<Resource>)cloneInfo.getSrcVlmData();
         LvmData<Resource> dstData = (LvmData<Resource>)cloneInfo.getDstVlmData();
-        final String cloneSnapshotName = "clone_for_" + cloneInfo.getResourceName().getDisplayName();
+        final String cloneSnapshotName = "clone_for_" + asLvIdentifier(dstData);
         final String srcId = asLvIdentifier(srcData);
         final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
 
@@ -770,7 +770,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
     {
         LvmData<Resource> srcData = (LvmData<Resource>)cloneInfo.getSrcVlmData();
-        final String cloneSnapshotName = "clone_for_" + cloneInfo.getResourceName().getDisplayName();
+        final String cloneSnapshotName = "clone_for_" + asLvIdentifier((LvmData<Resource>)cloneInfo.getDstVlmData());
         final String srcId = asLvIdentifier(srcData);
         final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
 

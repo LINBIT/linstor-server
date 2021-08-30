@@ -268,7 +268,6 @@ public class RscDfnInternalCallHandler
                         vlm.getFlags().disableFlags(apiCtx, Volume.Flags.CLONING);
                     }
                 }
-                rscDfn.getFlags().enableFlags(apiCtx, ResourceDefinition.Flags.RESTORE_TARGET);
 
                 ctrlTransactionHelper.commit();
 
@@ -304,7 +303,6 @@ public class RscDfnInternalCallHandler
         try
         {
             rscDfn.getFlags().disableFlags(apiCtx, ResourceDefinition.Flags.CLONING);
-            rscDfn.getFlags().disableFlags(apiCtx, ResourceDefinition.Flags.RESTORE_TARGET);
 
             final Set<Resource> resources = rscDfn.streamResource(apiCtx).collect(Collectors.toSet());
 
