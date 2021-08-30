@@ -61,6 +61,7 @@ import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySharedStorPoolLocksO
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplySnapshotOuterClass.MsgIntApplySnapshot;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyStorPoolOuterClass.MsgIntApplyStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntAuthOuterClass;
+import com.linbit.linstor.proto.javainternal.c2s.MsgIntBackupShippingFinishedOuterClass.MsgIntBackupShippingFinished;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntCryptKeyOuterClass.MsgIntCryptKey;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntExternalFileDeletedDataOuterClass.MsgIntExternalFileDeletedData;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntRemoteDeletedOuterClass.MsgIntRemoteDeleted;
@@ -888,6 +889,24 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setBackupName(backupName)
                 .setUploadId(uploadId)
                 .setRemoteName(remoteNameRef)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder notifyBackupShippingFinished(String rscName, String snapName)
+    {
+        try
+        {
+            MsgIntBackupShippingFinished.newBuilder()
+                .setRscName(rscName)
+                .setSnapName(snapName)
                 .build()
                 .writeDelimitedTo(baos);
         }

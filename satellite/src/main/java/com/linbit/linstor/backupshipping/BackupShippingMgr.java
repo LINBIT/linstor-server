@@ -131,6 +131,14 @@ public class BackupShippingMgr
         }
     }
 
+    public void removeSnapFromStartedShipments(String rscName, String snapName)
+    {
+        for (AbsBackupShippingService backupShippingService : services.values())
+        {
+            backupShippingService.removeSnapFromStartedShipments(rscName, snapName);
+        }
+    }
+
     public Collection<AbsBackupShippingService> getAllServices()
     {
         return services.values();

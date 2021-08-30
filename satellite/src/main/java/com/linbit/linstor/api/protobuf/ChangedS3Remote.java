@@ -20,7 +20,7 @@ import reactor.core.publisher.Flux;
 
 @ProtobufApiCall(
     name = InternalApiConsts.API_CHANGED_REMOTE,
-    description = "Called by the controller to indicate that an external file was modified"
+    description = "Called by the controller to indicate that a s3-remote was modified"
 )
 @Singleton
 public class ChangedS3Remote implements ApiCallReactive

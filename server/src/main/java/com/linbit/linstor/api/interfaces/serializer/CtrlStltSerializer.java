@@ -148,6 +148,8 @@ public interface CtrlStltSerializer extends CommonSerializer
             String remoteName
         );
 
+        CtrlStltSerializerBuilder notifyBackupShippingFinished(String rscName, String snapName);
+
         CtrlStltSerializerBuilder requestControllerUpdate();
         CtrlStltSerializerBuilder requestNodeUpdate(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder requestResourceUpdate(UUID rscUuid, String nodeName, String rscName);

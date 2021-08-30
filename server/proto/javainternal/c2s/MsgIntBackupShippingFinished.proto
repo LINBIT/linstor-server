@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.c2s;
+
+// Internal message to notify the stlt that the shipping of a snapshot is finished
+message MsgIntBackupShippingFinished
+{
+    string rsc_name = 2;
+    string snap_name = 3;
+}

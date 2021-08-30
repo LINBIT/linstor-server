@@ -22,6 +22,7 @@ import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.prop.WhitelistPropsReconfigurator;
+import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.core.ApplicationLifecycleManager;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
@@ -142,6 +143,7 @@ public class StltApiCallHandler
     private DrbdStateTracker drbdStateTracker;
     private DrbdEventPublisher drbdEventPublisher;
     private DrbdVersion drbdVersion;
+    private final BackupShippingMgr backupShippingMgr;
 
     @Inject
     public StltApiCallHandler(
@@ -184,7 +186,8 @@ public class StltApiCallHandler
         DrbdEventPublisher drbdEventPublisherRef,
         DeviceProviderMapper deviceProviderMapperRef,
         DrbdVersion drbdVersionRef,
-        ExtCmdFactory extCmdFactoryRef
+        ExtCmdFactory extCmdFactoryRef,
+        BackupShippingMgr backupShippingMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -227,6 +230,7 @@ public class StltApiCallHandler
         deviceProviderMapper = deviceProviderMapperRef;
         drbdVersion = drbdVersionRef;
         extCmdFactory = extCmdFactoryRef;
+        backupShippingMgr = backupShippingMgrRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -779,6 +783,11 @@ public class StltApiCallHandler
             rscDfnHandler.primaryResource(rscNameStr, rscUuid);
         }
 
+    }
+
+    public void backupShippingFinished(String rscName, String snapName)
+    {
+        backupShippingMgr.removeSnapFromStartedShipments(rscName, snapName);
     }
 
     public byte[] listErrorReports(

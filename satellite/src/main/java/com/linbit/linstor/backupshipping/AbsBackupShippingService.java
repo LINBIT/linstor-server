@@ -121,6 +121,10 @@ public abstract class AbsBackupShippingService implements SystemService
             }
         }
         shippingInfoMap.clear();
+        synchronized (startedShippments)
+        {
+            startedShippments.clear();
+        }
     }
 
     public void abort(AbsStorageVlmData<Snapshot> snapVlmData)
@@ -270,7 +274,10 @@ public abstract class AbsBackupShippingService implements SystemService
                         for (SnapVlmDataInfo snapVlmDataInfo : info.snapVlmDataInfoMap.values())
                         {
                             String uploadId = snapVlmDataInfo.daemon.start();
-                            startedShippments.add(snap);
+                            synchronized (startedShippments)
+                            {
+                                startedShippments.add(snap);
+                            }
 
                             if (uploadId != null)
                             {
@@ -463,7 +470,6 @@ public abstract class AbsBackupShippingService implements SystemService
                         throw new ImplementationError(exc);
                     }
                     shippingInfoMap.remove(snap);
-                    startedShippments.remove(snap);
                 }
             }
         }
@@ -497,7 +503,32 @@ public abstract class AbsBackupShippingService implements SystemService
 
     public boolean alreadyStarted(AbsStorageVlmData<Snapshot> snapVlmDataRef)
     {
-        return startedShippments.contains(snapVlmDataRef.getVolume().getAbsResource());
+        synchronized (startedShippments)
+        {
+            return startedShippments.contains(snapVlmDataRef.getVolume().getAbsResource());
+        }
+    }
+
+    public void removeSnapFromStartedShipments(String rscName, String snapName)
+    {
+        Snapshot target = null;
+        synchronized (startedShippments)
+        {
+            for (Snapshot snap : startedShippments)
+            {
+                if (
+                    snap.getResourceName().displayValue.equals(rscName) &&
+                        snap.getSnapshotName().displayValue.equals(snapName)
+                )
+                {
+                    target = snap;
+                }
+            }
+            if (target != null)
+            {
+                startedShippments.remove(target);
+            }
+        }
     }
 
     public boolean alreadyFinished(AbsStorageVlmData<Snapshot> snapVlmDataRef)
@@ -615,7 +646,10 @@ public abstract class AbsBackupShippingService implements SystemService
 
     public void snapshotDeleted(Snapshot snap)
     {
-        startedShippments.remove(snap);
+        synchronized (startedShippments)
+        {
+            startedShippments.remove(snap);
+        }
         finishedShipments.remove(snap);
     }
 

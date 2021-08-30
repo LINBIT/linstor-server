@@ -122,6 +122,7 @@ public class InternalApiConsts
     public static final String API_NOTIFY_BACKUP_SHIPPING_RECEIVED = "BackupShippingReceived";
     public static final String API_NOTIFY_BACKUP_SHIPPING_SENT = "BackupShippingSent";
     public static final String API_NOTIFY_BACKUP_SHIPPING_ID = "BackupShippingId";
+    public static final String API_NOTIFY_BACKUP_SHIPPING_FINISHED = "BackupShippingFinished";
     public static final String KEY_LAST_FULL_BACKUP_TIMESTAMP = "LastFullBackupTimestamp";
     public static final String KEY_BACKUP_LAST_SNAPSHOT = "BackupLastSnapshot";
     public static final String KEY_BACKUP_TO_RESTORE = "BackupToRestore";

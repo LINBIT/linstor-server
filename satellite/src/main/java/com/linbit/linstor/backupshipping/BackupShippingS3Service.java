@@ -89,9 +89,6 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         );
 
         backupHandler = backupHandlerRef;
-
-        // this causes all shippings to be aborted should the satellite lose connection to the controller
-        stltConnTracker.addClosingListener(this::killAllShipping);
     }
 
     @Override

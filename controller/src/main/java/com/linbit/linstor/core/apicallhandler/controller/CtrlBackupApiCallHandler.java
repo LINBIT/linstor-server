@@ -16,6 +16,7 @@ import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo;
@@ -167,6 +168,7 @@ public class CtrlBackupApiCallHandler
     private final SystemConfProtectionRepository sysCfgRepo;
     private final ResourceDefinitionRepository rscDfnRepo;
     private final Autoplacer autoplacer;
+    private final CtrlStltSerializer stltComSerializer;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -195,7 +197,8 @@ public class CtrlBackupApiCallHandler
         RemoteRepository remoteRepoRef,
         SystemConfProtectionRepository sysCfgRepoRef,
         ResourceDefinitionRepository rscDfnRepoRef,
-        Autoplacer autoplacerRef
+        Autoplacer autoplacerRef,
+        CtrlStltSerializer ctrlComSerializerRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -224,6 +227,7 @@ public class CtrlBackupApiCallHandler
         sysCfgRepo = sysCfgRepoRef;
         rscDfnRepo = rscDfnRepoRef;
         autoplacer = autoplacerRef;
+        stltComSerializer = ctrlComSerializerRef;
     }
 
     public Flux<ApiCallRc> createBackup(
@@ -3080,6 +3084,7 @@ public class CtrlBackupApiCallHandler
             }
 
             ctrlTransactionHelper.commit();
+            startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
             return l2lCleanupFlux.concatWith(flux);
         }
         catch (AccessDeniedException | InvalidKeyException | InvalidNameException exc)
@@ -3121,6 +3126,7 @@ public class CtrlBackupApiCallHandler
                 // re-enable shipping-flag to make sure the abort-logic gets triggered later on
                 snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                 ctrlTransactionHelper.commit();
+                startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
                 return ctrlSnapShipAbortHandler.abortBackupShippingPrivileged(snapDfn.getResourceDefinition());
             }
             snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
@@ -3153,7 +3159,7 @@ public class CtrlBackupApiCallHandler
                 }
             }
             ctrlTransactionHelper.commit();
-
+            startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
             return cleanupFlux.concatWith(
                 ctrlSatelliteUpdateCaller.updateSatellites(
                     snapDfn,
@@ -3175,6 +3181,13 @@ public class CtrlBackupApiCallHandler
         {
             throw new ApiDatabaseException(exc);
         }
+    }
+
+    private void startStltCleanup(Peer peer, String rscNameRef, String snapNameRef)
+    {
+        byte[] msg = stltComSerializer.headerlessBuilder().notifyBackupShippingFinished(rscNameRef, snapNameRef)
+            .build();
+        peer.apiCall(InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_FINISHED, msg);
     }
 
     private Flux<ApiCallRc> cleanupStltRemote(StltRemote remote)
