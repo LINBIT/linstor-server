@@ -468,6 +468,14 @@ class StorPoolFilter
                 {
                     storPoolMatches = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(apiAccCtx)
                         .orElse(0L) >= sizeInKib;
+                    if (!storPoolMatches)
+                    {
+                        errorReporter.logTrace(
+                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool does not have enough free space",
+                            sp.getName().displayValue,
+                            sp.getNode().getName().displayValue
+                        );
+                    }
                 }
                 else
                 {

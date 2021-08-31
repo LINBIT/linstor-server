@@ -83,6 +83,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +123,7 @@ public class CtrlNodeApiCallHandler
     private final AutoDiskfulTask autoDiskfulTask;
     private final CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelper;
     private final ErrorReporter errorReporter;
+    private final FreeCapacityFetcher freeCapacityFetcher;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -147,7 +149,8 @@ public class CtrlNodeApiCallHandler
         CtrlStltSerializer stltComSerializerRef,
         AutoDiskfulTask autoDiskfulTaskRef,
         CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        FreeCapacityFetcher freeCapacityFetcherRef
     )
     {
         apiCtx = apiCtxRef;
@@ -173,6 +176,7 @@ public class CtrlNodeApiCallHandler
         autoDiskfulTask = autoDiskfulTaskRef;
         autoRePlaceRscHelper = autoRePlaceRscHelperRef;
         errorReporter = errorReporterRef;
+        freeCapacityFetcher = freeCapacityFetcherRef;
     }
 
     Node createNodeImpl(
@@ -1058,7 +1062,9 @@ public class CtrlNodeApiCallHandler
     public Flux<ApiCallRc> evictNode(String nodeName)
     {
         return scopeRunner.fluxInTransactionlessScope(
-            "Evict node", lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(), () ->
+            "Evict node",
+            lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
+            () ->
             {
                 Node node = ctrlApiDataLoader.loadNode(nodeName, true);
                 try
@@ -1074,9 +1080,9 @@ public class CtrlNodeApiCallHandler
                     }
                 }
                 catch (AccessDeniedException exc)
-            {
+                {
                     throw new ApiAccessDeniedException(exc, "to " + nodeName, ApiConsts.FAIL_ACC_DENIED_NODE);
-            }
+                }
                 return declareEvicted(node);
             }
         );
@@ -1084,57 +1090,61 @@ public class CtrlNodeApiCallHandler
 
     public Flux<ApiCallRc> declareEvicted(Node node)
     {
-        return scopeRunner.fluxInTransactionalScope(
-            "Declare node EVICTED",
-            lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
-            () ->
-            {
-                node.markEvicted(apiCtx);
-                ctrlTransactionHelper.commit();
-                Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller.updateSatellites(
-                    node.getUuid(),
-                    node.getName(),
-                    CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
-                )
-                    .transform(tuple -> Flux.empty());
-                for (Resource res : node.streamResources(apiCtx).collect(Collectors.toList()))
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet()).flatMapMany(
+            // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
+            // the freeCapacities parameter here
+            ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
+                "Declare node EVICTED",
+                lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
+                () ->
                 {
-                    if (LayerRscUtils.getLayerStack(res, apiCtx).contains(DeviceLayerKind.DRBD))
+                    node.markEvicted(apiCtx);
+                    ctrlTransactionHelper.commit();
+                    Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                        node.getUuid(),
+                        node.getName(),
+                        CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
+                    )
+                        .transform(tuple -> Flux.empty());
+                    for (Resource res : node.streamResources(apiCtx).collect(Collectors.toList()))
                     {
-                        Map<String, String> objRefs = new TreeMap<>();
-                        objRefs.put(ApiConsts.KEY_RSC_DFN, res.getDefinition().getName().displayValue);
-                        objRefs.put(ApiConsts.KEY_NODE, res.getNode().getName().displayValue);
+                        if (LayerRscUtils.getLayerStack(res, apiCtx).contains(DeviceLayerKind.DRBD))
+                        {
+                            Map<String, String> objRefs = new TreeMap<>();
+                            objRefs.put(ApiConsts.KEY_RSC_DFN, res.getDefinition().getName().displayValue);
+                            objRefs.put(ApiConsts.KEY_NODE, res.getNode().getName().displayValue);
 
-                        ResponseContext context = new ResponseContext(
-                            ApiOperation.makeDeleteOperation(),
-                            "Auto-evicting resource: " + res.getDefinition().getName(),
-                            "auto-evicting resource: " + res.getDefinition().getName(),
-                            ApiConsts.MASK_DEL,
-                            objRefs
-                        );
-                        AutoHelperContext autoHelperCtx = new AutoHelperContext(
-                            new ApiCallRcImpl(),
-                            context,
-                            res.getDefinition()
-                        );
+                            ResponseContext context = new ResponseContext(
+                                ApiOperation.makeDeleteOperation(),
+                                "Auto-evicting resource: " + res.getDefinition().getName(),
+                                "auto-evicting resource: " + res.getDefinition().getName(),
+                                ApiConsts.MASK_DEL,
+                                objRefs
+                            );
+                            AutoHelperContext autoHelperCtx = new AutoHelperContext(
+                                new ApiCallRcImpl(),
+                                context,
+                                res.getDefinition()
+                            );
 
-                        res.markDeleted(apiCtx);
-                        autoRePlaceRscHelper.addNeedRePlaceRsc(res);
-                        autoRePlaceRscHelper.manage(autoHelperCtx);
+                            res.markDeleted(apiCtx);
+                            autoRePlaceRscHelper.addNeedRePlaceRsc(res);
+                            autoRePlaceRscHelper.manage(autoHelperCtx);
 
-                        flux = flux.concatWith(Flux.concat(autoHelperCtx.additionalFluxList));
+                            flux = flux.concatWith(Flux.concat(autoHelperCtx.additionalFluxList));
+                        }
+                        else
+                        {
+                            errorReporter.logDebug(
+                                "Auto-evict: ignoring resource %s since it is a non-DRBD resource",
+                                res.getDefinition().getName()
+                            );
+                        }
                     }
-                    else
-                    {
-                        errorReporter.logDebug(
-                            "Auto-evict: ignoring resource %s since it is a non-DRBD resource",
-                            res.getDefinition().getName()
-                        );
-                    }
+                    ctrlTransactionHelper.commit();
+                    return flux;
                 }
-                ctrlTransactionHelper.commit();
-                return flux;
-            }
+            )
         );
     }
 }
