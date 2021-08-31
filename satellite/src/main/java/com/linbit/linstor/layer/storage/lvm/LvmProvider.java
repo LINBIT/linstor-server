@@ -675,15 +675,14 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     @Override
     protected void createLvWithCopyImpl(
         LvmData<Resource> vlmData,
-        Resource srcRsc,
-        String cloneSnapshotName)
+        Resource srcRsc)
         throws StorageException, AccessDeniedException
     {
         final LvmData<Resource> srcVlmData = getVlmDataFromResource(
             srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
 
         final String srcId = asLvIdentifier(srcVlmData);
-        final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
+        final String srcFullSnapshotName = getCloneSnapshotName(srcVlmData, vlmData, "_");
 
         if (!infoListCache.containsKey(srcVlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
         {
@@ -752,9 +751,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
         LvmData<Resource> srcData = (LvmData<Resource>)cloneInfo.getSrcVlmData();
         LvmData<Resource> dstData = (LvmData<Resource>)cloneInfo.getDstVlmData();
-        final String cloneSnapshotName = "clone_for_" + asLvIdentifier(dstData);
-        final String srcId = asLvIdentifier(srcData);
-        final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
+        final String srcFullSnapshotName = getCloneSnapshotName(srcData, dstData, "_");
 
         return new String[]
             {
@@ -770,9 +767,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
     {
         LvmData<Resource> srcData = (LvmData<Resource>)cloneInfo.getSrcVlmData();
-        final String cloneSnapshotName = "clone_for_" + asLvIdentifier((LvmData<Resource>)cloneInfo.getDstVlmData());
-        final String srcId = asLvIdentifier(srcData);
-        final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
+        final String srcFullSnapshotName = getCloneSnapshotName(srcData, (LvmData<Resource>)cloneInfo.getDstVlmData(), "_");
 
         final String vlmGroup = getVolumeGroup(srcData.getStorPool());
         LvmUtils.execWithRetry(

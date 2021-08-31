@@ -474,8 +474,7 @@ public class LvmThinProvider extends LvmProvider
     @Override
     protected void createLvWithCopyImpl(
         LvmData<Resource> lvmVlmData,
-        Resource srcRsc,
-        String cloneSnapshotName)
+        Resource srcRsc)
         throws StorageException, AccessDeniedException
     {
         final LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
@@ -483,7 +482,7 @@ public class LvmThinProvider extends LvmProvider
             srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
 
         final String srcId = asLvIdentifier(srcVlmData);
-        final String srcFullSnapshotName = srcId + "_" + cloneSnapshotName;
+        final String srcFullSnapshotName = getCloneSnapshotName(srcVlmData, vlmData, "_");
         final String dstId = asLvIdentifier(vlmData);
 
         if (!infoListCache.containsKey(srcVlmData.getVolumeGroup() + "/" + srcFullSnapshotName))

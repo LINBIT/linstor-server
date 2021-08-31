@@ -147,7 +147,13 @@ public class ZfsCommands
     public static OutputData createSnapshot(ExtCmd extCmd, String zPool, String srcIdentifier, String snapName)
         throws StorageException
     {
-        String fullQualifiedId = zPool + File.separator + srcIdentifier + "@" + snapName;
+        return createSnapshotFullName(extCmd, zPool, srcIdentifier + "@" + snapName);
+    }
+
+    public static OutputData createSnapshotFullName(ExtCmd extCmd, String zPool, String fullSnapName)
+        throws StorageException
+    {
+        String fullQualifiedId = zPool + File.separator + fullSnapName;
         return genericExecutor(
             extCmd,
             new String[] {

@@ -88,6 +88,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 500;
     public static final long SIZE_OF_NOT_FOUND_STOR_POOL = -1;
 
+    private static final String CLONE_PREFIX = "CF_";
+
     protected final ErrorReporter errorReporter;
     protected final ExtCmdFactoryStlt extCmdFactory;
     protected final AccessContext storDriverAccCtx;
@@ -465,16 +467,21 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         return rsc.getVolume(vlmData.getVlmNr()).getFlags().isSet(storDriverAccCtx, Volume.Flags.CLONING_START);
     }
 
+    protected String getCloneSnapshotName(LAYER_DATA srcVlmData, LAYER_DATA dstVlmData, String separator) {
+        final String cloneSnapshotName = CLONE_PREFIX + String.format("%x", asLvIdentifier(dstVlmData).hashCode());
+        final String srcId = asLvIdentifier(srcVlmData);
+        return srcId + separator + cloneSnapshotName;
+    }
+
     private void createLvWithCopy(LAYER_DATA vlmData)
         throws AccessDeniedException, StorageException
     {
         final Props rscDfnProps = vlmData.getRscLayerObject().getAbsResource()
             .getResourceDefinition().getProps(storDriverAccCtx);
         final String srcRscName = rscDfnProps.getProp(InternalApiConsts.KEY_CLONED_FROM);
-        final String cloneSnapshotName = "clone_for_" + asLvIdentifier(vlmData);
         final Resource srcRsc = getResource(vlmData, srcRscName);
 
-        createLvWithCopyImpl(vlmData, srcRsc, cloneSnapshotName);
+        createLvWithCopyImpl(vlmData, srcRsc);
     }
 
     private void createVolumes(
@@ -1565,7 +1572,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected abstract void deactivateLvImpl(LAYER_DATA vlmData, String lvId)
         throws StorageException, AccessDeniedException, DatabaseException;
 
-    protected void createLvWithCopyImpl(LAYER_DATA vlmData, Resource srcRsc, String cloneSnapshotName)
+    protected void createLvWithCopyImpl(LAYER_DATA vlmData, Resource srcRsc)
         throws StorageException, AccessDeniedException
     {
         throw new StorageException("Clone volume is not supported by " + getClass().getSimpleName());

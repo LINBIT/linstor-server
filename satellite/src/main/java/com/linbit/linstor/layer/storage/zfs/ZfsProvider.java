@@ -765,25 +765,22 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     @Override
     protected void createLvWithCopyImpl(
         ZfsData<Resource> vlmData,
-        Resource srcRsc,
-        String cloneSnapshotName)
+        Resource srcRsc)
         throws StorageException, AccessDeniedException
     {
         final ZfsData<Resource> srcVlmData = getVlmDataFromResource(
             srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
 
         final String dstRscName = vlmData.getRscLayerObject().getResourceName().displayValue;
-        final String srcId = asLvIdentifier(srcVlmData);
-        final String srcFullSnapshotName = srcId + "@" + cloneSnapshotName;
+        final String srcFullSnapshotName = getCloneSnapshotName(srcVlmData, vlmData, "@");
 
 
         if (!infoListCache.containsKey(srcVlmData.getZPool() + "/" + srcFullSnapshotName))
         {
-            ZfsCommands.createSnapshot(
+            ZfsCommands.createSnapshotFullName(
                 extCmdFactory.create(),
                 srcVlmData.getZPool(),
-                srcId,
-                cloneSnapshotName
+                srcFullSnapshotName
             );
             // mark snapshot as temporary clone
             ZfsCommands.setUserProperty(
@@ -810,9 +807,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         ZfsData<Resource> srcData = (ZfsData<Resource>)cloneInfo.getSrcVlmData();
         ZfsData<Resource> dstData = (ZfsData<Resource>)cloneInfo.getDstVlmData();
         final String dstId = asLvIdentifier(dstData);
-        final String cloneSnapshotName = "clone_for_" + dstId;
-        final String srcId = asLvIdentifier(srcData);
-        final String srcFullSnapshotName = srcId + "@" + cloneSnapshotName;
+        final String srcFullSnapshotName = getCloneSnapshotName(srcData, dstData, "@");
         return new String[]
             {
                 "setsid", "-w",
@@ -839,9 +834,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
     {
         ZfsData<Resource> srcData = (ZfsData<Resource>)cloneInfo.getSrcVlmData();
-        final String cloneSnapshotName = "clone_for_" + asLvIdentifier((ZfsData<Resource>)cloneInfo.getDstVlmData());
-        final String srcId = asLvIdentifier(srcData);
-        final String srcFullSnapshotName = srcId + "@" + cloneSnapshotName;
+        final String srcFullSnapshotName = getCloneSnapshotName(srcData, (ZfsData<Resource>)cloneInfo.getDstVlmData(), "@");
         ZfsCommands.delete(extCmdFactory.create(), getZPool(srcData.getStorPool()), srcFullSnapshotName);
     }
 }
