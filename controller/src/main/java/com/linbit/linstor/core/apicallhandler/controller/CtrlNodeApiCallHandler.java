@@ -45,6 +45,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
@@ -85,6 +86,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -1128,6 +1130,12 @@ public class CtrlNodeApiCallHandler
                             );
 
                             res.markDeleted(apiCtx);
+                            Iterator<Volume> vlmIt = res.iterateVolumes();
+                            while (vlmIt.hasNext())
+                            {
+                                Volume vlm = vlmIt.next();
+                                vlm.markDeleted(apiCtx);
+                            }
                             autoRePlaceRscHelper.addNeedRePlaceRsc(res);
                             autoRePlaceRscHelper.manage(autoHelperCtx);
 

@@ -312,6 +312,12 @@ class StltRscApiCallHandler
                     rscRawData.getLayerData()
                 );
 
+                errorReporter.logTrace(
+                    "%s created with flags %s",
+                    localRsc,
+                    FlagsHelper.toStringList(Resource.Flags.class, rscRawData.getLocalRscFlags())
+                );
+
                 createdRscSet.add(new Resource.ResourceKey(localRsc));
 
                 for (OtherRscPojo otherRscRaw : rscRawData.getOtherRscList())

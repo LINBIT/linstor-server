@@ -1173,9 +1173,6 @@ public class JsonGenTypes
          * A list containing all entries found that are or could be from linstor
          */
         public Map<String, Backup> linstor = Collections.emptyMap();
-        /**
-         * A list containing all other entries found that have no relation to linstor
-         */
         public BackupOther other;
     }
 
@@ -1219,6 +1216,9 @@ public class JsonGenTypes
         public String meta_name;
     }
 
+    /**
+     * A map containing all other entries found that have no relation to linstor
+     */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class BackupOther
     {
