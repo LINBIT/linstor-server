@@ -194,7 +194,7 @@ public class SnapshotShippingInternalApiCallHandler
             }
 
             // deletes the whole snapshotDfn
-            flux = snapshotDeleteApiCallHandler.deleteSnapshot(rscNameRef, snapNameRef);
+            flux = snapshotDeleteApiCallHandler.deleteSnapshot(rscNameRef, snapNameRef, null);
             if (vlmNrsWithBlockedPort.size() > 0)
             {
                 try
@@ -270,7 +270,7 @@ public class SnapshotShippingInternalApiCallHandler
             ctrlTransactionHelper.commit();
 
             // deletes the whole snapshotDfn
-            flux = snapshotDeleteApiCallHandler.deleteSnapshot(rscNameRef, snapNameRef);
+            flux = snapshotDeleteApiCallHandler.deleteSnapshot(rscNameRef, snapNameRef, null);
         }
         else
         {

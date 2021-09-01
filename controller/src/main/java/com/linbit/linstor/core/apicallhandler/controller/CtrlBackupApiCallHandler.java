@@ -834,8 +834,11 @@ public class CtrlBackupApiCallHandler
             for (SnapshotDefinition.Key snapKey : toDelete.snapKeys)
             {
                 deleteSnapFlux = deleteSnapFlux.concatWith(
-                    ctrlSnapDeleteApiCallHandler
-                        .deleteSnapshot(snapKey.getResourceName().displayValue, snapKey.getSnapshotName().displayValue)
+                    ctrlSnapDeleteApiCallHandler.deleteSnapshot(
+                        snapKey.getResourceName().displayValue,
+                        snapKey.getSnapshotName().displayValue,
+                        null
+                    )
                 );
             }
             try
@@ -2997,7 +3000,9 @@ public class CtrlBackupApiCallHandler
                 else
                 {
                     flux = ctrlSnapDeleteApiCallHandler.deleteSnapshot(
-                        snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue
+                        snapDfn.getResourceName().displayValue,
+                        snapDfn.getName().displayValue,
+                        null
                     );
                     keepGoing = false; // last backup failed.
                 }

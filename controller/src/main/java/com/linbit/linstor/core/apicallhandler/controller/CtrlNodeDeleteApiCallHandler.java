@@ -485,7 +485,10 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             for (Snapshot snapshot : node.getSnapshots(apiCtx))
             {
                 fluxes.add(ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(
-                    snapshot.getResourceName().getName(), snapshot.getSnapshotName().getName()));
+                    snapshot.getResourceName().getName(),
+                    snapshot.getSnapshotName().getName(),
+                    Collections.singletonList(node.getName().displayValue)
+                ));
             }
         }
         catch (AccessDeniedException accDeniedExc)

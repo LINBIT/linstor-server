@@ -119,7 +119,7 @@ public class CtrlSnapshotShippingAbortHandler
                         abortBackupShippings(nodeRef);
                     }
                     flux = flux.concatWith(snapDelHandlerProvider.get()
-                        .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue)
+                        .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue, null)
                     );
                 }
             }
@@ -160,7 +160,11 @@ public class CtrlSnapshotShippingAbortHandler
                 {
                     flux = flux.concatWith(
                         snapDelHandlerProvider.get()
-                            .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue)
+                            .deleteSnapshot(
+                                snapDfn.getResourceName().displayValue,
+                                snapDfn.getName().displayValue,
+                                null
+                            )
                     );
                 }
             }
@@ -205,7 +209,9 @@ public class CtrlSnapshotShippingAbortHandler
                             flux = flux.concatWith(
                                 snapDelHandlerProvider.get()
                                     .deleteSnapshot(
-                                        snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue
+                                        snapDfn.getResourceName().displayValue,
+                                        snapDfn.getName().displayValue,
+                                        null
                                     )
                             );
                             abortBackupShippings(snap.getNode());

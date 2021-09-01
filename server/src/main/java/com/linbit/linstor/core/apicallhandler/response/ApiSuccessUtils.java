@@ -2,11 +2,12 @@ package com.linbit.linstor.core.apicallhandler.response;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcImpl.EntryBuilder;
 import com.linbit.linstor.api.ApiConsts;
 
-import java.util.UUID;
-
 import static com.linbit.utils.StringUtils.firstLetterCaps;
+
+import java.util.UUID;
 
 public class ApiSuccessUtils
 {
@@ -45,16 +46,18 @@ public class ApiSuccessUtils
 
     public static ApiCallRc.RcEntry defaultDeletedEntry(UUID uuid, String objectDescriptionInline)
     {
-        return ApiCallRcImpl
-            .entryBuilder(
-                ApiConsts.DELETED,
-                firstLetterCaps(objectDescriptionInline) + " deleted."
-            )
-            .setDetails(
+        EntryBuilder entryBuilder = ApiCallRcImpl.entryBuilder(
+            ApiConsts.DELETED,
+            firstLetterCaps(objectDescriptionInline) + " deleted."
+        );
+        if (uuid != null)
+        {
+            entryBuilder = entryBuilder.setDetails(
                 firstLetterCaps(objectDescriptionInline) + " UUID was: " + uuid.toString()
             )
-            .putObjRef(ApiConsts.KEY_UUID, uuid.toString())
-            .build();
+                .putObjRef(ApiConsts.KEY_UUID, uuid.toString());
+        }
+        return entryBuilder.build();
     }
 
     private static ApiCallRc.RcEntry defaultNewEntry(

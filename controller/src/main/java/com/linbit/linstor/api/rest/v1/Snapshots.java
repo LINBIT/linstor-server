@@ -24,6 +24,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -158,10 +159,11 @@ public class Snapshots
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("rscName") String rscName,
-        @PathParam("snapName") String snapName
+        @PathParam("snapName") String snapName,
+        @QueryParam("nodes") List<String> nodeNames
     )
     {
-        Flux<ApiCallRc> responses = ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(rscName, snapName)
+        Flux<ApiCallRc> responses = ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(rscName, snapName, nodeNames)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_SNAPSHOT, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(responses));

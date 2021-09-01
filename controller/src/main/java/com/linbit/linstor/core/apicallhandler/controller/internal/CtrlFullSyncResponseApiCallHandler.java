@@ -134,7 +134,9 @@ public class CtrlFullSyncResponseApiCallHandler
                     backupInfoMgr.restoreRemoveEntry(localSnap.getResourceDefinition());
                     fluxes.add(
                         ctrlSnapDelApiCallHandler.deleteSnapshot(
-                            localSnap.getResourceName().displayValue, localSnap.getSnapshotName().displayValue
+                            localSnap.getResourceName().displayValue,
+                            localSnap.getSnapshotName().displayValue,
+                            null
                         )
                     );
                 }

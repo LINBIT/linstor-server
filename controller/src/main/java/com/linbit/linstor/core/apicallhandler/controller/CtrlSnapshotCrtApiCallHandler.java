@@ -556,7 +556,11 @@ public class CtrlSnapshotCrtApiCallHandler
                 )
                 .concatWith(
                     ctrlSnapshotDeleteApiCallHandler
-                        .deleteSnapshot(snapshotDfn.getResourceName().displayValue, snapshotDfn.getName().displayValue)
+                        .deleteSnapshot(
+                            snapshotDfn.getResourceName().displayValue,
+                            snapshotDfn.getName().displayValue,
+                            null
+                        )
                 )
                 .concatWith(
                     Flux.<ApiCallRc>just(
