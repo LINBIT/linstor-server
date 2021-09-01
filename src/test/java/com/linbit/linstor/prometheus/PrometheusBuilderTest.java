@@ -60,7 +60,9 @@ public class PrometheusBuilderTest {
                 Collections.emptyList(),
                 Collections.emptyList(),
                 Collections.emptyMap(),
-                Collections.emptyMap())
+                Collections.emptyMap(),
+                null
+            )
         );
 
         final RscGrpPojo dfltRscGrp = new RscGrpPojo(

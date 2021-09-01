@@ -72,6 +72,10 @@ public class JsonGenTypes
         public List<String> resource_layers = Collections.emptyList();
         public Map<String, List<String>> unsupported_providers = Collections.emptyMap();
         public Map<String, List<String>> unsupported_layers = Collections.emptyMap();
+        /**
+         * milliseconds since unix epoch in UTC
+         */
+        public Long eviction_timestamp;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

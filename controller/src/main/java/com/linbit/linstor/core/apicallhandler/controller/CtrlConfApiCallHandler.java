@@ -45,6 +45,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
+import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -95,7 +96,8 @@ public class CtrlConfApiCallHandler
     private final CtrlNodeApiCallHandler ctrlNodeApiCallHandler;
 
     private final LockGuardFactory lockGuardFactory;
-    private AutoDiskfulTask autoDiskfulTask;
+    private final AutoDiskfulTask autoDiskfulTask;
+    private final ReconnectorTask reconnectorTask;
 
 
     @Inject
@@ -119,7 +121,8 @@ public class CtrlConfApiCallHandler
         CtrlConfig ctrlCfgRef,
         ResponseConverter responseConverterRef,
         CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef,
-        AutoDiskfulTask autoDiskfulTaskRef
+        AutoDiskfulTask autoDiskfulTaskRef,
+        ReconnectorTask reconnectorTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -141,6 +144,7 @@ public class CtrlConfApiCallHandler
         responseConverter = responseConverterRef;
         ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
         autoDiskfulTask = autoDiskfulTaskRef;
+        reconnectorTask = reconnectorTaskRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -189,6 +193,27 @@ public class CtrlConfApiCallHandler
         )
         {
             autoDiskfulTask.update();
+        }
+
+        boolean hasKeyInDrbdOptions = false;
+        for (String key : overridePropsRef.keySet())
+        {
+            if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
+            {
+                hasKeyInDrbdOptions = true;
+            }
+        }
+        for (String key : deletePropKeysRef)
+        {
+            if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
+            {
+                hasKeyInDrbdOptions = true;
+            }
+        }
+        hasKeyInDrbdOptions |= deletePropNamespacesRef.contains(ApiConsts.NAMESPC_DRBD_OPTIONS);
+        if (hasKeyInDrbdOptions)
+        {
+            reconnectorTask.rerunConfigChecks();
         }
 
         return apiCallRc;
@@ -484,6 +509,7 @@ public class CtrlConfApiCallHandler
                             break;
                         case ApiConsts.KEY_UPDATE_CACHE_INTERVAL: // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO: // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION: // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_AFTER_TIME: // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES: // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT:

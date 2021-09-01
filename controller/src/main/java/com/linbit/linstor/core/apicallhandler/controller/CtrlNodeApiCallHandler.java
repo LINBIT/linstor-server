@@ -881,6 +881,27 @@ public class CtrlNodeApiCallHandler
             autoDiskfulTask.update(node);
         }
 
+        boolean hasKeyInDrbdOptions = false;
+        for (String key : overrideProps.keySet())
+        {
+            if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
+            {
+                hasKeyInDrbdOptions = true;
+            }
+        }
+        for (String key : deletePropKeys)
+        {
+            if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
+            {
+                hasKeyInDrbdOptions = true;
+            }
+        }
+        hasKeyInDrbdOptions |= deleteNamespaces.contains(ApiConsts.NAMESPC_DRBD_OPTIONS);
+        if (hasKeyInDrbdOptions)
+        {
+            reconnectorTask.rerunConfigChecks();
+        }
+
         return retFlux;
     }
 

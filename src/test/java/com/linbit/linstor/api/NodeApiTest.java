@@ -97,6 +97,11 @@ public class NodeApiTest extends ApiTestBase
     @Test
     public void crtSecondAccDenied() throws Exception
     {
+        // This test will access node.getPeer().getAccessContext() in order to access some properties
+        // this access will fail as the peer's accCtx is null.
+        // that NPE can be avoided by entirely disabling security (for this test)
+        DummySecurityInitializer.setSecurityLevel(SYS_CTX, SecurityLevel.NO_SECURITY);
+
         // FIXME: this test only works because the first API call succeeds.
         // if it would fail, the transaction is currently NOT rolled back.
         evaluateTest(

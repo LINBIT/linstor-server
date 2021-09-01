@@ -5,6 +5,7 @@ import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -26,6 +27,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
     private final List<String> deviceProviderKindNames;
     private final Map<String, List<String>> unsupportedLayersWithReasons;
     private final Map<String, List<String>> unsupportedProvidersWithReasons;
+    private final Long evictionTimestamp;
 
     public NodePojo(
         final UUID nodeUuidRef,
@@ -42,7 +44,8 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         final List<String> deviceLayerKindNamesRef,
         final List<String> deviceProviderKindNamesRef,
         final Map<String, List<String>> unsupportedLayersWithReasonsRef,
-        final Map<String, List<String>> unsupportedProvidersWithReasonsRef
+        final Map<String, List<String>> unsupportedProvidersWithReasonsRef,
+        final Long evictionTimestampRef
     )
     {
         nodeUuid = nodeUuidRef;
@@ -60,6 +63,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         deviceProviderKindNames = deviceProviderKindNamesRef;
         unsupportedLayersWithReasons = unsupportedLayersWithReasonsRef;
         unsupportedProvidersWithReasons = unsupportedProvidersWithReasonsRef;
+        evictionTimestamp = evictionTimestampRef;
     }
 
     @Override
@@ -136,24 +140,34 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         return updateId;
     }
 
+    @Override
     public List<String> getDeviceLayerKindNames()
     {
         return deviceLayerKindNames;
     }
 
+    @Override
     public List<String> getDeviceProviderKindNames()
     {
         return deviceProviderKindNames;
     }
 
+    @Override
     public Map<String, List<String>> getUnsupportedLayersWithReasons()
     {
         return unsupportedLayersWithReasons;
     }
 
+    @Override
     public Map<String, List<String>> getUnsupportedProvidersWithReasons()
     {
         return unsupportedProvidersWithReasons;
+    }
+
+    @Override
+    public Long getEvictionTimestamp()
+    {
+        return evictionTimestamp;
     }
 
     public static class NodeConnPojo

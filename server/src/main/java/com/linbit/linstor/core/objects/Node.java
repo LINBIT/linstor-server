@@ -43,6 +43,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.utils.LocalInetAddresses;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -126,6 +127,8 @@ public class Node extends BaseTransactionObject
     private FluxSink<Boolean> initialConnectSink;
 
     private final ArrayList<ProcCryptoEntry> supportedCryptos;
+
+    private Long evictionTimstamp;
 
     Node(
         UUID uuidRef,
@@ -212,6 +215,7 @@ public class Node extends BaseTransactionObject
         );
 
         activeStltConn = transObjFactory.createTransactionSimpleObject(this, null, null);
+
         transObjs = Arrays.<TransactionObject>asList(
             flags,
             nodeType,
@@ -666,6 +670,15 @@ public class Node extends BaseTransactionObject
         }
     }
 
+    public void setEvictionTimestamp(@Nullable Long timestamp)
+    {
+        evictionTimstamp = timestamp;
+    }
+
+    public @Nullable Long getEvictionTimstamp()
+    {
+        return evictionTimstamp;
+    }
 
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
@@ -820,7 +833,8 @@ public class Node extends BaseTransactionObject
             extToolsManager.getSupportedProviders().stream()
                 .map(deviceProviderKind -> deviceProviderKind.name()).collect(toList()),
             extToolsManager.getUnsupportedLayersWithReasonsAsString(),
-            extToolsManager.getUnsupportedProvidersWithReasonsAsString()
+            extToolsManager.getUnsupportedProvidersWithReasonsAsString(),
+            evictionTimstamp
         );
     }
 

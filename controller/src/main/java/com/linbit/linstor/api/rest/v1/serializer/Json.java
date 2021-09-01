@@ -129,6 +129,7 @@ public class Json
         nd.storage_providers = nodeApi.getDeviceProviderKindNames();
         nd.unsupported_layers = nodeApi.getUnsupportedLayersWithReasons();
         nd.unsupported_providers = nodeApi.getUnsupportedProvidersWithReasons();
+        nd.eviction_timestamp = nodeApi.getEvictionTimestamp();
         return nd;
     }
 

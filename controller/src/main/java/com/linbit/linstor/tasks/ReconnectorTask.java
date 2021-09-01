@@ -129,6 +129,7 @@ public class ReconnectorTask implements Task
                     if (!peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                     {
                         reconnectorConfigSet.add(new ReconnectConfig(peer, drbdConnectionsOk(peer)));
+                        getFailedPeers(); // update evictionTime if necessary
                     }
                     else
                     {
@@ -201,6 +202,7 @@ public class ReconnectorTask implements Task
             }
             if (toRemove != null)
             {
+                toRemove.peer.getNode().setEvictionTimestamp(null);
                 removed = reconnectorConfigSet.remove(toRemove);
             }
             if (removed != null && pingTask != null)
@@ -410,6 +412,14 @@ public class ReconnectorTask implements Task
         }
     }
 
+    public void rerunConfigChecks()
+    {
+        synchronized (syncObj)
+        {
+            getFailedPeers();
+        }
+    }
+
     private ArrayList<ReconnectConfig> getFailedPeers()
     {
         ArrayList<ReconnectConfig> retry = new ArrayList<>();
@@ -419,9 +429,10 @@ public class ReconnectorTask implements Task
             try
             {
                 boolean drbdOkNew = drbdConnectionsOk(config.peer);
+                Node node = config.peer.getNode();
                 final PriorityProps props = new PriorityProps(
-                    config.peer.getNode().getProps(config.peer.getAccessContext()),
-                    systemConfRepo.getCtrlConfForView(config.peer.getAccessContext())
+                    node.getProps(apiCtx),
+                    systemConfRepo.getCtrlConfForView(apiCtx)
                 );
                 final long timeout = Long.parseLong(
                     props.getProp(
@@ -445,10 +456,19 @@ public class ReconnectorTask implements Task
                         config.offlineSince = System.currentTimeMillis();
                     }
                 }
-                if (!config.peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
+                if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                 {
                     retry.add(config);
-                    if (!config.drbdOk && System.currentTimeMillis() >= config.offlineSince + timeout)
+                    long evictionTimestamp = config.offlineSince + timeout;
+                    if (allowEviction)
+                    {
+                        node.setEvictionTimestamp(evictionTimestamp);
+                    }
+                    else
+                    {
+                        node.setEvictionTimestamp(null);
+                    }
+                    if (!config.drbdOk && System.currentTimeMillis() >= evictionTimestamp)
                     {
                         if (allowEviction)
                         {
@@ -467,7 +487,7 @@ public class ReconnectorTask implements Task
                                 errorReporter.logTrace(
                                     config.peer + " has been offline for too long, relocation of resources started."
                                 );
-                                ctrlNodeApiCallHandler.get().declareEvicted(config.peer.getNode())
+                                ctrlNodeApiCallHandler.get().declareEvicted(node)
                                     .subscriberContext(
                                         Context.of(
                                             ApiModule.API_CALL_NAME,
@@ -495,7 +515,7 @@ public class ReconnectorTask implements Task
                         {
                             errorReporter.logDebug(
                                 "The node %s will not be evicted since the property AutoEvictAllowEviction is set to false.",
-                                config.peer.getNode().getName()
+                                node.getName()
                             );
                         }
                     }

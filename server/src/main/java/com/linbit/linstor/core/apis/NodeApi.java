@@ -20,4 +20,5 @@ public interface NodeApi
     List<String> getDeviceProviderKindNames();
     Map<String, List<String>> getUnsupportedLayersWithReasons();
     Map<String, List<String>> getUnsupportedProvidersWithReasons();
+    Long getEvictionTimestamp();
 }

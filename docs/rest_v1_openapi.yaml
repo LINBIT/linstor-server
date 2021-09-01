@@ -21,8 +21,9 @@ info:
 
     Changelog:
 
-    * unreleased:
+    * unreleased
        - Added query-param "nodes" for DELETE /v1/resource-definitions/{resource}/snapshots/{snapshot}
+       - Added optional Node.eviction_timestamp
     * 1.10.0
        - Added resource-definition clone API
          - POST /v1/resource-definitions/{rscname}/clone
@@ -5554,6 +5555,10 @@ components:
             type: array
             items:
               type: string
+        eviction_timestamp:
+          type: integer
+          format: int64
+          description: milliseconds since unix epoch in UTC
     NodeModify:
       type: object
       properties:
