@@ -2929,13 +2929,21 @@ public class CtrlBackupApiCallHandler
         }
 
         ctrlTransactionHelper.commit();
+        ApiCallRcImpl success = new ApiCallRcImpl();
+        success.addEntry(
+            "Successfully aborted all " +
+                (create && restore ? "in-progress backup-shipments and restores"
+                    : create ? "in-progress backup-shipments" : "in-progress backup-restores") +
+                " of resource " + rscNameRef,
+            ApiConsts.MASK_SUCCESS
+        );
         return updateStlts.transform(
             responses -> CtrlResponseUtils.combineResponses(
                 responses,
                 LinstorParsingUtils.asRscName(rscNameRef),
                 "Abort backups of {1} on {0} started"
             )
-        );
+        ).concatWith(Flux.just(success));
     }
 
     private Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn) throws AccessDeniedException
