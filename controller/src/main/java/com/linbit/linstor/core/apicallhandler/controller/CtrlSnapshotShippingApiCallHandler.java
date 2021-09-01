@@ -677,21 +677,21 @@ public class CtrlSnapshotShippingApiCallHandler
                 SnapshotDefinition.Flags.SHIPPING,
                 SnapshotDefinition.Flags.SHIPPING_ABORT,
                 SnapshotDefinition.Flags.SHIPPING_CLEANUP
-            );
+            ) && !flags.isSet(peerAccCtx.get(), SnapshotDefinition.Flags.BACKUP);
             completed = flags -> flags.isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
         }
         else
         {
             for (String stat : statusRef)
             {
-                if (ApiConsts.SnapshotShipStatus.COMPLETE.getValue().equalsIgnoreCase(stat))
+                if (ApiConsts.SnapshotShipStatus.RUNNING.getValue().equalsIgnoreCase(stat))
                 {
                     running = flags -> flags.isSomeSet(
                         peerAccCtx.get(),
                         SnapshotDefinition.Flags.SHIPPING,
                         SnapshotDefinition.Flags.SHIPPING_ABORT,
                         SnapshotDefinition.Flags.SHIPPING_CLEANUP
-                    );
+                    ) && !flags.isSet(peerAccCtx.get(), SnapshotDefinition.Flags.BACKUP);
                 }
                 if (ApiConsts.SnapshotShipStatus.COMPLETE.getValue().equals(stat))
                 {
