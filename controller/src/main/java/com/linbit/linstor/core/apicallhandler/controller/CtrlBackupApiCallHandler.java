@@ -3008,6 +3008,7 @@ public class CtrlBackupApiCallHandler
                 nextSnapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
                 nextSnap.getFlags().enableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
 
+                ctrlTransactionHelper.commit();
                 flux = ctrlSatelliteUpdateCaller.updateSatellites(
                     snapDfn,
                     CtrlSatelliteUpdateCaller.notConnectedWarn()
