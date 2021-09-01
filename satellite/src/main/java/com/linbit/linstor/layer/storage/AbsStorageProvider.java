@@ -770,7 +770,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
                 {
                     snapShipMgr.abort(snapVlm);
-                    backupShipMapper.getService(snapVlm).abort(snapVlm);
+                    if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.BACKUP))
+                    {
+                        backupShipMapper.getService(snapVlm).abort(snapVlm);
+                    }
                 }
 
                 errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
