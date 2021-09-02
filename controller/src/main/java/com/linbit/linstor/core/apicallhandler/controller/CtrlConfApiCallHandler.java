@@ -50,7 +50,10 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.Pair;
 import com.linbit.utils.UuidUtils;
+
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -164,7 +167,30 @@ public class CtrlConfApiCallHandler
         }
     }
 
-    public ApiCallRc modifyCtrl(
+    public Flux<ApiCallRc> modifyCtrl(
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespacesRef
+    )
+    {
+        ResponseContext context = makeCtrlConfContext(
+            ApiOperation.makeModifyOperation()
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Modify node",
+                lockGuardFactory.buildDeferred(WRITE, LockObj.CTRL_CONFIG),
+                () -> modifyCtrlInTransaction(
+                    overridePropsRef,
+                    deletePropKeysRef,
+                    deletePropNamespacesRef
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> modifyCtrlInTransaction(
         Map<String, String> overridePropsRef,
         Set<String> deletePropKeysRef,
         Set<String> deletePropNamespacesRef
@@ -211,12 +237,17 @@ public class CtrlConfApiCallHandler
             }
         }
         hasKeyInDrbdOptions |= deletePropNamespacesRef.contains(ApiConsts.NAMESPC_DRBD_OPTIONS);
+        Flux<ApiCallRc> evictionFlux = Flux.empty();
         if (hasKeyInDrbdOptions)
         {
-            reconnectorTask.rerunConfigChecks();
+            ArrayList<Pair<Flux<ApiCallRc>, Peer>> rerunConfigChecks = reconnectorTask.rerunConfigChecks();
+            for (Pair<Flux<ApiCallRc>, Peer> pair : rerunConfigChecks)
+            {
+                evictionFlux = evictionFlux.concatWith(pair.objA);
+            }
         }
 
-        return apiCallRc;
+        return Flux.<ApiCallRc>just(apiCallRc).concatWith(evictionFlux);
     }
 
     public Flux<ApiCallRc> setCtrlConfig(

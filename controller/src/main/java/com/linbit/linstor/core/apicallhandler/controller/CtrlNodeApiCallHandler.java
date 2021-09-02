@@ -73,6 +73,7 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater.findNodesToContact;
@@ -491,11 +492,13 @@ public class CtrlNodeApiCallHandler
                 node.getUuid(), getNodeDescriptionInline(node)));
 
             if (notifyStlts) {
-                flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                flux = flux.concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(
                         node.getUuid(),
                         nodeName,
                         findNodesToContact(apiCtx, node))
-                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
+                        .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                );
             }
         }
         catch (Exception | ImplementationError exc)
@@ -899,7 +902,10 @@ public class CtrlNodeApiCallHandler
         hasKeyInDrbdOptions |= deleteNamespaces.contains(ApiConsts.NAMESPC_DRBD_OPTIONS);
         if (hasKeyInDrbdOptions)
         {
-            reconnectorTask.rerunConfigChecks();
+            for (Pair<Flux<ApiCallRc>, Peer> pair : reconnectorTask.rerunConfigChecks())
+            {
+                retFlux = retFlux.concatWith(pair.objA);
+            }
         }
 
         return retFlux;

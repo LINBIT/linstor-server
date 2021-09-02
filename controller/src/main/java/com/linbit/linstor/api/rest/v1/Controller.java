@@ -17,6 +17,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -98,28 +99,33 @@ public class Controller
     }
 
     @POST
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("properties")
-    public Response setProperties(
+    public void setProperties(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         String jsonData
     )
     {
-        return requestHelper.doInScope(ApiConsts.API_SET_CTRL_PROP, request, () ->
+        try
         {
             JsonGenTypes.ControllerPropsModify properties = objectMapper.readValue(
                 jsonData,
                 JsonGenTypes.ControllerPropsModify.class
             );
 
-            ApiCallRc apiCallRc = ctrlApiCallHandler.modifyCtrl(
+            Flux<ApiCallRc> flux = ctrlApiCallHandler.modifyCtrl(
                 properties.override_props,
                 new HashSet<>(properties.delete_props),
                 new HashSet<>(properties.delete_namespaces)
-            );
+            ).subscriberContext(requestHelper.createContext(ApiConsts.API_SET_CTRL_PROP, request));
 
-            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
-
-        }, true);
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 
     @DELETE

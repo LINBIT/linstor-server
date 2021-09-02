@@ -3,6 +3,7 @@ package com.linbit.linstor.tasks;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
@@ -31,6 +32,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
 import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
+import com.linbit.utils.Pair;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -49,6 +51,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 
+import reactor.core.publisher.Flux;
 import reactor.util.context.Context;
 
 @Singleton
@@ -247,11 +250,14 @@ public class ReconnectorTask implements Task
     @Override
     public long run()
     {
-        ArrayList<ReconnectConfig> localList;
+        Pair<ArrayList<ReconnectConfig>, ArrayList<Pair<Flux<ApiCallRc>, Peer>>> pair;
         synchronized (syncObj)
         {
-            localList = getFailedPeers();
+            pair = getFailedPeers();
         }
+        ArrayList<ReconnectConfig> localList = pair.objA;
+        runEvictionFluxes(pair.objB);
+
         for (final ReconnectConfig config : localList)
         {
             if (config.peer.isConnected(false))
@@ -359,6 +365,25 @@ public class ReconnectorTask implements Task
         return RECONNECT_SLEEP;
     }
 
+    private void runEvictionFluxes(ArrayList<Pair<Flux<ApiCallRc>, Peer>> fluxList)
+    {
+        for (Pair<Flux<ApiCallRc>, Peer> pair : fluxList)
+        {
+            Peer peer = pair.objB;
+            pair.objA.subscriberContext(
+                Context.of(
+                    ApiModule.API_CALL_NAME,
+                    "Recon:AutoEvicting",
+                    AccessContext.class,
+                    peer.getAccessContext(),
+                    Peer.class,
+                    peer
+                )
+            )
+            .subscribe();
+        }
+    }
+
     private void setNetIf(Node node, ReconnectConfig config) throws AccessDeniedException, DatabaseException
     {
         NetInterface currentActiveStltConn = node
@@ -412,18 +437,19 @@ public class ReconnectorTask implements Task
         }
     }
 
-    public void rerunConfigChecks()
+    public ArrayList<Pair<Flux<ApiCallRc>, Peer>> rerunConfigChecks()
     {
         synchronized (syncObj)
         {
-            getFailedPeers();
+            return getFailedPeers().objB;
         }
     }
 
-    private ArrayList<ReconnectConfig> getFailedPeers()
+    private Pair<ArrayList<ReconnectConfig>, ArrayList<Pair<Flux<ApiCallRc>, Peer>>> getFailedPeers()
     {
         ArrayList<ReconnectConfig> retry = new ArrayList<>();
         ArrayList<ReconnectConfig> copy = new ArrayList<>(reconnectorConfigSet);
+        ArrayList<Pair<Flux<ApiCallRc>, Peer>> fluxes = new ArrayList<>();
         for (ReconnectConfig config : copy)
         {
             try
@@ -487,18 +513,8 @@ public class ReconnectorTask implements Task
                                 errorReporter.logTrace(
                                     config.peer + " has been offline for too long, relocation of resources started."
                                 );
-                                ctrlNodeApiCallHandler.get().declareEvicted(node)
-                                    .subscriberContext(
-                                        Context.of(
-                                            ApiModule.API_CALL_NAME,
-                                            "Recon:AutoEvicting",
-                                            AccessContext.class,
-                                            config.peer.getAccessContext(),
-                                            Peer.class,
-                                            config.peer
-                                        )
-                                    )
-                                    .subscribe();
+                                fluxes.add(new Pair<>(ctrlNodeApiCallHandler.get().declareEvicted(node), config.peer));
+
                                 // evicted, stop trying reconnect
                                 retry.remove(config);
                                 reconnectorConfigSet.remove(config);
@@ -526,7 +542,7 @@ public class ReconnectorTask implements Task
                 errorReporter.reportError(exc);
             }
         }
-        return retry;
+        return new Pair<>(retry, fluxes);
     }
 
     private boolean drbdConnectionsOk(Peer peer)

@@ -938,22 +938,22 @@ public class CtrlApiCallHandler
         return apiCallRc;
     }
 
-    public ApiCallRc modifyCtrl(
+    public Flux<ApiCallRc> modifyCtrl(
         Map<String, String> overridePropsRef,
         Set<String> deletePropKeysRef,
         Set<String> deletePropNamespaces
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, CTRL_CONFIG))
         {
-            apiCallRc = ctrlConfApiCallHandler.modifyCtrl(
+            flux = ctrlConfApiCallHandler.modifyCtrl(
                 overridePropsRef,
                 deletePropKeysRef,
                 deletePropNamespaces
             );
         }
-        return apiCallRc;
+        return flux;
     }
 
     public Map<String, String> listCtrlCfg()
