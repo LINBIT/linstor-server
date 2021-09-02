@@ -202,6 +202,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             List<String> nodeNamesStrCopy = new ArrayList<>(nodeNamesStrListRef);
 
             List<String> nodeNamesToDelete = new ArrayList<>();
+            boolean hasSnapshotsNotBeingDeleted = false;
             for (Snapshot snapshot : getAllSnapshots(snapshotDfn))
             {
                 String foundNodeNameStr = null;
@@ -218,6 +219,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                 {
                     nodeNamesStrCopy.remove(foundNodeNameStr);
                 }
+                hasSnapshotsNotBeingDeleted |= !isFlagSet(snapshot, Snapshot.Flags.DELETE);
             }
             responses.addEntry(
                 "Marked snapshot for deletion " + getSnapshotDescriptionInline(
@@ -234,6 +236,10 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                         " was not found on given nodes: " + StringUtils.join(nodeNamesStrCopy, ", "),
                     ApiConsts.WARN_NOT_FOUND
                 );
+            }
+            if (!hasSnapshotsNotBeingDeleted)
+            {
+                markSnapshotDfnDeleted(snapshotDfn);
             }
         }
 
