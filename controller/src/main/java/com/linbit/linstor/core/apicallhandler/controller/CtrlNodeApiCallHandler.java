@@ -30,6 +30,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
@@ -46,8 +47,8 @@ import com.linbit.linstor.core.objects.NodeControllerFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
@@ -130,6 +131,8 @@ public class CtrlNodeApiCallHandler
     private final CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelper;
     private final ErrorReporter errorReporter;
     private final FreeCapacityFetcher freeCapacityFetcher;
+    private final CtrlRscDeleteApiCallHandler rscDeleteHandler;
+    private final CtrlSnapshotDeleteApiCallHandler snapDeleteHandler;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -156,7 +159,9 @@ public class CtrlNodeApiCallHandler
         AutoDiskfulTask autoDiskfulTaskRef,
         CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef,
         ErrorReporter errorReporterRef,
-        FreeCapacityFetcher freeCapacityFetcherRef
+        FreeCapacityFetcher freeCapacityFetcherRef,
+        CtrlRscDeleteApiCallHandler rscDeleteHandlerRef,
+        CtrlSnapshotDeleteApiCallHandler snapDeleteHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -183,6 +188,8 @@ public class CtrlNodeApiCallHandler
         autoRePlaceRscHelper = autoRePlaceRscHelperRef;
         errorReporter = errorReporterRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
+        rscDeleteHandler = rscDeleteHandlerRef;
+        snapDeleteHandler = snapDeleteHandlerRef;
     }
 
     Node createNodeImpl(
@@ -1042,31 +1049,138 @@ public class CtrlNodeApiCallHandler
             .transform(response -> responseConverter.reportingExceptions(context, response));
     }
 
-    public Flux<ApiCallRc> restoreNode(String nodeName)
+    public Flux<ApiCallRc> restoreNode(String nodeName, boolean deleteResources, boolean deleteSnapshots)
     {
         return scopeRunner.fluxInTransactionalScope(
             "Restore EVICTED node",
-            lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
+            lockGuardFactory.createDeferred().write(LockObj.NODES_MAP, LockObj.RSC_DFN_MAP).build(),
             () ->
             {
                 Flux<ApiCallRc> flux = Flux.empty();
                 try
                 {
+                    AccessContext peerCtx = peerAccCtx.get();
                     Node node = ctrlApiDataLoader.loadNode(nodeName, true);
-                    node.unMarkEvicted(apiCtx);
+                    if (!node.getFlags().isSet(peerCtx, Node.Flags.EVICTED))
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(ApiConsts.MASK_ERROR, "Node '" + nodeName + "' is not evicted.")
+                                .setSkipErrorReport(true)
+                        );
+                    }
+                    node.unMarkEvicted(peerCtx);
+
+                    Iterator<Resource> rscIt = node.iterateResources(peerCtx);
+                    if (deleteResources)
+                    {
+                        while (rscIt.hasNext())
+                        {
+                            Resource rsc = rscIt.next();
+
+                            // false if not a DRBD resource. false -> delete this resource
+                            boolean isLastNonDeletedDiskful = LayerRscUtils.getLayerStack(rsc, apiCtx)
+                                .contains(DeviceLayerKind.DRBD);
+                            {
+                                ResourceDefinition rscDfn = rsc.getResourceDefinition();
+                                Iterator<Resource> rscIt2 = rscDfn.iterateResource(apiCtx);
+                                while (rscIt2.hasNext())
+                                {
+                                    Resource otherRsc = rscIt2.next();
+                                    if (!otherRsc.equals(rsc))
+                                    {
+                                        StateFlags<Flags> rscFlags = otherRsc.getStateFlags();
+                                        if (!rscFlags.isSet(apiCtx, Resource.Flags.DISKLESS) &&
+                                            !rscFlags.isSet(apiCtx, Resource.Flags.DELETE))
+                                        {
+                                            isLastNonDeletedDiskful = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (!isLastNonDeletedDiskful)
+                            {
+                                flux = flux.concatWith(
+                                    rscDeleteHandler.deleteResource(
+                                        nodeName,
+                                        rsc.getResourceDefinition().getName().displayValue
+                                    )
+                                );
+                            }
+                            else
+                            {
+                                flux = flux.concatWithValues(
+                                    ApiCallRcImpl.singleApiCallRc(
+                                        ApiConsts.WARN_STLT_NOT_UPDATED,
+                                        "Not deleting resource " + rsc.getDefinition().getName().displayValue +
+                                            " since it is the last non-deleting diskful resource of this resource-definition"
+                                    )
+                                );
+                                errorReporter.logDebug(
+                                    "Auto-evict: ignoring resource %s since it is the last non-deleting diskful resource",
+                                    rsc.getDefinition().getName()
+                                );
+                            }
+                        }
+                    }
+                    else
+                    {
+                        while (rscIt.hasNext())
+                        {
+                            Resource rsc = rscIt.next();
+                            StateFlags<Flags> flags = rsc.getStateFlags();
+                            if (flags.isSet(peerCtx, Resource.Flags.EVICTED))
+                            {
+                                flags.disableFlags(peerCtx, Resource.Flags.EVICTED);
+                                if (flags.isSet(peerCtx, Resource.Flags.INACTIVE_BEFORE_EVICTION))
+                                {
+                                    flags.enableFlags(peerCtx, Resource.Flags.INACTIVE);
+                                    flags.disableFlags(peerCtx, Resource.Flags.INACTIVE_BEFORE_EVICTION);
+                                }
+                                // although we will perform a FullSync soon, the other satellites also need to be
+                                // updated that this resource is back online
+                                flux = flux.concatWith(
+                                    ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty())
+                                        .transform(
+                                            responses -> CtrlResponseUtils.combineResponses(
+                                                responses,
+                                                rsc.getDefinition().getName(),
+                                                "Resource restored on {0}"
+                                            )
+                                        )
+                                );
+                            }
+                        }
+                    }
+
+                    if (deleteSnapshots)
+                    {
+                        for (Snapshot snap : node.getSnapshots(peerCtx))
+                        {
+                            flux = flux.concatWith(
+                                snapDeleteHandler.deleteSnapshot(
+                                    snap.getResourceName().displayValue,
+                                    snap.getSnapshotName().displayValue,
+                                    Collections.singletonList(snap.getNodeName().displayValue)
+                                )
+                            );
+                        }
+                    }
+
                     ctrlTransactionHelper.commit();
+
                     reconnectorTask
-                        .add(node.getPeer(apiCtx).getConnector().reconnect(node.getPeer(apiCtx)), false, false);
+                        .add(node.getPeer(peerCtx).getConnector().reconnect(node.getPeer(peerCtx)), false, false);
                     Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateFlux = ctrlSatelliteUpdateCaller.updateSatellites(
                         node.getUuid(),
                         node.getName(),
-                        CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
+                        CtrlSatelliteUpdater.findNodesToContact(peerCtx, node)
                     );
                     ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
                         ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
                         "Successfully restored node " + nodeName
                     );
-                    flux = updateFlux.transform(tuple -> Flux.empty());
+                    flux = flux.concatWith(updateFlux.transform(tuple -> Flux.empty()));
                     return flux.concatWithValues(rc);
                 }
                 catch (AccessDeniedException exc)
@@ -1076,7 +1190,7 @@ public class CtrlNodeApiCallHandler
                         ApiConsts.FAIL_ACC_DENIED_NODE | ApiConsts.MASK_NODE,
                         "Access to node " + nodeName + " denied"
                     );
-                    return flux.concatWithValues(rc);
+                    return Flux.just(rc);
                 }
                 catch (DatabaseException exc)
                 {
@@ -1085,7 +1199,7 @@ public class CtrlNodeApiCallHandler
                         ApiConsts.FAIL_SQL | ApiConsts.MASK_NODE,
                         "Database Error, see error report " + rep
                     );
-                    return flux.concatWithValues(rc);
+                    return Flux.just(rc);
                 }
             }
         );
@@ -1150,7 +1264,7 @@ public class CtrlNodeApiCallHandler
                                 ApiOperation.makeDeleteOperation(),
                                 "Auto-evicting resource: " + res.getDefinition().getName(),
                                 "auto-evicting resource: " + res.getDefinition().getName(),
-                                ApiConsts.MASK_DEL,
+                                ApiConsts.MASK_MOD,
                                 objRefs
                             );
                             AutoHelperContext autoHelperCtx = new AutoHelperContext(
@@ -1159,50 +1273,25 @@ public class CtrlNodeApiCallHandler
                                 res.getDefinition()
                             );
 
-                            boolean isLastNonDeletedDiskful = true;
+                            StateFlags<Flags> rscFlags = res.getStateFlags();
+                            if (rscFlags.isSet(apiCtx, Resource.Flags.INACTIVE))
                             {
-                                ResourceDefinition rscDfn = res.getResourceDefinition();
-                                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
-                                while (rscIt.hasNext())
-                                {
-                                    Resource rsc = rscIt.next();
-                                    if (!rsc.equals(res))
-                                    {
-                                        StateFlags<Flags> rscFlags = rsc.getStateFlags();
-                                        if (!rscFlags.isSet(apiCtx, Resource.Flags.DISKLESS) &&
-                                            !rscFlags.isSet(apiCtx, Resource.Flags.DELETE))
-                                        {
-                                            isLastNonDeletedDiskful = false;
-                                            break;
-                                        }
-                                    }
-                                }
+                                rscFlags.enableFlags(apiCtx, Resource.Flags.INACTIVE_BEFORE_EVICTION);
                             }
+                            rscFlags.enableFlags(apiCtx, Resource.Flags.EVICTED);
+                            autoRePlaceRscHelper.addNeedRePlaceRsc(res);
+                            autoRePlaceRscHelper.manage(autoHelperCtx);
 
-                            if (!isLastNonDeletedDiskful)
-                            {
-                                res.markDeleted(apiCtx);
-                                Iterator<Volume> vlmIt = res.iterateVolumes();
-                                while (vlmIt.hasNext())
-                                {
-                                    Volume vlm = vlmIt.next();
-                                    vlm.markDeleted(apiCtx);
-                                }
-                                autoRePlaceRscHelper.addNeedRePlaceRsc(res);
-                                autoRePlaceRscHelper.manage(autoHelperCtx);
-
-                                flux = flux.concatWith(Flux.concat(autoHelperCtx.additionalFluxList));
-                            }
-                            else
-                            {
-                                errorReporter.logDebug(
-                                    "Auto-evict: ignoring resource %s since it is the last non-deleting diskful resource",
-                                    res.getDefinition().getName()
+                            flux = flux.concatWith(Flux.concat(autoHelperCtx.additionalFluxList))
+                                .concatWith(
+                                    this.ctrlSatelliteUpdateCaller.updateSatellites(res, Flux.empty()).transform(
+                                        responses -> CtrlResponseUtils.combineResponses(
+                                            responses,
+                                            res.getDefinition().getName(),
+                                            "Resource updated on {0}"
+                                        )
+                                    )
                                 );
-                            }
-
-
-                            flux = flux.concatWith(Flux.concat(autoHelperCtx.additionalFluxList));
                         }
                         else
                         {

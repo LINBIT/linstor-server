@@ -17,7 +17,8 @@ public class StltProviderUtils
         else
         {
             throw new StorageException(
-                "Device does not exist.",
+                "Device does not exist. VlmData: " + vlmData.getVolume() + ", suffix: " +
+                    vlmData.getRscLayerObject().getResourceNameSuffix(),
                 "Device does not exist.",
                 "The volume could not be found on the system.",
                 null,

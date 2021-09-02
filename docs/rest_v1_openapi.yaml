@@ -24,6 +24,8 @@ info:
     * unreleased
        - Added query-param "nodes" for DELETE /v1/resource-definitions/{resource}/snapshots/{snapshot}
        - Added optional Node.eviction_timestamp
+       - Added Schema NodeRestore
+       - Extended PUT /v1/nodes/{node_name}/restore to accept new NodeRestore body
     * 1.10.0
        - Added resource-definition clone API
          - POST /v1/resource-definitions/{rscname}/clone
@@ -950,6 +952,11 @@ paths:
     put:
       summary: restore node
       description: restore an evicted node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeRestore'
       responses:
         '200':
           description: node restored
@@ -5574,6 +5581,13 @@ components:
           type: array
           items:
             type: string
+    NodeRestore:
+      type: object
+      properties:
+        delete_resources:
+          type: boolean
+        delete_snapshots:
+          type: boolean
     NetInterface:
       type: object
       required:

@@ -8,6 +8,7 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.Node;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.NodeRestore;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
@@ -254,12 +255,35 @@ public class Nodes
     public void restoreNode(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
-        @PathParam("nodeName") String nodeName
+        @PathParam("nodeName") String nodeName,
+        String jsonData
     )
     {
-        final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.restoreNode(nodeName)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_NODE_RESTORE, request));
-        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        try
+        {
+            JsonGenTypes.NodeRestore data;
+            if (jsonData != null && !jsonData.isEmpty())
+            {
+                data = objectMapper.readValue(jsonData, JsonGenTypes.NodeRestore.class);
+            }
+            else
+            {
+                // values will be uninitialized / null -> will not delete resources or snapshots
+                data = new NodeRestore();
+            }
+            final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler
+                .restoreNode(
+                    nodeName,
+                    data.delete_resources != null && data.delete_resources,
+                    data.delete_snapshots != null && data.delete_snapshots
+                )
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_NODE_RESTORE, request));
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
     }
 
     @PUT

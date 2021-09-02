@@ -88,6 +88,13 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class NodeRestore
+    {
+        public Boolean delete_resources;
+        public Boolean delete_snapshots;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class NetInterface
     {
         public String name;

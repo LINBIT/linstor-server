@@ -198,11 +198,14 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         }
         else
         {
+            // original list could be the result of a stream.collect. However, we will want to remove from this list
+            List<String> nodeNamesStrCopy = new ArrayList<>(nodeNamesStrListRef);
+
             List<String> nodeNamesToDelete = new ArrayList<>();
             for (Snapshot snapshot : getAllSnapshots(snapshotDfn))
             {
                 String foundNodeNameStr = null;
-                for (String nodeNameStr : nodeNamesStrListRef)
+                for (String nodeNameStr : nodeNamesStrCopy)
                 {
                     if (nodeNameStr.toLowerCase().equals(snapshot.getNodeName().displayValue.toLowerCase()))
                     {
@@ -213,7 +216,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                 }
                 if (foundNodeNameStr != null)
                 {
-                    nodeNamesStrListRef.remove(foundNodeNameStr);
+                    nodeNamesStrCopy.remove(foundNodeNameStr);
                 }
             }
             responses.addEntry(
@@ -224,16 +227,15 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                 ),
                 ApiConsts.DELETED
             );
-            if (!nodeNamesStrListRef.isEmpty())
+            if (!nodeNamesStrCopy.isEmpty())
             {
                 responses.addEntry(
                     getSnapshotDfnDescription(rscName.displayValue, snapshotName.displayValue) +
-                        " was not found on given nodes: " + StringUtils.join(nodeNamesStrListRef, ", "),
+                        " was not found on given nodes: " + StringUtils.join(nodeNamesStrCopy, ", "),
                     ApiConsts.WARN_NOT_FOUND
                 );
             }
         }
-
 
         ctrlTransactionHelper.commit();
 

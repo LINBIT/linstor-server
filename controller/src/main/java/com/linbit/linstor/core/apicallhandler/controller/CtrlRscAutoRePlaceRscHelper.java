@@ -148,13 +148,14 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                         )
                         {
                             StateFlags<Flags> flags = res.getStateFlags();
-                            boolean isDeleting = flags.isSet(peerAccCtx, Resource.Flags.DELETE);
+                            boolean countAsActive = !flags.isSet(peerAccCtx, Resource.Flags.DELETE) &&
+                                !flags.isSet(peerAccCtx, Resource.Flags.INACTIVE);
                             boolean isDiskless = flags.isSet(peerAccCtx, Resource.Flags.DRBD_DISKLESS);
                             if (isDiskless)
                             {
                                 disklessNodeNames.add(res.getNode().getName().displayValue);
                             }
-                            else if (!isDeleting)
+                            else if (countAsActive)
                             {
                                 curReplicaCount++;
                             }
@@ -183,10 +184,18 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                     while (itr.hasNext())
                                     {
                                         Resource rsc = itr.next();
-                                        if (rsc.getNode().getFlags().isSet(peerAccCtx, Node.Flags.EVICTED))
+                                        StateFlags<Flags> rscFlags = rsc.getStateFlags();
+                                        if (rsc.getNode().getFlags().isSet(peerAccCtx, Node.Flags.EVICTED) &&
+                                            !rscFlags.isSet(peerAccCtx, Resource.Flags.EVICTED))
                                         {
-                                            rsc.markDeleted(peerAccCtx);
-                                            nodeNameOfEvictedResources.add(rsc.getNode().getName());
+                                            if (rscFlags.isSet(peerAccCtx, Resource.Flags.INACTIVE))
+                                            {
+                                                rscFlags.enableFlags(
+                                                    peerAccCtx,
+                                                    Resource.Flags.INACTIVE_BEFORE_EVICTION
+                                                );
+                                            }
+                                            rscFlags.enableFlags(peerAccCtx, Resource.Flags.EVICTED);
                                         }
                                     }
                                     ctrlTransactionHelper.commit();
