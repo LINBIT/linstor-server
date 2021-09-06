@@ -117,6 +117,7 @@ public class ReconnectorTask implements Task
     public void add(Peer peer, boolean authenticateImmediately, boolean abortSnapshotShippings)
     {
         boolean sendAuthentication = false;
+        Node node = peer.getNode();
         synchronized (syncObj)
         {
             if (authenticateImmediately && peer.isConnected(false))
@@ -129,15 +130,17 @@ public class ReconnectorTask implements Task
             {
                 try
                 {
-                    if (!peer.getNode().getFlags().isSet(apiCtx, Node.Flags.EVICTED))
+                    if (!node.isDeleted())
                     {
-                        reconnectorConfigSet.add(new ReconnectConfig(peer, drbdConnectionsOk(peer)));
-                        getFailedPeers(); // update evictionTime if necessary
-                    }
-                    else
-                    {
-                        errorReporter
-                            .logDebug("Node %s is evicted and will not be reconnected", peer.getNode().getName());
+                        if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
+                        {
+                            reconnectorConfigSet.add(new ReconnectConfig(peer, drbdConnectionsOk(peer)));
+                            getFailedPeers(); // update evictionTime if necessary
+                        }
+                        else
+                        {
+                            errorReporter.logDebug("Node %s is evicted and will not be reconnected", node.getName());
+                        }
                     }
                 }
                 catch (AccessDeniedException exc)
@@ -161,18 +164,21 @@ public class ReconnectorTask implements Task
              * the only way I can think of now would require some rewriting of many method-signatures
              * converting them from non-flux to flux returning methods.
              */
-            snapShipAbortHandler.abortAllShippingPrivileged(peer.getNode())
-                .subscriberContext(
-                    Context.of(
-                        ApiModule.API_CALL_NAME,
-                        "Abort currently shipped snapshots",
-                        AccessContext.class,
-                        apiCtx,
-                        Peer.class,
-                        peer
+            if (!node.isDeleted())
+            {
+                snapShipAbortHandler.abortAllShippingPrivileged(node)
+                    .subscriberContext(
+                        Context.of(
+                            ApiModule.API_CALL_NAME,
+                            "Abort currently shipped snapshots",
+                            AccessContext.class,
+                            apiCtx,
+                            Peer.class,
+                            peer
+                        )
                     )
-                )
-                .subscribe();
+                    .subscribe();
+            }
         }
 
         if (sendAuthentication)
