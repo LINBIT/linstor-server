@@ -7,7 +7,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
+import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -156,7 +156,9 @@ class SnapBCacheLayerHelper
     ) throws AccessDeniedException, InvalidNameException, DatabaseException
     {
         StorPool cacheStorPool = getStorPool(
-            snapVlmRef, ((WritecacheVlmPojo) vlmLayerDataApiRef).getCacheStorPoolName(), renameStorPoolMapRef
+            snapVlmRef,
+            ((BCacheVlmPojo) vlmLayerDataApiRef).getCacheStorPoolName(),
+            renameStorPoolMapRef
         );
         return layerDataFactory.createBCacheVlmData(
             snapVlmRef,
