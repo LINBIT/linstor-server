@@ -1,3 +1,39 @@
+linstor-server (1.15.0~rc.2-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * openapi: fix warning
+  * gitlab: update virter/vmshed
+  * virter: use version 0.14.1
+  * clone: improved error reporting on failed clone
+  * clone: copy metadata instead of creating fresh drbd md
+  * clone: generalize tmp clone snapshot naming and reduce length
+
+  [ Gabor Hernadi ]
+  * AutoEvict: Fetch thin space before autoplacer
+  * AutoEvict: also mark volumes as deleted
+  * Evict: Do not delete last non-deleting diskful resource
+  * Snapshot,delete: Allow deletion of single snapshots
+  * AutoEvict: Add evictionTimestamp to 'node list' response
+  * AutoEvict: Fixed "scope has already been entered"
+  * AutoEvict: Inactivate resource instead of delete
+  * Snapshot,delete: Also delete snapDfn if last snap is deleted
+  * ReconnectorTask: Ignore deleted nodes during add
+  * BackupShipping: Add error msg when extTools are missing
+  * BackupShipping: fail fast without encryption set up
+  * Revert "BackupShipping,DrbdLayer: Recreate MD after restore"
+  * BackupShipping: Only collect diskfull node-ids
+  * BackupShipping: Also backup DRBD's external metadata
+  * SnapshotShipping: Fixed NPE
+  * BackupShipping: Commit tx before updating satellites
+  * SnapBCacheLayerHelper: Fixed incorrect cast
+
+  [ Johanna Kucera ]
+  * BackupShipping: Do not start shipment again if it finished too fast
+  * BackupShipping: add success-message to backup abort
+  * BackupShipping: check for BACKUP-flag before aborting backups
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 07 Sep 2021 09:13:06 +0000
+
 linstor-server (1.15.0~rc.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

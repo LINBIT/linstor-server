@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.10.1
        - Added query-param "nodes" for DELETE /v1/resource-definitions/{resource}/snapshots/{snapshot}
        - Added optional Node.eviction_timestamp
        - Added Schema NodeRestore
