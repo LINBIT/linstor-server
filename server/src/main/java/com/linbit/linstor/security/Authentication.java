@@ -111,7 +111,7 @@ public final class Authentication
                 final char[] passwordChars;
                 try
                 {
-                    passwordChars = UnicodeConversion.utf8BytesToUtf16Chars(password);
+                    passwordChars = UnicodeConversion.utf8BytesToUtf16Chars(password, true);
                 }
                 catch (UnicodeConversion.InvalidSequenceException exc)
                 {
