@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.interfaces;
 
+import com.linbit.linstor.api.pojo.BCacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
@@ -31,7 +32,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @Type(value = LuksRscPojo.class, name = "luks"),
         @Type(value = NvmeRscPojo.class, name = "nvme"),
         @Type(value = StorageRscPojo.class, name = "storage"),
-        @Type(value = WritecacheRscPojo.class, name = "writecache")
+        @Type(value = WritecacheRscPojo.class, name = "writecache"),
+        @Type(value = BCacheRscPojo.class, name = "bcache")
+    // openflex not serialized (for now)
     }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)

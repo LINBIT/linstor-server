@@ -57,6 +57,8 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     protected transient long expectedSize;
     protected transient long originalSize;
     protected transient boolean active;
+    protected transient Long snapshotAllocatedSize = null;
+    protected transient Long snapshotUsableSize = null;
 
     public AbsStorageVlmData(
         AbsVolume<RSC> vlmRef,
@@ -311,5 +313,25 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         return getClass().getSimpleName() + " [" + vlm.toString() +
             ", RscNameSuffix: " + rscData.getResourceNameSuffix() +
             "]";
+    }
+
+    public Long getSnapshotAllocatedSize()
+    {
+        return snapshotAllocatedSize;
+    }
+
+    public void setSnapshotAllocatedSize(long allocatedSizeRef)
+    {
+        snapshotAllocatedSize = allocatedSizeRef;
+    }
+
+    public Long getSnapshotUsableSize()
+    {
+        return snapshotUsableSize;
+    }
+
+    public void setSnapshotUsableSize(long usableSizeRef)
+    {
+        snapshotUsableSize = usableSizeRef;
     }
 }

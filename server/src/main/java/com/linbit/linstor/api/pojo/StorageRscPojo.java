@@ -3,7 +3,6 @@ package com.linbit.linstor.api.pojo;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
-import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -106,9 +105,10 @@ public class StorageRscPojo implements RscLayerDataApi
         private final int vlmNr;
         @JsonIgnore
         private final String devicePath;
-        @JsonIgnore
         private final long allocatedSize;
         private final long usableSize;
+        private final Long snapAllocatedSize;
+        private final Long snapUsableSize;
         @JsonIgnore
         private final String diskState;
         @JsonIgnore
@@ -120,6 +120,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef,
             DeviceProviderKind kindRef
@@ -129,6 +131,8 @@ public class StorageRscPojo implements RscLayerDataApi
             devicePath = devicePathRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
+            snapAllocatedSize = snapAllocatedSizeRef;
+            snapUsableSize = snapUsableSizeRef;
             diskState = diskStateRef;
             storPoolApi = storPoolApiRef;
             kind = kindRef;
@@ -157,6 +161,18 @@ public class StorageRscPojo implements RscLayerDataApi
         public long getUsableSize()
         {
             return usableSize;
+        }
+
+        @Override
+        public Long getSnapshotAllocatedSize()
+        {
+            return snapAllocatedSize;
+        }
+
+        @Override
+        public Long getSnapshotUsableSize()
+        {
+            return snapUsableSize;
         }
 
         @Override
@@ -191,22 +207,44 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, DISKLESS);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                DISKLESS
+            );
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public DisklessVlmPojo(
             @JsonProperty("vlmNr") int vlmNrRef,
             @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
-            @JsonProperty("usableSize") long usableSizeRef
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
+
         )
         {
             super(
-                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
                 storPoolApiRef, DISKLESS
             );
         }
@@ -219,22 +257,43 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, LVM);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                LVM
+            );
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public LvmVlmPojo(
             @JsonProperty("vlmNr") int vlmNrRef,
             @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
-            @JsonProperty("usableSize") long usableSizeRef
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
         )
         {
             super(
-                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
                 storPoolApiRef, LVM
             );
         }
@@ -247,22 +306,43 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, SPDK);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                SPDK
+            );
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public SpdkVlmPojo(
             @JsonProperty("vlmNr") int vlmNrRef,
             @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
-            @JsonProperty("usableSize") long usableSizeRef
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
         )
         {
             super(
-                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
                 storPoolApiRef, SPDK
             );
         }
@@ -275,11 +355,23 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, REMOTE_SPDK);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                REMOTE_SPDK
+            );
         }
     }
 
@@ -290,22 +382,43 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, LVM_THIN);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                LVM_THIN
+            );
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public LvmThinVlmPojo(
             @JsonProperty("vlmNr") int vlmNrRef,
             @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
-            @JsonProperty("usableSize") long usableSizeRef
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
         )
         {
             super(
-                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
                 storPoolApiRef, LVM_THIN
             );
         }
@@ -318,22 +431,43 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, ZFS);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                ZFS
+            );
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public ZfsVlmPojo(
             @JsonProperty("vlmNr") int vlmNrRef,
             @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
-            @JsonProperty("usableSize") long usableSizeRef
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
         )
         {
             super(
-                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
                 storPoolApiRef, ZFS
             );
         }
@@ -346,22 +480,43 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, ZFS_THIN);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                ZFS_THIN
+            );
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public ZfsThinVlmPojo(
             @JsonProperty("vlmNr") int vlmNrRef,
             @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
-            @JsonProperty("usableSize") long usableSizeRef
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
         )
         {
             super(
-                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
                 storPoolApiRef, ZFS_THIN
             );
         }
@@ -374,22 +529,43 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, FILE);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                FILE
+            );
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public FileVlmPojo(
             @JsonProperty("vlmNr") int vlmNrRef,
             @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
-            @JsonProperty("usableSize") long usableSizeRef
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
         )
         {
             super(
-                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
                 storPoolApiRef, FILE
             );
         }
@@ -402,22 +578,43 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, FILE_THIN);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                FILE_THIN
+            );
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public FileThinVlmPojo(
             @JsonProperty("vlmNr") int vlmNrRef,
             @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
-            @JsonProperty("usableSize") long usableSizeRef
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
         )
         {
             super(
-                vlmNrRef, null, VlmProviderObject.UNINITIALIZED_SIZE, usableSizeRef, null,
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
                 storPoolApiRef, FILE_THIN
             );
         }
@@ -430,11 +627,23 @@ public class StorageRscPojo implements RscLayerDataApi
             String devicePathRef,
             long allocatedSizeRef,
             long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
             String diskStateRef,
             StorPoolApi storPoolApiRef
         )
         {
-            super(vlmNrRef, devicePathRef, allocatedSizeRef, usableSizeRef, diskStateRef, storPoolApiRef, EXOS);
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                EXOS
+            );
         }
     }
 }

@@ -548,34 +548,124 @@ public class ProtoLayerUtils
         switch (storPoolApi.getDeviceProviderKind())
         {
             case DISKLESS:
-                ret = new DisklessVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, null, storPoolApi);
+                ret = new DisklessVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    null,
+                    storPoolApi
+                );
                 break;
             case LVM:
-                ret = new LvmVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                ret = new LvmVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
                 break;
             case LVM_THIN:
-                ret = new LvmThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                ret = new LvmThinVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
                 break;
             case ZFS:
-                ret = new ZfsVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                ret = new ZfsVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
                 break;
             case ZFS_THIN:
-                ret = new ZfsThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                ret = new ZfsThinVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
                 break;
             case FILE:
-                ret = new FileVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                ret = new FileVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
                 break;
             case FILE_THIN:
-                ret = new FileThinVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                ret = new FileThinVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
                 break;
             case SPDK:
-                ret = new SpdkVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                ret = new SpdkVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
                 break;
             case REMOTE_SPDK:
-                ret = new RemoteSpdkVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                ret = new RemoteSpdkVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
                 break;
             case EXOS:
-                ret = new ExosVlmPojo(vlmNr, devicePath, allocatedSize, usableSize, diskState, storPoolApi);
+                ret = new ExosVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
                 break;
             case OPENFLEX_TARGET:
                 throw new ImplementationError(

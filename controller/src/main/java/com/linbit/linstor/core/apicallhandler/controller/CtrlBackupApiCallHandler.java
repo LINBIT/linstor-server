@@ -1211,17 +1211,20 @@ public class CtrlBackupApiCallHandler
                     }
                     metaInfo.exists = true;
                     metaInfo.metaFile = s3MetaFile;
-                    for (BackupInfoPojo backupInfoPojo : s3MetaFile.getBackups().values())
+                    for (List<BackupInfoPojo> backupInfoPojoList : s3MetaFile.getBackups().values())
                     {
-                        String childS3Key = backupInfoPojo.getName();
-                        S3ObjectInfo childS3Obj = ret.get(childS3Key);
-                        if (childS3Obj == null)
+                        for (BackupInfoPojo backupInfoPojo : backupInfoPojoList)
                         {
-                            childS3Obj = new S3ObjectInfo(childS3Key);
-                            ret.put(childS3Key, childS3Obj);
+                            String childS3Key = backupInfoPojo.getName();
+                            S3ObjectInfo childS3Obj = ret.get(childS3Key);
+                            if (childS3Obj == null)
+                            {
+                                childS3Obj = new S3ObjectInfo(childS3Key);
+                                ret.put(childS3Key, childS3Obj);
+                            }
+                            childS3Obj.referencedBy.add(metaInfo);
+                            metaInfo.references.add(childS3Obj);
                         }
-                        childS3Obj.referencedBy.add(metaInfo);
-                        metaInfo.references.add(childS3Obj);
                     }
                     String rscName = metaFileMatcher.group(1);
                     String snapName = metaFileMatcher.group(2);
@@ -1560,16 +1563,19 @@ public class CtrlBackupApiCallHandler
     )
         throws AccessDeniedException, ImplementationError, DatabaseException, InvalidValueException
     {
-        for (BackupInfoPojo backup : metadata.getBackups().values())
+        for (List<BackupInfoPojo> backupList : metadata.getBackups().values())
         {
-            if (!s3keys.contains(backup.getName()))
+            for (BackupInfoPojo backup : backupList)
             {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_NOT_FOUND_SNAPSHOT | ApiConsts.MASK_BACKUP,
-                        "Failed to find backup " + backup.getName()
-                    )
-                );
+                if (!s3keys.contains(backup.getName()))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_SNAPSHOT | ApiConsts.MASK_BACKUP,
+                            "Failed to find backup " + backup.getName()
+                        )
+                    );
+                }
             }
         }
         // 5. create layerPayload
@@ -2256,16 +2262,19 @@ public class CtrlBackupApiCallHandler
         Props snapProps = snap.getProps(peerAccCtx.get());
 
         LinkedList<String> backups = new LinkedList<>();
-        for (BackupInfoPojo backup : metadata.getBackups().values())
+        for (List<BackupInfoPojo> backupList : metadata.getBackups().values())
         {
-            String name = backup.getName();
-            Matcher m = BACKUP_VOLUME_PATTERN.matcher(name);
-            m.matches();
-            String shortName = m.group(1) + "_" + m.group(4);
-            backups.add(shortName);
-            if (shortTargetName != null && shortTargetName.equals(shortName))
+            for (BackupInfoPojo backup : backupList)
             {
-                break;
+                String name = backup.getName();
+                Matcher m = BACKUP_VOLUME_PATTERN.matcher(name);
+                m.matches();
+                String shortName = m.group(1) + "_" + m.group(4);
+                backups.add(shortName);
+                if (shortTargetName != null && shortTargetName.equals(shortName))
+                {
+                    break;
+                }
             }
         }
 
@@ -2529,51 +2538,54 @@ public class CtrlBackupApiCallHandler
                         getLocalMasterKey()
                     );
 
-                    Map<Integer, BackupInfoPojo> s3MetaVlmMap = s3MetaFile.getBackups();
+                    Map<Integer, List<BackupInfoPojo>> s3MetaVlmMap = s3MetaFile.getBackups();
                     Map<Integer, BackupVolumePojo> retVlmPojoMap = new TreeMap<>(); // vlmNr, vlmPojo
                     boolean restorable = true;
 
-                    for (Entry<Integer, BackupInfoPojo> entry : s3MetaVlmMap.entrySet())
+                    for (Entry<Integer, List<BackupInfoPojo>> entry : s3MetaVlmMap.entrySet())
                     {
                         Integer s3MetaVlmNr = entry.getKey();
-                        BackupInfoPojo s3BackVlmInfo = entry.getValue();
-                        if (!s3keys.contains(s3BackVlmInfo.getName()))
+                        List<BackupInfoPojo> s3BackVlmInfoList = entry.getValue();
+                        for (BackupInfoPojo s3BackVlmInfo : s3BackVlmInfoList)
                         {
-                            /*
-                             * The metafile is referring to a data-file that is not known in the given bucket
-                             */
-                            restorable = false;
-                        }
-                        else
-                        {
-
-                            Matcher s3BackupKeyMatcher = BACKUP_VOLUME_PATTERN.matcher(s3BackVlmInfo.getName());
-                            if (s3BackupKeyMatcher.matches())
+                            if (!s3keys.contains(s3BackVlmInfo.getName()))
                             {
-                                Integer s3VlmNrFromBackupName = Integer.parseInt(s3BackupKeyMatcher.group(3));
-                                if (s3MetaVlmNr == s3VlmNrFromBackupName)
-                                {
-                                    long vlmFinishedTime = s3BackVlmInfo.getFinishedTimestamp();
-                                    BackupVolumePojo retVlmPojo = new BackupVolumePojo(
-                                        s3MetaVlmNr,
-                                        S3Consts.DATE_FORMAT.format(new Date(vlmFinishedTime)),
-                                        vlmFinishedTime,
-                                        new BackupVlmS3Pojo(s3BackVlmInfo.getName())
-                                    );
-                                    retVlmPojoMap.put(s3MetaVlmNr, retVlmPojo);
-                                    linstorBackupsS3Keys.add(s3BackVlmInfo.getName());
-                                }
-                                else
-                                {
-                                    // meta-file vlmNr index corruption
-                                    restorable = false;
-                                }
+                                /*
+                                 * The metafile is referring to a data-file that is not known in the given bucket
+                                 */
+                                restorable = false;
                             }
                             else
                             {
-                                // meta-file corrupt
-                                // s3Key does not match backup name pattern
-                                restorable = false;
+
+                                Matcher s3BackupKeyMatcher = BACKUP_VOLUME_PATTERN.matcher(s3BackVlmInfo.getName());
+                                if (s3BackupKeyMatcher.matches())
+                                {
+                                    Integer s3VlmNrFromBackupName = Integer.parseInt(s3BackupKeyMatcher.group(3));
+                                    if (s3MetaVlmNr == s3VlmNrFromBackupName)
+                                    {
+                                        long vlmFinishedTime = s3BackVlmInfo.getFinishedTimestamp();
+                                        BackupVolumePojo retVlmPojo = new BackupVolumePojo(
+                                            s3MetaVlmNr,
+                                            S3Consts.DATE_FORMAT.format(new Date(vlmFinishedTime)),
+                                            vlmFinishedTime,
+                                            new BackupVlmS3Pojo(s3BackVlmInfo.getName())
+                                        );
+                                        retVlmPojoMap.put(s3MetaVlmNr, retVlmPojo);
+                                        linstorBackupsS3Keys.add(s3BackVlmInfo.getName());
+                                    }
+                                    else
+                                    {
+                                        // meta-file vlmNr index corruption
+                                        restorable = false;
+                                    }
+                                }
+                                else
+                                {
+                                    // meta-file corrupt
+                                    // s3Key does not match backup name pattern
+                                    restorable = false;
+                                }
                             }
                         }
                     }

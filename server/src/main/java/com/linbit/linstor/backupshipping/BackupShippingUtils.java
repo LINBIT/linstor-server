@@ -50,7 +50,7 @@ public class BackupShippingUtils
         byte[] encKey,
         byte[] hash,
         byte[] salt,
-        Map<Integer, BackupInfoPojo> backupsRef,
+        Map<Integer, List<BackupInfoPojo>> backupsRef,
         String basedOnMetaNameRef
     )
         throws AccessDeniedException, JsonProcessingException, ParseException
@@ -76,7 +76,7 @@ public class BackupShippingUtils
         byte[] encKey,
         byte[] hash,
         byte[] salt,
-        Map<Integer, BackupInfoPojo> backupsRef,
+        Map<Integer, List<BackupInfoPojo>> backupsRef,
         String basedOnMetaNameRef
     )
         throws AccessDeniedException, ParseException

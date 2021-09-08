@@ -112,6 +112,8 @@ public class ZfsData<RSC extends AbsResource<RSC>>
                 getDevicePath(),
                 getAllocatedSize(),
                 getUsableSize(),
+                getSnapshotAllocatedSize(),
+                getSnapshotUsableSize(),
                 new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
                 storPool.get().getApiData(null, null, accCtxRef, null, null)
             );
@@ -123,6 +125,8 @@ public class ZfsData<RSC extends AbsResource<RSC>>
                 getDevicePath(),
                 getAllocatedSize(),
                 getUsableSize(),
+                getSnapshotAllocatedSize(),
+                getSnapshotUsableSize(),
                 new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
                 storPool.get().getApiData(null, null, accCtxRef, null, null)
             );

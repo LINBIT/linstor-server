@@ -478,7 +478,7 @@ public abstract class AbsBackupShippingService implements SystemService
     protected String fillPojo(Snapshot snap, String basedOnMetaName)
         throws AccessDeniedException, IOException, ParseException
     {
-        Map<Integer, BackupInfoPojo> backupsRef = new TreeMap<>();
+        Map<Integer, List<BackupInfoPojo>> backupsRef = new TreeMap<>();
         for (SnapVlmDataInfo snapInfo : shippingInfoMap.get(snap).snapVlmDataInfoMap.values())
         {
             BackupInfoPojo backInfo = new BackupInfoPojo(
@@ -486,7 +486,13 @@ public abstract class AbsBackupShippingService implements SystemService
                 snapInfo.finishTimestamp,
                 snap.getNodeName().displayValue
             );
-            backupsRef.put(snapInfo.vlmNr, backInfo);
+            List<BackupInfoPojo> list = backupsRef.get(snapInfo.vlmNr);
+            if (list == null)
+            {
+                list = new ArrayList<>();
+                backupsRef.put(snapInfo.vlmNr, list);
+            }
+            list.add(backInfo);
         }
 
         return BackupShippingUtils.fillPojo(

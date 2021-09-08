@@ -84,6 +84,8 @@ public class DisklessData<RSC extends AbsResource<RSC>>
             getAllocatedSize(),
             getUsableSize(),
             null,
+            null,
+            null,
             storPool.get().getApiData(null, null, accCtxRef, null, null)
         );
     }

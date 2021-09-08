@@ -64,11 +64,19 @@ public interface VlmLayerDataApi
     @JsonIgnore
     String getDevicePath();
 
-    @JsonIgnore
     long getAllocatedSize();
 
-    @JsonIgnore
     long getUsableSize();
+
+    default Long getSnapshotAllocatedSize()
+    {
+        return null;
+    }
+
+    default Long getSnapshotUsableSize()
+    {
+        return null;
+    }
 
     @JsonIgnore
     String getDiskState();

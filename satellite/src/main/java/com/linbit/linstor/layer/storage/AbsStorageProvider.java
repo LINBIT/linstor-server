@@ -546,7 +546,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                             if (snapRscDat.getAbsResource().equals(snap) &&
                                 snapRscDat.getResourceNameSuffix().equals(rscData.getResourceNameSuffix()))
                             {
-                                createSnapshot(vlmData, snapVlmData);
+                                if (!snapshotExists(snapVlmData))
+                                {
+                                    createSnapshot(vlmData, snapVlmData);
+                                }
+                                copySizes(vlmData, snapVlmData);
                                 break;
                             }
                         }
@@ -618,6 +622,19 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
             addCreatedMsg(vlmData, apiCallRc);
         }
+    }
+
+    /**
+     * Copies the volume's allocated and usable size to the snapVlm data.
+     * CAUTION: that data is NOT stored. That means that data is gone / lost forever if the satellite is restarted.
+     *
+     * Currently this is only used by backup shipping which is aborted if the connection to the controller is lost,
+     * so losing that data does not matter in this case
+     */
+    private void copySizes(LAYER_DATA vlmDataRef, LAYER_SNAP_DATA snapVlmDataRef) throws DatabaseException
+    {
+        snapVlmDataRef.setSnapshotAllocatedSize(vlmDataRef.getAllocatedSize());
+        snapVlmDataRef.setSnapshotUsableSize(vlmDataRef.getUsableSize());
     }
 
     public void postCreate(LAYER_DATA vlmData, boolean wipeData)
@@ -840,6 +857,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     else
                     {
                         createSnapshot(vlmData, snapVlm);
+                        copySizes(vlmData, snapVlm);
 
                         addSnapCreatedMsg(snapVlm, apiCallRc);
 
