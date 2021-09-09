@@ -18,6 +18,7 @@ import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
@@ -46,6 +47,7 @@ import java.util.Set;
 @Singleton
 public class ResourceStateEventHandler implements EventHandler
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final SatelliteStateHelper satelliteStateHelper;
@@ -64,7 +66,8 @@ public class ResourceStateEventHandler implements EventHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         LockGuardFactory lockGuardFactoryRef,
         AutoDiskfulTask autoDiskfulTaskRef,
-        EventHandlerBridge eventHandlerBridgeRef
+        EventHandlerBridge eventHandlerBridgeRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -75,6 +78,7 @@ public class ResourceStateEventHandler implements EventHandler
         lockGuardFactory = lockGuardFactoryRef;
         autoDiskfulTask = autoDiskfulTaskRef;
         eventHandlerBridge = eventHandlerBridgeRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -200,19 +204,26 @@ public class ResourceStateEventHandler implements EventHandler
         // EventProcessor has already taken write lock on NodesMap
         try (LockGuard ignored = lockGuardFactory.build(LockType.WRITE, LockObj.RSC_DFN_MAP))
         {
-            Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, resourceName, true);
+            Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, resourceName, false);
 
-            Set<AbsRscLayerObject<Resource>> drbdDataSet = LayerRscUtils.getRscDataByProvider(
-                rsc.getLayerData(apiCtx), DeviceLayerKind.DRBD);
-            for (AbsRscLayerObject<Resource> rlo : drbdDataSet)
+            if (rsc != null)
             {
-                DrbdRscData<Resource> drbdRscData = ((DrbdRscData<Resource>) rlo);
-                drbdRscData.setPromotionScore(promotionScore);
-                if (!Objects.equals(drbdRscData.mayPromote(), mayPromote))
+                Set<AbsRscLayerObject<Resource>> drbdDataSet = LayerRscUtils.getRscDataByProvider(
+                    rsc.getLayerData(apiCtx), DeviceLayerKind.DRBD);
+                for (AbsRscLayerObject<Resource> rlo : drbdDataSet)
                 {
-                    eventHandlerBridge.triggerMayPromote(rsc.getApiData(apiCtx, null, null), mayPromote);
+                    DrbdRscData<Resource> drbdRscData = ((DrbdRscData<Resource>) rlo);
+                    drbdRscData.setPromotionScore(promotionScore);
+                    if (!Objects.equals(drbdRscData.mayPromote(), mayPromote))
+                    {
+                        eventHandlerBridge.triggerMayPromote(rsc.getApiData(apiCtx, null, null), mayPromote);
+                    }
+                    drbdRscData.setMayPromote(mayPromote);
                 }
-                drbdRscData.setMayPromote(mayPromote);
+            }
+            else
+            {
+                errorReporter.logWarning("Event update for unknown resource %s on node %s", resourceName, nodeName);
             }
         }
         catch (AccessDeniedException exc)
