@@ -597,6 +597,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
             fullSyncFlag.set(true);
             svcCondFlag.set(true);
+            collectUpdateNofiticationForceWakeFlag.set(true);
             sched.notify();
             try
             {
