@@ -54,4 +54,13 @@ public interface SpdkCommands<T>
 
     Iterator<JsonNode> getJsonElements(T data) throws StorageException, AccessDeniedException;
 
+    T createSnapshot(String fullQualifiedVlmId, String snapName) throws StorageException, AccessDeniedException;
+
+    T restoreSnapshot(String fullQualifiedSnapId, String newVlmId)
+        throws StorageException, AccessDeniedException;
+
+    T decoupleParent(String fullQualifiedIdentifierRef) throws StorageException, AccessDeniedException;
+
+    T clone(String fullQualifiedSourceSnapNameRef, String lvTargetIdRef)
+        throws StorageException, AccessDeniedException;
 }

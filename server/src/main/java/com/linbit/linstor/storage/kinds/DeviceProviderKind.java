@@ -108,8 +108,8 @@ public enum DeviceProviderKind
         ExtTools.LOSETUP
     ),
     SPDK(
-        false,
-        false,
+        true,
+        true,
         false,
         true,
         true,

@@ -130,6 +130,50 @@ public class SpdkRemoteCommands implements SpdkCommands<JsonNode>
     }
 
     @Override
+    public JsonNode createSnapshot(
+        String fullQualifiedVlmIdRef,
+        String snapName
+    )
+        throws StorageException, AccessDeniedException
+    {
+        HashMap<String, Object> params = map("lvol_name", fullQualifiedVlmIdRef);
+        params.put("snapshot_name", snapName);
+
+        return request("bdev_lvol_snapshot", params).getData();
+    }
+
+    @Override
+    public JsonNode restoreSnapshot(String fullQualifiedSnapName, String newVlmId)
+        throws StorageException, AccessDeniedException
+    {
+        HashMap<String, Object> params = map("snapshot_name", fullQualifiedSnapName);
+        params.put("clone_name", newVlmId);
+
+        return request("bdev_lvol_clone", params).getData();
+    }
+
+    @Override
+    public JsonNode decoupleParent(String fullQualifiedIdentifierRef) throws StorageException, AccessDeniedException
+    {
+        return request(
+            "bdev_lvol_decouple_parent",
+            map("name", fullQualifiedIdentifierRef)
+        ).getData();
+    }
+
+    @Override
+    public JsonNode clone(String fullQualifiedSourceSnapNameRef, String lvTargetIdRef)
+        throws StorageException, AccessDeniedException
+    {
+        HashMap<String, Object> params = map("snapshot_name", fullQualifiedSourceSnapNameRef);
+        params.put("clone_name", lvTargetIdRef);
+        return request(
+            "bdev_lvol_clone",
+            params
+        ).getData();
+    }
+
+    @Override
     public JsonNode delete(String volumeGroup, String vlmId)
         throws StorageException, AccessDeniedException
     {

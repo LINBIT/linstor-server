@@ -25,6 +25,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
+import com.linbit.linstor.layer.nvme.NvmeUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkConfigReader;
@@ -62,7 +63,6 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     public static final String FORMAT_RSC_TO_SPDK_ID = "%s%s_%05d";
     public static final String FORMAT_SNAP_TO_SPDK_ID = FORMAT_RSC_TO_SPDK_ID + "_%s";
-    private static final String FORMAT_SPDK_ID_WIPE_IN_PROGRESS = "%s-linstor_wiping_in_progress";
     private static final String SPDK_FORMAT_DEV_PATH = SPDK_PATH_PREFIX + "%s/%s";
 
     private static final String DFLT_LVCREATE_TYPE = "linear";
@@ -272,24 +272,6 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     protected void deleteLvImpl(SpdkData<Resource> vlmData, String oldSpdkId)
         throws StorageException, DatabaseException, AccessDeniedException
     {
-        // just make sure to not colide with any other ongoing wipe-lv-name
-        String newSpdkId = String.format(
-            FORMAT_SPDK_ID_WIPE_IN_PROGRESS,
-            asLvIdentifier(vlmData)
-        );
-
-        String devicePath = vlmData.getSpdkPath();
-        // devicePath is the "current" devicePath. as we will rename it right now
-        // we will have to adjust the devicePath
-        int lastIndexOf = devicePath.lastIndexOf(oldSpdkId);
-        devicePath = devicePath.substring(0, lastIndexOf) + newSpdkId;
-        String volumeGroup = vlmData.getVolumeGroup();
-
-        spdkCommands.rename(
-            volumeGroup,
-            oldSpdkId,
-            newSpdkId
-        );
 
         vlmData.setExists(false);
 
@@ -297,8 +279,8 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
         try
         {
             spdkCommands.delete(
-                volumeGroup,
-                newSpdkId
+                vlmData.getVolumeGroup(),
+                oldSpdkId
             );
         }
         catch (StorageException exc)
@@ -490,6 +472,81 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
     {
         // TODO: we need to implement a check for pmem here. something like LvmProvider.update does
+    }
+
+    /*
+     * Snapshots
+     */
+    @Override
+    protected boolean snapshotExists(SpdkData<Snapshot> snapVlmRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        String identifier = getFullQualifiedIdentifier(snapVlmRef);
+
+        return infoListCache.get(identifier) != null;
+    }
+
+    @Override
+    protected void createSnapshot(SpdkData<Resource> vlmData, SpdkData<Snapshot> snapVlm)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        spdkCommands.createSnapshot(
+            getFullQualifiedIdentifier(vlmData),
+            asSnapLvIdentifier(snapVlm)
+        );
+    }
+
+    @Override
+    protected void restoreSnapshot(String sourceLvIdRef, String sourceSnapNameRef, SpdkData<Resource> vlmDataRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        // DO NOT use asSnapLvIdentifier here as sourceLvIdRef already contains the rscName + rscNameSuffix + vlmNr.
+        // just appending the snapname should be sufficient
+        String fullQualifiedSnapName = vlmDataRef.getVolumeGroup() + "/" + sourceLvIdRef + "_" + sourceSnapNameRef;
+
+        spdkCommands.restoreSnapshot(
+            fullQualifiedSnapName,
+            asLvIdentifier(vlmDataRef)
+        );
+        spdkCommands.decoupleParent(getFullQualifiedIdentifier(vlmDataRef));
+    }
+
+    @Override
+    protected void rollbackImpl(SpdkData<Resource> vlmDataRef, String rollbackTargetSnapshotNameRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        String vlmGrp = vlmDataRef.getVolumeGroup();
+
+        String fullQualSnapName = vlmGrp + "/" + asSnapLvIdentifierRaw(
+            vlmDataRef.getRscLayerObject().getResourceName().displayValue,
+            vlmDataRef.getRscLayerObject().getResourceNameSuffix(),
+            rollbackTargetSnapshotNameRef,
+            vlmDataRef.getVlmNr().value
+        );
+        String vlmLvId = asLvIdentifier(vlmDataRef);
+        String rollbackVlmLvId = vlmLvId + "_rollback";
+        String fullQualVlmName = vlmDataRef.getVolumeGroup() + "/" + vlmLvId;
+
+        spdkCommands.clone(fullQualSnapName, rollbackVlmLvId);
+
+        final String nqn = NvmeUtils.STANDARD_NVME_SUBSYSTEM_PREFIX +
+            vlmDataRef.getRscLayerObject().getSuffixedResourceName();
+        spdkCommands.nvmfSubsystemRemoveNamespace(nqn, 1);
+
+        spdkCommands.delete(vlmGrp, vlmLvId);
+        spdkCommands.rename(vlmGrp, rollbackVlmLvId, vlmLvId);
+        spdkCommands.nvmfSubsystemAddNs(nqn, fullQualVlmName);
+
+        spdkCommands.decoupleParent(fullQualVlmName);
+    }
+
+    @Override
+    protected void deleteSnapshot(SpdkData<Snapshot> snapVlmRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        // no difference between snapshot and volume on SPDK level
+        spdkCommands.delete(snapVlmRef.getVolumeGroup(), asSnapLvIdentifier(snapVlmRef));
+        snapVlmRef.setExists(false);
     }
 
     @Override

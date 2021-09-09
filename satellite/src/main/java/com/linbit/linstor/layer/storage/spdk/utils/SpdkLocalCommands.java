@@ -121,19 +121,19 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
     public OutputData createFat(
         String volumeGroup,
         String vlmId,
-        long size,
+        long sizeInKib,
         String... additionalParameters
     )
         throws StorageException
     {
-        return createFat(extCmdFactory.create(), volumeGroup, vlmId, size, additionalParameters);
+        return createFat(extCmdFactory.create(), volumeGroup, vlmId, sizeInKib, additionalParameters);
     }
 
     public static OutputData createFat(
         ExtCmd extCmd,
         String volumeGroup,
         String vlmId,
-        long size,
+        long sizeInKib,
         String... additionalParameters
     )
         throws StorageException
@@ -146,13 +146,13 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
                 "bdev_lvol_create", // construct_lvol_bdev is deprecated
                 vlmId,
                 String.valueOf(
-                    SizeConv.convert(size, SizeUnit.UNIT_KiB, SizeUnit.UNIT_MiB)
+                    SizeConv.convert(sizeInKib, SizeUnit.UNIT_KiB, SizeUnit.UNIT_MiB)
                 ),
                 "--lvs-name", volumeGroup
             },
             "Failed to create lvol bdev",
             "Failed to create new lvol bdev'" + vlmId + "' in lovl store '" + volumeGroup +
-                "' with size " + size + "mb"
+                "' with size " + sizeInKib + "mb"
         );
     }
 
@@ -201,6 +201,123 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
     }
 
     @Override
+    public OutputData createSnapshot(
+        String fullQualifiedVlmIdRef,
+        String snapName
+    )
+        throws StorageException
+    {
+        return createSnapshot(extCmdFactory.create(), fullQualifiedVlmIdRef, snapName);
+    }
+
+    public static OutputData createSnapshot(
+        ExtCmd extCmd,
+        String fullQualifiedVlmId,
+        String snapName
+    )
+        throws StorageException
+    {
+        String errMsg = "Failed to create snapshot '" + snapName + "' of vol '" + fullQualifiedVlmId + "'";
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_lvol_snapshot",
+                fullQualifiedVlmId,
+                snapName
+            },
+            errMsg,
+            errMsg
+        );
+    }
+
+    @Override
+    public OutputData restoreSnapshot(String fullQualifiedSnapName, String newVlmId)
+        throws StorageException, AccessDeniedException
+    {
+        return restoreSnapshot(extCmdFactory.create(), fullQualifiedSnapName, newVlmId);
+    }
+
+    public static OutputData restoreSnapshot(
+        ExtCmd extCmd,
+        String fullQualifiedSnapId,
+        String newVlmId
+    )
+        throws StorageException
+    {
+        String errMsg = "Failed to restore snapshot '" + fullQualifiedSnapId + "' into new volume '" + newVlmId + "'";
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_lvol_clone",
+                fullQualifiedSnapId,
+                newVlmId
+            },
+            errMsg,
+            errMsg
+        );
+    }
+
+    @Override
+    public OutputData decoupleParent(String fullQualifiedIdentifierRef) throws StorageException, AccessDeniedException
+    {
+        return decoupleParent(extCmdFactory.create(), fullQualifiedIdentifierRef);
+    }
+
+    public static OutputData decoupleParent(
+        ExtCmd extCmd,
+        String fullQualifiedVlmId
+    )
+        throws StorageException
+    {
+        String errMsg = "Failed to 'decouple_parent' for volume '" + fullQualifiedVlmId + "'";
+        return genericExecutor(
+            extCmd,
+            new String[]
+            {
+                SPDK_RPC_SCRIPT,
+                "bdev_lvol_decouple_parent",
+                fullQualifiedVlmId
+            },
+            errMsg,
+            errMsg
+        );
+    }
+
+    @Override
+    public OutputData clone(String fullQualSnapNameRef, String lvTargetIdRef)
+        throws StorageException, AccessDeniedException
+    {
+        return clone(extCmdFactory.create(), fullQualSnapNameRef, lvTargetIdRef);
+    }
+
+    public static OutputData clone(
+        ExtCmd extCmd,
+        String fullQualifiedSourceSnapId,
+        String lvTargetIdRef
+    )
+        throws StorageException
+    {
+        String errMsg = "Failed to 'bdev_lvol_clone' from source snapshot '" + fullQualifiedSourceSnapId +
+            "' to new volume '" + lvTargetIdRef + "'";
+        return genericExecutor(
+            extCmd,
+            new String[]
+                {
+                    SPDK_RPC_SCRIPT,
+                    "bdev_lvol_clone",
+                    fullQualifiedSourceSnapId,
+                lvTargetIdRef
+                },
+                errMsg,
+                errMsg
+            );
+    }
+
+    @Override
     public OutputData delete(String volumeGroup, String vlmId)
         throws StorageException
     {
@@ -225,13 +342,13 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
     }
 
     @Override
-    public OutputData resize(String volumeGroup, String vlmId, long size)
+    public OutputData resize(String volumeGroup, String vlmId, long sizeInKib)
         throws StorageException
     {
-        return resize(extCmdFactory.create(), volumeGroup, vlmId, size);
+        return resize(extCmdFactory.create(), volumeGroup, vlmId, sizeInKib);
     }
 
-    public static OutputData resize(ExtCmd extCmd, String volumeGroup, String vlmId, long size)
+    public static OutputData resize(ExtCmd extCmd, String volumeGroup, String vlmId, long sizeInKib)
         throws StorageException
     {
         return genericExecutor(
@@ -242,11 +359,11 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
                 "bdev_lvol_resize", // resize_lvol_bdev is deprecated
                 volumeGroup + File.separator + vlmId,
                 String.valueOf(
-                    SizeConv.convert(size, SizeUnit.UNIT_KiB, SizeUnit.UNIT_MiB)
+                    SizeConv.convert(sizeInKib, SizeUnit.UNIT_KiB, SizeUnit.UNIT_MiB)
                 ),
             },
             "Failed to resize lvol bdev",
-            "Failed to resize lvol bdev '" + vlmId + "' in lvol store '" + volumeGroup + "' to size " + size
+            "Failed to resize lvol bdev '" + vlmId + "' in lvol store '" + volumeGroup + "' to size " + sizeInKib
         );
     }
 
