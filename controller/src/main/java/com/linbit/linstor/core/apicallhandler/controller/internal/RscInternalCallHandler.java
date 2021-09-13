@@ -23,6 +23,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -38,6 +39,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -318,11 +320,19 @@ public class RscInternalCallHandler
                 }
             }
 
-            if (rsc.getStateFlags().isSet(apiCtx, Resource.Flags.BACKUP_RESTORE))
+            StateFlags<Flags> rscFlags = rsc.getStateFlags();
+            if (rscFlags.isSet(apiCtx, Resource.Flags.BACKUP_RESTORE))
             {
-                rsc.getStateFlags().disableFlags(apiCtx, Resource.Flags.BACKUP_RESTORE);
+                rscFlags.disableFlags(apiCtx, Resource.Flags.BACKUP_RESTORE);
                 rsc.getProps(apiCtx)
                     .removeProp(InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                updateSatellite = true;
+            }
+
+            if (rscFlags.isSet(apiCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT))
+            {
+                rscFlags.disableFlags(apiCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT);
+                updateSatellite = true;
             }
 
             retryResourceTask.remove(rsc);

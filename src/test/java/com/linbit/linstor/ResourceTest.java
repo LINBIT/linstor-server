@@ -2,7 +2,6 @@ package com.linbit.linstor;
 
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Resource.Flags;
 
 import java.util.List;
 
@@ -32,9 +31,10 @@ public class ResourceTest
             Resource.Flags.INACTIVE.flagValue |
             Resource.Flags.INACTIVE_PERMANENTLY.flagValue |
             Resource.Flags.REACTIVATE.flagValue |
-            Resource.Flags.BACKUP_RESTORE.flagValue|
-            Resource.Flags.EVICTED.flagValue|
-            Resource.Flags.INACTIVE_BEFORE_EVICTION.flagValue;
+            Resource.Flags.BACKUP_RESTORE.flagValue |
+            Resource.Flags.EVICTED.flagValue |
+            Resource.Flags.INACTIVE_BEFORE_EVICTION.flagValue |
+            Resource.Flags.RESTORE_FROM_SNAPSHOT.flagValue;
         List<String> strList = Resource.Flags.toStringList(mask);
         assertEquals(Resource.Flags.values().length, strList.size());
 
@@ -55,7 +55,8 @@ public class ResourceTest
                 "INACTIVE_PERMANENTLY", // internal
                 "BACKUP_RESTORE", // internal,
                 ApiConsts.FLAG_EVICTED,
-                "INACTIVE_BEFORE_EVICTION" // internal
+                "INACTIVE_BEFORE_EVICTION", // internal
+                "RESTORE_FROM_SNAPSHOT", // internal
             },
             strList.toArray()
         );

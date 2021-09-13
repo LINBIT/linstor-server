@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer.storage;
 
+import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.layer.drbd.utils.MdSuperblockBuffer;
 import com.linbit.linstor.layer.storage.utils.Commands;
@@ -77,5 +78,25 @@ public class WipeHandler
         {
             wipeFinishedNotifier.accept(devicePath);
         }
+    }
+
+    public OutputData wipeFs(String device) throws StorageException
+    {
+        return wipeFs(extCmdFactory, device);
+    }
+
+    public static OutputData wipeFs(ExtCmdFactory extCmdFactoryRef, String device) throws StorageException
+    {
+        return Commands.genericExecutor(
+            extCmdFactoryRef.create(),
+            new String[]
+            {
+                "wipefs",
+                "-a",
+                device
+            },
+            "Failed to clear BCache metadata",
+            "Failed to clear BCache metadata"
+        );
     }
 }

@@ -16,7 +16,6 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
-import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -33,7 +32,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
-import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -332,7 +330,7 @@ class RscBCacheLayerHelper
                     "You have to set the property " +
                     ApiConsts.NAMESPC_BCACHE + "/" + ApiConsts.KEY_BCACHE_POOL_NAME +
                     " for " + CtrlVlmApiCallHandler.getVlmDescriptionInline(vlm) +
-                    " in order to use the writecache layer."
+                        " in order to use the bcache layer."
                 )
             );
         }
@@ -409,7 +407,7 @@ class RscBCacheLayerHelper
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException
     {
-        // WritecacheLayer does not have resource-definition specific data
+        // BCacheLayer does not have resource-definition specific data
         return null;
     }
 
@@ -450,7 +448,7 @@ class RscBCacheLayerHelper
     {
         return layerDataFactory.createBCacheVlmData(
             vlmRef,
-            ((WritecacheVlmData<RSC>) vlmProviderObjectRef).getCacheStorPool(),
+            ((BCacheVlmData<RSC>) vlmProviderObjectRef).getCacheStorPool(),
             rscDataRef
         );
     }

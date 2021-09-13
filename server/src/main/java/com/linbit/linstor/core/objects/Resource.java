@@ -504,6 +504,7 @@ public class Resource extends AbsResource<Resource>
         BACKUP_RESTORE(1L << 13),
         EVICTED(INACTIVE.flagValue | 1L << 14),
         INACTIVE_BEFORE_EVICTION(1L << 15),
+        RESTORE_FROM_SNAPSHOT(1L << 16),
         ;
 
         public final long flagValue;

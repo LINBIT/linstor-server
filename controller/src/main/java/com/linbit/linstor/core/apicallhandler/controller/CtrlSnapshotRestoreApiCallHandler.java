@@ -21,6 +21,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -39,6 +40,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -440,10 +442,12 @@ public class CtrlSnapshotRestoreApiCallHandler
             ctrlPropsHelper.getProps(snapshot),
             ctrlPropsHelper.getProps(rsc)
         );
+        StateFlags<Flags> rscFlags = rsc.getStateFlags();
         if (fromBackup)
         {
-            rsc.getStateFlags().enableFlags(peerAccCtx.get(), Resource.Flags.BACKUP_RESTORE);
+            rscFlags.enableFlags(peerAccCtx.get(), Resource.Flags.BACKUP_RESTORE);
         }
+        rscFlags.enableFlags(peerAccCtx.get(), Resource.Flags.RESTORE_FROM_SNAPSHOT);
 
         Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(toRscDfn);
         while (toVlmDfnIter.hasNext())

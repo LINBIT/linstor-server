@@ -227,6 +227,7 @@ public class BCacheLayer implements DeviceLayer
 
         boolean deleteFlagSet = rscFlags.isSomeSet(storDriverAccCtx, Resource.Flags.DELETE);
         boolean inactiveFlagSet = rscFlags.isSomeSet(storDriverAccCtx, Resource.Flags.INACTIVE);
+        boolean forceCreateMetaData = rscFlags.isSet(storDriverAccCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT);
 
         if (deleteFlagSet || inactiveFlagSet)
         {
@@ -332,9 +333,14 @@ public class BCacheLayer implements DeviceLayer
                     UUID bcacheUuid;
                     String identifier;
 
+
                     UUID backingUuid = BCacheUtils.getCSetUuidFromSuperBlock(extCmdFactory, backingDev);
-                    if (backingUuid == null)
+                    if (backingUuid == null || forceCreateMetaData)
                     {
+                        if (forceCreateMetaData)
+                        {
+                            WipeHandler.wipeFs(extCmdFactory, backingDev);
+                        }
                         backingUuid = BCacheUtils.makeBCache(extCmdFactory, backingDev, null, options);
                         BCacheUtils.register(errorReporter, backingDev);
                         identifier = waitUntilBackingDeviceIsRegistered(backingDev);
@@ -355,8 +361,12 @@ public class BCacheLayer implements DeviceLayer
                     }
 
                     UUID cacheUuid = BCacheUtils.getCSetUuidFromSuperBlock(extCmdFactory, cacheDev);
-                    if (cacheUuid == null)
+                    if (cacheUuid == null || forceCreateMetaData)
                     {
+                        if (forceCreateMetaData)
+                        {
+                            WipeHandler.wipeFs(extCmdFactory, cacheDev);
+                        }
                         cacheUuid = BCacheUtils.makeBCache(extCmdFactory, null, cacheDev, options);
                     }
                     if (!isCacheDeviceRegistered(cacheUuid))
@@ -399,8 +409,22 @@ public class BCacheLayer implements DeviceLayer
                     vlmData.setDevicePath(buildDevicePath(vlmData.getIdentifier()));
                     errorReporter.logDebug("BCache: device (%s) created", vlmData.getDevicePath());
                 }
+
+                if (forceCreateMetaData)
+                {
+                    // just in case something goes wrong later and we need to re-create the bcache metadata once more
+                    vlmData.setDevicePath(null);
+                }
             }
-            ret = LayerProcessResult.SUCCESS;
+            if (forceCreateMetaData)
+            {
+                // just in case something goes wrong later and we need to re-create the bcache metadata once more
+                ret = LayerProcessResult.NO_DEVICES_PROVIDED;
+            }
+            else
+            {
+                ret = LayerProcessResult.SUCCESS;
+            }
         }
         else
         {
