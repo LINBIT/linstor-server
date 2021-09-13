@@ -1,40 +1,68 @@
 package com.linbit.linstor.api.pojo.backups;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BackupInfoPojo
 {
-    private final String name;
-    private final long finishedTimestamp;
-    private final String node;
+    private final String rscName;
+    private final String fullBackupName;
+    private final String latestBackupName;
+    private final int backupCount;
+    private final long dlSizeKib;
+    private final long allocSizeKib;
+    private final List<BackupInfoStorPoolPojo> storpools;
 
-    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public BackupInfoPojo(
-        @JsonProperty("name") String nameRef,
-        @JsonProperty("finishedTimestamp") long finishedTimestampRef,
-        @JsonProperty("node") String nodeRef
+        String rscNameRef,
+        String fullBackupNameRef,
+        String latestBackupNameRef,
+        int backupCountRef,
+        long dlSizeKibRef,
+        long allocSizeKibRef,
+        List<BackupInfoStorPoolPojo> storpoolsRef
     )
     {
-        name = nameRef;
-        finishedTimestamp = finishedTimestampRef;
-        node = nodeRef;
+        rscName = rscNameRef;
+        fullBackupName = fullBackupNameRef;
+        latestBackupName = latestBackupNameRef;
+        backupCount = backupCountRef;
+        dlSizeKib = dlSizeKibRef;
+        allocSizeKib = allocSizeKibRef;
+        storpools = storpoolsRef;
     }
 
-    public String getName()
+    public String getRscName()
     {
-        return name;
+        return rscName;
     }
 
-    public long getFinishedTimestamp()
+    public String getFullBackupName()
     {
-        return finishedTimestamp;
+        return fullBackupName;
     }
 
-    public String getNode()
+    public String getLatestBackupName()
     {
-        return node;
+        return latestBackupName;
+    }
+
+    public int getBackupCount()
+    {
+        return backupCount;
+    }
+
+    public long getDlSizeKib()
+    {
+        return dlSizeKib;
+    }
+
+    public long getAllocSizeKib()
+    {
+        return allocSizeKib;
+    }
+
+    public List<BackupInfoStorPoolPojo> getStorpools()
+    {
+        return storpools;
     }
 }

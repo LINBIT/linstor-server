@@ -4,7 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
-import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
+import com.linbit.linstor.api.pojo.backups.BackupMetaInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.RscDfnMetaPojo;
@@ -50,7 +50,7 @@ public class BackupShippingUtils
         byte[] encKey,
         byte[] hash,
         byte[] salt,
-        Map<Integer, List<BackupInfoPojo>> backupsRef,
+        Map<Integer, List<BackupMetaInfoPojo>> backupsRef,
         String basedOnMetaNameRef
     )
         throws AccessDeniedException, JsonProcessingException, ParseException
@@ -76,7 +76,7 @@ public class BackupShippingUtils
         byte[] encKey,
         byte[] hash,
         byte[] salt,
-        Map<Integer, List<BackupInfoPojo>> backupsRef,
+        Map<Integer, List<BackupMetaInfoPojo>> backupsRef,
         String basedOnMetaNameRef
     )
         throws AccessDeniedException, ParseException

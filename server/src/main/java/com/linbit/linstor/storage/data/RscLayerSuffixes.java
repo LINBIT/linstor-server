@@ -1,5 +1,8 @@
 package com.linbit.linstor.storage.data;
 
+import com.linbit.ImplementationError;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -47,5 +50,31 @@ public final class RscLayerSuffixes
     public static boolean shouldSuffixBeShipped(String rscNameSuffixRef)
     {
         return SUFFIXES_TO_SHIP.contains(rscNameSuffixRef);
+    }
+
+    public static DeviceLayerKind getLayerKindFromLastSuffix(String rscNameSuffixRef)
+    {
+        int lastDot = rscNameSuffixRef.lastIndexOf(".");
+        return getLayerKindBySuffix(lastDot <= 0 ? rscNameSuffixRef : rscNameSuffixRef.substring(lastDot));
+    }
+
+    public static DeviceLayerKind getLayerKindBySuffix(String rscNameSuffixRef)
+    {
+        switch (rscNameSuffixRef)
+        {
+            case SUFFIX_DATA:
+                return DeviceLayerKind.STORAGE;
+            case SUFFIX_DRBD_META:
+                return DeviceLayerKind.DRBD;
+            case SUFFIX_WRITECACHE_CACHE:
+                return DeviceLayerKind.WRITECACHE;
+            case SUFFIX_BCACHE_CACHE:
+                return DeviceLayerKind.BCACHE;
+            case SUFFIX_CACHE_CACHE: // fall-through
+            case SUFFIX_CACHE_META:
+                return DeviceLayerKind.CACHE;
+            default:
+                throw new ImplementationError("Unknown RscLayerSuffix given: " + rscNameSuffixRef);
+        }
     }
 }

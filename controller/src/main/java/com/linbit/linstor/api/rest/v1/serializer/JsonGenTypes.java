@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.10.1";
+    public static final String REST_API_VERSION = "1.10.2";
 
     /**
      * Common api reply structure
@@ -1273,6 +1273,47 @@ public class JsonGenTypes
         public String dst_net_if_name;
         public String dst_stor_pool;
         public Map<String, String> stor_pool_rename = Collections.emptyMap();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupInfo
+    {
+        public String rsc;
+        public String full;
+        public String latest;
+        public Integer count;
+        public Long dl_size_kib;
+        public Long alloc_size_kib;
+        public List<BackupInfoStorPool> storpools = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupInfoRequest
+    {
+        public String src_rsc_name;
+        public String last_backup;
+        public Map<String, String> stor_pool_map = Collections.emptyMap();
+        public String node_name;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupInfoStorPool
+    {
+        public String name;
+        public String provider_kind;
+        public String target_name;
+        public Long remaining_space_kib;
+        public List<BackupInfoVolume> vlms = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupInfoVolume
+    {
+        public String name;
+        public String layer_type;
+        public Long dl_size_kib;
+        public Long alloc_size_kib;
+        public Long usable_size_kib;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

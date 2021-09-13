@@ -18,7 +18,10 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
+import com.linbit.linstor.api.pojo.backups.BackupInfoStorPoolPojo;
+import com.linbit.linstor.api.pojo.backups.BackupInfoVlmPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
+import com.linbit.linstor.api.pojo.backups.BackupMetaInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupS3Pojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVlmS3Pojo;
@@ -43,6 +46,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apis.BackupApi;
+import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -137,8 +141,6 @@ public class CtrlBackupApiCallHandler
 {
     private static final Pattern META_FILE_PATTERN = Pattern
         .compile("^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})(:?.*)\\.meta$");
-    private static final Pattern SNAP_DFN_TIME_PATTERN = Pattern
-        .compile("^(?:back_(?:inc_)?)([0-9]{8}_[0-9]{6})");
     private static final Pattern BACKUP_VOLUME_PATTERN = Pattern
         .compile("^([a-zA-Z0-9_-]{2,48})(\\..+)?_([0-9]{5})_(back_[0-9]{8}_[0-9]{6})(:?.*)$");
 
@@ -1211,9 +1213,9 @@ public class CtrlBackupApiCallHandler
                     }
                     metaInfo.exists = true;
                     metaInfo.metaFile = s3MetaFile;
-                    for (List<BackupInfoPojo> backupInfoPojoList : s3MetaFile.getBackups().values())
+                    for (List<BackupMetaInfoPojo> backupInfoPojoList : s3MetaFile.getBackups().values())
                     {
-                        for (BackupInfoPojo backupInfoPojo : backupInfoPojoList)
+                        for (BackupMetaInfoPojo backupInfoPojo : backupInfoPojoList)
                         {
                             String childS3Key = backupInfoPojo.getName();
                             S3ObjectInfo childS3Obj = ret.get(childS3Key);
@@ -1391,54 +1393,41 @@ public class CtrlBackupApiCallHandler
             );
         }
         // 2. find meta-file
-        String metaName = null;
-        Date latestBackTs = null;
-        for (String s3key : s3keys)
+        String metaName = "";
+        Date latestBackTs;
+        try
         {
-            Matcher m = META_FILE_PATTERN.matcher(s3key);
+            metaName = getLatestMetaFile(s3keys, targetTime);
+            if (metaName == null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
+                        "Could not find backups with the given resource name '" + srcRscName + "' in remote '" +
+                            remoteName + "'"
+                    )
+                );
+            }
+            Matcher m = META_FILE_PATTERN.matcher(metaName);
             if (m.matches())
             {
-                try
-                {
-                    // remove "back_" prefix
-                    String ts = m.group(2).substring(S3Consts.SNAP_PREFIX_LEN);
-                    Date curTs = S3Consts.DATE_FORMAT.parse(ts);
-                    if (targetTime != null)
-                    {
-                        if (
-                            (latestBackTs == null || latestBackTs.before(curTs)) &&
-                                (targetTime.after(curTs) || targetTime.equals(curTs))
-                        )
-                        {
-                            metaName = m.group();
-                            latestBackTs = curTs;
-                        }
-                    }
-                    else
-                    {
-                        if (latestBackTs == null || latestBackTs.before(curTs))
-                        {
-                            metaName = m.group();
-                            latestBackTs = curTs;
-                        }
-                    }
-                }
-                catch (ParseException exc)
-                {
-                    errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + s3key);
-                }
+                latestBackTs = S3Consts.DATE_FORMAT.parse(m.group(2).substring(S3Consts.SNAP_PREFIX_LEN));
+            }
+            else
+            {
+                throw new ImplementationError(metaName + " did not match the expected pattern.");
             }
         }
-        if (metaName == null)
+        catch (ParseException exc)
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
-                    "Could not find backups with the given resource name '" + srcRscName + "' in remote '" +
-                        remoteName + "'"
-                )
+                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP, "Tried to parse s3 key " + metaName
+                ),
+                exc
             );
         }
+
         if (backupInfoMgr.restoreContainsMetaFile(metaName))
         {
             throw new ApiRcException(
@@ -1546,6 +1535,42 @@ public class CtrlBackupApiCallHandler
         }
     }
 
+    private String getLatestMetaFile(Set<String> s3keys, Date targetTime) throws ParseException
+    {
+        String metaName = null;
+        Date latestBackTs = null;
+        for (String s3key : s3keys)
+        {
+            Matcher m = META_FILE_PATTERN.matcher(s3key);
+            if (m.matches())
+            {
+                // remove "back_" prefix
+                String ts = m.group(2).substring(S3Consts.SNAP_PREFIX_LEN);
+                Date curTs = S3Consts.DATE_FORMAT.parse(ts);
+                if (targetTime != null)
+                {
+                    if (
+                        (latestBackTs == null || latestBackTs.before(curTs)) &&
+                            (targetTime.after(curTs) || targetTime.equals(curTs))
+                    )
+                    {
+                        metaName = m.group();
+                        latestBackTs = curTs;
+                    }
+                }
+                else
+                {
+                    if (latestBackTs == null || latestBackTs.before(curTs))
+                    {
+                        metaName = m.group();
+                        latestBackTs = curTs;
+                    }
+                }
+            }
+        }
+        return metaName;
+    }
+
     private Snapshot createSnapshotByS3Meta(
         String srcRscName,
         Map<String, String> storPoolMap,
@@ -1563,9 +1588,9 @@ public class CtrlBackupApiCallHandler
     )
         throws AccessDeniedException, ImplementationError, DatabaseException, InvalidValueException
     {
-        for (List<BackupInfoPojo> backupList : metadata.getBackups().values())
+        for (List<BackupMetaInfoPojo> backupList : metadata.getBackups().values())
         {
-            for (BackupInfoPojo backup : backupList)
+            for (BackupMetaInfoPojo backup : backupList)
             {
                 if (!s3keys.contains(backup.getName()))
                 {
@@ -2262,9 +2287,9 @@ public class CtrlBackupApiCallHandler
         Props snapProps = snap.getProps(peerAccCtx.get());
 
         LinkedList<String> backups = new LinkedList<>();
-        for (List<BackupInfoPojo> backupList : metadata.getBackups().values())
+        for (List<BackupMetaInfoPojo> backupList : metadata.getBackups().values())
         {
-            for (BackupInfoPojo backup : backupList)
+            for (BackupMetaInfoPojo backup : backupList)
             {
                 String name = backup.getName();
                 Matcher m = BACKUP_VOLUME_PATTERN.matcher(name);
@@ -2538,15 +2563,15 @@ public class CtrlBackupApiCallHandler
                         getLocalMasterKey()
                     );
 
-                    Map<Integer, List<BackupInfoPojo>> s3MetaVlmMap = s3MetaFile.getBackups();
+                    Map<Integer, List<BackupMetaInfoPojo>> s3MetaVlmMap = s3MetaFile.getBackups();
                     Map<Integer, BackupVolumePojo> retVlmPojoMap = new TreeMap<>(); // vlmNr, vlmPojo
                     boolean restorable = true;
 
-                    for (Entry<Integer, List<BackupInfoPojo>> entry : s3MetaVlmMap.entrySet())
+                    for (Entry<Integer, List<BackupMetaInfoPojo>> entry : s3MetaVlmMap.entrySet())
                     {
                         Integer s3MetaVlmNr = entry.getKey();
-                        List<BackupInfoPojo> s3BackVlmInfoList = entry.getValue();
-                        for (BackupInfoPojo s3BackVlmInfo : s3BackVlmInfoList)
+                        List<BackupMetaInfoPojo> s3BackVlmInfoList = entry.getValue();
+                        for (BackupMetaInfoPojo s3BackVlmInfo : s3BackVlmInfoList)
                         {
                             if (!s3keys.contains(s3BackVlmInfo.getName()))
                             {
@@ -2972,6 +2997,301 @@ public class CtrlBackupApiCallHandler
             }
         }
         return snapDfns;
+    }
+
+    public Flux<BackupInfoPojo> backupInfo(
+        String srcRscName,
+        String lastBackup,
+        Map<String, String> storPoolMapRef,
+        String nodeName,
+        String remoteName
+    )
+    {
+        return freeCapacityFetcher
+            .fetchThinFreeCapacities(
+                Collections.emptySet()
+            ).flatMapMany(
+                ignored -> scopeRunner.fluxInTransactionalScope(
+                    "restore backup", lockGuardFactory.buildDeferred(
+                        LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP
+                    ),
+                    () -> backupInfoInTransaction(
+                        srcRscName,
+                        lastBackup,
+                        storPoolMapRef,
+                        nodeName,
+                        remoteName
+                    )
+                )
+            );
+    }
+
+    private Flux<BackupInfoPojo> backupInfoInTransaction(
+        String srcRscName,
+        String lastBackup,
+        Map<String, String> renameMap,
+        String nodeName,
+        String remoteName
+    ) throws AccessDeniedException, InvalidNameException
+    {
+        S3Remote remote = getS3Remote(remoteName);
+        String metaFileName = "";
+        byte[] masterKey = getLocalMasterKey();
+        if (lastBackup != null && !lastBackup.isEmpty())
+        {
+            Matcher volM = BACKUP_VOLUME_PATTERN.matcher(lastBackup);
+            if (volM.matches())
+            {
+                srcRscName = volM.group(1);
+                metaFileName = volM.group(1) + volM.group(4) + volM.group(5) + META_SUFFIX;
+            }
+            else
+            {
+                Matcher metaM = META_FILE_PATTERN
+                    .matcher(lastBackup.endsWith(META_SUFFIX) ? lastBackup : lastBackup + META_SUFFIX);
+                if (metaM.matches())
+                {
+                    srcRscName = metaM.group(1);
+                    metaFileName = lastBackup.endsWith(META_SUFFIX) ? lastBackup : lastBackup + META_SUFFIX;
+                }
+                else
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
+                            "The target backup " + lastBackup +
+                                " is invalid since it does not match the pattern of '<rscName>_back_YYYYMMDD_HHMMSS<optional-backup-s3-suffix> (e.g. my-rsc_back_20210824_072543)" +
+                                META_FILE_PATTERN + "'. " +
+                                "Please provide a valid target backup, or provide only the source resource name to restore to the latest backup of that resource."
+                        )
+                    );
+                }
+            }
+        }
+        List<S3ObjectSummary> objects = backupHandler.listObjects(srcRscName, remote, sysCtx, masterKey);
+        Set<String> s3keys = objects.stream().map(S3ObjectSummary::getKey)
+            .collect(Collectors.toCollection(TreeSet::new));
+
+        if (metaFileName.isEmpty())
+        {
+            try
+            {
+                metaFileName = getLatestMetaFile(s3keys, null);
+                if (metaFileName == null)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
+                            "Could not find the needed meta-file with the name '" + metaFileName + "' in remote '" +
+                                remoteName + "'"
+                        )
+                    );
+                }
+            }
+            catch (ParseException exc)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP, "Tried to parse s3 key " + metaFileName
+                    ),
+                    exc
+                );
+            }
+        }
+        else
+        {
+            if (!s3keys.contains(metaFileName))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
+                        "Could not find the needed meta-file with the name '" + metaFileName + "' in remote '" +
+                            remoteName + "'"
+                    )
+                );
+            }
+        }
+
+        String fullBackup = null;
+        String latestBackup = metaFileName.substring(0, metaFileName.length() - S3Consts.META_SUFFIX_LEN);
+        LinkedList<BackupMetaDataPojo> data = new LinkedList<>();
+        try
+        {
+            do
+            {
+                BackupMetaDataPojo metadata = backupHandler.getMetaFile(metaFileName, remote, peerAccCtx.get(), masterKey);
+                data.add(metadata);
+                if (metadata.getBasedOn() == null)
+                {
+                    fullBackup = metaFileName.substring(0, metaFileName.length() - S3Consts.META_SUFFIX_LEN);
+                }
+                metaFileName = metadata.getBasedOn();
+            }
+            while (metaFileName != null);
+        }
+        catch (IOException exc)
+        {
+            errorReporter.reportError(exc);
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                    "Failed to parse meta file " + metaFileName
+                )
+            );
+        }
+
+        long totalDlSizeKib = 0;
+        long totalAllocSizeKib = 0;
+        Map<StorPoolApi, List<BackupInfoVlmPojo>> storPoolMap = new HashMap<>();
+        List<BackupInfoStorPoolPojo> storpools = new ArrayList<>();
+
+        boolean first = true;
+        for (BackupMetaDataPojo meta : data)
+        {
+            Pair<Long, Long> totalSizes = new Pair<>(0L, 0L); // dlSize, allocSize
+            fillBackupInfo(first, storPoolMap, objects, meta, meta.getLayerData(), totalSizes);
+            first = false;
+            totalDlSizeKib += totalSizes.objA;
+            totalAllocSizeKib += totalSizes.objB;
+        }
+        Map<String, Long> remainingFreeSpace = new HashMap<>();
+
+        if (nodeName != null)
+        {
+            for (Entry<StorPoolApi, List<BackupInfoVlmPojo>> entry : storPoolMap.entrySet())
+            {
+                String targetStorPool = renameMap.get(entry.getKey().getStorPoolName());
+                if (targetStorPool == null)
+                {
+                    targetStorPool = entry.getKey().getStorPoolName();
+                }
+                long poolAllocSize = 0;
+                long poolDlSize = 0;
+                StorPool sp = ctrlApiDataLoader.loadStorPool(targetStorPool, nodeName, true);
+                Long freeSpace = remainingFreeSpace.get(sp.getName().value);
+                if (freeSpace == null)
+                {
+                    freeSpace = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(sysCtx).orElseGet(null);
+                }
+                for (BackupInfoVlmPojo vlm : entry.getValue())
+                {
+                    poolAllocSize += vlm.getAllocSizeKib() != null ? vlm.getAllocSizeKib() : 0;
+                    poolDlSize += vlm.getDlSizeKib() != null ? vlm.getDlSizeKib() : 0;
+                }
+                remainingFreeSpace.put(
+                    sp.getName().value,
+                    freeSpace != null ? freeSpace - poolAllocSize - poolDlSize : null
+                );
+            }
+        }
+        for (Entry<StorPoolApi, List<BackupInfoVlmPojo>> entry : storPoolMap.entrySet())
+        {
+            String targetStorPool = renameMap.get(entry.getKey().getStorPoolName());
+            if (targetStorPool == null)
+            {
+                targetStorPool = entry.getKey().getStorPoolName();
+            }
+            storpools.add(
+                new BackupInfoStorPoolPojo(
+                    entry.getKey().getStorPoolName(),
+                    entry.getKey().getDeviceProviderKind(),
+                    targetStorPool,
+                    remainingFreeSpace.get(targetStorPool.toUpperCase()),
+                    entry.getValue()
+                )
+            );
+        }
+
+        BackupInfoPojo backupInfo = new BackupInfoPojo(
+            srcRscName,
+            fullBackup,
+            latestBackup,
+            data.size(),
+            totalDlSizeKib,
+            totalAllocSizeKib,
+            storpools
+        );
+
+        return Flux.just(backupInfo);
+    }
+
+    private void fillBackupInfo(
+        boolean first,
+        Map<StorPoolApi, List<BackupInfoVlmPojo>> storPoolMap,
+        List<S3ObjectSummary> objects,
+        BackupMetaDataPojo meta,
+        RscLayerDataApi layerData,
+        Pair<Long, Long> totalSizes
+    )
+    {
+        for (RscLayerDataApi child : layerData.getChildren())
+        {
+            fillBackupInfo(first, storPoolMap, objects, meta, child, totalSizes);
+        }
+        if (layerData.getLayerKind().equals(DeviceLayerKind.STORAGE))
+        {
+            for (VlmLayerDataApi volume : layerData.getVolumeList())
+            {
+                if (!storPoolMap.containsKey(volume.getStorPoolApi()))
+                {
+                    storPoolMap.put(volume.getStorPoolApi(), new ArrayList<>());
+                }
+                String vlmName = "";
+                Long allocSizeKib = null;
+                Long useSizeKib = null;
+                Long dlSizeKib = null;
+                for (BackupMetaInfoPojo backup : meta.getBackups().get(volume.getVlmNr()))
+                {
+                    Matcher m = BACKUP_VOLUME_PATTERN.matcher(backup.getName());
+                    if (m.matches())
+                    {
+                        boolean empty = m.group(2) == null || m.group(2).isEmpty();
+                        if (
+                            empty && layerData.getRscNameSuffix().isEmpty() ||
+                                !empty && m.group(2).equals(layerData.getRscNameSuffix())
+                        )
+                        {
+                            vlmName = backup.getName();
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
+                                "A backup name in the meta-file did not match with the backup-name-pattern." +
+                                    " The meta-file is either corrupted or created by an outdated version of linstor."
+                            )
+                        );
+                    }
+                }
+                if (first)
+                {
+                    allocSizeKib = volume.getSnapshotAllocatedSize();
+                    totalSizes.objB += allocSizeKib;
+                    useSizeKib = volume.getSnapshotUsableSize();
+                }
+                for (S3ObjectSummary object : objects)
+                {
+                    if (object.getKey().equals(vlmName))
+                    {
+                        dlSizeKib = (long) Math.ceil(object.getSize() / 1024.0);
+                        totalSizes.objA += dlSizeKib;
+                        break;
+                    }
+                }
+                DeviceLayerKind layerType = RscLayerSuffixes.getLayerKindFromLastSuffix(layerData.getRscNameSuffix());
+                BackupInfoVlmPojo vlmPojo = new BackupInfoVlmPojo(
+                    vlmName,
+                    layerType,
+                    dlSizeKib,
+                    allocSizeKib,
+                    useSizeKib
+                );
+                storPoolMap.get(volume.getStorPoolApi()).add(vlmPojo);
+            }
+        }
     }
 
     public Flux<ApiCallRc> shippingReceived(String rscNameRef, String snapNameRef, boolean successRef)

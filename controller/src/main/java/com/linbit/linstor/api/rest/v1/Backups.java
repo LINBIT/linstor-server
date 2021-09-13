@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.BackupShip;
@@ -39,6 +40,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Path("v1/remotes/{remoteName}/backups")
 @Produces(MediaType.APPLICATION_JSON)
@@ -353,5 +355,99 @@ public class Backups
         {
             ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
         }
+    }
+
+    @POST
+    @Path("info")
+    public void backupInfo(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("remoteName") String remoteName,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.BackupInfoRequest data = objectMapper
+                .readValue(jsonData, JsonGenTypes.BackupInfoRequest.class);
+            boolean lastBackupNullOrEmpty = data.last_backup == null || data.last_backup.isEmpty();
+            boolean srcRscNameNullOrEmpty = data.src_rsc_name == null || data.src_rsc_name.isEmpty();
+            boolean renameMapNullOrEmpty = data.stor_pool_map == null || data.stor_pool_map.isEmpty();
+            boolean nodeNameNullOrEmpty = data.node_name == null || data.node_name.isEmpty();
+            if (lastBackupNullOrEmpty == srcRscNameNullOrEmpty)
+            {
+                // either neither last_backup and src_rsc_name are given, or both
+                requestHelper
+                    .doFlux(
+                        asyncResponse,
+                        ApiCallRcRestUtils.mapToMonoResponse(
+                            Flux.just(
+                                ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.FAIL_INVLD_REQUEST,
+                                    "Too many or too few parameters given. Either --id or -r is required, but not both!"
+                                )
+                            ),
+                            Response.Status.BAD_REQUEST
+                        )
+                    );
+            }
+            else if (!renameMapNullOrEmpty && nodeNameNullOrEmpty)
+            {
+                // only one of stor_pool_map and node_name is given
+                requestHelper
+                    .doFlux(
+                        asyncResponse,
+                        ApiCallRcRestUtils.mapToMonoResponse(
+                            Flux.just(
+                                ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.FAIL_INVLD_REQUEST,
+                                    "Too few parameters given. When using --storpool-rename, then --target-node is also needed."
+                                )
+                            ),
+                            Response.Status.BAD_REQUEST
+                        )
+                    );
+            }
+            else
+            {
+                Flux<BackupInfoPojo> backupInfoFlux = backupApiCallHandler.backupInfo(
+                    data.src_rsc_name,
+                    data.last_backup,
+                    data.stor_pool_map,
+                    data.node_name,
+                    remoteName
+                )
+                    .subscriberContext(requestHelper.createContext(ApiConsts.API_BACKUP_INFO, request));
+                requestHelper.doFlux(asyncResponse, backupInfoPojoToResponse(backupInfoFlux, asyncResponse));
+            }
+        }
+        catch (JsonProcessingException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
+    }
+
+    private Mono<Response> backupInfoPojoToResponse(
+        Flux<BackupInfoPojo> backupInfoFlux,
+        @Suspended final AsyncResponse asyncResponse
+    )
+    {
+        return backupInfoFlux.flatMap(backupInfoPojo ->
+        {
+            Response resp = null;
+            JsonGenTypes.BackupInfo backupInfo = Json.apiToBackupInfo(backupInfoPojo);
+            try
+            {
+                resp = Response.status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(backupInfo))
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+            }
+            catch (JsonProcessingException exc)
+            {
+                ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+            }
+            return Mono.just(resp);
+        }).next();
     }
 }

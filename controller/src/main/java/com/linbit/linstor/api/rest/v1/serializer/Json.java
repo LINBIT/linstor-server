@@ -29,6 +29,9 @@ import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
+import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
+import com.linbit.linstor.api.pojo.backups.BackupInfoStorPoolPojo;
+import com.linbit.linstor.api.pojo.backups.BackupInfoVlmPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ExosDefaults;
 import com.linbit.linstor.core.apis.BackupApi;
@@ -1197,6 +1200,39 @@ public class Json
             jsonBackups.put(backup.getId(), jsonBackup);
         }
         return jsonBackups;
+    }
+
+    public static JsonGenTypes.BackupInfo apiToBackupInfo(BackupInfoPojo pojo)
+    {
+        JsonGenTypes.BackupInfo json = new JsonGenTypes.BackupInfo();
+        json.rsc = pojo.getRscName();
+        json.full = pojo.getFullBackupName();
+        json.latest = pojo.getLatestBackupName();
+        json.count = pojo.getBackupCount();
+        json.dl_size_kib = pojo.getDlSizeKib();
+        json.alloc_size_kib = pojo.getAllocSizeKib();
+        json.storpools = new ArrayList<>();
+        for (BackupInfoStorPoolPojo storPoolPojo : pojo.getStorpools())
+        {
+            JsonGenTypes.BackupInfoStorPool storPoolJson = new JsonGenTypes.BackupInfoStorPool();
+            storPoolJson.name = storPoolPojo.getStorPoolName();
+            storPoolJson.provider_kind = storPoolPojo.getProviderKind().name();
+            storPoolJson.target_name = storPoolPojo.getTargetStorPoolName();
+            storPoolJson.remaining_space_kib = storPoolPojo.getRemainingSpaceKib();
+            storPoolJson.vlms = new ArrayList<>();
+            for (BackupInfoVlmPojo vlmPojo : storPoolPojo.getVlms())
+            {
+                JsonGenTypes.BackupInfoVolume vlmJson = new JsonGenTypes.BackupInfoVolume();
+                vlmJson.name = vlmPojo.getBackupVlmName();
+                vlmJson.layer_type = vlmPojo.getLayerType().name();
+                vlmJson.dl_size_kib = vlmPojo.getDlSizeKib();
+                vlmJson.alloc_size_kib = vlmPojo.getAllocSizeKib();
+                vlmJson.usable_size_kib = vlmPojo.getUseSizeKib();
+                storPoolJson.vlms.add(vlmJson);
+            }
+            json.storpools.add(storPoolJson);
+        }
+        return json;
     }
 
     public static JsonGenTypes.S3Remote apiToS3Remote(S3RemotePojo pojo)

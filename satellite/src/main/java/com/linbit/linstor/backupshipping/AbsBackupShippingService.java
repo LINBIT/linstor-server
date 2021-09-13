@@ -12,7 +12,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
-import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
+import com.linbit.linstor.api.pojo.backups.BackupMetaInfoPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.StltConfigAccessor;
@@ -478,15 +478,15 @@ public abstract class AbsBackupShippingService implements SystemService
     protected String fillPojo(Snapshot snap, String basedOnMetaName)
         throws AccessDeniedException, IOException, ParseException
     {
-        Map<Integer, List<BackupInfoPojo>> backupsRef = new TreeMap<>();
+        Map<Integer, List<BackupMetaInfoPojo>> backupsRef = new TreeMap<>();
         for (SnapVlmDataInfo snapInfo : shippingInfoMap.get(snap).snapVlmDataInfoMap.values())
         {
-            BackupInfoPojo backInfo = new BackupInfoPojo(
+            BackupMetaInfoPojo backInfo = new BackupMetaInfoPojo(
                 snapInfo.backupName,
                 snapInfo.finishTimestamp,
                 snap.getNodeName().displayValue
             );
-            List<BackupInfoPojo> list = backupsRef.get(snapInfo.vlmNr);
+            List<BackupMetaInfoPojo> list = backupsRef.get(snapInfo.vlmNr);
             if (list == null)
             {
                 list = new ArrayList<>();
