@@ -12,6 +12,7 @@ import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.storage.WipeHandler;
@@ -74,6 +75,7 @@ public class LvmThinProvider extends LvmProvider
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void updateInfo(LvmData<?> vlmDataRef, LvsInfo infoRef)
         throws AccessDeniedException, DatabaseException, StorageException
@@ -89,6 +91,12 @@ public class LvmThinProvider extends LvmProvider
         {
             lvmThinData.setThinPool(infoRef.thinPool);
             lvmThinData.setAllocatedPercent(infoRef.dataPercent / 100.0f);
+        }
+
+        if (vlmDataRef.exists() && vlmDataRef.getVolume() instanceof Volume)
+        {
+            // update allocated size after we set the dataPercent
+            updateAllocatedSize((LvmThinData<Resource>) vlmDataRef);
         }
     }
 
