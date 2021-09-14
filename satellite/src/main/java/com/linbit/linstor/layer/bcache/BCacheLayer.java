@@ -227,7 +227,9 @@ public class BCacheLayer implements DeviceLayer
 
         boolean deleteFlagSet = rscFlags.isSomeSet(storDriverAccCtx, Resource.Flags.DELETE);
         boolean inactiveFlagSet = rscFlags.isSomeSet(storDriverAccCtx, Resource.Flags.INACTIVE);
-        boolean forceCreateMetaData = rscFlags.isSet(storDriverAccCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT);
+        boolean forceCreateMetaData = rscFlags.isSet(storDriverAccCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT) ||
+            rscData.getAbsResource().getResourceDefinition().getFlags()
+                .isSet(storDriverAccCtx, ResourceDefinition.Flags.CLONING);
 
         if (deleteFlagSet || inactiveFlagSet)
         {
