@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
+import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
@@ -63,6 +64,7 @@ class StltSnapshotApiCallHandler
     private final StltRscGrpApiCallHelper rscGrpApiCallHelper;
     private final StltLayerSnapDataMerger layerSnapDataMerger;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final BackupShippingMgr backupShippingMgr;
 
     @Inject
     StltSnapshotApiCallHandler(
@@ -79,7 +81,8 @@ class StltSnapshotApiCallHandler
         SnapshotVolumeSatelliteFactory snapshotVolumeFactoryRef,
         StltRscGrpApiCallHelper stltGrpApiCallHelperRef,
         StltLayerSnapDataMerger layerSnapDataMergerRef,
-        Provider<TransactionMgr> transMgrProviderRef
+        Provider<TransactionMgr> transMgrProviderRef,
+        BackupShippingMgr backupShippingMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -96,6 +99,7 @@ class StltSnapshotApiCallHandler
         rscGrpApiCallHelper = stltGrpApiCallHelperRef;
         layerSnapDataMerger = layerSnapDataMergerRef;
         transMgrProvider = transMgrProviderRef;
+        backupShippingMgr = backupShippingMgrRef;
     }
 
     public void applyChanges(SnapshotPojo snapshotRaw)
@@ -301,7 +305,13 @@ class StltSnapshotApiCallHandler
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
             if (rscDfn != null)
             {
-                rscDfn.removeSnapshotDfn(apiCtx, snapshotName);
+                SnapshotDefinition snapDfn = rscDfn.getSnapshotDfn(apiCtx, snapshotName);
+                for (Snapshot snap : snapDfn.getAllSnapshots(apiCtx))
+                {
+                    backupShippingMgr.snapshotDeleted(snap);
+                    snap.delete(apiCtx);
+                }
+                snapDfn.delete(apiCtx);
 
                 if (rscDfn.getResourceCount() == 0 && rscDfn.getSnapshotDfns(apiCtx).isEmpty())
                 {
