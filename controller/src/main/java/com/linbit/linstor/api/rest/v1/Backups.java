@@ -164,7 +164,8 @@ public class Backups
                     data.target_rsc_name,
                     remoteName,
                     data.passphrase,
-                    data.last_backup
+                    data.last_backup,
+                    data.download_only
                 ).subscriberContext(requestHelper.createContext(ApiConsts.API_RESTORE_BACKUP, request));
                 requestHelper.doFlux(
                     asyncResponse,
@@ -343,7 +344,8 @@ public class Backups
                 data.dst_node_name,
                 data.dst_net_if_name,
                 data.dst_stor_pool,
-                data.stor_pool_rename
+                data.stor_pool_rename,
+                data.download_only
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_SHIP_BACKUP, request));
             requestHelper.doFlux(

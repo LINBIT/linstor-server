@@ -106,7 +106,8 @@ public class CtrlBackupL2LDstApiCallHandler
         @Nullable String dstNetIfNameRef,
         @Nullable String dstStorPoolRef,
         @Nullable Map<String, String> storPoolRenameMapRef,
-        boolean useZstd
+        boolean useZstd,
+        boolean downloadOnly
     )
     {
         Flux<BackupShippingResponse> flux;
@@ -147,7 +148,8 @@ public class CtrlBackupL2LDstApiCallHandler
                     dstStorPoolRef,
                     storPoolRenameMapRef,
                     snapShipPort,
-                    useZstd
+                    useZstd,
+                    downloadOnly
                 );
 
                 flux = scopeRunner.fluxInTransactionalScope(
@@ -232,7 +234,8 @@ public class CtrlBackupL2LDstApiCallHandler
                             data.stltRemote,
                             data.snapName,
                             data.srcSnapDfnUuids,
-                            data.useZstd
+                            data.useZstd,
+                            data.downloadOnly
                         )
                     )
                 )
@@ -374,6 +377,7 @@ public class CtrlBackupL2LDstApiCallHandler
         private Map<String, String> storPoolRenameMap;
         private final int snapShipPort;
         private boolean useZstd;
+        private boolean downloadOnly;
 
         public BackupShippingData(
             int[] srcVersionRef,
@@ -387,7 +391,8 @@ public class CtrlBackupL2LDstApiCallHandler
             String dstStorPoolRef,
             Map<String, String> storPoolRenameMapRef,
             int snapShipPortRef,
-            boolean useZstdRef
+            boolean useZstdRef,
+            boolean downloadOnlyRef
         )
         {
             srcVersion = srcVersionRef;
@@ -402,6 +407,7 @@ public class CtrlBackupL2LDstApiCallHandler
             storPoolRenameMap = storPoolRenameMapRef;
             snapShipPort = snapShipPortRef;
             useZstd = useZstdRef;
+            downloadOnly = downloadOnlyRef;
         }
     }
 }

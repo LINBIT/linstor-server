@@ -77,7 +77,8 @@ public class BackupShippingInternal
                 shipRequest.dstNodeNetIfName,
                 shipRequest.dstStorPool,
                 shipRequest.storPoolRenameMap,
-                shipRequest.useZstd
+                shipRequest.useZstd,
+                shipRequest.downloadOnly
             ).subscriberContext(
                 requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
             );

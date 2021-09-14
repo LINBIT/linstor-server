@@ -23,6 +23,7 @@ info:
 
     * unreleased
        - Added /v1/remotes/{remote-name}/backups/info as well as BackupInfo, BackupInfoRequest, BackupInfoStorPool and BackupInfoVolume
+       - Added download_only to BackupShip and BackupRestore
     * 1.10.1
        - Added query-param "nodes" for DELETE /v1/resource-definitions/{resource}/snapshots/{snapshot}
        - Added optional Node.eviction_timestamp
@@ -7161,6 +7162,9 @@ components:
           type: string
         node_name:
           type: string
+        download_only:
+          type: boolean
+          default: false
     BackupCreate:
       type: object
       properties:
@@ -7198,6 +7202,9 @@ components:
           type: object
           additionalProperties:
             type: string
+        download_only:
+          type: boolean
+          default: false
     BackupInfo:
       type: object
       properties:

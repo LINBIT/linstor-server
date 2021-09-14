@@ -1245,6 +1245,7 @@ public class JsonGenTypes
         public String target_rsc_name;
         public String passphrase;
         public String node_name;
+        public boolean download_only = false;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1273,6 +1274,7 @@ public class JsonGenTypes
         public String dst_net_if_name;
         public String dst_stor_pool;
         public Map<String, String> stor_pool_rename = Collections.emptyMap();
+        public boolean download_only = false;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

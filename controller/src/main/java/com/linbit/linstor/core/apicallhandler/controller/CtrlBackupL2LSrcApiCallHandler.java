@@ -134,7 +134,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String dstNodeNameRef,
         @Nullable String dstNetIfNameRef,
         @Nullable String dstStorPoolRef,
-        @Nullable Map<String, String> storPoolRenameRef
+        @Nullable Map<String, String> storPoolRenameRef,
+        boolean downloadOnly
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -150,7 +151,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 dstNodeNameRef,
                 dstNetIfNameRef,
                 dstStorPoolRef,
-                storPoolRenameRef
+                storPoolRenameRef,
+                downloadOnly
             )
         );
     }
@@ -163,7 +165,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         String dstNodeNameRef,
         String dstNetIfNameRef,
         String dstStorPoolRef,
-        Map<String, String> storPoolRenameRef
+        Map<String, String> storPoolRenameRef,
+        boolean downloadOnly
     )
     {
 
@@ -204,7 +207,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             dstNodeNameRef,
             dstNetIfNameRef,
             dstStorPoolRef,
-            storPoolRenameRef
+            storPoolRenameRef,
+            downloadOnly
         );
 
         /*
@@ -610,7 +614,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                                     data.dstNetIfName,
                                     data.dstStorPool,
                                     data.storPoolRename,
-                                    data.useZstd
+                                    data.useZstd,
+                                    data.downloadOnly
                                 )
                             ),
                             Arrays.asList(responseOk, notFound, badRequest, internalServerError),
@@ -677,6 +682,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         private Snapshot srcSnapshot;
         private final LinstorRemote linstorRemote;
         private boolean useZstd;
+        private boolean downloadOnly;
 
         private BackupMetaDataPojo metaDataPojo;
         private final String dstRscName;
@@ -698,7 +704,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             String dstNodeNameRef,
             String dstNetIfNameRef,
             String dstStorPoolRef,
-            Map<String, String> storPoolRenameRef
+            Map<String, String> storPoolRenameRef,
+            boolean downloadOnlyRef
         )
         {
             srcClusterId = srcClusterIdRef;
@@ -712,6 +719,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             dstNetIfName = dstNetIfNameRef;
             dstStorPool = dstStorPoolRef;
             storPoolRename = storPoolRenameRef;
+            downloadOnly = downloadOnlyRef;
         }
     }
 }

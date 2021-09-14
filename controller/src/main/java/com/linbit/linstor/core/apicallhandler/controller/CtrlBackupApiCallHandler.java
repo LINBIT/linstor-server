@@ -1301,7 +1301,8 @@ public class CtrlBackupApiCallHandler
         String targetRscName,
         String remoteName,
         String passphrase,
-        String lastBackup
+        String lastBackup,
+        boolean downloadOnly
     )
     {
         return freeCapacityFetcher
@@ -1320,7 +1321,8 @@ public class CtrlBackupApiCallHandler
                         targetRscName,
                         remoteName,
                         passphrase,
-                        lastBackup
+                        lastBackup,
+                        downloadOnly
                     )
                 )
             );
@@ -1334,7 +1336,8 @@ public class CtrlBackupApiCallHandler
         String targetRscName,
         String remoteName,
         String passphrase,
-        String lastBackup
+        String lastBackup,
+        boolean downloadOnly
     ) throws AccessDeniedException, InvalidNameException
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -1466,7 +1469,8 @@ public class CtrlBackupApiCallHandler
                     metaName,
                     metadata,
                     responses,
-                    resetData
+                    resetData,
+                    downloadOnly
                 );
                 // all other "basedOn" snapshots should not change props / size / etc..
                 resetData = false;
@@ -1584,7 +1588,8 @@ public class CtrlBackupApiCallHandler
         String metaName,
         BackupMetaDataPojo metadata,
         ApiCallRcImpl responses,
-        boolean resetData
+        boolean resetData,
+        boolean downloadOnly
     )
         throws AccessDeniedException, ImplementationError, DatabaseException, InvalidValueException
     {
@@ -1673,7 +1678,7 @@ public class CtrlBackupApiCallHandler
         SnapshotName snapName = LinstorParsingUtils.asSnapshotName(m.group(2));
         ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, metaName, resetData);
         // 9. create snapDfn
-        SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses);
+        SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses, downloadOnly);
         // 10. create vlmDfn(s)
         // 11. create snapVlmDfn(s)
         Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
@@ -1770,7 +1775,8 @@ public class CtrlBackupApiCallHandler
         StltRemote remote,
         SnapshotName snapName,
         Set<String> srcSnapDfnUuidsForIncrementalRef,
-        boolean useZstd
+        boolean useZstd,
+        boolean downloadOnly
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -1820,7 +1826,7 @@ public class CtrlBackupApiCallHandler
             Snapshot snap = null;
 
             // 9. create snapDfn
-            snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses);
+            snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses, downloadOnly);
             // 10. create vlmDfn(s)
             // 11. create snapVlmDfn(s)
             long totalSize = createSnapVlmDfnForBackupRestore(
@@ -2391,7 +2397,8 @@ public class CtrlBackupApiCallHandler
         BackupMetaDataPojo metadata,
         SnapshotName snapName,
         ResourceDefinition rscDfn,
-        ApiCallRcImpl responsesRef
+        ApiCallRcImpl responsesRef,
+        boolean downloadOnly
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -2423,7 +2430,7 @@ public class CtrlBackupApiCallHandler
                 )
             );
         }
-        else
+        else if (!downloadOnly)
         {
             snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS);
         }
