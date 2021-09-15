@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 
@@ -1729,6 +1730,7 @@ public class GeneratedDatabaseTables
         }
     }
 
+    public static final DatabaseTable[] ALL_TABLES; // initialized in static block
     public static final Files FILES = new Files();
     public static final KeyValueStore KEY_VALUE_STORE = new KeyValueStore();
     public static final LayerBcacheVolumes LAYER_BCACHE_VOLUMES = new LayerBcacheVolumes();
@@ -1775,6 +1777,52 @@ public class GeneratedDatabaseTables
 
     static
     {
+        ALL_TABLES = new DatabaseTable[] {
+            FILES,
+            KEY_VALUE_STORE,
+            LAYER_BCACHE_VOLUMES,
+            LAYER_CACHE_VOLUMES,
+            LAYER_DRBD_RESOURCES,
+            LAYER_DRBD_RESOURCE_DEFINITIONS,
+            LAYER_DRBD_VOLUMES,
+            LAYER_DRBD_VOLUME_DEFINITIONS,
+            LAYER_LUKS_VOLUMES,
+            LAYER_OPENFLEX_RESOURCE_DEFINITIONS,
+            LAYER_OPENFLEX_VOLUMES,
+            LAYER_RESOURCE_IDS,
+            LAYER_STORAGE_VOLUMES,
+            LAYER_WRITECACHE_VOLUMES,
+            LINSTOR_REMOTES,
+            NODES,
+            NODE_CONNECTIONS,
+            NODE_NET_INTERFACES,
+            NODE_STOR_POOL,
+            PROPS_CONTAINERS,
+            RESOURCES,
+            RESOURCE_CONNECTIONS,
+            RESOURCE_DEFINITIONS,
+            RESOURCE_GROUPS,
+            S3_REMOTES,
+            SATELLITES_CAPACITY,
+            SEC_ACCESS_TYPES,
+            SEC_ACL_MAP,
+            SEC_CONFIGURATION,
+            SEC_DFLT_ROLES,
+            SEC_IDENTITIES,
+            SEC_ID_ROLE_MAP,
+            SEC_OBJECT_PROTECTION,
+            SEC_ROLES,
+            SEC_TYPES,
+            SEC_TYPE_RULES,
+            SPACE_HISTORY,
+            STOR_POOL_DEFINITIONS,
+            TRACKING_DATE,
+            VOLUMES,
+            VOLUME_CONNECTIONS,
+            VOLUME_DEFINITIONS,
+            VOLUME_GROUPS
+        };
+
         Files.UUID.table = FILES;
         Files.PATH.table = FILES;
         Files.FLAGS.table = FILES;
@@ -2044,6 +2092,101 @@ public class GeneratedDatabaseTables
         public String toString()
         {
             return (table == null ? "No table set" : table ) + ", Column: " + name;
+        }
+    }
+
+    public static DatabaseTable getByValue(String value)
+    {
+        switch(value.toUpperCase())
+        {
+            case "FILES":
+                return FILES;
+            case "KEY_VALUE_STORE":
+                return KEY_VALUE_STORE;
+            case "LAYER_BCACHE_VOLUMES":
+                return LAYER_BCACHE_VOLUMES;
+            case "LAYER_CACHE_VOLUMES":
+                return LAYER_CACHE_VOLUMES;
+            case "LAYER_DRBD_RESOURCES":
+                return LAYER_DRBD_RESOURCES;
+            case "LAYER_DRBD_RESOURCE_DEFINITIONS":
+                return LAYER_DRBD_RESOURCE_DEFINITIONS;
+            case "LAYER_DRBD_VOLUMES":
+                return LAYER_DRBD_VOLUMES;
+            case "LAYER_DRBD_VOLUME_DEFINITIONS":
+                return LAYER_DRBD_VOLUME_DEFINITIONS;
+            case "LAYER_LUKS_VOLUMES":
+                return LAYER_LUKS_VOLUMES;
+            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
+                return LAYER_OPENFLEX_RESOURCE_DEFINITIONS;
+            case "LAYER_OPENFLEX_VOLUMES":
+                return LAYER_OPENFLEX_VOLUMES;
+            case "LAYER_RESOURCE_IDS":
+                return LAYER_RESOURCE_IDS;
+            case "LAYER_STORAGE_VOLUMES":
+                return LAYER_STORAGE_VOLUMES;
+            case "LAYER_WRITECACHE_VOLUMES":
+                return LAYER_WRITECACHE_VOLUMES;
+            case "LINSTOR_REMOTES":
+                return LINSTOR_REMOTES;
+            case "NODES":
+                return NODES;
+            case "NODE_CONNECTIONS":
+                return NODE_CONNECTIONS;
+            case "NODE_NET_INTERFACES":
+                return NODE_NET_INTERFACES;
+            case "NODE_STOR_POOL":
+                return NODE_STOR_POOL;
+            case "PROPS_CONTAINERS":
+                return PROPS_CONTAINERS;
+            case "RESOURCES":
+                return RESOURCES;
+            case "RESOURCE_CONNECTIONS":
+                return RESOURCE_CONNECTIONS;
+            case "RESOURCE_DEFINITIONS":
+                return RESOURCE_DEFINITIONS;
+            case "RESOURCE_GROUPS":
+                return RESOURCE_GROUPS;
+            case "S3_REMOTES":
+                return S3_REMOTES;
+            case "SATELLITES_CAPACITY":
+                return SATELLITES_CAPACITY;
+            case "SEC_ACCESS_TYPES":
+                return SEC_ACCESS_TYPES;
+            case "SEC_ACL_MAP":
+                return SEC_ACL_MAP;
+            case "SEC_CONFIGURATION":
+                return SEC_CONFIGURATION;
+            case "SEC_DFLT_ROLES":
+                return SEC_DFLT_ROLES;
+            case "SEC_IDENTITIES":
+                return SEC_IDENTITIES;
+            case "SEC_ID_ROLE_MAP":
+                return SEC_ID_ROLE_MAP;
+            case "SEC_OBJECT_PROTECTION":
+                return SEC_OBJECT_PROTECTION;
+            case "SEC_ROLES":
+                return SEC_ROLES;
+            case "SEC_TYPES":
+                return SEC_TYPES;
+            case "SEC_TYPE_RULES":
+                return SEC_TYPE_RULES;
+            case "SPACE_HISTORY":
+                return SPACE_HISTORY;
+            case "STOR_POOL_DEFINITIONS":
+                return STOR_POOL_DEFINITIONS;
+            case "TRACKING_DATE":
+                return TRACKING_DATE;
+            case "VOLUMES":
+                return VOLUMES;
+            case "VOLUME_CONNECTIONS":
+                return VOLUME_CONNECTIONS;
+            case "VOLUME_DEFINITIONS":
+                return VOLUME_DEFINITIONS;
+            case "VOLUME_GROUPS":
+                return VOLUME_GROUPS;
+            default:
+                throw new ImplementationError("Unknown database table: " + value);
         }
     }
 }

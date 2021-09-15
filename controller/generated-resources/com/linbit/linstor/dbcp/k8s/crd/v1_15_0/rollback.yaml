@@ -1,0 +1,634 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "rollback.internal.linstor.linbit.com"
+spec:
+  group: "internal.linstor.linbit.com"
+  versions:
+  - name: "v1-15-0"
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              files:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  path:
+                    type: "string"
+                  flags:
+                    type: "integer"
+                    format: "int64"
+                  content:
+                    type: "string"
+                    format: "byte"
+                  content_checksum:
+                    type: "string"
+              keyvaluestore:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  kvs_name:
+                    type: "string"
+                  kvs_dsp_name:
+                    type: "string"
+              layerbcachevolumes:
+                type: "object"
+                properties:
+                  layer_resource_id:
+                    type: "integer"
+                    format: "int32"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  node_name:
+                    type: "string"
+                  pool_name:
+                    type: "string"
+                  dev_uuid:
+                    type: "string"
+              layercachevolumes:
+                type: "object"
+                properties:
+                  layer_resource_id:
+                    type: "integer"
+                    format: "int32"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  node_name:
+                    type: "string"
+                  pool_name_cache:
+                    type: "string"
+                  pool_name_meta:
+                    type: "string"
+              layerdrbdresources:
+                type: "object"
+                properties:
+                  layer_resource_id:
+                    type: "integer"
+                    format: "int32"
+                  peer_slots:
+                    type: "integer"
+                    format: "int32"
+                  al_stripes:
+                    type: "integer"
+                    format: "int32"
+                  al_stripe_size:
+                    type: "integer"
+                    format: "int64"
+                  flags:
+                    type: "integer"
+                    format: "int64"
+                  node_id:
+                    type: "integer"
+                    format: "int32"
+              layerdrbdresourcedefinitions:
+                type: "object"
+                properties:
+                  resource_name:
+                    type: "string"
+                  resource_name_suffix:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  peer_slots:
+                    type: "integer"
+                    format: "int32"
+                  al_stripes:
+                    type: "integer"
+                    format: "int32"
+                  al_stripe_size:
+                    type: "integer"
+                    format: "int64"
+                  tcp_port:
+                    type: "integer"
+                    format: "int32"
+                  transport_type:
+                    type: "string"
+                  secret:
+                    type: "string"
+              layerdrbdvolumes:
+                type: "object"
+                properties:
+                  layer_resource_id:
+                    type: "integer"
+                    format: "int32"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  node_name:
+                    type: "string"
+                  pool_name:
+                    type: "string"
+              layerdrbdvolumedefinitions:
+                type: "object"
+                properties:
+                  resource_name:
+                    type: "string"
+                  resource_name_suffix:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  vlm_minor_nr:
+                    type: "integer"
+                    format: "int32"
+              layerluksvolumes:
+                type: "object"
+                properties:
+                  layer_resource_id:
+                    type: "integer"
+                    format: "int32"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  encrypted_password:
+                    type: "string"
+              layeropenflexresourcedefinitions:
+                type: "object"
+                properties:
+                  resource_name:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  resource_name_suffix:
+                    type: "string"
+                  nqn:
+                    type: "string"
+              layeropenflexvolumes:
+                type: "object"
+                properties:
+                  layer_resource_id:
+                    type: "integer"
+                    format: "int32"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  node_name:
+                    type: "string"
+                  pool_name:
+                    type: "string"
+              layerresourceids:
+                type: "object"
+                properties:
+                  layer_resource_id:
+                    type: "integer"
+                    format: "int32"
+                  node_name:
+                    type: "string"
+                  resource_name:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  layer_resource_kind:
+                    type: "string"
+                  layer_resource_parent_id:
+                    type: "integer"
+                    format: "int32"
+                  layer_resource_suffix:
+                    type: "string"
+                  layer_resource_suspended:
+                    type: "boolean"
+              layerstoragevolumes:
+                type: "object"
+                properties:
+                  layer_resource_id:
+                    type: "integer"
+                    format: "int32"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  provider_kind:
+                    type: "string"
+                  node_name:
+                    type: "string"
+                  stor_pool_name:
+                    type: "string"
+              layerwritecachevolumes:
+                type: "object"
+                properties:
+                  layer_resource_id:
+                    type: "integer"
+                    format: "int32"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  node_name:
+                    type: "string"
+                  pool_name:
+                    type: "string"
+              linstorremotes:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  name:
+                    type: "string"
+                  dsp_name:
+                    type: "string"
+                  flags:
+                    type: "integer"
+                    format: "int64"
+                  url:
+                    type: "string"
+                  encrypted_passphrase:
+                    type: "string"
+                    format: "byte"
+                  cluster_id:
+                    type: "string"
+              nodes:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  node_name:
+                    type: "string"
+                  node_dsp_name:
+                    type: "string"
+                  node_flags:
+                    type: "integer"
+                    format: "int64"
+                  node_type:
+                    type: "integer"
+                    format: "int32"
+              nodeconnections:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  node_name_src:
+                    type: "string"
+                  node_name_dst:
+                    type: "string"
+              nodenetinterfaces:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  node_name:
+                    type: "string"
+                  node_net_name:
+                    type: "string"
+                  node_net_dsp_name:
+                    type: "string"
+                  inet_address:
+                    type: "string"
+                  stlt_conn_port:
+                    type: "integer"
+                  stlt_conn_encr_type:
+                    type: "string"
+              nodestorpool:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  node_name:
+                    type: "string"
+                  pool_name:
+                    type: "string"
+                  driver_name:
+                    type: "string"
+                  free_space_mgr_name:
+                    type: "string"
+                  free_space_mgr_dsp_name:
+                    type: "string"
+                  external_locking:
+                    type: "boolean"
+              propscontainers:
+                type: "object"
+                properties:
+                  props_instance:
+                    type: "string"
+                  prop_key:
+                    type: "string"
+                  prop_value:
+                    type: "string"
+              resources:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  node_name:
+                    type: "string"
+                  resource_name:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  resource_flags:
+                    type: "integer"
+                    format: "int64"
+                  create_timestamp:
+                    type: "integer"
+              resourceconnections:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  node_name_src:
+                    type: "string"
+                  node_name_dst:
+                    type: "string"
+                  resource_name:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  flags:
+                    type: "integer"
+                    format: "int64"
+                  tcp_port:
+                    type: "integer"
+                    format: "int32"
+              resourcedefinitions:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  resource_name:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  resource_dsp_name:
+                    type: "string"
+                  snapshot_dsp_name:
+                    type: "string"
+                  resource_flags:
+                    type: "integer"
+                    format: "int64"
+                  layer_stack:
+                    type: "string"
+                  resource_external_name:
+                    type: "string"
+                    format: "byte"
+                  resource_group_name:
+                    type: "string"
+                  parent_uuid:
+                    type: "string"
+              resourcegroups:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  resource_group_name:
+                    type: "string"
+                  resource_group_dsp_name:
+                    type: "string"
+                  description:
+                    type: "string"
+                  layer_stack:
+                    type: "string"
+                  replica_count:
+                    type: "integer"
+                    format: "int32"
+                  node_name_list:
+                    type: "string"
+                  pool_name:
+                    type: "string"
+                  pool_name_diskless:
+                    type: "string"
+                  do_not_place_with_rsc_regex:
+                    type: "string"
+                  do_not_place_with_rsc_list:
+                    type: "string"
+                  replicas_on_same:
+                    type: "string"
+                  replicas_on_different:
+                    type: "string"
+                  allowed_provider_list:
+                    type: "string"
+                  diskless_on_remaining:
+                    type: "boolean"
+              s3remotes:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  name:
+                    type: "string"
+                  dsp_name:
+                    type: "string"
+                  flags:
+                    type: "integer"
+                    format: "int64"
+                  endpoint:
+                    type: "string"
+                  bucket:
+                    type: "string"
+                  region:
+                    type: "string"
+                  access_key:
+                    type: "string"
+                    format: "byte"
+                  secret_key:
+                    type: "string"
+                    format: "byte"
+              satellitescapacity:
+                type: "object"
+                properties:
+                  node_name:
+                    type: "string"
+                  capacity:
+                    type: "string"
+                    format: "byte"
+                  fail_flag:
+                    type: "boolean"
+              secaccesstypes:
+                type: "object"
+                properties:
+                  access_type_name:
+                    type: "string"
+                  access_type_value:
+                    type: "integer"
+              secaclmap:
+                type: "object"
+                properties:
+                  object_path:
+                    type: "string"
+                  role_name:
+                    type: "string"
+                  access_type:
+                    type: "integer"
+              secconfiguration:
+                type: "object"
+                properties:
+                  entry_key:
+                    type: "string"
+                  entry_dsp_key:
+                    type: "string"
+                  entry_value:
+                    type: "string"
+              secdfltroles:
+                type: "object"
+                properties:
+                  identity_name:
+                    type: "string"
+                  role_name:
+                    type: "string"
+              secidentities:
+                type: "object"
+                properties:
+                  identity_name:
+                    type: "string"
+                  identity_dsp_name:
+                    type: "string"
+                  pass_salt:
+                    type: "string"
+                  pass_hash:
+                    type: "string"
+                  id_enabled:
+                    type: "boolean"
+                  id_locked:
+                    type: "boolean"
+              secidrolemap:
+                type: "object"
+                properties:
+                  identity_name:
+                    type: "string"
+                  role_name:
+                    type: "string"
+              secobjectprotection:
+                type: "object"
+                properties:
+                  object_path:
+                    type: "string"
+                  creator_identity_name:
+                    type: "string"
+                  owner_role_name:
+                    type: "string"
+                  security_type_name:
+                    type: "string"
+              secroles:
+                type: "object"
+                properties:
+                  role_name:
+                    type: "string"
+                  role_dsp_name:
+                    type: "string"
+                  domain_name:
+                    type: "string"
+                  role_enabled:
+                    type: "boolean"
+                  role_privileges:
+                    type: "integer"
+                    format: "int64"
+              sectypes:
+                type: "object"
+                properties:
+                  type_name:
+                    type: "string"
+                  type_dsp_name:
+                    type: "string"
+                  type_enabled:
+                    type: "boolean"
+              sectyperules:
+                type: "object"
+                properties:
+                  domain_name:
+                    type: "string"
+                  type_name:
+                    type: "string"
+                  access_type:
+                    type: "integer"
+              spacehistory:
+                type: "object"
+                properties:
+                  entry_date:
+                    type: "string"
+                    format: "date-time"
+                  capacity:
+                    type: "string"
+                    format: "byte"
+              storpooldefinitions:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  pool_name:
+                    type: "string"
+                  pool_dsp_name:
+                    type: "string"
+              trackingdate:
+                type: "object"
+                properties:
+                  entry_date:
+                    type: "string"
+                    format: "date-time"
+              volumes:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  node_name:
+                    type: "string"
+                  resource_name:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  vlm_flags:
+                    type: "integer"
+                    format: "int64"
+              volumeconnections:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  node_name_src:
+                    type: "string"
+                  node_name_dst:
+                    type: "string"
+                  resource_name:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+              volumedefinitions:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  resource_name:
+                    type: "string"
+                  snapshot_name:
+                    type: "string"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  vlm_size:
+                    type: "integer"
+                    format: "int64"
+                  vlm_flags:
+                    type: "integer"
+                    format: "int64"
+              volumegroups:
+                type: "object"
+                properties:
+                  uuid:
+                    type: "string"
+                  resource_group_name:
+                    type: "string"
+                  vlm_nr:
+                    type: "integer"
+                    format: "int32"
+                  flags:
+                    type: "integer"
+                    format: "int64"
+  scope: "Cluster"
+  names:
+    plural: "rollback"
+    singular: "rollback"
+    kind: "Rollback"

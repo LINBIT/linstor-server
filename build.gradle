@@ -76,6 +76,8 @@ subprojects {
             // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
             implementation group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.18'
 
+            implementation group: 'io.fabric8', name: 'kubernetes-client', version: '5.7.3'
+
             testImplementation group: 'junit', name: 'junit', version: '4.+'
         }
     }
@@ -291,10 +293,10 @@ project(':controller') {
     sourceSets {
         main {
             java {
-                srcDirs = ["src/main/java"]
+                srcDirs = ["src/main/java", "generated-src"]
             }
             resources {
-                srcDirs = ["src/main/resources"]
+                srcDirs = ["src/main/resources", "generated-resources"]
             }
         }
         test {

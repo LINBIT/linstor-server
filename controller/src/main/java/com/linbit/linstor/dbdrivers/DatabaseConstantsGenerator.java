@@ -1,76 +1,78 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbcp.migration.k8s.crd.K8sCrdMigration;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 public final class DatabaseConstantsGenerator
 {
-    public static final String DFLT_PACKAGE = "com.linbit.linstor.dbdrivers";
-    public static final String DFLT_CLAZZ_NAME = "GeneratedDatabaseTables";
+    public static final String DFLT_DBDRIVERS_PACKAGE = "com.linbit.linstor.dbdrivers";
+    public static final String DFLT_GEN_DB_TABLES_CLASS_NAME = "GeneratedDatabaseTables";
 
-    public static final String[] IMPORTS = new String[]
-    {
-        "com.linbit.linstor.dbdrivers.DatabaseTable",
-        "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
-        null, // empty line
-        "java.sql.Types"
-    };
+    public static final String DFLT_K8S_CRD_PACKAGE = "com.linbit.linstor.dbdrivers.k8s.crd";
+    public static final String DFLT_K8S_CRD_CLASS_NAME_FORMAT = "GenCrd%s";
+    public static final String DFLT_K8S_CRD_MIGRATION_CLASS_NAME_FORMAT = "Migration_%s";
+    public static final String DFLT_K8S_CRD_CLASS_NAME_CURRENT = "GenCrdCurrent";
+    public static final String DFLT_K8S_CRD_CLASS_NAME = "GenCrd";
+    private static final String CRD_LINSTOR_CRD_INTERFACE_NAME = "LinstorCrd";
+    private static final String CRD_LINSTOR_SPEC_INTERFACE_NAME = "LinstorSpec";
+    private static final String CRD_PK_DELIMITER = ":";
 
     public static final String DB_SCHEMA = "LINSTOR";
     public static final String TYPE_TABLE = "TABLE";
 
-    private static final String INTERFACE_NAME = "DatabaseTable";
+
+    private static final String INTERFACE_NAME_SQL = "DatabaseTable";
     private static final String COLUMN_HOLDER_NAME = "ColumnImpl";
     private static final String COLUMN_INTERFACE_NAME = "Column";
     private static final String INDENT = "    ";
+    public static final Pattern VERSION_PATTERN = Pattern.compile(
+        "[Vv]([0-9]+)(?:[._]([0-9]+))?(?:[._]([0-9]+))?(.*?)"
+    );
 
     private static final Set<String> IGNORED_TABLES = Collections.singleton(
         "FLYWAY_SCHEMA_HISTORY"
     );
+    private static final String CRD_GROUP = "internal.linstor.linbit.com";
 
-    private StringBuilder clazzBuilder;
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
+
+    private static Random random = new Random();
+    private StringBuilder mainBuilder = new StringBuilder();
     private int indentLevel = 0;
     private TreeMap<String, Table> tbls = new TreeMap<>();
 
-    public static String generateSqlConstants(Connection conRef)
+    public DatabaseConstantsGenerator(Connection conRef) throws SQLException
     {
-        return generateSqlConstants(conRef, null, null);
-    }
-
-    public static String generateSqlConstants(Connection conRef, String pkgStrRef, String clazzNameRef)
-    {
-        DatabaseConstantsGenerator generator = new DatabaseConstantsGenerator();
-        String generatedClass;
-        try
-        {
-            String pkgStr = pkgStrRef == null ? DFLT_PACKAGE : pkgStrRef;
-            String clazzName = clazzNameRef == null ? DFLT_CLAZZ_NAME : clazzNameRef;
-
-            generatedClass = generator.generate(conRef, pkgStr, clazzName);
-        }
-        catch (Exception exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        return generatedClass;
-    }
-
-
-    private String generate(Connection con, String pkgName, String clazzName) throws Exception
-    {
-        tbls = extractTables(con, IGNORED_TABLES);
-        String generatedTablesJavaClassSrc = render(pkgName, clazzName);
-
-        return generatedTablesJavaClassSrc;
+        tbls = extractTables(conRef, IGNORED_TABLES);
     }
 
     public static TreeMap<String, Table> extractTables(Connection con, Set<String> ignoredTables) throws SQLException
@@ -116,6 +118,7 @@ public final class DatabaseConstantsGenerator
                             String clmName = metaColumns.getString("COLUMN_NAME");
                             tbl.columns.add(
                                 new Column(
+                                    tbl,
                                     clmName,
                                     metaColumns.getString("TYPE_NAME"),
                                     primaryKeys.contains(clmName),
@@ -131,11 +134,18 @@ public final class DatabaseConstantsGenerator
         return tables;
     }
 
-    private String render(String pkgName, String clazzName) throws Exception
+    public String renderSqlConsts(String pkgName, String clazzName)
     {
-        clazzBuilder = new StringBuilder();
+        mainBuilder = new StringBuilder();
 
-        renderPackageAndImports(pkgName);
+        renderPackageAndImports(
+            pkgName,
+            "com.linbit.ImplementationError",
+            "com.linbit.linstor.dbdrivers.DatabaseTable",
+            "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
+            null, // empty line
+            "java.sql.Types"
+        );
 
         appendEmptyLine();
         appendLine("public class %s", clazzName);
@@ -154,11 +164,12 @@ public final class DatabaseConstantsGenerator
             // tables and columns
             for (Table tbl : tbls.values())
             {
-                renderTable(tbl);
+                renderSqlConstsTable(tbl);
                 appendEmptyLine();
             }
 
             // table constants
+            appendLine("public static final DatabaseTable[] ALL_TABLES; // initialized in static block");
             for (Table tbl : tbls.values())
             {
                 String tblNameCamelCase = toUpperCamelCase(tbl.name);
@@ -178,6 +189,18 @@ public final class DatabaseConstantsGenerator
             appendLine("static");
             try (IndentLevel staticBlock = new IndentLevel())
             {
+                appendLine("ALL_TABLES = new DatabaseTable[] {");
+                try (IndentLevel allTablesInitIndent = new IndentLevel("", "", false, false))
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        appendLine("%s,", tbl.name);
+                    }
+                    cutLastAndAppend(2, "\n");
+                }
+                appendLine("};", tbls.values().size());
+                appendEmptyLine();
+
                 for (Table tbl : tbls.values())
                 {
                     String tblNameCamelCase = toUpperCamelCase(tbl.name);
@@ -205,19 +228,41 @@ public final class DatabaseConstantsGenerator
                     {"boolean", "isNullable"}
                 },
                 new String[][] {
-                    {INTERFACE_NAME, "table"}
+                    { INTERFACE_NAME_SQL, "table" }
                 }
             );
 
+            appendEmptyLine();
+            appendLine("public static DatabaseTable getByValue(String value)");
+            try (IndentLevel getByValueIdent = new IndentLevel())
+            {
+                appendLine("switch(value.toUpperCase())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        appendLine("case \"%s\":", tbl.name);
+                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                        {
+                            appendLine("return %s;", tbl.name);
+                        }
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("throw new ImplementationError(\"Unknown database table: \" + value);");
+                    }
+                }
+            }
         }
-        return clazzBuilder.toString();
+        return mainBuilder.toString();
     }
 
-    private void renderPackageAndImports(String pkgName)
+    private void renderPackageAndImports(String pkgName, String... imports)
     {
         appendLine("package %s;", pkgName);
         appendEmptyLine();
-        for (String imp : IMPORTS)
+        for (String imp : imports)
         {
             if (imp == null)
             {
@@ -230,7 +275,7 @@ public final class DatabaseConstantsGenerator
         }
     }
 
-    private void renderTable(Table tbl)
+    private void renderSqlConstsTable(Table tbl)
     {
         String tblNameCamelCase = toUpperCamelCase(tbl.name);
 
@@ -258,7 +303,7 @@ public final class DatabaseConstantsGenerator
             }
         }
 
-        appendLine("public static class %s implements %s", tblNameCamelCase, INTERFACE_NAME);
+        appendLine("public static class %s implements %s", tblNameCamelCase, INTERFACE_NAME_SQL);
         try (IndentLevel tblDfn = new IndentLevel())
         {
             // constructor
@@ -323,26 +368,1345 @@ public final class DatabaseConstantsGenerator
         }
     }
 
-    private void cutLastAndAppend(int cutLen, String appendAfter)
+    /*
+     * K8S CRD
+     */
+    public GeneratedCrdResult renderKubernetesCustomResourceDefinitions(
+        String basePkgName,
+        String clazzNameFormatRef,
+        String currentVersionStrRef,
+        Set<String> allVersionsRef
+    )
     {
-        clazzBuilder.setLength(clazzBuilder.length() - cutLen);
-        clazzBuilder.append(appendAfter);
+        // reinitialize random with currentVersion based seed
+        random = new Random(currentVersionStrRef.hashCode());
+
+        mainBuilder = new StringBuilder();
+        TreeSet<GeneratorVersion> olderVersions = new TreeSet<>();
+        TreeSet<GeneratorVersion> allVersions = new TreeSet<>();
+        for (String olderVersion : allVersionsRef)
+        {
+            GeneratorVersion version = getVersion(olderVersion);
+            olderVersions.add(version);
+            allVersions.add(version);
+        }
+        GeneratorVersion curVer = getVersion(currentVersionStrRef);
+        olderVersions.remove(curVer);
+        allVersions.add(curVer);
+
+        Set<GeneratedCrdJavaClass> javaClasses = new HashSet<>();
+        Set<GeneratedResources> resources = new HashSet<>();
+
+        // currently we are only generating one large class instead of many smaller classes (one per table? or three?)
+        renderCurrentGenCrd(basePkgName, currentVersionStrRef, DFLT_K8S_CRD_CLASS_NAME_CURRENT);
+        String genCrdCurrentCode = mainBuilder.toString();
+        javaClasses.add(
+            new GeneratedCrdJavaClass(basePkgName, DFLT_K8S_CRD_CLASS_NAME_CURRENT, genCrdCurrentCode)
+        );
+        // also save the just generated code as GenCrd${currentVersion}.java for the migration to refer to
+        String versionedClassName = String.format(DFLT_K8S_CRD_CLASS_NAME_FORMAT, currentVersionStrRef.toUpperCase());
+        javaClasses.add(
+            new GeneratedCrdJavaClass(
+                basePkgName,
+                versionedClassName,
+                genCrdCurrentCode.replaceAll(DFLT_K8S_CRD_CLASS_NAME_CURRENT, versionedClassName)
+            )
+        );
+
+        // renderMainGenCrd(basePkgName, clazzNameFormatRef, allVersions, curVer);
+        // javaClasses.add(
+        // new GeneratedCrdJavaClass(basePkgName, DFLT_K8S_CRD_CLASS_NAME, genCrdCurrentCode)
+        // );
+
+        for (Table tbl : tbls.values())
+        {
+            renderYamlFile(tbl, currentVersionStrRef, olderVersions);
+            resources.add(new GeneratedResources(getYamlLocation(tbl, currentVersionStrRef), mainBuilder.toString()));
+        }
+        renderRollbackYamlFile(tbls.values(), currentVersionStrRef, olderVersions);
+        resources.add(
+            new GeneratedResources(
+                getYamlLocation(currentVersionStrRef, "rollback"),
+                mainBuilder.toString()
+            )
+        );
+
+        // renderMigrationClassTemplate(currentVersionStrRef);
+        // GeneratedCrdJavaClass migrationTemplateClass = new GeneratedCrdJavaClass(
+        // K8sCrdMigration.class.getPackage().getName(),
+        // String.format(DFLT_K8S_CRD_MIGRATION_CLASS_NAME_FORMAT, currentVersionStrRef.toUpperCase()),
+        // mainBuilder.toString()
+        // );
+        return new GeneratedCrdResult(javaClasses, resources);
+    }
+
+    private void renderCurrentGenCrd(String pkgName, String currentVersionRef, String clazzName)
+    {
+        mainBuilder.setLength(0);
+        renderPackageAndImports(
+            pkgName,
+            // "java.io.Serializable",
+            "java.math.BigInteger",
+            "java.nio.charset.StandardCharsets",
+            // "java.util.ArrayList",
+            "java.util.Date",
+            "java.util.HashMap",
+            "java.util.HashSet",
+            "java.util.Map",
+            "java.util.TreeMap",
+            null, // empty line
+            "com.linbit.ImplementationError",
+            "com.linbit.linstor.dbdrivers.DatabaseTable",
+            "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
+            "com.linbit.linstor.dbdrivers.GeneratedDatabaseTables",
+            "com.linbit.linstor.security.AccessDeniedException",
+            "com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext",
+            "com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext",
+            "com.linbit.utils.ExceptionThrowingFunction",
+            null, // empty line
+            "com.fasterxml.jackson.annotation.JsonCreator",
+            "com.fasterxml.jackson.annotation.JsonIgnore",
+            "com.fasterxml.jackson.annotation.JsonProperty",
+            // "com.fasterxml.jackson.databind.annotation.JsonDeserialize",
+            // "io.fabric8.kubernetes.api.model.KubernetesResource",
+            // "io.fabric8.kubernetes.api.model.Namespaced",
+            // "io.fabric8.kubernetes.api.model.HasMetadata",
+            "io.fabric8.kubernetes.api.model.ObjectMetaBuilder",
+            "io.fabric8.kubernetes.client.CustomResource",
+            // "io.fabric8.kubernetes.client.CustomResourceList",
+            "io.fabric8.kubernetes.model.annotation.Group",
+            "io.fabric8.kubernetes.model.annotation.Plural",
+            "io.fabric8.kubernetes.model.annotation.Singular",
+            "io.fabric8.kubernetes.model.annotation.Version"
+        );
+        appendEmptyLine();
+
+        appendLine("public class %s", clazzName);
+        try (IndentLevel clazzIndent = new IndentLevel())
+        {
+            appendLine("public static final String VERSION = \"%s\";", asYamlVersionString(currentVersionRef));
+            appendLine("public static final String GROUP = \"%s\";", CRD_GROUP);
+            appendEmptyLine();
+
+            appendEmptyLine();
+            appendLine("private %s()", clazzName);
+            try (IndentLevel constructor = new IndentLevel())
+            {}
+
+            appendEmptyLine();
+            appendLine("@SuppressWarnings(\"unchecked\")");
+            appendLine(
+                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> Class<? extends LinstorCrd<SPEC>> databaseTableToCustomResourceClass("
+            );
+            try (IndentLevel databaseTableToCrdIndent = new IndentLevel("", "", false, false))
+            {
+                appendLine("DatabaseTable table");
+            }
+            appendLine(")");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("switch(table.getName())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        String tblNameCamelCase = toUpperCamelCase(tbl.name);
+                        appendLine("case \"%s\":", tbl.name);
+                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                        {
+                            appendLine("return (Class<CRD>) %s.class;", tblNameCamelCase);
+                        }
+                    }
+                    appendLine("case \"rollback\": // intentionally lower case");
+                    try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("return (Class<CRD>) Rollback.class;");
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("throw new ImplementationError(\"Unknown database table: \" + table.getName());");
+                    }
+                }
+            }
+
+            appendEmptyLine();
+            appendLine("@SuppressWarnings(\"unchecked\")");
+            appendLine("public static <SPEC extends LinstorSpec> LinstorCrd<SPEC> specToCrd(SPEC spec)");
+            try (IndentLevel specToCrdMethod = new IndentLevel())
+            {
+                appendLine("switch(spec.getDatabaseTable().getName())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        String tblNameCamelCase = toUpperCamelCase(tbl.name);
+                        String specClassName = tblNameCamelCase + "Spec";
+                        appendLine("case \"%s\":", tbl.name);
+                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                        {
+                            appendLine("return (LinstorCrd<SPEC>) new %s((%s) spec);", tblNameCamelCase, specClassName);
+                        }
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine(
+                            "throw new ImplementationError(\"Unknown database table: \" + spec.getDatabaseTable().getName());"
+                        );
+                    }
+                }
+            }
+
+            appendEmptyLine();
+            appendLine("public static <DATA> LinstorCrd<?> dataToCrd(");
+            try (IndentLevel genericCreateMethodParams = new IndentLevel("", "", false, false))
+            {
+                appendLine("DatabaseTable table,");
+                appendLine("Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,");
+                appendLine("DATA data");
+            }
+            appendLine(")");
+            try (IndentLevel genericCreateMethodThrowsDeclarations = new IndentLevel("", "", false, false))
+            {
+                appendLine("throws AccessDeniedException");
+            }
+            try (IndentLevel genericCreateMethod = new IndentLevel())
+            {
+                appendLine("switch(table.getName())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        String tblNameCamelCase = toUpperCamelCase(tbl.name);
+                        String specClassName = tblNameCamelCase + "Spec";
+                        appendLine("case \"%s\":", tbl.name);
+                        try (IndentLevel caseIndent = new IndentLevel())
+                        {
+                            appendLine("return new %s(", tblNameCamelCase);
+                            try (IndentLevel CrArgIndent = new IndentLevel("", "", false, false))
+                            {
+                                appendLine("new %s(", specClassName);
+                                try (IndentLevel specArgIndent = new IndentLevel("", "", false, false))
+                                {
+                                    for (Column clm : tbl.columns)
+                                    {
+                                        appendLine(
+                                            "(%s) setters.get(%s.%s.%s).accept(data),",
+                                            getJavaType(clm),
+                                            DFLT_GEN_DB_TABLES_CLASS_NAME,
+                                            toUpperCamelCase(clm.tbl.name),
+                                            clm.name
+                                        );
+                                        // appendLine("(%s) setters.get(%s.%s).accept(data),", type, clmName);
+                                    }
+                                    cutLastAndAppend(2, "\n");
+                                }
+                                appendLine(")");
+                            }
+                            appendLine(");");
+                        }
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("throw new ImplementationError(\"Unknown database table: \" + table.getName());");
+                    }
+                }
+            }
+
+            appendEmptyLine();
+            appendLine("public static String databaseTableToYamlLocation(DatabaseTable dbTable)");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("switch(dbTable.getName())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        appendLine("case \"%s\":", tbl.name);
+                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                        {
+                            appendLine("return \"%s\";", getYamlLocation(tbl, currentVersionRef));
+                        }
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("throw new ImplementationError(\"Unknown database table: \" + dbTable.getName());");
+                    }
+                }
+            }
+
+            appendEmptyLine();
+            appendLine("public static String getRollbackYamlLocation()");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return \"%s\";", getYamlLocation(currentVersionRef, "rollback"));
+            }
+
+            appendEmptyLine();
+            appendLine(
+                "public static BaseControllerK8sCrdTransactionMgrContext<%s.Rollback> createTxMgrContext()",
+                clazzName
+            );
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return new BaseControllerK8sCrdTransactionMgrContext<>(");
+                try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
+                {
+                    appendLine("%s::databaseTableToCustomResourceClass,", clazzName);
+                    appendLine("%s.Rollback.class,", clazzName);
+                    appendLine("%s::newRollbackCrd,", clazzName);
+                    appendLine("%s::specToCrd", clazzName);
+                }
+                appendLine(");");
+            }
+
+            appendEmptyLine();
+            appendLine("public static K8sCrdSchemaUpdateContext createSchemaUpdateContext()");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return new K8sCrdSchemaUpdateContext(");
+                try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
+                {
+                    appendLine("%s::databaseTableToYamlLocation,", clazzName);
+                    appendLine("getRollbackYamlLocation()");
+                }
+                appendLine(");");
+            }
+
+            renderRollbackClass(currentVersionRef, clazzName);
+
+            for (Table tbl : tbls.values())
+            {
+                appendEmptyLine();
+                renderCrdTableClass(tbl, currentVersionRef, clazzName);
+            }
+
+            appendEmptyLine();
+            appendLine("private static final String base32Encode(String format, Object... args)");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("String stringToEncode = String.format(format, args);");
+                appendLine("return new BigInteger(1, stringToEncode.getBytes(StandardCharsets.UTF_8)).toString(32);");
+            }
+        }
+    }
+
+    private String asYamlVersionString(String currentVersionRef)
+    {
+        return currentVersionRef.replaceAll("_", "-");
+    }
+
+    private GeneratorVersion getVersion(String strVersion)
+    {
+        Matcher m = VERSION_PATTERN.matcher(strVersion);
+        if (!m.find())
+        {
+            throw new ImplementationError("Failed to parse version '" + strVersion + "'");
+        }
+        String major = m.group(1);
+        String minor = m.group(2);
+        String patch = m.group(3);
+        String additional = m.group(4);
+        return new GeneratorVersion(
+            new Version(
+                Integer.parseInt(major),
+                minor == null || minor.isEmpty() ? null : Integer.parseInt(minor),
+                patch == null || patch.isEmpty() ? null : Integer.parseInt(patch),
+                additional == null || additional.isEmpty() ? null : additional
+            ),
+            strVersion
+        );
     }
 
 
-    private String toUpperCamelCase(String nameRef)
+    private void renderRollbackClass(String crdVersion, String currentClassName)
+    {
+        appendEmptyLine();
+        appendLine("public static Rollback newRollbackCrd()");
+        try (IndentLevel methodIndent = new IndentLevel())
+        {
+            appendLine("return new Rollback(new RollbackSpec());");
+        }
+
+        /*
+         * Spec class
+         */
+        appendEmptyLine();
+        appendLine("public static class RollbackSpec implements RollbackSpecInterface");
+        try (IndentLevel rollbackSpecIndent = new IndentLevel())
+        {
+            appendLine("@JsonIgnore private static final long serialVersionUID = %dL;", random.nextLong());
+            appendEmptyLine();
+
+            appendLine("@JsonIgnore private final Object syncObject = new Object();");
+            appendEmptyLine();
+
+            appendLine("/** Contains original data for each modified or created Spec class */");
+            appendLine("// HashMap<dbTable.toString(), HashMap<spec.getKey(), spec>>");
+            appendLine(
+                "@JsonProperty(\"rollbackMap\") public final HashMap<String, HashMap<String, %s>> rollbackMap;",
+                CRD_LINSTOR_SPEC_INTERFACE_NAME
+            );
+            appendEmptyLine();
+
+            appendLine("/**");
+            appendLine("  * Contains keys of instances that were created in this transaction.");
+            appendLine("  * A rollback causes deletion of these entries");
+            appendLine("  */");
+            appendLine("// HashMap<dbTable.toString(), HashMap<spec.getKey(), spec>>");
+            appendLine("@JsonProperty(\"deleteMap\") public final HashMap<String, HashSet<String>> deleteMap;");
+
+            appendEmptyLine();
+            appendLine("public RollbackSpec()");
+            try (IndentLevel ctorIndent = new IndentLevel())
+            {
+                appendLine("rollbackMap = new HashMap<>();");
+                appendLine("deleteMap = new HashMap<>();");
+            }
+
+            appendEmptyLine();
+            appendLine("@JsonCreator");
+            appendLine("public RollbackSpec(");
+            try (IndentLevel ctorParamIndent = new IndentLevel("", "", false, false))
+            {
+                appendLine("@JsonProperty(\"rollbackMap\")HashMap<String, HashMap<String, %s>> rollbackMapRef,", CRD_LINSTOR_SPEC_INTERFACE_NAME);
+                appendLine("@JsonProperty(\"deleteMap\") HashMap<String, HashSet<String>> deleteMapRef");
+            }
+            appendLine(")");
+            try (IndentLevel ctorIndent = new IndentLevel())
+            {
+                appendLine("rollbackMap = rollbackMapRef;");
+                appendLine("deleteMap = deleteMapRef;");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("@JsonIgnore");
+            appendLine("public void updatedOrDeleted(DatabaseTable dbTable, %s data)", CRD_LINSTOR_SPEC_INTERFACE_NAME);
+            try (IndentLevel addAsUpdateMethodIndent = new IndentLevel())
+            {
+                appendLine("synchronized (syncObject)");
+                try (IndentLevel addAsUpdateMethodSynchronizedIndent = new IndentLevel())
+                {
+                    appendLine("String dbTableStr = dbTable.toString();");
+                    appendLine("String specKey = data.getKey();");
+                    appendLine("if (!alreadyKnown(dbTableStr, specKey))");
+                    try (IndentLevel ifIndent = new IndentLevel())
+                    {
+                        appendLine(
+                            "HashMap<String, %s> rbMap = rollbackMap.get(dbTableStr);",
+                            CRD_LINSTOR_SPEC_INTERFACE_NAME
+                        );
+                        appendLine("if (rbMap == null)");
+                        try (IndentLevel nestedIfIndent = new IndentLevel())
+                        {
+                            appendLine("rbMap = new HashMap<>();");
+                            appendLine("rollbackMap.put(dbTableStr, rbMap);");
+                        }
+                        appendLine("rbMap.put(specKey, data);");
+                    }
+                }
+            }
+            appendEmptyLine();
+
+            appendLine("@Override");
+            appendLine("@JsonIgnore");
+            appendLine("public void created(DatabaseTable dbTable, String specKey)");
+            try (IndentLevel addAsUpdateMethodIndent = new IndentLevel())
+            {
+                appendLine("synchronized (syncObject)");
+                try (IndentLevel addAsUpdateMethodSynchronizedIndent = new IndentLevel())
+                {
+                    appendLine("String dbTableStr = dbTable.toString();");
+                    appendLine("if (!alreadyKnown(dbTableStr, specKey))");
+                    try (IndentLevel ifIndent = new IndentLevel())
+                    {
+                        appendLine("HashSet<String> delSet = deleteMap.get(dbTableStr);");
+                        appendLine("if (delSet == null)");
+                        try (IndentLevel addAsUpdateMethodIfIndent = new IndentLevel())
+                        {
+                            appendLine("delSet = new HashSet<>();");
+                            appendLine("deleteMap.put(dbTableStr, delSet);");
+                        }
+                        appendLine("delSet.add(specKey);");
+                    }
+                }
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public HashMap<String, HashMap<String, LinstorSpec>> getRollbackMap()");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return rollbackMap;");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public HashMap<String, HashSet<String>> getDeleteMap()");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return deleteMap;");
+            }
+
+            appendEmptyLine();
+            appendLine("@JsonIgnore");
+            appendLine("private boolean alreadyKnown(String dbTableStr, String specKey)");
+            try (IndentLevel alreadyKnownMethodIndent = new IndentLevel())
+            {
+                appendLine(
+                    "HashMap<String, %s> rbMap = rollbackMap.get(dbTableStr);",
+                    CRD_LINSTOR_SPEC_INTERFACE_NAME
+                );
+                appendLine("HashSet<String> delSet = deleteMap.get(dbTableStr);");
+                appendLine(
+                    "return (rbMap == null || !rbMap.containsKey(specKey)) && (delSet == null || !delSet.contains(specKey));"
+                );
+            }
+
+            appendEmptyLine();
+            appendLine("@JsonIgnore");
+            appendLine("@Override");
+            appendLine("public String getKey()");
+            try (IndentLevel getKeyIndent = new IndentLevel())
+            {
+                appendLine("return \"rollback\";");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("@JsonIgnore");
+            appendLine("public Map<String, Object> asRawParameters()");
+            try (IndentLevel getKeyIndent = new IndentLevel())
+            {
+                appendLine("throw new ImplementationError(\"Method not supported by Rollback\");");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("@JsonIgnore");
+            appendLine("public Object getByColumn(Column clmRef)");
+            try (IndentLevel getKeyIndent = new IndentLevel())
+            {
+                appendLine("throw new ImplementationError(\"Method not supported by Rollback\");");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("@JsonIgnore");
+            appendLine("public DatabaseTable getDatabaseTable()");
+            try (IndentLevel getKeyIndent = new IndentLevel())
+            {
+                appendLine("throw new ImplementationError(\"Method not supported by Rollback\");");
+            }
+        }
+
+        /*
+         * CustomResource class
+         */
+        appendEmptyLine();
+        appendLine("@Version(%s.VERSION)", currentClassName);
+        appendLine("@Group(%s.GROUP)", currentClassName);
+        appendLine("@Plural(\"rollback\")");
+        appendLine("@Singular(\"rollback\")");
+        appendLine(
+            "public static class Rollback extends CustomResource<RollbackSpec, Void> implements RollbackCrd"
+        );
+        try (IndentLevel clazzIndent = new IndentLevel())
+        {
+            appendLine("private static final long serialVersionUID = %dL;", random.nextLong());
+            appendEmptyLine();
+
+            appendLine("public Rollback()");
+            try (IndentLevel ctorIndent = new IndentLevel())
+            {
+                appendLine("super();");
+            }
+            appendEmptyLine();
+
+            appendLine("public Rollback(RollbackSpec spec)");
+            try (IndentLevel ctorIndent = new IndentLevel())
+            {
+                appendLine("setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());");
+                appendLine("setSpec(spec);");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("@JsonIgnore");
+            appendLine("public String getKey()");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return spec.getKey();");
+            }
+        }
+    }
+
+    private void renderCrdTableClass(Table tbl, String crdVersion, String clazzNameRef)
+    {
+        String tblNameCamelCase = toUpperCamelCase(tbl.name);
+        String specClassName = tblNameCamelCase + "Spec";
+
+        /*
+         * Create method
+         */
+        appendLine(
+            "public static %s create%s(",
+            tblNameCamelCase,
+            tblNameCamelCase
+        );
+        try (IndentLevel paramIndent = new IndentLevel("", "", false, false))
+        {
+            for (Column clm : tbl.columns)
+            {
+                String type = getJavaType(clm);
+                String clmName = camelCase(clm.name.toLowerCase().toCharArray());
+                appendLine("%s %s,", type, clmName);
+            }
+            cutLastAndAppend(2, "\n");
+        }
+        appendLine(")");
+        try (IndentLevel createMethodIndent = new IndentLevel())
+        {
+            appendLine("return new %s(", tblNameCamelCase);
+            try (IndentLevel CrArgIndent = new IndentLevel("", "", false, false))
+            {
+                appendLine("new %s(", specClassName);
+                try (IndentLevel specArgIndent = new IndentLevel("", "", false, false))
+                {
+                    for (Column clm : tbl.columns)
+                    {
+                        String clmName = camelCase(clm.name.toLowerCase().toCharArray());
+                        appendLine("%s,", clmName);
+                    }
+                    cutLastAndAppend(2, "\n");
+                }
+                appendLine(")");
+            }
+            appendLine(");");
+        }
+
+        /*
+         * Spec class
+         */
+        appendEmptyLine();
+        appendLine("public static class %s implements %s", specClassName, CRD_LINSTOR_SPEC_INTERFACE_NAME);
+        try (IndentLevel specClazzIndent = new IndentLevel())
+        {
+            appendLine("@JsonIgnore private static final long serialVersionUID = %dL;", random.nextLong());
+
+            StringBuilder pkFormat = new StringBuilder();
+            StringBuilder pkFormatBackup = new StringBuilder(); // in case a table has no PKs defined, take all columns
+            boolean pkFound = false;
+            for (Column clm : tbl.columns)
+            {
+                String stringFormatType = getStringFormatType(clm);
+                if (stringFormatType != null)
+                {
+                    pkFormatBackup.append(stringFormatType);
+                    pkFormatBackup.append(CRD_PK_DELIMITER);
+                    if (clm.pk)
+                    {
+                        pkFormat.append(stringFormatType);
+                        pkFormat.append(CRD_PK_DELIMITER);
+                        pkFound = true;
+                    }
+                }
+            }
+            if (!pkFound)
+            {
+                pkFormat = pkFormatBackup;
+            }
+            pkFormat.setLength(pkFormat.length() - CRD_PK_DELIMITER.length());
+            appendLine("@JsonIgnore private static final String PK_FORMAT = \"%s\";", pkFormat);
+
+            appendEmptyLine();
+            appendLine("@JsonIgnore private final String formattedPrimaryKey;");
+
+            appendEmptyLine();
+            LinkedHashMap<String, String> ctorParameters = new LinkedHashMap<>();
+            for (Column clm : tbl.columns)
+            {
+                String type = getJavaType(clm);
+                String lowerCaseClmName = clm.name.toLowerCase();
+                String camelCaseClmName = camelCase(lowerCaseClmName.toCharArray());
+                appendLine(
+                    "@JsonProperty(\"%s\") public final %s %s;%s",
+                    lowerCaseClmName,
+                    type,
+                    camelCaseClmName,
+                    clm.pk ? " // PK" : ""
+                );
+                ctorParameters.put(lowerCaseClmName, type);
+            }
+            appendEmptyLine();
+
+            // constructor
+            if (ctorParameters.isEmpty())
+            {
+                appendLine("@JsonCreator");
+                appendLine("public %s() {}", specClassName);
+            }
+            else
+            {
+                appendLine("@JsonCreator");
+                appendLine("public %s(", specClassName);
+                try (IndentLevel ctorParamIndent = new IndentLevel("", "", false, false))
+                {
+                    for (Entry<String, String> arg : ctorParameters.entrySet())
+                    {
+                        String lowerCaseClmName = arg.getKey();
+                        String camelCaseClmName = camelCase(lowerCaseClmName.toCharArray());
+                        appendLine(
+                            "@JsonProperty(\"%s\") %s %sRef,",
+                            lowerCaseClmName,
+                            arg.getValue(),
+                            camelCaseClmName
+                        );
+                    }
+                    cutLastAndAppend(2, "\n");
+                }
+                appendLine(")");
+                try (IndentLevel ctorIndent = new IndentLevel())
+                {
+                    for (String lowerCaseClmName : ctorParameters.keySet())
+                    {
+                        String camelCaseClmName = camelCase(lowerCaseClmName.toCharArray());
+                        appendLine("%s = %sRef;", camelCaseClmName, camelCaseClmName);
+                    }
+                    appendEmptyLine();
+                    appendLine("formattedPrimaryKey = base32Encode(String.format(");
+                    try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("%s.PK_FORMAT,", specClassName);
+                        for (Column clm : tbl.columns)
+                        {
+                            if (clm.pk)
+                            {
+                                String clmName = camelCase(clm.name.toLowerCase().toCharArray());
+                                appendLine("%s,", clmName);
+                            }
+                        }
+                        cutLastAndAppend(2, "\n");
+                    }
+                    appendLine("));");
+                }
+            }
+
+            appendEmptyLine();
+            appendLine("public final <DATA> %s create(", specClassName);
+            try (IndentLevel createParamIndent = new IndentLevel("", "", false, false))
+            {
+                appendLine("Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,");
+                appendLine("DATA data");
+            }
+            appendLine(")");
+            try (IndentLevel genericCreateMethodThrowsDeclarations = new IndentLevel("", "", false, false))
+            {
+                appendLine("throws AccessDeniedException");
+            }
+            try (IndentLevel createMethodIndent = new IndentLevel())
+            {
+                appendLine("return new %s(", specClassName);
+                try (IndentLevel createParamIndent = new IndentLevel("", "", false, false))
+                {
+                    for (Column clm : tbl.columns)
+                    {
+                        appendLine(
+                            "(%s) setters.get(%s.%s.%s).accept(data),",
+                            getJavaType(clm),
+                            DFLT_GEN_DB_TABLES_CLASS_NAME,
+                            toUpperCamelCase(clm.tbl.name),
+                            clm.name
+                        );
+                    }
+                    cutLastAndAppend(2, "\n");
+                }
+                appendLine(");");
+            }
+
+            appendEmptyLine();
+            appendLine("@JsonIgnore");
+            appendLine("@Override");
+            appendLine("public Map<String, Object> asRawParameters()");
+            try (IndentLevel getRawParamMethodIndent = new IndentLevel())
+            {
+                appendLine("Map<String, Object> ret = new TreeMap<>();");
+                for (Column clm : tbl.columns)
+                {
+                    appendLine("ret.put(\"%s\", %s);", clm.name, camelCase(clm.name.toLowerCase().toCharArray()));
+                }
+                appendLine("return ret;");
+            }
+
+            appendEmptyLine();
+            appendLine("@JsonIgnore");
+            appendLine("@Override");
+            appendLine("public Object getByColumn(Column clm)");
+            try (IndentLevel getByColumnMethodIndent = new IndentLevel())
+            {
+                appendLine("switch(clm.getName())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Column clm : tbl.columns)
+                    {
+                        appendLine("case \"%s\":", clm.name);
+                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                        {
+                            appendLine("return %s;", camelCase(clm.name.toLowerCase().toCharArray()));
+                        }
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine(
+                            "throw new ImplementationError(\"Unknown database column. Table: \" + clm.getTable().getName() + \", Column: \" + clm.getName());"
+                        );
+                    }
+                }
+            }
+
+            appendEmptyLine();
+            appendLine("@JsonIgnore");
+            appendLine("@Override");
+            appendLine("public final String getKey()");
+            try (IndentLevel ctorParamIndent = new IndentLevel())
+            {
+                appendLine("return formattedPrimaryKey;");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("@JsonIgnore");
+            appendLine("public DatabaseTable getDatabaseTable()");
+            try (IndentLevel getKeyIndent = new IndentLevel())
+            {
+                appendLine("return GeneratedDatabaseTables.%s;", tbl.name);
+            }
+        }
+
+        /*
+         * CustomResource class
+         */
+        appendEmptyLine();
+        appendLine("@Version(%s.VERSION)", clazzNameRef);
+        appendLine("@Group(%s.GROUP)", clazzNameRef);
+        appendLine("@Plural(\"%s\")", tblNameCamelCase.toLowerCase());
+        appendLine("@Singular(\"%s\")", tblNameCamelCase.toLowerCase());
+        // appendLine("@SuppressWarnings(\"unchecked\")"); // due to interface method '<T> T getSpec();'
+        appendLine(
+            "public static class %s extends CustomResource<%s, Void> implements LinstorCrd<%s>",
+            tblNameCamelCase,
+            specClassName,
+            specClassName
+        );
+        try (IndentLevel clazzIndent = new IndentLevel())
+        {
+            appendLine("private static final long serialVersionUID = %dL;", random.nextLong());
+            appendEmptyLine();
+
+            appendLine("public %s()", tblNameCamelCase);
+            try (IndentLevel ctorIndent = new IndentLevel())
+            {
+                appendLine("super();");
+            }
+            appendEmptyLine();
+
+            appendLine("public %s(%s spec)", tblNameCamelCase, specClassName);
+            try (IndentLevel ctorIndent = new IndentLevel())
+            {
+                appendLine("setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());");
+                appendLine("setSpec(spec);");
+            }
+
+            appendEmptyLine();
+            appendLine("@JsonIgnore");
+            appendLine("public String getKey()");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return spec.getKey();");
+            }
+        }
+    }
+
+    private void renderYamlFile(
+        Table tbl,
+        String currentVersionRef,
+        TreeSet<GeneratorVersion> olderVersionClassNamesRef
+    )
+    {
+        mainBuilder.setLength(0);
+        ObjectNode rootNode = YAML_MAPPER.createObjectNode();
+        rootNode.put("apiVersion", "apiextensions.k8s.io/v1");
+        rootNode.put("kind", "CustomResourceDefinition");
+
+        String nameCamelCase = toUpperCamelCase(tbl.name);
+        String nameLowerCase = nameCamelCase.toLowerCase();
+        // String namePlural = getNamePlural(nameLowerCase);
+        // String nameSingular = getNameSingular(nameLowerCase);
+        String namePlural = nameLowerCase;
+        String nameSingular = nameLowerCase;
+
+        ObjectNode metadataNode = YAML_MAPPER.createObjectNode();
+        {
+            metadataNode.put("name", namePlural + "." + CRD_GROUP);
+        }
+        rootNode.set("metadata", metadataNode);
+
+        ObjectNode specNode = YAML_MAPPER.createObjectNode();
+        {
+            specNode.put("group", CRD_GROUP);
+
+            ArrayNode versionArrayNode = YAML_MAPPER.createArrayNode();
+            {
+                // first add the newest (current) version.
+                ObjectNode curVerNode = YAML_MAPPER.createObjectNode();
+                {
+                    curVerNode.put("name", asYamlVersionString(currentVersionRef));
+                    curVerNode.put("served", true);
+                    curVerNode.put("storage", true); // always true for current version
+
+                    ObjectNode schemaNode = YAML_MAPPER.createObjectNode();
+                    {
+                        ObjectNode openapiNode = YAML_MAPPER.createObjectNode();
+                        {
+                            openapiNode.put("type", "object");
+                            ObjectNode propertiesNode = YAML_MAPPER.createObjectNode();
+                            {
+                                ObjectNode propertiesSpecNode = buildPropertiesSpecNode(tbl);
+                                propertiesNode.set("spec", propertiesSpecNode);
+                            }
+                            openapiNode.set("properties", propertiesNode);
+                        }
+                        schemaNode.set("openAPIV3Schema", openapiNode);
+                    }
+                    curVerNode.set("schema", schemaNode);
+                    versionArrayNode.add(curVerNode);
+                }
+
+                // now load versions section from last last
+                if (!olderVersionClassNamesRef.isEmpty())
+                {
+                    JsonNode oldVersionSection = loadOldVersionSection(tbl, olderVersionClassNamesRef.last());
+                    if (oldVersionSection != null)
+                    {
+                        Iterator<JsonNode> versionIt = oldVersionSection.elements();
+                        while (versionIt.hasNext())
+                        {
+                            ObjectNode oldVerNode = versionIt.next().deepCopy();
+                            oldVerNode.put("storage", false); // always for older versions
+                            versionArrayNode.add(oldVerNode);
+                        }
+                    }
+                }
+            }
+            specNode.set("versions", versionArrayNode);
+            specNode.put("scope", "Cluster");
+
+            ObjectNode namesNode = YAML_MAPPER.createObjectNode();
+            {
+                namesNode.put("plural", namePlural);
+                namesNode.put("singular", nameSingular);
+                namesNode.put("kind", nameCamelCase);
+                // no short name (for now?)
+            }
+            specNode.set("names", namesNode);
+        }
+        rootNode.set("spec", specNode);
+
+        try
+        {
+            mainBuilder.append(YAML_MAPPER.writeValueAsString(rootNode));
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new ImplementationError("Failed to serialize yaml content", exc);
+        }
+    }
+
+    private ObjectNode buildPropertiesSpecNode(Table tbl)
+    {
+        ObjectNode propertiesSpecNode = YAML_MAPPER.createObjectNode();
+        {
+            propertiesSpecNode.put("type", "object");
+            ObjectNode propertiesSpecPropertiesNode = YAML_MAPPER.createObjectNode();
+            {
+                for (Column clm : tbl.columns)
+                {
+                    String clmName = clm.name.toLowerCase(); // keep underscores, but all lower-case
+                    ObjectNode clmNode = YAML_MAPPER.createObjectNode();
+                    {
+                        clmNode.put("type", getYamlType(clm));
+                        String format = getYamlFormat(clm);
+                        if (format != null)
+                        {
+                            clmNode.put("format", format);
+                        }
+                    }
+                    propertiesSpecPropertiesNode.set(clmName, clmNode);
+                }
+            }
+            propertiesSpecNode.set("properties", propertiesSpecPropertiesNode);
+        }
+        return propertiesSpecNode;
+    }
+
+    private void renderRollbackYamlFile(
+        Collection<Table> tables,
+        String currentVersionStrRef,
+        TreeSet<GeneratorVersion> olderVersionsRef
+    )
+    {
+        mainBuilder.setLength(0);
+        ObjectNode rootNode = YAML_MAPPER.createObjectNode();
+        rootNode.put("apiVersion", "apiextensions.k8s.io/v1");
+        rootNode.put("kind", "CustomResourceDefinition");
+
+        String nameCamelCase = "Rollback";
+        String nameLowerCase = "rollback";
+        String namePlural = nameLowerCase;
+        String nameSingular = nameLowerCase;
+
+
+        ObjectNode metadataNode = YAML_MAPPER.createObjectNode();
+        {
+            metadataNode.put("name", namePlural + "." + CRD_GROUP);
+        }
+        rootNode.set("metadata", metadataNode);
+
+        ObjectNode specNode = YAML_MAPPER.createObjectNode();
+        {
+            specNode.put("group", CRD_GROUP);
+
+            ArrayNode versionArrayNode = YAML_MAPPER.createArrayNode();
+            {
+                // first add the newest (current) version.
+                ObjectNode curVerNode = YAML_MAPPER.createObjectNode();
+                {
+                    curVerNode.put("name", asYamlVersionString(currentVersionStrRef));
+                    curVerNode.put("served", true);
+                    curVerNode.put("storage", true); // always true for current version
+
+                    ObjectNode schemaNode = YAML_MAPPER.createObjectNode();
+                    {
+                        ObjectNode openapiNode = YAML_MAPPER.createObjectNode();
+                        {
+                            openapiNode.put("type", "object");
+                            ObjectNode propertiesNode = YAML_MAPPER.createObjectNode();
+                            {
+                                ObjectNode propertiesSpecNode = YAML_MAPPER.createObjectNode();
+                                {
+                                    propertiesSpecNode.put("type", "object");
+                                    // basically only to reset indentation :(
+                                    ObjectNode propertiesSpecPropertiesNode = buildRollbackPropertiesSpecPropertiesNode(
+                                        tables
+                                    );
+                                    propertiesSpecNode.set("properties", propertiesSpecPropertiesNode);
+                                }
+                                propertiesNode.set("spec", propertiesSpecNode);
+                            }
+                            openapiNode.set("properties", propertiesNode);
+                        }
+                        schemaNode.set("openAPIV3Schema", openapiNode);
+                    }
+                    curVerNode.set("schema", schemaNode);
+                    versionArrayNode.add(curVerNode);
+                }
+
+                // now load versions section from last last
+                if (!olderVersionsRef.isEmpty())
+                {
+                    JsonNode oldVersionSection = loadOldVersionSection(
+                        getYamlLocation(currentVersionStrRef, nameCamelCase)
+                    );
+                    if (oldVersionSection != null)
+                    {
+                        Iterator<JsonNode> versionIt = oldVersionSection.elements();
+                        while (versionIt.hasNext())
+                        {
+                            ObjectNode oldVerNode = versionIt.next().deepCopy();
+                            oldVerNode.put("storage", false); // always for older versions
+                            versionArrayNode.add(oldVerNode);
+                        }
+                    }
+                }
+            }
+            specNode.set("versions", versionArrayNode);
+            specNode.put("scope", "Cluster");
+
+            ObjectNode namesNode = YAML_MAPPER.createObjectNode();
+            {
+                namesNode.put("plural", namePlural);
+                namesNode.put("singular", nameSingular);
+                namesNode.put("kind", nameCamelCase);
+                // no short name (for now?)
+            }
+            specNode.set("names", namesNode);
+        }
+        rootNode.set("spec", specNode);
+
+        try
+        {
+            mainBuilder.append(YAML_MAPPER.writeValueAsString(rootNode));
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new ImplementationError("Failed to serialize yaml content", exc);
+        }
+    }
+
+    private ObjectNode buildRollbackPropertiesSpecPropertiesNode(Collection<Table> tables)
+    {
+        ObjectNode propertiesSpecPropertiesNode = YAML_MAPPER.createObjectNode();
+        {
+            for (Table tbl : tables)
+            {
+                ObjectNode tblNode = YAML_MAPPER.createObjectNode();
+                String tblNameLower = camelCase(tbl.name.toCharArray()).toLowerCase();
+                propertiesSpecPropertiesNode.set(
+                    tblNameLower,
+                    buildPropertiesSpecNode(tbl)
+                );
+            }
+        }
+        return propertiesSpecPropertiesNode;
+    }
+
+    private JsonNode loadOldVersionSection(Table tbl, GeneratorVersion generatorVersionRef)
+    {
+        return loadOldVersionSection(getYamlLocation(tbl, generatorVersionRef.originalVersion));
+    }
+
+    private JsonNode loadOldVersionSection(String yamlLocation)
+    {
+        JsonNode versionsObj = null;
+        try
+        {
+            File file = new File(yamlLocation);
+            if (file.exists())
+            {
+                // System.out.println("loading: " + file);
+                versionsObj = YAML_MAPPER.readTree(file).get("spec").get("versions");
+            }
+        }
+        catch (IOException exc)
+        {
+            throw new ImplementationError("Failed read old yaml file", exc);
+        }
+        return versionsObj;
+    }
+
+    private void renderMigrationClassTemplate(String currentVersionRef)
+    {
+        mainBuilder.setLength(0);
+        String versionedGenCrdClassName = String.format(
+            DFLT_K8S_CRD_CLASS_NAME_FORMAT,
+            currentVersionRef.toUpperCase()
+        );
+        renderPackageAndImports(
+            K8sCrdMigration.class.getPackage().getName(),
+            "com.linbit.ImplementationError",
+            "com.linbit.linstor.ControllerK8sCrdDatabase",
+            "com.linbit.linstor.dbdrivers.k8s.crd." + versionedGenCrdClassName,
+//            "com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd",
+//            "com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec",
+            "com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgr",
+//            "com.linbit.linstor.transaction.K8sCrdTransaction"
+            null, // empty line
+            "io.fabric8.kubernetes.client.KubernetesClient"
+        );
+        appendEmptyLine();
+
+        String migrationClassName = String.format(
+            DFLT_K8S_CRD_MIGRATION_CLASS_NAME_FORMAT,
+            currentVersionRef.toUpperCase()
+        );
+        appendLine("@K8sCrdMigration(");
+        try (IndentLevel annotIndent = new IndentLevel("", "", false, false))
+        {
+            appendLine("description = null,");
+            appendLine("version = \"%s\"", currentVersionRef);
+        }
+        appendLine(")");
+        appendLine("public class %s extends BaseK8sCrdMigration", migrationClassName);
+        try (IndentLevel clazzIndent = new IndentLevel())
+        {
+            // appendLine("public %s()", migrationClassName);
+            // try (IndentLevel ctorIndent = new IndentLevel())
+            // {}
+            //
+            // appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public void migrate(ControllerK8sCrdDatabase k8sDbRef) throws Exception");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine(
+                    "BaseControllerK8sCrdTransactionMgr<%s.Rollback> txMgr = new BaseControllerK8sCrdTransactionMgr<>(",
+                    versionedGenCrdClassName
+                );
+                try (IndentLevel argumentIndent = new IndentLevel("", "", false, false))
+                {
+                    appendLine("k8sDbRef,");
+                    appendLine("%s::databaseTableToCustomResourceClass,", versionedGenCrdClassName);
+                    appendLine("%s.Rollback.class,", versionedGenCrdClassName);
+                    appendLine("%s::newRollbackCrd,", versionedGenCrdClassName);
+                    appendLine("%s::specToCrd", versionedGenCrdClassName);
+                }
+                appendLine(");");
+
+                appendEmptyLine();
+                appendLine("KubernetesClient k8sClient = k8sDbRef.getClient();");
+
+                appendEmptyLine();
+                appendLine("// load data from database that needs to change");
+                appendLine("// TODO implement loading data to migrate");
+
+                appendEmptyLine();
+                appendLine("// update CRD entries for all DatabaseTables");
+                appendLine(
+                    "updateCrdSchemaForAllTables(k8sClient, %s::databaseTableToYamlLocation);",
+                    versionedGenCrdClassName
+                );
+
+                appendEmptyLine();
+                appendLine("// write modified data to database");
+                appendLine("// TODO implement writing changed data");
+                appendEmptyLine();
+                appendLine("throw new ImplementationError(\"Migration not implemented yet\");");
+            }
+        }
+    }
+
+    private String versionToString(Version versionRef)
+    {
+        return "v" + versionRef.toString();
+    }
+
+
+    private String getYamlLocation(Table tblRef, String crdVersionRef)
+    {
+        return getYamlLocation(crdVersionRef, toUpperCamelCase(tblRef.name));
+    }
+
+    public static String getYamlLocation(String dir, String fileName)
+    {
+        return String.format(
+            "generated-resources/com/linbit/linstor/dbcp/k8s/crd/%s/%s.yaml",
+            dir,
+            fileName
+        );
+    }
+
+    private String getJavaType(Column clmRef)
+    {
+        switch (clmRef.sqlType)
+        {
+            case "CHAR":
+            case "VARCHAR":
+            case "CLOB":
+                return "String";
+            case "BIGINT":
+            case "TIMESTAMP":
+                return clmRef.nullable ? "Long" : "long";
+            case "INTEGER":
+                return clmRef.nullable ? "Integer" : "int";
+            case "SMALLINT":
+                return clmRef.nullable ? "Short" : "short";
+            case "BOOLEAN":
+                return clmRef.nullable ? "Boolean" : "boolean";
+            case "BLOB":
+                return "byte[]";
+            case "DATE":
+                return "Date";
+            default:
+                throw new ImplementationError("Unknown Type: " + clmRef.sqlType);
+        }
+    }
+
+    private String getYamlType(Column clmRef)
+    {
+        switch (clmRef.sqlType)
+        {
+            case "CHAR":
+            case "VARCHAR":
+            case "CLOB":
+            case "BLOB":
+            case "DATE":
+                return "string";
+            case "BIGINT":
+            case "TIMESTAMP":
+            case "INTEGER":
+            case "SMALLINT":
+                return "integer";
+            case "BOOLEAN":
+                return "boolean";
+            default:
+                throw new ImplementationError("Unknown Type: " + clmRef.sqlType);
+        }
+    }
+
+    private String getYamlFormat(Column clmRef)
+    {
+        switch (clmRef.sqlType)
+        {
+            case "BIGINT":
+                return "int64";
+            case "INTEGER":
+                return "int32";
+            case "DATE":
+                return "date-time";
+            case "BLOB":
+                return "byte"; // base64 encoded
+            default:
+                return null; // no special format
+        }
+    }
+
+    private String getStringFormatType(Column clmRef)
+    {
+        switch (clmRef.sqlType)
+        {
+            case "CHAR":
+            case "VARCHAR":
+            case "CLOB":
+            case "DATE":
+                return "%s";
+            case "BIGINT":
+            case "TIMESTAMP":
+            case "INTEGER":
+            case "SMALLINT":
+                return "%d";
+            case "BOOLEAN":
+                return "%b";
+            case "BLOB":
+                return null;
+            default:
+                throw new ImplementationError("Unknown Type: " + clmRef.sqlType);
+        }
+    }
+
+    private void cutLastAndAppend(int cutLen, String appendAfter)
+    {
+        mainBuilder.setLength(mainBuilder.length() - cutLen);
+        mainBuilder.append(appendAfter);
+    }
+
+    public static String toUpperCamelCase(String nameRef)
     {
         return camelCase(firstToUpper(nameRef.toLowerCase()).toCharArray());
     }
 
-    private String firstToUpper(String nameRef)
+    public static String firstToUpper(String nameRef)
     {
         char[] ret = nameRef.toCharArray();
         ret[0] = Character.toUpperCase(ret[0]);
         return new String(ret);
     }
 
-    private String camelCase(char[] name)
+    public static String camelCase(char[] name)
     {
         StringBuilder sb = new StringBuilder();
         boolean nextUpper = false;
@@ -371,7 +1735,6 @@ public final class DatabaseConstantsGenerator
         String[][] fields,
         String[][] fieldsWithSetter
     )
-        throws Exception
     {
         appendLine("public static class %s implements %s", COLUMN_HOLDER_NAME, COLUMN_INTERFACE_NAME);
         try (IndentLevel clazzIndent = new IndentLevel())
@@ -456,25 +1819,21 @@ public final class DatabaseConstantsGenerator
 
     private void appendEmptyLine()
     {
-        clazzBuilder.append("\n");
+        mainBuilder.append("\n");
     }
 
     private void appendLine(String format, Object... args)
     {
-        append(format, args).append("\n");
+        append(format + "%n", args);
     }
 
     private StringBuilder append(String format, Object... args)
     {
         for (int indent = 0; indent < indentLevel; ++indent)
         {
-            clazzBuilder.append(INDENT);
+            mainBuilder.append(INDENT);
         }
-        return clazzBuilder.append(String.format(format, args));
-    }
-
-    private DatabaseConstantsGenerator()
-    {
+        return mainBuilder.append(String.format(format, args));
     }
 
     private class IndentLevel implements AutoCloseable
@@ -502,7 +1861,7 @@ public final class DatabaseConstantsGenerator
             }
             else
             {
-                clazzBuilder.append(openStrRef);
+                mainBuilder.append(openStrRef);
             }
             ++indentLevel;
         }
@@ -517,7 +1876,7 @@ public final class DatabaseConstantsGenerator
             }
             else
             {
-                clazzBuilder.append(closeStr);
+                mainBuilder.append(closeStr);
             }
         }
     }
@@ -545,17 +1904,24 @@ public final class DatabaseConstantsGenerator
 
     public static class Column
     {
+        private Table tbl;
         private String name;
         private String sqlType;
         private boolean pk;
         private boolean nullable;
 
-        private Column(String colNameRef, String sqlColumnTypeRef, boolean isPkRef, boolean isNullableRef)
+        private Column(Table tblRef, String colNameRef, String sqlColumnTypeRef, boolean isPkRef, boolean isNullableRef)
         {
+            tbl = tblRef;
             name = colNameRef;
             sqlType = sqlColumnTypeRef;
             pk = isPkRef;
             nullable = isNullableRef;
+        }
+
+        public Table getTable()
+        {
+            return tbl;
         }
 
         public String getName()
@@ -576,6 +1942,98 @@ public final class DatabaseConstantsGenerator
         public boolean isNullable()
         {
             return nullable;
+        }
+    }
+
+    public static class GeneratedCrdResult
+    {
+        public final Set<GeneratedCrdJavaClass> javaClasses;
+        public final Set<GeneratedResources> resources;
+
+        private GeneratedCrdResult(
+            Set<GeneratedCrdJavaClass> javaClassesRef,
+            Set<GeneratedResources> resourcesRef
+        )
+        {
+            javaClasses = Collections.unmodifiableSet(javaClassesRef);
+            resources = Collections.unmodifiableSet(resourcesRef);
+        }
+    }
+
+    public static class GeneratedCrdJavaClass
+    {
+        public final String pkgName;
+        public final String clazzName;
+        public final String javaCode;
+
+        public GeneratedCrdJavaClass(String pkgNameRef, String clazzNameRef, String javaCodeRef)
+        {
+            pkgName = pkgNameRef;
+            clazzName = clazzNameRef;
+            javaCode = javaCodeRef;
+        }
+    }
+
+    public static class GeneratedResources
+    {
+        public final String yamlLocation;
+        public final String content;
+
+        public GeneratedResources(String yamlLocationRef, String contentRef)
+        {
+            yamlLocation = yamlLocationRef;
+            content = contentRef;
+        }
+    }
+
+    public static class GeneratorVersion implements Comparable<GeneratorVersion>
+    {
+        public final Version parsedVersion;
+        public final String originalVersion;
+
+        public GeneratorVersion(Version parsedVersionRef, String originalVersionRef)
+        {
+            parsedVersion = parsedVersionRef;
+            originalVersion = originalVersionRef;
+        }
+
+        @Override
+        public int compareTo(GeneratorVersion oRef)
+        {
+            int cmp = parsedVersion.compareTo(oRef.parsedVersion);
+            if (cmp == 0)
+            {
+                cmp = originalVersion.compareTo(oRef.originalVersion);
+            }
+            return cmp;
+        }
+
+        @Override
+        public String toString()
+        {
+            return originalVersion;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((originalVersion == null) ? 0 : originalVersion.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            GeneratorVersion other = (GeneratorVersion) obj;
+            return Objects.equals(originalVersion, other.originalVersion);
         }
     }
 }

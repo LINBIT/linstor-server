@@ -2,6 +2,7 @@ package com.linbit.linstor.storage.kinds;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ExtToolsInfo
 {
@@ -111,31 +112,38 @@ public class ExtToolsInfo
         return version.greaterOrEqual(ver);
     }
 
-    public static class Version
+    public static class Version implements Comparable<Version>
     {
         private final Integer major;
         private final Integer minor;
         private final Integer patch;
+        private final String additionalInfo; // "rc1" or whatever
 
         public Version()
         {
-            this(null, null, null);
+            this(null, null, null, null);
         }
         public Version(int majRef)
         {
-            this(majRef, null, null);
+            this(majRef, null, null, null);
         }
 
         public Version(int majRef, int minRef)
         {
-            this(majRef, minRef, null);
+            this(majRef, minRef, null, null);
         }
 
         public Version(Integer majRef, Integer minRef, Integer patchRef)
         {
+            this(majRef, minRef, patchRef, null);
+        }
+
+        public Version(Integer majRef, Integer minRef, Integer patchRef, String additionalInfoRef)
+        {
             major = majRef;
             minor = minRef;
             patch = patchRef;
+            additionalInfo = additionalInfoRef;
         }
 
         /**
@@ -145,6 +153,7 @@ public class ExtToolsInfo
          */
         public boolean greaterOrEqual(Version v)
         {
+            // DO NOT rely on compareTo method, because of different handling of null values
             int cmp = major == null || v.major == null ? 1 : Integer.compare(major, v.major);
             if (cmp == 0)
             {
@@ -157,6 +166,107 @@ public class ExtToolsInfo
             return cmp >= 0;
         }
 
+        @Override
+        public int compareTo(Version v)
+        {
+            int cmp = compare(major, v.major); // equals
+            if (cmp == 0)
+            {
+                cmp = compare(minor, v.minor);
+                if (cmp == 0)
+                {
+                    cmp = compare(patch, v.patch);
+                    if (cmp == 0)
+                    {
+                        boolean localNullOrEmpty = additionalInfo == null || additionalInfo.isEmpty();
+                        boolean otherNullOrEmpty = v.additionalInfo == null || additionalInfo.isEmpty();
+
+                        if (localNullOrEmpty)
+                        {
+                            cmp = otherNullOrEmpty ? 0 : -1;
+                        }
+                        else
+                        {
+                            cmp = otherNullOrEmpty ? 1 : 0;
+                        }
+                    }
+                }
+            }
+            return cmp;
+        }
+
+        private int compare(Integer v1, Integer v2) {
+            // null will be sorted before not-null
+            int cmp;
+            if (Objects.equals(v1, v2))
+            {
+                cmp = 0;
+            }
+            else if (v1 == null && v2 != null)
+            {
+                cmp = -1;
+            }
+            else if (v1 != null && v2 == null)
+            {
+                cmp = 1;
+            }
+            else
+            {
+                cmp = Integer.compare(v1, v2);
+            }
+            return cmp;
+        }
+
+        private int compare(String v1, String v2)
+        {
+            // null will be sorted before not-null
+            int cmp;
+            if (Objects.equals(v1, v2))
+            {
+                cmp = 0;
+            }
+            else if (v1 == null && v2 != null)
+            {
+                cmp = -1;
+            }
+            else if (v1 != null && v2 == null)
+            {
+                cmp = 1;
+            }
+            else
+            {
+                cmp = v1.compareTo(v2);
+            }
+            return cmp;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((major == null) ? 0 : major.hashCode());
+            result = prime * result + ((minor == null) ? 0 : minor.hashCode());
+            result = prime * result + ((patch == null) ? 0 : patch.hashCode());
+            result = prime * result + ((additionalInfo == null) ? 0 : additionalInfo.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Version other = (Version) obj;
+            return Objects.equals(major, other.major) &&
+                Objects.equals(minor, other.minor) &&
+                Objects.equals(patch, other.patch) &&
+                Objects.equals(additionalInfo, other.additionalInfo);
+        }
         @Override
         public String toString()
         {
@@ -172,6 +282,10 @@ public class ExtToolsInfo
             if (patch != null)
             {
                 sb.append(".").append(patch);
+            }
+            if (additionalInfo != null)
+            {
+                sb.append(additionalInfo);
             }
             return sb.toString();
         }
