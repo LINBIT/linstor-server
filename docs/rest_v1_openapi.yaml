@@ -7079,6 +7079,10 @@ components:
           $ref: '#/components/schemas/BackupOther'
     Backup:
       type: object
+      required:
+        - id
+        - origin_rsc
+        - vlms
       properties:
         id:
           type: string
@@ -7114,6 +7118,8 @@ components:
           type: string
     BackupVolumes:
       type: object
+      required:
+        - vlm_nr
       properties:
         vlm_nr:
           type: integer
@@ -7147,6 +7153,9 @@ components:
             type: string
     BackupRestore:
       type: object
+      required:
+        - target_rsc_name
+        - node_name
       properties:
         src_rsc_name:
           type: string
@@ -7167,6 +7176,8 @@ components:
           default: false
     BackupCreate:
       type: object
+      required:
+        - rsc_name
       properties:
         rsc_name:
           type: string
@@ -7176,6 +7187,8 @@ components:
           type: boolean
     BackupAbort:
       type: object
+      required:
+        - rsc_name
       properties:
         rsc_name:
           type: string
@@ -7185,6 +7198,9 @@ components:
           type: boolean
     BackupShip:
       type: object
+      required:
+        - src_rsc_name
+        - dst_rsc_name
       properties:
         src_node_name:
           type: string
@@ -7207,6 +7223,13 @@ components:
           default: false
     BackupInfo:
       type: object
+      required:
+        - rsc
+        - full
+        - latest
+        - dl_size_kib
+        - alloc_size_kib
+        - storpools
       properties:
         rsc:
           type: string
@@ -7242,6 +7265,9 @@ components:
           type: string
     BackupInfoStorPool:
       type: object
+      required:
+        - name
+        - vlms
       properties:
         name:
           type: string
@@ -7258,6 +7284,9 @@ components:
             $ref: '#/components/schemas/BackupInfoVolume'
     BackupInfoVolume:
       type: object
+      required:
+        - layer_type
+        - alloc_size_kib
       properties:
         name:
           type: string
