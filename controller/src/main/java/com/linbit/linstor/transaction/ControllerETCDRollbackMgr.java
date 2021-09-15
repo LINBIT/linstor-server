@@ -2,7 +2,6 @@ package com.linbit.linstor.transaction;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerETCDDatabase;
-import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +49,7 @@ public class ControllerETCDRollbackMgr
         currentRollbackMap = new TreeMap<>();
         namespaceRollback = prefix + "ROLLBACK/";
         namespaceRollbackUpdate = namespaceRollback + "UPDATE/";
-        namespaceRollbackDel = namespaceRollback + "UPDATE/";
+        namespaceRollbackDel = namespaceRollback + "DELETE/";
         namespaceRollbackStatus = namespaceRollback + "STATUS";
     }
 
