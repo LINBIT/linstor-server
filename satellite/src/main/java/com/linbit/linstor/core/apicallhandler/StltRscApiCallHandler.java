@@ -170,21 +170,36 @@ class StltRscApiCallHandler
         {
             ResourceName rscName = new ResourceName(rscNameStr);
 
-            ResourceDefinition removedRscDfn = rscDfnMap.remove(rscName); // just to be sure
-            if (removedRscDfn != null)
+            ResourceDefinition rscDfn = rscDfnMap.get(rscName);
+            if (rscDfn != null)
             {
-                ResourceGroup rscGrp = removedRscDfn.getResourceGroup();
-                removedRscDfn.delete(apiCtx);
-                if (!rscGrp.hasResourceDefinitions(apiCtx))
+                if (rscDfn.getSnapshotDfns(apiCtx).isEmpty())
                 {
-                    rscGrpMap.remove(rscGrp.getName());
-                    rscGrp.delete(apiCtx);
+                    rscDfnMap.remove(rscName); // just to be sure
+                    ResourceGroup rscGrp = rscDfn.getResourceGroup();
+                    rscDfn.delete(apiCtx);
+                    if (!rscGrp.hasResourceDefinitions(apiCtx))
+                    {
+                        rscGrpMap.remove(rscGrp.getName());
+                        rscGrp.delete(apiCtx);
+                    }
+                    errorReporter.logInfo("Resource definition '" + rscNameStr +
+                        "' and the corresponding resource removed by Controller.");
+                }
+                else
+                {
+                    Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+                    while (rscIt.hasNext())
+                    {
+                        Resource rsc = rscIt.next();
+                        rsc.delete(apiCtx);
+                    }
+                    errorReporter.logInfo("Resources of resource definition '" + rscNameStr +
+                        "' removed by Controller.");
                 }
                 transMgrProvider.get().commit();
             }
 
-            errorReporter.logInfo("Resource definition '" + rscNameStr +
-                "' and the corresponding resource removed by Controller.");
 
             deviceManager.rscUpdateApplied(
                 Collections.singleton(

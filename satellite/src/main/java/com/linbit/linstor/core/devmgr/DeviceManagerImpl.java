@@ -1593,14 +1593,17 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         ResourceGroup rscGrp = curRscDfn.getResourceGroup();
                         // Since the local node no longer has the resource, it also does not need
                         // to know about the resource definition any longer, therefore
-                        // delete the resource definition as well
-                        curRscDfn.delete(wrkCtx); // just to be sure
-                        rscDfnMap.remove(curRscName);
-                        if (!rscGrp.hasResourceDefinitions(wrkCtx))
+                        // delete the resource definition as well as long as it has no snapDfns depending on it
+                        if (curRscDfn.getSnapshotDfns(wrkCtx).isEmpty())
                         {
-                            ResourceGroupName rscGrpName = rscGrp.getName();
-                            rscGrp.delete(wrkCtx);
-                            rscGrpMap.remove(rscGrpName);
+                            curRscDfn.delete(wrkCtx); // just to be sure
+                            rscDfnMap.remove(curRscName);
+                            if (!rscGrp.hasResourceDefinitions(wrkCtx))
+                            {
+                                ResourceGroupName rscGrpName = rscGrp.getName();
+                                rscGrp.delete(wrkCtx);
+                                rscGrpMap.remove(rscGrpName);
+                            }
                         }
                     }
                 }

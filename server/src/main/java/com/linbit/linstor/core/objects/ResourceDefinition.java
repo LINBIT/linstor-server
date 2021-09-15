@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
@@ -518,7 +519,10 @@ public class ResourceDefinition extends BaseTransactionObject
         if (!deleted.get())
         {
             objProt.requireAccess(accCtx, AccessType.CONTROL);
-
+            if (!snapshotDfnMap.isEmpty())
+            {
+                throw new ImplementationError("Cannot delete resource definition which contains snapshot definitions");
+            }
             // Shallow copy the resource collection because calling delete results in elements being removed from it
             Collection<Resource> resources = new ArrayList<>(resourceMap.values());
             for (Resource rsc : resources)

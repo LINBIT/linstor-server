@@ -1341,7 +1341,6 @@ public class CtrlBackupApiCallHandler
     ) throws AccessDeniedException, InvalidNameException
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
-
         Date targetTime = null;
         String shortTargetName = null;
         if (lastBackup != null && !lastBackup.isEmpty())
@@ -1370,7 +1369,7 @@ public class CtrlBackupApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
-                        "The target backup " + lastBackup + META_SUFFIX +
+                        "The target backup " + lastBackup +
                             " is invalid since it does not match the pattern of '<rscName>_back_YYYYMMDD_HHMMSS<optional-backup-s3-suffix> (e.g. my-rsc_back_20210824_072543)" +
                             META_FILE_PATTERN + "'. " +
                             "Please provide a valid target backup, or provide only the source resource name to restore to the latest backup of that resource."
