@@ -511,6 +511,8 @@ public class CtrlRscCrtApiHelper
                 boolean hasThinStorPool = false;
                 boolean hasFatStorPool = false;
                 String granularity = "8192"; // take ZFS, unless we have at least one LVM
+                // only set true on ZFS, see internal gitlab issue 671 for details
+                boolean discardZerosIfAligned = false;
 
                 List<AbsRscLayerObject<Resource>> storageRscLayerObjList = LayerUtils.getChildLayerDataByKind(
                     rscLayerObj,
@@ -532,7 +534,6 @@ public class CtrlRscCrtApiHelper
                                 case LVM: // fall-through
                                 case SPDK: // fall-through
                                 case REMOTE_SPDK: // fall-through
-                                case ZFS: // fall-through
                                 case EXOS:
                                     hasFatStorPool = true;
                                     break;
@@ -542,8 +543,14 @@ public class CtrlRscCrtApiHelper
                                     break;
                                 case LVM_THIN:
                                     granularity = "65536";
-                                    // fall-through
+                                    hasThinStorPool = true;
+                                    break;
+                                case ZFS:
+                                    hasFatStorPool = true;
+                                    discardZerosIfAligned = true;
+                                    break;
                                 case ZFS_THIN: // fall-through
+                                    discardZerosIfAligned = true;
                                 case FILE_THIN:
                                     hasThinStorPool = true;
                                     break;
@@ -574,7 +581,10 @@ public class CtrlRscCrtApiHelper
                 }
                 if (props.getProp("discard-zeroes-if-aligned", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
                 {
-                    props.setProp("discard-zeroes-if-aligned", "yes",  ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                    props.setProp(
+                        "discard-zeroes-if-aligned",
+                        discardZerosIfAligned ? "yes" : "no",
+                        ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
                 }
             }
         }
