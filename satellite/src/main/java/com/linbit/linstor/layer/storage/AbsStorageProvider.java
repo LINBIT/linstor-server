@@ -789,7 +789,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     snapShipMgr.abort(snapVlm);
                     if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.BACKUP))
                     {
-                        backupShipMapper.getService(snapVlm).abort(snapVlm);
+                        AbsBackupShippingService backupShipService = backupShipMapper.getService(snapVlm);
+                        if (backupShipService != null)
+                        {
+                            backupShipService.abort(snapVlm);
+                        }
                     }
                 }
 
@@ -920,7 +924,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                  */
                 AbsBackupShippingService backupShippingService = backupShipMapper.getService(snapVlm);
 
-                if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
+                if (
+                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT) &&
+                        backupShippingService != null
+                )
                 {
                     backupShippingService.abort(snapVlm);
                 }

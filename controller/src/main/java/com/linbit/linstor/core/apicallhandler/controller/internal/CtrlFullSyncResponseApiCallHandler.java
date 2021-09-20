@@ -131,6 +131,7 @@ public class CtrlFullSyncResponseApiCallHandler
                 )
                 {
                     // complete abort, remove restore-lock on rscDfn
+                    backupInfoMgr.backupsToDownloadCleanUp(localSnap);
                     backupInfoMgr.restoreRemoveEntry(localSnap.getResourceDefinition());
                     fluxes.add(
                         ctrlSnapDelApiCallHandler.deleteSnapshot(

@@ -272,7 +272,7 @@ public class CtrlSnapshotShippingAbortHandler
 
     private void abortBackupShippings(Node nodeRef)
     {
-        Map<SnapshotDefinition.Key, AbortInfo> abortEntries = backupInfoMgr.abortGetEntries(nodeRef.getName());
+        Map<SnapshotDefinition.Key, AbortInfo> abortEntries = backupInfoMgr.abortCreateGetEntries(nodeRef.getName());
         if (abortEntries != null && !abortEntries.isEmpty())
         {
             for (Entry<SnapshotDefinition.Key, AbortInfo> abortEntry : abortEntries.entrySet())
@@ -331,7 +331,7 @@ public class CtrlSnapshotShippingAbortHandler
                     // nothing to do for AbortL2LInfo entries, just enable the ABORT flag
 
                     SnapshotDefinition.Key snapDfnkey = abortEntry.getKey();
-                    backupInfoMgr.abortDeleteEntries(nodeRef.getName(), snapDfnkey);
+                    backupInfoMgr.abortCreateDeleteEntries(nodeRef.getName(), snapDfnkey);
                     enableFlagsPrivileged(
                         ctrlApiDataLoader.loadSnapshotDfn(
                             snapDfnkey.getResourceName(),

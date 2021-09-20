@@ -289,10 +289,14 @@ public abstract class AbsBackupShippingService implements SystemService
                                     );
                                     if (remoteName == null || remoteName.isEmpty())
                                     {
-                                        remoteName = snap.getProps(accCtx).getProp(
-                                            InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                        throw new ImplementationError(
+                                            "KEY_BACKUP_TARGET_REMOTE is not set for the backup-shipping of " +
+                                                snap.getSnapshotName()
                                         );
+                                        // remoteName = snap.getProps(accCtx).getProp(
+                                        // InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                                        // ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                        // );
                                     }
                                     controllerPeerConnector.getControllerPeer().sendMessage(
                                         interComSerializer

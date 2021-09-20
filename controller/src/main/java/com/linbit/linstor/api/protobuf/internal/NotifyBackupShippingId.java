@@ -36,7 +36,7 @@ public class NotifyBackupShippingId implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataInRef) throws IOException
     {
         MsgIntBackupShippingId ship = MsgIntBackupShippingId.parseDelimitedFrom(msgDataInRef);
-        backupInfoMgr.abortAddS3Entry(
+        backupInfoMgr.abortCreateAddS3Entry(
             ship.getNodeName(),
             ship.getRscName(),
             ship.getSnapName(),

@@ -8,7 +8,6 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinition.Key;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
@@ -16,25 +15,33 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Singleton
 public class BackupInfoManager
 {
     private Map<ResourceDefinition, String> restoreMap;
-    private Map<NodeName, Map<SnapshotDefinition.Key, AbortInfo>> abortMap;
-    private Map<Snapshot, LinkedList<Snapshot>> backupsToUpload;
+    private Map<NodeName, Map<SnapshotDefinition.Key, AbortInfo>> abortCreateMap;
+    private Map<ResourceName, Set<Snapshot>> abortRestoreMap;
+    private Map<Snapshot, Snapshot> backupsToDownload;
 
     @Inject
     public BackupInfoManager(TransactionObjectFactory transObjFactoryRef)
     {
         restoreMap = transObjFactoryRef.createTransactionPrimitiveMap(new HashMap<>(), null);
-        abortMap = new HashMap<>();
-        backupsToUpload = new HashMap<>();
+        abortCreateMap = new HashMap<>();
+        abortRestoreMap = new HashMap<>();
+        backupsToDownload = new HashMap<>();
     }
 
+    /**
+     * mark a rscDfn as target of a backup restore. rscDfns in this map should not be modified in any way
+     * also add the backup that is the source of the restore, to avoid multiple restores
+     * of the same backup at the same time
+     */
     public boolean restoreAddEntry(ResourceDefinition rscDfn, String metaName)
     {
         synchronized (restoreMap)
@@ -51,6 +58,10 @@ public class BackupInfoManager
         }
     }
 
+    /**
+     * unmark the rscDfn to signify the backup restore is done and allow other modifications to take place
+     * and also free the source backup for the next restore
+     */
     public void restoreRemoveEntry(ResourceDefinition rscDfn)
     {
         synchronized (restoreMap)
@@ -59,6 +70,9 @@ public class BackupInfoManager
         }
     }
 
+    /**
+     * check if a rscDfn has been marked as a target of a restore
+     */
     public boolean restoreContainsRscDfn(ResourceDefinition rscDfn)
     {
         synchronized (restoreMap)
@@ -67,6 +81,9 @@ public class BackupInfoManager
         }
     }
 
+    /**
+     * check if a certain backup is currently being restored
+     */
     public boolean restoreContainsMetaFile(String metaName)
     {
         synchronized (restoreMap)
@@ -75,15 +92,98 @@ public class BackupInfoManager
         }
     }
 
-    public boolean restoreContainsMetaFile(String rscName, String snapName)
+    /**
+     * abortRestore saves a list of snapshots used in a restore for each rscDfn that need to be
+     * taken care of in case of an abort. This method adds a snapshot to that list
+     */
+    public void abortRestoreAddEntry(String rscNameStr, Snapshot snap)
     {
-        synchronized (restoreMap)
+        try
         {
-            return restoreMap.containsValue(rscName + "_" + snapName + ".meta");
+            synchronized (abortRestoreMap)
+            {
+                ResourceName rscName = new ResourceName(rscNameStr);
+                Set<Snapshot> snaps = abortRestoreMap.get(rscName);
+                if (snaps == null)
+                {
+                    snaps = new HashSet<>();
+                    abortRestoreMap.put(rscName, snaps);
+                }
+                snaps.add(snap);
+            }
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 
-    public void abortAddS3Entry(
+    /**
+     * get all the restore-related snapshots that need to be aborted of a specific rscDfn
+     */
+    public Set<Snapshot> abortRestoreGetEntries(String rscNameStr)
+    {
+        try
+        {
+            synchronized (abortRestoreMap)
+            {
+                ResourceName rscName = new ResourceName(rscNameStr);
+                return abortRestoreMap.get(rscName);
+            }
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    /**
+     * remove the rscDfn and all the remaining snapshots in the list, signifying that the restore or abort is done
+     */
+    public void abortRestoreDeleteAllEntries(String rscNameStr)
+    {
+        try
+        {
+            synchronized (abortRestoreMap)
+            {
+                ResourceName rscName = new ResourceName(rscNameStr);
+                abortRestoreMap.remove(rscName);
+            }
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    /**
+     * remove a single snapshot from the list associated with the given rscDfn,
+     * signifying that this snapshot is completed and no longer needs aborting
+     */
+    public void abortRestoreDeleteEntry(String rscNameStr, Snapshot snap)
+    {
+        try
+        {
+            synchronized (abortRestoreMap)
+            {
+                ResourceName rscName = new ResourceName(rscNameStr);
+                Set<Snapshot> snaps = abortRestoreMap.get(rscName);
+                if (snaps != null)
+                {
+                    snaps.remove(snap);
+                }
+            }
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    /**
+     * add all the information needed to cleanly abort a multipart-upload to s3 to a list for easy access when needed
+     */
+    public void abortCreateAddS3Entry(
         String nodeName,
         String rscName,
         String snapName,
@@ -94,29 +194,33 @@ public class BackupInfoManager
     {
         // DO NOT just synchronize within getAbortInfo as the following .add(new Abort*Info(..)) should also be in the
         // same synchronized block as the initial get
-        synchronized (abortMap)
+        synchronized (abortCreateMap)
         {
-            getAbortInfo(nodeName, rscName, snapName).abortS3InfoList.add(
+            getAbortCreateInfo(nodeName, rscName, snapName).abortS3InfoList.add(
                 new AbortS3Info(backupName, uploadId, remoteName)
             );
         }
     }
 
-    public void abortAddL2LEntry(NodeName nodeName, Key key)
+    /**
+     * add information about a l2l-shipping to a list to automatically abort it when issues like loss of connection
+     * arise
+     */
+    public void abortCreateAddL2LEntry(NodeName nodeName, SnapshotDefinition.Key key)
     {
         // DO NOT just synchronize within getAbortInfo as the following .add(new Abort*Info(..)) should also be in the
         // same synchronized block as the initial get
-        synchronized (abortMap)
+        synchronized (abortCreateMap)
         {
-            getAbortInfo(nodeName, key).abortL2LInfoList.add(new AbortL2LInfo());
+            getAbortCreateInfo(nodeName, key).abortL2LInfoList.add(new AbortL2LInfo());
         }
     }
 
-    private AbortInfo getAbortInfo(String nodeName, String rscName, String snapName)
+    private AbortInfo getAbortCreateInfo(String nodeName, String rscName, String snapName)
     {
         try
         {
-            return getAbortInfo(
+            return getAbortCreateInfo(
                 new NodeName(nodeName),
                 new SnapshotDefinition.Key(new ResourceName(rscName), new SnapshotName(snapName))
             );
@@ -127,13 +231,13 @@ public class BackupInfoManager
         }
     }
 
-    private AbortInfo getAbortInfo(NodeName nodeName, SnapshotDefinition.Key snapDfnKey)
+    private AbortInfo getAbortCreateInfo(NodeName nodeName, SnapshotDefinition.Key snapDfnKey)
     {
-        Map<SnapshotDefinition.Key, AbortInfo> map = abortMap.get(nodeName);
+        Map<SnapshotDefinition.Key, AbortInfo> map = abortCreateMap.get(nodeName);
         if (map == null)
         {
             map = new HashMap<>();
-            abortMap.put(nodeName, map);
+            abortCreateMap.put(nodeName, map);
         }
 
         AbortInfo abortInfo = map.get(snapDfnKey);
@@ -145,22 +249,28 @@ public class BackupInfoManager
         return abortInfo;
     }
 
-    public void abortDeleteEntries(String nodeName, String rscName, String snapName) throws InvalidNameException
+    /**
+     * delete the abort-information given when it is no longer needed
+     */
+    public void abortCreateDeleteEntries(String nodeName, String rscName, String snapName) throws InvalidNameException
     {
-        synchronized (abortMap)
+        synchronized (abortCreateMap)
         {
-            abortDeleteEntries(
+            abortCreateDeleteEntries(
                 new NodeName(nodeName),
                 new SnapshotDefinition.Key(new ResourceName(rscName), new SnapshotName(snapName))
             );
         }
     }
 
-    public void abortDeleteEntries(NodeName nodeName, SnapshotDefinition.Key snapDfnKey)
+    /**
+     * delete the abort-information given when it is no longer needed
+     */
+    public void abortCreateDeleteEntries(NodeName nodeName, SnapshotDefinition.Key snapDfnKey)
     {
-        synchronized (abortMap)
+        synchronized (abortCreateMap)
         {
-            Map<SnapshotDefinition.Key, AbortInfo> map = abortMap.get(nodeName);
+            Map<SnapshotDefinition.Key, AbortInfo> map = abortCreateMap.get(nodeName);
             if (map != null)
             {
                 map.remove(snapDfnKey);
@@ -168,46 +278,58 @@ public class BackupInfoManager
         }
     }
 
-    public Map<SnapshotDefinition.Key, AbortInfo> abortGetEntries(NodeName nodeName)
+    /**
+     * get the abort-information to use it
+     */
+    public Map<SnapshotDefinition.Key, AbortInfo> abortCreateGetEntries(NodeName nodeName)
     {
-        synchronized (abortMap)
+        synchronized (abortCreateMap)
         {
-            return abortMap.get(nodeName);
+            return abortCreateMap.get(nodeName);
         }
     }
 
-    public boolean backupsToUploadAddEntry(Snapshot snap, LinkedList<Snapshot> backups)
+    /**
+     * add a pair of snapshots, with the second snapshot being the first snapshot's successor
+     * these are used to determine which backups need to be downloaded during a restore
+     */
+    public boolean backupsToDownloadAddEntry(Snapshot snap, Snapshot successor)
     {
-        synchronized (backupsToUpload)
+        synchronized (backupsToDownload)
         {
-            if (backupsToUpload.containsKey(snap))
+            // TODO: change to Map<Snapshot, Snapshot>
+            if (backupsToDownload.containsKey(snap))
             {
                 return false;
             }
-            backupsToUpload.put(snap, backups);
+            backupsToDownload.put(snap, successor);
             return true;
         }
     }
 
-    public Snapshot getNextBackupToUpload(Snapshot snap)
+    /**
+     * get the successor of the given snapshot and delete the entry
+     */
+    public Snapshot getNextBackupToDownload(Snapshot snap)
     {
-        synchronized (backupsToUpload)
+        synchronized (backupsToDownload)
         {
-            LinkedList<Snapshot> linkedList = backupsToUpload.get(snap);
-            Snapshot ret = null;
-            if (linkedList != null)
-            {
-                ret = linkedList.pollFirst();
-            }
-            return ret;
+            return backupsToDownload.remove(snap);
         }
     }
 
-    public void backupsToUploadRemoveEntry(Snapshot snap)
+    /**
+     * clean up the download-map when the restore is aborted by anything
+     */
+    public void backupsToDownloadCleanUp(Snapshot snap)
     {
-        synchronized (backupsToUpload)
+        synchronized (backupsToDownload)
         {
-            backupsToUpload.remove(snap);
+            Snapshot toDelete = backupsToDownload.remove(snap);
+            while (toDelete != null)
+            {
+                toDelete = backupsToDownload.remove(toDelete);
+            }
         }
     }
 

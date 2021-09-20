@@ -36,7 +36,7 @@ public class BackupShippingFinished implements ApiCallReactive
         apiCallHandler
             .backupShippingFinished(backupShippingFinished.getRscName(), backupShippingFinished.getSnapName());
 
-        return null;
+        return Flux.empty();
     }
 
 }

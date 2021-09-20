@@ -379,7 +379,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             );
 
             NodeName srcSendingNodeName = data.srcSnapshot.getNodeName();
-            backupInfoMgr.abortAddL2LEntry(
+            backupInfoMgr.abortCreateAddL2LEntry(
                 srcSendingNodeName,
                 new SnapshotDefinition.Key(data.srcSnapshot.getSnapshotDefinition())
             );

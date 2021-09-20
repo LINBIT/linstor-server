@@ -1471,6 +1471,7 @@ public class CtrlBackupApiCallHandler
                     resetData,
                     downloadOnly
                 );
+                backupInfoMgr.abortRestoreAddEntry(targetRscName, snap);
                 // all other "basedOn" snapshots should not change props / size / etc..
                 resetData = false;
                 snap.getProps(peerAccCtx.get()).setProp(
@@ -1478,11 +1479,9 @@ public class CtrlBackupApiCallHandler
                     srcRscName + "_" + snap.getSnapshotName().displayValue,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
                 );
-                LinkedList<Snapshot> list = new LinkedList<>();
-                backupInfoMgr.backupsToUploadAddEntry(snap, list);
                 if (nextBackup != null)
                 {
-                    list.add(nextBackup);
+                    backupInfoMgr.backupsToDownloadAddEntry(snap, nextBackup);
                 }
                 nextBackup = snap;
                 metaName = metadata.getBasedOn();
@@ -2161,8 +2160,12 @@ public class CtrlBackupApiCallHandler
     private Flux<ApiCallRc> cleanupAfterFailedRestoreInTransaction(
         Throwable throwableRef,
         SnapshotDefinition snapDfnRef
-    )
+    ) throws AccessDeniedException
     {
+        for (Snapshot snap : snapDfnRef.getAllSnapshots(sysCtx))
+        {
+            backupInfoMgr.backupsToDownloadCleanUp(snap);
+        }
         backupInfoMgr.restoreRemoveEntry(snapDfnRef.getResourceDefinition());
         ctrlTransactionHelper.commit();
 
@@ -2946,7 +2949,9 @@ public class CtrlBackupApiCallHandler
             }
         }
 
+        Set<Snapshot> abortRestoreSnaps = backupInfoMgr.abortRestoreGetEntries(rscNameRef);
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateStlts = Flux.empty();
+        List<SnapshotDefinition> snapDfnsToUpdate = new ArrayList<>();
         for (SnapshotDefinition snapDfn : snapDfns)
         {
             Collection<Snapshot> snaps = snapDfn.getAllSnapshots(peerAccCtx.get());
@@ -2954,7 +2959,7 @@ public class CtrlBackupApiCallHandler
             for (Snapshot snap : snaps)
             {
                 if (
-                    snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET) && restore ||
+                    abortRestoreSnaps.contains(snap) && restore ||
                         snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE) && create
                 )
                 {
@@ -2965,13 +2970,17 @@ public class CtrlBackupApiCallHandler
             {
                 snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                 snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT);
-                updateStlts = updateStlts.concatWith(
-                    ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
-                );
+                snapDfnsToUpdate.add(snapDfn);
             }
         }
 
         ctrlTransactionHelper.commit();
+        for (SnapshotDefinition snapDfn : snapDfnsToUpdate)
+        {
+            updateStlts = updateStlts.concatWith(
+                ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
+            );
+        }
         ApiCallRcImpl success = new ApiCallRcImpl();
         success.addEntry(
             "Successfully aborted all " +
@@ -3339,9 +3348,10 @@ public class CtrlBackupApiCallHandler
 
             boolean keepGoing;
 
-            Snapshot nextSnap = backupInfoMgr.getNextBackupToUpload(snap);
+            Snapshot nextSnap = backupInfoMgr.getNextBackupToDownload(snap);
             if (successRef && nextSnap != null)
             {
+                backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
                 SnapshotDefinition nextSnapDfn = nextSnap.getSnapshotDefinition();
                 nextSnapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
                 nextSnap.getFlags().enableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
@@ -3362,9 +3372,11 @@ public class CtrlBackupApiCallHandler
             }
             else
             {
-                backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
                 if (successRef)
                 {
+                    backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
+                    backupInfoMgr.backupsToDownloadCleanUp(snap);
+                    backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
                     // start snap-restore
                     if (snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS))
                     {
@@ -3391,11 +3403,37 @@ public class CtrlBackupApiCallHandler
                 }
                 else
                 {
-                    flux = ctrlSnapDeleteApiCallHandler.deleteSnapshot(
-                        snapDfn.getResourceName().displayValue,
-                        snapDfn.getName().displayValue,
-                        null
-                    );
+                    List<SnapshotDefinition> snapsToDelete = new ArrayList<>();
+                    snapsToDelete.add(snapDfn);
+                    backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
+                    Snapshot nextSnapToDel = nextSnap;
+                    while (nextSnapToDel != null)
+                    {
+                        snapsToDelete.add(nextSnapToDel.getSnapshotDefinition());
+                        backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, nextSnapToDel);
+                        nextSnapToDel = backupInfoMgr.getNextBackupToDownload(nextSnapToDel);
+                    }
+                    Set<Snapshot> leftovers = backupInfoMgr.abortRestoreGetEntries(rscNameRef);
+                    if (leftovers.isEmpty())
+                    {
+                        backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
+                    }
+                    else
+                    {
+                        throw new ImplementationError("Not all restore-entries marked for abortion: " + leftovers);
+                    }
+                    backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
+                    flux = Flux.empty();
+                    for (SnapshotDefinition snapDfnToDel : snapsToDelete)
+                    {
+                        flux = flux.concatWith(
+                            ctrlSnapDeleteApiCallHandler.deleteSnapshot(
+                            snapDfnToDel.getResourceName().displayValue,
+                            snapDfnToDel.getName().displayValue,
+                            null
+                            )
+                        );
+                    }
                     keepGoing = false; // last backup failed.
                 }
             }
@@ -3467,7 +3505,7 @@ public class CtrlBackupApiCallHandler
         {
             Flux<ApiCallRc> cleanupFlux = Flux.empty();
             NodeName nodeName = peerProvider.get().getNode().getName();
-            backupInfoMgr.abortDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
+            backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
             if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
             {
                 // re-enable shipping-flag to make sure the abort-logic gets triggered later on
