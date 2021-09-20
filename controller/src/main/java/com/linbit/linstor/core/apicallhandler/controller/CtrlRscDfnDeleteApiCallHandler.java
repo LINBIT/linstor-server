@@ -29,6 +29,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
@@ -63,6 +64,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
     private final SharedResourceManager sharedRscMgr;
+    private final AutoSnapshotTask autoSnapshotTask;
 
     @Inject
     public CtrlRscDfnDeleteApiCallHandler(
@@ -75,7 +77,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        SharedResourceManager sharedRscMgrRef
+        SharedResourceManager sharedRscMgrRef,
+        AutoSnapshotTask autoSnapshotTaskRef
     )
     {
         apiCtx = apiCtxRef;
@@ -88,6 +91,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         sharedRscMgr = sharedRscMgrRef;
+        autoSnapshotTask = autoSnapshotTaskRef;
     }
 
     @Override
@@ -144,8 +148,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             ));
         }
 
-        Optional<Resource> rscInUse = null;
-        rscInUse = anyResourceInUsePrivileged(rscDfn);
+        Optional<Resource> rscInUse = anyResourceInUsePrivileged(rscDfn);
         if (rscInUse.isPresent())
         {
             NodeName nodeName = rscInUse.get().getNode().getName();
@@ -393,6 +396,9 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         byte[] externalName = rscDfn.getExternalName();
         UUID rscDfnUuid = rscDfn.getUuid();
         String descriptionFirstLetterCaps = firstLetterCaps(getRscDfnDescriptionInline(rscName));
+
+        autoSnapshotTask.removeAutoSnapshotShipping(rscName.getName());
+        autoSnapshotTask.removeAutoSnapshotting(rscName.getName());
 
         delete(rscDfn);
 
