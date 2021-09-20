@@ -1380,7 +1380,9 @@ public class CtrlBackupApiCallHandler
         S3Remote remote = getS3Remote(remoteName);
         byte[] targetMasterKey = getLocalMasterKey();
         // 1. list srcRscName*
-        Set<String> s3keys = backupHandler.listObjects(srcRscName, remote, peerAccCtx.get(), targetMasterKey).stream()
+        List<S3ObjectSummary> objects = backupHandler
+            .listObjects(srcRscName, remote, peerAccCtx.get(), targetMasterKey);
+        Set<String> s3keys = objects.stream()
             .map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
         if (targetTime != null && !s3keys.contains(lastBackup))
@@ -1451,10 +1453,49 @@ public class CtrlBackupApiCallHandler
             Snapshot nextBackup = null;
             boolean resetData = true; // reset data based on the final snapshot
             String lastMetaName = metaName;
-            BackupMetaDataPojo metadata;
+            Map<StorPoolApi, List<BackupInfoVlmPojo>> storPoolInfo = new HashMap<>();
+            List<Pair<String, BackupMetaDataPojo>> data = new ArrayList<>();
             do
             {
-                metadata = backupHandler.getMetaFile(metaName, remote, peerAccCtx.get(), targetMasterKey);
+                BackupMetaDataPojo metadata = backupHandler
+                    .getMetaFile(metaName, remote, peerAccCtx.get(), targetMasterKey);
+                data.add(new Pair<>(metaName, metadata));
+                metaName = metadata.getBasedOn();
+            }
+            while (metaName != null);
+
+            // check if given storpools have enough space remaining for the restore
+            boolean first = true;
+            for (Pair<String, BackupMetaDataPojo> meta : data)
+            {
+                Pair<Long, Long> totalSizes = new Pair<>(0L, 0L); // dlSize, allocSize
+                fillBackupInfo(first, storPoolInfo, objects, meta.objB, meta.objB.getLayerData(), totalSizes);
+                first = false;
+            }
+            Map<String, Long> remainingFreeSpace = getRemainingSize(storPoolInfo, storPoolMap, nodeName);
+            List<String> spTooFull = new ArrayList<>();
+            for (Entry<String, Long> spaceEntry : remainingFreeSpace.entrySet())
+            {
+                if (spaceEntry.getValue() < 0)
+                {
+                    spTooFull.add(
+                        ctrlApiDataLoader.loadStorPool(spaceEntry.getKey(), nodeName, true).getName().displayValue
+                    );
+                }
+            }
+            if (!spTooFull.isEmpty())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_NOT_ENOUGH_FREE_SPACE | ApiConsts.MASK_BACKUP,
+                        "The storage-pool(s) " + StringUtils.join(spTooFull, ", ") + " do(es) not have enough space remaining for the restore." +
+                            " For more information, please use the 'backup info' command."
+                    )
+                );
+            }
+
+            for (Pair<String, BackupMetaDataPojo> metadata : data)
+            {
                 Snapshot snap = createSnapshotByS3Meta(
                     srcRscName,
                     storPoolMap,
@@ -1465,8 +1506,8 @@ public class CtrlBackupApiCallHandler
                     remote,
                     s3keys,
                     latestBackTs,
-                    metaName,
-                    metadata,
+                    metadata.objA,
+                    metadata.objB,
                     responses,
                     resetData,
                     downloadOnly
@@ -1484,9 +1525,7 @@ public class CtrlBackupApiCallHandler
                     backupInfoMgr.backupsToDownloadAddEntry(snap, nextBackup);
                 }
                 nextBackup = snap;
-                metaName = metadata.getBasedOn();
             }
-            while (metaName != null);
             /*
              * we went through the snapshots from the newest to the oldest.
              * That means "nextBackup" now is the base-/full-backup which we want to start restore with
@@ -1688,29 +1727,6 @@ public class CtrlBackupApiCallHandler
             snapVlmDfns,
             resetData
         );
-
-        // TODO: check if all storPools have enough space for restore
-
-        // StorPool storPool = ctrlApiDataLoader.loadStorPool(storPoolName, nodeName, true);
-        // boolean storPoolUsable = FreeCapacityAutoPoolSelectorUtils.isStorPoolUsable(
-        // totalSize,
-        // thinFreeCapacities,
-        // storPool.getDeviceProviderKind().usesThinProvisioning(),
-        // storPool.getName(),
-        // node,
-        // peerAccCtx.get()
-        // ).orElse(true);
-        // if (!storPoolUsable)
-        // {
-        // throw new ApiRcException(
-        // ApiCallRcImpl.simpleEntry(
-        // ApiConsts.FAIL_INVLD_VLM_SIZE,
-        // "Not enough space in storage pool " + storPoolName + " to restore the backup."
-        // )
-        // );
-        // }
-        //
-        // Map<String, String> renameMap = createRenameMap(layers, storPoolName);
 
         Snapshot snap = createSnapshotAndVolumesForBackupRestore(
             metadata,
@@ -2170,25 +2186,6 @@ public class CtrlBackupApiCallHandler
         ctrlTransactionHelper.commit();
 
         return Flux.error(throwableRef);
-    }
-
-    private long getTotalSize(ResourceDefinition rscDfn)
-    {
-        long totalSize = 0;
-        try
-        {
-            Iterator<VolumeDefinition> vlmDfnIt = rscDfn.iterateVolumeDfn(sysCtx);
-            while (vlmDfnIt.hasNext())
-            {
-                VolumeDefinition vlmDfn = vlmDfnIt.next();
-                totalSize += vlmDfn.getVolumeSize(sysCtx);
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        return totalSize;
     }
 
     private long getAllocatedSizeSum(Snapshot snapRef)
@@ -3173,31 +3170,7 @@ public class CtrlBackupApiCallHandler
 
         if (nodeName != null)
         {
-            for (Entry<StorPoolApi, List<BackupInfoVlmPojo>> entry : storPoolMap.entrySet())
-            {
-                String targetStorPool = renameMap.get(entry.getKey().getStorPoolName());
-                if (targetStorPool == null)
-                {
-                    targetStorPool = entry.getKey().getStorPoolName();
-                }
-                long poolAllocSize = 0;
-                long poolDlSize = 0;
-                StorPool sp = ctrlApiDataLoader.loadStorPool(targetStorPool, nodeName, true);
-                Long freeSpace = remainingFreeSpace.get(sp.getName().value);
-                if (freeSpace == null)
-                {
-                    freeSpace = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(sysCtx).orElseGet(null);
-                }
-                for (BackupInfoVlmPojo vlm : entry.getValue())
-                {
-                    poolAllocSize += vlm.getAllocSizeKib() != null ? vlm.getAllocSizeKib() : 0;
-                    poolDlSize += vlm.getDlSizeKib() != null ? vlm.getDlSizeKib() : 0;
-                }
-                remainingFreeSpace.put(
-                    sp.getName().value,
-                    freeSpace != null ? freeSpace - poolAllocSize - poolDlSize : null
-                );
-            }
+            remainingFreeSpace = getRemainingSize(storPoolMap, renameMap, nodeName);
         }
         for (Entry<StorPoolApi, List<BackupInfoVlmPojo>> entry : storPoolMap.entrySet())
         {
@@ -3228,6 +3201,41 @@ public class CtrlBackupApiCallHandler
         );
 
         return Flux.just(backupInfo);
+    }
+
+    private Map<String, Long> getRemainingSize(
+        Map<StorPoolApi, List<BackupInfoVlmPojo>> storPoolMap,
+        Map<String, String> renameMap,
+        String nodeName
+    ) throws AccessDeniedException
+    {
+        Map<String, Long> remainingFreeSpace = new HashMap<>();
+        for (Entry<StorPoolApi, List<BackupInfoVlmPojo>> entry : storPoolMap.entrySet())
+        {
+            String targetStorPool = renameMap.get(entry.getKey().getStorPoolName());
+            if (targetStorPool == null)
+            {
+                targetStorPool = entry.getKey().getStorPoolName();
+            }
+            long poolAllocSize = 0;
+            long poolDlSize = 0;
+            StorPool sp = ctrlApiDataLoader.loadStorPool(targetStorPool, nodeName, true);
+            Long freeSpace = remainingFreeSpace.get(sp.getName().value);
+            if (freeSpace == null)
+            {
+                freeSpace = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(sysCtx).orElseGet(null);
+            }
+            for (BackupInfoVlmPojo vlm : entry.getValue())
+            {
+                poolAllocSize += vlm.getAllocSizeKib() != null ? vlm.getAllocSizeKib() : 0;
+                poolDlSize += vlm.getDlSizeKib() != null ? vlm.getDlSizeKib() : 0;
+            }
+            remainingFreeSpace.put(
+                sp.getName().value,
+                freeSpace != null ? freeSpace - poolAllocSize - poolDlSize : null
+            );
+        }
+        return remainingFreeSpace;
     }
 
     private void fillBackupInfo(
