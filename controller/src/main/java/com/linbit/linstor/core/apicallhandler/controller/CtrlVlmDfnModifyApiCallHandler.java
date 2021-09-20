@@ -289,7 +289,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
              *
              * Note: Satellites do not care about vlmDfn RESIZE flag, only about vlm RESIZE and DRBD_RESIZE flag
              */
-            notifyStlts = true;
             Iterator<Volume> vlmIter = iterateVolumes(vlmDfn);
 
             if (vlmIter.hasNext())
@@ -308,6 +307,10 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 updateResponses = resizeNonDrbdInTransaction(rscName, vlmNr)
                     .concatWith(resizeDrbd(rscName, vlmNr))
                     .concatWith(finishResize(rscName, vlmNr));
+            }
+        } else {
+            if (notifyStlts) {
+                updateResponses = updateResponses.concatWith(updateSatellites(rscName, vlmNr, false));
             }
         }
 
