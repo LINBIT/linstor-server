@@ -1719,7 +1719,7 @@ public class CtrlBackupApiCallHandler
         // 10. create vlmDfn(s)
         // 11. create snapVlmDfn(s)
         Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
-        long totalSize = createSnapVlmDfnForBackupRestore(
+        createSnapVlmDfnForBackupRestore(
             targetRscName,
             metadata,
             rscDfn,
@@ -2290,23 +2290,6 @@ public class CtrlBackupApiCallHandler
         Snapshot snap = snapshotCrtHelper
             .restoreSnapshot(snapDfn, node, layers, renameMap);
         Props snapProps = snap.getProps(peerAccCtx.get());
-
-        LinkedList<String> backups = new LinkedList<>();
-        for (List<BackupMetaInfoPojo> backupList : metadata.getBackups().values())
-        {
-            for (BackupMetaInfoPojo backup : backupList)
-            {
-                String name = backup.getName();
-                Matcher m = BACKUP_VOLUME_PATTERN.matcher(name);
-                m.matches();
-                String shortName = m.group(1) + "_" + m.group(4);
-                backups.add(shortName);
-                if (shortTargetName != null && shortTargetName.equals(shortName))
-                {
-                    break;
-                }
-            }
-        }
 
         snapProps.map().putAll(metadata.getRsc().getProps());
         try
