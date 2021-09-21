@@ -120,6 +120,9 @@ RUN sed -i '/^devices {/a global_filter = [ "r|^/dev/drbd|" ]' /etc/lvm/lvm.conf
 # Ensure we log to files in containers, otherwise SOS reports won't show any logs at all
 RUN sed -i 's#<!-- <appender-ref ref="FILE" /> -->#<appender-ref ref="FILE" />#' /usr/share/linstor-server/lib/conf/logback.xml
 
+# PORTS:
+# 3366: controller <-> satellite
+# 3367: controller <-SSL-> satellite
 EXPOSE 3366/tcp 3367/tcp
 
 COPY scripts/entry.sh /
