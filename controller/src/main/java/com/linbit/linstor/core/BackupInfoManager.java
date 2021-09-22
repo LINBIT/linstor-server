@@ -23,10 +23,10 @@ import java.util.Set;
 @Singleton
 public class BackupInfoManager
 {
-    private Map<ResourceDefinition, String> restoreMap;
-    private Map<NodeName, Map<SnapshotDefinition.Key, AbortInfo>> abortCreateMap;
-    private Map<ResourceName, Set<Snapshot>> abortRestoreMap;
-    private Map<Snapshot, Snapshot> backupsToDownload;
+    private final Map<ResourceDefinition, String> restoreMap;
+    private final Map<NodeName, Map<SnapshotDefinition.Key, AbortInfo>> abortCreateMap;
+    private final Map<ResourceName, Set<Snapshot>> abortRestoreMap;
+    private final Map<Snapshot, Snapshot> backupsToDownload;
 
     @Inject
     public BackupInfoManager(TransactionObjectFactory transObjFactoryRef)
@@ -103,12 +103,7 @@ public class BackupInfoManager
             synchronized (abortRestoreMap)
             {
                 ResourceName rscName = new ResourceName(rscNameStr);
-                Set<Snapshot> snaps = abortRestoreMap.get(rscName);
-                if (snaps == null)
-                {
-                    snaps = new HashSet<>();
-                    abortRestoreMap.put(rscName, snaps);
-                }
+                Set<Snapshot> snaps = abortRestoreMap.computeIfAbsent(rscName, k -> new HashSet<>());
                 snaps.add(snap);
             }
         }
@@ -233,20 +228,8 @@ public class BackupInfoManager
 
     private AbortInfo getAbortCreateInfo(NodeName nodeName, SnapshotDefinition.Key snapDfnKey)
     {
-        Map<SnapshotDefinition.Key, AbortInfo> map = abortCreateMap.get(nodeName);
-        if (map == null)
-        {
-            map = new HashMap<>();
-            abortCreateMap.put(nodeName, map);
-        }
-
-        AbortInfo abortInfo = map.get(snapDfnKey);
-        if (abortInfo == null)
-        {
-            abortInfo = new AbortInfo();
-            map.put(snapDfnKey, abortInfo);
-        }
-        return abortInfo;
+        Map<SnapshotDefinition.Key, AbortInfo> map = abortCreateMap.computeIfAbsent(nodeName, k -> new HashMap<>());
+        return map.computeIfAbsent(snapDfnKey, a -> new AbortInfo());
     }
 
     /**
