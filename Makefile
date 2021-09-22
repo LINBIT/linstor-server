@@ -135,11 +135,11 @@ versioninfo:
 
 .PHONY: dockerimage dockerimage.controller dockerimage.satellite dockerpatch update-rest-props resttypes
 dockerimage.controller:
-	docker build --build-arg=ARCH=$(ARCH) -f $(DOCKERFILE_CONTROLLER) -t $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) .
+	docker build --build-arg=ARCH=$(ARCH) -f $(DOCKERFILE_CONTROLLER) -t $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) $(EXTRA_DOCKER_BUILDARGS) .
 	docker tag $(DOCKERREGPATH_CONTROLLER):$(DOCKER_TAG) $(DOCKERREGPATH_CONTROLLER):latest
 
 dockerimage.satellite:
-	docker build --build-arg=ARCH=$(ARCH) -f $(DOCKERFILE_SATELLITE) -t $(DOCKERREGPATH_SATELLITE):$(DOCKER_TAG) .
+	docker build --build-arg=ARCH=$(ARCH) -f $(DOCKERFILE_SATELLITE) -t $(DOCKERREGPATH_SATELLITE):$(DOCKER_TAG) $(EXTRA_DOCKER_BUILDARGS) .
 	docker tag $(DOCKERREGPATH_SATELLITE):$(DOCKER_TAG) $(DOCKERREGPATH_SATELLITE):latest
 
 ifneq ($(FORCE),1)
