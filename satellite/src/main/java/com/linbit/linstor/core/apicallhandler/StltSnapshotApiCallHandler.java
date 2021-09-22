@@ -306,28 +306,30 @@ class StltSnapshotApiCallHandler
             if (rscDfn != null)
             {
                 SnapshotDefinition snapDfn = rscDfn.getSnapshotDfn(apiCtx, snapshotName);
-                for (Snapshot snap : snapDfn.getAllSnapshots(apiCtx))
+                if (snapDfn != null)
                 {
-                    backupShippingMgr.snapshotDeleted(snap);
-                    snap.delete(apiCtx);
-                }
-                snapDfn.delete(apiCtx);
-
-                if (rscDfn.getResourceCount() == 0 && rscDfn.getSnapshotDfns(apiCtx).isEmpty())
-                {
-                    ResourceDefinition removedRscDfn = rscDfnMap.remove(rscName);
-                    if (removedRscDfn != null)
+                    for (Snapshot snap : snapDfn.getAllSnapshots(apiCtx))
                     {
-                        ResourceGroup rscGrp = removedRscDfn.getResourceGroup();
-                        removedRscDfn.delete(apiCtx);
-                        if (!rscGrp.hasResourceDefinitions(apiCtx))
+                        backupShippingMgr.snapshotDeleted(snap);
+                        snap.delete(apiCtx);
+                    }
+                    snapDfn.delete(apiCtx);
+
+                    if (rscDfn.getResourceCount() == 0 && rscDfn.getSnapshotDfns(apiCtx).isEmpty())
+                    {
+                        ResourceDefinition removedRscDfn = rscDfnMap.remove(rscName);
+                        if (removedRscDfn != null)
                         {
-                            rscGrpMap.remove(rscGrp.getName());
-                            rscGrp.delete(apiCtx);
+                            ResourceGroup rscGrp = removedRscDfn.getResourceGroup();
+                            removedRscDfn.delete(apiCtx);
+                            if (!rscGrp.hasResourceDefinitions(apiCtx))
+                            {
+                                rscGrpMap.remove(rscGrp.getName());
+                                rscGrp.delete(apiCtx);
+                            }
                         }
                     }
                 }
-
                 transMgrProvider.get().commit();
             }
 

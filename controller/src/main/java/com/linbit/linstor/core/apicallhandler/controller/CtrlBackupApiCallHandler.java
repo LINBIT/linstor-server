@@ -1340,6 +1340,20 @@ public class CtrlBackupApiCallHandler
         boolean downloadOnly
     ) throws AccessDeniedException, InvalidNameException
     {
+
+        Node node = ctrlApiDataLoader.loadNode(nodeName, true);
+        if (!node.getPeer(peerAccCtx.get()).isConnected())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_NOT_CONNECTED,
+                        "No active connection to satellite '" + node.getName() + "'."
+                    )
+                    .setDetails("Backups cannot be restored when the corresponding satellite is not connected.")
+                    .build()
+            );
+        }
         ApiCallRcImpl responses = new ApiCallRcImpl();
         Date targetTime = null;
         String shortTargetName = null;
@@ -1476,7 +1490,7 @@ public class CtrlBackupApiCallHandler
             List<String> spTooFull = new ArrayList<>();
             for (Entry<String, Long> spaceEntry : remainingFreeSpace.entrySet())
             {
-                if (spaceEntry.getValue() < 0)
+                if (spaceEntry != null && spaceEntry.getValue() < 0)
                 {
                     spTooFull.add(
                         ctrlApiDataLoader.loadStorPool(spaceEntry.getKey(), nodeName, true).getName().displayValue
@@ -1499,7 +1513,7 @@ public class CtrlBackupApiCallHandler
                 Snapshot snap = createSnapshotByS3Meta(
                     srcRscName,
                     storPoolMap,
-                    nodeName,
+                    node,
                     targetRscName,
                     passphrase,
                     shortTargetName,
@@ -1615,7 +1629,7 @@ public class CtrlBackupApiCallHandler
     private Snapshot createSnapshotByS3Meta(
         String srcRscName,
         Map<String, String> storPoolMap,
-        String nodeName,
+        Node node,
         String targetRscName,
         String passphrase,
         String shortTargetName,
@@ -1647,19 +1661,6 @@ public class CtrlBackupApiCallHandler
         }
         // 5. create layerPayload
         RscLayerDataApi layers = metadata.getLayerData();
-        Node node = ctrlApiDataLoader.loadNode(nodeName, true);
-        if (!node.getPeer(peerAccCtx.get()).isConnected())
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.FAIL_NOT_CONNECTED,
-                        "No active connection to satellite '" + node.getName() + "'."
-                    )
-                    .setDetails("Backups cannot be restored when the corresponding satellite is not connected.")
-                    .build()
-            );
-        }
         // 6. do luks-stuff if needed
         LuksLayerMetaPojo luksInfo = metadata.getLuksInfo();
         byte[] srcMasterKey = null;
@@ -3206,7 +3207,7 @@ public class CtrlBackupApiCallHandler
             Long freeSpace = remainingFreeSpace.get(sp.getName().value);
             if (freeSpace == null)
             {
-                freeSpace = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(sysCtx).orElseGet(null);
+                freeSpace = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(sysCtx).orElse(null);
             }
             for (BackupInfoVlmPojo vlm : entry.getValue())
             {
