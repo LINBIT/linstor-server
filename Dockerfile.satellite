@@ -70,7 +70,7 @@ RUN cd ${HOME}/${LINSTOR_TGZNAME}-${LINSTOR_VERSION} && \
   ) || rpmbuild -bb --define "debug_package %{nil}"  linstor.spec
 
 
-FROM quay.io/linbit/drbd-utils
+FROM quay.io/linbit/drbd-utils:v9.18.2
 # this is/needs to be based on registry.access.redhat.com/ubi7/ubi
 
 ENV LINSTOR_VERSION 1.15.0-rc.2
