@@ -2576,7 +2576,7 @@ public class CtrlBackupApiCallHandler
                                 if (s3BackupKeyMatcher.matches())
                                 {
                                     Integer s3VlmNrFromBackupName = Integer.parseInt(s3BackupKeyMatcher.group(3));
-                                    if (s3MetaVlmNr == s3VlmNrFromBackupName)
+                                    if (s3MetaVlmNr.equals(s3VlmNrFromBackupName))
                                     {
                                         long vlmFinishedTime = s3BackVlmInfo.getFinishedTimestamp();
                                         BackupVolumePojo retVlmPojo = new BackupVolumePojo(
