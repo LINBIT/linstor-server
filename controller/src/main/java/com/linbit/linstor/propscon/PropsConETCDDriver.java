@@ -39,6 +39,11 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
     public Map<String, String> loadAll(String instanceName) throws DatabaseException
     {
         errorReporter.logTrace("Loading properties for instance %s", getId(instanceName));
+        return loadAllImpl(instanceName);
+    }
+
+    private Map<String, String> loadAllImpl(String instanceName) throws DatabaseException
+    {
         String etcdNamespace = getEtcdKey(instanceName, null);
         Map<String, String> etcdMap = namespace(etcdNamespace).get(true);
 
@@ -137,8 +142,15 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
     {
         errorReporter.logTrace("Removing all properties by instance %s", getId(instanceName));
 
-        namespace(getEtcdKey(instanceName, null))
-            .delete(true);
+        /*
+         * Do NOT use recursive delete here as that might cause a duplicated key in etcd-tx exception when doing
+         * something like
+         * props.clear();
+         * props.setProp(...);
+         */
+
+        // as the driver currently does not know which keys to delete, unfortunately we have to load them again
+        remove(instanceName, loadAll(instanceName).keySet());
     }
 
     private String getId(String instanceName)
