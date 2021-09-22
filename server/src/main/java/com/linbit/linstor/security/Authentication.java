@@ -22,7 +22,7 @@ public final class Authentication
 {
     public static final String HASH_ALGORITHM = "SHA-512";
     public static final int ITERATIONS  = 5000;
-    public static final int HASH_SIZE   = 64;
+    public static final int HASH_SIZE   = 512;
     public static final int SALT_SIZE   = 16;
 
     private static final AtomicBoolean GLOBAL_AUTH_REQUIRED =
