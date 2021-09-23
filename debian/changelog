@@ -1,3 +1,41 @@
+linstor-server (1.15.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * devmgr: force updatenotification flag on fullsync applied
+  * eventhandler: do not fail on unknown resource updates
+  * bcache-clone: fix cloning for bcache devices
+  * vlmdfn: update satellites if necessary
+  * rscdfn: remove from auto-snapshotting on delete
+  * rsc-create: fix drbd data corruption on initial syncs
+  * BackupShipping: use .equals for non primitive compare
+  * backupinfomgr: cleanup
+
+  [ Gabor Hernadi ]
+  * BCache: Fix snapshot support
+  * ETCD: Fixed incorrect rollback/delete namespace
+  * BackupShipping: Added SnapAllocatedSize to VlmLayerData
+  * LvmThin: updateAllocatedSize after determined allocation-percent
+  * PropsConEtcdDriver: Fixed removeAll method
+
+  [ Roland Kammerer ]
+  * containers: document packages
+  * containers: remove unnecessary mkdir
+  * containers: install linstor-gui in customer containers
+  * containers: pin satellite to utils 9.18.2
+
+  [ Johanna Kucera ]
+  * BackupShipping: implemented backup info
+  * BackupShipping: add download-only option to restore
+  * Snapshot: prevent snapDfn from getting removed from the rscDfn without [...]
+  * Stlt: do not delete rscDfn if it still has snapDfns
+  * BackupShipping: declare required fields in rest_v1_openapi.yaml
+  * BackupShipping: fix backup abort for incremental restore
+  * BackupShipping: check if storpools have enough free space for restore
+  * BackupShipping: remove unused code
+  * BackupShipping: prevent some NPEs
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 23 Sep 2021 06:20:13 +0000
+
 linstor-server (1.15.0~rc.2-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

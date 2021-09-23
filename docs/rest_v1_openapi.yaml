@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.10.2
        - Added /v1/remotes/{remote-name}/backups/info as well as BackupInfo, BackupInfoRequest, BackupInfoStorPool and BackupInfoVolume
        - Added download_only to BackupShip and BackupRestore
     * 1.10.1
