@@ -118,7 +118,8 @@ public class GrizzlyHttpService implements SystemService
         }
     }
 
-    private static class HTTPSForwarder extends HttpHandler {
+    private static class HTTPSForwarder extends HttpHandler
+    {
         private final int httpsPort;
         public HTTPSForwarder(int httpsPort)
         {
@@ -142,15 +143,15 @@ public class GrizzlyHttpService implements SystemService
         fwdMappings.add("/v1");
 
         boolean disableHttpMetrics = false;
-        try
+        try (LockGuard ignored = lockGuardFactory.build(READ, CTRL_CONFIG))
         {
-            try (LockGuard ignored = lockGuardFactory.build(READ, CTRL_CONFIG))
-            {
-                disableHttpMetrics = systemConfRepository.getCtrlConfForView(sysCtx)
-                    .getPropWithDefault(ApiConsts.KEY_DISABLE_HTTP_METRICS, ApiConsts.NAMESPC_REST, "false")
-                    .equalsIgnoreCase("true");
-            }
-        } catch (AccessDeniedException ignored) {}
+            disableHttpMetrics = systemConfRepository.getCtrlConfForView(sysCtx)
+                .getPropWithDefault(ApiConsts.KEY_DISABLE_HTTP_METRICS, ApiConsts.NAMESPC_REST, "false")
+                .equalsIgnoreCase("true");
+        }
+        catch (AccessDeniedException ignored)
+        {
+        }
         if (disableHttpMetrics)
         {
             fwdMappings.add("/metrics");
@@ -255,8 +256,11 @@ public class GrizzlyHttpService implements SystemService
                     builder.rotatedDaily();
                     break;
                 case APPEND:
+                    // fall-through
                 case NO_LOG:
+                    // fall-through
                 default:
+                    break;
             }
 
             if (httpServer != null)
@@ -342,7 +346,6 @@ public class GrizzlyHttpService implements SystemService
     @Override
     public void shutdown()
     {
-        httpServer.shutdownNow();
         if (httpsServer != null)
         {
             httpsServer.shutdownNow();
@@ -352,7 +355,6 @@ public class GrizzlyHttpService implements SystemService
     @Override
     public void awaitShutdown(long timeout)
     {
-        httpServer.shutdown(timeout, TimeUnit.SECONDS);
         if (httpsServer != null)
         {
             httpsServer.shutdown(timeout, TimeUnit.SECONDS);
@@ -388,7 +390,7 @@ public class GrizzlyHttpService implements SystemService
     @Override
     public boolean isStarted()
     {
-        return httpServer.isStarted();
+        return httpServer != null ? httpServer.isStarted() : false;
     }
 }
 
@@ -449,7 +451,8 @@ class LinstorMapper implements ExceptionMapper<Exception>
                         .build());
             respStatus = javax.ws.rs.core.Response.Status.NOT_FOUND;
         }
-        else if (exc instanceof NotAllowedException)
+        else
+        if (exc instanceof NotAllowedException)
         {
             final String msg = String.format("Method '%s' not allowed on path '/%s'.",
                 request.getMethod(), uriInfo.getPath());
