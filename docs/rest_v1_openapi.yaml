@@ -4929,7 +4929,7 @@ paths:
             schema:
               $ref: '#/components/schemas/BackupShip'
   /v1/remotes/{remote_name}/backups/info:
-    get:
+    post:
       tags:
         - developers
       summary: list info about a backup
