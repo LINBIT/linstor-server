@@ -60,7 +60,7 @@ public class GrizzlyHttpService implements SystemService
 {
     private final ErrorReporter errorReporter;
     private HttpServer httpServer;
-    private HttpServer httpsServer;
+    private HttpServer httpSslServer;
     private ServiceName instanceName;
     private final String listenAddress;
     private final String listenAddressSecure;
@@ -189,7 +189,7 @@ public class GrizzlyHttpService implements SystemService
 
             addHTTPSRedirectHandler(httpServer, httpsUri.getPort());
 
-            httpsServer = GrizzlyHttpServerFactory.createHttpServer(
+            httpSslServer = GrizzlyHttpServerFactory.createHttpServer(
                 httpsUri,
                 restResourceConfig,
                 false
@@ -207,7 +207,7 @@ public class GrizzlyHttpService implements SystemService
                 sslCon.setTrustStorePass(trustStorePassword);
             }
 
-            for (NetworkListener netListener : httpsServer.getListeners())
+            for (NetworkListener netListener : httpSslServer.getListeners())
             {
                 netListener.setSecure(true);
                 SSLEngineConfigurator ssle = new SSLEngineConfigurator(sslCon);
@@ -217,12 +217,12 @@ public class GrizzlyHttpService implements SystemService
                 netListener.setSSLEngineConfig(ssle);
             }
 
-            enableCompression(httpsServer);
-            httpsServer.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
+            enableCompression(httpSslServer);
+            httpSslServer.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
         }
         else
         {
-            httpsServer = null;
+            httpSslServer = null;
             httpServer = GrizzlyHttpServerFactory.createHttpServer(
                 URI.create(String.format("http://%s", bindAddress)),
                 restResourceConfig,
@@ -267,9 +267,9 @@ public class GrizzlyHttpService implements SystemService
             {
                 builder.instrument(httpServer.getServerConfiguration());
             }
-            if (httpsServer != null)
+            if (httpSslServer != null)
             {
-                builder.instrument(httpsServer.getServerConfiguration());
+                builder.instrument(httpSslServer.getServerConfiguration());
             }
         }
         else
@@ -303,9 +303,9 @@ public class GrizzlyHttpService implements SystemService
             initGrizzly(listenAddress, listenAddressSecure);
             httpServer.start();
 
-            if (httpsServer != null)
+            if (httpSslServer != null)
             {
-                httpsServer.start();
+                httpSslServer.start();
             }
         }
         catch (SocketException sexc)
@@ -322,9 +322,9 @@ public class GrizzlyHttpService implements SystemService
                     initGrizzly("0.0.0.0:" + uri.getPort(), "0.0.0.0:" + uriSecure.getPort());
                     httpServer.start();
 
-                    if (httpsServer != null)
+                    if (httpSslServer != null)
                     {
-                        httpsServer.start();
+                        httpSslServer.start();
                     }
                 }
                 catch (IOException exc)
@@ -346,18 +346,26 @@ public class GrizzlyHttpService implements SystemService
     @Override
     public void shutdown()
     {
-        if (httpsServer != null)
+        if (httpServer != null)
         {
-            httpsServer.shutdownNow();
+            httpServer.shutdownNow();
+        }
+        if (httpSslServer != null)
+        {
+            httpSslServer.shutdownNow();
         }
     }
 
     @Override
     public void awaitShutdown(long timeout)
     {
-        if (httpsServer != null)
+        if (httpServer != null)
         {
-            httpsServer.shutdown(timeout, TimeUnit.SECONDS);
+            httpServer.shutdown(timeout, TimeUnit.SECONDS);
+        }
+        if (httpSslServer != null)
+        {
+            httpSslServer.shutdown(timeout, TimeUnit.SECONDS);
         }
     }
 
@@ -390,7 +398,8 @@ public class GrizzlyHttpService implements SystemService
     @Override
     public boolean isStarted()
     {
-        return httpServer != null ? httpServer.isStarted() : false;
+        return (httpServer != null ? httpServer.isStarted() : false) ||
+            (httpSslServer != null ? httpSslServer.isStarted() : false);
     }
 }
 
