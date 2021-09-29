@@ -9,7 +9,6 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdentities;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecRoles;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecTypes;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
-import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.Rollback;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.SecAccessTypesSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.SecConfigurationSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.SecDfltRolesSpec;
@@ -20,7 +19,7 @@ import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
 import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
-import com.linbit.linstor.transaction.ControllerK8sCrdCurrentTransactionMgr;
+import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
 import com.linbit.linstor.transaction.K8sCrdTransaction;
 
@@ -49,7 +48,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     {
         SignInEntryPojo signInEntry = null;
 
-        ControllerK8sCrdCurrentTransactionMgr tx = txMgrGen.startTransaction();
+        ControllerK8sCrdTransactionMgr tx = txMgrGen.startTransaction();
         SecIdentitiesSpec identity = loadIdentity(tx, idName, false);
 
         if (identity != null)
@@ -128,7 +127,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     {
         List<TypeEnforcementRulePojo> ret = new ArrayList<>();
 
-        ControllerK8sCrdCurrentTransactionMgr tx = txMgrGen.startTransaction();
+        ControllerK8sCrdTransactionMgr tx = txMgrGen.startTransaction();
         Map<String, GenCrdCurrent.SecTypeRulesSpec> typeRulesMap = tx.getTransaction().get(
             GeneratedDatabaseTables.SEC_TYPE_RULES
         );
@@ -179,8 +178,8 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
          * This action should always have its own transaction (i.e. no other actions should
          * be active concurrently)
          */
-        ControllerK8sCrdCurrentTransactionMgr txMgr = new ControllerK8sCrdCurrentTransactionMgr(k8sCrdDb);
-        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = txMgr.getTransaction();
+        ControllerK8sCrdTransactionMgr txMgr = new ControllerK8sCrdTransactionMgr(k8sCrdDb);
+        K8sCrdTransaction tx = txMgr.getTransaction();
         tx.update(
             GeneratedDatabaseTables.SEC_CONFIGURATION,
             GenCrdCurrent.createSecConfiguration(
@@ -199,8 +198,8 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
          * This action should always have its own transaction (i.e. no other actions should
          * be active concurrently)
          */
-        ControllerK8sCrdCurrentTransactionMgr txMgr = new ControllerK8sCrdCurrentTransactionMgr(k8sCrdDb);
-        K8sCrdTransaction<Rollback> tx = txMgr.getTransaction();
+        ControllerK8sCrdTransactionMgr txMgr = new ControllerK8sCrdTransactionMgr(k8sCrdDb);
+        K8sCrdTransaction tx = txMgr.getTransaction();
         tx.update(
             GeneratedDatabaseTables.SEC_CONFIGURATION,
             GenCrdCurrent.createSecConfiguration(
@@ -213,7 +212,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     }
 
     private SecIdentitiesSpec loadIdentity(
-        ControllerK8sCrdCurrentTransactionMgr tx,
+        ControllerK8sCrdTransactionMgr tx,
         IdentityName idNameRef,
         boolean failIfNull
     )
@@ -228,7 +227,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     }
 
     private SecDfltRolesSpec loadDefaultRole(
-        ControllerK8sCrdCurrentTransactionMgr tx,
+        ControllerK8sCrdTransactionMgr tx,
         IdentityName idNameRef,
         boolean failIfNull
     )
@@ -243,7 +242,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     }
 
     private SecRolesSpec loadRole(
-        ControllerK8sCrdCurrentTransactionMgr tx,
+        ControllerK8sCrdTransactionMgr tx,
         String roleNameRef,
         boolean failIfNull
     )
@@ -258,7 +257,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     }
 
     private SecIdRoleMapSpec loadIdRole(
-        ControllerK8sCrdCurrentTransactionMgr tx,
+        ControllerK8sCrdTransactionMgr tx,
         IdentityName idName,
         RoleName roleName,
         boolean failIfNull
@@ -274,7 +273,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     }
 
     private List<String> loadDistinctSecDspNames(
-        ControllerK8sCrdCurrentTransactionMgr tx,
+        ControllerK8sCrdTransactionMgr tx,
         Column dspNameCol
     )
     {
@@ -289,7 +288,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     }
 
     private String getValueOfConfigSpec(
-        ControllerK8sCrdCurrentTransactionMgr tx,
+        ControllerK8sCrdTransactionMgr tx,
         String key
     )
     {
@@ -303,7 +302,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     }
 
     private SecConfigurationSpec loadConfigSpec(
-        ControllerK8sCrdCurrentTransactionMgr tx,
+        ControllerK8sCrdTransactionMgr tx,
         String key
     )
     {

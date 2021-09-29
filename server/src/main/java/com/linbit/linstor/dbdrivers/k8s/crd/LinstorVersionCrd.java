@@ -4,15 +4,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Kind;
 import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
 
-@Version(LinstorVersion.VERSION)
-@Group(LinstorVersion.GROUP)
-@Plural(LinstorVersion.LINSTOR_CRD_NAME)
-@Singular(LinstorVersion.LINSTOR_CRD_NAME)
-public class LinstorVersion extends CustomResource<LinstorVersionSpec, Void> implements LinstorCrd<LinstorVersionSpec>
+@Version(LinstorVersionCrd.VERSION)
+@Group(LinstorVersionCrd.GROUP)
+@Plural(LinstorVersionCrd.LINSTOR_CRD_NAME)
+@Singular(LinstorVersionCrd.LINSTOR_CRD_NAME)
+@Kind(LinstorVersionCrd.LINSTOR_CRD_KIND)
+public class LinstorVersionCrd extends CustomResource<LinstorVersionSpec, Void> implements LinstorCrd<LinstorVersionSpec>
 {
     private static final long serialVersionUID = -8682837877370152832L;
 
@@ -20,13 +22,14 @@ public class LinstorVersion extends CustomResource<LinstorVersionSpec, Void> imp
     public static final String GROUP = "internal.linstor.linbit.com";
 
     public static final String LINSTOR_CRD_NAME = "linstorversion";
+    public static final String LINSTOR_CRD_KIND = "LinstorVersion";
 
-    public LinstorVersion()
+    public LinstorVersionCrd()
     {
         super();
     }
 
-    public LinstorVersion(LinstorVersionSpec spec)
+    public LinstorVersionCrd(LinstorVersionSpec spec)
     {
         setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
         setSpec(spec);

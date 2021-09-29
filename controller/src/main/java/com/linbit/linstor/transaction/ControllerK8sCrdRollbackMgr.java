@@ -7,7 +7,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.RollbackCrd;
-import com.linbit.linstor.dbdrivers.k8s.crd.RollbackSpecInterface;
+import com.linbit.linstor.dbdrivers.k8s.crd.RollbackSpec;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,13 +31,11 @@ public class ControllerK8sCrdRollbackMgr
      *
      * @return
      */
-    public static <CRD extends RollbackCrd> void createRollbackEntry(
-        K8sCrdTransaction<CRD> currentTransactionRef,
-        CRD rollbackCrd
-    )
+    public static void createRollbackEntry(K8sCrdTransaction currentTransactionRef)
         throws DatabaseException
     {
-        RollbackSpecInterface rollbackSpec = rollbackCrd.getSpec();
+        RollbackSpec rollbackSpec = new RollbackSpec();
+        RollbackCrd rollbackCrd = new RollbackCrd(rollbackSpec);
         boolean hasContent = false;
 
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToChangeOrCreate
@@ -94,17 +92,17 @@ public class ControllerK8sCrdRollbackMgr
         }
     }
 
-    public static <CRD extends RollbackCrd> void cleanup(K8sCrdTransaction<CRD> currentTransactionRef)
+    public static void cleanup(K8sCrdTransaction currentTransactionRef)
     {
         currentTransactionRef.getRollbackClient().delete();
     }
 
-    public static <ROLLBACK_CRD extends RollbackCrd, CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void rollbackIfNeeded(
-        K8sCrdTransaction<ROLLBACK_CRD> currentTransactionRef,
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void rollbackIfNeeded(
+        K8sCrdTransaction currentTransactionRef,
         Function<SPEC, CRD> specToCrdRef
     )
     {
-        List<ROLLBACK_CRD> rollbackList = currentTransactionRef.getRollbackClient().list().getItems();
+        List<RollbackCrd> rollbackList = currentTransactionRef.getRollbackClient().list().getItems();
         if (rollbackList.size() > 1)
         {
             throw new ImplementationError("Unexpected count of rollback objects: " + rollbackList.size());
@@ -113,16 +111,16 @@ public class ControllerK8sCrdRollbackMgr
         {
             return;
         }
-        RollbackSpecInterface rollback = rollbackList.get(0).getSpec();
+        RollbackSpec rollbackSpec = rollbackList.get(0).getSpec();
 
-        for (Entry<String, HashSet<String>> entry : rollback.getDeleteMap().entrySet())
+        for (Entry<String, HashSet<String>> entry : rollbackSpec.getDeleteMap().entrySet())
         {
             DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
             HashSet<String> keysToDelete = entry.getValue();
             delete(currentTransactionRef, dbTable, keysToDelete, specToCrdRef);
         }
 
-        for (Entry<String, HashMap<String, LinstorSpec>> entry : rollback.getRollbackMap().entrySet())
+        for (Entry<String, HashMap<String, LinstorSpec>> entry : rollbackSpec.getRollbackMap().entrySet())
         {
             DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
             ArrayList<SPEC> specList = new ArrayList<>();
@@ -143,8 +141,8 @@ public class ControllerK8sCrdRollbackMgr
     }
 
     @SuppressWarnings("unchecked")
-    private static <ROLLBACK_CRD extends RollbackCrd, CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void delete(
-        K8sCrdTransaction<ROLLBACK_CRD> currentTransaction,
+    private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void delete(
+        K8sCrdTransaction currentTransaction,
         DatabaseTable dbTable,
         HashSet<String> keysToDelete,
         Function<SPEC, CRD> specToCrdRef
@@ -166,8 +164,8 @@ public class ControllerK8sCrdRollbackMgr
     }
 
     @SuppressWarnings("unchecked")
-    private static <ROLLBACK_CRD extends RollbackCrd, CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void restoreData(
-        K8sCrdTransaction<ROLLBACK_CRD> currentTransaction,
+    private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void restoreData(
+        K8sCrdTransaction currentTransaction,
         DatabaseTable dbTable,
         Collection<SPEC> valuesToRestore,
         Function<SPEC, CRD> specToCrdRef

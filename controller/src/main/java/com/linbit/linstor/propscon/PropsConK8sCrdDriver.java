@@ -39,7 +39,7 @@ public class PropsConK8sCrdDriver implements PropsConDatabaseDriver
     {
         errorReporter.logTrace("Loading properties for instance %s", getId(instanceName));
 
-        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         HashMap<String, GenCrdCurrent.PropsContainersSpec> map = tx.get(
             GeneratedDatabaseTables.PROPS_CONTAINERS,
             propEntry -> propEntry.propsInstance.equals(instanceName)
@@ -57,7 +57,7 @@ public class PropsConK8sCrdDriver implements PropsConDatabaseDriver
     public void persist(String instanceName, String key, String value) throws DatabaseException
     {
         errorReporter.logTrace("Storing property %s", getId(instanceName, key, value));
-        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         tx.update(
             GeneratedDatabaseTables.PROPS_CONTAINERS,
             GenCrdCurrent.createPropsContainers(instanceName, key, value)
@@ -78,7 +78,7 @@ public class PropsConK8sCrdDriver implements PropsConDatabaseDriver
     {
         errorReporter.logTrace("Removing property %s", getId(instanceName, key));
 
-        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         tx.delete(
             GeneratedDatabaseTables.PROPS_CONTAINERS,
             GenCrdCurrent.createPropsContainers(instanceName, key, null)
@@ -99,7 +99,7 @@ public class PropsConK8sCrdDriver implements PropsConDatabaseDriver
     {
         errorReporter.logTrace("Removing all properties by instance %s", getId(instanceName));
 
-        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
 
         HashMap<String, GenCrdCurrent.PropsContainersSpec> map = tx.get(
             GeneratedDatabaseTables.PROPS_CONTAINERS,

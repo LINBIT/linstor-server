@@ -3,8 +3,7 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
-import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0.Rollback;
-import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgr;
+import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -18,13 +17,13 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     @Override
     public void migrate(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
-        BaseControllerK8sCrdTransactionMgr<GenCrdV1_15_0.Rollback> txMgr = new BaseControllerK8sCrdTransactionMgr<>(
+        ControllerK8sCrdTransactionMgr txMgr = new ControllerK8sCrdTransactionMgr(
             k8sDbRef,
             GenCrdV1_15_0.createTxMgrContext()
         );
 
         KubernetesClient k8sClient = k8sDbRef.getClient();
-        K8sCrdTransaction<Rollback> transaction = txMgr.getTransaction();
+        K8sCrdTransaction transaction = txMgr.getTransaction();
         // load data from database that needs to change
         // noop for initial migration
 
@@ -187,7 +186,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecConfiguration(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String entryKey,
         String entryDspKey,
         String entryValue
@@ -200,7 +199,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecIdentities(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String identityName,
         String identityDspName,
         String passSalt,
@@ -216,7 +215,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecTypes(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String typeName,
         String typeDspName,
         boolean typeEnabled
@@ -229,7 +228,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecRoles(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String roleName,
         String roleDspName,
         String domainName,
@@ -244,7 +243,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecIdRoleMap(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String identityName,
         String roleName
     )
@@ -259,7 +258,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecAccessTypes(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String accessTypeName,
         int accessTypeValue
     )
@@ -274,7 +273,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecTypeRules(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String domainName,
         String typeName,
         int accessType
@@ -291,7 +290,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecDfltRoles(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String identityName,
         String roleName
     )
@@ -306,7 +305,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecObjectProtection(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String objectPath,
         String creatorIdentityName,
         String ownerRoleName,
@@ -325,7 +324,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createSecAclMap(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String objectPath,
         String roleName,
         int accessType
@@ -342,7 +341,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createStorPoolDefinitions(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String uuid,
         String poolName,
         String poolDspName
@@ -359,7 +358,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createResourceGroups(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String uuid,
         String resourceGroupName,
         String resourceGroupDspName,
@@ -400,7 +399,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     private void createPropsContainers(
-        K8sCrdTransaction<Rollback> transactionRef,
+        K8sCrdTransaction transactionRef,
         String propsInstance,
         String propKey,
         String propValue

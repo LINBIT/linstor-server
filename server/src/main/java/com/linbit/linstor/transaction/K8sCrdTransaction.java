@@ -4,7 +4,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
-import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersion;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersionCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersionSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.RollbackCrd;
 
@@ -17,19 +17,19 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
-public class K8sCrdTransaction<ROLLBACK_CRD extends RollbackCrd>
+public class K8sCrdTransaction
 {
     private final Map<DatabaseTable, MixedOperation<?, ?, ?>> crdClientLut;
-    private final MixedOperation<ROLLBACK_CRD, KubernetesResourceList<ROLLBACK_CRD>, Resource<ROLLBACK_CRD>> rollbackClient;
-    private final MixedOperation<LinstorVersion, KubernetesResourceList<LinstorVersion>, Resource<LinstorVersion>> linstorVersionClient;
+    private final MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClient;
+    private final MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClient;
 
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToChangeOrCreate;
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToDelete;
 
     public K8sCrdTransaction(
         Map<DatabaseTable, MixedOperation<?, ?, ?>> crdClientLutRef,
-        MixedOperation<ROLLBACK_CRD, KubernetesResourceList<ROLLBACK_CRD>, Resource<ROLLBACK_CRD>> rollbackClientRef,
-        MixedOperation<LinstorVersion, KubernetesResourceList<LinstorVersion>, Resource<LinstorVersion>> linstorVersionClientRef
+        MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClientRef,
+        MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClientRef
     )
     {
         crdClientLut = crdClientLutRef;
@@ -40,19 +40,19 @@ public class K8sCrdTransaction<ROLLBACK_CRD extends RollbackCrd>
         rscsToDelete = new HashMap<>();
     }
 
-    public MixedOperation<ROLLBACK_CRD, KubernetesResourceList<ROLLBACK_CRD>, Resource<ROLLBACK_CRD>> getRollbackClient()
+    public MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> getRollbackClient()
     {
         return rollbackClient;
     }
 
-    public MixedOperation<LinstorVersion, KubernetesResourceList<LinstorVersion>, Resource<LinstorVersion>> getLinstorVersionClient()
+    public MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> getLinstorVersionClient()
     {
         return linstorVersionClient;
     }
 
     public void updateLinstorVersion(int version)
     {
-        LinstorVersion linstorVersion = new LinstorVersion(new LinstorVersionSpec(version));
+        LinstorVersionCrd linstorVersion = new LinstorVersionCrd(new LinstorVersionSpec(version));
         linstorVersionClient.createOrReplace(linstorVersion);
     }
 

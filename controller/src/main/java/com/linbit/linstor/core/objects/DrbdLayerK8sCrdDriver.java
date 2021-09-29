@@ -161,7 +161,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
     {
         try
         {
-            K8sCrdTransaction<?> tx = transMgrProvider.get().getTransaction();
+            K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
             {
                 Map<String, GenCrdCurrent.LayerDrbdResourcesSpec> drbdRscSpecList = tx.get(
                     GeneratedDatabaseTables.LAYER_DRBD_RESOURCES

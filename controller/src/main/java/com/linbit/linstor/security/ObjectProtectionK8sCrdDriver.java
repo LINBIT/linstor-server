@@ -107,7 +107,7 @@ public class ObjectProtectionK8sCrdDriver implements ObjectProtectionDatabaseDri
 
         errorReporter.logTrace("Loading ObjectProtection %s", getObjProtId(objectPathRef));
 
-        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         SecObjectProtectionSpec objProtSpec = tx.get(
             SEC_OBJECT_PROTECTION,
             objProtCrdTmp -> objProtCrdTmp.objectPath.equals(objectPathRef),

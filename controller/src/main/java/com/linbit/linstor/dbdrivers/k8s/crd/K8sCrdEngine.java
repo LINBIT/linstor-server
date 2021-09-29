@@ -78,7 +78,7 @@ public class K8sCrdEngine implements DbEngine
     {
         try
         {
-            K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+            K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
             LinstorCrd<?> crd = GenCrdCurrent.dataToCrd(table, setters, data);
             errorReporter.logTrace(
                 "Updating/Creating %s %s: %n%s",
@@ -109,7 +109,7 @@ public class K8sCrdEngine implements DbEngine
     {
         try
         {
-            K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+            K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
             LinstorCrd<?> crd = GenCrdCurrent.dataToCrd(table, setters, data);
             errorReporter.logTrace(
                 "Deleting %s %s: %n%s",
@@ -140,7 +140,7 @@ public class K8sCrdEngine implements DbEngine
     {
         Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
 
-        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         for (LinstorSpec linstorSpec : tx.get(table).values())
         {
             Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(
@@ -230,7 +230,7 @@ public class K8sCrdEngine implements DbEngine
     @Override
     public String getDbDump() throws DatabaseException
     {
-        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         Map<String, Collection<LinstorSpec>> dump = new TreeMap<>();
         for (DatabaseTable table : GeneratedDatabaseTables.ALL_TABLES)
         {

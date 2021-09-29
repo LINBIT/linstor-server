@@ -12,9 +12,10 @@ import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.migration.k8s.crd.BaseK8sCrdMigration;
 import com.linbit.linstor.dbcp.migration.k8s.crd.K8sCrdMigration;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersion;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersionCrd;
+import com.linbit.linstor.dbdrivers.k8s.crd.RollbackCrd;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.transaction.ControllerK8sCrdCurrentTransactionMgr;
+import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
 
 import javax.inject.Inject;
@@ -99,7 +100,7 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     @Override
     public void migrate(String dbTypeRef) throws InitializationException
     {
-        ControllerK8sCrdCurrentTransactionMgr currentTx = k8sTxGenerator.startTransaction();
+        ControllerK8sCrdTransactionMgr currentTx = k8sTxGenerator.startTransaction();
         Integer dbVersion = currentTx.getDbVersion();
 
         ControllerK8sCrdDatabase k8sDb = controllerDatabaseProvider.get();
@@ -111,10 +112,18 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> crdApi = k8sDb
                 .getClient().apiextensions().v1()
                 .customResourceDefinitions();
-            CustomResourceDefinition linstorVersionCrd = crdApi.load(
-                new File(LinstorVersion.getYamlLocation())
-            ).get();
-            crdApi.createOrReplace(linstorVersionCrd);
+
+            crdApi.createOrReplace(
+                crdApi.load(
+                    new File(LinstorVersionCrd.getYamlLocation())
+                ).get()
+            );
+
+            crdApi.createOrReplace(
+                crdApi.load(
+                    new File(RollbackCrd.getYamlLocation())
+                ).get()
+            );
 
             dbVersion = 0;
         }
@@ -169,7 +178,9 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
                             (dbVersion - 1) + " -> " + dbVersion
                     );
                 }
-                errorReporter.logDebug("Migration DB: " + dbVersion + ": " + migration.getDescription());
+                errorReporter.logDebug(
+                    "Migration DB: " + dbVersion + " -> " + (dbVersion + 1) + ": " + migration.getDescription()
+                );
                 migration.migrate(k8sDb);
 
                 dbVersion = migration.getNextVersion();

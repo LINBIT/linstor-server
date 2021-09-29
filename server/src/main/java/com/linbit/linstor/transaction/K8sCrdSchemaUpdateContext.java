@@ -7,25 +7,16 @@ import java.util.function.Function;
 public class K8sCrdSchemaUpdateContext
 {
     private final Function<DatabaseTable, String> getYamlLocations;
-    private final String rollbackYamlLocation;
 
     public K8sCrdSchemaUpdateContext(
-        Function<DatabaseTable, String> getYamlLocationsRef,
-        String rollbackYamlLocationRef
+        Function<DatabaseTable, String> getYamlLocationsRef
     )
     {
-        super();
         getYamlLocations = getYamlLocationsRef;
-        rollbackYamlLocation = rollbackYamlLocationRef;
     }
 
     public Function<DatabaseTable, String> getGetYamlLocations()
     {
         return getYamlLocations;
-    }
-
-    public String getRollbackYamlLocation()
-    {
-        return rollbackYamlLocation;
     }
 }

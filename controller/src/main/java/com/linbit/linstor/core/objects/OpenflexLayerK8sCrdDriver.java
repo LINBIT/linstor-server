@@ -207,7 +207,7 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
     private void fetchOfVlms(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef) throws DatabaseException
     {
         cachedVlmInfoMap = new HashMap<>();
-        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         Map<String, GenCrdCurrent.LayerOpenflexVolumesSpec> openflexVlmSpecMap = tx.get(
             GeneratedDatabaseTables.LAYER_OPENFLEX_VOLUMES
         );

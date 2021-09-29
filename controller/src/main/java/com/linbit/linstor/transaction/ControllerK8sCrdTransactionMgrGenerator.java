@@ -24,8 +24,8 @@ public class ControllerK8sCrdTransactionMgrGenerator implements TransactionMgrGe
     }
 
     @Override
-    public ControllerK8sCrdCurrentTransactionMgr startTransaction()
+    public ControllerK8sCrdTransactionMgr startTransaction()
     {
-        return new ControllerK8sCrdCurrentTransactionMgr(controllerDatabase.get());
+        return new ControllerK8sCrdTransactionMgr(controllerDatabase.get());
     }
 }

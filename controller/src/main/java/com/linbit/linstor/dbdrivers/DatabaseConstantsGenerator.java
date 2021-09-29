@@ -10,7 +10,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -423,13 +422,6 @@ public final class DatabaseConstantsGenerator
             renderYamlFile(tbl, currentVersionStrRef, olderVersions);
             resources.add(new GeneratedResources(getYamlLocation(tbl, currentVersionStrRef), mainBuilder.toString()));
         }
-        renderRollbackYamlFile(tbls.values(), currentVersionStrRef, olderVersions);
-        resources.add(
-            new GeneratedResources(
-                getYamlLocation(currentVersionStrRef, "rollback"),
-                mainBuilder.toString()
-            )
-        );
 
         // renderMigrationClassTemplate(currentVersionStrRef);
         // GeneratedCrdJavaClass migrationTemplateClass = new GeneratedCrdJavaClass(
@@ -450,8 +442,8 @@ public final class DatabaseConstantsGenerator
             "java.nio.charset.StandardCharsets",
             // "java.util.ArrayList",
             "java.util.Date",
-            "java.util.HashMap",
-            "java.util.HashSet",
+            // "java.util.HashMap",
+            // "java.util.HashSet",
             "java.util.Map",
             "java.util.TreeMap",
             null, // empty line
@@ -516,11 +508,6 @@ public final class DatabaseConstantsGenerator
                         {
                             appendLine("return (Class<CRD>) %s.class;", tblNameCamelCase);
                         }
-                    }
-                    appendLine("case \"rollback\": // intentionally lower case");
-                    try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
-                    {
-                        appendLine("return (Class<CRD>) Rollback.class;");
                     }
                     appendLine("default:");
                     try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
@@ -639,25 +626,16 @@ public final class DatabaseConstantsGenerator
             }
 
             appendEmptyLine();
-            appendLine("public static String getRollbackYamlLocation()");
-            try (IndentLevel methodIndent = new IndentLevel())
-            {
-                appendLine("return \"%s\";", getYamlLocation(currentVersionRef, "rollback"));
-            }
-
-            appendEmptyLine();
             appendLine(
-                "public static BaseControllerK8sCrdTransactionMgrContext<%s.Rollback> createTxMgrContext()",
+                "public static BaseControllerK8sCrdTransactionMgrContext createTxMgrContext()",
                 clazzName
             );
             try (IndentLevel methodIndent = new IndentLevel())
             {
-                appendLine("return new BaseControllerK8sCrdTransactionMgrContext<>(");
+                appendLine("return new BaseControllerK8sCrdTransactionMgrContext(");
                 try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
                 {
                     appendLine("%s::databaseTableToCustomResourceClass,", clazzName);
-                    appendLine("%s.Rollback.class,", clazzName);
-                    appendLine("%s::newRollbackCrd,", clazzName);
                     appendLine("%s::specToCrd", clazzName);
                 }
                 appendLine(");");
@@ -670,13 +648,10 @@ public final class DatabaseConstantsGenerator
                 appendLine("return new K8sCrdSchemaUpdateContext(");
                 try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
                 {
-                    appendLine("%s::databaseTableToYamlLocation,", clazzName);
-                    appendLine("getRollbackYamlLocation()");
+                    appendLine("%s::databaseTableToYamlLocation", clazzName);
                 }
                 appendLine(");");
             }
-
-            renderRollbackClass(currentVersionRef, clazzName);
 
             for (Table tbl : tbls.values())
             {
@@ -719,230 +694,6 @@ public final class DatabaseConstantsGenerator
             ),
             strVersion
         );
-    }
-
-
-    private void renderRollbackClass(String crdVersion, String currentClassName)
-    {
-        appendEmptyLine();
-        appendLine("public static Rollback newRollbackCrd()");
-        try (IndentLevel methodIndent = new IndentLevel())
-        {
-            appendLine("return new Rollback(new RollbackSpec());");
-        }
-
-        /*
-         * Spec class
-         */
-        appendEmptyLine();
-        appendLine("public static class RollbackSpec implements RollbackSpecInterface");
-        try (IndentLevel rollbackSpecIndent = new IndentLevel())
-        {
-            appendLine("@JsonIgnore private static final long serialVersionUID = %dL;", random.nextLong());
-            appendEmptyLine();
-
-            appendLine("@JsonIgnore private final Object syncObject = new Object();");
-            appendEmptyLine();
-
-            appendLine("/** Contains original data for each modified or created Spec class */");
-            appendLine("// HashMap<dbTable.toString(), HashMap<spec.getKey(), spec>>");
-            appendLine(
-                "@JsonProperty(\"rollbackMap\") public final HashMap<String, HashMap<String, %s>> rollbackMap;",
-                CRD_LINSTOR_SPEC_INTERFACE_NAME
-            );
-            appendEmptyLine();
-
-            appendLine("/**");
-            appendLine("  * Contains keys of instances that were created in this transaction.");
-            appendLine("  * A rollback causes deletion of these entries");
-            appendLine("  */");
-            appendLine("// HashMap<dbTable.toString(), HashMap<spec.getKey(), spec>>");
-            appendLine("@JsonProperty(\"deleteMap\") public final HashMap<String, HashSet<String>> deleteMap;");
-
-            appendEmptyLine();
-            appendLine("public RollbackSpec()");
-            try (IndentLevel ctorIndent = new IndentLevel())
-            {
-                appendLine("rollbackMap = new HashMap<>();");
-                appendLine("deleteMap = new HashMap<>();");
-            }
-
-            appendEmptyLine();
-            appendLine("@JsonCreator");
-            appendLine("public RollbackSpec(");
-            try (IndentLevel ctorParamIndent = new IndentLevel("", "", false, false))
-            {
-                appendLine("@JsonProperty(\"rollbackMap\")HashMap<String, HashMap<String, %s>> rollbackMapRef,", CRD_LINSTOR_SPEC_INTERFACE_NAME);
-                appendLine("@JsonProperty(\"deleteMap\") HashMap<String, HashSet<String>> deleteMapRef");
-            }
-            appendLine(")");
-            try (IndentLevel ctorIndent = new IndentLevel())
-            {
-                appendLine("rollbackMap = rollbackMapRef;");
-                appendLine("deleteMap = deleteMapRef;");
-            }
-
-            appendEmptyLine();
-            appendLine("@Override");
-            appendLine("@JsonIgnore");
-            appendLine("public void updatedOrDeleted(DatabaseTable dbTable, %s data)", CRD_LINSTOR_SPEC_INTERFACE_NAME);
-            try (IndentLevel addAsUpdateMethodIndent = new IndentLevel())
-            {
-                appendLine("synchronized (syncObject)");
-                try (IndentLevel addAsUpdateMethodSynchronizedIndent = new IndentLevel())
-                {
-                    appendLine("String dbTableStr = dbTable.toString();");
-                    appendLine("String specKey = data.getKey();");
-                    appendLine("if (!alreadyKnown(dbTableStr, specKey))");
-                    try (IndentLevel ifIndent = new IndentLevel())
-                    {
-                        appendLine(
-                            "HashMap<String, %s> rbMap = rollbackMap.get(dbTableStr);",
-                            CRD_LINSTOR_SPEC_INTERFACE_NAME
-                        );
-                        appendLine("if (rbMap == null)");
-                        try (IndentLevel nestedIfIndent = new IndentLevel())
-                        {
-                            appendLine("rbMap = new HashMap<>();");
-                            appendLine("rollbackMap.put(dbTableStr, rbMap);");
-                        }
-                        appendLine("rbMap.put(specKey, data);");
-                    }
-                }
-            }
-            appendEmptyLine();
-
-            appendLine("@Override");
-            appendLine("@JsonIgnore");
-            appendLine("public void created(DatabaseTable dbTable, String specKey)");
-            try (IndentLevel addAsUpdateMethodIndent = new IndentLevel())
-            {
-                appendLine("synchronized (syncObject)");
-                try (IndentLevel addAsUpdateMethodSynchronizedIndent = new IndentLevel())
-                {
-                    appendLine("String dbTableStr = dbTable.toString();");
-                    appendLine("if (!alreadyKnown(dbTableStr, specKey))");
-                    try (IndentLevel ifIndent = new IndentLevel())
-                    {
-                        appendLine("HashSet<String> delSet = deleteMap.get(dbTableStr);");
-                        appendLine("if (delSet == null)");
-                        try (IndentLevel addAsUpdateMethodIfIndent = new IndentLevel())
-                        {
-                            appendLine("delSet = new HashSet<>();");
-                            appendLine("deleteMap.put(dbTableStr, delSet);");
-                        }
-                        appendLine("delSet.add(specKey);");
-                    }
-                }
-            }
-
-            appendEmptyLine();
-            appendLine("@Override");
-            appendLine("public HashMap<String, HashMap<String, LinstorSpec>> getRollbackMap()");
-            try (IndentLevel methodIndent = new IndentLevel())
-            {
-                appendLine("return rollbackMap;");
-            }
-
-            appendEmptyLine();
-            appendLine("@Override");
-            appendLine("public HashMap<String, HashSet<String>> getDeleteMap()");
-            try (IndentLevel methodIndent = new IndentLevel())
-            {
-                appendLine("return deleteMap;");
-            }
-
-            appendEmptyLine();
-            appendLine("@JsonIgnore");
-            appendLine("private boolean alreadyKnown(String dbTableStr, String specKey)");
-            try (IndentLevel alreadyKnownMethodIndent = new IndentLevel())
-            {
-                appendLine(
-                    "HashMap<String, %s> rbMap = rollbackMap.get(dbTableStr);",
-                    CRD_LINSTOR_SPEC_INTERFACE_NAME
-                );
-                appendLine("HashSet<String> delSet = deleteMap.get(dbTableStr);");
-                appendLine(
-                    "return (rbMap == null || !rbMap.containsKey(specKey)) && (delSet == null || !delSet.contains(specKey));"
-                );
-            }
-
-            appendEmptyLine();
-            appendLine("@JsonIgnore");
-            appendLine("@Override");
-            appendLine("public String getKey()");
-            try (IndentLevel getKeyIndent = new IndentLevel())
-            {
-                appendLine("return \"rollback\";");
-            }
-
-            appendEmptyLine();
-            appendLine("@Override");
-            appendLine("@JsonIgnore");
-            appendLine("public Map<String, Object> asRawParameters()");
-            try (IndentLevel getKeyIndent = new IndentLevel())
-            {
-                appendLine("throw new ImplementationError(\"Method not supported by Rollback\");");
-            }
-
-            appendEmptyLine();
-            appendLine("@Override");
-            appendLine("@JsonIgnore");
-            appendLine("public Object getByColumn(Column clmRef)");
-            try (IndentLevel getKeyIndent = new IndentLevel())
-            {
-                appendLine("throw new ImplementationError(\"Method not supported by Rollback\");");
-            }
-
-            appendEmptyLine();
-            appendLine("@Override");
-            appendLine("@JsonIgnore");
-            appendLine("public DatabaseTable getDatabaseTable()");
-            try (IndentLevel getKeyIndent = new IndentLevel())
-            {
-                appendLine("throw new ImplementationError(\"Method not supported by Rollback\");");
-            }
-        }
-
-        /*
-         * CustomResource class
-         */
-        appendEmptyLine();
-        appendLine("@Version(%s.VERSION)", currentClassName);
-        appendLine("@Group(%s.GROUP)", currentClassName);
-        appendLine("@Plural(\"rollback\")");
-        appendLine("@Singular(\"rollback\")");
-        appendLine(
-            "public static class Rollback extends CustomResource<RollbackSpec, Void> implements RollbackCrd"
-        );
-        try (IndentLevel clazzIndent = new IndentLevel())
-        {
-            appendLine("private static final long serialVersionUID = %dL;", random.nextLong());
-            appendEmptyLine();
-
-            appendLine("public Rollback()");
-            try (IndentLevel ctorIndent = new IndentLevel())
-            {
-                appendLine("super();");
-            }
-            appendEmptyLine();
-
-            appendLine("public Rollback(RollbackSpec spec)");
-            try (IndentLevel ctorIndent = new IndentLevel())
-            {
-                appendLine("setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());");
-                appendLine("setSpec(spec);");
-            }
-
-            appendEmptyLine();
-            appendLine("@Override");
-            appendLine("@JsonIgnore");
-            appendLine("public String getKey()");
-            try (IndentLevel methodIndent = new IndentLevel())
-            {
-                appendLine("return spec.getKey();");
-            }
-        }
     }
 
     private void renderCrdTableClass(Table tbl, String crdVersion, String clazzNameRef)
@@ -1354,127 +1105,6 @@ public final class DatabaseConstantsGenerator
         return propertiesSpecNode;
     }
 
-    private void renderRollbackYamlFile(
-        Collection<Table> tables,
-        String currentVersionStrRef,
-        TreeSet<GeneratorVersion> olderVersionsRef
-    )
-    {
-        mainBuilder.setLength(0);
-        ObjectNode rootNode = YAML_MAPPER.createObjectNode();
-        rootNode.put("apiVersion", "apiextensions.k8s.io/v1");
-        rootNode.put("kind", "CustomResourceDefinition");
-
-        String nameCamelCase = "Rollback";
-        String nameLowerCase = "rollback";
-        String namePlural = nameLowerCase;
-        String nameSingular = nameLowerCase;
-
-
-        ObjectNode metadataNode = YAML_MAPPER.createObjectNode();
-        {
-            metadataNode.put("name", namePlural + "." + CRD_GROUP);
-        }
-        rootNode.set("metadata", metadataNode);
-
-        ObjectNode specNode = YAML_MAPPER.createObjectNode();
-        {
-            specNode.put("group", CRD_GROUP);
-
-            ArrayNode versionArrayNode = YAML_MAPPER.createArrayNode();
-            {
-                // first add the newest (current) version.
-                ObjectNode curVerNode = YAML_MAPPER.createObjectNode();
-                {
-                    curVerNode.put("name", asYamlVersionString(currentVersionStrRef));
-                    curVerNode.put("served", true);
-                    curVerNode.put("storage", true); // always true for current version
-
-                    ObjectNode schemaNode = YAML_MAPPER.createObjectNode();
-                    {
-                        ObjectNode openapiNode = YAML_MAPPER.createObjectNode();
-                        {
-                            openapiNode.put("type", "object");
-                            ObjectNode propertiesNode = YAML_MAPPER.createObjectNode();
-                            {
-                                ObjectNode propertiesSpecNode = YAML_MAPPER.createObjectNode();
-                                {
-                                    propertiesSpecNode.put("type", "object");
-                                    // basically only to reset indentation :(
-                                    ObjectNode propertiesSpecPropertiesNode = buildRollbackPropertiesSpecPropertiesNode(
-                                        tables
-                                    );
-                                    propertiesSpecNode.set("properties", propertiesSpecPropertiesNode);
-                                }
-                                propertiesNode.set("spec", propertiesSpecNode);
-                            }
-                            openapiNode.set("properties", propertiesNode);
-                        }
-                        schemaNode.set("openAPIV3Schema", openapiNode);
-                    }
-                    curVerNode.set("schema", schemaNode);
-                    versionArrayNode.add(curVerNode);
-                }
-
-                // now load versions section from last last
-                if (!olderVersionsRef.isEmpty())
-                {
-                    JsonNode oldVersionSection = loadOldVersionSection(
-                        getYamlLocation(currentVersionStrRef, nameCamelCase)
-                    );
-                    if (oldVersionSection != null)
-                    {
-                        Iterator<JsonNode> versionIt = oldVersionSection.elements();
-                        while (versionIt.hasNext())
-                        {
-                            ObjectNode oldVerNode = versionIt.next().deepCopy();
-                            oldVerNode.put("storage", false); // always for older versions
-                            versionArrayNode.add(oldVerNode);
-                        }
-                    }
-                }
-            }
-            specNode.set("versions", versionArrayNode);
-            specNode.put("scope", "Cluster");
-
-            ObjectNode namesNode = YAML_MAPPER.createObjectNode();
-            {
-                namesNode.put("plural", namePlural);
-                namesNode.put("singular", nameSingular);
-                namesNode.put("kind", nameCamelCase);
-                // no short name (for now?)
-            }
-            specNode.set("names", namesNode);
-        }
-        rootNode.set("spec", specNode);
-
-        try
-        {
-            mainBuilder.append(YAML_MAPPER.writeValueAsString(rootNode));
-        }
-        catch (JsonProcessingException exc)
-        {
-            throw new ImplementationError("Failed to serialize yaml content", exc);
-        }
-    }
-
-    private ObjectNode buildRollbackPropertiesSpecPropertiesNode(Collection<Table> tables)
-    {
-        ObjectNode propertiesSpecPropertiesNode = YAML_MAPPER.createObjectNode();
-        {
-            for (Table tbl : tables)
-            {
-                ObjectNode tblNode = YAML_MAPPER.createObjectNode();
-                String tblNameLower = camelCase(tbl.name.toCharArray()).toLowerCase();
-                propertiesSpecPropertiesNode.set(
-                    tblNameLower,
-                    buildPropertiesSpecNode(tbl)
-                );
-            }
-        }
-        return propertiesSpecPropertiesNode;
-    }
-
     private JsonNode loadOldVersionSection(Table tbl, GeneratorVersion generatorVersionRef)
     {
         return loadOldVersionSection(getYamlLocation(tbl, generatorVersionRef.originalVersion));
@@ -1579,12 +1209,6 @@ public final class DatabaseConstantsGenerator
             }
         }
     }
-
-    private String versionToString(Version versionRef)
-    {
-        return "v" + versionRef.toString();
-    }
-
 
     private String getYamlLocation(Table tblRef, String crdVersionRef)
     {
