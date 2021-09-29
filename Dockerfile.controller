@@ -97,7 +97,6 @@ EXPOSE 3370/tcp 3371/tcp
 
 COPY scripts/entry.sh /
 
-ENV LC_ALL=en_US.utf8
 USER linstor
 
 CMD ["startController"]
