@@ -363,13 +363,16 @@ public class LayerDataFactory
         AbsVolume<RSC> vlm,
         NvmeRscData<RSC> rscData
     )
+        throws DatabaseException
     {
-        return new NvmeVlmData<>(
+        NvmeVlmData<RSC> nvmeVlmData = new NvmeVlmData<>(
             vlm,
             rscData,
             transObjFactory,
             transMgrProvider
         );
+        nvmeDbDriver.persist(nvmeVlmData);
+        return nvmeVlmData;
     }
 
     public <RSC extends AbsResource<RSC>> OpenflexRscDfnData<RSC> createOpenflexRscDfnData(
@@ -466,8 +469,9 @@ public class LayerDataFactory
         StorPool cacheStorPool,
         WritecacheRscData<RSC> rscData
     )
+        throws DatabaseException
     {
-        return new WritecacheVlmData<>(
+        WritecacheVlmData<RSC> writecacheVlmData = new WritecacheVlmData<>(
             vlm,
             rscData,
             cacheStorPool,
@@ -475,6 +479,8 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
+        writecacheDbDriver.persist(writecacheVlmData);
+        return writecacheVlmData;
     }
 
     public <RSC extends AbsResource<RSC>> CacheRscData<RSC> createCacheRscData(
@@ -507,8 +513,9 @@ public class LayerDataFactory
         StorPool metaStorPool,
         CacheRscData<RSC> rscData
     )
+        throws DatabaseException
     {
-        return new CacheVlmData<>(
+        CacheVlmData<RSC> cacheVlmData = new CacheVlmData<>(
             vlm,
             rscData,
             cacheStorPool,
@@ -517,6 +524,8 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
+        cacheDbDriver.persist(cacheVlmData);
+        return cacheVlmData;
     }
 
     public <RSC extends AbsResource<RSC>> BCacheRscData<RSC> createBCacheRscData(
@@ -548,8 +557,9 @@ public class LayerDataFactory
         StorPool cacheStorPool,
         BCacheRscData<RSC> rscData
     )
+        throws DatabaseException
     {
-        return new BCacheVlmData<>(
+        BCacheVlmData<RSC> bCacheVlmData = new BCacheVlmData<>(
             vlm,
             rscData,
             cacheStorPool,
@@ -557,6 +567,8 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
+        bcacheDbDriver.persist(bCacheVlmData);
+        return bCacheVlmData;
     }
 
     public <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> LvmData<RSC> createLvmData(

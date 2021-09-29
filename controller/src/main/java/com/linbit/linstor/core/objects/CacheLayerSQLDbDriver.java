@@ -70,7 +70,7 @@ public class CacheLayerSQLDbDriver implements CacheLayerCtrlDatabaseDriver
     private static final String INSERT_VLM =
         " INSERT INTO " + TBL_LAYER_CACHE_VOLUMES +
         " (" + StringUtils.join(", ", VLM_ALL_FIELDS) + " ) " +
-        " VALUES (" + StringUtils.repeat("?", ", ", VLM_ALL_FIELDS.length);
+        " VALUES (" + StringUtils.repeat("?", ", ", VLM_ALL_FIELDS.length) + ")";
     private static final String DELETE_VLM =
         " DELETE FROM " + TBL_LAYER_CACHE_VOLUMES +
         " WHERE " + LAYER_RESOURCE_ID + " = ? AND " +

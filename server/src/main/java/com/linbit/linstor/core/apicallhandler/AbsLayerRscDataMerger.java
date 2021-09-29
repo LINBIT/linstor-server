@@ -532,6 +532,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     }
 
     private void createOrMergeNvmeVlm(AbsVolume<RSC> vlm, NvmeRscData<RSC> nvmeRscData, NvmeVlmPojo vlmPojo)
+        throws DatabaseException
     {
         VolumeNumber vlmNr = vlm.getVolumeNumber();
 
@@ -1027,7 +1028,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     protected abstract void removeNvmeVlm(NvmeRscData<RSC> nvmeRscData, VolumeNumber vlmNr)
         throws DatabaseException, AccessDeniedException;
 
-    protected abstract void createNvmeVlm(AbsVolume<RSC> vlm, NvmeRscData<RSC> nvmeRscData, VolumeNumber vlmNr);
+    protected abstract void createNvmeVlm(AbsVolume<RSC> vlm, NvmeRscData<RSC> nvmeRscData, VolumeNumber vlmNr)
+        throws DatabaseException;
 
     protected abstract void mergeNvmeVlm(NvmeVlmPojo vlmPojo, NvmeVlmData<RSC> nvmeVlmData);
 
@@ -1089,7 +1091,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         WritecacheVlmPojo vlmPojoRef,
         VolumeNumber vlmNr
     )
-        throws AccessDeniedException, InvalidNameException;
+        throws AccessDeniedException, InvalidNameException, DatabaseException;
 
     protected abstract void mergeWritecacheVlm(WritecacheVlmPojo vlmPojo, WritecacheVlmData<RSC> writecacheVlmData)
         throws DatabaseException;
@@ -1114,7 +1116,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         CacheVlmPojo vlmPojoRef,
         VolumeNumber vlmNr
     )
-        throws AccessDeniedException, InvalidNameException;
+        throws AccessDeniedException, InvalidNameException, DatabaseException;
 
     protected abstract void mergeCacheVlm(CacheVlmPojo vlmPojo, CacheVlmData<RSC> cacheVlmData)
         throws DatabaseException;
@@ -1147,7 +1149,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         BCacheVlmPojo vlmPojoRef,
         VolumeNumber vlmNr
     )
-        throws AccessDeniedException, InvalidNameException;
+        throws AccessDeniedException, InvalidNameException, DatabaseException;
 
     protected abstract void mergeBCacheVlm(BCacheVlmPojo vlmPojo, BCacheVlmData<RSC> bcacheVlmData)
         throws DatabaseException;

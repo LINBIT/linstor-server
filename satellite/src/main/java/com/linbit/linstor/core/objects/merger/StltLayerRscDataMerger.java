@@ -649,6 +649,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         NvmeRscData<Resource> nvmeRscDataRef,
         VolumeNumber vlmNrRef
     )
+        throws DatabaseException
     {
         NvmeVlmData<Resource> nvmeVlmData = layerDataFactory.createNvmeVlmData(vlmRef, nvmeRscDataRef);
         nvmeRscDataRef.getVlmLayerObjects().put(vlmNrRef, nvmeVlmData);
@@ -712,7 +713,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         WritecacheRscData<Resource> writecacheRscDataRef,
         WritecacheVlmPojo vlmPojo,
         VolumeNumber vlmNrRef
-    ) throws AccessDeniedException, InvalidNameException
+    )
+        throws AccessDeniedException, InvalidNameException, DatabaseException
     {
         String cacheStorPoolNameStr = vlmPojo.getCacheStorPoolName();
         StorPool cacheStorPool = null;
@@ -787,7 +789,8 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         CacheRscData<Resource> cacheRscDataRef,
         CacheVlmPojo vlmPojo,
         VolumeNumber vlmNrRef
-    ) throws AccessDeniedException, InvalidNameException
+    )
+        throws AccessDeniedException, InvalidNameException, DatabaseException
     {
         String cacheStorPoolNameStr = vlmPojo.getCacheStorPoolName();
         StorPool cacheStorPool = null;
@@ -882,7 +885,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         BCacheVlmPojo vlmPojo,
         VolumeNumber vlmNrRef
     )
-        throws AccessDeniedException, InvalidNameException
+        throws AccessDeniedException, InvalidNameException, DatabaseException
     {
         String cacheStorPoolNameStr = vlmPojo.getCacheStorPoolName();
         StorPool cacheStorPool = null;
