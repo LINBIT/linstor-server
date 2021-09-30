@@ -359,10 +359,18 @@ public class ResourceGroups
     {
         try
         {
-            JsonGenTypes.ResourceGroupAdjust data = objectMapper.readValue(
-                jsonData,
-                JsonGenTypes.ResourceGroupAdjust.class
-            );
+            JsonGenTypes.ResourceGroupAdjust data;
+            if (jsonData != null && !jsonData.isEmpty())
+            {
+                data = objectMapper.readValue(
+                    jsonData,
+                    JsonGenTypes.ResourceGroupAdjust.class
+                );
+            }
+            else
+            {
+                data = new JsonGenTypes.ResourceGroupAdjust();
+            }
             AutoSelectFilterApi adjustAutoSelectFilter = selectFilterToApi(data.select_filter);
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler
                 .adjust(rscGrpName, adjustAutoSelectFilter)
@@ -386,10 +394,18 @@ public class ResourceGroups
     {
         try
         {
-            JsonGenTypes.ResourceGroupAdjust data = objectMapper.readValue(
-                jsonData,
-                JsonGenTypes.ResourceGroupAdjust.class
-            );
+            JsonGenTypes.ResourceGroupAdjust data;
+            if (jsonData != null && !jsonData.isEmpty())
+            {
+                data = objectMapper.readValue(
+                    jsonData,
+                    JsonGenTypes.ResourceGroupAdjust.class
+                );
+            }
+            else
+            {
+                data = new JsonGenTypes.ResourceGroupAdjust();
+            }
             AutoSelectFilterApi adjustAutoSelectFilter = selectFilterToApi(data.select_filter);
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.adjustAll(adjustAutoSelectFilter)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_ADJUST_RSC_GRP, request));
