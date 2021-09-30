@@ -18,7 +18,6 @@ import com.linbit.linstor.security.pojo.SignInEntryPojo;
 import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
 import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
 import com.linbit.linstor.transaction.EtcdTransaction;
-import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -101,9 +100,9 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
         Map<String, String> idRoleMapRow = EtcdUtils.getTableRow(
             etcdDb.getKvClient(),
             EtcdUtils.buildKey(
-                GeneratedDatabaseTables.SEC_IDENTITIES,
-                StringUtils.join(EtcdUtils.PK_DELIMITER, idName.value, rlName.value),
-                ""
+                GeneratedDatabaseTables.SEC_ID_ROLE_MAP,
+                idName.value,
+                rlName.value
             )
         );
 
@@ -126,9 +125,8 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
         Map<String, String> dfltRoleRow = EtcdUtils.getTableRow(
             etcdDb.getKvClient(),
             EtcdUtils.buildKey(
-                GeneratedDatabaseTables.SEC_IDENTITIES,
-                idName.value,
-                ""
+                GeneratedDatabaseTables.SEC_DFLT_ROLES,
+                idName.value
             )
         );
 

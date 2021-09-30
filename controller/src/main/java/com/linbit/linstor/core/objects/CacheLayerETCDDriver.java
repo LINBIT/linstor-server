@@ -103,7 +103,8 @@ public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCt
         int vlmNrInt = -1;
 
         Map<String, String> etcdVlmMap = namespace(
-            GeneratedDatabaseTables.LAYER_CACHE_VOLUMES
+            GeneratedDatabaseTables.LAYER_CACHE_VOLUMES,
+            Integer.toString(id)
         )
             .get(true);
         Set<String> composedPkSet = EtcdUtils.getComposedPkList(etcdVlmMap);

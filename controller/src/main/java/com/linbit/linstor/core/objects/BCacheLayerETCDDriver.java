@@ -114,7 +114,10 @@ public class BCacheLayerETCDDriver extends BaseEtcdDriver implements BCacheLayer
 
         int vlmNrInt = -1;
 
-        Map<String, String> etcdVlmMap = namespace(GeneratedDatabaseTables.LAYER_WRITECACHE_VOLUMES)
+        Map<String, String> etcdVlmMap = namespace(
+            GeneratedDatabaseTables.LAYER_BCACHE_VOLUMES,
+            Integer.toString(id)
+        )
             .get(true);
         Set<String> composedPkSet = EtcdUtils.getComposedPkList(etcdVlmMap);
         NodeName nodeName = absRsc.getNode().getName();
