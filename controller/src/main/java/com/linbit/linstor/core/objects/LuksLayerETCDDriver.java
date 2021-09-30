@@ -14,7 +14,6 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -70,7 +69,6 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:magicnumber", "unchecked"})
     public <RSC extends AbsResource<RSC>> Pair<LuksRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
         RSC absRsc,
         int id,
@@ -79,7 +77,6 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
     )
         throws DatabaseException
     {
-        Pair<DrbdRscData<RSC>, Set<AbsRscLayerObject<RSC>>> ret;
         Set<AbsRscLayerObject<RSC>> children = new HashSet<>();
 
         Map<VolumeNumber, LuksVlmData<RSC>> vlmDataMap = new TreeMap<>();
