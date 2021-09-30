@@ -1138,8 +1138,9 @@ public class CtrlRscGrpApiCallHandler
         {
             for (ResourceGroup rg : resourceGroupRepository.getMapForView(peerAccCtx.get()).values())
             {
-                ret = ret
-                    .concatWith(adjustInTransaction(rg.getName().displayValue, adjustAutoSelectFilterRef, contextRef));
+                ret = ret.concatWith(
+                    adjustInTransaction(rg.getName().displayValue, adjustAutoSelectFilterRef, contextRef)
+                );
             }
         }
         catch (AccessDeniedException exc)
@@ -1150,7 +1151,7 @@ public class CtrlRscGrpApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_GRP
             );
         }
-        return null;
+        return ret;
     }
 
     private Flux<ApiCallRc> adjustInTransaction(
