@@ -1617,7 +1617,22 @@ public class DrbdLayer implements DeviceLayer
                     setResourceUpToDate(drbdRscData);
                 }
 
+
+                /*
+                 * since we just created this resource, becoming briefly primary (without --force)
+                 * should not be an issue.
+                 * we need to be primary even if autoPromote is deactivated to create the filesystem
+                 */
+                drbdUtils.primary(drbdRscData, false, false);
                 MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
+                try
+                {
+                    drbdUtils.secondary(drbdRscData);
+                }
+                catch (ExtCmdFailedException exc)
+                {
+                    throw new StorageException("Failed to become secondary again after creating filesystem", exc);
+                }
             }
         }
         catch (InvalidKeyException invalidKeyExc)
