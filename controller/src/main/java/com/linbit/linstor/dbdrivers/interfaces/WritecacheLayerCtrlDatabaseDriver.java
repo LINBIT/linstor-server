@@ -24,6 +24,20 @@ public interface WritecacheLayerCtrlDatabaseDriver extends WritecacheLayerDataba
     )
         throws DatabaseException;
 
+    /*
+     * Implement these methods to increase loading performance by for example fetching all data with one single request
+     * instead of creating new requests for each object.
+     *
+     * If the underlying DBEngine is performant enough (like SQL), there is no need to implement these methods
+     */
+    default void fetchForLoadAll()
+    {
+    }
+
+    default void clearLoadAllCache()
+    {
+    }
+
     default String getId(WritecacheRscData<?> writecacheRscData)
     {
         return "(LayerRscId=" + writecacheRscData.getRscLayerId() +

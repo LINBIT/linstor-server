@@ -25,6 +25,20 @@ public interface CacheLayerCtrlDatabaseDriver extends CacheLayerDatabaseDriver
     )
         throws DatabaseException;
 
+    /*
+     * Implement these methods to increase loading performance by for example fetching all data with one single request
+     * instead of creating new requests for each object.
+     *
+     * If the underlying DBEngine is performant enough (like SQL), there is no need to implement these methods
+     */
+    default void fetchForLoadAll()
+    {
+    }
+
+    default void clearLoadAllCache()
+    {
+    }
+
     default String getId(CacheRscData<?> cacheRscData)
     {
         return "(LayerRscId=" + cacheRscData.getRscLayerId() +

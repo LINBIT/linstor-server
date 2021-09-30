@@ -288,7 +288,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
      * these caches should never be used again.
      */
     @Override
-    public void clearLoadCache()
+    public void clearLoadAllCache()
     {
         drbdRscDfnCache.clear();
         drbdVlmDfnCache.clear();
@@ -302,7 +302,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
      * @throws DatabaseException
      */
     @Override
-    public void loadLayerData(
+    public void fetchForLoadAll(
         Map<ResourceName, ResourceDefinition> rscDfnMapRef,
         Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> snapDfnMapRef
     )

@@ -22,7 +22,7 @@ public interface StorageLayerCtrlDatabaseDriver extends StorageLayerDatabaseDriv
     void fetchForLoadAll(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapRef)
         throws DatabaseException;
 
-    void loadLayerData(
+    void fetchForLoadAll(
         Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef,
         Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> tmpSnapDfnMapRef
     )

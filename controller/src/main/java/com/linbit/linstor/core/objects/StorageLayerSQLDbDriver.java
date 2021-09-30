@@ -193,7 +193,7 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
     }
 
     @Override
-    public void loadLayerData(
+    public void fetchForLoadAll(
         Map<ResourceName, ResourceDefinition> rscDfnMap,
         Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> snapDfnMap
     ) throws DatabaseException

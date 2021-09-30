@@ -21,13 +21,13 @@ import java.util.Set;
 
 public interface DrbdLayerCtrlDatabaseDriver extends DrbdLayerDatabaseDriver
 {
-    void loadLayerData(
+    void fetchForLoadAll(
         Map<ResourceName, ResourceDefinition> tmpRscDfnMapRef,
         Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> tmpSnapDfnMapRef
     )
         throws DatabaseException;
 
-    void clearLoadCache();
+    void clearLoadAllCache();
 
     <RSC extends AbsResource<RSC>> Pair<DrbdRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
         RSC rscRef,

@@ -144,10 +144,12 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
      * these caches should never be used again.
      */
     @Override
-    public void clearLoadCache()
+    public void clearLoadAllCache()
     {
         drbdRscDfnCache.clear();
         drbdVlmDfnCache.clear();
+        drbdSnapDfnCache.clear();
+        drbdSnapVlmDfnCache.clear();
     }
 
     /**
@@ -158,7 +160,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
      */
 
     @Override
-    public void loadLayerData(
+    public void fetchForLoadAll(
         Map<ResourceName, ResourceDefinition> rscDfnMap,
         Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> snapDfnMap
     )

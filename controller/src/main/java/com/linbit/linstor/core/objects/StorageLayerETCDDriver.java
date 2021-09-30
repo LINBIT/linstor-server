@@ -358,7 +358,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     }
 
     @Override
-    public void loadLayerData(
+    public void fetchForLoadAll(
         Map<ResourceName, ResourceDefinition> rscDfnMap,
         Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition> snapDfnMap
     )

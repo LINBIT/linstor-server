@@ -651,10 +651,15 @@ public class DatabaseLoader implements DatabaseDriver
     {
         storageLayerDriver.fetchForLoadAll(tmpStorPoolMapRef);
         openflexLayerDriver.fetchForLoadAll(tmpStorPoolMapRef, tmpRscDfnMapRef);
+        bcacheLayerDriver.fetchForLoadAll();
+        cacheLayerDriver.fetchForLoadAll();
+        writecacheLayerDriver.fetchForLoadAll();
+        luksLayerDriver.fetchForLoadAll();
+        nvmeLayerDriver.fetchForLoadAll();
 
         // load RscDfnLayerObjects and VlmDfnLayerObjects
-        drbdLayerDriver.loadLayerData(tmpRscDfnMapRef, tmpSnapDfnMapRef);
-        storageLayerDriver.loadLayerData(tmpRscDfnMapRef, tmpSnapDfnMapRef);
+        drbdLayerDriver.fetchForLoadAll(tmpRscDfnMapRef, tmpSnapDfnMapRef);
+        storageLayerDriver.fetchForLoadAll(tmpRscDfnMapRef, tmpSnapDfnMapRef);
         // no *DfnLayerObjects for nvme
         // no *DfnLayerObjects for luks
 
@@ -689,7 +694,13 @@ public class DatabaseLoader implements DatabaseDriver
             }
         );
 
-        drbdLayerDriver.clearLoadCache();
+        openflexLayerDriver.clearLoadAllCache();
+        bcacheLayerDriver.clearLoadAllCache();
+        cacheLayerDriver.clearLoadAllCache();
+        writecacheLayerDriver.clearLoadAllCache();
+        luksLayerDriver.clearLoadAllCache();
+        nvmeLayerDriver.clearLoadAllCache();
+        drbdLayerDriver.clearLoadAllCache();
         storageLayerDriver.clearLoadAllCache();
 
         CtrlRscLayerDataFactory rscLayerDataHelper = ctrlRscLayerDataHelper.get();
