@@ -92,7 +92,8 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
                     remote -> Base64.encode(remote.getEncryptedRemotePassphrase(dbCtx))
                 );
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 setColumnSetter(ENCRYPTED_PASSPHRASE, remote -> remote.getEncryptedRemotePassphrase(dbCtx));
                 break;
             default:
@@ -110,7 +111,8 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
                     byteArr -> ByteUtils.bytesToHex(byteArr)
                 );
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 encryptedPassphraseDriver = generateSingleColumnDriver(
                     ENCRYPTED_PASSPHRASE,
                     remote -> ByteUtils.bytesToHex(remote.getEncryptedRemotePassphrase(dbCtx)),
@@ -167,7 +169,8 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
                 initFlags = Long.parseLong(raw.get(FLAGS));
                 encryptedPassphrase = Base64.decode(raw.get(ENCRYPTED_PASSPHRASE));
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 initFlags = raw.get(FLAGS);
                 encryptedPassphrase = raw.get(ENCRYPTED_PASSPHRASE);
                 break;

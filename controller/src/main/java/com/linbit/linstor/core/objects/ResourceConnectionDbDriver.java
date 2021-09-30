@@ -134,7 +134,8 @@ public class ResourceConnectionDbDriver
                     port = portStr != null ? new TcpPortNumber(Integer.parseInt(portStr)) : null;
                     flags = Long.parseLong(raw.get(FLAGS));
                     break;
-                case SQL:
+                case SQL: // fall-through
+                case K8S_CRD:
                     port = raw.build(TCP_PORT, TcpPortNumber::new);
                     flags = raw.get(FLAGS);
                     break;

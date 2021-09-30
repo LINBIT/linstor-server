@@ -134,7 +134,8 @@ public class SnapshotVolumeDefinitionDbDriver extends
                     vlmSize = Integer.parseInt(raw.get(VLM_SIZE));
                     flags = Long.parseLong(raw.get(VLM_FLAGS));
                     break;
-                case SQL:
+                case SQL: // fall-through
+                case K8S_CRD:
                     vlmNr = raw.build(VLM_NR, VolumeNumber::new);
                     vlmSize = raw.get(VLM_SIZE);
                     flags = raw.get(VLM_FLAGS);

@@ -89,7 +89,8 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
                 setColumnSetter(ACCESS_KEY, remote -> Base64.encode(remote.getAccessKey(dbCtx)));
                 setColumnSetter(SECRET_KEY, remote -> Base64.encode(remote.getSecretKey(dbCtx)));
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 setColumnSetter(ACCESS_KEY, remote -> remote.getAccessKey(dbCtx));
                 setColumnSetter(SECRET_KEY, remote -> remote.getSecretKey(dbCtx));
                 break;
@@ -114,7 +115,8 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
                     byteArr -> ByteUtils.bytesToHex(byteArr)
                 );
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 accessKeyDriver = generateSingleColumnDriver(
                     ACCESS_KEY, remote -> ByteUtils.bytesToHex(remote.getAccessKey(dbCtx)), Function.identity()
                 );
@@ -181,7 +183,8 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
                 accessKey = Base64.decode(raw.get(ACCESS_KEY));
                 secretKey = Base64.decode(raw.get(SECRET_KEY));
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 initFlags = raw.get(FLAGS);
                 accessKey = raw.get(ACCESS_KEY);
                 secretKey = raw.get(SECRET_KEY);

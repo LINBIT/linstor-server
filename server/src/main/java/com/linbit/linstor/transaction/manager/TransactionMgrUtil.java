@@ -17,6 +17,11 @@ public class TransactionMgrUtil
             initScope.seed(TransactionMgrETCD.class, (TransactionMgrETCD) transMgr);
         }
         else
+        if (transMgr instanceof TransactionMgrK8sCrd)
+        {
+            initScope.seed(TransactionMgrK8sCrd.class, (TransactionMgrK8sCrd) transMgr);
+        }
+        else
         if (transMgr instanceof SatelliteTransactionMgr)
         {
 

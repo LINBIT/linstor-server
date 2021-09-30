@@ -108,7 +108,19 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
         setColumnSetter(NODE_NAME, node -> node.getName().value);
         setColumnSetter(NODE_DSP_NAME, node -> node.getName().displayValue);
         setColumnSetter(NODE_FLAGS, node -> node.getFlags().getFlagsBits(dbCtxRef));
-        setColumnSetter(NODE_TYPE, node -> node.getNodeType(dbCtxRef).getFlagValue());
+        switch (getDbType())
+        {
+            case SQL: // fall-through
+            case ETCD:
+                setColumnSetter(NODE_TYPE, node -> node.getNodeType(dbCtxRef).getFlagValue());
+                break;
+            case K8S_CRD:
+                // TODO make a DB migration changing the NODE_TYPE from INTEGER to BIGINT
+                setColumnSetter(NODE_TYPE, node -> (int) node.getNodeType(dbCtxRef).getFlagValue());
+                break;
+            default:
+                throw new ImplementationError("Unknown database type: " + getDbType());
+        }
     }
 
     @Override
@@ -150,6 +162,10 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
                 break;
             case SQL:
                 nodeType = Node.Type.getByValue(raw.<Integer>get(NODE_TYPE).longValue());
+                flags = raw.get(NODE_FLAGS);
+                break;
+            case K8S_CRD:
+                nodeType = Node.Type.getByValue(raw.<Integer>get(NODE_TYPE));
                 flags = raw.get(NODE_FLAGS);
                 break;
             default:

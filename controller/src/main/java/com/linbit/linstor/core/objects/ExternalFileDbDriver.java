@@ -79,7 +79,8 @@ public class ExternalFileDbDriver extends AbsDatabaseDriver<ExternalFile, Extern
             case ETCD:
                 setColumnSetter(CONTENT, extFile -> Base64.encode(extFile.getContent(dbCtxRef)));
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 setColumnSetter(CONTENT, extFile -> extFile.getContent(dbCtxRef));
                 break;
             default:
@@ -139,7 +140,8 @@ public class ExternalFileDbDriver extends AbsDatabaseDriver<ExternalFile, Extern
                 initFlags = Long.parseLong(raw.get(FLAGS));
                 setColumnSetter(CONTENT, extFile -> Base64.encode(extFile.getContent(dbCtx)));
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 content = raw.get(CONTENT);
                 initFlags = raw.get(FLAGS);
                 break;

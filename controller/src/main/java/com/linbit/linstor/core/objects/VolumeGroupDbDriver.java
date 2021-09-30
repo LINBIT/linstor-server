@@ -92,7 +92,8 @@ public class VolumeGroupDbDriver
                 vlmNr = new VolumeNumber(Integer.parseInt(raw.get(VLM_NR)));
                 flags = Long.parseLong(raw.get(FLAGS));
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 vlmNr = raw.build(VLM_NR, VolumeNumber::new);
                 flags = raw.get(FLAGS);
                 break;

@@ -130,7 +130,8 @@ public class SnapshotDefinitionDbDriver
                 case ETCD:
                     flags = Long.parseLong(raw.get(RESOURCE_FLAGS));
                     break;
-                case SQL:
+                case SQL: // fall-through
+                case K8S_CRD:
                     flags = raw.get(RESOURCE_FLAGS);
                     break;
                 default:

@@ -77,7 +77,18 @@ public class StorPoolDbDriver
         setColumnSetter(DRIVER_NAME, sp -> sp.getDeviceProviderKind().name());
         setColumnSetter(FREE_SPACE_MGR_NAME, sp -> sp.getFreeSpaceTracker().getName().value);
         setColumnSetter(FREE_SPACE_MGR_DSP_NAME, sp -> sp.getFreeSpaceTracker().getName().displayValue);
-        setColumnSetter(EXTERNAL_LOCKING, sp -> Boolean.toString(sp.isExternalLocking()));
+        switch (getDbType())
+        {
+            case SQL: // fall-through
+            case ETCD:
+                setColumnSetter(EXTERNAL_LOCKING, sp -> Boolean.toString(sp.isExternalLocking()));
+                break;
+            case K8S_CRD:
+                setColumnSetter(EXTERNAL_LOCKING, sp -> sp.isExternalLocking());
+                break;
+            default:
+                throw new ImplementationError("Unknown database type: " + getDbType());
+        }
     }
 
     @Override
@@ -104,7 +115,8 @@ public class StorPoolDbDriver
             case ETCD:
                 externalLocking = raw.build(EXTERNAL_LOCKING, Boolean::parseBoolean);
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 externalLocking = raw.get(EXTERNAL_LOCKING);
                 break;
             default:

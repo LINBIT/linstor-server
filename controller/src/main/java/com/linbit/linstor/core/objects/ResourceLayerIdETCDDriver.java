@@ -175,5 +175,4 @@ public class ResourceLayerIdETCDDriver extends BaseEtcdDriver implements Resourc
     {
         return (SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean>) ((Object) suspendDriver);
     }
-
 }

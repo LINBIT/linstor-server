@@ -112,7 +112,8 @@ public class ResourceDefinitionDbDriver
                     }
                 );
                 break;
-            case SQL:
+            case SQL: // fall-through
+            case K8S_CRD:
                 setColumnSetter(RESOURCE_EXTERNAL_NAME, ResourceDefinition::getExternalName);
                 break;
             default:
@@ -176,7 +177,8 @@ public class ResourceDefinitionDbDriver
                     String extNameBase64 = raw.get(RESOURCE_EXTERNAL_NAME);
                     extName = extNameBase64 != null ? Base64.decode(extNameBase64) : null;
                     break;
-                case SQL:
+                case SQL:// fall-through
+                case K8S_CRD:
                     flags = raw.get(RESOURCE_FLAGS);
                     extName = raw.get(RESOURCE_EXTERNAL_NAME);
                     break;

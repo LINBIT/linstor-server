@@ -27,6 +27,9 @@ public class ControllerTransactionMgrModule extends AbstractModule
             case ETCD:
                 bind(TransactionMgrGenerator.class).to(ControllerETCDTransactionMgrGenerator.class);
                 break;
+            case K8S_CRD:
+                bind(TransactionMgrGenerator.class).to(ControllerK8sCrdTransactionMgrGenerator.class);
+                break;
             default:
                 throw new ImplementationError("Unknown database type: " + dbType);
         }

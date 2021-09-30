@@ -1,0 +1,248 @@
+package com.linbit.linstor.dbdrivers.k8s.crd;
+
+import com.linbit.ImplementationError;
+import com.linbit.InvalidIpAddressException;
+import com.linbit.InvalidNameException;
+import com.linbit.ValueOutOfRangeException;
+import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.dbdrivers.AbsDatabaseDriver.RawParameters;
+import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
+import com.linbit.linstor.dbdrivers.DbEngine;
+import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.Flags;
+import com.linbit.linstor.stateflags.StateFlagsPersistence;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
+import com.linbit.linstor.transaction.manager.TransactionMgrK8sCrd;
+import com.linbit.utils.ExceptionThrowingFunction;
+import com.linbit.utils.Pair;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Function;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Provider;
+
+@Singleton
+public class K8sCrdEngine implements DbEngine
+{
+    private final ObjectMapper objectMapper;
+    private final ErrorReporter errorReporter;
+    private final Provider<TransactionMgrK8sCrd> transMgrProvider;
+
+    @Inject
+    public K8sCrdEngine(ErrorReporter errorReporterRef, Provider<TransactionMgrK8sCrd> transMgrProviderRef)
+    {
+        errorReporter = errorReporterRef;
+        transMgrProvider = transMgrProviderRef;
+        objectMapper = new ObjectMapper();
+    }
+
+    @Override
+    public DatabaseType getType()
+    {
+        return DatabaseType.K8S_CRD;
+    }
+
+    @Override
+    public <DATA> void create(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        DATA data,
+        DatabaseTable table,
+        DataToString<DATA> dataIdToString
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        updateOrCreate(table, setters, data, dataIdToString);
+    }
+
+    private <DATA> void updateOrCreate(
+        DatabaseTable table,
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        DATA data,
+        DataToString<DATA> dataIdToString
+    )
+        throws DatabaseException
+    {
+        try
+        {
+            K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+            LinstorCrd<?> crd = GenCrdCurrent.dataToCrd(table, setters, data);
+            errorReporter.logTrace(
+                "Updating/Creating %s %s: %n%s",
+                table.getName(),
+                dataIdToString.toString(data),
+                objectMapper.writeValueAsString(crd)
+            );
+            tx.update(table, crd);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public <DATA> void delete(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        DATA data,
+        DatabaseTable table,
+        DataToString<DATA> dataIdToString
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        try
+        {
+            K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+            LinstorCrd<?> crd = GenCrdCurrent.dataToCrd(table, setters, data);
+            errorReporter.logTrace(
+                "Deleting %s %s: %n%s",
+                table.getName(),
+                dataIdToString.toString(data),
+                objectMapper.writeValueAsString(crd)
+            );
+            tx.delete(table, crd);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
+        DatabaseTable table,
+        LOAD_ALL parents,
+        DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoader
+    )
+        throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
+        ValueOutOfRangeException, MdException
+    {
+        Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
+
+        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        for (LinstorSpec linstorSpec : tx.get(table).values())
+        {
+            Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(
+                new RawParameters(table, linstorSpec.asRawParameters()),
+                parents
+            );
+            // pair might be null when loading objects sharing the same table.
+            // For example SnapshotDbDriver will return null when finding a Resource entry
+            // and vice versa.
+            if (pair != null)
+            {
+                loadedObjectsMap.put(pair.objA, pair.objB);
+            }
+        }
+
+        return loadedObjectsMap;
+    }
+
+    @Override
+    public <DATA, FLAG extends Enum<FLAG> & Flags> StateFlagsPersistence<DATA> generateFlagsDriver(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
+        Column colRef,
+        Class<FLAG> ignoredFlagsClass,
+        DataToString<DATA> dataIdToString
+    )
+    {
+        final DatabaseTable table = colRef.getTable();
+        // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
+        return (data, ignored) -> updateOrCreate(table, settersRef, data, dataIdToString);
+    }
+
+    @Override
+    public <DATA, INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriver(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column col,
+        Function<INPUT_TYPE, DB_TYPE> ignoredTypeMapper,
+        DataToString<DATA> dataIdToString,
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> ignoredDataValueToString
+    )
+    {
+        final DatabaseTable table = col.getTable();
+        // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
+        return (data, ignored) -> updateOrCreate(table, setters, data, dataIdToString);
+    }
+
+    @Override
+    public <DATA, INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriverMapped(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column colRef,
+        Function<INPUT_TYPE, DB_TYPE> ignoredTypeMapper,
+        DataToString<DATA> dataIdToString,
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef
+    )
+    {
+        final DatabaseTable table = colRef.getTable();
+        // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
+        return (data, ignored) -> updateOrCreate(table, setters, data, dataIdToString);
+    }
+
+    @Override
+    public <DATA, LIST_TYPE> CollectionDatabaseDriver<DATA, LIST_TYPE> generateCollectionToJsonStringArrayDriver(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
+        Column colRef,
+        DataToString<DATA> dataIdToString
+    )
+    {
+        final DatabaseTable table = colRef.getTable();
+        // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
+        return new CollectionDatabaseDriver<DATA, LIST_TYPE>()
+        {
+            @Override
+            public void insert(DATA parent, LIST_TYPE ignored, Collection<LIST_TYPE> ignoredBackingCollection)
+                throws DatabaseException
+            {
+                updateOrCreate(table, settersRef, parent, dataIdToString);
+            }
+
+            @Override
+            public void remove(DATA parent, LIST_TYPE ignoredType, Collection<LIST_TYPE> ignoredBackingCollection)
+                throws DatabaseException
+            {
+                updateOrCreate(table, settersRef, parent, dataIdToString);
+            }
+        };
+    }
+
+    @Override
+    public String getDbDump() throws DatabaseException
+    {
+        K8sCrdTransaction<GenCrdCurrent.Rollback> tx = transMgrProvider.get().getTransaction();
+        Map<String, Collection<LinstorSpec>> dump = new TreeMap<>();
+        for (DatabaseTable table : GeneratedDatabaseTables.ALL_TABLES)
+        {
+            dump.put(table.getName(), tx.get(table).values());
+        }
+        try
+        {
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dump);
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+    }
+}

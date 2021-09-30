@@ -277,7 +277,8 @@ public class ResourceGroupDbDriver
                     disklessOnRemaining = disklessOnRemainingStr != null ?
                         Boolean.parseBoolean(disklessOnRemainingStr) : null;
                     break;
-                case SQL:
+                case SQL: // fall-through
+                case K8S_CRD:
                     replicaCount = raw.get(REPLICA_COUNT);
 
                     replicasOnSame = raw.getAsStringList(REPLICAS_ON_SAME);

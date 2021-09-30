@@ -128,7 +128,8 @@ public class VolumeDefinitionDbDriver extends
                     vlmSize = Long.parseLong(raw.get(VLM_SIZE));
                     vlmFlags = Long.parseLong(raw.get(VLM_FLAGS));
                     break;
-                case SQL:
+                case SQL: // fall-through
+                case K8S_CRD:
                     vlmNr = new VolumeNumber(raw.get(VLM_NR));
                     vlmSize = raw.get(VLM_SIZE);
                     vlmFlags = raw.get(VLM_FLAGS);

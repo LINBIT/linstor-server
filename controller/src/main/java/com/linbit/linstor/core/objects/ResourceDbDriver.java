@@ -102,6 +102,11 @@ public class ResourceDbDriver extends
                     Long.toString(createTime.getTime()) :
                     null;
                 break;
+            case K8S_CRD:
+                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
+                    rsc.getCreateTimestamp().get().getTime() : null);
+                createTimestampTypeMapper = createTime -> createTime != null ? createTime.getTime() : null;
+                break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
@@ -154,6 +159,14 @@ public class ResourceDbDriver extends
                 case SQL:
                     flags = raw.get(RESOURCE_FLAGS);
                     createTimestamp = raw.get(CREATE_TIMESTAMP);
+                    break;
+                case K8S_CRD:
+                    flags = raw.get(RESOURCE_FLAGS);
+                    Long timestamp = raw.get(CREATE_TIMESTAMP);
+                    if (timestamp != null)
+                    {
+                        createTimestamp = new Date(timestamp);
+                    }
                     break;
                 default:
                     throw new ImplementationError("Unknown database type: " + getDbType());
