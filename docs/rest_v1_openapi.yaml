@@ -7001,8 +7001,8 @@ components:
         status:
           type: string
           enum:
-            - running
-            - complete
+            - Running
+            - Complete
     SnapshotNode:
       type: object
       description: Actual snapshot data from a node
