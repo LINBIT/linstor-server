@@ -209,6 +209,10 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                     long alStripeSize = Long.parseLong(
                         get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.AL_STRIPE_SIZE, pks)
                     );
+
+                    TransportType transportType = TransportType.byValue(
+                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.TRANSPORT_TYPE, pks)
+                    );
                     Integer tcpPort;
                     String secret;
                     if (restoreAsResourceDefinition)
@@ -217,19 +221,6 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                             get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.TCP_PORT, pks)
                         );
                         secret = get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.SECRET, pks);
-                    }
-                    else
-                    {
-                        tcpPort = null;
-                        secret = null;
-                    }
-
-                    TransportType transportType = TransportType.byValue(
-                        get(allDrbdRscDfnMap, LayerDrbdResourceDefinitions.TRANSPORT_TYPE, pks)
-                    );
-
-                    if (restoreAsResourceDefinition)
-                    {
                         restoreAndCache(
                             rscDfn,
                             rscNameSuffix,
@@ -243,6 +234,8 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                     }
                     else
                     {
+                        tcpPort = null;
+                        secret = null;
                         restoreAndCache(
                             snapDfn,
                             rscNameSuffix,
