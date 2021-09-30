@@ -25,4 +25,19 @@ public interface ObjectProtectionDatabaseDriver
     SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver();
 
     SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver();
+
+    default String getAclId(String objPath, String roleName, AccessType acType)
+    {
+        return "(ObjectPath=" + objPath + " Role=" + roleName + " AccessType=" + acType + ")";
+    }
+
+    default String getAclId(String objPath, String roleName)
+    {
+        return "(ObjectPath=" + objPath + " Role=" + roleName + ")";
+    }
+
+    default String getObjProtId(String objectPathRef)
+    {
+        return "(ObjProtPath=" + objectPathRef + ")";
+    }
 }

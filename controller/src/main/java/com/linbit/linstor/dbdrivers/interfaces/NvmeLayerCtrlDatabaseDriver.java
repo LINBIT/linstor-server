@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.utils.Pair;
 
@@ -14,4 +15,11 @@ public interface NvmeLayerCtrlDatabaseDriver extends NvmeLayerDatabaseDriver
         String rscSuffixRef,
         AbsRscLayerObject<RSC> parentRef
     );
+
+    default String getId(NvmeRscData<?> nvmeRscData)
+    {
+        return "(LayerRscId=" + nvmeRscData.getRscLayerId() +
+            ", SuffResName=" + nvmeRscData.getSuffixedResourceName() +
+            ")";
+    }
 }

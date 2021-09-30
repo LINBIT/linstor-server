@@ -259,19 +259,4 @@ public class CacheLayerSQLDbDriver implements CacheLayerCtrlDatabaseDriver
     {
         return transMgrProvider.get().getConnection();
     }
-
-    private String getId(CacheRscData<?> cacheRscData)
-    {
-        return "(LayerRscId=" + cacheRscData.getRscLayerId() +
-            ", SuffResName=" + cacheRscData.getSuffixedResourceName() +
-            ")";
-    }
-
-    private String getId(CacheVlmData<?> cacheVlmData)
-    {
-        return "(LayerRscId=" + cacheVlmData.getRscLayerId() +
-            ", SuffResName=" + cacheVlmData.getRscLayerObject().getSuffixedResourceName() +
-            ", VlmNr=" + cacheVlmData.getVlmNr().value +
-            ")";
-    }
 }

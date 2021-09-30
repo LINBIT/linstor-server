@@ -13,6 +13,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -411,21 +412,6 @@ public class ObjectProtectionSQLDbDriver implements ObjectProtectionDatabaseDriv
             parent.getObjectProtectionPath(),
             role.name.displayValue
         );
-    }
-
-    private String getAclId(String objPath, String roleName, AccessType acType)
-    {
-        return "(ObjectPath=" + objPath + " Role=" + roleName + " AccessType=" + acType + ")";
-    }
-
-    private String getAclId(String objPath, String roleName)
-    {
-        return "(ObjectPath=" + objPath + " Role=" + roleName + ")";
-    }
-
-    private String getObjProtId(String objectProtectionPath)
-    {
-        return "(ObjProtPath=" + objectProtectionPath + ")";
     }
 
     private class IdentityGenericDbDriver implements SingleColumnDatabaseDriver<ObjectProtection, Identity>

@@ -182,13 +182,6 @@ public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrl
         );
     }
 
-    private String getId(LuksVlmData<?> luksVlmDataRef)
-    {
-        return "(LayerRscId=" + luksVlmDataRef.getRscLayerId() +
-            ", VlmNr=" + luksVlmDataRef.getVlmNr().value +
-            ")";
-    }
-
     private class VlmPwDriver implements SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]>
     {
 

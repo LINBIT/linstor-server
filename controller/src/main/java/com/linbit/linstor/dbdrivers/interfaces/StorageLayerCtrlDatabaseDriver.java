@@ -11,6 +11,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.utils.Pair;
 
 import java.util.Map;
@@ -36,4 +37,11 @@ public interface StorageLayerCtrlDatabaseDriver extends StorageLayerDatabaseDriv
         AbsRscLayerObject<RSC> parentRef
     )
         throws AccessDeniedException, DatabaseException;
+
+    default String getId(VlmProviderObject<?> vlmData)
+    {
+        return vlmData.getProviderKind().name() +
+            "( rscId: " + vlmData.getRscLayerObject().getRscLayerId() +
+            ", vlmNr:" + vlmData.getVlmNr() + ")";
+    }
 }

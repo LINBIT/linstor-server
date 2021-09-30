@@ -1116,31 +1116,6 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(DrbdVlmData<?> drbdVlmData)
-    {
-        return "(LayerRscId=" + drbdVlmData.getRscLayerId() +
-            ", VlmNr=" + drbdVlmData.getVlmNr() +
-            ")";
-    }
-
-    private String getId(DrbdRscData<?> drbdRscData)
-    {
-        return "(LayerRscId=" + drbdRscData.getRscLayerId() +
-            ")";
-    }
-
-    private String getId(DrbdRscDfnData<?> drbdRscDfnData)
-    {
-        return "(SuffResName=" + drbdRscDfnData.getSuffixedResourceName() + ")";
-    }
-
-    private String getId(DrbdVlmDfnData<?> drbdVlmDfnData)
-    {
-        return "(SuffResName=" + drbdVlmDfnData.getSuffixedResourceName() +
-            ", VlmNr=" + drbdVlmDfnData.getVolumeNumber().value +
-            ")";
-    }
-
     private class RscFlagsDriver implements StateFlagsPersistence<DrbdRscData<?>>
     {
         @Override

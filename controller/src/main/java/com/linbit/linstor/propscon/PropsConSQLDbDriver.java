@@ -9,6 +9,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -218,21 +219,5 @@ public class PropsConSQLDbDriver implements PropsConDatabaseDriver
     private Connection getConnection()
     {
         return transMgrProvider.get().getConnection();
-    }
-
-
-    private String getId(String instanceName)
-    {
-        return "(InstanceName=" + instanceName + ")";
-    }
-
-    private String getId(String instanceName, String key)
-    {
-        return "(InstanceName=" + instanceName + " Key=" + key + ")";
-    }
-
-    private String getId(String instanceName, String key, String value)
-    {
-        return "(InstanceName=" + instanceName + " Key=" + key + " Value=" + value + ")";
     }
 }

@@ -129,11 +129,4 @@ public class NvmeLayerSQLDbDriver implements NvmeLayerCtrlDatabaseDriver
     {
         return transMgrProvider.get().getConnection();
     }
-
-    private String getId(NvmeRscData<?> nvmeRscData)
-    {
-        return "(LayerRscId=" + nvmeRscData.getRscLayerId() +
-            ", SuffResName=" + nvmeRscData.getSuffixedResourceName() +
-            ")";
-    }
 }

@@ -176,12 +176,4 @@ public class ResourceLayerIdETCDDriver extends BaseEtcdDriver implements Resourc
         return (SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean>) ((Object) suspendDriver);
     }
 
-    public static String getId(AbsRscLayerObject<?> rscData)
-    {
-        return rscData.getLayerKind().name() +
-            " (id: " + rscData.getRscLayerId() +
-            ", rscName: " + rscData.getSuffixedResourceName() +
-            ", parent: " + (rscData.getParent() == null ? "-" : rscData.getParent().getRscLayerId()) + ")";
-    }
-
 }

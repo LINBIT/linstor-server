@@ -152,19 +152,4 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
         // as the driver currently does not know which keys to delete, unfortunately we have to load them again
         remove(instanceName, loadAll(instanceName).keySet());
     }
-
-    private String getId(String instanceName)
-    {
-        return "(InstanceName=" + instanceName + ")";
-    }
-
-    private String getId(String instanceName, String key)
-    {
-        return "(InstanceName=" + instanceName + " Key=" + key + ")";
-    }
-
-    private String getId(String instanceName, String key, String value)
-    {
-        return "(InstanceName=" + instanceName + " Key=" + key + " Value=" + value + ")";
-    }
 }

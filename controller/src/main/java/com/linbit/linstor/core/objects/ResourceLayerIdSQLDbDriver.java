@@ -228,18 +228,6 @@ public class ResourceLayerIdSQLDbDriver implements ResourceLayerIdCtrlDatabaseDr
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(AbsRscLayerObject<?> rscData)
-    {
-        return rscData.getLayerKind().name() +
-            " (id: " + rscData.getRscLayerId() +
-            ", nodeName: " + rscData.getAbsResource().getNode().getName().displayValue +
-            ", rscName: " + rscData.getSuffixedResourceName() +
-            (rscData.getAbsResource() instanceof Snapshot
-                ? ", SnapshotName: " + (((Snapshot) rscData.getAbsResource()).getSnapshotName().displayValue)
-                : DFLT_SNAP_NAME_FOR_RSC) +
-            ", parent: " + (rscData.getParent() == null ? "-" : rscData.getParent().getRscLayerId()) + ")";
-    }
-
     private String getId(AbsRscData<?, ?> rscData)
     {
         AbsResource<?> absRsc = rscData.getAbsResource();

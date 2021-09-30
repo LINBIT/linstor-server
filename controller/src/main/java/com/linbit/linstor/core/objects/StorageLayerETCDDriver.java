@@ -431,12 +431,4 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     {
         return storPoolDriver;
     }
-
-    public static String getId(VlmProviderObject<?> vlmData)
-    {
-        return vlmData.getProviderKind().name() +
-            "( rscId: " + vlmData.getRscLayerObject().getRscLayerId() +
-            ", vlmNr:" + vlmData.getVlmNr() + ")";
-    }
-
 }

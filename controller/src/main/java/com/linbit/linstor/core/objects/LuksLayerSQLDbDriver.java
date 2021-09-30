@@ -224,13 +224,6 @@ public class LuksLayerSQLDbDriver implements LuksLayerCtrlDatabaseDriver
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(LuksVlmData<?> luksVlmDataRef)
-    {
-        return "(LayerRscId=" + luksVlmDataRef.getRscLayerId() +
-            ", VlmNr=" + luksVlmDataRef.getVlmNr().value +
-            ")";
-    }
-
     private class VlmPwDriver implements SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]>
     {
         @SuppressWarnings("checkstyle:magicnumber")

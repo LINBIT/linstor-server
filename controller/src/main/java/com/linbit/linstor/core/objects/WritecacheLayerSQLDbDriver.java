@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-@SuppressWarnings("checkstyle:magicnumber")
 @Singleton
 public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDriver
 {
@@ -247,20 +246,5 @@ public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDr
     private Connection getConnection()
     {
         return transMgrProvider.get().getConnection();
-    }
-
-    private String getId(WritecacheRscData<?> writecacheRscData)
-    {
-        return "(LayerRscId=" + writecacheRscData.getRscLayerId() +
-            ", SuffResName=" + writecacheRscData.getSuffixedResourceName() +
-            ")";
-    }
-
-    private String getId(WritecacheVlmData<?> writecacheVlmData)
-    {
-        return "(LayerRscId=" + writecacheVlmData.getRscLayerId() +
-            ", SuffResName=" + writecacheVlmData.getRscLayerObject().getSuffixedResourceName() +
-            ", VlmNr=" + writecacheVlmData.getVlmNr().value +
-            ")";
     }
 }

@@ -203,21 +203,6 @@ public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCt
             .delete(true);
     }
 
-    private String getId(CacheRscData<?> cacheRscData)
-    {
-        return "(LayerRscId=" + cacheRscData.getRscLayerId() +
-            ", SuffResName=" + cacheRscData.getSuffixedResourceName() +
-            ")";
-    }
-
-    private String getId(CacheVlmData<?> cacheVlmData)
-    {
-        return "(LayerRscId=" + cacheVlmData.getRscLayerId() +
-            ", SuffResName=" + cacheVlmData.getRscLayerObject().getSuffixedResourceName() +
-            ", VlmNr=" + cacheVlmData.getVlmNr().value +
-            ")";
-    }
-
     private FluentLinstorTransaction getNamespace(CacheVlmData<?> cacheVlmDataRef)
     {
         return namespace(

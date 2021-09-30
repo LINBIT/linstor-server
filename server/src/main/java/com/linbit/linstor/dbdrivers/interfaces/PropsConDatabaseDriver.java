@@ -54,4 +54,19 @@ public interface PropsConDatabaseDriver
      * @throws DatabaseException
      */
     void removeAll(String instanceName) throws DatabaseException;
+
+    default String getId(String instanceName)
+    {
+        return "(InstanceName=" + instanceName + ")";
+    }
+
+    default String getId(String instanceName, String key)
+    {
+        return "(InstanceName=" + instanceName + " Key=" + key + ")";
+    }
+
+    default String getId(String instanceName, String key, String value)
+    {
+        return "(InstanceName=" + instanceName + " Key=" + key + " Value=" + value + ")";
+    }
 }

@@ -121,11 +121,4 @@ public class NvmeLayerETCDDriver extends BaseEtcdDriver implements NvmeLayerCtrl
         // no-op - there is no special database table.
         // this method only exists if NvmeVlmData will get a database table in future.
     }
-
-    private String getId(NvmeRscData<?> nvmeRscData)
-    {
-        return "(LayerRscId=" + nvmeRscData.getRscLayerId() +
-            ", SuffResName=" + nvmeRscData.getSuffixedResourceName() +
-            ")";
-    }
 }

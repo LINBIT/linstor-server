@@ -403,25 +403,6 @@ public class OpenflexLayerETCDDriver extends BaseEtcdDriver implements OpenflexL
         );
     }
 
-    private String getId(OpenflexRscDfnData<?> openflexRscDfnData)
-    {
-        return "(ResName=" + openflexRscDfnData.getResourceName() +
-            ", ResNameSuffix=" + openflexRscDfnData.getRscNameSuffix() + ")";
-    }
-
-    private String getId(OpenflexVlmData<?> ofVlmData)
-    {
-        return "(LayerRscId=" + ofVlmData.getRscLayerId() +
-            ", VlmNr=" + ofVlmData.getVlmNr() + ")";
-    }
-
-    private String getId(OpenflexRscData<?> ofRscData)
-    {
-        return "(LayerRscId=" + ofRscData.getRscLayerId() +
-            ", SuffResName=" + ofRscData.getSuffixedResourceName() +
-            ")";
-    }
-
     private class NqnDriver implements SingleColumnDatabaseDriver<OpenflexRscDfnData<?>, String>
     {
         @Override

@@ -462,25 +462,6 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(OpenflexRscDfnData<?> openflexRscDfnData)
-    {
-        return "(ResName=" + openflexRscDfnData.getResourceName() +
-            ", ResNameSuffix=" + openflexRscDfnData.getRscNameSuffix() + ")";
-    }
-
-    private String getId(OpenflexVlmData<?> ofVlmData)
-    {
-        return "(LayerRscId=" + ofVlmData.getRscLayerId() +
-            ", VlmNr=" + ofVlmData.getVlmNr() + ")";
-    }
-
-    private String getId(OpenflexRscData<?> ofRscData)
-    {
-        return "(LayerRscId=" + ofRscData.getRscLayerId() +
-            ", SuffResName=" + ofRscData.getSuffixedResourceName() +
-            ")";
-    }
-
     public static class OpenflexVlmInfo
     {
         public final int rscId;

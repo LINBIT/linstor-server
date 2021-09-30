@@ -449,13 +449,6 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(VlmProviderObject<?> vlmData)
-    {
-        return vlmData.getProviderKind().name() +
-            "( rscId: " + vlmData.getRscLayerObject().getRscLayerId() +
-            ", vlmNr:" + vlmData.getVlmNr() + ")";
-    }
-
     private class StorPoolDriver implements SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool>
     {
         @Override

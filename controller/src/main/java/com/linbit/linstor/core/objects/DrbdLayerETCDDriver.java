@@ -937,32 +937,6 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
         return ret;
     }
 
-    private String getId(DrbdVlmData<?> drbdVlmData)
-    {
-        return "(LayerRscId=" + drbdVlmData.getRscLayerId() +
-            ", VlmNr=" + drbdVlmData.getVlmNr() + ")";
-    }
-
-    private String getId(DrbdRscData<?> drbdRscData)
-    {
-        return "(LayerRscId=" + drbdRscData.getRscLayerId() + ")";
-    }
-
-    private String getId(DrbdRscDfnData<?> drbdRscDfnData)
-    {
-        return "(ResName=" + drbdRscDfnData.getResourceName() +
-            ", ResNameSuffix=" + drbdRscDfnData.getRscNameSuffix() +
-            ", SnapName=" + drbdRscDfnData.getSnapshotName() + ")";
-    }
-
-    private String getId(DrbdVlmDfnData<?> drbdVlmDfnData)
-    {
-        return "(ResName=" + drbdVlmDfnData.getResourceName() +
-            ", ResNameSuffix=" + drbdVlmDfnData.getRscNameSuffix() +
-            ", SnapName=" + drbdVlmDfnData.getSnapshotName() +
-            ", VlmNr=" + drbdVlmDfnData.getVolumeNumber().value + ")";
-    }
-
     private class RscFlagsDriver implements StateFlagsPersistence<DrbdRscData<?>>
     {
         @Override

@@ -203,14 +203,6 @@ public class BCacheLayerETCDDriver extends BaseEtcdDriver implements BCacheLayer
             .delete(true);
     }
 
-    private String getId(BCacheVlmData<?> bcacheVlmData)
-    {
-        return "(LayerRscId=" + bcacheVlmData.getRscLayerId() +
-            ", SuffResName=" + bcacheVlmData.getRscLayerObject().getSuffixedResourceName() +
-            ", VlmNr=" + bcacheVlmData.getVlmNr().value +
-            ")";
-    }
-
     private FluentLinstorTransaction getNamespace(BCacheVlmData<?> bcacheVlmDataRef)
     {
         return namespace(

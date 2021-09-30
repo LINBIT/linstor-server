@@ -4,13 +4,14 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import java.util.List;
 
 public interface ResourceLayerIdCtrlDatabaseDriver extends ResourceLayerIdDatabaseDriver
 {
-    public static class RscLayerInfo
+    class RscLayerInfo
     {
         public final NodeName nodeName;
         public final ResourceName resourceName;
@@ -47,4 +48,13 @@ public interface ResourceLayerIdCtrlDatabaseDriver extends ResourceLayerIdDataba
      * Methods only needed for loading
      */
     List<? extends RscLayerInfo> loadAllResourceIds() throws DatabaseException;
+
+    default String getId(AbsRscLayerObject<?> rscData)
+    {
+        return rscData.getLayerKind().name() +
+            " (id: " + rscData.getRscLayerId() +
+            ", nodeName: " + rscData.getAbsResource().getNode().getName().displayValue +
+            ", rscName: " + rscData.getSuffixedResourceName() +
+            ", parent: " + (rscData.getParent() == null ? "-" : rscData.getParent().getRscLayerId()) + ")";
+    }
 }

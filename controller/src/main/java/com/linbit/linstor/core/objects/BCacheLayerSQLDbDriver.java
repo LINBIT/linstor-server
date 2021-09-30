@@ -261,14 +261,6 @@ public class BCacheLayerSQLDbDriver implements BCacheLayerCtrlDatabaseDriver
         return transMgrProvider.get().getConnection();
     }
 
-    private String getId(BCacheVlmData<?> bcacheVlmData)
-    {
-        return "(LayerRscId=" + bcacheVlmData.getRscLayerId() +
-            ", SuffResName=" + bcacheVlmData.getRscLayerObject().getSuffixedResourceName() +
-            ", VlmNr=" + bcacheVlmData.getVlmNr().value +
-            ")";
-    }
-
     private class VlmDeviceUuidDriver implements SingleColumnDatabaseDriver<BCacheVlmData<?>, UUID>
     {
         @Override

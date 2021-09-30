@@ -190,21 +190,6 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
             .delete(true);
     }
 
-    private String getId(WritecacheRscData<?> writecacheRscData)
-    {
-        return "(LayerRscId=" + writecacheRscData.getRscLayerId() +
-            ", SuffResName=" + writecacheRscData.getSuffixedResourceName() +
-            ")";
-    }
-
-    private String getId(WritecacheVlmData<?> writecacheVlmData)
-    {
-        return "(LayerRscId=" + writecacheVlmData.getRscLayerId() +
-            ", SuffResName=" + writecacheVlmData.getRscLayerObject().getSuffixedResourceName() +
-            ", VlmNr=" + writecacheVlmData.getVlmNr().value +
-            ")";
-    }
-
     private FluentLinstorTransaction getNamespace(WritecacheVlmData<?> writecacheVlmDataRef)
     {
         return namespace(

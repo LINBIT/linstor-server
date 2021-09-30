@@ -280,19 +280,4 @@ public class ObjectProtectionEtcdDriver extends BaseEtcdDriver implements Object
     {
         return securityTypeDriver;
     }
-
-    public static String getAclId(String objPath, String roleName, AccessType acType)
-    {
-        return "(ObjectPath=" + objPath + " Role=" + roleName + " AccessType=" + acType + ")";
-    }
-
-    public static String getAclId(String objPath, String roleName)
-    {
-        return "(ObjectPath=" + objPath + " Role=" + roleName + ")";
-    }
-
-    public static String getObjProtId(String objectPathRef)
-    {
-        return "(ObjProtPath=" + objectPathRef + ")";
-    }
 }
