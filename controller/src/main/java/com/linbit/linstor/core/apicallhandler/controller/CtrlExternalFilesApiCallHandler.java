@@ -214,7 +214,8 @@ public class CtrlExternalFilesApiCallHandler
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_EXT_FILE,
-                    "The path must not be null or empty"
+                    "The path must not be null or empty",
+                    true
                 )
             );
         }
@@ -223,7 +224,8 @@ public class CtrlExternalFilesApiCallHandler
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_EXT_FILE,
-                    "The path must be absolute"
+                    "The path must be absolute",
+                    true
                 )
             );
         }

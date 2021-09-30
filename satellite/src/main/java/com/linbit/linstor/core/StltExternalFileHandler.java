@@ -8,6 +8,7 @@ import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.ExternalFileMap;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ExternalFile;
@@ -49,6 +50,7 @@ public class StltExternalFileHandler
     private final Props stltProps;
     private final ExternalFileMap extFileMap;
     private final ResourceDefinitionMap rscDfnMap;
+    private final StltConfig stltCfg;
 
     private Props localNodeProps;
 
@@ -58,7 +60,8 @@ public class StltExternalFileHandler
         @DeviceManagerContext AccessContext wrkCtxRef,
         @Named(LinStor.SATELLITE_PROPS) Props satellitePropsRef,
         CoreModule.ExternalFileMap extFileMapRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        StltConfig stltCfgRef
     )
     {
         errorReporter = errorReporterRef;
@@ -66,6 +69,7 @@ public class StltExternalFileHandler
         stltProps = satellitePropsRef;
         extFileMap = extFileMapRef;
         rscDfnMap = rscDfnMapRef;
+        stltCfg = stltCfgRef;
         extFileRequestedByRscDfnsMap = new HashMap<>();
         rscDfnToExtFilesMap = new HashMap<>();
     }
@@ -228,12 +232,27 @@ public class StltExternalFileHandler
             }
             if (
                 !externalFile.alreadyWritten() && externalFile.getContent(wrkCtx) != null &&
-                externalFile.getContent(wrkCtx).length > 0
+                externalFile.getContent(wrkCtx).length > 0 &&
+                isWhitelisted(externalFile)
             )
             {
                 rewrite(externalFile);
             }
         }
+    }
+
+    private boolean isWhitelisted(ExternalFile externalFileRef) throws StorageException
+    {
+        Path extFilePath = Paths.get(externalFileRef.getName().extFileName).normalize();
+        boolean whitelisted = stltCfg.getWhitelistedExternalFilePaths().contains(extFilePath.getParent());
+        if (!whitelisted)
+        {
+            throw new StorageException(
+                "The path " + extFilePath + " does not have a whitelisted parent. Allowed parent directories: " +
+                    stltCfg.getWhitelistedExternalFilePaths()
+            );
+        }
+        return whitelisted;
     }
 
     private void rewrite(ExternalFile externalFile) throws StorageException, DatabaseException

@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.cfg;
 
+import java.util.Set;
+
 public class StltTomlConfig
 {
     public static class NETCOM
@@ -43,12 +45,24 @@ public class StltTomlConfig
         }
     }
 
+    static class Files
+    {
+        private Set<String> allowExtFiles;
+
+        public void applyTo(StltConfig cfg)
+        {
+            cfg.setExternalFilesWhitelist(allowExtFiles);
+        }
+    }
+
     private NETCOM netcom = new NETCOM();
     private Logging logging = new Logging();
+    private Files files = new Files();
 
     public void applyTo(StltConfig cfg)
     {
         netcom.applyTo(cfg);
         logging.applyTo(cfg);
+        files.applyTo(cfg);
     }
 }

@@ -5,6 +5,8 @@ import com.linbit.linstor.InternalApiConsts;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import com.moandjiezana.toml.Toml;
@@ -28,6 +30,11 @@ public class StltConfig extends LinstorConfig
     private String netSecureKeystorePassword;
     private String netSecureTruststorePassword;
     private String netSecureSslProtocol;
+
+    /*
+     * External files
+     */
+    private Set<Path> whitelistedExternalFilePaths;
 
     public StltConfig(String[] argsRef)
     {
@@ -266,6 +273,31 @@ public class StltConfig extends LinstorConfig
         if (netTypeRef != null)
         {
             netType = netTypeRef;
+        }
+    }
+
+    public Set<Path> getWhitelistedExternalFilePaths()
+    {
+        return whitelistedExternalFilePaths;
+    }
+
+    public void setExternalFilesWhitelist(Set<String> whitelistedExternalFilePathsRef)
+    {
+        if (whitelistedExternalFilePathsRef != null)
+        {
+            if (whitelistedExternalFilePaths == null)
+            {
+                whitelistedExternalFilePaths = new HashSet<>();
+            }
+            else
+            {
+                whitelistedExternalFilePaths.clear();
+            }
+
+            for (String pathStr : whitelistedExternalFilePathsRef)
+            {
+                whitelistedExternalFilePaths.add(Paths.get(pathStr));
+            }
         }
     }
 }

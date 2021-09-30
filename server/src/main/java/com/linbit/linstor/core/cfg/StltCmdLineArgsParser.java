@@ -4,6 +4,8 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.core.LinStor;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import picocli.CommandLine;
 
@@ -73,6 +75,9 @@ class StltCmdLineArgsParser
     @CommandLine.Option(names = { "--remote-spdk" }, hidden = true)
     private boolean remoteSpdk;
 
+    @CommandLine.Option(names = "--allow-ext-files", split = ",", description = "Whitelist paths for external files")
+    private String[] extFilesWhitelist;
+
     static void parseCommandLine(String[] args, StltConfig stltCfg)
     {
         StltCmdLineArgsParser linArgParser = new StltCmdLineArgsParser();
@@ -128,6 +133,13 @@ class StltCmdLineArgsParser
 
         stltCfg.setLogLevel(linArgParser.logLevel);
         stltCfg.setLogLevelLinstor(linArgParser.logLevelLinstor);
+
+        if (linArgParser.extFilesWhitelist != null)
+        {
+            stltCfg.setExternalFilesWhitelist(
+                Arrays.stream(linArgParser.extFilesWhitelist).collect(Collectors.toSet())
+            );
+        }
     }
 
     private StltCmdLineArgsParser()
