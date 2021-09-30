@@ -232,6 +232,7 @@ public class ResourceLayerIdSQLDbDriver implements ResourceLayerIdCtrlDatabaseDr
     {
         return rscData.getLayerKind().name() +
             " (id: " + rscData.getRscLayerId() +
+            ", nodeName: " + rscData.getAbsResource().getNode().getName().displayValue +
             ", rscName: " + rscData.getSuffixedResourceName() +
             (rscData.getAbsResource() instanceof Snapshot
                 ? ", SnapshotName: " + (((Snapshot) rscData.getAbsResource()).getSnapshotName().displayValue)
