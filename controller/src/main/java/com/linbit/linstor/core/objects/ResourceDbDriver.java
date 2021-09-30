@@ -36,10 +36,12 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Resources.UUI
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 @Singleton
 public class ResourceDbDriver extends
@@ -77,6 +79,8 @@ public class ResourceDbDriver extends
 
         flagsDriver = generateFlagDriver(RESOURCE_FLAGS, Resource.Flags.class);
 
+        Function<Date, Object> createTimestampTypeMapper;
+
         setColumnSetter(UUID, rsc -> rsc.getUuid().toString());
         setColumnSetter(NODE_NAME, rsc -> rsc.getNode().getName().value);
         setColumnSetter(RESOURCE_NAME, rsc -> rsc.getResourceDefinition().getName().value);
@@ -87,24 +91,26 @@ public class ResourceDbDriver extends
             case SQL:
                 setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
                     new Timestamp(rsc.getCreateTimestamp().get().getTime()) : null);
+                createTimestampTypeMapper = createTime -> createTime != null ?
+                    new Timestamp(createTime.getTime()) :
+                    null;
                 break;
             case ETCD:
                 setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
-                        Long.toString(rsc.getCreateTimestamp().get().getTime()) : null);
+                    Long.toString(rsc.getCreateTimestamp().get().getTime()) : null);
+                createTimestampTypeMapper = createTime -> createTime != null ?
+                    Long.toString(createTime.getTime()) :
+                    null;
                 break;
+            default:
+                throw new ImplementationError("Unknown database type: " + getDbType());
         }
 
         createTimestampDriver = generateSingleColumnDriverMapped(
             CREATE_TIMESTAMP,
             rsc -> rsc.getCreateTimestamp().isPresent() ? rsc.getCreateTimestamp().get().toString() : "null",
-            createTime -> {
-                switch(getDbType())
-                {
-                    case SQL:  return createTime != null ? new Timestamp(createTime.getTime()) : null;
-                    case ETCD: return createTime != null ? Long.toString(createTime.getTime()) : null;
-                }
-                return null;
-            });
+            createTimestampTypeMapper
+        );
     }
 
     @Override

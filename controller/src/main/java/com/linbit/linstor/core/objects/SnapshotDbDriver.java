@@ -43,6 +43,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 @Singleton
 public class SnapshotDbDriver extends
@@ -74,6 +75,8 @@ public class SnapshotDbDriver extends
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
 
+        Function<Date, Object> createTimestampTypeMapper;
+
         setColumnSetter(UUID, snap -> snap.getUuid().toString());
         setColumnSetter(NODE_NAME, snap -> snap.getNode().getName().value);
         setColumnSetter(RESOURCE_NAME, snap -> snap.getResourceDefinition().getName().value);
@@ -82,28 +85,39 @@ public class SnapshotDbDriver extends
         switch(getDbType())
         {
             case SQL:
-                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
-                    new Timestamp(rsc.getCreateTimestamp().get().getTime()) : null);
+                setColumnSetter(
+                    CREATE_TIMESTAMP,
+                    snap -> snap.getCreateTimestamp().isPresent() ?
+                        new Timestamp(snap.getCreateTimestamp().get().getTime()) :
+                        null
+                );
+                createTimestampTypeMapper = createTime -> createTime != null ?
+                    new Timestamp(createTime.getTime()) :
+                    null;
+                break;
             case ETCD:
-                setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?
-                    Long.toString(rsc.getCreateTimestamp().get().getTime()) : null);
+                setColumnSetter(
+                    CREATE_TIMESTAMP,
+                    snap -> snap.getCreateTimestamp().isPresent() ?
+                        Long.toString(snap.getCreateTimestamp().get().getTime()) :
+                        null
+                );
+                createTimestampTypeMapper = createTime -> createTime != null ?
+                    Long.toString(createTime.getTime()) :
+                    null;
+
+                break;
+            default:
+                throw new ImplementationError("Unknown database type: " + getDbType());
         }
 
         flagsDriver = generateFlagDriver(RESOURCE_FLAGS, Snapshot.Flags.class);
 
         createTimestampDriver = generateSingleColumnDriverMapped(
             CREATE_TIMESTAMP,
-            rsc -> rsc.getCreateTimestamp().isPresent() ? rsc.getCreateTimestamp().get().toString() : "null",
-            createTime -> {
-                switch(getDbType())
-                {
-                    case SQL:
-                        return createTime != null ? new Timestamp(createTime.getTime()) : null;
-                    case ETCD:
-                        return createTime != null ? Long.toString(createTime.getTime()) : null;
-                }
-                return null;
-            });
+            snap -> snap.getCreateTimestamp().isPresent() ? snap.getCreateTimestamp().get().toString() : "null",
+            createTimestampTypeMapper
+        );
     }
 
     @Override

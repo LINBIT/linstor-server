@@ -75,8 +75,7 @@ public class SnapshotVolumeDbDriver extends
         setColumnSetter(RESOURCE_NAME, snapVlm -> snapVlm.getResourceName().value);
         setColumnSetter(SNAPSHOT_NAME, snapVlm -> snapVlm.getSnapshotName().value);
         setColumnSetter(VLM_NR, snapVlm -> snapVlm.getVolumeNumber().value);
-
-        setColumnSetter(VLM_FLAGS, ignored -> 0);
+        setColumnSetter(VLM_FLAGS, ignored -> 0L);
     }
 
     @Override
