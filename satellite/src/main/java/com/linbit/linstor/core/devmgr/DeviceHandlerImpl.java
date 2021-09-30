@@ -923,7 +923,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             localNodePropsChanged(localNodeProps);
 
             extFileHandler.clear();
-            extFileHandler.rebuildExtFilesToRscDfnMaps(localNodeProps, localNode);
+            extFileHandler.rebuildExtFilesToRscDfnMaps(localNode);
 
             backupShippingManager.killAllShipping();
             snapshotShippingManager.killAllShipping();

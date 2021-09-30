@@ -17,14 +17,12 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 
 import java.io.IOException;
@@ -47,18 +45,14 @@ public class StltExternalFileHandler
 
     private final Map<ExternalFileName, Set<ResourceName>> extFileRequestedByRscDfnsMap;
     private final Map<ResourceName, Set<ExternalFileName>> rscDfnToExtFilesMap;
-    private final Props stltProps;
     private final ExternalFileMap extFileMap;
     private final ResourceDefinitionMap rscDfnMap;
     private final StltConfig stltCfg;
-
-    private Props localNodeProps;
 
     @Inject
     public StltExternalFileHandler(
         ErrorReporter errorReporterRef,
         @DeviceManagerContext AccessContext wrkCtxRef,
-        @Named(LinStor.SATELLITE_PROPS) Props satellitePropsRef,
         CoreModule.ExternalFileMap extFileMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         StltConfig stltCfgRef
@@ -66,7 +60,6 @@ public class StltExternalFileHandler
     {
         errorReporter = errorReporterRef;
         wrkCtx = wrkCtxRef;
-        stltProps = satellitePropsRef;
         extFileMap = extFileMapRef;
         rscDfnMap = rscDfnMapRef;
         stltCfg = stltCfgRef;
@@ -95,9 +88,8 @@ public class StltExternalFileHandler
         }
     }
 
-    public void rebuildExtFilesToRscDfnMaps(Props localNodePropsRef, Node localNodeRef) throws StorageException
+    public void rebuildExtFilesToRscDfnMaps(Node localNodeRef) throws StorageException
     {
-        localNodeProps = localNodePropsRef;
         try
         {
             for (ResourceDefinition rscDfn : rscDfnMap.values())
