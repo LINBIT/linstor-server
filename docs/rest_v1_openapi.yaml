@@ -5569,10 +5569,13 @@ components:
             - CONNECTED
             - ONLINE
             - VERSION_MISMATCH
-            - HOSTNAME_MISMATCH
             - FULL_SYNC_FAILED
             - AUTHENTICATION_ERROR
             - UNKNOWN
+            - HOSTNAME_MISMATCH
+            - OTHER_CONTROLLER
+            - AUTHENTICATED
+            - NO_STLT_CONN
         uuid:
           type: string
           description: unique object id
@@ -5640,9 +5643,9 @@ components:
           example: 3366
         satellite_encryption_type:
           type: string
-          example: Plain
+          example: PLAIN
           enum:
-            - Plain
+            - PLAIN
             - SSL
         is_active:
           description: Defines if this netinterface should be used for the satellite
