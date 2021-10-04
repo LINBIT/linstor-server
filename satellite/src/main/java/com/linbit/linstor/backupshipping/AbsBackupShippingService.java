@@ -195,7 +195,8 @@ public abstract class AbsBackupShippingService implements SystemService
                                 ),
                                 true
                             )
-                        )
+                        ),
+                        snapVlmData
                     )
                 },
                 snapNameRef,
@@ -232,7 +233,6 @@ public abstract class AbsBackupShippingService implements SystemService
             ensureRemoteType(remote);
 
             String backupName = getBackupNameForRestore(snapVlmData);
-
             startDaemon(
                 cmdRef,
                 new String[]
@@ -241,7 +241,7 @@ public abstract class AbsBackupShippingService implements SystemService
                     "-w",
                     "bash",
                     "-c",
-                    getCommandReceiving(cmdRef, remote)
+                    getCommandReceiving(cmdRef, remote, snapVlmData)
                 },
                 snapVlm.getSnapshotName().displayValue,
                 backupName,
@@ -676,9 +676,17 @@ public abstract class AbsBackupShippingService implements SystemService
     protected abstract String getBackupNameForRestore(AbsStorageVlmData<Snapshot> snapVlmDataRef)
         throws InvalidKeyException, AccessDeniedException;
 
-    protected abstract String getCommandSending(String cmdRef, Remote remoteRef) throws AccessDeniedException;
+    protected abstract String getCommandSending(
+        String cmdRef,
+        Remote remoteRef,
+        AbsStorageVlmData<Snapshot> snapVlmDataRef
+    ) throws AccessDeniedException;
 
-    protected abstract String getCommandReceiving(String cmdRef, Remote remoteRef) throws AccessDeniedException;
+    protected abstract String getCommandReceiving(
+        String cmdRef,
+        Remote remoteRef,
+        AbsStorageVlmData<Snapshot> snapVlmDataRef
+    ) throws AccessDeniedException;
 
     protected abstract void preCtrlNotifyBackupShipped(
         boolean successRef,

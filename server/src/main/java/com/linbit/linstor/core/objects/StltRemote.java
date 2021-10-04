@@ -13,6 +13,7 @@ import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -21,6 +22,7 @@ import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -41,7 +43,7 @@ public class StltRemote extends BaseTransactionObject
     private final transient UUID dbgInstanceId;
     private final RemoteName remoteName;
     private final TransactionSimpleObject<StltRemote, String> ip;
-    private final TransactionSimpleObject<StltRemote, Integer> port;
+    private final TransactionMap<String, Integer> ports;
     private final TransactionSimpleObject<StltRemote, Boolean> useZstd;
     private final TransactionSimpleObject<StltRemote, Boolean> deleted;
     private final StateFlags<Flags> flags;
@@ -52,7 +54,7 @@ public class StltRemote extends BaseTransactionObject
         RemoteName remoteNameRef,
         long initialFlags,
         String ipRef,
-        Integer portRef,
+        Map<String, Integer> portRef,
         Boolean useZstdRef,
         StateFlagsPersistence<StltRemote> stateFlagsDriverRef,
         TransactionObjectFactory transObjFactory,
@@ -66,7 +68,7 @@ public class StltRemote extends BaseTransactionObject
         remoteName = remoteNameRef;
 
         ip = transObjFactory.createTransactionSimpleObject(this, ipRef, null);
-        port = transObjFactory.createTransactionSimpleObject(this, portRef, null);
+        ports = transObjFactory.createTransactionPrimitiveMap(portRef, null);
         useZstd = transObjFactory.createTransactionSimpleObject(this, useZstdRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
@@ -82,7 +84,7 @@ public class StltRemote extends BaseTransactionObject
         transObjs = Arrays.asList(
             objProt,
             ip,
-            port,
+            ports,
             useZstd,
             flags,
             deleted
@@ -130,18 +132,40 @@ public class StltRemote extends BaseTransactionObject
         ip.set(ipRef);
     }
 
-    public Integer getPort(AccessContext accCtx) throws AccessDeniedException
+    public Map<String, Integer> getPorts(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
-        return port.get();
+        return ports;
     }
 
-    public void setPort(AccessContext accCtx, int portRef) throws AccessDeniedException, DatabaseException
+    public void setPort(AccessContext accCtx, int portRef, int vlmNrRef, String rscLayerSuffixRef)
+        throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        port.set(portRef);
+        ports.put(vlmNrRef + rscLayerSuffixRef, portRef);
+    }
+
+    /**
+     * This method adds the ports in the map given to the already existing ports
+     */
+    public void addPorts(AccessContext accCtx, Map<String, Integer> portsRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        ports.putAll(portsRef);
+    }
+
+    /**
+     * This method will replace the already existing ports with the ports in the map given
+     */
+    public void setAllPorts(AccessContext accCtx, Map<String, Integer> portsRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        ports.clear();
+        ports.putAll(portsRef);
     }
 
     public Boolean useZstd(AccessContext accCtx) throws AccessDeniedException
@@ -180,20 +204,24 @@ public class StltRemote extends BaseTransactionObject
             remoteName.displayValue,
             flags.getFlagsBits(accCtx),
             ip.get(),
-            port.get(),
+            ports,
             useZstd.get(),
             fullSyncId,
             updateId
         );
     }
 
+    /**
+     * This method removes all currently set values and replaces them with the values found in the given StltRemotePojo
+     */
     public void applyApiData(AccessContext accCtx, StltRemotePojo apiData)
         throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         ip.set(apiData.getIp());
-        port.set(apiData.getPort());
+        ports.clear();
+        ports.putAll(apiData.getPorts());
         useZstd.set(apiData.useZstd());
 
         flags.resetFlagsTo(accCtx, Flags.restoreFlags(apiData.getFlags()));
@@ -223,7 +251,7 @@ public class StltRemote extends BaseTransactionObject
     {
         if (deleted.get())
         {
-            throw new AccessToDeletedDataException("Access to deleted S3Remote");
+            throw new AccessToDeletedDataException("Access to deleted StltRemote");
         }
     }
 

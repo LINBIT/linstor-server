@@ -92,13 +92,13 @@ public class BackupShippingS3Service extends AbsBackupShippingService
     }
 
     @Override
-    protected String getCommandReceiving(String cmdRef, Remote ignoredRemote)
+    protected String getCommandReceiving(String cmdRef, Remote ignoredRemote, AbsStorageVlmData<Snapshot> ignored)
     {
         return String.format(CMD_FORMAT_RECEIVING, cmdRef);
     }
 
     @Override
-    protected String getCommandSending(String cmdRef, Remote ignoredRemote)
+    protected String getCommandSending(String cmdRef, Remote ignoredRemote, AbsStorageVlmData<Snapshot> ignored)
     {
         return String.format(CMD_FORMAT_SENDING, cmdRef);
     }

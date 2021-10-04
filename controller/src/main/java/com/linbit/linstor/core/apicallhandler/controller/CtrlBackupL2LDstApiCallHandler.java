@@ -8,6 +8,8 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SecretGenerator;
@@ -31,6 +33,8 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -46,6 +50,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 
 import reactor.core.publisher.Flux;
 
@@ -131,10 +136,11 @@ public class CtrlBackupL2LDstApiCallHandler
         }
         else
         {
-            int snapShipPort;
+            Map<String, Integer> snapShipPorts = new TreeMap<>(); // Key: vlmNr + rscLayerSuffx, value: portNr
             try
             {
-                snapShipPort = snapshotShippingPortPool.autoAllocate();
+                RscLayerDataApi layerData = metaDataRef.getLayerData();
+                allocatePortNumbers(layerData, snapShipPorts);
 
                 BackupShippingData data = new BackupShippingData(
                     srcVersionRef,
@@ -147,7 +153,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     dstNetIfNameRef,
                     dstStorPoolRef,
                     storPoolRenameMapRef,
-                    snapShipPort,
+                    snapShipPorts,
                     useZstd,
                     downloadOnly
                 );
@@ -158,7 +164,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP).buildDeferred(),
                     () -> startReceivingInTransaction(data)
-                ).map(startInfo -> snapshotToResponse(data, startInfo, dstNetIfNameRef, snapShipPort));
+                ).map(startInfo -> snapshotToResponse(data, startInfo, dstNetIfNameRef, snapShipPorts));
                 // .onErrorResume(err -> errorToResponse(err));
             }
             catch (ExhaustedPoolException exc)
@@ -182,6 +188,26 @@ public class CtrlBackupL2LDstApiCallHandler
         return flux;
     }
 
+    private void allocatePortNumbers(RscLayerDataApi layerDataRef, Map<String, Integer> ports)
+        throws ExhaustedPoolException
+    {
+        for (RscLayerDataApi child : layerDataRef.getChildren())
+        {
+            allocatePortNumbers(child, ports);
+        }
+        if (layerDataRef.getLayerKind().equals(DeviceLayerKind.STORAGE))
+        {
+            if (RscLayerSuffixes.shouldSuffixBeShipped(layerDataRef.getRscNameSuffix()))
+            {
+                for (VlmLayerDataApi vlm : layerDataRef.getVolumeList())
+                {
+                    ports
+                        .put(vlm.getVlmNr() + layerDataRef.getRscNameSuffix(), snapshotShippingPortPool.autoAllocate());
+                }
+            }
+        }
+    }
+
     private Flux<BackupShippingStartInfo> startReceivingInTransaction(BackupShippingData data)
     {
         String clusterHash = getSrcClusterShortId(data.srcClusterId);
@@ -193,7 +219,7 @@ public class CtrlBackupL2LDstApiCallHandler
             apiCtx,
             data.dstRscName,
             snapName.displayValue,
-            data.snapShipPort
+            data.snapShipPorts
         );
 
         data.snapName = snapName;
@@ -283,14 +309,43 @@ public class CtrlBackupL2LDstApiCallHandler
         BackupShippingData dataRef,
         BackupShippingStartInfo startInfo,
         @Nullable String dstNetIfNameRef,
-        int snapShipPortRef
+        Map<String, Integer> snapShipPortsRef
     )
     {
         try
         {
             ApiCallRcImpl responses = new ApiCallRcImpl();
             Snapshot snap = startInfo.apiCallRcWithSnapshot.extractApiCallRc(responses);
-
+            if (snap.isDeleted())
+            {
+                responses.addEntry(
+                    "Error while trying to start receiving, Snapshot has already been deleted due to it.",
+                    ApiConsts.FAIL_UNKNOWN_ERROR
+                );
+                return new BackupShippingResponse(
+                    false,
+                    responses,
+                    null,
+                    null,
+                    null,
+                    null
+                );
+            }
+            if (dataRef.stltRemote.isDeleted())
+            {
+                responses.addEntry(
+                    "Error while trying to start receiving, StltRemote has already been deleted due to it.",
+                    ApiConsts.FAIL_UNKNOWN_ERROR
+                );
+                return new BackupShippingResponse(
+                    false,
+                    responses,
+                    null,
+                    null,
+                    null,
+                    null
+                );
+            }
             NetInterface netIf = null;
             Node node = snap.getNode();
             if (dstNetIfNameRef != null)
@@ -320,7 +375,7 @@ public class CtrlBackupL2LDstApiCallHandler
                 true,
                 responses,
                 netIf.getAddress(apiCtx).getAddress(),
-                snapShipPortRef,
+                snapShipPortsRef,
                 srcSnapDfnUuid,
                 useZstd
             );
@@ -375,7 +430,7 @@ public class CtrlBackupL2LDstApiCallHandler
         private String dstNetIfName;
         private String dstStorPool;
         private Map<String, String> storPoolRenameMap;
-        private final int snapShipPort;
+        private final Map<String, Integer> snapShipPorts;
         private boolean useZstd;
         private boolean downloadOnly;
 
@@ -390,7 +445,7 @@ public class CtrlBackupL2LDstApiCallHandler
             String dstNetIfNameRef,
             String dstStorPoolRef,
             Map<String, String> storPoolRenameMapRef,
-            int snapShipPortRef,
+            Map<String, Integer> snapShipPortsRef,
             boolean useZstdRef,
             boolean downloadOnlyRef
         )
@@ -405,7 +460,7 @@ public class CtrlBackupL2LDstApiCallHandler
             dstNetIfName = dstNetIfNameRef;
             dstStorPool = dstStorPoolRef;
             storPoolRenameMap = storPoolRenameMapRef;
-            snapShipPort = snapShipPortRef;
+            snapShipPorts = snapShipPortsRef;
             useZstd = useZstdRef;
             downloadOnly = downloadOnlyRef;
         }

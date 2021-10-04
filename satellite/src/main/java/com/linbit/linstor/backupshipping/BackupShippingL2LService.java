@@ -22,6 +22,7 @@ import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 @Singleton
@@ -61,10 +62,11 @@ public class BackupShippingL2LService extends AbsBackupShippingService
     }
 
     @Override
-    protected String getCommandReceiving(String cmdRef, Remote remoteRef) throws AccessDeniedException
+    protected String getCommandReceiving(String cmdRef, Remote remoteRef, AbsStorageVlmData<Snapshot> snapVlmDataRef)
+        throws AccessDeniedException
     {
         StltRemote stltRemote = (StltRemote) remoteRef;
-
+        Map<String, Integer> ports = stltRemote.getPorts(accCtx);
         boolean useZstd = stltRemote.useZstd(accCtx);
 
         StringBuilder cmdBuilder = new StringBuilder()
@@ -72,7 +74,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
             .append("set -o pipefail; ")
             .append("(")
             .append("socat TCP-LISTEN:")
-            .append(stltRemote.getPort(accCtx))
+            .append(ports.get(snapVlmDataRef.getVlmNr() + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix()))
             .append(" STDOUT | ");
         if (useZstd)
         {
@@ -85,11 +87,13 @@ public class BackupShippingL2LService extends AbsBackupShippingService
     }
 
     @Override
-    protected String getCommandSending(String cmdRef, Remote remoteRef) throws AccessDeniedException
+    protected String getCommandSending(String cmdRef, Remote remoteRef, AbsStorageVlmData<Snapshot> snapVlmDataRef)
+        throws AccessDeniedException
     {
         StltRemote stltRemote = (StltRemote) remoteRef;
 
         boolean useZstd = stltRemote.useZstd(accCtx);
+        Map<String, Integer> ports = stltRemote.getPorts(accCtx);
 
         StringBuilder cmdBuilder = new StringBuilder()
             .append("trap 'kill -HUP 0' SIGTERM; ")
@@ -104,7 +108,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
         cmdBuilder.append("socat STDIN TCP:")
             .append(stltRemote.getIp(accCtx))
             .append(":")
-            .append(stltRemote.getPort(accCtx))
+            .append(ports.get(snapVlmDataRef.getVlmNr() + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix()))
             .append(" ;)&\\wait $!");
 
         return cmdBuilder.toString();

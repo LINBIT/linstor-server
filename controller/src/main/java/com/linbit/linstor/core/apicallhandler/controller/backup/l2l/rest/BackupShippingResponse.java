@@ -4,6 +4,8 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 
 import javax.annotation.Nullable;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -20,7 +22,7 @@ public class BackupShippingResponse
      * This means that the src-Stlt and dst-Stlt will ship p2p, not through one or both controllers!
      */
     public final @Nullable String dstStltIp;
-    public final @Nullable Integer dstStltPort;
+    public final @Nullable Map<String, Integer> dstStltPorts;
     public final @Nullable String srcSnapDfnUuid;
 
     public final @Nullable Boolean useZstd;
@@ -30,7 +32,7 @@ public class BackupShippingResponse
         @JsonProperty("canReceive") boolean canReceiveRef,
         @JsonProperty("responses") ApiCallRcImpl responsesRef,
         @JsonProperty("dstStltIp") @Nullable String dstStltIpRef,
-        @JsonProperty("dstStltPort") @Nullable Integer dstStltPortRef,
+        @JsonProperty("dstStltPort") @Nullable Map<String, Integer> snapShipPortsRef,
         @JsonProperty("srcBaseSnapDfnUuid") @Nullable String srcSnapDfnUuidRef,
         @JsonProperty("useZstd") @Nullable Boolean useZstdRef
     )
@@ -38,7 +40,7 @@ public class BackupShippingResponse
         canReceive = canReceiveRef;
         responses = responsesRef;
         dstStltIp = dstStltIpRef;
-        dstStltPort = dstStltPortRef;
+        dstStltPorts = snapShipPortsRef;
         srcSnapDfnUuid = srcSnapDfnUuidRef;
         useZstd = useZstdRef;
     }

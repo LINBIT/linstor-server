@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+import java.util.Map;
 import java.util.UUID;
 
 public class StltRemotePojo implements Comparable<StltRemotePojo>
@@ -8,7 +9,7 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
     private final String remoteName;
     private final long flags;
     private final String ip;
-    private final Integer port;
+    private final Map<String, Integer> ports;
     private final Boolean useZstd;
     private final Long fullSyncId;
     private final Long updateId;
@@ -18,7 +19,7 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
         String remoteNameRef,
         long flagsRef,
         String ipRet,
-        Integer portRef,
+        Map<String, Integer> portsRef,
         Boolean useZstdRef,
         Long fullSyncIdRef,
         Long updateIdRef
@@ -28,7 +29,7 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
         remoteName = remoteNameRef;
         flags = flagsRef;
         ip = ipRet;
-        port = portRef;
+        ports = portsRef;
         useZstd = useZstdRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
@@ -54,9 +55,9 @@ public class StltRemotePojo implements Comparable<StltRemotePojo>
         return ip;
     }
 
-    public Integer getPort()
+    public Map<String, Integer> getPorts()
     {
-        return port;
+        return ports;
     }
 
     public Boolean useZstd()

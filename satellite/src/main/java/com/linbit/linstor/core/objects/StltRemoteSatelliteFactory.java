@@ -17,6 +17,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.util.Map;
 import java.util.UUID;
 
 public class StltRemoteSatelliteFactory
@@ -47,7 +48,7 @@ public class StltRemoteSatelliteFactory
         RemoteName remoteNameRef,
         long initflags,
         String ipRef,
-        Integer portRef,
+        Map<String, Integer> portsRef,
         Boolean useZstdRef
     )
         throws ImplementationError
@@ -64,7 +65,7 @@ public class StltRemoteSatelliteFactory
                     remoteNameRef,
                     initflags,
                     ipRef,
-                    portRef,
+                    portsRef,
                     useZstdRef,
                     (StateFlagsPersistence<StltRemote>) noopFlagDriver,
                     transObjFactory,

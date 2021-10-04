@@ -1943,32 +1943,29 @@ public class CtrlBackupApiCallHandler
             }
             else
             {
-                if (snap == null)
-                {
-                    // otherwise we found and reuse snapshot for incremental shipping
-                    StorPool storPool = storPools.iterator().next();
-                    Node node = storPool.getNode();
+                StorPool storPool = storPools.iterator().next();
+                Node node = storPool.getNode();
 
-                    // TODO add autoSelected storPool into renameMap
+                // TODO add autoSelected storPool into renameMap
 
-                    // 12. create snapshot
-                    snap = createSnapshotAndVolumesForBackupRestore(
-                        metadata,
-                        layers,
-                        node,
-                        snapDfn,
-                        snapVlmDfns,
-                        renameMap,
-                        remote,
-                        null
-                    );
-                }
+                // 12. create snapshot
+                snap = createSnapshotAndVolumesForBackupRestore(
+                    metadata,
+                    layers,
+                    node,
+                    snapDfn,
+                    snapVlmDfns,
+                    renameMap,
+                    remote,
+                    null
+                );
                 snap.getProps(peerAccCtx.get()).setProp(
                     InternalApiConsts.KEY_BACKUP_TO_RESTORE,
                     snap.getResourceName().displayValue + "_" + snap.getSnapshotName().displayValue,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
                 );
                 snap.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
+                backupInfoMgr.abortRestoreAddEntry(targetRscName, snap);
 
                 // LUKS
                 Set<AbsRscLayerObject<Snapshot>> luksLayerData = LayerRscUtils.getRscDataByProvider(
@@ -2940,7 +2937,7 @@ public class CtrlBackupApiCallHandler
             for (Snapshot snap : snaps)
             {
                 if (
-                    abortRestoreSnaps.contains(snap) && restore ||
+                    abortRestoreSnaps != null && abortRestoreSnaps.contains(snap) && restore ||
                         snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE) && create
                 )
                 {
@@ -3406,7 +3403,7 @@ public class CtrlBackupApiCallHandler
                         nextSnapToDel = backupInfoMgr.getNextBackupToDownload(nextSnapToDel);
                     }
                     Set<Snapshot> leftovers = backupInfoMgr.abortRestoreGetEntries(rscNameRef);
-                    if (leftovers.isEmpty())
+                    if (leftovers != null && leftovers.isEmpty())
                     {
                         backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
                     }

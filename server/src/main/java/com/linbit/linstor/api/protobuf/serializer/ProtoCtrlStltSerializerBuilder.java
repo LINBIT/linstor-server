@@ -1406,10 +1406,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 builder.setTargetIp(ip);
             }
-            Integer port = stltremote.getPort(serializerCtx);
-            if (port != null)
+            Map<String, Integer> ports = stltremote.getPorts(serializerCtx);
+            if (ports != null && !ports.isEmpty())
             {
-                builder.setTargetPort(port);
+                builder.putAllTargetPorts(ports);
             }
             Boolean useZstd = stltremote.useZstd(serializerCtx);
             if (useZstd != null)

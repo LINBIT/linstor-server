@@ -14,6 +14,7 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.TreeMap;
 import java.util.UUID;
 
 @ProtobufApiCall(
@@ -83,7 +84,7 @@ public class ApplyRemote implements ApiCall
             proto.getName(),
             proto.getFlags(),
             proto.getTargetIp(),
-            proto.getTargetPort(),
+            new TreeMap<>(proto.getTargetPortsMap()),
             proto.getUseZstd(),
             fullSyncId,
             updateId

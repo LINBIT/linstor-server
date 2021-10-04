@@ -127,7 +127,7 @@ public class StltRemoteApiCallHandler
                 new RemoteName(stltRemotePojo.getRemoteName(), true),
                 stltRemotePojo.getFlags(),
                 stltRemotePojo.getIp(),
-                stltRemotePojo.getPort(),
+                stltRemotePojo.getPorts(),
                 stltRemotePojo.useZstd()
             );
 

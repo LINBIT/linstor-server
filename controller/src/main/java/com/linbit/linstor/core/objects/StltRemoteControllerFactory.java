@@ -17,6 +17,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Singleton
@@ -46,7 +47,7 @@ public class StltRemoteControllerFactory
         AccessContext accCtxRef,
         RemoteName nameRef,
         String ipRef,
-        Integer portRef
+        Map<String, Integer> portsRef
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -65,7 +66,7 @@ public class StltRemoteControllerFactory
             nameRef,
             0,
             ipRef,
-            portRef,
+            portsRef,
             null,
             (StateFlagsPersistence<StltRemote>) stateFlagsDriver,
             transObjFactory,

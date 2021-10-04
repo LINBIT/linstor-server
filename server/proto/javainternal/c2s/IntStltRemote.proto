@@ -5,10 +5,10 @@ package com.linbit.linstor.proto.javainternal.c2s;
 // Internal message containing a satellite remote
 message IntStltRemote
 {
-    string  uuid = 1;
-    string  name = 2;
-    sint64  flags = 3;
-    string  target_ip = 4;
-    sint32  target_port = 5;
-    bool    use_zstd = 6;
+    string               uuid = 1;
+    string               name = 2;
+    sint64               flags = 3;
+    string               target_ip = 4;
+    map<string, sint32>  target_ports = 5;
+    bool                 use_zstd = 6;
 }

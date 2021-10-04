@@ -65,6 +65,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -252,7 +253,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             peerAccCtx.get(),
             data.srcRscName,
             data.srcBackupName,
-            null
+            new TreeMap<>()
         );
 
         data.stltRemote = stltRemote;
@@ -323,7 +324,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         AccessContext accCtxRef,
         String rscNameRef,
         String snapshotNameRef,
-        @Nullable Integer portRef
+        Map<String, Integer> snapShipPortsRef
     )
     {
         StltRemote stltRemote;
@@ -334,7 +335,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                 // add random uuid to avoid naming conflict
                 RemoteName.createInternal(rscNameRef + "_" + snapshotNameRef + "_" + UUID.randomUUID().toString()),
                 null,
-                portRef
+                snapShipPortsRef
             );
             remoteRepoRef.put(accCtxRef, stltRemote);
         }
@@ -452,7 +453,7 @@ public class CtrlBackupL2LSrcApiCallHandler
 
                 StltRemote stltRemote = data.stltRemote;
                 stltRemote.setIp(accCtx, responseRef.dstStltIp);
-                stltRemote.setPort(accCtx, responseRef.dstStltPort);
+                stltRemote.setAllPorts(accCtx, responseRef.dstStltPorts);
 
                 stltRemote.useZstd(accCtx, responseRef.useZstd && data.useZstd);
 
