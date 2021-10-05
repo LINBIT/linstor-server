@@ -121,8 +121,8 @@ public enum DeviceProviderKind
         ExtTools.SPDK
     ),
     REMOTE_SPDK(
-        false,
-        false,
+        true,
+        true,
         false,
         true,
         true,
