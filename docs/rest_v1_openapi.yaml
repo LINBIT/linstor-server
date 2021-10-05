@@ -2094,19 +2094,14 @@ paths:
       description: |
         Adds a resource on a node if not already deployed.
 
-        To use a specific storage pool add the `StorPoolName` property
-        and use the storage pool name as value.
-        If the `StorPoolName` property is not set, a storage pool will be chosen automatically
-        using the auto-placer.
+        New resources will be diskless, if possible. To force creation of
+        a diskful resource, set `diskful` to `true` in the request body.
 
-        To create a diskless resource you have to set the "DISKLESS" flag in the flags list.
-        ```
-        {
-          "resource": {
-            "flags": ["DISKLESS"]
-          }
-        }
-        ```
+        Optionally, you can override the layer stack for the created resource.
+        If not given, the default configuration for the resource definition is
+        used.
+
+        The storage pool will be selected by the autoplacer.
       responses:
         '200':
           description: resource is either created or ensured to be available
