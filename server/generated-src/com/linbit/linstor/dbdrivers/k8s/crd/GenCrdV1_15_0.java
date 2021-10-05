@@ -762,91 +762,91 @@ public class GenCrdV1_15_0
         switch(dbTable.getName())
         {
             case "FILES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/Files.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/Files.yaml";
             case "KEY_VALUE_STORE":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/KeyValueStore.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/KeyValueStore.yaml";
             case "LAYER_BCACHE_VOLUMES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerBcacheVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerBcacheVolumes.yaml";
             case "LAYER_CACHE_VOLUMES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerCacheVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerCacheVolumes.yaml";
             case "LAYER_DRBD_RESOURCES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerDrbdResources.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerDrbdResources.yaml";
             case "LAYER_DRBD_RESOURCE_DEFINITIONS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerDrbdResourceDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerDrbdResourceDefinitions.yaml";
             case "LAYER_DRBD_VOLUMES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerDrbdVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerDrbdVolumes.yaml";
             case "LAYER_DRBD_VOLUME_DEFINITIONS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerDrbdVolumeDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerDrbdVolumeDefinitions.yaml";
             case "LAYER_LUKS_VOLUMES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerLuksVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerLuksVolumes.yaml";
             case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerOpenflexResourceDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerOpenflexResourceDefinitions.yaml";
             case "LAYER_OPENFLEX_VOLUMES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerOpenflexVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerOpenflexVolumes.yaml";
             case "LAYER_RESOURCE_IDS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerResourceIds.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerResourceIds.yaml";
             case "LAYER_STORAGE_VOLUMES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerStorageVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerStorageVolumes.yaml";
             case "LAYER_WRITECACHE_VOLUMES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerWritecacheVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LayerWritecacheVolumes.yaml";
             case "LINSTOR_REMOTES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LinstorRemotes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/LinstorRemotes.yaml";
             case "NODES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/Nodes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/Nodes.yaml";
             case "NODE_CONNECTIONS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/NodeConnections.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/NodeConnections.yaml";
             case "NODE_NET_INTERFACES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/NodeNetInterfaces.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/NodeNetInterfaces.yaml";
             case "NODE_STOR_POOL":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/NodeStorPool.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/NodeStorPool.yaml";
             case "PROPS_CONTAINERS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/PropsContainers.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/PropsContainers.yaml";
             case "RESOURCES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/Resources.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/Resources.yaml";
             case "RESOURCE_CONNECTIONS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/ResourceConnections.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/ResourceConnections.yaml";
             case "RESOURCE_DEFINITIONS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/ResourceDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/ResourceDefinitions.yaml";
             case "RESOURCE_GROUPS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/ResourceGroups.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/ResourceGroups.yaml";
             case "S3_REMOTES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/S3Remotes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/S3Remotes.yaml";
             case "SATELLITES_CAPACITY":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SatellitesCapacity.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SatellitesCapacity.yaml";
             case "SEC_ACCESS_TYPES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecAccessTypes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecAccessTypes.yaml";
             case "SEC_ACL_MAP":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecAclMap.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecAclMap.yaml";
             case "SEC_CONFIGURATION":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecConfiguration.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecConfiguration.yaml";
             case "SEC_DFLT_ROLES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecDfltRoles.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecDfltRoles.yaml";
             case "SEC_IDENTITIES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecIdentities.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecIdentities.yaml";
             case "SEC_ID_ROLE_MAP":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecIdRoleMap.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecIdRoleMap.yaml";
             case "SEC_OBJECT_PROTECTION":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecObjectProtection.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecObjectProtection.yaml";
             case "SEC_ROLES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecRoles.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecRoles.yaml";
             case "SEC_TYPES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecTypes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecTypes.yaml";
             case "SEC_TYPE_RULES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecTypeRules.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SecTypeRules.yaml";
             case "SPACE_HISTORY":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SpaceHistory.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/SpaceHistory.yaml";
             case "STOR_POOL_DEFINITIONS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/StorPoolDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/StorPoolDefinitions.yaml";
             case "TRACKING_DATE":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/TrackingDate.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/TrackingDate.yaml";
             case "VOLUMES":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/Volumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/Volumes.yaml";
             case "VOLUME_CONNECTIONS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/VolumeConnections.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/VolumeConnections.yaml";
             case "VOLUME_DEFINITIONS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/VolumeDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/VolumeDefinitions.yaml";
             case "VOLUME_GROUPS":
-                return "generated-resources/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/VolumeGroups.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/VolumeGroups.yaml";
             default:
                 throw new ImplementationError("Unknown database table: " + dbTable.getName());
         }

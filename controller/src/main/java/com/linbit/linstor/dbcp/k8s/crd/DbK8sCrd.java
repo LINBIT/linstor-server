@@ -114,14 +114,12 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
                 .customResourceDefinitions();
 
             crdApi.createOrReplace(
-                crdApi.load(
-                    new File(LinstorVersionCrd.getYamlLocation())
-                ).get()
+                crdApi.load(DbK8sCrd.class.getResourceAsStream("/" + LinstorVersionCrd.getYamlLocation())).get()
             );
 
             crdApi.createOrReplace(
                 crdApi.load(
-                    new File(RollbackCrd.getYamlLocation())
+                    DbK8sCrd.class.getResourceAsStream("/" + RollbackCrd.getYamlLocation())
                 ).get()
             );
 

@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
@@ -55,7 +56,7 @@ public abstract class BaseK8sCrdMigration
             createOrReplaceCrdSchema(k8sClient, dbTableToYamlLocation.apply(dbTable));
         }
         // createOrReplaceCrdSchema(k8sClient, rollbackYamlLocation.getRollbackYamlLocation());
-        createOrReplaceCrdSchema(k8sClient, "com/linbit/linstor/dbcp/k8s/crd/Rollback.yaml");
+        createOrReplaceCrdSchema(k8sClient, "/com/linbit/linstor/dbcp/k8s/crd/Rollback.yaml");
     }
 
     protected void createOrReplaceCrdSchema(KubernetesClient k8s, String yamlLocation) throws FileNotFoundException
@@ -64,7 +65,7 @@ public abstract class BaseK8sCrdMigration
             .apiextensions().v1().customResourceDefinitions();
 
         CustomResourceDefinition crd = k8sApi
-            .load(new FileInputStream(new File(yamlLocation)))
+            .load(DbK8sCrd.class.getResourceAsStream(yamlLocation))
             .get();
         k8sApi.createOrReplace(crd);
     }

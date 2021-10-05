@@ -1218,7 +1218,7 @@ public final class DatabaseConstantsGenerator
     public static String getYamlLocation(String dir, String fileName)
     {
         return String.format(
-            "generated-resources/com/linbit/linstor/dbcp/k8s/crd/%s/%s.yaml",
+            "/com/linbit/linstor/dbcp/k8s/crd/%s/%s.yaml",
             dir,
             fileName
         );
