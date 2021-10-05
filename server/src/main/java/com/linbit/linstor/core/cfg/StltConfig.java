@@ -5,6 +5,7 @@ import com.linbit.linstor.InternalApiConsts;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -59,6 +60,8 @@ public class StltConfig extends LinstorConfig
         setNetType("plain");
 
         setNetSecureSslProtocol("TLSv1.2");
+
+        setExternalFilesWhitelist(Collections.emptySet()); // just to prevent NPE when checking the set with .contains
     }
 
     @Override
