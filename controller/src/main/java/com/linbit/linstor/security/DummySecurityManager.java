@@ -32,12 +32,6 @@ public class DummySecurityManager extends SecurityManager
     }
 
     @Override
-    public void checkAwtEventQueueAccess()
-    {
-        // ignored
-    }
-
-    @Override
     public void checkConnect(String hostRef, int portRef)
     {
         // ignored
@@ -86,19 +80,7 @@ public class DummySecurityManager extends SecurityManager
     }
 
     @Override
-    public void checkMemberAccess(Class<?> clazzRef, int whichRef)
-    {
-        // ignored
-    }
-
-    @Override
     public void checkMulticast(InetAddress maddrRef)
-    {
-        // ignored
-    }
-
-    @Override
-    public void checkMulticast(InetAddress maddrRef, byte ttlRef)
     {
         // ignored
     }
@@ -173,18 +155,6 @@ public class DummySecurityManager extends SecurityManager
     public void checkSetFactory()
     {
         // ignored
-    }
-
-    @Override
-    public void checkSystemClipboardAccess()
-    {
-        // ignored
-    }
-
-    @Override
-    public boolean checkTopLevelWindow(Object windowRef)
-    {
-        return false;
     }
 
     @Override
