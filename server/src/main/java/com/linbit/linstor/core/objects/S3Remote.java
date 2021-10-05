@@ -226,6 +226,8 @@ public class S3Remote extends BaseTransactionObject
         region.set(apiData.getRegion());
         accessKey.set(apiData.getAccessKey());
         secretKey.set(apiData.getSecretKey());
+
+        flags.resetFlagsTo(accCtx, Flags.restoreFlags(apiData.getFlags()));
     }
 
     public boolean isDeleted()

@@ -78,12 +78,19 @@ public class StltRemoteApiCallHandler
 
             localS3Remote.applyApiData(apiCtx, s3remotePojo);
 
+            RemoteName remoteName = localS3Remote.getName();
+            if (localS3Remote.getFlags().isSet(apiCtx, StltRemote.Flags.DELETE))
+            {
+                errorReporter.logTrace("S3Remote marked for deletion. Deleting. %s", remoteName);
+                remoteMap.remove(remoteName);
+                localS3Remote.delete(apiCtx);
+            }
+            transMgrProvider.get().commit();
+
             deviceManager.remoteUpdateApplied(
-                localS3Remote.getName(),
+                remoteName,
                 ctrlPeerConnector.getLocalNodeName()
             );
-
-            transMgrProvider.get().commit();
         }
         catch (Exception | ImplementationError exc)
         {
@@ -99,6 +106,7 @@ public class StltRemoteApiCallHandler
             Remote remote = remoteMap.get(remoteName);
             if (remote != null)
             {
+                errorReporter.logTrace("Cleaning up deleted Remote: %s", remoteNameStrRef);
                 remote.delete(apiCtx);
                 remoteMap.remove(remoteName);
             }
@@ -125,17 +133,20 @@ public class StltRemoteApiCallHandler
 
             localStltRemote.applyApiData(apiCtx, stltRemotePojo);
 
-            deviceManager.remoteUpdateApplied(
-                localStltRemote.getName(),
-                ctrlPeerConnector.getLocalNodeName()
-            );
-
+            RemoteName remoteName = localStltRemote.getName();
             if (localStltRemote.getFlags().isSet(apiCtx, StltRemote.Flags.DELETE))
             {
-                remoteMap.remove(localStltRemote.getName());
+                errorReporter.logTrace("StltRemote marked for deletion. Deleting. %s", remoteName);
+                remoteMap.remove(remoteName);
+                localStltRemote.delete(apiCtx);
             }
 
             transMgrProvider.get().commit();
+
+            deviceManager.remoteUpdateApplied(
+                remoteName,
+                ctrlPeerConnector.getLocalNodeName()
+            );
         }
         catch (Exception | ImplementationError exc)
         {
@@ -151,6 +162,7 @@ public class StltRemoteApiCallHandler
             Remote remote = remoteMap.get(remoteName);
             if (remote != null)
             {
+                errorReporter.logTrace("Cleaning up deleted StltRemote: %s", stltRemotePojoRef);
                 remote.delete(apiCtx);
                 remoteMap.remove(remoteName);
             }
