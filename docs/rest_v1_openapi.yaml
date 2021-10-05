@@ -6542,8 +6542,6 @@ components:
     AutoSelectFilter:
       # do not add defaults
       type: object
-      required:
-        - place_count
       properties:
         place_count:
           type: integer

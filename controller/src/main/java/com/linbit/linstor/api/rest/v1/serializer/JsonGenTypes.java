@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.10.2";
+    public static final String REST_API_VERSION = "1.11.0";
 
     /**
      * Common api reply structure
@@ -23,7 +23,7 @@ public class JsonGenTypes
         /**
          * A masked error number
          */
-        public Long ret_code;
+        public long ret_code;
         public String message;
         /**
          * Cause of the error
@@ -295,7 +295,7 @@ public class JsonGenTypes
         /**
          * Size of the volume in Kibi.
          */
-        public Long size_kib;
+        public long size_kib;
         public Map<String, String> props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
         public List<VolumeDefinitionLayer> layer_data = Collections.emptyList();
@@ -966,7 +966,7 @@ public class JsonGenTypes
     public static class ErrorReport
     {
         public String node_name;
-        public Long error_time;
+        public long error_time;
         /**
          * Filename of the error report on the server.
          *
@@ -1209,7 +1209,7 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class BackupVolumes
     {
-        public Long vlm_nr;
+        public long vlm_nr;
         public String finished_time;
         public Long finished_timestamp;
         public BackupVolumesS3 s3;
@@ -1284,8 +1284,8 @@ public class JsonGenTypes
         public String full;
         public String latest;
         public Integer count;
-        public Long dl_size_kib;
-        public Long alloc_size_kib;
+        public long dl_size_kib;
+        public long alloc_size_kib;
         public List<BackupInfoStorPool> storpools = Collections.emptyList();
     }
 
@@ -1314,7 +1314,7 @@ public class JsonGenTypes
         public String name;
         public String layer_type;
         public Long dl_size_kib;
-        public Long alloc_size_kib;
+        public long alloc_size_kib;
         public Long usable_size_kib;
     }
 
