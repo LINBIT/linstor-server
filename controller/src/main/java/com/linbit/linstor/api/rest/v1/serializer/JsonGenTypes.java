@@ -1616,6 +1616,42 @@ public class JsonGenTypes
         public String cluster_id;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class NodeStats
+    {
+        public long count;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class StoragePoolStats
+    {
+        public long count;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceGroupStats
+    {
+        public long count;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceDefinitionStats
+    {
+        public long count;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceStats
+    {
+        public long count;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ErrorReportStats
+    {
+        public long count;
+    }
+
     private JsonGenTypes()
     {
     }

@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased:
+       - Added /v1/stats/* endpoints for all objects
     * 1.10.2
        - Added /v1/remotes/{remote-name}/backups/info as well as BackupInfo, BackupInfoRequest, BackupInfoStorPool and BackupInfoVolume
        - Added download_only to BackupShip and BackupRestore
@@ -162,7 +164,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.10.2
+  version: 1.11.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -364,6 +366,23 @@ paths:
                   satellite_encryption_type: Plain
                   is_active: true
         description: Node to add to Linstor
+  /v1/stats/nodes:
+    get:
+      tags:
+        - developers
+      summary: Return stats of all nodes.
+      operationId: nodeStats
+      description: |
+        Returns a node stats object.
+      responses:
+        '200':
+          description: Object stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeStats'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
   /v1/nodes/{node}:
     parameters:
       - $ref: '#/components/parameters/Node'
@@ -1087,6 +1106,23 @@ paths:
             example:
               resource_definition:
                 name: rsc1
+  /v1/stats/resource-definitions:
+    get:
+      tags:
+        - developers
+      summary: Return stats of all resource definitions.
+      operationId: resourceDefinitionStats
+      description: |
+        Returns a resource definition stats object.
+      responses:
+        '200':
+          description: Object stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceDefinitionStats'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
   /v1/resource-definitions/{resource}:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -2928,6 +2964,25 @@ paths:
               $ref: '#/components/schemas/ResourceGroup'
             example:
               name: rscgrp1
+
+  /v1/stats/resource-groups:
+    get:
+      tags:
+        - developers
+      summary: Return stats of all resource groups.
+      operationId: resourceGroupStats
+      description: |
+        Returns a resource group stats object.
+      responses:
+        '200':
+          description: Object stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceGroupStats'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+
   /v1/resource-groups/{resource_group}:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
@@ -4321,6 +4376,23 @@ paths:
                 $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/stats/error-reports:
+    get:
+      tags:
+        - developers
+      summary: Return stats of all error-reports.
+      operationId: errorReportStats
+      description: |
+        Returns a error report stats object.
+      responses:
+        '200':
+          description: Object stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorReportStats'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
   /v1/error-reports/{reportid}:
     get:
       tags:
@@ -4627,6 +4699,41 @@ paths:
                   $ref: '#/components/schemas/SnapshotShippingStatus'
         '500':
           $ref: '#/components/responses/OperationFailed'
+
+  /v1/stats/resources:
+    get:
+      tags:
+        - developers
+      summary: Return stats of all resources.
+      operationId: resourcesStats
+      description: |
+        Returns a resource stats object.
+      responses:
+        '200':
+          description: Object stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceStats'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+  /v1/stats/storage-pools:
+    get:
+      tags:
+        - developers
+      summary: Return stats of all storage pools.
+      operationId: storagePoolsStats
+      description: |
+        Returns a storage pool stats object.
+      responses:
+        '200':
+          description: Object stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoragePoolStats'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
 
   /v1/physical-storage:
     get:
@@ -7644,3 +7751,51 @@ components:
           type: string
         cluster_id:
           type: string
+    NodeStats:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          format: int64
+    StoragePoolStats:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          format: int64
+    ResourceGroupStats:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          format: int64
+    ResourceDefinitionStats:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          format: int64
+    ResourceStats:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          format: int64
+    ErrorReportStats:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          format: int64
