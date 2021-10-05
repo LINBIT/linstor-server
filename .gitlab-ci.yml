@@ -140,7 +140,7 @@ test-e2e:
       ci_fetch_binary vmshed vmshed-$VMSHED_VERSION https://github.com/LINBIT/vmshed/releases/download/$VMSHED_VERSION/vmshed-linux-amd64
     - |
       case "$CI_COMMIT_BRANCH" in
-       "jenkins") VARIANTS="--variant default --variant etcd" ;;
+       "jenkins") VARIANTS="--variant default --variant etcd --variant crd" ;;
        *) VARIANTS=$VMSHED_VARIANTS ;;
       esac
     - echo "Running variants $VARIANTS"
