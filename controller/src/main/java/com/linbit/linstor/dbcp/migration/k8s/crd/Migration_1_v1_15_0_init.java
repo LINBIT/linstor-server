@@ -33,6 +33,8 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
             GenCrdV1_15_0.createSchemaUpdateContext()
         );
 
+        Thread.sleep(6000);
+
         // write modified data to database
         createSecConfiguration(transaction, "SECURITYLEVEL", "SecurityLevel", "NO_SECURITY");
         createSecConfiguration(transaction, "AUTHREQUIRED", "AuthRequired", "false");

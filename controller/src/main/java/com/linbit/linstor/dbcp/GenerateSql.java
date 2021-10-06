@@ -318,7 +318,8 @@ public class GenerateSql {
     )
         throws IOException
     {
-        Path path = Paths.get(gitRoot).resolve("controller").resolve(Paths.get(relativePath));
+        Path path = Paths.get(gitRoot).resolve("controller/generated-resources").resolve(Paths.get(".", relativePath))
+            .normalize();
         Files.createDirectories(path.getParent()); // ensure parent folder exists
         Files.write(path, content.getBytes());
     }

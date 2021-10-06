@@ -626,6 +626,29 @@ public final class DatabaseConstantsGenerator
             }
 
             appendEmptyLine();
+            appendLine("public static String databaseTableToYamlName(DatabaseTable dbTable)");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("switch(dbTable.getName())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        appendLine("case \"%s\":", tbl.name);
+                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                        {
+                            appendLine("return \"%s\";", toUpperCamelCase(tbl.name).toLowerCase());
+                        }
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("throw new ImplementationError(\"Unknown database table: \" + dbTable.getName());");
+                    }
+                }
+            }
+
+            appendEmptyLine();
             appendLine(
                 "public static BaseControllerK8sCrdTransactionMgrContext createTxMgrContext()",
                 clazzName
@@ -648,7 +671,9 @@ public final class DatabaseConstantsGenerator
                 appendLine("return new K8sCrdSchemaUpdateContext(");
                 try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
                 {
-                    appendLine("%s::databaseTableToYamlLocation", clazzName);
+                    appendLine("%s::databaseTableToYamlLocation,", clazzName);
+                    appendLine("%s::databaseTableToYamlName,", clazzName);
+                    appendLine("\"%s\"", asYamlVersionString(currentVersionRef));
                 }
                 appendLine(");");
             }

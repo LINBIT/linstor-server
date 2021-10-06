@@ -852,6 +852,101 @@ public class GenCrdV1_15_0
         }
     }
 
+    public static String databaseTableToYamlName(DatabaseTable dbTable)
+    {
+        switch(dbTable.getName())
+        {
+            case "FILES":
+                return "files";
+            case "KEY_VALUE_STORE":
+                return "keyvaluestore";
+            case "LAYER_BCACHE_VOLUMES":
+                return "layerbcachevolumes";
+            case "LAYER_CACHE_VOLUMES":
+                return "layercachevolumes";
+            case "LAYER_DRBD_RESOURCES":
+                return "layerdrbdresources";
+            case "LAYER_DRBD_RESOURCE_DEFINITIONS":
+                return "layerdrbdresourcedefinitions";
+            case "LAYER_DRBD_VOLUMES":
+                return "layerdrbdvolumes";
+            case "LAYER_DRBD_VOLUME_DEFINITIONS":
+                return "layerdrbdvolumedefinitions";
+            case "LAYER_LUKS_VOLUMES":
+                return "layerluksvolumes";
+            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
+                return "layeropenflexresourcedefinitions";
+            case "LAYER_OPENFLEX_VOLUMES":
+                return "layeropenflexvolumes";
+            case "LAYER_RESOURCE_IDS":
+                return "layerresourceids";
+            case "LAYER_STORAGE_VOLUMES":
+                return "layerstoragevolumes";
+            case "LAYER_WRITECACHE_VOLUMES":
+                return "layerwritecachevolumes";
+            case "LINSTOR_REMOTES":
+                return "linstorremotes";
+            case "NODES":
+                return "nodes";
+            case "NODE_CONNECTIONS":
+                return "nodeconnections";
+            case "NODE_NET_INTERFACES":
+                return "nodenetinterfaces";
+            case "NODE_STOR_POOL":
+                return "nodestorpool";
+            case "PROPS_CONTAINERS":
+                return "propscontainers";
+            case "RESOURCES":
+                return "resources";
+            case "RESOURCE_CONNECTIONS":
+                return "resourceconnections";
+            case "RESOURCE_DEFINITIONS":
+                return "resourcedefinitions";
+            case "RESOURCE_GROUPS":
+                return "resourcegroups";
+            case "S3_REMOTES":
+                return "s3remotes";
+            case "SATELLITES_CAPACITY":
+                return "satellitescapacity";
+            case "SEC_ACCESS_TYPES":
+                return "secaccesstypes";
+            case "SEC_ACL_MAP":
+                return "secaclmap";
+            case "SEC_CONFIGURATION":
+                return "secconfiguration";
+            case "SEC_DFLT_ROLES":
+                return "secdfltroles";
+            case "SEC_IDENTITIES":
+                return "secidentities";
+            case "SEC_ID_ROLE_MAP":
+                return "secidrolemap";
+            case "SEC_OBJECT_PROTECTION":
+                return "secobjectprotection";
+            case "SEC_ROLES":
+                return "secroles";
+            case "SEC_TYPES":
+                return "sectypes";
+            case "SEC_TYPE_RULES":
+                return "sectyperules";
+            case "SPACE_HISTORY":
+                return "spacehistory";
+            case "STOR_POOL_DEFINITIONS":
+                return "storpooldefinitions";
+            case "TRACKING_DATE":
+                return "trackingdate";
+            case "VOLUMES":
+                return "volumes";
+            case "VOLUME_CONNECTIONS":
+                return "volumeconnections";
+            case "VOLUME_DEFINITIONS":
+                return "volumedefinitions";
+            case "VOLUME_GROUPS":
+                return "volumegroups";
+            default:
+                throw new ImplementationError("Unknown database table: " + dbTable.getName());
+        }
+    }
+
     public static BaseControllerK8sCrdTransactionMgrContext createTxMgrContext()
     {
         return new BaseControllerK8sCrdTransactionMgrContext(
@@ -863,7 +958,9 @@ public class GenCrdV1_15_0
     public static K8sCrdSchemaUpdateContext createSchemaUpdateContext()
     {
         return new K8sCrdSchemaUpdateContext(
-            GenCrdV1_15_0::databaseTableToYamlLocation
+            GenCrdV1_15_0::databaseTableToYamlLocation,
+            GenCrdV1_15_0::databaseTableToYamlName,
+            "v1-15-0"
         );
     }
 
