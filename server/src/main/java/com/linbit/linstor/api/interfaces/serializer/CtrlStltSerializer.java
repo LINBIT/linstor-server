@@ -137,7 +137,8 @@ public interface CtrlStltSerializer extends CommonSerializer
             int vlmNr,
             boolean successRef
         );
-        CtrlStltSerializerBuilder notifyBackupShipped(Snapshot snap, boolean successRef);
+
+        CtrlStltSerializerBuilder notifyBackupShipped(Snapshot snap, boolean successRef, List<Integer> ports);
 
         CtrlStltSerializerBuilder notifyBackupShippingId(
             Snapshot snap,

@@ -71,6 +71,8 @@ import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -101,6 +103,7 @@ import com.linbit.utils.StringUtils;
 import static com.linbit.linstor.backupshipping.S3Consts.META_SUFFIX;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -171,6 +174,7 @@ public class CtrlBackupApiCallHandler
     private final ResourceDefinitionRepository rscDfnRepo;
     private final Autoplacer autoplacer;
     private final CtrlStltSerializer stltComSerializer;
+    private final DynamicNumberPool snapshotShippingPortPool;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -200,7 +204,8 @@ public class CtrlBackupApiCallHandler
         SystemConfProtectionRepository sysCfgRepoRef,
         ResourceDefinitionRepository rscDfnRepoRef,
         Autoplacer autoplacerRef,
-        CtrlStltSerializer ctrlComSerializerRef
+        CtrlStltSerializer ctrlComSerializerRef,
+        @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -230,6 +235,7 @@ public class CtrlBackupApiCallHandler
         rscDfnRepo = rscDfnRepoRef;
         autoplacer = autoplacerRef;
         stltComSerializer = ctrlComSerializerRef;
+        snapshotShippingPortPool = snapshotShippingPortPoolRef;
     }
 
     public Flux<ApiCallRc> createBackup(
@@ -3298,7 +3304,12 @@ public class CtrlBackupApiCallHandler
         }
     }
 
-    public Flux<ApiCallRc> shippingReceived(String rscNameRef, String snapNameRef, boolean successRef)
+    public Flux<ApiCallRc> shippingReceived(
+        String rscNameRef,
+        String snapNameRef,
+        List<Integer> portsRef,
+        boolean successRef
+    )
     {
         return scopeRunner
             .fluxInTransactionalScope(
@@ -3306,11 +3317,16 @@ public class CtrlBackupApiCallHandler
                 lockGuardFactory.create()
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP).buildDeferred(),
-                () -> shippingReceivedInTransaction(rscNameRef, snapNameRef, successRef)
+                () -> shippingReceivedInTransaction(rscNameRef, snapNameRef, portsRef, successRef)
             );
     }
 
-    private Flux<ApiCallRc> shippingReceivedInTransaction(String rscNameRef, String snapNameRef, boolean successRef)
+    private Flux<ApiCallRc> shippingReceivedInTransaction(
+        String rscNameRef,
+        String snapNameRef,
+        List<Integer> portsRef,
+        boolean successRef
+    )
     {
         errorReporter.logInfo(
             "Backup receiving for snapshot %s of resource %s %s", snapNameRef, rscNameRef,
@@ -3334,6 +3350,13 @@ public class CtrlBackupApiCallHandler
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             snap.getFlags().disableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
+            for (Integer port : portsRef)
+            {
+                if (port != null)
+                {
+                    snapshotShippingPortPool.deallocate(port);
+                }
+            }
 
             boolean keepGoing;
 
@@ -3471,7 +3494,12 @@ public class CtrlBackupApiCallHandler
         }
     }
 
-    public Flux<ApiCallRc> shippingSent(String rscNameRef, String snapNameRef, boolean successRef)
+    public Flux<ApiCallRc> shippingSent(
+        String rscNameRef,
+        String snapNameRef,
+        List<Integer> ignored,
+        boolean successRef
+    )
     {
         return scopeRunner
             .fluxInTransactionalScope(

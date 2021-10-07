@@ -871,7 +871,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     @Override
     public CtrlStltSerializerBuilder notifyBackupShipped(
         Snapshot snapRef,
-        boolean success
+        boolean success,
+        List<Integer> ports
     )
     {
         try
@@ -879,6 +880,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             MsgIntBackupShipped.newBuilder()
                 .setRscName(snapRef.getResourceName().displayValue)
                 .setSnapName(snapRef.getSnapshotName().displayValue)
+                .addAllPorts(ports)
                 .setSuccess(success)
                 .build()
                 .writeDelimitedTo(baos);

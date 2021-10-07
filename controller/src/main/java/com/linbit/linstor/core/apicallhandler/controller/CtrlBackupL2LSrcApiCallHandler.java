@@ -222,7 +222,7 @@ public class CtrlBackupL2LSrcApiCallHandler
          * As this is an optimistic approach, we will have to delete our just created snapshot, -definition, etc if the
          * destination cluster refuses the shipment
          *
-         * If the destination cluster agrees, the answer also contains IP and port of the already waiting receiver. All
+         * If the destination cluster agrees, the answer also contains IP and ports of the already waiting receiver. All
          * that is left to do on the source side is to set those IP / port into the previously create StltRemote object,
          * update the satellite, set the corresponding "you may start sending" flag and update the satellite again.
          */

@@ -8,4 +8,5 @@ message MsgIntBackupShipped
     string rsc_name = 1;
     string snap_name = 2;
     bool success = 3;
+    repeated sint32 ports = 4;
 }

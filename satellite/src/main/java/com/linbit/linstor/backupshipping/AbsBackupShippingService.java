@@ -23,6 +23,7 @@ import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Remote.RemoteType;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.StltRemote;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -293,10 +294,6 @@ public abstract class AbsBackupShippingService implements SystemService
                                             "KEY_BACKUP_TARGET_REMOTE is not set for the backup-shipping of " +
                                                 snap.getSnapshotName()
                                         );
-                                        // remoteName = snap.getProps(accCtx).getProp(
-                                        // InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                                        // ApiConsts.NAMESPC_BACKUP_SHIPPING
-                                        // );
                                     }
                                     controllerPeerConnector.getControllerPeer().sendMessage(
                                         interComSerializer
@@ -334,7 +331,7 @@ public abstract class AbsBackupShippingService implements SystemService
         AbsStorageVlmData<Snapshot> basedOnSnapVlmData,
         AbsStorageVlmData<Snapshot> snapVlmData
     )
-        throws StorageException, InvalidNameException
+        throws StorageException, InvalidNameException, AccessDeniedException
     {
         ensureRemoteType(remote);
 
@@ -350,6 +347,17 @@ public abstract class AbsBackupShippingService implements SystemService
                 {
                     info = new ShippingInfo();
                     shippingInfoMap.put(snap, info);
+                }
+                if (remote instanceof StltRemote)
+                {
+                    if (info.ports == null)
+                    {
+                        info.ports = new ArrayList<>();
+                    }
+                    info.ports.add(
+                        ((StltRemote) remote).getPorts(accCtx)
+                            .get(snapVlmData.getVlmNr() + snapVlmData.getRscLayerObject().getResourceNameSuffix())
+                    );
                 }
                 info.snapVlmDataInfoMap.put(
                     snapVlmData,
@@ -448,7 +456,13 @@ public abstract class AbsBackupShippingService implements SystemService
                         preCtrlNotifyBackupShipped(successRef, restoring, snap, shippingInfo);
 
                         controllerPeerConnector.getControllerPeer().sendMessage(
-                            interComSerializer.onewayBuilder(internalApiName).notifyBackupShipped(snap, success).build()
+                            interComSerializer.onewayBuilder(internalApiName)
+                                .notifyBackupShipped(
+                                    snap,
+                                    success,
+                                    shippingInfo.ports == null ? new ArrayList<>() : shippingInfo.ports
+                                )
+                                .build()
                         );
                     }
 
@@ -700,6 +714,7 @@ public abstract class AbsBackupShippingService implements SystemService
         private boolean isStarted = false;
         Map<AbsStorageVlmData<Snapshot>, SnapVlmDataInfo> snapVlmDataInfoMap = new HashMap<>();
         Remote remote = null;
+        List<Integer> ports;
 
         String s3MetaKey;
         String basedOnS3MetaKey;
