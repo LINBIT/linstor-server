@@ -85,7 +85,7 @@ import java.util.stream.Collectors;
 public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmData<Resource>, LAYER_SNAP_DATA extends AbsStorageVlmData<Snapshot>>
     implements DeviceProvider
 {
-    private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 500;
+    private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 5000;
     public static final long SIZE_OF_NOT_FOUND_STOR_POOL = -1;
 
     private static final String CLONE_PREFIX = "CF_";
