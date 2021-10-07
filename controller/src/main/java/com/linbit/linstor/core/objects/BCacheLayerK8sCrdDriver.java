@@ -225,7 +225,7 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
                 bcacheVlmDataRef.getVlmNr().value,
                 extStorPool.getNode().getName().value,
                 extStorPool.getName().value,
-                bcacheVlmDataRef.getDeviceUuid().toString()
+                bcacheVlmDataRef.getDeviceUuid() == null ? null : bcacheVlmDataRef.getDeviceUuid().toString()
             )
         );
     }
