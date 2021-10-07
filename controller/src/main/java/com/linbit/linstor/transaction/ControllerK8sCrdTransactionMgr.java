@@ -180,6 +180,12 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     public void rollback() throws TransactionException
     {
         ControllerK8sCrdRollbackMgr.rollbackIfNeeded(currentTransaction, specToCrd);
+
+        transactionObjectCollection.rollbackAll();
+
+        currentTransaction = createNewTx();
+
+        clearTransactionObjects();
     }
 
     @Override
