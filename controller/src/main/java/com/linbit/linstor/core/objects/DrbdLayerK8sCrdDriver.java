@@ -801,7 +801,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
             GeneratedDatabaseTables.LAYER_DRBD_RESOURCE_DEFINITIONS,
             GenCrdCurrent.createLayerDrbdResourceDefinitions(
                 drbdRscDfnData.getResourceName().value,
-                drbdRscDfnData.getResourceName().displayValue,
+                drbdRscDfnData.getRscNameSuffix(),
                 drbdRscDfnData.getSnapshotName() == null ? null : drbdRscDfnData.getSnapshotName().value,
                 0,
                 0,
