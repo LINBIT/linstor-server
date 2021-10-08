@@ -35,6 +35,8 @@
         </triggeringPolicy>
     </appender>
 
+    <logger name="okhttp3" class="okhttp3.logging" level="OFF" />
+
     <logger name="LINSTOR/Controller" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
         <!-- <appender-ref ref="FILE" /> -->
