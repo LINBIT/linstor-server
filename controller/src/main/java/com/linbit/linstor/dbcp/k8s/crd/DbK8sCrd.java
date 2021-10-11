@@ -21,10 +21,10 @@ import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -153,8 +153,10 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
                             migration.getDescription()
                     );
                 }
-                migrations.put(version - 1, migration);
+                migrations.put(version, migration);
             }
+            // also copy version 1 to 0, so we can start the loop at 0
+            migrations.put(0, migrations.get(1));
 
             checkIfAllMigrationsLinked(migrations);
         }
@@ -169,15 +171,8 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             while (dbVersion <= highestKey)
             {
                 BaseK8sCrdMigration migration = migrations.get(dbVersion);
-                if (migration == null)
-                {
-                    throw new ImplementationError(
-                        "missing migration from dbVersion " +
-                            (dbVersion - 1) + " -> " + dbVersion
-                    );
-                }
                 errorReporter.logDebug(
-                    "Migration DB: " + dbVersion + " -> " + (dbVersion + 1) + ": " + migration.getDescription()
+                    "Migration DB: " + dbVersion + " -> " + migration.getVersion() + ": " + migration.getDescription()
                 );
                 migration.migrate(k8sDb);
 
@@ -197,7 +192,7 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
 
     private void checkIfAllMigrationsLinked(TreeMap<Integer, BaseK8sCrdMigration> migrationsRef)
     {
-        List<BaseK8sCrdMigration> unreachableMigrations = new ArrayList<>(migrationsRef.values());
+        Set<BaseK8sCrdMigration> unreachableMigrations = new HashSet<>(migrationsRef.values());
         BaseK8sCrdMigration current = migrationsRef.get(0);
         while (current != null)
         {

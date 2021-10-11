@@ -124,6 +124,7 @@ public class GenerateSql {
             DatabaseConstantsGenerator.DFLT_K8S_CRD_CLASS_NAME_FORMAT,
             crdVersion,
             loadAllCrdVersionNumbers(
+                gitRoot,
                 DatabaseConstantsGenerator.getYamlLocation("", "")
             )
         );
@@ -260,9 +261,10 @@ public class GenerateSql {
         return checksum;
     }
 
-    private static Set<String> loadAllCrdVersionNumbers(String yamlLocationRef) throws IOException
+    private static Set<String> loadAllCrdVersionNumbers(String gitRoot, String yamlLocationRef) throws IOException
     {
-        Path path = Paths.get(yamlLocationRef).getParent();
+        Path path = Paths.get(gitRoot, "controller", "generated-resources").resolve(Paths.get(".", yamlLocationRef))
+            .normalize().getParent();
         Set<String> ret;
         if (Files.isDirectory(path))
         {

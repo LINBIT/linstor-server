@@ -1,14 +1,19 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
+import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
+import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.io.FileNotFoundException;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
@@ -26,12 +31,44 @@ public abstract class BaseK8sCrdMigration
 {
     private final int version;
     private final String description;
+    private final BaseControllerK8sCrdTransactionMgrContext upgradeToTxMgrContext;
+    private final K8sCrdSchemaUpdateContext upgradeToSchemaUpdateCtx;
+    private final K8sCrdSchemaUpdateContext upgradeFromSchemaUpdateCtx;
 
-    public BaseK8sCrdMigration()
+    private ControllerK8sCrdTransactionMgr txMgr;
+    private KubernetesClient k8sClient;
+
+    protected K8sCrdTransaction tx;
+
+    public BaseK8sCrdMigration(
+        K8sCrdSchemaUpdateContext upgradeFromSchemaUpdateCtxRef,
+        BaseControllerK8sCrdTransactionMgrContext upgradeToTxMgrContextRef,
+        K8sCrdSchemaUpdateContext upgradeToSchemaUpdateCtxRef
+    )
     {
         K8sCrdMigration k8sMigAnnot = this.getClass().getAnnotation(K8sCrdMigration.class);
         version = k8sMigAnnot.version();
         description = k8sMigAnnot.description();
+
+        if (description.isEmpty())
+        {
+            throw new ImplementationError("Description must not be empty");
+        }
+        if (version == -1)
+        {
+            throw new ImplementationError("Version must not be -1");
+        }
+
+        if (version != 1)
+        {
+            upgradeFromSchemaUpdateCtx = Objects.requireNonNull(upgradeToSchemaUpdateCtxRef);
+        }
+        else
+        {
+            upgradeFromSchemaUpdateCtx = upgradeFromSchemaUpdateCtxRef;
+        }
+        upgradeToTxMgrContext = Objects.requireNonNull(upgradeToTxMgrContextRef);
+        upgradeToSchemaUpdateCtx = Objects.requireNonNull(upgradeToSchemaUpdateCtxRef);
     }
 
     public int getVersion()
@@ -49,12 +86,17 @@ public abstract class BaseK8sCrdMigration
         return description;
     }
 
-    protected void updateCrdSchemaForAllTables(
-        KubernetesClient k8sClient,
-        K8sCrdSchemaUpdateContext updateCtx
-    )
+
+    protected void updateCrdSchemaForAllTables() throws FileNotFoundException, DatabaseException
+    {
+        updateCrdSchemaForAllTables(upgradeToSchemaUpdateCtx);
+    }
+
+    protected void updateCrdSchemaForAllTables(K8sCrdSchemaUpdateContext upgradeToYamlFileLocationsRef)
         throws FileNotFoundException, DatabaseException
     {
+        K8sCrdSchemaUpdateContext updateCtx = upgradeToYamlFileLocationsRef;
+
         Function<DatabaseTable, String> dbTableToYamlLocation = updateCtx.getGetYamlLocations();
         Function<DatabaseTable, String> yamlKindNameFct = updateCtx.getGetYamlKindNameFunction();
         String targetVersion = updateCtx.getTargetVersion();
@@ -148,5 +190,29 @@ public abstract class BaseK8sCrdMigration
         k8sApi.createOrReplace(crd);
     }
 
-    public abstract void migrate(ControllerK8sCrdDatabase k8sDbRef) throws Exception;
+    public void migrate(ControllerK8sCrdDatabase k8sDbRef) throws Exception
+    {
+        txMgr = new ControllerK8sCrdTransactionMgr(
+            k8sDbRef,
+            upgradeToTxMgrContext
+        );
+        k8sClient = k8sDbRef.getClient();
+        tx = txMgr.getTransaction();
+
+        try
+        {
+            migrateImpl();
+            txMgr.commit();
+        }
+        catch (Exception exc)
+        {
+            txMgr.rollback();
+
+            // not working right now
+            // updateCrdSchemaForAllTables(upgradeFromSchemaUpdateCtx);
+            throw exc;
+        }
+    }
+
+    public abstract void migrateImpl() throws Exception;
 }

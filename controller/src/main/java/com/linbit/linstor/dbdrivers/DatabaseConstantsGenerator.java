@@ -6,6 +6,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1140,14 +1141,14 @@ public final class DatabaseConstantsGenerator
         JsonNode versionsObj = null;
         try
         {
-            File file = new File(yamlLocation);
+            File file = new File(getClass().getResource(yamlLocation).toURI());
             if (file.exists())
             {
                 // System.out.println("loading: " + file);
                 versionsObj = YAML_MAPPER.readTree(file).get("spec").get("versions");
             }
         }
-        catch (IOException exc)
+        catch (IOException | URISyntaxException exc)
         {
             throw new ImplementationError("Failed read old yaml file", exc);
         }
