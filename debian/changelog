@@ -1,3 +1,62 @@
+linstor-server (1.16.0~rc.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gitlab: build 1.99.0.latest on master push
+  * rest-openapi-doc: fix incorrect method type
+  * rest-api-doc: fix SnapshotShippingStatus enums
+  * rest-api-doc: add missing connection_status enums
+  * absstorprov: increase device created timeout to 5000ms
+  * gitlab: run variant crd on jenkins
+  * k8s-crd: fix yaml resource paths
+  * K8s,Migration: Wait until all CRDs are updated
+  * logback: disable okhttp3 logging
+  * k8scrdmigration: use txFrom and txTo
+  * rest-gen: create required fields as primitives
+  * rest-api: add stats endpoints for nodes,rscdfn,rscgrp,rsc,storpool,errors
+
+  [ Robert Altnoeder ]
+  * Fix NullPointerException & some small code cleanup
+  * Fix for incorrect fix of NullPointerException in GrizzlyHttpService
+
+  [ Roland Kammerer ]
+  * containers: switch to ubi8
+  * containers: unset LC_ALL for client
+
+  [ Gabor Hernadi ]
+  * RscGrp,adjust,adjustall: Allow empty jsonData
+  * RscLayerIdDriver: Also log nodeName
+  * RscGrp.adjustAll: run the adjustAll-flux
+  * DRBD: become primary for fs-creation
+  * SPDK,snapshot First version
+  * RscStorLayerHelper: Fixed possible NPE
+  * RemoteSPDK: Allow snapshots
+  * Stlt,S3Remote: Actually delete the S3Remote if flag is set
+  * ExtFiles: Add whitelisting
+  * StltExtFileHandler: removed unused variables
+  * StltExtFileHandler: prevent NPE
+  * DB: persist Cache-,Writecache- and BCacheVlmData
+  * Gen: generating classes and yaml files for K8s CRD
+  * ETCD: Fixed neglected PK when loading LAYER* data
+  * SQL,ETCD: Pulled up getId methods to interface
+  * ETCD,Luks: Small cleanup
+  * DB: Fixed some wrong type mapping
+  * DB: Add fetchForLoad and clearCache methods to all layer drivers
+  * ETCD,DRBD: Small cleanup
+  * TxMgrModule: throw implError on unknown DB type
+  * CRD: First version of driver
+  * CRD: Removed unnecessary generic Rollback type
+  * K8s,Drbd: Fixed incorrect PK
+  * K8s,Tx: Also rollback LinstorTxObjects
+  * K8s,BCache: Added missing null check
+  * CRD: Fixed minor migration issues
+  * Autoplacer: Enable DummySecurityManager
+  * DummySecMgr: Deleted deprecated methods
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * openapi: fix description of make-available
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 12 Oct 2021 11:55:55 +0000
+
 linstor-server (1.15.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

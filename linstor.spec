@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.15.0
+Version: 1.16.0~rc.1
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -138,6 +138,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Tue Oct 12 2021 Rene Peinthor <rene.peinthor@linbit.com> 1.16.0~rc.1-1
+- New upstream release. Kubernetes CRD support,  Bug fixes
+
 * Thu Sep 23 2021 Rene Peinthor <rene.peinthor@linbit.com> 1.15.0-1
 - New upstream release. Bug fixes
 
