@@ -32,16 +32,16 @@ public abstract class BaseK8sCrdMigration
     private final int version;
     private final String description;
     private final BaseControllerK8sCrdTransactionMgrContext upgradeToTxMgrContext;
+    private final BaseControllerK8sCrdTransactionMgrContext upgradeFromTxMgrContext;
     private final K8sCrdSchemaUpdateContext upgradeToSchemaUpdateCtx;
-    private final K8sCrdSchemaUpdateContext upgradeFromSchemaUpdateCtx;
 
-    private ControllerK8sCrdTransactionMgr txMgr;
     private KubernetesClient k8sClient;
 
-    protected K8sCrdTransaction tx;
+    protected K8sCrdTransaction txFrom;
+    protected K8sCrdTransaction txTo;
 
     public BaseK8sCrdMigration(
-        K8sCrdSchemaUpdateContext upgradeFromSchemaUpdateCtxRef,
+        BaseControllerK8sCrdTransactionMgrContext upgradeFromTxMgrContextRef,
         BaseControllerK8sCrdTransactionMgrContext upgradeToTxMgrContextRef,
         K8sCrdSchemaUpdateContext upgradeToSchemaUpdateCtxRef
     )
@@ -61,11 +61,11 @@ public abstract class BaseK8sCrdMigration
 
         if (version != 1)
         {
-            upgradeFromSchemaUpdateCtx = Objects.requireNonNull(upgradeToSchemaUpdateCtxRef);
+            upgradeFromTxMgrContext = Objects.requireNonNull(upgradeFromTxMgrContextRef);
         }
         else
         {
-            upgradeFromSchemaUpdateCtx = upgradeFromSchemaUpdateCtxRef;
+            upgradeFromTxMgrContext = upgradeFromTxMgrContextRef;
         }
         upgradeToTxMgrContext = Objects.requireNonNull(upgradeToTxMgrContextRef);
         upgradeToSchemaUpdateCtx = Objects.requireNonNull(upgradeToSchemaUpdateCtxRef);
@@ -93,7 +93,7 @@ public abstract class BaseK8sCrdMigration
     }
 
     protected void updateCrdSchemaForAllTables(K8sCrdSchemaUpdateContext upgradeToYamlFileLocationsRef)
-        throws FileNotFoundException, DatabaseException
+        throws DatabaseException
     {
         K8sCrdSchemaUpdateContext updateCtx = upgradeToYamlFileLocationsRef;
 
@@ -166,7 +166,7 @@ public abstract class BaseK8sCrdMigration
                 {
                     tablesToUpdate.wait(sleep);
                 }
-                catch (InterruptedException exc)
+                catch (InterruptedException ignored)
                 {
                 }
                 sleep = maxWaitUntil - System.currentTimeMillis();
@@ -179,7 +179,7 @@ public abstract class BaseK8sCrdMigration
         }
     }
 
-    protected void createOrReplaceCrdSchema(KubernetesClient k8s, String yamlLocation) throws FileNotFoundException
+    protected void createOrReplaceCrdSchema(KubernetesClient k8s, String yamlLocation)
     {
         NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> k8sApi = k8s
             .apiextensions().v1().customResourceDefinitions();
@@ -192,24 +192,30 @@ public abstract class BaseK8sCrdMigration
 
     public void migrate(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
-        txMgr = new ControllerK8sCrdTransactionMgr(
+        k8sClient = k8sDbRef.getClient();
+        ControllerK8sCrdTransactionMgr txMgrTo = new ControllerK8sCrdTransactionMgr(
             k8sDbRef,
             upgradeToTxMgrContext
         );
-        k8sClient = k8sDbRef.getClient();
-        tx = txMgr.getTransaction();
+        txTo = txMgrTo.getTransaction();
+
+        if (upgradeFromTxMgrContext != null)
+        {
+            ControllerK8sCrdTransactionMgr txMgrFrom = new ControllerK8sCrdTransactionMgr(
+                k8sDbRef,
+                upgradeFromTxMgrContext
+            );
+            txFrom = txMgrFrom.getTransaction();
+        }
 
         try
         {
             migrateImpl();
-            txMgr.commit();
+            txMgrTo.commit();
         }
         catch (Exception exc)
         {
-            txMgr.rollback();
-
-            // not working right now
-            // updateCrdSchemaForAllTables(upgradeFromSchemaUpdateCtx);
+            txMgrTo.rollback();
             throw exc;
         }
     }

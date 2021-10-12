@@ -179,7 +179,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         String entryValue
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_CONFIGURATION,
             GenCrdV1_15_0.createSecConfiguration(entryKey, entryDspKey, entryValue)
         );
@@ -194,7 +194,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         boolean idLocked
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_IDENTITIES,
             GenCrdV1_15_0.createSecIdentities(identityName, identityDspName, passSalt, passHash, idEnabled, idLocked)
         );
@@ -206,7 +206,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         boolean typeEnabled
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_TYPES,
             GenCrdV1_15_0.createSecTypes(typeName, typeDspName, typeEnabled)
         );
@@ -220,7 +220,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         long rolePrivileges
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_ROLES,
             GenCrdV1_15_0.createSecRoles(roleName, roleDspName, domainName, roleEnabled, rolePrivileges)
         );
@@ -231,7 +231,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         String roleName
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_ID_ROLE_MAP,
             GenCrdV1_15_0.createSecIdRoleMap(
                 identityName,
@@ -245,7 +245,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         int accessTypeValue
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_ACCESS_TYPES,
             GenCrdV1_15_0.createSecAccessTypes(
                 accessTypeName,
@@ -260,7 +260,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         int accessType
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_TYPE_RULES,
             GenCrdV1_15_0.createSecTypeRules(
                 domainName,
@@ -275,7 +275,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         String roleName
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_DFLT_ROLES,
             GenCrdV1_15_0.createSecDfltRoles(
                 identityName,
@@ -291,7 +291,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         String securityTypeName
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_OBJECT_PROTECTION,
             GenCrdV1_15_0.createSecObjectProtection(
                 objectPath,
@@ -308,7 +308,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         int accessType
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.SEC_ACL_MAP,
             GenCrdV1_15_0.createSecAclMap(
                 objectPath,
@@ -324,7 +324,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         String poolDspName
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.STOR_POOL_DEFINITIONS,
             GenCrdV1_15_0.createStorPoolDefinitions(
                 uuid,
@@ -352,7 +352,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         Boolean disklessOnRemaining
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.RESOURCE_GROUPS,
             GenCrdV1_15_0.createResourceGroups(
                 uuid,
@@ -380,7 +380,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         String propValue
     )
     {
-        tx.update(
+        txTo.update(
             GeneratedDatabaseTables.PROPS_CONTAINERS,
             GenCrdV1_15_0.createPropsContainers(
                 propsInstance,
