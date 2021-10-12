@@ -37,6 +37,8 @@ public class DrbdVersion
 
     public static final String KEY_VSN_CODE = "DRBD_KERNEL_VERSION_CODE";
 
+    private static final Object SYNC_OBJ = new Object();
+
     private static final int HEXADECIMAL = 16;
     public static final int SHIFT_MAJOR_VSN = 16;
     public static final int SHIFT_MINOR_VSN = 8;
@@ -73,62 +75,71 @@ public class DrbdVersion
      */
     public void checkVersion()
     {
-        ExtCmd cmd = new ExtCmd(timerRef, errorLogRef);
-        String value = null;
-        try
+        synchronized (SYNC_OBJ)
         {
-            restoreDefaults();
-            OutputData cmdData = cmd.exec(VSN_QUERY_COMMAND);
-            try (BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdData.getStdoutStream())))
+            ExtCmd cmd = new ExtCmd(timerRef, errorLogRef);
+            String value = null;
+            try
             {
-                String key = KEY_VSN_CODE + "=";
-                for (String vsnLine = vsnReader.readLine(); vsnLine != null; vsnLine = vsnReader.readLine())
+                restoreDefaults();
+                OutputData cmdData = cmd.exec(VSN_QUERY_COMMAND);
+                try (BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdData.getStdoutStream())))
                 {
-                    if (vsnLine.startsWith(key))
+                    String key = KEY_VSN_CODE + "=";
+                    for (String vsnLine = vsnReader.readLine(); vsnLine != null; vsnLine = vsnReader.readLine())
                     {
-                        value = vsnLine.substring(key.length());
-                        break;
+                        if (vsnLine.startsWith(key))
+                        {
+                            value = vsnLine.substring(key.length());
+                            break;
+                        }
                     }
-                }
 
-                if (value != null)
-                {
-                    if (value.startsWith("0x"))
+                    if (value != null)
                     {
-                        value = value.substring(2);
-                    }
-                    int vsnCode = Integer.parseInt(value, HEXADECIMAL);
-                    majorVsn = (short) ((vsnCode >>> SHIFT_MAJOR_VSN) & MASK_VSN_ELEM);
-                    minorVsn = (short) ((vsnCode >>> SHIFT_MINOR_VSN) & MASK_VSN_ELEM);
-                    patchLvl = (short) (vsnCode & MASK_VSN_ELEM);
+                        if (value.startsWith("0x"))
+                        {
+                            value = value.substring(2);
+                        }
+                        int vsnCode = Integer.parseInt(value, HEXADECIMAL);
+                        majorVsn = (short) ((vsnCode >>> SHIFT_MAJOR_VSN) & MASK_VSN_ELEM);
+                        minorVsn = (short) ((vsnCode >>> SHIFT_MINOR_VSN) & MASK_VSN_ELEM);
+                        patchLvl = (short) (vsnCode & MASK_VSN_ELEM);
 
-                    if (!hasDrbd9())
-                    {
-                        notSupportedReasons.add(
-                            "DRBD version has to be >= 9. Current DRBD version: " +
-                                majorVsn + "." + minorVsn + "." + patchLvl
-                        );
+                        if (!hasDrbd9())
+                        {
+                            notSupportedReasons.add(
+                                "DRBD version has to be >= 9. Current DRBD version: " +
+                                    majorVsn + "." + minorVsn + "." + patchLvl
+                            );
+                        }
+                        else
+                        {
+                            SYNC_OBJ.notifyAll();
+                        }
                     }
                 }
             }
-        }
-        catch (NumberFormatException nfExc)
-        {
-            errorLogRef.reportError(
-                Level.ERROR,
-                new LinStorException(
-                    LOG_TXT_CHECK_FAILED,
-                    ERR_DSC_CHECK_FAILED,
-                    "The value of the " + KEY_VSN_CODE + " field in the output of the " + DRBD_UTILS_CMD +
+            catch (NumberFormatException nfExc)
+            {
+                errorLogRef.reportError(
+                    Level.ERROR,
+                    new LinStorException(
+                        LOG_TXT_CHECK_FAILED,
+                        ERR_DSC_CHECK_FAILED,
+                        "The value of the " + KEY_VSN_CODE + " field in the output of the " + DRBD_UTILS_CMD +
                             "utility is unparsable",
-                    ERR_CORR_TXT,
-                    "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
-                    nfExc));
-        }
-        catch (IOException | ChildProcessTimeoutException exc)
-        {
-            errorLogRef.logWarning("Unable to check drbdadm version. '" + exc.getMessage() + "'");
-            notSupportedReasons.add(exc.getClass().getSimpleName() + " occurred when checking DRBD version");
+                        ERR_CORR_TXT,
+                        "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
+                        nfExc
+                    )
+                );
+            }
+            catch (IOException | ChildProcessTimeoutException exc)
+            {
+                errorLogRef.logWarning("Unable to check drbdadm version. '" + exc.getMessage() + "'");
+                notSupportedReasons.add(exc.getClass().getSimpleName() + " occurred when checking DRBD version");
+            }
         }
     }
 
@@ -226,6 +237,22 @@ public class DrbdVersion
         minorVsn = UNDETERMINED_VERSION;
         patchLvl = UNDETERMINED_VERSION;
         notSupportedReasons.clear();
+    }
+
+    /**
+     * Waits (blocks) until {@link #hasDrbd9()} returns true
+     *
+     * @throws InterruptedException
+     */
+    public void waitUntilDrbd9IsAvailable() throws InterruptedException
+    {
+        synchronized (SYNC_OBJ)
+        {
+            if (!hasDrbd9())
+            {
+                SYNC_OBJ.wait();
+            }
+        }
     }
 
     public List<String> getNotSupportedReasons()

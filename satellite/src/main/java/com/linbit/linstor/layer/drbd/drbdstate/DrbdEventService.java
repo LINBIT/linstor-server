@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
+import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.DaemonHandler;
 import com.linbit.extproc.OutputProxy.EOFEvent;
 import com.linbit.extproc.OutputProxy.Event;
@@ -51,6 +52,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     private DaemonHandler demonHandler;
     private final ErrorReporter errorReporter;
     private final DrbdStateTracker tracker;
+    private final DrbdVersion drbdVersion;
 
     static
     {
@@ -68,7 +70,8 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     public DrbdEventService(
         final ErrorReporter errorReporterRef,
         final DrbdStateTracker trackerRef,
-        final CoreModule.ResourceDefinitionMap rscDfnMap
+        final CoreModule.ResourceDefinitionMap rscDfnMap,
+        final DrbdVersion drbdVersionRef
     )
     {
         try
@@ -79,6 +82,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
             running = false;
             errorReporter = errorReporterRef;
             tracker = trackerRef;
+            drbdVersion = drbdVersionRef;
             eventsMonitor = new DrbdEventsMonitor(trackerRef, errorReporterRef, rscDfnMap);
         }
         catch (InvalidNameException invalidNameExc)
@@ -161,16 +165,17 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
         errorReporter.logTrace("Stopping DRBD 'events2' demonHandler.");
         demonHandler.stop(true);
         eventsMonitor.reinitializing();
-        if (timeout <= 0)
-        {
-            errorReporter.logTrace("Restarting DRBD 'events2' now");
-        }
-        else
-        {
-            errorReporter.logTrace("Restarting DRBD 'events2' in " + timeout + "ms");
-        }
         try
         {
+            drbdVersion.waitUntilDrbd9IsAvailable();
+            if (timeout <= 0)
+            {
+                errorReporter.logTrace("Restarting DRBD 'events2' now");
+            }
+            else
+            {
+                errorReporter.logTrace("Restarting DRBD 'events2' in " + timeout + "ms");
+            }
             if (timeout > 0)
             {
                 Thread.sleep(timeout);

@@ -116,7 +116,7 @@ public final class Satellite
     private final StltCoreObjProtInitializer stltCoreObjProtInitializer;
     private final StltConfig stltCfg;
 
-
+    private final DrbdVersion vsnCheck;
 
     @Inject
     public Satellite(
@@ -138,7 +138,8 @@ public final class Satellite
         SatelliteNetComInitializer satelliteNetComInitializerRef,
         StltCoreObjProtInitializer stltCoreObjProtInitializerRef,
         StltConfig stltCfgRef,
-        CloneService cloneServiceRef
+        CloneService cloneServiceRef,
+        DrbdVersion drbdVersionRef
     )
     {
         errorReporter = errorReporterRef;
@@ -158,6 +159,7 @@ public final class Satellite
         stltCoreObjProtInitializer = stltCoreObjProtInitializerRef;
         stltCfg = stltCfgRef;
         cloneService = cloneServiceRef;
+        vsnCheck = drbdVersionRef;
     }
 
     public void start()
@@ -212,12 +214,8 @@ public final class Satellite
                 errorReporter.reportError(ioExc);
             }
 
-            DrbdVersion vsnCheck = new DrbdVersion(timerEventSvc, errorReporter);
             vsnCheck.checkVersion();
-            if (vsnCheck.hasDrbd9())
-            {
-                ensureDrbdConfigSetup();
-            }
+            ensureDrbdConfigSetup();
 
             AccessContext initCtx = sysCtx.clone();
             initCtx.getEffectivePrivs().enablePrivileges(Privilege.PRIV_SYS_ALL);
@@ -229,11 +227,8 @@ public final class Satellite
 
             startOrderlist.add(new ServiceStarter(timerEventSvc));
             startOrderlist.add(new ServiceStarter(fsWatchSvc));
-            if (vsnCheck.hasDrbd9())
-            {
-                startOrderlist.add(new ServiceStarter(drbdEventSvc));
-                startOrderlist.add(new ServiceStarter(drbdEventPublisher));
-            }
+            startOrderlist.add(new ServiceStarter(drbdEventSvc));
+            startOrderlist.add(new ServiceStarter(drbdEventPublisher));
             startOrderlist.add(new ServiceStarter(snapShipSvc));
             for (AbsBackupShippingService absBackupSvc : backShipMgr.getAllServices())
             {
