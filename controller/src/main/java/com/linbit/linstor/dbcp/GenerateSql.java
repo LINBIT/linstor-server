@@ -203,13 +203,13 @@ public class GenerateSql {
                     {
                         throw new ImplementationError(exc);
                     }
-                    String checksumOld = getCheckSum(replaceVersionUID(oldCode));
-                    String checksumNew = getCheckSum(replaceVersionUID(generatedCrdJavaClass.javaCode));
+                    String sanitizedOldCode = replaceVersionUID(oldCode);
+                    String sanitizedNewCode = replaceVersionUID(generatedCrdJavaClass.javaCode);
 
                     // System.out.println("old checksum: " + checksumOld);
                     // System.out.println("new checksum: " + checksumNew);
 
-                    ret = !checksumNew.equals(checksumOld);
+                    ret = !sanitizedNewCode.equals(sanitizedOldCode);
                 }
                 break;
             }

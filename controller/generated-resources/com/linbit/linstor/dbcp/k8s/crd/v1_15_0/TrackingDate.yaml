@@ -17,8 +17,8 @@ spec:
             type: "object"
             properties:
               entry_date:
-                type: "string"
-                format: "date-time"
+                type: "integer"
+                format: "int64"
   scope: "Cluster"
   names:
     plural: "trackingdate"

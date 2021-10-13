@@ -1,11 +1,5 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.Map;
-import java.util.TreeMap;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
@@ -14,6 +8,13 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 import com.linbit.utils.ExceptionThrowingFunction;
+
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+import java.util.TreeMap;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -29,7 +30,7 @@ public class GenCrdCurrent
 {
     public static final String VERSION = "v1-15-0";
     public static final String GROUP = "internal.linstor.linbit.com";
-
+    private static final SimpleDateFormat RFC3339 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
 
     private GenCrdCurrent()
     {
@@ -1100,6 +1101,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -1225,6 +1227,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -1369,6 +1372,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -1513,6 +1517,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -1665,6 +1670,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -1846,6 +1852,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -1981,6 +1988,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -2127,6 +2135,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -2253,6 +2262,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -2388,6 +2398,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -2523,6 +2534,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -2693,6 +2705,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -2837,6 +2850,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -2972,6 +2986,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -3133,6 +3148,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -3276,6 +3292,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -3402,6 +3419,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -3564,6 +3582,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -3726,6 +3745,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -3852,6 +3872,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -4006,6 +4027,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -4170,6 +4192,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -4359,6 +4382,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -4592,6 +4616,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -4771,6 +4796,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -4896,6 +4922,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -5012,6 +5039,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -5138,6 +5166,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -5263,6 +5292,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -5379,6 +5409,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -5531,6 +5562,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -5648,6 +5680,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -5782,6 +5815,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -5925,6 +5959,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -6050,6 +6085,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -6176,6 +6212,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -6217,7 +6254,7 @@ public class GenCrdCurrent
 
             formattedPrimaryKey = base32Encode(String.format(
                 SpaceHistorySpec.PK_FORMAT,
-                entryDate
+                RFC3339.format(entryDate)
             ));
         }
 
@@ -6292,6 +6329,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -6417,6 +6455,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -6442,6 +6481,7 @@ public class GenCrdCurrent
 
         @JsonIgnore private final String formattedPrimaryKey;
 
+        // No PK found. Combining ALL columns for K8s key
         @JsonProperty("entry_date") public final Date entryDate;
 
         @JsonCreator
@@ -6452,7 +6492,8 @@ public class GenCrdCurrent
             entryDate = entryDateRef;
 
             formattedPrimaryKey = base32Encode(String.format(
-                TrackingDateSpec.PK_FORMAT
+                TrackingDateSpec.PK_FORMAT,
+                RFC3339.format(entryDate)
             ));
         }
 
@@ -6523,6 +6564,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -6678,6 +6720,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -6834,6 +6877,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -6988,6 +7032,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {
@@ -7123,6 +7168,7 @@ public class GenCrdCurrent
             setSpec(spec);
         }
 
+        @Override
         @JsonIgnore
         public String getKey()
         {

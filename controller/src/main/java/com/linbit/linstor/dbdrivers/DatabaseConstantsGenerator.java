@@ -439,15 +439,6 @@ public final class DatabaseConstantsGenerator
         renderPackageAndImports(
             pkgName,
             // "java.io.Serializable",
-            "java.math.BigInteger",
-            "java.nio.charset.StandardCharsets",
-            // "java.util.ArrayList",
-            "java.util.Date",
-            // "java.util.HashMap",
-            // "java.util.HashSet",
-            "java.util.Map",
-            "java.util.TreeMap",
-            null, // empty line
             "com.linbit.ImplementationError",
             "com.linbit.linstor.dbdrivers.DatabaseTable",
             "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
@@ -456,6 +447,16 @@ public final class DatabaseConstantsGenerator
             "com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext",
             "com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext",
             "com.linbit.utils.ExceptionThrowingFunction",
+            null, // empty line
+            "java.math.BigInteger",
+            "java.nio.charset.StandardCharsets",
+            "java.text.SimpleDateFormat",
+            // "java.util.ArrayList",
+            "java.util.Date",
+            // "java.util.HashMap",
+            // "java.util.HashSet",
+            "java.util.Map",
+            "java.util.TreeMap",
             null, // empty line
             "com.fasterxml.jackson.annotation.JsonCreator",
             "com.fasterxml.jackson.annotation.JsonIgnore",
@@ -479,7 +480,7 @@ public final class DatabaseConstantsGenerator
         {
             appendLine("public static final String VERSION = \"%s\";", asYamlVersionString(currentVersionRef));
             appendLine("public static final String GROUP = \"%s\";", CRD_GROUP);
-            appendEmptyLine();
+            appendLine("private static final SimpleDateFormat RFC3339 = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ssXXX\");");
 
             appendEmptyLine();
             appendLine("private %s()", clazzName);
@@ -804,6 +805,10 @@ public final class DatabaseConstantsGenerator
             appendLine("@JsonIgnore private final String formattedPrimaryKey;");
 
             appendEmptyLine();
+            if (!pkFound)
+            {
+                appendLine("// No PK found. Combining ALL columns for K8s key");
+            }
             LinkedHashMap<String, String> ctorParameters = new LinkedHashMap<>();
             for (Column clm : tbl.columns)
             {
@@ -861,10 +866,17 @@ public final class DatabaseConstantsGenerator
                         appendLine("%s.PK_FORMAT,", specClassName);
                         for (Column clm : tbl.columns)
                         {
-                            if (clm.pk)
+                            if (clm.pk || !pkFound)
                             {
                                 String clmName = camelCase(clm.name.toLowerCase().toCharArray());
-                                appendLine("%s,", clmName);
+                                if (clm.sqlType.equals("DATE"))
+                                {
+                                    appendLine("RFC3339.format(%s),", clmName);
+                                }
+                                else
+                                {
+                                    appendLine("%s,", clmName);
+                                }
                             }
                         }
                         cutLastAndAppend(2, "\n");
@@ -1000,6 +1012,7 @@ public final class DatabaseConstantsGenerator
             }
 
             appendEmptyLine();
+            appendLine("@Override");
             appendLine("@JsonIgnore");
             appendLine("public String getKey()");
             try (IndentLevel methodIndent = new IndentLevel())
@@ -1284,8 +1297,8 @@ public final class DatabaseConstantsGenerator
             case "VARCHAR":
             case "CLOB":
             case "BLOB":
-            case "DATE":
                 return "string";
+            case "DATE":
             case "BIGINT":
             case "TIMESTAMP":
             case "INTEGER":
@@ -1307,7 +1320,7 @@ public final class DatabaseConstantsGenerator
             case "INTEGER":
                 return "int32";
             case "DATE":
-                return "date-time";
+                return "int64";
             case "BLOB":
                 return "byte"; // base64 encoded
             default:
@@ -1333,6 +1346,27 @@ public final class DatabaseConstantsGenerator
                 return "%b";
             case "BLOB":
                 return null;
+            default:
+                throw new ImplementationError("Unknown Type: " + clmRef.sqlType);
+        }
+    }
+
+    private String adaptForFormatCall(Column clmRef)
+    {
+        switch (clmRef.sqlType)
+        {
+            case "CHAR":
+            case "VARCHAR":
+            case "CLOB":
+            case "BIGINT":
+            case "TIMESTAMP":
+            case "INTEGER":
+            case "SMALLINT":
+            case "BOOLEAN":
+            case "BLOB":
+                return "";
+            case "DATE":
+                return ".toString()";
             default:
                 throw new ImplementationError("Unknown Type: " + clmRef.sqlType);
         }
