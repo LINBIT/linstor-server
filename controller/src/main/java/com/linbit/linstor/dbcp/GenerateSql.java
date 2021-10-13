@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableMap;
@@ -129,22 +130,25 @@ public class GenerateSql {
             )
         );
 
-        for (GeneratedCrdJavaClass generatedCrdJavaClass : result.javaClasses)
+        if (genCrdCurrentChanged(gitRoot, result))
         {
-            renderJavaFile(
-                generatedCrdJavaClass.javaCode,
-                generatedCrdJavaClass.pkgName,
-                generatedCrdJavaClass.clazzName,
-                gitRoot,
-                "server"
-            );
-        }
+            for (GeneratedCrdJavaClass generatedCrdJavaClass : result.javaClasses)
+            {
+                renderJavaFile(
+                    generatedCrdJavaClass.javaCode,
+                    generatedCrdJavaClass.pkgName,
+                    generatedCrdJavaClass.clazzName,
+                    gitRoot,
+                    "server"
+                );
+            }
 
-        for (GeneratedResources generatedResources : result.resources)
-        {
-            renderResourceFile(gitRoot, generatedResources.yamlLocation, generatedResources.content);
+            for (GeneratedResources generatedResources : result.resources)
+            {
+                renderResourceFile(gitRoot, generatedResources.yamlLocation, generatedResources.content);
+            }
+            // rerenderCrdVersion(gitRoot, crdVersion);
         }
-        // rerenderCrdVersion(gitRoot, crdVersion);
     }
 
     private static String loadCurrentGitTag(String gitRoot)
@@ -190,16 +194,17 @@ public class GenerateSql {
                     .resolve(generatedCrdJavaClass.clazzName + ".java");
                 if (Files.exists(path))
                 {
-                    String checksumOld;
+                    String oldCode;
                     try
                     {
-                        checksumOld = getCheckSum(new String(Files.readAllBytes(path)));
+                        oldCode = new String(Files.readAllBytes(path));
                     }
                     catch (IOException exc)
                     {
                         throw new ImplementationError(exc);
                     }
-                    String checksumNew = getCheckSum(generatedCrdJavaClass.javaCode);
+                    String checksumOld = getCheckSum(replaceVersionUID(oldCode));
+                    String checksumNew = getCheckSum(replaceVersionUID(generatedCrdJavaClass.javaCode));
 
                     // System.out.println("old checksum: " + checksumOld);
                     // System.out.println("new checksum: " + checksumNew);
@@ -209,6 +214,25 @@ public class GenerateSql {
                 break;
             }
         }
+        return ret;
+    }
+
+    private static String replaceVersionUID(String javaCode)
+    {
+        String ret = javaCode.replaceAll(
+            "private static final long serialVersionUID = -?\\d+L;",
+            "private static final long serialVersionUID = 0L;"
+        );
+
+        Pattern pattern = Pattern.compile("public static final String VERSION = \"([^\"]+)\";");
+        Matcher matcher = pattern.matcher(ret);
+        if (!matcher.find())
+            throw new ImplementationError("No version found");
+        String version = matcher.group(1);
+        version = version.replaceAll("[-_]", "[-_]");
+
+        ret = ret.replaceAll(version, "v0");
+
         return ret;
     }
 
