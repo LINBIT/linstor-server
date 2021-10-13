@@ -78,6 +78,7 @@ import com.linbit.utils.InjectorLoader;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -345,6 +346,19 @@ public final class Controller
 
             whitelistProps.overrideDrbdProperties();
 
+            String notifySocket = System.getenv("NOTIFY_SOCKET");
+            if (notifySocket != null && !notifySocket.trim().isEmpty())
+            {
+                Runtime.getRuntime().exec("systemd-notify READY=1");
+            }
+            else
+            {
+                errorReporter.logWarning(
+                    "Not calling 'systemd-notify' as NOTIFY_SOCKET is %s",
+                    notifySocket == null ? "null" : "empty"
+                );
+            }
+
             errorReporter.logInfo("Controller initialized");
         }
         catch (AccessDeniedException accessExc)
@@ -355,7 +369,7 @@ public final class Controller
                 accessExc
             );
         }
-        catch (SystemServiceStartException exc)
+        catch (SystemServiceStartException|IOException exc)
         {
             errorReporter.reportError(Level.ERROR, exc);
             reconfigurationLock.writeLock().unlock();
