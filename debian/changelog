@@ -1,3 +1,15 @@
+linstor-server (1.16.0~rc.2-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * GenSql: Only render CRD classes when structure changed
+  * DbConstGen: Fixed Spacetracking related issues
+  * ETCD: increase max inbound msg size
+
+  [ Rene Peinthor ]
+  * controller: notify systemd after init
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 14 Oct 2021 09:05:11 +0000
+
 linstor-server (1.16.0~rc.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
