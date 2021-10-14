@@ -225,7 +225,8 @@ public class DbEtcd implements ControllerETCDDatabase
         final String connectionUrl = origConUrl.toLowerCase().startsWith(ETCD_SCHEME) ?
             origConUrl.substring(ETCD_SCHEME.length()) : origConUrl;
 
-        EtcdClient.Builder builder = EtcdClient.forEndpoints(connectionUrl);
+        EtcdClient.Builder builder = EtcdClient.forEndpoints(connectionUrl)
+            .withMaxInboundMessageSize(Integer.MAX_VALUE);
 
         if (ctrlCfg.getDbCaCertificate() != null)
         {
