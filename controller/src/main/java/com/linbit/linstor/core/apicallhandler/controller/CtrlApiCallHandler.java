@@ -20,6 +20,7 @@ import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.StorPool;
@@ -44,7 +45,6 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -1387,10 +1387,19 @@ public class CtrlApiCallHandler
                         // if DRBD is involved wait for all resources to be ready
                         if (containsLayerKind(cloneRscDfn, ApiConsts.DeviceLayerKind.DRBD))
                         {
-                            if (rscs.getSatelliteStates().size() == rscs.getResources().size())
+                            if (rscs.getSatelliteStates().size() >= rscs.getResources().size())
                             {
-                                for (SatelliteState stltState : rscs.getSatelliteStates().values())
+                                final Set<String> nodeNames = rscs.getResources().stream()
+                                    .map(r -> r.getNodeName().toLowerCase())
+                                    .collect(Collectors.toSet());
+
+                                for (Map.Entry<NodeName, SatelliteState> entry : rscs.getSatelliteStates().entrySet())
                                 {
+                                    if (!nodeNames.contains(entry.getKey().displayValue.toLowerCase())) {
+                                        continue; // skip non resource nodes
+                                    }
+
+                                    final SatelliteState stltState = entry.getValue();
                                     SatelliteResourceState rscState = stltState.getResourceStates().get(rscCloneName);
 
                                     if (rscState == null)
