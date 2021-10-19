@@ -57,7 +57,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Singleton
 public class BackupToS3
 {
-    private final static ObjectMapper OBJ_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
     private final StltConfigAccessor stltConfigAccessor;
     private final DecryptionHelper decHelper;
@@ -128,10 +128,11 @@ public class BackupToS3
         List<PartETag> parts = new ArrayList<>();
 
         byte[] readBuf = new byte[(int) bufferSize];
-        int readLen = 0;
         int offset = 0;
         int partId = 1;
-        while ((readLen = input.read(readBuf, offset, readBuf.length - offset)) != -1)
+        for (int readLen = input.read(readBuf, offset, readBuf.length - offset);
+             readLen != -1;
+             readLen = input.read(readBuf, offset, readBuf.length - offset))
         {
             offset += readLen;
             if (readBuf.length == offset)
@@ -247,9 +248,8 @@ public class BackupToS3
 
             {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                int nRead;
                 byte[] data = new byte[1024];
-                while ((nRead = s3is.read(data, 0, data.length)) != -1)
+                for (int nRead = s3is.read(data, 0, data.length); nRead != -1; nRead = s3is.read(data, 0, data.length))
                 {
                     buffer.write(data, 0, nRead);
                 }
