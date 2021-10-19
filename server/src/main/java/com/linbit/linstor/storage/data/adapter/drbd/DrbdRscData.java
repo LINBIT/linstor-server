@@ -259,9 +259,9 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         return mayPromote;
     }
 
-    public void setMayPromote(@Nullable Boolean mayPromote)
+    public void setMayPromote(@Nullable Boolean mayPromoteFlag)
     {
-        this.mayPromote = mayPromote;
+        mayPromote = mayPromoteFlag;
     }
 
     public Integer getPromotionScore()

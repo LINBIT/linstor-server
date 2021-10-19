@@ -142,17 +142,17 @@ public final class ControllerNetComInitializer implements StartupInitializer
                 invalidNameExc
             );
         }
-        TcpConnector netComSvc = netComContainer.getNetComConnector(serviceName);
+        TcpConnector curNetComSvc = netComContainer.getNetComConnector(serviceName);
         SystemService sysSvc = systemServicesMap.get(serviceName);
 
         boolean svcStarted = false;
         boolean issuedShutdown = false;
-        if (netComSvc != null)
+        if (curNetComSvc != null)
         {
-            svcStarted = netComSvc.isStarted();
+            svcStarted = curNetComSvc.isStarted();
             if (svcStarted)
             {
-                netComSvc.shutdown();
+                curNetComSvc.shutdown();
                 issuedShutdown = true;
             }
         }
@@ -180,7 +180,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
             );
         }
 
-        if (netComSvc != null || sysSvc != null)
+        if (curNetComSvc != null || sysSvc != null)
         {
             errorLogRef.logInfo(
                 String.format(
@@ -190,7 +190,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
             );
         }
 
-        return netComSvc != null || sysSvc != null;
+        return curNetComSvc != null || sysSvc != null;
     }
 
     @Override

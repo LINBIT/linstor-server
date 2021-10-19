@@ -175,6 +175,7 @@ public class CtrlRscCrtApiHelper
         List<String> layerStackStrListRef
     )
     {
+        long adjustedFlags = flags;
         List<Flux<ApiCallRc>> autoFlux = new ArrayList<>();
         Resource rsc;
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -206,16 +207,16 @@ public class CtrlRscCrtApiHelper
             rsc = rscForToggleDiskful;
             autoHelper.get().removeTiebreakerFlag(rscForToggleDiskful); // just in case this was a tiebreaker
             String storPoolNameStr = storPoolName;
-            StorPool storPool = storPoolNameStr == null ? null
-                : ctrlApiDataLoader.loadStorPool(storPoolNameStr, nodeNameStr, false);
+            StorPool storPool = storPoolNameStr == null ?
+                null : ctrlApiDataLoader.loadStorPool(storPoolNameStr, nodeNameStr, false);
 
-            boolean isDiskless = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS) || // needed for
+            boolean isDiskless = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DISKLESS) || // needed for
                                                                                               // compatibility
-                FlagsHelper.isFlagEnabled(flags, Resource.Flags.DRBD_DISKLESS) ||
-                FlagsHelper.isFlagEnabled(flags, Resource.Flags.NVME_INITIATOR) ||
+                FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DRBD_DISKLESS) ||
+                FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.NVME_INITIATOR) ||
                 (storPool != null && storPool.getDeviceProviderKind().equals(DeviceProviderKind.DISKLESS));
 
-            if (FlagsHelper.isFlagEnabled(flags, Resource.Flags.INACTIVE))
+            if (FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.INACTIVE))
             {
                 setResourceFlags(rsc, Resource.Flags.INACTIVE);
             }
@@ -268,8 +269,8 @@ public class CtrlRscCrtApiHelper
             LayerPayload payload = new LayerPayload();
             payload.getDrbdRsc().nodeId = nodeIdInt;
             if (storPoolName != null)
-            {// null if resource is created with "-d"
-
+            {
+                // null if resource is created with "-d" (diskless)
                 StorPool storPool = ctrlApiDataLoader.loadStorPool(storPoolName, nodeNameStr, true);
 
                 Iterator<VolumeDefinition> vlmDfnIt = getVlmDfnIterator(rscDfn);
@@ -304,8 +305,9 @@ public class CtrlRscCrtApiHelper
 
             // compatibility
             String storPoolNameStr = storPoolName;
-            StorPool storPool = storPoolNameStr == null ? null
-                : ctrlApiDataLoader.loadStorPool(
+            StorPool storPool = storPoolNameStr == null ?
+                null :
+                ctrlApiDataLoader.loadStorPool(
                     storPoolNameStr,
                     nodeNameStr,
                     false
@@ -319,9 +321,9 @@ public class CtrlRscCrtApiHelper
                 isStorPoolOpenflex = storPool.getDeviceProviderKind().equals(DeviceProviderKind.OPENFLEX_TARGET);
             }
 
-            boolean isDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DISKLESS);
-            boolean isDrbdDisklessSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.DRBD_DISKLESS);
-            boolean isNvmeInitiatorSet = FlagsHelper.isFlagEnabled(flags, Resource.Flags.NVME_INITIATOR);
+            boolean isDisklessSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DISKLESS);
+            boolean isDrbdDisklessSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DRBD_DISKLESS);
+            boolean isNvmeInitiatorSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.NVME_INITIATOR);
 
             if (
                 (isDisklessSet && !isDrbdDisklessSet && !isNvmeInitiatorSet) ||
@@ -330,7 +332,7 @@ public class CtrlRscCrtApiHelper
             {
                 if (layerStack.isEmpty())
                 {
-                    flags |= Resource.Flags.DRBD_DISKLESS.flagValue;
+                    adjustedFlags |= Resource.Flags.DRBD_DISKLESS.flagValue;
                     responses.addEntry(makeFlaggedDrbdDisklessWarning(storPool));
                 }
                 else
@@ -347,11 +349,11 @@ public class CtrlRscCrtApiHelper
                             responses.addEntry(makeFlaggedNvmeInitiatorWarning(storPool));
                         }
                     }
-                    flags |= disklessNvmeOrDrbd.flagValue;
+                    adjustedFlags |= disklessNvmeOrDrbd.flagValue;
 
                     if (
                         FlagsHelper.isFlagEnabled(
-                            flags,
+                            adjustedFlags,
                             Resource.Flags.DRBD_DISKLESS,
                             Resource.Flags.NVME_INITIATOR
                         )
@@ -384,7 +386,7 @@ public class CtrlRscCrtApiHelper
                 );
             }
 
-            rsc = createResource(rscDfn, node, payload, flags, layerStack);
+            rsc = createResource(rscDfn, node, payload, adjustedFlags, layerStack);
             Props rscProps = ctrlPropsHelper.getProps(rsc);
 
             ctrlPropsHelper.fillProperties(
@@ -547,13 +549,17 @@ public class CtrlRscCrtApiHelper
                             DeviceProviderKind devProviderKind = storPool.getDeviceProviderKind();
                             switch (devProviderKind)
                             {
-                                case OPENFLEX_TARGET: // fall-through
+                                case OPENFLEX_TARGET:
+                                    // fall-through
                                 case DISKLESS:
                                     // ignored
                                     break;
-                                case LVM: // fall-through
-                                case SPDK: // fall-through
-                                case REMOTE_SPDK: // fall-through
+                                case LVM:
+                                    // fall-through
+                                case SPDK:
+                                    // fall-through
+                                case REMOTE_SPDK:
+                                    // fall-through
                                 case EXOS:
                                     hasFatStorPool = true;
                                     break;
@@ -588,15 +594,16 @@ public class CtrlRscCrtApiHelper
                                     hasFatStorPool = true;
                                     discardZerosIfAligned = true;
                                     break;
-                                case ZFS_THIN: // fall-through
+                                case ZFS_THIN:
                                     discardZerosIfAligned = true;
+                                    // fall-through
                                 case FILE_THIN:
                                     hasThinStorPool = true;
                                     break;
                                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                                    // fall-through
                                 default:
                                     throw new ImplementationError("Unknown deviceProviderKind: " + devProviderKind);
-
                             }
                         }
                     }
@@ -669,10 +676,13 @@ public class CtrlRscCrtApiHelper
             // No DRBD resource is created when no volumes are present, so do not wait for it to be ready
             readyResponses = Mono.just(responseConverter.addContextAll(
                 makeNoVolumesMessage(rscName), context, false));
-        } else if (allDiskless(rscDfn))
+        }
+        else
+        if (allDiskless(rscDfn))
         {
             readyResponses = Mono.just(makeAllDisklessMessage(rscName));
-        } else
+        }
+        else
         {
             List<Mono<ApiCallRc>> resourceReadyResponses = new ArrayList<>();
             for (Resource rsc : deployedResources)

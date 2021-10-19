@@ -196,8 +196,10 @@ public class CtrlRscCrtApiCallHandler
 
         for (Resource rsc : deployedResources)
         {
-            responseConverter.addWithOp(responses, context,
-                ApiSuccessUtils.defaultRegisteredEntry(rsc.getUuid(), getRscDescriptionInline(rsc)));
+            responseConverter.addWithOp(
+                responses, context,
+                ApiSuccessUtils.defaultRegisteredEntry(rsc.getUuid(), getRscDescriptionInline(rsc))
+            );
 
             responses.addEntries(makeVolumeRegisteredEntries(rsc));
         }
@@ -205,7 +207,7 @@ public class CtrlRscCrtApiCallHandler
         Flux<ApiCallRc> deploymentResponses;
         if (deployedResources.isEmpty())
         {
-            deploymentResponses = Flux.empty();// no new resources, only take-over of TIE_BREAKER
+            deploymentResponses = Flux.empty(); // no new resources, only take-over of TIE_BREAKER
         }
         else
         {

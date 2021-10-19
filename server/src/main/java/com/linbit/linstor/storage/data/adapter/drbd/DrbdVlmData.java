@@ -215,13 +215,13 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     public String getBackingDevice()
     {
         VlmProviderObject<RSC> childBySuffix = getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-        String devicePath = null;
+        String bdDevPath = null;
         if (childBySuffix != null)
         {
             // null when diskless
-            devicePath = childBySuffix.getDevicePath();
+            bdDevPath = childBySuffix.getDevicePath();
         }
-        return devicePath;
+        return bdDevPath;
     }
 
     @Override

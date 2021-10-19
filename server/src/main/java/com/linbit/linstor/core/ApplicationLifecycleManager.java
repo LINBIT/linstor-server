@@ -104,12 +104,12 @@ public class ApplicationLifecycleManager
         }
     }
 
-    public void stopSystemServices(ArrayList<StartupInitializer> services)
+    public void stopSystemServices(ArrayList<StartupInitializer> serviceList)
     {
         // Shutdown services in backwards order
-        for (int idx = services.size() - 1; idx >= 0; idx--)
+        for (int idx = serviceList.size() - 1; idx >= 0; idx--)
         {
-            StartupInitializer service = services.get(idx);
+            StartupInitializer service = serviceList.get(idx);
             SystemService sysService = service.getSystemService();
             if (sysService != null)
             {
