@@ -66,7 +66,10 @@ public class ExosRestClient
 
     private static final long LOGIN_TIMEOUT = 29 * 60 * 1000; // 29 min in ms
 
-    public static final String[] CONTROLLERS = new String[] { "A", "B" };
+    public static final String[] CONTROLLERS = new String[]
+    {
+        "A", "B"
+    };
     static final String KEY_API_IP = ApiConsts.KEY_STOR_POOL_EXOS_API_IP;
     static final String KEY_API_IP_ENV = ApiConsts.KEY_STOR_POOL_EXOS_API_IP_ENV;
     static final String KEY_API_PORT = ApiConsts.KEY_STOR_POOL_EXOS_API_PORT;
@@ -140,8 +143,14 @@ public class ExosRestClient
         restClient = new RestHttpClient(errorReporterRef);
 
         baseEnclosureKey = ApiConsts.NAMESPC_EXOS + "/" + enclosureName + "/";
-        baseNamespace = new String[] { baseEnclosureKey };
-        baseAndCtrlNamespace = new String[] { baseEnclosureKey, ApiConsts.NAMESPC_EXOS };
+        baseNamespace = new String[]
+        {
+            baseEnclosureKey
+        };
+        baseAndCtrlNamespace = new String[]
+        {
+            baseEnclosureKey, ApiConsts.NAMESPC_EXOS
+        };
 
         for (String ctrl : CONTROLLERS)
         {
@@ -351,13 +360,14 @@ public class ExosRestClient
     }
 
     private <T> RestResponse<T> simpleGetRequest(
-        String relativeUrl,
+        final String reqUrl,
         PriorityProps prioProps,
         Class<T> responseClass,
         boolean inLogin
     )
         throws StorageException
     {
+        String relativeUrl = reqUrl;
         if (!relativeUrl.startsWith("/"))
         {
             relativeUrl = "/" + relativeUrl;
@@ -368,7 +378,8 @@ public class ExosRestClient
         RestResponse<T> response = null;
         String url = null;
         Map<String, String> headers = null;
-        for (int ctrlIdx = 0; ctrlIdx < CONTROLLERS.length; ctrlIdx++)
+        int ctrlIdx = 0;
+        while (ctrlIdx < CONTROLLERS.length)
         {
             String ctrl = CONTROLLERS[ctrlIdx];
             if (!inLogin)
@@ -417,8 +428,8 @@ public class ExosRestClient
                     String requestPayloadAsString = parseExc.getRequestPayloadAsString();
                     if (
                         jsonParseExc != null ||
-                            (requestPayloadAsString != null &&
-                            !requestPayloadAsString.toLowerCase().contains("internal server error"))
+                        (requestPayloadAsString != null &&
+                        !requestPayloadAsString.toLowerCase().contains("internal server error"))
                     )
                     {
                         exc = new StorageException("Failed to parse JSON", parseExc);
@@ -456,13 +467,15 @@ public class ExosRestClient
                     enclosureName
                 );
             }
+            ++ctrlIdx;
         }
         if (exc != null)
         {
             throw exc;
         }
 
-        if (response == null) {
+        if (response == null)
+        {
             throw new StorageException(
                 String.format(
                     "Neither controller A nor controller B was configured for enclosure %s!",
@@ -550,11 +563,13 @@ public class ExosRestClient
 
         String username = PropsUtils.getPropOrEnv(
             prioPropsRef,
-            new String[] {
+            new String[]
+            {
                 baseCtrlNamespace + "/" + KEY_API_USER,
                 ApiConsts.NAMESPC_EXOS + "/" + KEY_API_USER
             },
-            new String[] {
+            new String[]
+            {
                 baseCtrlNamespace + "/" + KEY_API_USER_ENV,
                 ApiConsts.NAMESPC_EXOS + "/" + KEY_API_USER_ENV
             }
@@ -565,11 +580,13 @@ public class ExosRestClient
         }
         String password = PropsUtils.getPropOrEnv(
             prioPropsRef,
-            new String[] {
+            new String[]
+            {
                 baseCtrlNamespace + "/" + KEY_API_PASS,
                 ApiConsts.NAMESPC_EXOS + "/" + KEY_API_PASS
             },
-            new String[] {
+            new String[]
+            {
                 baseCtrlNamespace + "/" + KEY_API_PASS_ENV,
                 ApiConsts.NAMESPC_EXOS + "/" + KEY_API_PASS_ENV
             }

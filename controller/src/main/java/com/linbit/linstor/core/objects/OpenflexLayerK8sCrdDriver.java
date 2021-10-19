@@ -204,7 +204,8 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
         }
     }
 
-    private void fetchOfVlms(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef) throws DatabaseException
+    private void fetchOfVlms(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef)
+        throws DatabaseException
     {
         cachedVlmInfoMap = new HashMap<>();
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
@@ -296,8 +297,8 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
             transObjFactory,
             transMgrProvider
         );
-        rscDfnDataPair.objB.add((OpenflexRscData<Resource>) ofRscData);// FIXME as soon as snapshots are supported for
-                                                                       // openflex
+        rscDfnDataPair.objB.add((OpenflexRscData<Resource>) ofRscData); // FIXME as soon as snapshots are supported for
+                                                                        // openflex
 
         try
         {

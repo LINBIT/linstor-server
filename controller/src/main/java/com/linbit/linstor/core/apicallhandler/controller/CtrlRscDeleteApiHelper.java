@@ -247,7 +247,8 @@ public class CtrlRscDeleteApiHelper
                 .setCorrection(String.format("Un-mount resource '%s' on the node '%s'.", rscName, nodeName))
                 .build();
             resp.addEntry(err);
-            if (throwApiExc) {
+            if (throwApiExc)
+            {
                 throw new ApiRcException(err);
             }
         }
@@ -284,7 +285,8 @@ public class CtrlRscDeleteApiHelper
                     .build();
 
                 resp.addEntry(err);
-                if (throwApiExc) {
+                if (throwApiExc)
+                {
                     throw new ApiRcException(err);
                 }
             }

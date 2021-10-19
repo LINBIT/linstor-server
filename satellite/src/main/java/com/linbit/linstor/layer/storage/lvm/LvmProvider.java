@@ -748,9 +748,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
-        LvmData<Resource> srcData = (LvmData<Resource>)cloneInfo.getSrcVlmData();
-        LvmData<Resource> dstData = (LvmData<Resource>)cloneInfo.getDstVlmData();
+    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
+    {
+        LvmData<Resource> srcData = (LvmData<Resource>) cloneInfo.getSrcVlmData();
+        LvmData<Resource> dstData = (LvmData<Resource>) cloneInfo.getDstVlmData();
         final String srcFullSnapshotName = getCloneSnapshotName(srcData, dstData, "_");
 
         return new String[]
@@ -766,8 +767,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     @Override
     public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
     {
-        LvmData<Resource> srcData = (LvmData<Resource>)cloneInfo.getSrcVlmData();
-        final String srcFullSnapshotName = getCloneSnapshotName(srcData, (LvmData<Resource>)cloneInfo.getDstVlmData(), "_");
+        LvmData<Resource> srcData = (LvmData<Resource>) cloneInfo.getSrcVlmData();
+        final String srcFullSnapshotName = getCloneSnapshotName(
+            srcData, (LvmData<Resource>) cloneInfo.getDstVlmData(), "_"
+        );
 
         final String vlmGroup = getVolumeGroup(srcData.getStorPool());
         LvmUtils.execWithRetry(

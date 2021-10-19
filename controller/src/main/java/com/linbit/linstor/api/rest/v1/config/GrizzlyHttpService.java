@@ -121,9 +121,10 @@ public class GrizzlyHttpService implements SystemService
     private static class HTTPSForwarder extends HttpHandler
     {
         private final int httpsPort;
-        public HTTPSForwarder(int httpsPort)
+
+        HTTPSForwarder(int httpsPortPrm)
         {
-            this.httpsPort = httpsPort;
+            httpsPort = httpsPortPrm;
         }
 
         @Override
@@ -162,8 +163,9 @@ public class GrizzlyHttpService implements SystemService
             fwdMappings.toArray(new String[0]));
     }
 
-    private void addUiStaticHandler(HttpServer httpServer) {
-        httpServer.getServerConfiguration().addHttpHandler(new StaticHttpHandler(webUiDirectory), "/ui");
+    private void addUiStaticHandler(HttpServer httpSrv)
+    {
+        httpSrv.getServerConfiguration().addHttpHandler(new StaticHttpHandler(webUiDirectory), "/ui");
     }
 
     private void enableCompression(HttpServer httpServerRef)

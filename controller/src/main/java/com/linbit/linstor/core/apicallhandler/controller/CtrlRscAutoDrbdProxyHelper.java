@@ -126,11 +126,12 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
     {
         Resource[] rscs = new Resource[rscDfnRef.getResourceCount()];
         Iterator<Resource> iterateResource = rscDfnRef.iterateResource(peerCtxProvider.get());
-        int i = 0;
+        int idx = 0;
         while (iterateResource.hasNext())
         {
             Resource rsc = iterateResource.next();
-            rscs[i++] = rsc;
+            rscs[idx] = rsc;
+            ++idx;
         }
         return rscs;
     }

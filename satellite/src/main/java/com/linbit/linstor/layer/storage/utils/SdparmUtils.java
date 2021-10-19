@@ -32,7 +32,7 @@ public class SdparmUtils
     {
         OutputData outputData = Commands.genericExecutor(
             extCmdFactory.create().setSaveWithoutSharedLocks(true),
-            new String[] { "sdparm", "-i", "-H", devPath },
+            new String[] {"sdparm", "-i", "-H", devPath},
             "Failed to gather inquiry information for " + devPath + " while looking for the MAC address",
             "Failed to gather inquiry information for " + devPath + " while looking for the MAC address"
         );
@@ -64,9 +64,9 @@ public class SdparmUtils
 
         String[] lines = out.split("\n");
         // ignore the first line
-        for (int i = skipFirstLines; i < lines.length; i++)
+        for (int idx = skipFirstLines; idx < lines.length; idx++)
         {
-            ret.append(lines[i].substring(8, 56)).append(" ");
+            ret.append(lines[idx].substring(8, 56)).append(" ");
         }
 
         return ret.toString().replaceAll("  ", " ");

@@ -32,7 +32,8 @@ import reactor.core.publisher.Mono;
 
 @Path("v1/stats")
 @Produces(MediaType.APPLICATION_JSON)
-public class Stats {
+public class Stats
+{
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final ObjectMapper objectMapper;
@@ -58,75 +59,91 @@ public class Stats {
     @Path("nodes")
     public Response nodeStats(@Context Request request)
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_NODE_STATS, request), () ->
-        {
-            Stream<NodeApi> nodeApiStream = ctrlApiCallHandler.listNodes(
-                Collections.emptyList(), Collections.emptyList()).stream();
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_NODE_STATS, request),
+            () ->
+            {
+                Stream<NodeApi> nodeApiStream = ctrlApiCallHandler.listNodes(
+                    Collections.emptyList(), Collections.emptyList()).stream();
 
-            JsonGenTypes.NodeStats objStats = new JsonGenTypes.NodeStats();
-            objStats.count = nodeApiStream.count();
+                JsonGenTypes.NodeStats objStats = new JsonGenTypes.NodeStats();
+                objStats.count = nodeApiStream.count();
 
-            return Response
-                .status(Response.Status.OK)
-                .entity(objectMapper.writeValueAsString(objStats))
-                .build();
-        }, false);
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(objStats))
+                    .build();
+            },
+            false
+        );
     }
 
     @GET
     @Path("resource-groups")
     public Response resourceGroupStats(@Context Request request)
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_RSC_GRP_STATS, request), () ->
-        {
-            Stream<ResourceGroupApi> rscGrpApiStream =
-                ctrlApiCallHandler.listResourceGroups(Collections.emptyList(), Collections.emptyList()).stream();
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_RSC_GRP_STATS, request),
+            () ->
+            {
+                Stream<ResourceGroupApi> rscGrpApiStream =
+                    ctrlApiCallHandler.listResourceGroups(Collections.emptyList(), Collections.emptyList()).stream();
 
-            JsonGenTypes.ResourceGroupStats objStats = new JsonGenTypes.ResourceGroupStats();
-            objStats.count = rscGrpApiStream.count();
+                JsonGenTypes.ResourceGroupStats objStats = new JsonGenTypes.ResourceGroupStats();
+                objStats.count = rscGrpApiStream.count();
 
-            return Response
-                .status(Response.Status.OK)
-                .entity(objectMapper.writeValueAsString(objStats))
-                .build();
-        }, false);
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(objStats))
+                    .build();
+            },
+            false
+        );
     }
 
     @GET
     @Path("resource-definitions")
     public Response rscDfnStats(@Context Request request)
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_RSC_DFN_STATS, request), () ->
-        {
-            Stream<ResourceDefinitionApi> rscDfnApiStream =
-                ctrlApiCallHandler.listResourceDefinitions(Collections.emptyList(), Collections.emptyList()).stream();
-            JsonGenTypes.ResourceDefinitionStats objStats = new JsonGenTypes.ResourceDefinitionStats();
-            objStats.count = rscDfnApiStream.count();
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_RSC_DFN_STATS, request),
+            () ->
+            {
+                Stream<ResourceDefinitionApi> rscDfnApiStream =
+                    ctrlApiCallHandler.listResourceDefinitions(Collections.emptyList(), Collections.emptyList()).stream();
+                JsonGenTypes.ResourceDefinitionStats objStats = new JsonGenTypes.ResourceDefinitionStats();
+                objStats.count = rscDfnApiStream.count();
 
-            return Response
-                .status(Response.Status.OK)
-                .entity(objectMapper.writeValueAsString(objStats))
-                .build();
-        }, false);
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(objStats))
+                    .build();
+            },
+            false
+        );
     }
 
     @GET
     @Path("resources")
     public Response resourceStats(@Context Request request)
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_RSC_STATS, request), () ->
-        {
-            ResourceList resourceList = ctrlApiCallHandler.listResource(
-                Collections.emptyList(), Collections.emptyList());
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_RSC_STATS, request),
+            () ->
+            {
+                ResourceList resourceList = ctrlApiCallHandler.listResource(
+                    Collections.emptyList(), Collections.emptyList());
 
-            JsonGenTypes.ResourceStats objStats = new JsonGenTypes.ResourceStats();
-            objStats.count = resourceList.getResources().size();
+                JsonGenTypes.ResourceStats objStats = new JsonGenTypes.ResourceStats();
+                objStats.count = resourceList.getResources().size();
 
-            return Response
-                .status(Response.Status.OK)
-                .entity(objectMapper.writeValueAsString(objStats))
-                .build();
-        }, false);
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(objStats))
+                    .build();
+            },
+            false
+        );
     }
 
     @GET
@@ -135,19 +152,23 @@ public class Stats {
         @Context Request request
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_STOR_POOL_STATS, request), () ->
-        {
-            final List<StorPoolApi> storagePoolList = ctrlStorPoolListApiCallHandler
-                .listStorPoolsCached(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_STOR_POOL_STATS, request),
+            () ->
+            {
+                final List<StorPoolApi> storagePoolList = ctrlStorPoolListApiCallHandler
+                    .listStorPoolsCached(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
 
-            JsonGenTypes.StoragePoolStats objStats = new JsonGenTypes.StoragePoolStats();
-            objStats.count = storagePoolList.size();
+                JsonGenTypes.StoragePoolStats objStats = new JsonGenTypes.StoragePoolStats();
+                objStats.count = storagePoolList.size();
 
-            return Response
-                .status(Response.Status.OK)
-                .entity(objectMapper.writeValueAsString(objStats))
-                .build();
-        }, false);
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(objStats))
+                    .build();
+            },
+            false
+        );
     }
 
     @GET
@@ -165,26 +186,28 @@ public class Stats {
                 Collections.emptySet())
             .subscriberContext(requestHelper.createContext(ApiConsts.API_ERR_REPORT_STATS, request))
             .flatMap(reportSet -> Flux.just(reportSet.stream()))
-            .flatMap(errorReportStream ->
-            {
-                JsonGenTypes.ErrorReportStats objStats = new JsonGenTypes.ErrorReportStats();
-                objStats.count = errorReportStream.count();
+            .flatMap(
+                errorReportStream ->
+                {
+                    JsonGenTypes.ErrorReportStats objStats = new JsonGenTypes.ErrorReportStats();
+                    objStats.count = errorReportStream.count();
 
-                Response resp;
-                try
-                {
-                    resp = Response
-                        .status(Response.Status.OK)
-                        .entity(objectMapper.writeValueAsString(objStats))
-                        .build();
+                    Response resp;
+                    try
+                    {
+                        resp = Response
+                            .status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(objStats))
+                            .build();
+                    }
+                    catch (JsonProcessingException exc)
+                    {
+                        exc.printStackTrace();
+                        resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    }
+                    return Mono.just(resp);
                 }
-                catch (JsonProcessingException exc)
-                {
-                    exc.printStackTrace();
-                    resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                }
-                return Mono.just(resp);
-            })
+            )
             .next();
 
         requestHelper.doFlux(asyncResponse, flux);

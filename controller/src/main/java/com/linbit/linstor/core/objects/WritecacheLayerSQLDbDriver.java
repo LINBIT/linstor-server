@@ -67,7 +67,7 @@ public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDr
     private static final String INSERT_VLM =
         " INSERT INTO " + TBL_LAYER_WRITECACHE_VOLUMES +
         " (" + StringUtils.join(", ", VLM_ALL_FIELDS) + " ) " +
-        " VALUES (" + StringUtils.repeat("?", ", ", VLM_ALL_FIELDS.length) +")";
+        " VALUES (" + StringUtils.repeat("?", ", ", VLM_ALL_FIELDS.length) + ")";
     private static final String DELETE_VLM =
         " DELETE FROM " + TBL_LAYER_WRITECACHE_VOLUMES +
         " WHERE " + LAYER_RESOURCE_ID + " = ? AND " +

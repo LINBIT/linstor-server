@@ -66,7 +66,8 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
                 composedKey.lastIndexOf(EtcdUtils.PK_DELIMITER)
             );
 
-            if (instName.equals(instanceName)) {
+            if (instName.equals(instanceName))
+            {
                 String propsKey = composedKey.substring(propsKeyStart);
                 propsMap.put(
                     propsKey,

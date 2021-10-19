@@ -114,7 +114,9 @@ public class CtrlDrbdProxyModifyApiCallHandler
                             "Could not delete property '" + delKey + "' as it did not exist. " +
                                                 "This operation had no effect."
                         ));
-                    } else {
+                    }
+                    else
+                    {
                         notifyStlts = true;
                     }
                 }
@@ -162,7 +164,8 @@ public class CtrlDrbdProxyModifyApiCallHandler
                     "proxy options for " + getRscDfnDescriptionInline(rscDfn)
                 )
             );
-            if (notifyStlts) {
+            if (notifyStlts)
+            {
                 responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(rscDfn));
             }
         }

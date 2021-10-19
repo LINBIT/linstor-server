@@ -470,7 +470,8 @@ public class CtrlSnapshotShippingApiCallHandler
             {
                 new SnapshotName(snapShipNamePrefix);
             }
-            catch (InvalidNameException exc) {
+            catch (InvalidNameException exc)
+            {
                 responsesRef.addEntries(
                     ApiCallRcImpl.singleApiCallRc(
                         ApiConsts.WARN_INVLD_SNAPSHOT_SHIPPING_PREFIX,

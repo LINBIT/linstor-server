@@ -101,7 +101,7 @@ public class GrizzlyInitializer implements StartupInitializer
     @Override
     public void shutdown()
     {
-        if ( grizzlyHttpService != null)
+        if (grizzlyHttpService != null)
         {
             grizzlyHttpService.shutdown();
         }

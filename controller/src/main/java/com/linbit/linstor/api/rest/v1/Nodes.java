@@ -457,64 +457,68 @@ public class Nodes
         String nodeName
     )
     {
-        return requestHelper.doInScope(InternalApiConsts.API_LST_STLT_CONFIG, request, () ->
-        {
-            JsonGenTypes.SatelliteConfig stltConfig = new JsonGenTypes.SatelliteConfig();
+        return requestHelper.doInScope(
+            InternalApiConsts.API_LST_STLT_CONFIG, request,
+            () ->
+            {
+                JsonGenTypes.SatelliteConfig stltConfig = new JsonGenTypes.SatelliteConfig();
 
-            Response resp;
-            try
-            {
-                StltConfig stltConf = ctrlNodeApiCallHandler.getConfig(nodeName);
-                if (stltConf == null)
+                Response resp;
+                try
                 {
-                    ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
-                        ApiConsts.WARN_NOT_CONNECTED | ApiConsts.MASK_NODE,
-                        "Node is offline"
-                    );
-                    resp = Response
-                        .status(Response.Status.SERVICE_UNAVAILABLE)
-                        .entity(ApiCallRcRestUtils.toJSON(rc))
-                        .build();
-                }
-                else
-                {
-                    stltConfig.config = new JsonGenTypes.ControllerConfigConfig();
-                    stltConfig.config.dir = stltConf.getConfigDir();
-                    stltConfig.debug = new JsonGenTypes.ControllerConfigDebug();
-                    stltConfig.debug.console_enabled = stltConf.isDebugConsoleEnabled();
-                    stltConfig.log = new JsonGenTypes.SatelliteConfigLog();
-                    stltConfig.log.print_stack_trace = stltConf.isLogPrintStackTrace();
-                    stltConfig.log.directory = stltConf.getLogDirectory();
-                    stltConfig.log.level = stltConf.getLogLevel();
-                    stltConfig.log.level_linstor = stltConf.getLogLevelLinstor();
-                    stltConfig.stlt_override_node_name = stltConf.getStltOverrideNodeName();
-                    stltConfig.openflex = stltConf.isOpenflex();
-                    stltConfig.remote_spdk = stltConf.isRemoteSpdk();
-                    stltConfig.special_satellite = stltConf.isOpenflex() || stltConf.isRemoteSpdk();
-                    stltConfig.drbd_keep_res_pattern = stltConf.getDrbdKeepResPattern().toString();
-                    stltConfig.net = new JsonGenTypes.SatelliteConfigNet();
-                    stltConfig.net.bind_address = stltConf.getNetBindAddress();
-                    stltConfig.net.port = stltConf.getNetPort();
-                    stltConfig.net.com_type = stltConf.getNetType();
+                    StltConfig stltConf = ctrlNodeApiCallHandler.getConfig(nodeName);
+                    if (stltConf == null)
+                    {
+                        ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.WARN_NOT_CONNECTED | ApiConsts.MASK_NODE,
+                            "Node is offline"
+                        );
+                        resp = Response
+                            .status(Response.Status.SERVICE_UNAVAILABLE)
+                            .entity(ApiCallRcRestUtils.toJSON(rc))
+                            .build();
+                    }
+                    else
+                    {
+                        stltConfig.config = new JsonGenTypes.ControllerConfigConfig();
+                        stltConfig.config.dir = stltConf.getConfigDir();
+                        stltConfig.debug = new JsonGenTypes.ControllerConfigDebug();
+                        stltConfig.debug.console_enabled = stltConf.isDebugConsoleEnabled();
+                        stltConfig.log = new JsonGenTypes.SatelliteConfigLog();
+                        stltConfig.log.print_stack_trace = stltConf.isLogPrintStackTrace();
+                        stltConfig.log.directory = stltConf.getLogDirectory();
+                        stltConfig.log.level = stltConf.getLogLevel();
+                        stltConfig.log.level_linstor = stltConf.getLogLevelLinstor();
+                        stltConfig.stlt_override_node_name = stltConf.getStltOverrideNodeName();
+                        stltConfig.openflex = stltConf.isOpenflex();
+                        stltConfig.remote_spdk = stltConf.isRemoteSpdk();
+                        stltConfig.special_satellite = stltConf.isOpenflex() || stltConf.isRemoteSpdk();
+                        stltConfig.drbd_keep_res_pattern = stltConf.getDrbdKeepResPattern().toString();
+                        stltConfig.net = new JsonGenTypes.SatelliteConfigNet();
+                        stltConfig.net.bind_address = stltConf.getNetBindAddress();
+                        stltConfig.net.port = stltConf.getNetPort();
+                        stltConfig.net.com_type = stltConf.getNetType();
 
-                    resp = Response
-                        .status(Response.Status.OK)
-                        .entity(objectMapper.writeValueAsString(stltConfig))
-                        .build();
+                        resp = Response
+                            .status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(stltConfig))
+                            .build();
+                    }
                 }
-            }
-            catch (JsonProcessingException exc)
-            {
-                errorReporter.reportError(exc);
-                resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-            }
-            catch (AccessDeniedException exc)
-            {
-                errorReporter.reportError(exc);
-                resp = Response.status(Response.Status.UNAUTHORIZED).build();
-            }
-            return resp;
-        }, false);
+                catch (JsonProcessingException exc)
+                {
+                    errorReporter.reportError(exc);
+                    resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                }
+                catch (AccessDeniedException exc)
+                {
+                    errorReporter.reportError(exc);
+                    resp = Response.status(Response.Status.UNAUTHORIZED).build();
+                }
+                return resp;
+            },
+            false
+        );
     }
 
     private static class SatelliteConfigPojo implements SatelliteConfigApi
@@ -564,7 +568,7 @@ public class Nodes
         {
             ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
-        catch (AccessDeniedException e)
+        catch (AccessDeniedException exc)
         {
             requestHelper
                 .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.UNAUTHORIZED));
@@ -580,12 +584,13 @@ public class Nodes
     {
         return requestHelper.doInScope(
             ApiConsts.API_LST_PROPS_INFO, request,
-            () -> Response.status(Response.Status.OK)
-                .entity(
-                    objectMapper
-                        .writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.NODE))
+            () ->
+            {
+                return Response.status(Response.Status.OK).entity(
+                    objectMapper.writeValueAsString(ctrlPropsInfoApiCallHandler.listFilteredProps(LinStorObject.NODE))
                 )
-                .build(),
+                .build();
+            },
             false
         );
     }

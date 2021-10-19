@@ -47,7 +47,8 @@ import java.util.function.Function;
 
 @Singleton
 public class SnapshotDbDriver extends
-    AbsDatabaseDriver<AbsResource<Snapshot>, Snapshot.InitMaps, Pair<Map<NodeName, Node>, Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
+    AbsDatabaseDriver<AbsResource<Snapshot>, Snapshot.InitMaps, Pair<Map<NodeName, Node>,
+    Map<Pair<ResourceName, SnapshotName>, SnapshotDefinition>>>
     implements SnapshotCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
@@ -82,7 +83,7 @@ public class SnapshotDbDriver extends
         setColumnSetter(RESOURCE_NAME, snap -> snap.getResourceDefinition().getName().value);
         setColumnSetter(SNAPSHOT_NAME, snap -> ((Snapshot) snap).getSnapshotName().value);
         setColumnSetter(RESOURCE_FLAGS, snap -> ((Snapshot) snap).getFlags().getFlagsBits(dbCtxRef));
-        switch(getDbType())
+        switch (getDbType())
         {
             case SQL:
                 setColumnSetter(

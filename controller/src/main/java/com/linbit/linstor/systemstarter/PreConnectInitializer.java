@@ -75,8 +75,8 @@ public class PreConnectInitializer implements StartupInitializer
                             sysCtx,
                             SnapshotDefinition.Flags.SHIPPING,
                             SnapshotDefinition.Flags.SHIPPING_CLEANUP
-                        )
-                            && !snapDfn.getFlags().isSet(sysCtx, SnapshotDefinition.Flags.BACKUP)
+                        ) &&
+                        !snapDfn.getFlags().isSet(sysCtx, SnapshotDefinition.Flags.BACKUP)
                     )
                     {
                         snapDfn.getFlags().enableFlags(sysCtx, SnapshotDefinition.Flags.DELETE);

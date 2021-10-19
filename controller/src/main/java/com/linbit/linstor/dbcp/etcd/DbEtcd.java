@@ -112,9 +112,8 @@ public class DbEtcd implements ControllerETCDDatabase
         Map<String, String> dbHistoryVersionResponse = etcdTx.get(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version");
         Map<String, String> dbHistoryVersionPre34 = etcdTx.get(DB_HISTORY_VERSION_KEY_PRE34);
 
-        int dbVersion = dbHistoryVersionResponse.size() > 0
-            ? Integer.parseInt(dbHistoryVersionResponse.values().iterator().next())
-            : 0;
+        int dbVersion = dbHistoryVersionResponse.size() > 0 ?
+            Integer.parseInt(dbHistoryVersionResponse.values().iterator().next()) : 0;
 
         if ((dbVersion > 0 && dbVersion <= 34) || dbHistoryVersionPre34.size() > 0)
         {

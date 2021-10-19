@@ -371,7 +371,7 @@ public final class Controller
                 accessExc
             );
         }
-        catch (SystemServiceStartException|IOException exc)
+        catch (SystemServiceStartException | IOException exc)
         {
             errorReporter.reportError(Level.ERROR, exc);
             reconfigurationLock.writeLock().unlock();

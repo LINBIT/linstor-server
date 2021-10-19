@@ -159,7 +159,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_IN_USE,
-                    getSnapshotDfnDescription(rscNameStr, snapshotNameStr) + " is currently being restored from a backup. " +
+                    getSnapshotDfnDescription(rscNameStr, snapshotNameStr) + " is currently being restored " +
+                        "from a backup. " +
                         "Please wait until the restore is finished"
                 )
             );
@@ -173,7 +174,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_IN_USE,
-                    getSnapshotDfnDescription(rscNameStr, snapshotNameStr) + " is currently being shipped as a backup. " +
+                    getSnapshotDfnDescription(rscNameStr, snapshotNameStr) + " is currently being shipped " +
+                        "as a backup. " +
                         "Please wait until the shipping is finished or use backup abort --create"
                 )
             );

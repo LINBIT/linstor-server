@@ -80,7 +80,8 @@ public class SharedResourceManager
             result = getSharedResources(sharedSpNames, rsc.getDefinition());
             result.remove(rsc);
         }
-        catch (AccessDeniedException exc) {
+        catch (AccessDeniedException exc)
+        {
             throw new ImplementationError(exc);
         }
 

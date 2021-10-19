@@ -32,12 +32,17 @@ public class FileCollector extends SimpleFileVisitor<Path>
     }
 
     @Override
-    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-        if (LOG_MATCHER.matches(file)) {
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+    {
+        if (LOG_MATCHER.matches(file))
+        {
             String content = "";
-            try {
+            try
+            {
                 content = new String(Files.readAllBytes(file));
-            } catch (IOException ignored) {
+            }
+            catch (IOException ignored)
+            {
             }
             Path relFile = parentDir.relativize(file);
             files.add(
@@ -53,7 +58,8 @@ public class FileCollector extends SimpleFileVisitor<Path>
     }
 
     @Override
-    public FileVisitResult visitFileFailed(Path file, IOException exc) {
+    public FileVisitResult visitFileFailed(Path file, IOException exc)
+    {
         Path relFile = parentDir.relativize(file);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         exc.printStackTrace(new PrintStream(baos));
@@ -69,11 +75,13 @@ public class FileCollector extends SimpleFileVisitor<Path>
     }
 
     @Override
-    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+    public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+    {
         return FileVisitResult.CONTINUE;
     }
 
-    public Set<LinstorFile> getFiles() {
+    public Set<LinstorFile> getFiles()
+    {
         return files;
     }
 }

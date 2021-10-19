@@ -225,7 +225,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         Flux<ApiCallRc> nextStep = Flux.error(exception);
         return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
             // ensure that the individual node update fluxes are subscribed to, but ignore the responses
-            .flatMap(Tuple2::getT2).thenMany(Flux.<ApiCallRc> empty())
+            .flatMap(Tuple2::getT2).thenMany(Flux.<ApiCallRc>empty())
             .concatWith(
                 Flux.just(
                     ApiCallRcImpl.singletonApiCallRc(

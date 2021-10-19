@@ -144,7 +144,8 @@ public class SnapshotShippingDaemon implements Runnable
      * Simple event forcing this thread to kill itself
      */
     private static class PoisonEvent implements Event
-    {}
+    {
+    }
 
     public void shutdown()
     {

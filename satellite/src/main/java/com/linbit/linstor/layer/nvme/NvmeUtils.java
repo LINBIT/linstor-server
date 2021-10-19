@@ -504,7 +504,8 @@ public class NvmeUtils
         );
     }
 
-    public <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void disconnect(
+    public <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>>
+    void disconnect(
         RSC_DATA rscData,
         String subsystemName,
         BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
@@ -538,7 +539,8 @@ public class NvmeUtils
         }
     }
 
-    private <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> boolean isAnyMounted(
+    private <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>>
+    boolean isAnyMounted(
         RSC_DATA rscData,
         Function<VLM_DATA, String> getDevPathVlmFunc
     )
@@ -636,7 +638,8 @@ public class NvmeUtils
         );
     }
 
-    public <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> boolean setDevicePaths(
+    public <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>>
+    boolean setDevicePaths(
         boolean isWaiting,
         RSC_DATA rscData,
         String subsystemName,
@@ -731,7 +734,8 @@ public class NvmeUtils
         return success;
     }
 
-    private <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void setDeepExists(
+    private <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>>
+    void setDeepExists(
         RSC_DATA rscData,
         BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
         BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
@@ -911,7 +915,8 @@ public class NvmeUtils
                 Thread.sleep(NVME_GREP_SLEEP_INCREMENT);
                 tries++;
             }
-        } while (!extCmdSuccess && tries < NVME_GREP_SLEEP_MAX_WAIT_TIME);
+        }
+        while (!extCmdSuccess && tries < NVME_GREP_SLEEP_MAX_WAIT_TIME);
 
         if (isWaiting && tries >= NVME_GREP_SLEEP_MAX_WAIT_TIME || !extCmdSuccess)
         {

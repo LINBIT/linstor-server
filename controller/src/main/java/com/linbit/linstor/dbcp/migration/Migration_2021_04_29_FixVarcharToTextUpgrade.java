@@ -43,7 +43,8 @@ public class Migration_2021_04_29_FixVarcharToTextUpgrade extends LinstorMigrati
     protected void migrate(Connection dbCon, DbProduct dbProductRef) throws Exception
     {
         final ObjectMapper objMapper = new ObjectMapper();
-        try(
+        try
+        (
             PreparedStatement select = dbCon.prepareStatement(
                 " SELECT " + StringUtils.join(", ", COL_NAMES_FOR_TYPE_CHANGE) +
                 " FROM " + TBL_RG
@@ -54,10 +55,10 @@ public class Migration_2021_04_29_FixVarcharToTextUpgrade extends LinstorMigrati
             while (rs.next())
             {
                 ResultSetMetaData rsMd = rs.getMetaData();
-                for (int i = 0; i < COL_NAMES_FOR_TYPE_CHANGE.length; i++)
+                for (int idx = 0; idx < COL_NAMES_FOR_TYPE_CHANGE.length; idx++)
                 {
-                    String col = COL_NAMES_FOR_TYPE_CHANGE[i];
-                    int columnType = rsMd.getColumnType(i + 1);
+                    String col = COL_NAMES_FOR_TYPE_CHANGE[idx];
+                    int columnType = rsMd.getColumnType(idx + 1);
 
                     if (columnType == Types.BLOB)
                     {

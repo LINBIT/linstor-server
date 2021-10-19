@@ -26,7 +26,8 @@ import java.util.Set;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 
-public class H2ErrorReporter {
+public class H2ErrorReporter
+{
     private static final String DB_CRT_VERSION_TABLE = "CREATE TABLE IF NOT EXISTS VERSION (" +
         "VERSION_NUMBER INT);";
     private static final String DB_CRT_ERRORS_TABLE = "CREATE TABLE IF NOT EXISTS ERRORS (\n" +
@@ -64,16 +65,24 @@ public class H2ErrorReporter {
 
     private void setupErrorDB()
     {
-        try (Connection con = dataSource.getConnection();
-             Statement stmt = con.createStatement()) {
+        try
+        (
+            Connection con = dataSource.getConnection();
+            Statement stmt = con.createStatement();
+        )
+        {
             stmt.executeUpdate(DB_CRT_VERSION_TABLE);
 
-            try (ResultSet rs = stmt.executeQuery("SELECT VERSION_NUMBER FROM VERSION")) {
-                if (rs.next()) {
+            try (ResultSet rs = stmt.executeQuery("SELECT VERSION_NUMBER FROM VERSION"))
+            {
+                if (rs.next())
+                {
                     int versionNumber = rs.getInt("VERSION_NUMBER");
                     errorReporter.logInfo("ErrorReporter DB version %d found.", versionNumber);
                     // upgrade db?
-                } else {
+                }
+                else
+                {
                     // db empty
                     stmt.executeUpdate(DB_CRT_ERRORS_TABLE);
                     stmt.executeUpdate("CREATE INDEX IF NOT EXISTS IDX_ERRORS_DT ON ERRORS (DATETIME)");
@@ -82,7 +91,9 @@ public class H2ErrorReporter {
                     errorReporter.logInfo("ErrorReporter DB first time init.");
                 }
             }
-        } catch(SQLException sqlExc) {
+        }
+        catch (SQLException sqlExc)
+        {
             errorReporter.logError("Unable to operate the error-reports database: " + sqlExc);
         }
     }
@@ -103,16 +114,20 @@ public class H2ErrorReporter {
         Integer originLine = traceItems.length > 0 ? traceItems[0].getLineNumber() : null;
         String excMsg = errorInfo.getMessage();
 
-        try (Connection con = dataSource.getConnection();
-             PreparedStatement stmt = con.prepareStatement("INSERT INTO ERRORS" +
+        try
+        (
+            Connection con = dataSource.getConnection();
+            PreparedStatement stmt = con.prepareStatement("INSERT INTO ERRORS" +
                  " (INSTANCE_EPOCH, ERROR_NR, NODE, MODULE, ERROR_ID, DATETIME, VERSION, PEER," +
                  " EXCEPTION, EXCEPTION_MESSAGE, ORIGIN_FILE, ORIGIN_METHOD, ORIGIN_LINE, TEXT)" +
-                 " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                 " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        )
+        {
             int fieldIdx = 1;
             stmt.setLong(fieldIdx++, instanceEpoch);
             stmt.setLong(fieldIdx++, reportNr);
             stmt.setString(fieldIdx++, nodeName);
-            stmt.setInt(fieldIdx++, (int)(module.equalsIgnoreCase(LinStor.CONTROLLER_MODULE) ?
+            stmt.setInt(fieldIdx++, (int) (module.equalsIgnoreCase(LinStor.CONTROLLER_MODULE) ?
                 Node.Type.CONTROLLER.getFlagValue() : Node.Type.SATELLITE.getFlagValue()));
             stmt.setString(fieldIdx++, String.format("%s-%06d", errorReporter.getInstanceId(), reportNr));
             stmt.setTimestamp(fieldIdx++, new Timestamp(errorTime.getTime()));
@@ -126,13 +141,16 @@ public class H2ErrorReporter {
             {
                 stmt.setInt(fieldIdx++, originLine);
             }
-            else {
+            else
+            {
                 stmt.setNull(fieldIdx++, Types.INTEGER);
             }
             stmt.setClob(fieldIdx, new InputStreamReader(new ByteArrayInputStream(errorReportText)));
 
             stmt.executeUpdate();
-        } catch (SQLException sqlExc) {
+        }
+        catch (SQLException sqlExc)
+        {
             errorReporter.logError("Unable to write error report to DB: " + sqlExc.getMessage());
         }
     }
@@ -147,7 +165,8 @@ public class H2ErrorReporter {
         ArrayList<ErrorReport> errors = new ArrayList<>();
         String where = "1=1";
 
-        if (!ids.isEmpty()) {
+        if (!ids.isEmpty())
+        {
             where += " AND ERROR_ID IN ('" + String.join("','", ids) + "')";
         }
 
@@ -167,32 +186,42 @@ public class H2ErrorReporter {
             " FROM ERRORS" +
             " WHERE " + where +
             " ORDER BY DATETIME";
-        try (Connection con = dataSource.getConnection();
-             Statement stmt = con.createStatement();
-             ResultSet rslt = stmt.executeQuery(stmtStr)) {
-            while(rslt.next()) {
+        try
+        (
+            Connection con = dataSource.getConnection();
+            Statement stmt = con.createStatement();
+            ResultSet rslt = stmt.executeQuery(stmtStr)
+        )
+        {
+            while (rslt.next())
+            {
                 String text = null;
-                if (withText) {
+                if (withText)
+                {
                     Clob clob = rslt.getClob("TEXT");
                     // this is how you get the whole string back from a CLOB
-                    text = clob.getSubString(1, (int)clob.length());
+                    text = clob.getSubString(1, (int) clob.length());
                 }
-                errors.add(new ErrorReport(
-                    rslt.getString("NODE"),
-                    Node.Type.getByValue(rslt.getInt("MODULE")),
-                    "ErrorReport-" + rslt.getString("ERROR_ID") + ".log",
-                    rslt.getString("VERSION"),
-                    rslt.getString("PEER"),
-                    rslt.getString("EXCEPTION"),
-                    rslt.getString("EXCEPTION_MESSAGE"),
-                    rslt.getString("ORIGIN_FILE"),
-                    rslt.getString("ORIGIN_METHOD"),
-                    rslt.getInt("ORIGIN_LINE"),
-                    new Date(rslt.getTimestamp("DATETIME").getTime()),
-                    text
-                ));
+                errors.add(
+                    new ErrorReport(
+                        rslt.getString("NODE"),
+                        Node.Type.getByValue(rslt.getInt("MODULE")),
+                        "ErrorReport-" + rslt.getString("ERROR_ID") + ".log",
+                        rslt.getString("VERSION"),
+                        rslt.getString("PEER"),
+                        rslt.getString("EXCEPTION"),
+                        rslt.getString("EXCEPTION_MESSAGE"),
+                        rslt.getString("ORIGIN_FILE"),
+                        rslt.getString("ORIGIN_METHOD"),
+                        rslt.getInt("ORIGIN_LINE"),
+                        new Date(rslt.getTimestamp("DATETIME").getTime()),
+                        text
+                    )
+                );
             }
-        } catch(SQLException sqlExc) {
+        }
+        catch(SQLException sqlExc)
+        {
             errorReporter.logError("Unable to operate on error-reports database: " + sqlExc.getMessage());
         }
 
@@ -210,7 +239,9 @@ public class H2ErrorReporter {
 
         // prevent an "empty" where clause(delete all)
         if (to == null && exception == null && version == null && (ids == null || ids.isEmpty()))
+        {
             return apiCallRc;
+        }
 
         try
         {
@@ -246,14 +277,17 @@ public class H2ErrorReporter {
                 stmt.append(")");
             }
 
-            try (Connection con = dataSource.getConnection();
-                 PreparedStatement pStmt = con.prepareStatement(stmt.toString()))
+            try
+            (
+                Connection con = dataSource.getConnection();
+                PreparedStatement pStmt = con.prepareStatement(stmt.toString());
+            )
             {
                 if (to != null)
                 {
                     pStmt.setTimestamp(index++, new java.sql.Timestamp(to.getTime()));
                 }
-                if(since != null)
+                if (since != null)
                 {
                     pStmt.setTimestamp(index++, new java.sql.Timestamp(since.getTime()));
                 }
@@ -279,7 +313,8 @@ public class H2ErrorReporter {
                     apiCallRc.addEntry(String.format("Deleted %d error-report(s)", deleted), ApiConsts.DELETED);
                 }
             }
-        } catch (SQLException sqlExc)
+        }
+        catch (SQLException sqlExc)
         {
             final String errorMsg = "Unable to operate on error-reports database: " + sqlExc.getMessage();
             final String errorId = errorReporter.reportError(sqlExc);

@@ -419,6 +419,7 @@ public class CtrlRscMakeAvailableApiCallHandler
 
     private Resource getActiveRsc(ResourceWithPayloadApi rscToCreate, Node node, ResourceDefinition rscDfn)
     {
+        Resource activeRsc = null;
         try
         {
             Set<SharedStorPoolName> sharedSpNames = getSharedSpNamesByRscCreateApi(rscToCreate, node, rscDfn);
@@ -427,7 +428,8 @@ public class CtrlRscMakeAvailableApiCallHandler
             {
                 if (!rsc.getStateFlags().isSet(peerCtxProvider.get(), Resource.Flags.INACTIVE))
                 {
-                    return rsc;
+                    activeRsc = rsc;
+                    break;
                 }
             }
         }
@@ -793,7 +795,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                         );
                     }
                 }
-                if (allVolumesShared) {
+                if (allVolumesShared)
+                {
                     Integer nodeId = null;
                     {
                         Set<AbsRscLayerObject<Resource>> drbdRscData = LayerRscUtils.getRscDataByProvider(

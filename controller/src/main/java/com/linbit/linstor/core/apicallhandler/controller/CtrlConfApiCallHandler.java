@@ -512,11 +512,13 @@ public class CtrlConfApiCallHandler
                  */
                 handleClusterRemoteNamespace(apiCallRc, fullKey, value);
             }
-            else if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
+            else
+            if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
             {
                 boolean notifyStlts = false;
                 String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
-                if (fullKey.startsWith(ApiConsts.NAMESPC_REST + '/') || fullKey.startsWith(ApiConsts.NAMESPC_AUTOPLACER + "/"))
+                if (fullKey.startsWith(ApiConsts.NAMESPC_REST + '/') ||
+                    fullKey.startsWith(ApiConsts.NAMESPC_AUTOPLACER + "/"))
                 {
                     notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                 }
@@ -533,16 +535,23 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_TCP_PORT_RANGE:
                             setTcpPort(key, namespace, normalized, snapShipPortPool, apiCallRc);
                             break;
-                        case ApiConsts.KEY_SEARCH_DOMAIN: // fall-through
-                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER: // fall-through
+                        case ApiConsts.KEY_SEARCH_DOMAIN:
+                            // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER:
+                            // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM:
                             notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                             break;
-                        case ApiConsts.KEY_UPDATE_CACHE_INTERVAL: // fall-through
-                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO: // fall-through
-                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION: // fall-through
-                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_AFTER_TIME: // fall-through
-                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES: // fall-through
+                        case ApiConsts.KEY_UPDATE_CACHE_INTERVAL:
+                            // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO:
+                            // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION:
+                            // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_AFTER_TIME:
+                            // fall-through
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES:
+                            // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT:
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace); // no need to update stlts
                             break;
@@ -558,7 +567,6 @@ public class CtrlConfApiCallHandler
                                             "The " + ApiConsts.KEY_EXT_CMD_WAIT_TO + " must not be negative"
                                         )
                                     );
-
                                 }
                                 ChildProcessHandler.dfltWaitTimeout = timeout;
                             }
@@ -572,6 +580,7 @@ public class CtrlConfApiCallHandler
                                     exc
                                 );
                             }
+                            // fall-through
                         default:
                             notifyStlts = setStltProp(peerAccCtx.get(), fullKey, normalized);
                             break;
@@ -579,7 +588,8 @@ public class CtrlConfApiCallHandler
                 }
                 transMgrProvider.get().commit();
 
-                if (notifyStlts) {
+                if (notifyStlts)
+                {
                     updateSatelliteConf();
                 }
 
@@ -777,7 +787,8 @@ public class CtrlConfApiCallHandler
 
                 transMgrProvider.get().commit();
 
-                if (notifyStlts) {
+                if (notifyStlts)
+                {
                     updateSatelliteConf();
                 }
 

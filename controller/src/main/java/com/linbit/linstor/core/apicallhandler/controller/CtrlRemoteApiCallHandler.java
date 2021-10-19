@@ -518,13 +518,18 @@ public class CtrlRemoteApiCallHandler
         String port = matcher.group(3);
 
         int dfltPort = CtrlConfig.DEFAULT_HTTP_REST_PORT;
-        if (protocol == null || protocol.isEmpty()) {
+        if (protocol == null || protocol.isEmpty())
+        {
             protocol = "http://";
-        }else if (protocol.equals("https://")) {
+        }
+        else
+        if (protocol.equals("https://"))
+        {
             dfltPort = CtrlConfig.DEFAULT_HTTPS_REST_PORT;
         }
 
-        if (port == null || port.isEmpty()) {
+        if (port == null || port.isEmpty())
+        {
             port = ":" + Integer.toString(dfltPort);
         }
 
@@ -670,7 +675,7 @@ public class CtrlRemoteApiCallHandler
 
         if (remote == null)
         {
-            flux = Flux.<ApiCallRc> just(
+            flux = Flux.<ApiCallRc>just(
                 ApiCallRcImpl.singleApiCallRc(
                     ApiConsts.WARN_NOT_FOUND,
                     remoteDescription + " not found."
@@ -689,7 +694,7 @@ public class CtrlRemoteApiCallHandler
                     .setDetails(remoteDescription + " UUID is: " + remote.getUuid().toString())
                     .build()
             );
-            flux = Flux.<ApiCallRc> just(responses)
+            flux = Flux.<ApiCallRc>just(responses)
                 .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote))
                 .concatWith(deleteImpl(remote));
         }

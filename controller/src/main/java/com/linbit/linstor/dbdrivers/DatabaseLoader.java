@@ -668,14 +668,15 @@ public class DatabaseLoader implements DatabaseDriver
             rli ->
             {
                 // snamshotName != null means this is a snapshot, not a resource.
-                return rli.snapshotName != null ? null
-                    : tmpRscDfnMapRef.get(rli.resourceName).getResource(dbCtx, rli.nodeName);
+                return rli.snapshotName != null ?
+                    null : tmpRscDfnMapRef.get(rli.resourceName).getResource(dbCtx, rli.nodeName);
             }
         );
 
         List<Snapshot> snapshotsWithLayerData = loadLayerData(
             tmpStorPoolMapRef,
-            rli ->{
+            rli ->
+            {
                 Snapshot snap = null;
                 if (rli.snapshotName != null)
                 {
@@ -765,7 +766,7 @@ public class DatabaseLoader implements DatabaseDriver
                     switch (rli.kind)
                     {
                         case DRBD:
-                            rscLayerObjectPair = drbdLayerDriver.<RSC> load(
+                            rscLayerObjectPair = drbdLayerDriver.<RSC>load(
                                 rsc,
                                 rli.id,
                                 rli.rscSuffix,

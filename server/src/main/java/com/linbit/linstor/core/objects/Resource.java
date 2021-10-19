@@ -442,17 +442,17 @@ public class Resource extends AbsResource<Resource>
         }
 
         @Override
-        public boolean equals(Object o)
+        public boolean equals(Object obj)
         {
-            if (this == o)
+            if (this == obj)
             {
                 return true;
             }
-            if (o == null || getClass() != o.getClass())
+            if (obj == null || getClass() != obj.getClass())
             {
                 return false;
             }
-            ResourceKey that = (ResourceKey) o;
+            ResourceKey that = (ResourceKey) obj;
             return Objects.equals(nodeName, that.nodeName) &&
                 Objects.equals(resourceName, that.resourceName);
         }

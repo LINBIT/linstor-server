@@ -52,7 +52,8 @@ public class BCacheUtils
             cmdList.add("-B");
             cmdList.add(backingDev);
         }
-        if (cacheDev != null) {
+        if (cacheDev != null)
+        {
             cmdList.add("-C");
             cmdList.add(cacheDev);
         }
@@ -77,10 +78,10 @@ public class BCacheUtils
         UUID ret = null;
         for (String line : out.trim().split(System.lineSeparator()))
         {
-            Matcher m = pattern.matcher(line);
-            if (m.find())
+            Matcher mtc = pattern.matcher(line);
+            if (mtc.find())
             {
-                ret = UUID.fromString(m.group(1));
+                ret = UUID.fromString(mtc.group(1));
                 break;
             }
         }
@@ -236,9 +237,11 @@ public class BCacheUtils
                 Thread.sleep(ATTACH_WAIT_SYS_FS_EXIST_TIMEOUT_IN_MS);
             }
             catch (InterruptedException ignored)
-            {}
+            {
+            }
         }
-        if (!Files.exists(attachPath)) {
+        if (!Files.exists(attachPath))
+        {
             throw new StorageException(
                 "Path does not exist after waiting " +
                     ATTACH_WAIT_SYS_FS_EXIST_TIMEOUT_IN_MS * ATTACH_WAIT_SYS_FS_EXISTS_COUNT + "ms: " + attachPath

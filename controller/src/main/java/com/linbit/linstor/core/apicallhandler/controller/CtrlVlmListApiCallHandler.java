@@ -296,7 +296,8 @@ public class CtrlVlmListApiCallHandler
                 }
             }
         }
-        else if(vlm.isAllocatedSizeSet(peerAccCtx.get()))
+        else
+        if (vlm.isAllocatedSizeSet(peerAccCtx.get()))
         {
             allocated = vlm.getAllocatedSize(peerAccCtx.get());
         }

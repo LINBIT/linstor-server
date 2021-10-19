@@ -661,13 +661,17 @@ public class LvmCommands
         String[] cmd;
         if (ignoreCache)
         {
-            cmd = new String[] { "vgscan", "-qq", // quite and auto-"no"
+            cmd = new String[]
+            {
+                "vgscan", "-qq", // quite and auto-"no"
                 "--cache" // yes, that means to bypass LVMs cache...
             };
         }
         else
         {
-            cmd = new String[] { "vgscan", "-qq" // quite and auto-"no"
+            cmd = new String[]
+            {
+                "vgscan", "-qq" // quite and auto-"no"
             };
         }
 

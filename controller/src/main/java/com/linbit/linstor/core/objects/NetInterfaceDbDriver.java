@@ -87,15 +87,14 @@ public class NetInterfaceDbDriver
                 break;
             case K8S_CRD:
                 // TODO: change NetIf.STLT_CONN_PORT from SHORT to INTEGER with SQL migration
-                setColumnSetter(STLT_CONN_PORT, netIf ->
-                {
-                    Integer nullable = TcpPortNumber.getValueNullable(netIf.getStltConnPort(dbCtxRef));
-                    if (nullable == null)
+                setColumnSetter(
+                    STLT_CONN_PORT,
+                    netIf ->
                     {
-                        return (Short) null;
+                        Integer nullable = TcpPortNumber.getValueNullable(netIf.getStltConnPort(dbCtxRef));
+                        return nullable != null ? nullable.shortValue() : (Short) null;
                     }
-                    return nullable.shortValue();
-                });
+                );
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());

@@ -177,7 +177,11 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                         entry.getValue(), entry.getKey(), localNodeName
                     );
                     // Subscribe a noop consumer
-                    fluxObj.subscribe(rc -> {});
+                    fluxObj.subscribe(
+                        rc ->
+                        {
+                        }
+                    );
                 }
 
                 if (nameMatcher == null)
@@ -230,7 +234,11 @@ public class CmdRunDeviceManager extends BaseDebugCmd
                                 rsc.getUuid(), rscName, localNodeName
                             );
                             // Subscribe a noop consumer
-                            fluxObj.subscribe(rc -> {});
+                            fluxObj.subscribe(
+                                rc ->
+                                {
+                                }
+                            );
                             debugOut.println(
                                 "Device manager notified to adjust the resource '" +
                                 rscName.displayValue + "'"

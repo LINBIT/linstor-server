@@ -65,6 +65,16 @@ public class StoragePools
     private final ObjectMapper objectMapper;
     private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
+    private static final ArrayList<String> RENAME_KEYS = new ArrayList<>();
+    static
+    {
+        RENAME_KEYS.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_VOLUME_GROUP);
+        RENAME_KEYS.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_ZPOOL);
+        RENAME_KEYS.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_ZPOOLTHIN);
+        RENAME_KEYS.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_FILE_DIRECTORY);
+        RENAME_KEYS.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_OPENFLEX_STOR_POOL);
+    }
+
     @Inject
     StoragePools(
         RequestHelper requestHelperRef,
@@ -215,15 +225,6 @@ public class StoragePools
         }).next();
     }
 
-    private final static ArrayList<String> renameKeys = new ArrayList<>();
-    static {
-        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_VOLUME_GROUP);
-        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_ZPOOL);
-        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_ZPOOLTHIN);
-        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_FILE_DIRECTORY);
-        renameKeys.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_OPENFLEX_STOR_POOL);
-    }
-
     /**
      * Converts old/multiple storage pool properties into the single new one KEY_STOR_POOL_NAME
      * @param props map with current properties
@@ -231,7 +232,7 @@ public class StoragePools
     private void convertStorPoolProp(Map<String, String> props)
     {
         final String poolNameKey = ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_NAME;
-        for (final String key : renameKeys)
+        for (final String key : RENAME_KEYS)
         {
             if (props.containsKey(key))
             {
@@ -243,7 +244,7 @@ public class StoragePools
         final String thinKey = ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_THIN_POOL;
         if (props.containsKey(thinKey))
         {
-            props.put(poolNameKey,props.get(poolNameKey) + '/' + props.get(thinKey));
+            props.put(poolNameKey, props.get(poolNameKey) + '/' + props.get(thinKey));
             props.remove(thinKey);
         }
     }

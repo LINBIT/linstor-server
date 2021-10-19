@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public interface TransactionMgr
 {
-    static final Pattern TX_MGR_PATTERN = Pattern.compile("(Controller(SQL|ETCD)|Satellite|)TransactionMgr|DummyTxMgr");
+    Pattern TX_MGR_PATTERN = Pattern.compile("(Controller(SQL|ETCD)|Satellite|)TransactionMgr|DummyTxMgr");
 
     void register(TransactionObject transObj);
 

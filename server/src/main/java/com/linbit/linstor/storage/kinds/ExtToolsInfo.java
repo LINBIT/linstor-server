@@ -167,19 +167,19 @@ public class ExtToolsInfo
         }
 
         @Override
-        public int compareTo(Version v)
+        public int compareTo(Version vsn)
         {
-            int cmp = compare(major, v.major); // equals
+            int cmp = compare(major, vsn.major); // equals
             if (cmp == 0)
             {
-                cmp = compare(minor, v.minor);
+                cmp = compare(minor, vsn.minor);
                 if (cmp == 0)
                 {
-                    cmp = compare(patch, v.patch);
+                    cmp = compare(patch, vsn.patch);
                     if (cmp == 0)
                     {
                         boolean localNullOrEmpty = additionalInfo == null || additionalInfo.isEmpty();
-                        boolean otherNullOrEmpty = v.additionalInfo == null || additionalInfo.isEmpty();
+                        boolean otherNullOrEmpty = vsn.additionalInfo == null || additionalInfo.isEmpty();
 
                         if (localNullOrEmpty)
                         {

@@ -49,7 +49,8 @@ public class ExosEnclosurePingTask implements Task
         sysCtx = sysCtxRef;
     }
 
-    public List<ExosEnclosureHealthPojo> getPojos(boolean recache){
+    public List<ExosEnclosureHealthPojo> getPojos(boolean recache)
+    {
         recacheIfEmpty(recache);
 
         synchronized (enclosureInfo)
@@ -195,7 +196,7 @@ public class ExosEnclosurePingTask implements Task
 
         final ExosRestClient client;
 
-        public EnclosureInfo(String enclosureNameRef, String ctrlAIpRef, String ctrlBIpRef)
+        EnclosureInfo(String enclosureNameRef, String ctrlAIpRef, String ctrlBIpRef)
             throws AccessDeniedException
         {
             enclosureName = enclosureNameRef;

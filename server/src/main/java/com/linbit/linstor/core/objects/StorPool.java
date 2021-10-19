@@ -456,17 +456,17 @@ public class StorPool extends BaseTransactionObject
         }
 
         @Override
-        public boolean equals(Object o)
+        public boolean equals(Object obj)
         {
-            if (this == o)
+            if (this == obj)
             {
                 return true;
             }
-            if (o == null || getClass() != o.getClass())
+            if (obj == null || getClass() != obj.getClass())
             {
                 return false;
             }
-            Key that = (Key) o;
+            Key that = (Key) obj;
             return Objects.equals(nodeName, that.nodeName) &&
                 Objects.equals(storPoolName, that.storPoolName);
         }

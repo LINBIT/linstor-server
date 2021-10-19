@@ -80,10 +80,12 @@ class Selector
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                if (!rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DELETE)) {
+                if (!rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DELETE))
+                {
                     Node node = rsc.getNode();
 
-                    List<String> skipAlreadyPlacedOnNodeNamesCheck = selectFilterRef.skipAlreadyPlacedOnNodeNamesCheck();
+                    List<String> skipAlreadyPlacedOnNodeNamesCheck =
+                        selectFilterRef.skipAlreadyPlacedOnNodeNamesCheck();
                     Boolean skipAlreadyPlacedOnAllNodesCheck = selectFilterRef.skipAlreadyPlacedOnAllNodeCheck();
 
                     boolean countResource = skipAlreadyPlacedOnAllNodesCheck == null ||
@@ -115,7 +117,8 @@ class Selector
                     {
                         if (storageRscData.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
                         {
-                            for (VlmProviderObject<Resource> storageVlmData : storageRscData.getVlmLayerObjects().values())
+                            for (VlmProviderObject<Resource> storageVlmData :
+                                 storageRscData.getVlmLayerObjects().values())
                             {
                                 StorPool sp = storageVlmData.getStorPool();
                                 alreadyDeployedInSharedSPNames.add(sp.getSharedStorPoolName());
@@ -130,7 +133,10 @@ class Selector
                                     else
                                     if (!alreadySelectedProviderKind.equals(storageVlmProviderKind))
                                     {
-                                        throw new ImplementationError("Multiple deployed provider kinds found for: " + rsc);
+                                        throw new ImplementationError(
+                                            "Multiple deployed provider kinds found for: " +
+                                            rsc
+                                        );
                                     }
                                 }
                             }
@@ -209,7 +215,8 @@ class Selector
                 else
                 {
                     errorReporter.logTrace(
-                        "Autoplacer.Selector: Skipping candidate %s as its accumulated score %f is lower than currently best candidate's %f",
+                        "Autoplacer.Selector: Skipping candidate %s as its accumulated score %f is lower than " +
+                            "currently best candidate's %f",
                         storPoolDescrForLog.toString(),
                         currentScore,
                         selectionScore
@@ -231,7 +238,8 @@ class Selector
                     if (!keepSearchingForCandidates)
                     {
                         errorReporter.logTrace(
-                            "Autoplacer.Selector: Remaining candidates-combinations cannot have higher score then the currently chosen one. Search finished."
+                            "Autoplacer.Selector: Remaining candidates-combinations cannot have higher score then " +
+                                "the currently chosen one. Search finished."
                         );
                     }
                     else
@@ -255,7 +263,8 @@ class Selector
             {
                 errorReporter.logTrace("Autoplacer.Selector: no more candidates found");
             }
-        } while (currentSelection.size() == replicaCount && keepSearchingForCandidates);
+        }
+        while (currentSelection.size() == replicaCount && keepSearchingForCandidates);
 
         return selectionResult;
     }
@@ -320,7 +329,7 @@ class Selector
         private HashMap<String, String> sameProps = new HashMap<>();
         private HashMap<String, List<String>> diffProps = new HashMap<>();
 
-        public SelectionManger(
+        SelectionManger(
             AutoSelectFilterApi selectFilterRef,
             List<Node> alreadyDeployedOnNodesRef,
             int diskfulNodeCount,
@@ -469,11 +478,12 @@ class Selector
                     String nodePropValue = nodeProps.getProp(sameProp.getKey());
                     // if the node does not have the property, do not allow selecting this storage pool
                     isAllowed = nodePropValue != null && nodePropValue.equals(samePropValue);
-                    if (!isAllowed) {
+                    if (!isAllowed)
+                    {
                         errorReporter.logTrace(
                             "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
-                            "canditate-selection as the node has property '%s' set to '%s' while the already selected "+
-                            "nodes require the value to be '%s'",
+                            "canditate-selection as the node has property '%s' set to '%s' while the already " +
+                            "selected nodes require the value to be '%s'",
                             sp.getName().displayValue,
                             sp.getNode().getName().displayValue,
                             sameProp.getKey(),
@@ -498,8 +508,8 @@ class Selector
                     {
                         errorReporter.logTrace(
                             "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
-                            "canditate-selection as the node has property '%s' set to '%s', but that value is already " +
-                            "taken by another node from the current selection",
+                            "canditate-selection as the node has property '%s' set to '%s', but that value is " +
+                            "already taken by another node from the current selection",
                             sp.getName().displayValue,
                             sp.getNode().getName().displayValue,
                             diffProp.getKey(),

@@ -279,7 +279,7 @@ public class CtrlNodeCrtApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
-        return Flux.<ApiCallRc> just(apiCallRcImpl)
+        return Flux.<ApiCallRc>just(apiCallRcImpl)
             .concatWith(Flux.merge(autoFluxes));
     }
 }

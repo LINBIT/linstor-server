@@ -1395,51 +1395,55 @@ public class CtrlApiCallHandler
 
                                 for (Map.Entry<NodeName, SatelliteState> entry : rscs.getSatelliteStates().entrySet())
                                 {
-                                    if (!nodeNames.contains(entry.getKey().displayValue.toLowerCase())) {
-                                        continue; // skip non resource nodes
-                                    }
-
-                                    final SatelliteState stltState = entry.getValue();
-                                    SatelliteResourceState rscState = stltState.getResourceStates().get(rscCloneName);
-
-                                    if (rscState == null)
+                                    // Ignore non resource nodes
+                                    if (nodeNames.contains(entry.getKey().displayValue.toLowerCase()))
                                     {
-                                        isReady = false;
-                                        break;
+                                        SatelliteState stltState = entry.getValue();
+                                        SatelliteResourceState rscState =
+                                            stltState.getResourceStates().get(rscCloneName);
 
-                                    }
-                                    if (!rscState.isReady())
-                                    {
-                                        isReady = false;
-
-                                        anyFailed = rscState.getConnectionStates().values()
-                                            .stream()
-                                            .flatMap(f -> f.values().stream())
-                                            .anyMatch("StandAlone"::equalsIgnoreCase);
-
-                                        if (anyFailed)
+                                        if (rscState == null)
                                         {
+                                            isReady = false;
                                             break;
+
                                         }
-
-                                        boolean allDrbdConnected = rscState.getConnectionStates().values()
-                                            .stream()
-                                            .flatMap(f -> f.values().stream())
-                                            .allMatch("Connected"::equalsIgnoreCase);
-
-                                        if (allDrbdConnected)
+                                        if (!rscState.isReady())
                                         {
-                                            anyFailed = rscState.getVolumeStates().values().stream().anyMatch(
-                                                vlmState -> vlmState.getDiskState().equalsIgnoreCase("Inconsistent") ||
-                                                    vlmState.getDiskState().equalsIgnoreCase("Outdated"));
+                                            isReady = false;
+
+                                            anyFailed = rscState.getConnectionStates().values()
+                                                .stream()
+                                                .flatMap(f -> f.values().stream())
+                                                .anyMatch("StandAlone"::equalsIgnoreCase);
+
                                             if (anyFailed)
                                             {
                                                 break;
                                             }
+
+                                            boolean allDrbdConnected = rscState.getConnectionStates().values()
+                                                .stream()
+                                                .flatMap(f -> f.values().stream())
+                                                .allMatch("Connected"::equalsIgnoreCase);
+
+                                            if (allDrbdConnected)
+                                            {
+                                                anyFailed = rscState.getVolumeStates().values().stream().anyMatch(
+                                                    vlmState ->
+                                                        vlmState.getDiskState().equalsIgnoreCase("Inconsistent") ||
+                                                        vlmState.getDiskState().equalsIgnoreCase("Outdated")
+                                                );
+                                                if (anyFailed)
+                                                {
+                                                    break;
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                            } else
+                            }
+                            else
                             {
                                 isReady = false;
                             }
@@ -1448,7 +1452,8 @@ public class CtrlApiCallHandler
                         if (isReady)
                         {
                             status = ApiConsts.CloneStatus.COMPLETE;
-                        } else
+                        }
+                        else
                         {
                             if (anyFailed)
                             {
@@ -1461,9 +1466,12 @@ public class CtrlApiCallHandler
             else
             {
                 throw new ApiRcException(
-                    ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_NOT_FOUND_RSC_DFN, "Cloned resource not found."));
+                    ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_NOT_FOUND_RSC_DFN, "Cloned resource not found.")
+                );
             }
-        } catch (InvalidNameException exc) {
+        }
+        catch (InvalidNameException exc)
+        {
             throw new ApiRcException(
                 ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_INVLD_RSC_NAME, "Invalid resource name provided.")
             );

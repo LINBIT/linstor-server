@@ -151,7 +151,8 @@ public class CtrlSosReportApiCallHandler
             );
 
         List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> namesAndRequests = nodeStream
-            .map(node -> Tuples.of(node.getName(), prepareSosRequestApi(node, tmpDir, since))).collect(Collectors.toList());
+            .map(node -> Tuples.of(node.getName(), prepareSosRequestApi(node, tmpDir, since)))
+            .collect(Collectors.toList());
 
         return Flux.fromIterable(namesAndRequests)
             .flatMap(
@@ -349,7 +350,8 @@ public class CtrlSosReportApiCallHandler
             {
                 makeFile(
                     Paths.get(cmd.file.toString() + ".failed"),
-                    exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " + Arrays.toString(cmd.cmd),
+                    exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " +
+                        Arrays.toString(cmd.cmd),
                     System.currentTimeMillis()
                 );
             }
@@ -388,8 +390,9 @@ public class CtrlSosReportApiCallHandler
         }
     }
 
-    private void makeFile(Path filePath, String text, long time) throws IOException
+    private void makeFile(Path filePath, String contents, long time) throws IOException
     {
+        String text = contents;
         if (text == null || text.isEmpty())
         {
             text = "No content found";
@@ -432,7 +435,8 @@ public class CtrlSosReportApiCallHandler
         if (output.exitCode != 0)
         {
             makeFile(
-                filePath, new String(output.stdoutData) + "\n\n" + new String(output.stderrData), System.currentTimeMillis()
+                filePath, new String(output.stdoutData) + "\n\n" + new String(output.stderrData),
+                System.currentTimeMillis()
             );
         }
         else
@@ -449,7 +453,8 @@ public class CtrlSosReportApiCallHandler
         if (output.exitCode != 0)
         {
             makeFile(
-                Paths.get(filePath.toString() + ".failed"), new String(output.stdoutData) + "\n\n" + new String(output.stderrData), System.currentTimeMillis()
+                Paths.get(filePath.toString() + ".failed"), new String(output.stdoutData) + "\n\n" +
+                    new String(output.stderrData), System.currentTimeMillis()
             );
         }
     }

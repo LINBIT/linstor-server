@@ -157,13 +157,15 @@ public class CtrlErrorListApiCallHandler
             nodes.stream().anyMatch(n -> n.equalsIgnoreCase(LinStor.CONTROLLER_MODULE)))
         {
             // delete on controller
-            apiCallRc.addEntries(errorReporter.deleteErrorReports(
-                since,
-                to,
-                exception,
-                version,
-                ids
-            ));
+            apiCallRc.addEntries(
+                errorReporter.deleteErrorReports(
+                    since,
+                    to,
+                    exception,
+                    version,
+                    ids
+                )
+            );
         }
 
         // Returned satellite error deletion answers
@@ -172,7 +174,7 @@ public class CtrlErrorListApiCallHandler
             NodeName nodeName = deleteAnswer.getT1();
             ByteArrayInputStream dataIn = deleteAnswer.getT2();
 
-            ApiCallRc nodeApis = ProtoDeserializationUtils.parseApiCallAnswerMsg(dataIn,nodeName.displayValue + ": ");
+            ApiCallRc nodeApis = ProtoDeserializationUtils.parseApiCallAnswerMsg(dataIn, nodeName.displayValue + ": ");
             nodeApis.getEntries().forEach(entry -> entry.getObjRefs().put(ApiConsts.KEY_NODE, nodeName.displayValue));
             apiCallRc.addEntries(nodeApis);
         }

@@ -205,7 +205,8 @@ class CtrlStorPoolDfnApiCallHandler
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 storPoolDfn.getUuid(), getStorPoolDfnDescriptionInline(storPoolDfn)));
 
-            if (notifyStlts) {
+            if (notifyStlts)
+            {
                 fluxes = updateSatellites(storPoolDfn);
             }
         }

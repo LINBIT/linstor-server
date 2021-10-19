@@ -533,7 +533,9 @@ public class ReconnectorTask implements Task
                             else
                             {
                                 errorReporter.logTrace(
-                                    "Currently more than %d%% nodes are not connected to the controller. The controller might have a problem with it's connections, therefore no nodes will be declared as EVICTED",
+                                    "Currently more than %d%% nodes are not connected to the controller. " +
+                                        "The controller might have a problem with it's connections, therefore " +
+                                        "no nodes will be declared as EVICTED",
                                     maxPercentDiscon
                                 );
                             }
@@ -541,7 +543,8 @@ public class ReconnectorTask implements Task
                         else
                         {
                             errorReporter.logDebug(
-                                "The node %s will not be evicted since the property AutoEvictAllowEviction is set to false.",
+                                "The node %s will not be evicted since the property AutoEvictAllowEviction is set " +
+                                    "to false.",
                                 node.getName()
                             );
                         }

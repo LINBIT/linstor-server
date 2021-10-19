@@ -230,13 +230,15 @@ public class RscDfnInternalCallHandler
                         vlm.getFlags().enableFlags(apiCtx, Volume.Flags.CLONING_FINISHED);
                         errorReporter.logTrace("Cloning finished with success on %s/%d from %s",
                             rscName, vlmNr, currentPeer.getNode().getName());
-                    } else
+                    }
+                    else
                     {
                         rscDfn.getFlags().enableFlags(apiCtx, ResourceDefinition.Flags.FAILED);
                         errorReporter.logError("Error cloning Volume %s/%d on node %s",
                             rscName, vlmNr, currentPeer.getNode().getName());
                     }
-                } else
+                }
+                else
                 {
                     errorReporter.logError("Clone update for non cloning Volume: %s/%d from node %s",
                         rscName, vlmNr, currentPeer.getNode().getName());
@@ -248,23 +250,31 @@ public class RscDfnInternalCallHandler
 
             // if failed never finish
             boolean allCloned = !rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.Flags.FAILED);
-            if (allCloned) {
-                for (Resource rsc : rscDfn.streamResource(apiCtx).collect(Collectors.toList())) {
-                    for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList())) {
-                        if (!vlm.getFlags().isSet(apiCtx, Volume.Flags.CLONING_FINISHED)) {
+            if (allCloned)
+            {
+                for (Resource rsc : rscDfn.streamResource(apiCtx).collect(Collectors.toList()))
+                {
+                    for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
+                    {
+                        if (!vlm.getFlags().isSet(apiCtx, Volume.Flags.CLONING_FINISHED))
+                        {
                             allCloned = false;
                             break;
                         }
                     }
-                    if (!allCloned) {
+                    if (!allCloned)
+                    {
                         break;
                     }
                 }
             }
 
-            if (allCloned) {
-                for (Resource rsc : rscDfn.streamResource(apiCtx).collect(Collectors.toList())) {
-                    for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList())) {
+            if (allCloned)
+            {
+                for (Resource rsc : rscDfn.streamResource(apiCtx).collect(Collectors.toList()))
+                {
+                    for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
+                    {
                         vlm.getFlags().disableFlags(apiCtx, Volume.Flags.CLONING);
                     }
                 }
@@ -287,19 +297,23 @@ public class RscDfnInternalCallHandler
                                 .write(LockGuardFactory.LockObj.RSC_DFN_MAP).buildDeferred(),
                             () -> disableForceMetadataFlagInTransaction(rscDfn)
                         )
-                    )
-                ;
-            } else {
+                    );
+            }
+            else
+            {
                 ctrlTransactionHelper.commit();
             }
-        } catch (AccessDeniedException | ValueOutOfRangeException | DatabaseException | InvalidNameException exc) {
+        }
+        catch (AccessDeniedException | ValueOutOfRangeException | DatabaseException | InvalidNameException exc)
+        {
             throw new ImplementationError(exc);
         }
 
         return flux;
     }
 
-    public Flux<ApiCallRc> disableForceMetadataFlagInTransaction(ResourceDefinition rscDfn) {
+    public Flux<ApiCallRc> disableForceMetadataFlagInTransaction(ResourceDefinition rscDfn)
+    {
         try
         {
             rscDfn.getFlags().disableFlags(apiCtx, ResourceDefinition.Flags.CLONING);
@@ -317,7 +331,9 @@ public class RscDfnInternalCallHandler
                     "Notified {0} that {1} is being updated on Node(s)"
                     )
                 ).concatWith(ctrlRscCrtHandler.setInitialized(resources));
-        } catch (AccessDeniedException | DatabaseException exc) {
+        }
+        catch (AccessDeniedException | DatabaseException exc)
+        {
             throw new ImplementationError(exc);
         }
     }

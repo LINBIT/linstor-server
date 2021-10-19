@@ -304,7 +304,9 @@ public class WritecacheLayer implements DeviceLayer
                     }
                 }
             }
-        } else {
+        }
+        else
+        {
             if (!hasDrbd)
             {
                 // resumeIO if necessary
@@ -397,7 +399,8 @@ public class WritecacheLayer implements DeviceLayer
                             apiCallRcRef.addEntries(
                                 ApiCallRcImpl.singleApiCallRc(
                                     ApiConsts.MASK_VLM | ApiConsts.MASK_CRT | ApiConsts.WARN_MIXED_PMEM_AND_NON_PMEM,
-                                    "Some storage pools are based on pmem while others are not. Falling back to 's' mode."
+                                    "Some storage pools are based on pmem while others are not. " +
+                                        "Falling back to 's' mode."
                                 )
                             );
                         }
@@ -408,7 +411,7 @@ public class WritecacheLayer implements DeviceLayer
                         errorReporter.logDebug(
                             "Writecache: considering used storage pool%s as pmem: %s",
                             storPoolSet.size() == 1 ?
-                               " [" + storPoolSet.iterator().next().getName().displayValue +"]" :
+                               " [" + storPoolSet.iterator().next().getName().displayValue + "]" :
                                 "s " + storPoolSet,
                             considerCacheAsPmem
                         );
@@ -512,7 +515,8 @@ public class WritecacheLayer implements DeviceLayer
         }
         else
         {
-            AbsRscLayerObject<Resource> cacheRscChild = layerDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE);
+            AbsRscLayerObject<Resource> cacheRscChild =
+                layerDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE);
             if (cacheRscChild == null)
             {
                 // we might be an imaginary layer above an NVMe target which does not need a cache...

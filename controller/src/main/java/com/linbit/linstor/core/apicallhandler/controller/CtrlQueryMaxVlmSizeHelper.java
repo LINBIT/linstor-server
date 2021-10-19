@@ -113,11 +113,12 @@ public class CtrlQueryMaxVlmSizeHelper
 
                     nodeNameList.add(sp.getNode().getName().displayValue);
 
-                    Optional<Long> freeCapacityCurrentEstimation = FreeCapacityAutoPoolSelectorUtils.getFreeCapacityCurrentEstimationPrivileged(
-                        apiCtx,
-                        thinFreeCapacities,
-                        sp
-                    );
+                    Optional<Long> freeCapacityCurrentEstimation =
+                        FreeCapacityAutoPoolSelectorUtils.getFreeCapacityCurrentEstimationPrivileged(
+                            apiCtx,
+                            thinFreeCapacities,
+                            sp
+                        );
                     if (freeCapacityCurrentEstimation.isPresent())
                     {
                         Long spFreeSpace = freeCapacityCurrentEstimation.get();

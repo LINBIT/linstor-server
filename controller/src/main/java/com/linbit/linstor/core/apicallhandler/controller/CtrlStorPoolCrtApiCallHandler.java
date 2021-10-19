@@ -138,6 +138,7 @@ public class CtrlStorPoolCrtApiCallHandler
             // Therefore we need to be able to modify apiCtrlAccessors.storPoolDfnMap
             requireStorPoolDfnMapChangeAccess();
 
+            String modifiedNameStr = sharedStorPoolNameStr;
             if (deviceProviderKindRef == DeviceProviderKind.EXOS)
             {
                 // exos always needs this
@@ -147,7 +148,7 @@ public class CtrlStorPoolCrtApiCallHandler
                 String poolSn = storPoolPropsMap.get(
                     ApiConsts.NAMESPC_EXOS + "/" + ApiConsts.KEY_STOR_POOL_EXOS_POOL_SN
                 );
-                sharedStorPoolNameStr = enclosureName + "_" + poolSn;
+                modifiedNameStr = enclosureName + "_" + poolSn;
 
                 if (exosPingTask.getClient(enclosureName) == null)
                 {
@@ -164,7 +165,7 @@ public class CtrlStorPoolCrtApiCallHandler
                 nodeNameStr,
                 storPoolNameStr,
                 deviceProviderKindRef,
-                sharedStorPoolNameStr,
+                modifiedNameStr,
                 externalLockingRef
             );
 

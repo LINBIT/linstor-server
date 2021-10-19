@@ -15,7 +15,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class ProcCryptoUtils {
+public class ProcCryptoUtils
+{
 
     private static final Pattern PROC_CRYPTO_PATTERN = Pattern.compile("(\\w+)\\s+:\\s+([a-zA-Z_0-9\\-(),]+)");
 

@@ -75,5 +75,6 @@ public interface DeviceHandler
      * where the DeviceManager is already accessible through the injected Provider<DeviceManager>
      */
     default void initialize()
-    {}
+    {
+    }
 }

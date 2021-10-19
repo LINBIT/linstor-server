@@ -576,11 +576,13 @@ public class CtrlExosApiCallHandler
             if (client != null)
             {
                 StringBuilder sb = new StringBuilder();
-                for (String cmd : cmdsRef) {
+                for (String cmd : cmdsRef)
+                {
                     sb.append(cmd).append("/");
                 }
-                if (sb.length() > 0) {
-                    sb.setLength(sb.length()-1);
+                if (sb.length() > 0)
+                {
+                    sb.setLength(sb.length() - 1);
                 }
                 ret = client.exec(sb.toString());
             }

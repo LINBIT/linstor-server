@@ -90,8 +90,9 @@ public class PriorityProps
                 break;
             }
         }
-        if (value == null) {
-            final String fullKey = namespace != null? namespace + Props.PATH_SEPARATOR + key : key;
+        if (value == null)
+        {
+            final String fullKey = namespace != null ? namespace + Props.PATH_SEPARATOR + key : key;
             value = fallbackMap.get(prepStoreKey(fullKey));
         }
         return value;
@@ -213,7 +214,7 @@ public class PriorityProps
                 }
             }
         }
-        final String fullKey = namespace != null? namespace + Props.PATH_SEPARATOR + key : key;
+        final String fullKey = namespace != null ? namespace + Props.PATH_SEPARATOR + key : key;
         String value = fallbackMap.get(prepStoreKey(fullKey));
         if (value != null)
         {
@@ -273,7 +274,8 @@ public class PriorityProps
                 {
                     result = new MultiResult(entry.getValue(), FALLBACKMAP_NAME);
                     ret.put(key, result);
-                } else
+                }
+                else
                 {
                     result.addResult(entry.getValue(), FALLBACKMAP_NAME);
                 }

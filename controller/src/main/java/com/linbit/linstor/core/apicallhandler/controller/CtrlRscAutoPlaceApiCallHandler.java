@@ -325,8 +325,9 @@ public class CtrlRscAutoPlaceApiCallHandler
 
                 ctrlTransactionHelper.commit();
 
-                deploymentResponses = deployedResources.objB.isEmpty() ? Flux.empty()
-                    : ctrlRscCrtApiHelper.deployResources(context, deployedResources.objB);
+                deploymentResponses = deployedResources.objB.isEmpty() ?
+                    Flux.empty() :
+                    ctrlRscCrtApiHelper.deployResources(context, deployedResources.objB);
                 deploymentResponses = Flux.merge(deployedResources.objA)
                     .concatWith(deploymentResponses)
                     .concatWith(autoFlux);

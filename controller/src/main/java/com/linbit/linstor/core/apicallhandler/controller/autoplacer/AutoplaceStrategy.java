@@ -15,12 +15,12 @@ public interface AutoplaceStrategy
 
     MinMax getMinMax();
 
-    public enum MinMax
+    enum MinMax
     {
         MINIMIZE, MAXIMIZE;
     }
 
-    public static class RatingAdditionalInfo
+    class RatingAdditionalInfo
     {
         public RatingAdditionalInfo()
         {

@@ -36,7 +36,8 @@ public interface DeviceLayer
      * where the DeviceManager is already accessible through the injected Provider<DeviceManager>
      */
     default void initialize()
-    {}
+    {
+    }
 
     String getName();
 
@@ -150,12 +151,12 @@ public interface DeviceLayer
         void notifyResourceFailed(Resource rsc, ApiCallRc apiCallRc);
     }
 
-    public enum LayerProcessResult
+    enum LayerProcessResult
     {
         SUCCESS, NO_DEVICES_PROVIDED
     }
 
-    public class AbortLayerProcessingException extends LinStorRuntimeException
+    class AbortLayerProcessingException extends LinStorRuntimeException
     {
         private static final long serialVersionUID = -3885415188860635819L;
         public final AbsRscLayerObject<?> rscLayerObject;

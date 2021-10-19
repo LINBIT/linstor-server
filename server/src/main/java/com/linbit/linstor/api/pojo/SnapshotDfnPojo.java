@@ -7,11 +7,8 @@ import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.utils.Pair;
 
-import javax.annotation.Nullable;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 public class SnapshotDfnPojo implements SnapshotDefinitionApi

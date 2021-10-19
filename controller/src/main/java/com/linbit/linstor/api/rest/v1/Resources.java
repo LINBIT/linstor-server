@@ -455,7 +455,7 @@ public class Resources
     )
     {
         Flux<ApiCallRc> flux = ctrlRscActivateApiCallHandler
-            .activateRsc(nodeName,rscName)
+            .activateRsc(nodeName, rscName)
             .subscriberContext(
                 requestHelper.createContext(ApiConsts.API_ACTIVATE_RSC, request)
             );
@@ -473,7 +473,7 @@ public class Resources
         )
     {
         Flux<ApiCallRc> flux = ctrlRscActivateApiCallHandler
-            .deactivateRsc(nodeName,rscName)
+            .deactivateRsc(nodeName, rscName)
             .subscriberContext(
                 requestHelper.createContext(ApiConsts.API_DEACTIVATE_RSC, request)
             );

@@ -16,7 +16,8 @@ public class Migration_2019_12_04_RemoveOrphanedResourceLayerIds extends Linstor
     @Override
     protected void migrate(Connection dbCon, DbProduct dbProduct) throws Exception
     {
-        try(
+        try
+        (
             PreparedStatement select = dbCon.prepareStatement(
                 " SELECT TMP.LAYER_RESOURCE_ID, TMP.NODE_NAME, TMP.RESOURCE_NAME, R.RESOURCE_FLAGS FROM ( " +
                 "      SELECT ID.LAYER_RESOURCE_ID, ID.NODE_NAME, ID.RESOURCE_NAME, ID.LAYER_RESOURCE_KIND, DV.VLM_NR " +
@@ -42,7 +43,7 @@ public class Migration_2019_12_04_RemoveOrphanedResourceLayerIds extends Linstor
                 " WHERE NODE_NAME     = ? AND " +
                       " RESOURCE_NAME = ? "
             )
-            )
+        )
         {
             while (rs.next())
             {

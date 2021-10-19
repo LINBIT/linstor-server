@@ -104,8 +104,12 @@ class CtrlVlmConnectionApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
-                vlmConn.getUuid(), getVlmConnectionDescriptionInline(apiCtx, vlmConn)));
+            responseConverter.addWithOp(
+                responses, context,
+                ApiSuccessUtils.defaultCreatedEntry(
+                    vlmConn.getUuid(), getVlmConnectionDescriptionInline(apiCtx, vlmConn)
+                )
+            );
             responseConverter.addWithDetail(responses, context, updateSatellites(vlmConn));
         }
         catch (Exception | ImplementationError exc)
@@ -143,10 +147,12 @@ class CtrlVlmConnectionApiCallHandler
 
             if (rscConnUuid != null && !rscConnUuid.equals(vlmConn.getUuid()))
             {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_UUID_VLM_CONN,
-                    "UUID-check failed"
-                ));
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UUID_VLM_CONN,
+                        "UUID-check failed"
+                    )
+                );
             }
 
             Props props = getProps(vlmConn);
@@ -162,9 +168,14 @@ class CtrlVlmConnectionApiCallHandler
 
             ctrlTransactionHelper.commit();
 
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
-                vlmConn.getUuid(), getVlmConnectionDescriptionInline(apiCtx, vlmConn)));
-            if (notifyStlts) {
+            responseConverter.addWithOp(
+                responses, context,
+                ApiSuccessUtils.defaultModifiedEntry(
+                    vlmConn.getUuid(), getVlmConnectionDescriptionInline(apiCtx, vlmConn)
+                )
+            );
+            if (notifyStlts)
+            {
                 responseConverter.addWithDetail(responses, context, updateSatellites(vlmConn));
             }
         }
@@ -197,12 +208,15 @@ class CtrlVlmConnectionApiCallHandler
             VolumeConnection vlmConn = loadVlmConn(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt);
             if (vlmConn == null)
             {
-                responseConverter.addWithDetail(responses, context, ApiCallRcImpl.simpleEntry(
-                    ApiConsts.WARN_NOT_FOUND,
-                    "Could not delete " +
-                        getVlmConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt) +
-                        " as it does not exist."
-                ));
+                responseConverter.addWithDetail(
+                    responses, context,
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.WARN_NOT_FOUND,
+                        "Could not delete " +
+                            getVlmConnectionDescriptionInline(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt) +
+                            " as it does not exist."
+                    )
+                );
             }
             else
             {
@@ -210,8 +224,12 @@ class CtrlVlmConnectionApiCallHandler
                 delete(vlmConn);
                 ctrlTransactionHelper.commit();
 
-                responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
-                    vlmConnUuid, getVlmConnectionDescription(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt)));
+                responseConverter.addWithOp(
+                    responses, context,
+                    ApiSuccessUtils.defaultDeletedEntry(
+                        vlmConnUuid, getVlmConnectionDescription(nodeName1Str, nodeName2Str, rscNameStr, vlmNrInt)
+                    )
+                );
             }
         }
         catch (Exception | ImplementationError exc)

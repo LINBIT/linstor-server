@@ -13,13 +13,14 @@ public class Migration_2021_03_30_AddStorPoolDisklessColumnRG extends LinstorMig
 {
     private static final String TBL_RG = "RESOURCE_GROUPS";
     private static final String COL_NAME_POOL_NAME = "POOL_NAME";
-	private static final String COL_NAM_NODE_NAME_LIST = "NODE_NAME_LIST";
-	private static final String COL_NAM_DO_NOT_PLACE_WITH_RSC_REGEX = "DO_NOT_PLACE_WITH_RSC_REGEX";
-	private static final String COL_NAM_DO_NOT_PLACE_WITH_RSC_LIST = "DO_NOT_PLACE_WITH_RSC_LIST";
-	private static final String COL_NAM_REPLICAS_ON_SAME = "REPLICAS_ON_SAME";
-	private static final String COL_NAM_REPLICAS_ON_DIFFERENT = "REPLICAS_ON_DIFFERENT";
+    private static final String COL_NAM_NODE_NAME_LIST = "NODE_NAME_LIST";
+    private static final String COL_NAM_DO_NOT_PLACE_WITH_RSC_REGEX = "DO_NOT_PLACE_WITH_RSC_REGEX";
+    private static final String COL_NAM_DO_NOT_PLACE_WITH_RSC_LIST = "DO_NOT_PLACE_WITH_RSC_LIST";
+    private static final String COL_NAM_REPLICAS_ON_SAME = "REPLICAS_ON_SAME";
+    private static final String COL_NAM_REPLICAS_ON_DIFFERENT = "REPLICAS_ON_DIFFERENT";
 
-    private static final String[] COL_NAMES_FOR_TYPE_CHANGE = new String[] {
+    private static final String[] COL_NAMES_FOR_TYPE_CHANGE = new String[]
+    {
         COL_NAME_POOL_NAME,
         COL_NAM_NODE_NAME_LIST,
         COL_NAM_DO_NOT_PLACE_WITH_RSC_REGEX,

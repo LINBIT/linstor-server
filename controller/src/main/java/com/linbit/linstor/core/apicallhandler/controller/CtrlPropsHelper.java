@@ -454,7 +454,8 @@ public class CtrlPropsHelper
                 try
                 {
                     final String oldVal = targetProps.setProp(key, normalized);
-                    if (!normalized.equals(oldVal)) {
+                    if (!normalized.equals(oldVal))
+                    {
                         propsModified = true;
                     }
                 }
@@ -593,7 +594,8 @@ public class CtrlPropsHelper
             if (isPropWhitelisted)
             {
                 String deletedValue = props.removeProp(key);
-                if (deletedValue != null) {
+                if (deletedValue != null)
+                {
                     propsModified = true;
                 }
             }
@@ -626,7 +628,8 @@ public class CtrlPropsHelper
                         );
                     }
                 }
-                if (props.removeNamespace(deleteNamespace)) {
+                if (props.removeNamespace(deleteNamespace))
+                {
                     propsModified = true;
                 }
             }

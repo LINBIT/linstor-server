@@ -222,7 +222,8 @@ public class SysFsHandler
                         if (!vlmData.getRscLayerObject().getChildren().isEmpty())
                         {
                             VlmProviderObject<Resource> childVlmData = vlmData.getRscLayerObject()
-                                .getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA).getVlmProviderObject(vlmData.getVlmNr());
+                                .getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+                                .getVlmProviderObject(vlmData.getVlmNr());
                             if (
                                 childVlmData != null &&
                                     childVlmData.getDevicePath() != null &&
@@ -328,7 +329,7 @@ public class SysFsHandler
     private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws StorageException, AccessDeniedException
     {
         String majMin = deviceMajorMinorMap.get(vlmDataRef);
-        if (vlmDataRef.exists() && !((Volume)vlmDataRef.getVolume()).getFlags().isSet(apiCtx, Volume.Flags.CLONING))
+        if (vlmDataRef.exists() && !((Volume) vlmDataRef.getVolume()).getFlags().isSet(apiCtx, Volume.Flags.CLONING))
         {
             if (majMin == null)
             {
@@ -436,7 +437,7 @@ public class SysFsHandler
                             {
                                 Thread.sleep(100);
                             }
-                            catch (InterruptedException exc)
+                            catch (InterruptedException ignored)
                             {
                             }
                         }
@@ -545,7 +546,7 @@ public class SysFsHandler
     {
         private final ExceptionThrowingBiFunction<Path, BasicFileAttributes, FileVisitResult, IOException> fct;
 
-        public SysFsFileWalker(
+        SysFsFileWalker(
             ExceptionThrowingBiFunction<Path, BasicFileAttributes, FileVisitResult, IOException> fctRef
         )
         {

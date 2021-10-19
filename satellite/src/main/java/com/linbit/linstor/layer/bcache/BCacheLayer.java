@@ -453,7 +453,8 @@ public class BCacheLayer implements DeviceLayer
                 }
             }
             catch (InterruptedException ignored)
-            {}
+            {
+            }
         }
         if (!found)
         {
@@ -476,7 +477,8 @@ public class BCacheLayer implements DeviceLayer
                 identifier = BCacheUtils.getIdentifierByBackingUuid(extCmdFactory, backingDevUuid);
             }
             catch (InterruptedException ignored)
-            {}
+            {
+            }
         }
         if (identifier == null)
         {

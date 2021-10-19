@@ -329,12 +329,16 @@ public class CtrlVlmGrpApiCallHandler
                 )
             );
 
-            if (notifyStlts) {
-                for (ResourceDefinition rscDfn : rscGrp.getRscDfns(peerAccCtx.get())) {
-                    fluxes.add(Flux.just(ctrlSatelliteUpdateCaller
-                        .updateSatellites(rscDfn, Flux.empty())
-                        .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
-                    ));
+            if (notifyStlts)
+            {
+                for (ResourceDefinition rscDfn : rscGrp.getRscDfns(peerAccCtx.get()))
+                {
+                    fluxes.add(
+                        Flux.just(
+                            ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+                                .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                        )
+                    );
                 }
             }
         }

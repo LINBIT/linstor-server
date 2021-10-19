@@ -182,7 +182,8 @@ public class CtrlStorPoolApiCallHandler
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 storPool.getUuid(), getStorPoolDescriptionInline(storPool)));
 
-            if (notifyStlts) {
+            if (notifyStlts)
+            {
                 flux = ctrlSatelliteUpdateCaller.updateSatellite(storPool);
             }
         }

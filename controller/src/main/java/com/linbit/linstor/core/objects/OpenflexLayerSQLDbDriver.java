@@ -89,7 +89,7 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
     private static final String INSERT_RSC_DFN =
         " INSERT INTO " + TBL_LAYER_OPENFLEX_RESOURCE_DEFINITONS +
         " ( " + StringUtils.join(", ", RSC_DFN_ALL_FIELDS) + " ) " +
-        " VALUES ( " +StringUtils.repeat("?", ",",RSC_DFN_ALL_FIELDS.length) + " )";
+        " VALUES ( " + StringUtils.repeat("?", ",", RSC_DFN_ALL_FIELDS.length) + " )";
     private static final String INSERT_VLM =
         " INSERT INTO " + TBL_LAYER_OPENFLEX_VOLUMES +
         " ( " + StringUtils.join(", ", VLM_ALL_FIELDS) + " ) " +
@@ -254,7 +254,8 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
         }
     }
 
-    private void fetchOfVlms(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef) throws DatabaseException
+    private void fetchOfVlms(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef)
+        throws DatabaseException
     {
         cachedVlmInfoMap = new HashMap<>();
         try (
@@ -339,8 +340,8 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
             transMgrProvider
         );
 
-        rscDfnDataPair.objB.add((OpenflexRscData<Resource>) ofRscData);// FIXME as soon as snapshots are supported for
-                                                                       // openflex
+        rscDfnDataPair.objB.add((OpenflexRscData<Resource>) ofRscData); // FIXME as soon as snapshots are supported for
+                                                                        // openflex
 
         List<OpenflexVlmInfo> ofVlmInfoList = cachedVlmInfoMap.get(id);
         try

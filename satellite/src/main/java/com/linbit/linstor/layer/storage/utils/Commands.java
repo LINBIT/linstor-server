@@ -172,8 +172,7 @@ public class Commands
     {
         OutputData output = genericExecutor(
             extCmd,
-            new String[] { "blockdev", "--getsize64", devicePath
-            },
+            new String[] {"blockdev", "--getsize64", devicePath},
             "Failed to get block size of " + devicePath,
             "Failed to get block size of " + devicePath
         );

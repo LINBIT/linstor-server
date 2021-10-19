@@ -151,7 +151,8 @@ public class ConfFileBuilder
                 InternalApiConsts.DRBD_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
             final String autoVerifyAlgo = prioProps.getProp(
                 InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
-            if (verifyAlgo == null && autoVerifyAlgo != null) {
+            if (verifyAlgo == null && autoVerifyAlgo != null)
+            {
                 prioProps.setFallbackProp(
                     InternalApiConsts.DRBD_VERIFY_ALGO,
                     autoVerifyAlgo,

@@ -23,7 +23,8 @@ import java.util.Date;
     transactional = false
 )
 @Singleton
-public class DelErrorReports implements ApiCall {
+public class DelErrorReports implements ApiCall
+{
     private final StltApiCallHandler apiCallHandler;
     private final Provider<Peer> peerProvider;
 

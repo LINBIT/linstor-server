@@ -78,7 +78,7 @@ public class SosReport
                             output.flush();
                             input.close();
                         }
-                        catch (Exception e)
+                        catch (Exception exc)
                         {
                             throw new WebApplicationException("File Not Found !!");
                         }

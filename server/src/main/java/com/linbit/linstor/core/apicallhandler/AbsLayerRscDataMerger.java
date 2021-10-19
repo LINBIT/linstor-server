@@ -656,7 +656,8 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         if (writecacheRscData == null)
         {
             writecacheRscData = createWritecacheRscData(rsc, parent, writecacheRscPojo);
-        } else
+        }
+        else
         {
             mergeWritecacheRscData(parent, writecacheRscPojo, writecacheRscData);
         }

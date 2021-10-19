@@ -371,13 +371,13 @@ public class DevicePoolHandler
             List<String> nvmeBdevs = new ArrayList<>();
             for (final String pciAddress : pciAddresses)
             {
-                final String bdev_name = new String(
+                final String bdevName = new String(
                     SpdkLocalCommands.nvmeBdevCreate(
                         extCmdFactory.create(),
                         pciAddress
                     ).stdoutData
                 ).trim();
-                nvmeBdevs.add(bdev_name);
+                nvmeBdevs.add(bdevName);
                 apiCallRc.addEntry(
                     ApiCallRcImpl.entryBuilder(
                         ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,

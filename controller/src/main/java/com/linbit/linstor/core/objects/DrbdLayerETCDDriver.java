@@ -280,7 +280,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                         vlmDfn.getVolumeNumber(),
                         minor,
                         minorPool,
-                        vlmDfn.getResourceDefinition().<DrbdRscDfnData<Resource>> getLayerData(
+                        vlmDfn.getResourceDefinition().<DrbdRscDfnData<Resource>>getLayerData(
                             dbCtx,
                             DeviceLayerKind.DRBD,
                             rscNameSuffix
@@ -305,9 +305,8 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                     if (snapVlmDfn == null)
                     {
                         throw new LinStorDBRuntimeException(
-                            "Loaded drbd snapshot volume definition data for non existent snapshot volume definition '"
-                                +
-                                rscName + "', '" + snapDfnStr + "', vlmNr: " + vlmNr
+                            "Loaded drbd snapshot volume definition data for non existent snapshot " +
+                                "volume definition '" + rscName + "', '" + snapDfnStr + "', vlmNr: " + vlmNr
                         );
                     }
                     DrbdVlmDfnData<Snapshot> drbdSnapVlmDfnData = new DrbdVlmDfnData<>(
@@ -318,7 +317,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                         snapVlmDfn.getVolumeNumber(),
                         DrbdVlmDfnData.SNAPSHOT_MINOR,
                         minorPool,
-                        snapVlmDfn.getSnapshotDefinition().<DrbdRscDfnData<Snapshot>> getLayerData(
+                        snapVlmDfn.getSnapshotDefinition().<DrbdRscDfnData<Snapshot>>getLayerData(
                             dbCtx,
                             DeviceLayerKind.DRBD,
                             rscNameSuffix

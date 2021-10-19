@@ -42,8 +42,8 @@ import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 @Singleton
 class PreSelector
 {
-    private final static Path SCRIPT_BASE_PATH = Paths.get("/etc/linstor/selector/");
-    private final static long DFLT_SCRIPT_RUN_TIME = 5_000;
+    private static final Path SCRIPT_BASE_PATH = Paths.get("/etc/linstor/selector/");
+    private static final long DFLT_SCRIPT_RUN_TIME = 5_000;
 
     private final AccessContext apiCtx;
     private final ErrorReporter errorReporter;
@@ -325,7 +325,7 @@ class PreSelector
          */
         private NodeScriptPojo node;
 
-        public StorPoolScriptPojo(StorPoolWithScore spWithScore)
+        StorPoolScriptPojo(StorPoolWithScore spWithScore)
         {
             storPool = spWithScore.storPool;
             score = spWithScore.score;
@@ -370,7 +370,7 @@ class PreSelector
     {
         private final Node node;
 
-        public NodeScriptPojo(Node nodeRef)
+        NodeScriptPojo(Node nodeRef)
         {
             node = nodeRef;
         }

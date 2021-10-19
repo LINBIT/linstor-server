@@ -363,7 +363,7 @@ public class SharedStorPoolManager
     private Node getNode(TransactionObject txObj)
     {
         Node ret;
-        if(txObj instanceof Resource)
+        if (txObj instanceof Resource)
         {
             ret = ((Resource) txObj).getNode();
         }

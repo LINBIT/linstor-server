@@ -231,14 +231,14 @@ public class ResourceLayerIdSQLDbDriver implements ResourceLayerIdCtrlDatabaseDr
     private String getId(AbsRscData<?, ?> rscData)
     {
         AbsResource<?> absRsc = rscData.getAbsResource();
-        String snapName = absRsc instanceof Resource ? DFLT_SNAP_NAME_FOR_RSC
-            : ((Snapshot) absRsc).getSnapshotName().displayValue;
+        String snapName = absRsc instanceof Resource ?
+            DFLT_SNAP_NAME_FOR_RSC : ((Snapshot) absRsc).getSnapshotName().displayValue;
         return "(" + rscData.getClass().getSimpleName() + ", " +
             "Node: " + rscData.getAbsResource().getNode().getName().displayValue +
             ", Resource: " + rscData.getResourceName().displayValue +
-            (rscData.getAbsResource() instanceof Snapshot
-                ? ", SnapshotName: " + (((Snapshot) rscData.getAbsResource()).getSnapshotName().displayValue)
-                : DFLT_SNAP_NAME_FOR_RSC) +
+            (rscData.getAbsResource() instanceof Snapshot ?
+                ", SnapshotName: " + (((Snapshot) rscData.getAbsResource()).getSnapshotName().displayValue) :
+                DFLT_SNAP_NAME_FOR_RSC) +
             ", Layer Id: " + rscData.getRscLayerId() + ")";
     }
 

@@ -771,7 +771,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
             "SELECT " +
                 CLM_UUID + ", " +
                 CLM_NODE_NAME + ", " +
-                CLM_RSC_NAME +", " +
+                CLM_RSC_NAME + ", " +
                 CLM_SNAP_NAME + ", " +
                 CLM_SNAP_FLAGS +  // copy into RESOURCE_FLAGS
             " FROM " + TBL_SNAP;
@@ -884,7 +884,7 @@ public class Migration_2019_11_21_UnifyResourceAndSnapshot extends LinstorMigrat
                 "SV." + CLM_STOR_POOL_NAME + ", " +
                 "SP." + CLM_DRIVER_NAME +
             " FROM " +
-                TBL_SNAP_VLM + " AS SV, "+
+                TBL_SNAP_VLM + " AS SV, " +
                 TBL_SNAP + " AS S, " +
                 TBL_STOR_POOL + " AS SP " +
             " WHERE " +

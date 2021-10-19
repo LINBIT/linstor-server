@@ -15,7 +15,8 @@ public class Migration_17_UpdateAllowedVerifyAlgoList extends BaseEtcdMigration
             "crct10dif-pclmul;crct10dif-generic;sha384-generic;sha512-generic;sha256-generic;md5-generic");
         final String stltKey = prefix + "PROPS_CONTAINERS/STLTCFG:DrbdOptions/auto-verify-algo-disable";
         final String disabled =  tx.getFirstValue(stltKey);
-        if (disabled != null) {
+        if (disabled != null)
+        {
             tx.put(prefix + "PROPS_CONTAINERS//CTRLCFG:DrbdOptions/auto-verify-algo-disable", disabled);
             tx.delete(stltKey, false);
         }

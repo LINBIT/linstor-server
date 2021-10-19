@@ -125,7 +125,8 @@ public class CtrlRscAutoHelper
         );
     }
 
-    private Flux<ApiCallRc> manageAllInTransaction(AutoHelperContext autoCtxWithoutRscDfn){
+    private Flux<ApiCallRc> manageAllInTransaction(AutoHelperContext autoCtxWithoutRscDfn)
+    {
         List<Flux<ApiCallRc>> fluxList = new ArrayList<>();
         try
         {
@@ -291,5 +292,4 @@ public class CtrlRscAutoHelper
     {
         void manage(AutoHelperContext ctx);
     }
-
 }

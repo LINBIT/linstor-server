@@ -278,7 +278,8 @@ public class SnapshotShippingService implements SystemService
                     {
                         boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
                         controllerPeerConnector.getControllerPeer().sendMessage(
-                            interComSerializer.onewayBuilder(internalApiName).notifySnapshotShipped(snap, success, shippingInfo.vlmNrsWithBlockedPort).build()
+                            interComSerializer.onewayBuilder(internalApiName)
+                                .notifySnapshotShipped(snap, success, shippingInfo.vlmNrsWithBlockedPort).build()
                         );
                     }
 

@@ -244,13 +244,15 @@ public class RscOpenflexLayerHelper
         RSC absRsc = fromSnapDataRef.getAbsResource();
         if (absRsc instanceof Snapshot)
         {
-            dfnData = ((Snapshot)absRsc).getSnapshotDefinition()
+            dfnData = ((Snapshot) absRsc).getSnapshotDefinition()
                 .getLayerData(
                     apiCtx,
                     DeviceLayerKind.OPENFLEX,
                     resourceNameSuffix
                 );
-        } else if (absRsc instanceof Resource)
+        }
+        else
+        if (absRsc instanceof Resource)
         {
             dfnData = absRsc.getResourceDefinition()
                 .getLayerData(
@@ -258,7 +260,9 @@ public class RscOpenflexLayerHelper
                     DeviceLayerKind.OPENFLEX,
                     resourceNameSuffix
                 );
-        } else {
+        }
+        else
+        {
             throw new ImplementationError("Unexpected AbsRsc Type");
         }
         String shortName = nameShortener.shorten(rscDfnRef, resourceNameSuffix);

@@ -292,7 +292,7 @@ public class CtrlRscGrpApiCallHandler
 
         StorPoolDefinitionMap spdMap = spdRepo.getMapForView(apiCtx);
         AutoSelectorConfig autoPlaceConfig = rscGrpRef.getAutoPlaceConfig();
-        for (boolean diskfulExpected : new Boolean[] { true, false })
+        for (boolean diskfulExpected : new Boolean[] {true, false})
         {
             List<String> storPoolNamesToCheck;
             if (diskfulExpected)
@@ -349,7 +349,8 @@ public class CtrlRscGrpApiCallHandler
             if (!spNameDiskfulButDisklessExpectedList.isEmpty())
             {
                 sb.append(
-                    "The following configured storage pools are diskful, but are wrongly configured to be used for diskless autoplacements:\n\t"
+                    "The following configured storage pools are diskful, but are wrongly configured to be used " +
+                        "for diskless autoplacements:\n\t"
                 );
                 sb.append(StringUtils.join(spNameDiskfulButDisklessExpectedList, "\n\t"));
                 sb.append("\n");
@@ -357,7 +358,8 @@ public class CtrlRscGrpApiCallHandler
             if (!spNameDisklessButDiskfulExpectedList.isEmpty())
             {
                 sb.append(
-                    "The following configured storage pools are diskless, but are wrongly configured to be used for diskful autoplacements:\n\t"
+                    "The following configured storage pools are diskless, but are wrongly configured to be used " +
+                        "for diskful autoplacements:\n\t"
                 );
                 sb.append(StringUtils.join(spNameDisklessButDiskfulExpectedList, "\n\t"));
                 sb.append("\n");
@@ -494,17 +496,19 @@ public class CtrlRscGrpApiCallHandler
                     for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx))
                     {
                         long rscCount = rscDfn.streamResource(apiCtx)
-                            .filter(rsc ->
-                            {
-                                try
+                            .filter(
+                                rsc ->
                                 {
-                                    return !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER);
+                                    try
+                                    {
+                                        return !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER);
+                                    }
+                                    catch (AccessDeniedException exc)
+                                    {
+                                        throw new ImplementationError(exc);
+                                    }
                                 }
-                                catch (AccessDeniedException exc)
-                                {
-                                    throw new ImplementationError(exc);
-                                }
-                            }).count();
+                            ).count();
                         if (rscCount < newReplicaCount)
                         {
                             errorReporter.logDebug(
@@ -545,8 +549,10 @@ public class CtrlRscGrpApiCallHandler
                 )
             );
 
-            if (notifyStlts) {
-                for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx)) {
+            if (notifyStlts)
+            {
+                for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx))
+                {
                     responseConverter.addWithDetail(
                             apiCallRcs,
                             context,

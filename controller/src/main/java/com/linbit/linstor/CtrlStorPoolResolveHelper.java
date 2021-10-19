@@ -156,9 +156,11 @@ public class CtrlStorPoolResolveHelper
                     possibleStorPools = Collections.singletonList(LinstorParsingUtils.asStorPoolName(storPoolNameStr));
                 }
 
-                for (StorPoolName storPoolName : possibleStorPools) {
+                for (StorPoolName storPoolName : possibleStorPools)
+                {
                     storPool = rsc.getNode().getStorPool(apiCtx, storPoolName);
-                    if (storPool != null) {
+                    if (storPool != null)
+                    {
                         if (storPool.getDeviceProviderKind().hasBackingDevice())
                         {
                             // If the storage pool has backing storage, check that it is of the same kind as the peers

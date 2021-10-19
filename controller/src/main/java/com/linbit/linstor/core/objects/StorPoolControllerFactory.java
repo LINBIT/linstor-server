@@ -47,7 +47,8 @@ public class StorPoolControllerFactory
         FreeSpaceTracker freeSpaceTrackerRef,
         boolean externalLockingRef
     )
-        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, IllegalStorageDriverException
+        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException,
+        IllegalStorageDriverException
     {
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);

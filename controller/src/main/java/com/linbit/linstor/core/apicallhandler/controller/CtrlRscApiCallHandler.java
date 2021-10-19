@@ -195,7 +195,8 @@ public class CtrlRscApiCallHandler
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 rsc.getUuid(), getRscDescriptionInline(rsc)));
 
-            if (notifyStlts) {
+            if (notifyStlts)
+            {
                 flux = ctrlSatelliteUpdateCaller
                         .updateSatellites(rsc.getDefinition(), Flux.empty())
                         .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());

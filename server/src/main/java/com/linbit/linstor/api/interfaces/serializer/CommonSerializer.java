@@ -83,11 +83,11 @@ public interface CommonSerializer
         );
 
         CommonSerializerBuilder deleteErrorReports(
-            @Nullable final Date since,
-            @Nullable final Date to,
-            @Nullable final String exception,
-            @Nullable final String version,
-            @Nullable final List<String> ids
+            @Nullable Date since,
+            @Nullable Date to,
+            @Nullable String exception,
+            @Nullable String version,
+            @Nullable List<String> ids
         );
 
         CommonSerializerBuilder requestSosReport(Date since);

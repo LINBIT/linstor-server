@@ -138,53 +138,54 @@ public class ResourceDefinitions
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createResourceDefinition(@Context Request request, String jsonData)
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_CRT_RSC_DFN, request), () ->
-        {
-            JsonGenTypes.ResourceDefinitionCreate rscDfnCreate = objectMapper.readValue(
-                jsonData,
-                JsonGenTypes.ResourceDefinitionCreate.class
-            );
-//            final List<VolumeDefinitionData> vlmDfns =
-//                rscDfnCreate.resource_definition.volume_definitions != null ?
-//                    rscDfnCreate.resource_definition.volume_definitions : new ArrayList<>();
-
-            List<JsonGenTypes.ResourceDefinitionLayer> layerDataList = rscDfnCreate.resource_definition.layer_data;
-            // currently we ignore the possible payload, only extract the layer-stack
-
-            byte[] externalNameBytes = rscDfnCreate.resource_definition.external_name != null ?
-                rscDfnCreate.resource_definition.external_name.getBytes(StandardCharsets.UTF_8) : null;
-
-            LayerPayload payload = new LayerPayload();
-            payload.drbdRscDfn.peerSlotsNewResource = rscDfnCreate.drbd_peer_slots == null ? null
-                : rscDfnCreate.drbd_peer_slots.shortValue();
-            payload.drbdRscDfn.tcpPort = rscDfnCreate.drbd_port;
-            if (rscDfnCreate.drbd_transport_type != null && !rscDfnCreate.drbd_transport_type.trim().isEmpty())
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_CRT_RSC_DFN, request),
+            () ->
             {
-                try
-                {
-                    payload.drbdRscDfn.transportType = TransportType.byValue(rscDfnCreate.drbd_transport_type);
-                }
-                catch (IllegalArgumentException unknownValueExc)
-                {
-                    throw new JsonParseException(
-                        "The given transport type '" + rscDfnCreate.drbd_transport_type + "' is invalid.",
-                        unknownValueExc
-                    );
-                }
-            }
-            payload.drbdRscDfn.sharedSecret = rscDfnCreate.drbd_secret;
+                JsonGenTypes.ResourceDefinitionCreate rscDfnCreate = objectMapper.readValue(
+                    jsonData,
+                    JsonGenTypes.ResourceDefinitionCreate.class
+                );
 
-            ApiCallRc apiCallRc = ctrlApiCallHandler.createResourceDefinition(
-                rscDfnCreate.resource_definition.name,
-                externalNameBytes,
-                rscDfnCreate.resource_definition.props,
-                new ArrayList<>(), // do not allow volume definition creations
-                layerDataList.stream().map(rscDfnData -> rscDfnData.type).collect(Collectors.toList()),
-                payload,
-                rscDfnCreate.resource_definition.resource_group_name
-            );
-            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
-        }, true);
+                List<JsonGenTypes.ResourceDefinitionLayer> layerDataList = rscDfnCreate.resource_definition.layer_data;
+                // currently we ignore the possible payload, only extract the layer-stack
+
+                byte[] externalNameBytes = rscDfnCreate.resource_definition.external_name != null ?
+                    rscDfnCreate.resource_definition.external_name.getBytes(StandardCharsets.UTF_8) : null;
+
+                LayerPayload payload = new LayerPayload();
+                payload.drbdRscDfn.peerSlotsNewResource = rscDfnCreate.drbd_peer_slots == null ?
+                    null : rscDfnCreate.drbd_peer_slots.shortValue();
+                payload.drbdRscDfn.tcpPort = rscDfnCreate.drbd_port;
+                if (rscDfnCreate.drbd_transport_type != null && !rscDfnCreate.drbd_transport_type.trim().isEmpty())
+                {
+                    try
+                    {
+                        payload.drbdRscDfn.transportType = TransportType.byValue(rscDfnCreate.drbd_transport_type);
+                    }
+                    catch (IllegalArgumentException unknownValueExc)
+                    {
+                        throw new JsonParseException(
+                            "The given transport type '" + rscDfnCreate.drbd_transport_type + "' is invalid.",
+                            unknownValueExc
+                        );
+                    }
+                }
+                payload.drbdRscDfn.sharedSecret = rscDfnCreate.drbd_secret;
+
+                ApiCallRc apiCallRc = ctrlApiCallHandler.createResourceDefinition(
+                    rscDfnCreate.resource_definition.name,
+                    externalNameBytes,
+                    rscDfnCreate.resource_definition.props,
+                    new ArrayList<>(), // do not allow volume definition creations
+                    layerDataList.stream().map(rscDfnData -> rscDfnData.type).collect(Collectors.toList()),
+                    payload,
+                    rscDfnCreate.resource_definition.resource_group_name
+                );
+                return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
+            },
+            true
+        );
     }
 
     @PUT
@@ -306,21 +307,29 @@ public class ResourceDefinitions
     {
         return flux
             .collectList()
-            .map(apiCallRcList -> {
+            .map(
+                apiCallRcList ->
+                {
                     Response.ResponseBuilder builder = Response.status(Response.Status.CREATED);
-                    ApiCallRcImpl flatApiCallRc = new ApiCallRcImpl(apiCallRcList.stream().flatMap(
-                        apiCallRc -> apiCallRc.getEntries().stream()
-                    ).collect(Collectors.toList()));
-                try
-                {
-                    builder.entity(objectMapper.writeValueAsString(Json.resourceDefCloneStarted(
-                        srcName, clonedName, flatApiCallRc)));
-                } catch (JsonProcessingException e)
-                {
-                    e.printStackTrace();
-                    return Response.serverError().build();
-                }
-                return builder.build();
+                    ApiCallRcImpl flatApiCallRc = new ApiCallRcImpl(
+                        apiCallRcList.stream().flatMap(
+                            apiCallRc -> apiCallRc.getEntries().stream()
+                        ).collect(Collectors.toList())
+                    );
+                    try
+                    {
+                        builder.entity(
+                            objectMapper.writeValueAsString(
+                                Json.resourceDefCloneStarted(srcName, clonedName, flatApiCallRc)
+                            )
+                        );
+                    }
+                    catch (JsonProcessingException exc)
+                    {
+                        exc.printStackTrace();
+                        return Response.serverError().build();
+                    }
+                    return builder.build();
                 }
             );
     }

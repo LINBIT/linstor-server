@@ -41,6 +41,6 @@ public class NotifyBackupShippingReceived implements ApiCallReactive
             ship.getSnapName(),
             ship.getPortsList(),
             ship.getSuccess()
-        ).thenMany(Flux.<byte[]> empty());
+        ).thenMany(Flux.<byte[]>empty());
     }
 }

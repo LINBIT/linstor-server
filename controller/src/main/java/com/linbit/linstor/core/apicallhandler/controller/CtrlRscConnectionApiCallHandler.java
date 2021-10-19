@@ -258,7 +258,8 @@ class CtrlRscConnectionApiCallHandler
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 rscConn.getUuid(), getResourceConnectionDescriptionInline(apiCtx, rscConn)));
 
-            if (notifyStlts) {
+            if (notifyStlts)
+            {
                 fluxes = updateSatellites(rscConn);
             }
         }

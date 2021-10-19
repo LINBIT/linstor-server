@@ -32,7 +32,8 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
     @Override
     protected void migrate(Connection dbCon, DbProduct dbProductRef) throws Exception
     {
-        try(
+        try
+        (
             PreparedStatement select = dbCon.prepareStatement(
                 " SELECT LRI." +
                     StringUtils.join(
@@ -141,7 +142,7 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
         String kind;
         String rscSuffix;
 
-        public LriKey(String nodeNameRef, String rscNameRef, String snapNameRef, String kindRef, String rscSuffixRef)
+        LriKey(String nodeNameRef, String rscNameRef, String snapNameRef, String kindRef, String rscSuffixRef)
         {
             nodeName = nodeNameRef;
             rscName = rscNameRef;

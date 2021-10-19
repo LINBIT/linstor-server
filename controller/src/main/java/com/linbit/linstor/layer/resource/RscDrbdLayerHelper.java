@@ -718,7 +718,7 @@ public class RscDrbdLayerHelper extends
         RSC absRsc = fromSnapDataRef.getAbsResource();
         if (absRsc instanceof Snapshot)
         {
-            dfnData = ((Snapshot)absRsc).getSnapshotDefinition().getLayerData(
+            dfnData = ((Snapshot) absRsc).getSnapshotDefinition().getLayerData(
                 apiCtx,
                 DeviceLayerKind.DRBD,
                 resourceNameSuffix

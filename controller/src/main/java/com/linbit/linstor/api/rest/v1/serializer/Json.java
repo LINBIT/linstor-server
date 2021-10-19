@@ -796,6 +796,7 @@ public class Json
                     volumeLayerData.data = pojoToBCacheVolume(bcacheVlmPojo);
                     break;
                 default:
+                    break;
             }
 
             volume.layer_data_list.add(volumeLayerData);

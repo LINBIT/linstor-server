@@ -457,7 +457,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
                                 vlmDfn.getVolumeNumber(),
                                 minor,
                                 minorPool,
-                                vlmDfn.getResourceDefinition().<DrbdRscDfnData<Resource>> getLayerData(
+                                vlmDfn.getResourceDefinition().<DrbdRscDfnData<Resource>>getLayerData(
                                     dbCtx,
                                     DeviceLayerKind.DRBD,
                                     rscNameSuffix
@@ -659,9 +659,10 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
                     else
                     {
                         Snapshot snap = (Snapshot) absRsc;
-                        Pair<DrbdRscDfnData<Snapshot>, List<DrbdRscData<Snapshot>>> drbdSnapDfnDataPair = drbdSnapDfnCache.get(
-                            new Pair<>(snap.getSnapshotDefinition(), rscSuffixRef)
-                        );
+                        Pair<DrbdRscDfnData<Snapshot>, List<DrbdRscData<Snapshot>>> drbdSnapDfnDataPair =
+                            drbdSnapDfnCache.get(
+                                new Pair<>(snap.getSnapshotDefinition(), rscSuffixRef)
+                            );
 
                         Map<VolumeNumber, DrbdVlmData<Snapshot>> vlmMap = new TreeMap<>();
                         DrbdRscData<Snapshot> drbdSnapData = new DrbdRscData<>(

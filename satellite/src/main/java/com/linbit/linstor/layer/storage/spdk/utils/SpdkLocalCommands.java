@@ -431,7 +431,8 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
         return genericExecutor(
             extCmd,
             new String[]
-            { SPDK_RPC_SCRIPT, "nvmf_get_transports"
+            {
+                SPDK_RPC_SCRIPT, "nvmf_get_transports"
             },
             "Failed to get nvmf transports",
             "Failed to get nvmf transports"
@@ -534,7 +535,7 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
                 subsystemName,
                 "-t", transportType,
                 "-a", address,
-                "-f",addressType,
+                "-f", addressType,
                 "-s", port
             },
             "Failed to add listener to subsystem!",

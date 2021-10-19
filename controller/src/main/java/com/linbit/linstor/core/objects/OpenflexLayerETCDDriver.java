@@ -214,7 +214,8 @@ public class OpenflexLayerETCDDriver extends BaseEtcdDriver implements OpenflexL
         }
     }
 
-    private void fetchOfVlms(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef) throws DatabaseException
+    private void fetchOfVlms(Map<Pair<NodeName, StorPoolName>, Pair<StorPool, InitMaps>> tmpStorPoolMapRef)
+        throws DatabaseException
     {
         cachedVlmInfoMap = new HashMap<>();
 
@@ -310,8 +311,8 @@ public class OpenflexLayerETCDDriver extends BaseEtcdDriver implements OpenflexL
             transObjFactory,
             transMgrProvider
         );
-        rscDfnDataPair.objB.add((OpenflexRscData<Resource>) ofRscData);// FIXME as soon as snapshots are supported for
-                                                                       // openflex
+        rscDfnDataPair.objB.add((OpenflexRscData<Resource>) ofRscData); // FIXME as soon as snapshots are supported for
+                                                                        // openflex
 
         List<OpenflexVlmInfo> ofVlmInfoList = cachedVlmInfoMap.get(id);
         try

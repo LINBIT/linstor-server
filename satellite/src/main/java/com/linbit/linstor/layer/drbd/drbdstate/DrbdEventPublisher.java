@@ -249,7 +249,8 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         return new ResourceState(
             !volumesMap.isEmpty() && volumesMap.values().stream().allMatch(this::volumeReady),
             drbdResource.getRole() == DrbdResource.Role.PRIMARY,
-            volumesMap.values().stream().map(DrbdVolume::getDiskState).allMatch(DrbdVolume.DiskState.UP_TO_DATE::equals),
+            volumesMap.values().stream().map(DrbdVolume::getDiskState)
+                .allMatch(DrbdVolume.DiskState.UP_TO_DATE::equals),
             drbdResource.getPromotionScore(),
             drbdResource.mayPromote()
         );

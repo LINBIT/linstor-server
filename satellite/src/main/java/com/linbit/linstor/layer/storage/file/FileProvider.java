@@ -639,7 +639,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
                 }
                 catch (IOException exc)
                 {
-                    throw new StorageException("Cannot create dummy file in given storage directory '" + dummyVlmPath + "'", exc);
+                    throw new StorageException("Cannot create dummy file in given storage directory '" +
+                        dummyVlmPath + "'", exc);
                 }
 
                 try

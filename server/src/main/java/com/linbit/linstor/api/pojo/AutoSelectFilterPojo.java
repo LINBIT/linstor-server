@@ -106,7 +106,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         List<DeviceProviderKind> providerList = null;
         Boolean disklessOnRemaining = null;
         List<String> skipAlreadyPlacedOnNodeCheck = null;
-        Boolean skipAlreadyPlacedOnAllNodeCheck= null;
+        Boolean skipAlreadyPlacedOnAllNodeCheck = null;
         String disklessType = null;
         Map<ExtTools, ExtToolsInfo.Version> requiredExtTools = null;
 

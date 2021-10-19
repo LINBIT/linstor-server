@@ -195,8 +195,8 @@ public class DrbdLayer implements DeviceLayer
             .getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
         // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
         // as an unexpected exception in dispatchResource()
-        short peerSlots = peerSlotsProp == null ? InternalApiConsts.DEFAULT_PEER_SLOTS
-            : Short.parseShort(peerSlotsProp);
+        short peerSlots = peerSlotsProp == null ?
+            InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
 
         try
         {
@@ -246,8 +246,8 @@ public class DrbdLayer implements DeviceLayer
             }
         }
         catch (
-            InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException | MinAlSizeException
-            | MaxAlSizeException | AlStripesException | PeerCountException exc
+            InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException |
+            MinAlSizeException| MaxAlSizeException | AlStripesException | PeerCountException exc
         )
         {
             throw new ImplementationError(exc);
@@ -264,8 +264,8 @@ public class DrbdLayer implements DeviceLayer
             .getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
         // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
         // as an unexpected exception in dispatchResource()
-        short peerSlots = peerSlotsProp == null ? InternalApiConsts.DEFAULT_PEER_SLOTS
-            : Short.parseShort(peerSlotsProp);
+        short peerSlots = peerSlotsProp == null ?
+            InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
 
         try
         {
@@ -325,8 +325,8 @@ public class DrbdLayer implements DeviceLayer
             }
         }
         catch (
-            InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException | MinAlSizeException
-            | MaxAlSizeException | AlStripesException | PeerCountException exc
+            InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException | MinAlSizeException |
+            MaxAlSizeException | AlStripesException | PeerCountException exc
         )
         {
             throw new ImplementationError(exc);
@@ -715,7 +715,8 @@ public class DrbdLayer implements DeviceLayer
                                             {
                                                 // ignore the exceptions, the peer does not seem to exist any more
                                                 errorReporter.logDebug(
-                                                    "del-peer and forget-peer failed, but we also failed to find the specific peer. noop"
+                                                    "del-peer and forget-peer failed, but we also failed to find " +
+                                                        "the specific peer. noop"
                                                 );
                                             }
                                         }
@@ -745,11 +746,12 @@ public class DrbdLayer implements DeviceLayer
                             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
-                        String[] nodeIds = ids == null || ids.isEmpty() ? new String[0]
-                            : ids.split(InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR);
-                        for (int i = 0; i < nodeIds.length; i++)
+                        String[] nodeIds =
+                            ids == null ||
+                            ids.isEmpty() ? new String[0] : ids.split(InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR);
+                        for (int idx = 0; idx < nodeIds.length; idx++)
                         {
-                            int nodeId = Integer.parseInt(nodeIds[i]);
+                            int nodeId = Integer.parseInt(nodeIds[idx]);
                             if (drbdRscData.getNodeId().value != nodeId)
                             {
                                 try

@@ -168,6 +168,7 @@ public class ExternalFileDbDriver extends AbsDatabaseDriver<ExternalFile, Extern
     private class InitMapsImpl implements ExternalFile.InitMaps
     {
         private InitMapsImpl()
-        {}
+        {
+        }
     }
 }

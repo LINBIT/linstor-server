@@ -282,9 +282,9 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         String[] zfscreateOptions = getZfscreateOptions(vlmDataRef);
         try
         {
-            for (int i = 0; i < zfscreateOptions.length; i++)
+            for (int idx = 0; idx < zfscreateOptions.length; idx++)
             {
-                String opt = zfscreateOptions[i];
+                String opt = zfscreateOptions[idx];
                 String extSizeStr;
 
                 /*
@@ -292,7 +292,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                  */
                 if (opt.equals("-b"))
                 {
-                    extSizeStr = zfscreateOptions[i + 1];
+                    extSizeStr = zfscreateOptions[idx + 1];
                 }
                 else
                 if (opt.startsWith("-b"))
@@ -302,8 +302,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 else
                 if (opt.equals("-o"))
                 {
-                    extSizeStr = zfscreateOptions[i + 1].startsWith("volblocksize=") ?
-                        zfscreateOptions[i + 1] :
+                    extSizeStr = zfscreateOptions[idx + 1].startsWith("volblocksize=") ?
+                        zfscreateOptions[idx + 1] :
                         null;
                 }
                 else
@@ -335,7 +335,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 }
             }
         }
-        catch (ArrayIndexOutOfBoundsException aioobe) {
+        catch (ArrayIndexOutOfBoundsException boundsExc)
+        {
             throw new StorageException(
                 "Expected additional argument while looking for extentSize in: " + Arrays.toString(zfscreateOptions)
             );
@@ -803,9 +804,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
-        ZfsData<Resource> srcData = (ZfsData<Resource>)cloneInfo.getSrcVlmData();
-        ZfsData<Resource> dstData = (ZfsData<Resource>)cloneInfo.getDstVlmData();
+    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
+    {
+        ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
+        ZfsData<Resource> dstData = (ZfsData<Resource>) cloneInfo.getDstVlmData();
         final String dstId = asLvIdentifier(dstData);
         final String srcFullSnapshotName = getCloneSnapshotName(srcData, dstData, "@");
         return new String[]
@@ -833,8 +835,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     @Override
     public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
     {
-        ZfsData<Resource> srcData = (ZfsData<Resource>)cloneInfo.getSrcVlmData();
-        final String srcFullSnapshotName = getCloneSnapshotName(srcData, (ZfsData<Resource>)cloneInfo.getDstVlmData(), "@");
+        ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
+        final String srcFullSnapshotName = getCloneSnapshotName(srcData, (ZfsData<Resource>) cloneInfo.getDstVlmData(), "@");
         ZfsCommands.delete(extCmdFactory.create(), getZPool(srcData.getStorPool()), srcFullSnapshotName);
     }
 }

@@ -48,10 +48,12 @@ public class ProcCryptoEntry {
     private final int priority;
 
     public ProcCryptoEntry(
-            String nameRef,
-            String driverRef,
-            CryptoType typeRef,
-            int priorityRef) {
+        String nameRef,
+        String driverRef,
+        CryptoType typeRef,
+        int priorityRef
+    )
+    {
         name = nameRef;
         driver = driverRef;
         type = typeRef;

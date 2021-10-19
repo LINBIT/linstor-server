@@ -27,7 +27,7 @@ public class Migration_2020_10_22_Add_INACTIVE_PERMANENTLY extends LinstorMigrat
            "R.NODE_NAME = LRI.NODE_NAME AND " +
            "R.RESOURCE_NAME = LRI.RESOURCE_NAME";
     private static final String UPDATE_RSC_FLAGS =
-        "UPDATE RESOURCES "+
+        "UPDATE RESOURCES " +
         "SET RESOURCE_FLAGS = ? " +
         "WHERE NODE_NAME = ? AND RESOURCE_NAME = ?";
 

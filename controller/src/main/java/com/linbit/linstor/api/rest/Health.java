@@ -14,15 +14,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Path("health")
-public class Health {
+public class Health
+{
 
     private final ControllerDatabase ctrlDb;
     private final Map<ServiceName, SystemService> systemServiceMap;
 
     @Inject
     public Health(
-            ControllerDatabase ctrlDbRef,
-            Map<ServiceName, SystemService> systemServiceMapRef)
+        ControllerDatabase ctrlDbRef,
+        Map<ServiceName, SystemService> systemServiceMapRef
+    )
     {
         ctrlDb = ctrlDbRef;
         systemServiceMap = systemServiceMapRef;

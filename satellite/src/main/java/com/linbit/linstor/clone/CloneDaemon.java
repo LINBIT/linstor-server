@@ -11,7 +11,8 @@ import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Consumer;
 
-public class CloneDaemon implements Runnable {
+public class CloneDaemon implements Runnable
+{
     private static final int DFLT_DEQUE_CAPACITY = 100;
 
     private final ErrorReporter errorReporter;
@@ -143,7 +144,8 @@ public class CloneDaemon implements Runnable {
      * Simple event forcing this thread to kill itself
      */
     private static class PoisonEvent implements OutputProxy.Event
-    {}
+    {
+    }
 
     public void shutdown()
     {

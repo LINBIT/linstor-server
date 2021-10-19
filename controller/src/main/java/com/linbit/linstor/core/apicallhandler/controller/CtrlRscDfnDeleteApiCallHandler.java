@@ -98,8 +98,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(ResourceDefinition rscDfn, ResponseContext context)
         throws AccessDeniedException
     {
-        return rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.Flags.DELETE)
-            ?
+        return rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.Flags.DELETE) ?
             Collections.singletonList(deleteDiskless(rscDfn.getName())) :
             Collections.emptyList();
     }
@@ -294,12 +293,12 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                     Resource activeRsc = null;
                     for (Resource sharedRsc : sharedRscMgr.getSharedResources(rsc))
                     {
-                        if(!isFlagSetPrivileged(sharedRsc, Resource.Flags.INACTIVE))
+                        if (!isFlagSetPrivileged(sharedRsc, Resource.Flags.INACTIVE))
                         {
                             activeRsc = sharedRsc;
                             break;
                         }
-                        if(!isFlagSetPrivileged(sharedRsc, Resource.Flags.INACTIVE_PERMANENTLY))
+                        if (!isFlagSetPrivileged(sharedRsc, Resource.Flags.INACTIVE_PERMANENTLY))
                         {
                             rscToActivate = sharedRsc;
                         }

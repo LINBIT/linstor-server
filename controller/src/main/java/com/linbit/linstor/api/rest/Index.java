@@ -7,7 +7,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 
 @Path("")
-public class Index {
+public class Index
+{
     private static final String INDEX_CONTENT = "<html><title>Linstor REST server</title>" +
             "<body><a href=\"https://app.swaggerhub.com/apis-docs/Linstor/Linstor/" + JsonGenTypes.REST_API_VERSION +
             "\">Documentation</a></body></html>";

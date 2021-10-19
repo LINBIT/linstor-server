@@ -205,7 +205,8 @@ public class StltExternalFileHandler
     private <K, V> void lazyAdd(Map<K, Set<V>> map, K key, V value)
     {
         Set<V> set = map.get(key);
-        if (set == null) {
+        if (set == null)
+        {
             set = new HashSet<>();
             map.put(key, set);
         }

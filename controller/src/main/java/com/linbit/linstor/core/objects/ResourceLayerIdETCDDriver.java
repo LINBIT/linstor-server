@@ -101,8 +101,8 @@ public class ResourceLayerIdETCDDriver extends BaseEtcdDriver implements Resourc
             {
                 String parentIdStr = allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_PARENT_ID, layerId));
                 String snapNameStr = allIds.get(EtcdUtils.buildKey(SNAPSHOT_NAME, layerId));
-                SnapshotName snapName = snapNameStr == null || snapNameStr.isEmpty() ? null
-                    : new SnapshotName(snapNameStr);
+                SnapshotName snapName = snapNameStr == null ||
+                    snapNameStr.isEmpty() ? null : new SnapshotName(snapNameStr);
 
                 String suspendedStr = allIds.get(EtcdUtils.buildKey(LAYER_RESOURCE_SUSPENDED, layerId));
                 ret.add(

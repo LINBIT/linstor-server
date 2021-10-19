@@ -115,14 +115,14 @@ public class BackupShippingS3Service extends AbsBackupShippingService
             ApiConsts.NAMESPC_BACKUP_SHIPPING
         );
 
-        Matcher m = S3_BACKUP_NAME_PATTERN.matcher(simpleBackupName);
-        if (m.matches())
+        Matcher mtc = S3_BACKUP_NAME_PATTERN.matcher(simpleBackupName);
+        if (mtc.matches())
         {
             ret = BackupShippingUtils.buildS3VolumeName(
-                m.group(1),
+                mtc.group(1),
                 snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
                 snapVlmDataRef.getVlmNr().value,
-                m.group(2),
+                mtc.group(2),
                 snap.getSnapshotDefinition().getProps(accCtx).getProp(
                     ApiConsts.KEY_BACKUP_S3_SUFFIX,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING

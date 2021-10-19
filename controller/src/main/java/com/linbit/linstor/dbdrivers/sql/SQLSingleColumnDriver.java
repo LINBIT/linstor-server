@@ -96,7 +96,8 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
                     dataToString.toString(parentRef)
                 );
             }
-            else {
+            else
+            {
                 errorReporter.logTrace(
                     "%s's %s updated from [%s] to [%s] %s",
                     table.getName(),

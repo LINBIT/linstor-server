@@ -103,7 +103,8 @@ class CtrlNodeConnectionApiCallHandler
             responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
                 nodeConn.getUuid(), getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str)));
 
-            if (notifyStlts) {
+            if (notifyStlts)
+            {
                 responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node1));
                 responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node2));
             }

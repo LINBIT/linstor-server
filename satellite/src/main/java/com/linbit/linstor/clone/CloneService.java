@@ -33,7 +33,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
 @Singleton
-public class CloneService implements SystemService {
+public class CloneService implements SystemService
+{
 
     public static final ServiceName SERVICE_NAME;
     public static final String SERVICE_INFO = "CloneService";
@@ -105,7 +106,8 @@ public class CloneService implements SystemService {
     public void shutdown()
     {
         serviceStarted = false;
-        for (CloneInfo cloneInfo : activeClones) {
+        for (CloneInfo cloneInfo : activeClones)
+        {
             cloneInfo.getCloneDaemon().shutdown();
             cleanupDevices(cloneInfo);
         }
@@ -115,7 +117,8 @@ public class CloneService implements SystemService {
     public void awaitShutdown(long timeout) throws InterruptedException
     {
         long exitTime = Math.addExact(System.currentTimeMillis(), timeout);
-        for (CloneInfo cloneInfo : activeClones) {
+        for (CloneInfo cloneInfo : activeClones)
+        {
             long now = System.currentTimeMillis();
             if (now < exitTime)
             {
@@ -123,7 +126,6 @@ public class CloneService implements SystemService {
                 cloneInfo.getCloneDaemon().awaitShutdown(maxWaitTime);
             }
             cleanupDevices(cloneInfo);
-
         }
     }
 
@@ -134,7 +136,9 @@ public class CloneService implements SystemService {
         {
             writeLock.lock();
             cloneInfo.getDeviceProvider().doCloneCleanup(cloneInfo);
-        } catch (StorageException exc) {
+        }
+        catch (StorageException exc)
+        {
             errorReporter.reportError(exc);
         }
         finally
@@ -184,7 +188,8 @@ public class CloneService implements SystemService {
             dstVlmData,
             provider
         );
-        if (isStarted()) {
+        if (isStarted())
+        {
             synchronized (activeClones)
             {
                 if (!activeClones.contains(cloneInfo))
@@ -215,7 +220,9 @@ public class CloneService implements SystemService {
                     cloneDaemon.start();
                 }
             }
-        } else {
+        }
+        else
+        {
             throw new StorageException("CloneService not started");
         }
     }
@@ -243,10 +250,11 @@ public class CloneService implements SystemService {
         {
             cloneInfo.setCloneStatus(successRef); // do not move this out of the synchronized block
             Set<CloneInfo> volClones = volumeClones(cloneInfo);
-            boolean allDone = volClones.stream().allMatch(ci -> ci.getStatus() == CloneInfo.CloneStatus.FINISH
-                || ci.getStatus() == CloneInfo.CloneStatus.FAILED);
+            boolean allDone = volClones.stream().allMatch(ci -> ci.getStatus() == CloneInfo.CloneStatus.FINISH ||
+                ci.getStatus() == CloneInfo.CloneStatus.FAILED);
 
-            if (allDone) {
+            if (allDone)
+            {
                 boolean anyFailed = volClones.stream().anyMatch(ci -> ci.getStatus() == CloneInfo.CloneStatus.FAILED);
 
                 volumeDiskStateEvent.get().triggerEvent(
@@ -267,7 +275,8 @@ public class CloneService implements SystemService {
         }
     }
 
-    public static class CloneInfo implements Comparable<CloneInfo> {
+    public static class CloneInfo implements Comparable<CloneInfo>
+    {
         private final ResourceName rscName;
         private final String suffix;
         private final AbsStorageVlmData<Resource> srcVlmData;
@@ -277,7 +286,8 @@ public class CloneService implements SystemService {
         private CloneDaemon cloneDaemon;
         private CloneStatus status;
 
-        public enum CloneStatus {
+        public enum CloneStatus
+        {
             PROGRESS,
             FAILED,
             FINISH
@@ -297,18 +307,22 @@ public class CloneService implements SystemService {
             status = CloneStatus.PROGRESS;
         }
 
-        public AbsStorageVlmData<Resource> getSrcVlmData() {
+        public AbsStorageVlmData<Resource> getSrcVlmData()
+        {
             return srcVlmData;
         }
-        public AbsStorageVlmData<Resource> getDstVlmData() {
+        public AbsStorageVlmData<Resource> getDstVlmData()
+        {
             return dstVlmData;
         }
 
-        public AbsStorageProvider<?, ?, ?> getDeviceProvider() {
+        public AbsStorageProvider<?, ?, ?> getDeviceProvider()
+        {
             return deviceProvider;
         }
 
-        public String[] getCloneCommand() {
+        public String[] getCloneCommand()
+        {
             return getDeviceProvider().getCloneCommand(this);
         }
 
@@ -369,10 +383,10 @@ public class CloneService implements SystemService {
         }
 
         @Override
-        public int compareTo(CloneInfo o)
+        public int compareTo(CloneInfo other)
         {
             return (getResourceName().getName() + getSuffix() + getVlmNr())
-                .compareTo(o.getResourceName().getName() + o.getSuffix() + o.getVlmNr());
+                .compareTo(other.getResourceName().getName() + other.getSuffix() + other.getVlmNr());
         }
 
         @Override

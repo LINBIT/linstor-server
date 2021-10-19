@@ -45,7 +45,8 @@ import java.util.function.Function;
 
 @Singleton
 public class ResourceDbDriver extends
-    AbsDatabaseDriver<AbsResource<Resource>, Resource.InitMaps, Pair<Map<NodeName, Node>, Map<ResourceName, ResourceDefinition>>>
+    AbsDatabaseDriver<AbsResource<Resource>, Resource.InitMaps, Pair<Map<NodeName, Node>,
+    Map<ResourceName, ResourceDefinition>>>
     implements ResourceCtrlDatabaseDriver
 {
 
@@ -86,7 +87,7 @@ public class ResourceDbDriver extends
         setColumnSetter(RESOURCE_NAME, rsc -> rsc.getResourceDefinition().getName().value);
         setColumnSetter(RESOURCE_FLAGS, rsc -> ((Resource) rsc).getStateFlags().getFlagsBits(dbCtxRef));
         setColumnSetter(SNAPSHOT_NAME, ignored -> DFLT_SNAP_NAME_FOR_RSC);
-        switch(getDbType())
+        switch (getDbType())
         {
             case SQL:
                 setColumnSetter(CREATE_TIMESTAMP, rsc -> rsc.getCreateTimestamp().isPresent() ?

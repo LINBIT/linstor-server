@@ -180,8 +180,8 @@ public class NodeInternalCallHandler
 
     private void updateStlt(Node node, Set<SharedStorPoolName> locks) throws AccessDeniedException
     {
-        Peer peer = node.getPeer(apiCtx);
-        peer.sendMessage(
+        Peer stltPeer = node.getPeer(apiCtx);
+        stltPeer.sendMessage(
             ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_APPLY_SHARED_STOR_POOL_LOCKS)
                 .grantsharedStorPoolLocks(locks)
                 .build()

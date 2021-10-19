@@ -202,7 +202,7 @@ public class Autoplacer
         StorPool storPool;
         double score;
 
-        public StorPoolWithScore(StorPool storPoolRef, double scoreRef)
+        StorPoolWithScore(StorPool storPoolRef, double scoreRef)
         {
             super();
             storPool = storPoolRef;

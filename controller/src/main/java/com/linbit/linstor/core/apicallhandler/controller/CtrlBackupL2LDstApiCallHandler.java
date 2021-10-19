@@ -551,7 +551,7 @@ public class CtrlBackupL2LDstApiCallHandler
         @Nullable
         private final Snapshot incrBaseSnapshot;
 
-        public BackupShippingStartInfo(ApiCallRcWith<Snapshot> apiCallRcWithSnapshotRef, Snapshot incrBaseSnapshotRef)
+        BackupShippingStartInfo(ApiCallRcWith<Snapshot> apiCallRcWithSnapshotRef, Snapshot incrBaseSnapshotRef)
         {
             super();
             apiCallRcWithSnapshot = apiCallRcWithSnapshotRef;
@@ -580,7 +580,7 @@ public class CtrlBackupL2LDstApiCallHandler
         public boolean useZstd;
         public boolean downloadOnly;
 
-        public BackupShippingData(
+        BackupShippingData(
             int[] srcVersionRef,
             String srcL2LRemoteNameRef,
             String srcL2LRemoteUrlRef,

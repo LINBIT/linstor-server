@@ -460,7 +460,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
             );
             if (
                 !LayerRscUtils.getLayerStack(rsc, sysCtx).contains(DeviceLayerKind.DRBD) ||
-                rsc.getStateFlags().isSet(sysCtx,Resource.Flags.DRBD_DISKLESS) ||
+                rsc.getStateFlags().isSet(sysCtx, Resource.Flags.DRBD_DISKLESS) ||
                 ApiConsts.VAL_FALSE.equalsIgnoreCase(cleanupAllowed) // cleanupAllowed might be null
             )
             {

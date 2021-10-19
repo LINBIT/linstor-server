@@ -12,7 +12,7 @@ public class SysBlockUtils
         String sizePath = "/sys/block/drbd" + minorNr + "/size";
         OutputData outputData = Commands.genericExecutor(
             extCmdFactoryRef.create(),
-            new String[] { "cat", sizePath },
+            new String[] {"cat", sizePath},
             "Failed to query size of " + sizePath,
             "Failed to query size of " + sizePath
         );

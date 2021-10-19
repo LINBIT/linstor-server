@@ -290,7 +290,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
                         vlmDfn.getVolumeNumber(),
                         minor,
                         minorPool,
-                        vlmDfn.getResourceDefinition().<DrbdRscDfnData<Resource>> getLayerData(
+                        vlmDfn.getResourceDefinition().<DrbdRscDfnData<Resource>>getLayerData(
                             dbCtx,
                             DeviceLayerKind.DRBD,
                             rscNameSuffix
@@ -317,8 +317,8 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
                     if (snapVlmDfn == null)
                     {
                         throw new LinStorDBRuntimeException(
-                            "Loaded drbd snapshot volume definition data for non existent snapshot volume definition '"
-                                +
+                            "Loaded drbd snapshot volume definition data for non existent " +
+                                "snapshot volume definition '" +
                                 rscName + "', '" + snapDfnStr + "', vlmNr: " + vlmNr
                         );
                     }
@@ -330,7 +330,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
                         snapVlmDfn.getVolumeNumber(),
                         DrbdVlmDfnData.SNAPSHOT_MINOR,
                         minorPool,
-                        snapVlmDfn.getSnapshotDefinition().<DrbdRscDfnData<Snapshot>> getLayerData(
+                        snapVlmDfn.getSnapshotDefinition().<DrbdRscDfnData<Snapshot>>getLayerData(
                             dbCtx,
                             DeviceLayerKind.DRBD,
                             rscNameSuffix

@@ -177,7 +177,7 @@ public class VolumeGroup extends BaseTransactionObject
         );
     }
 
-    public static enum Flags implements com.linbit.linstor.stateflags.Flags
+    public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         GROSS_SIZE(1L);
 

@@ -346,7 +346,8 @@ public class ApiCallRcImpl implements ApiCallRc
 
         public EntryBuilder addErrorId(String errorId)
         {
-            if (errorId != null) {
+            if (errorId != null)
+            {
                 errorIds.add(errorId);
             }
             return this;

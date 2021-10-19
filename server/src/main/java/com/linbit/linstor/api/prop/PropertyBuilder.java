@@ -54,7 +54,9 @@ public class PropertyBuilder
                 prop = new StringProperty(name, key, internal, info, unit, dflt);
                 break;
             case NUMERIC_OR_SYMBOL:
-                prop = new NumericOrSymbolProperty(name, key, min, max, buildValuesEnumRegex(), internal, info, unit, dflt);
+                prop = new NumericOrSymbolProperty(
+                    name, key, min, max, buildValuesEnumRegex(), internal, info, unit, dflt
+                );
                 break;
             case LONG:
                 prop = new LongProperty(name, key, internal, info, unit, dflt);

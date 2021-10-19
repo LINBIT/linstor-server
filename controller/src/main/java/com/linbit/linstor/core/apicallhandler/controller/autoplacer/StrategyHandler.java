@@ -88,7 +88,8 @@ class StrategyHandler
             if (!stratRate.isEmpty())
             {
                 errorReporter.logTrace(
-                    "Autoplacer.Strategy: Scores of strategy '%s', weight: %f: (raw score, normalized score, weighted final score)",
+                    "Autoplacer.Strategy: Scores of strategy '%s', weight: %f: " +
+                        "(raw score, normalized score, weighted final score)",
                     stratName,
                     weight
                 );

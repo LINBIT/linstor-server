@@ -315,7 +315,8 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         // first, check the mapping to see if we need to unmap the default
         ExosVolumeView exosVolumeView = restClient.showMaps(exosVlmName);
 
-        if (exosVolumeView == null) {
+        if (exosVolumeView == null)
+        {
             throw new StorageException("'show maps " + exosVlmName + "' returned no result");
         }
 
@@ -552,7 +553,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             {
                 try
                 {
-                    Thread.sleep(1_000L);// give multipath a bit more time for setup
+                    Thread.sleep(1_000L); // give multipath a bit more time for setup
                 }
                 catch (InterruptedException ignored)
                 {
@@ -1047,7 +1048,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                                 enclosureName + "/" +
                                 exosRestPort.controller +
                                 "/Ports/" +
-                                exosRestPort.port.substring(1);// "A0" -> "0"
+                                exosRestPort.port.substring(1); // "A0" -> "0"
 
                             String currentValue = localNodePropsRef.getProp(propKey);
                             if (!Objects.equal(currentValue, ExosMappingManager.CONNECTED))

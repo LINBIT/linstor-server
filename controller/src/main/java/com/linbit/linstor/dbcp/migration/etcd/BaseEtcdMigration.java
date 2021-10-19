@@ -62,5 +62,5 @@ public abstract class BaseEtcdMigration
         return etcdKeyRef.substring(etcdKeyRef.lastIndexOf(PATH_DELIMITER) + 1);
     }
 
-    public abstract void migrate(EtcdTransaction tx, final String prefix) throws Exception;
+    public abstract void migrate(EtcdTransaction tx, String prefix) throws Exception;
 }

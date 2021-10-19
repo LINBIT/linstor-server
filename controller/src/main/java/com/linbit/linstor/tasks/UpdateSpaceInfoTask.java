@@ -30,7 +30,8 @@ import java.util.Map;
 import reactor.core.publisher.Flux;
 import reactor.util.context.Context;
 
-public class UpdateSpaceInfoTask implements TaskScheduleService.Task {
+public class UpdateSpaceInfoTask implements TaskScheduleService.Task
+{
 
     private static final String DEFAULT_UPDATE_SLEEP = "180";
     private final ErrorReporter errRep;
@@ -78,9 +79,11 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task {
                 scopeRunner.fluxInTransactionalScope(
                     "Update volume allocations",
                     lockGuardFactory.buildDeferred(WRITE, RSC_DFN_MAP),
-                    () -> {
+                    () ->
+                    {
                         for (Map.Entry<Volume.Key, VlmAllocatedResult> entry : vlmAllocations.entrySet()) {
-                            try {
+                            try
+                            {
                                 Volume.Key vlmKey = entry.getKey();
                                 ResourceDefinition rscDfn = rscDefRepo.get(sysCtx, vlmKey.getResourceName());
                                 if (rscDfn != null)
@@ -107,7 +110,10 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task {
                                         }
                                     }
                                 }
-                            } catch (AccessDeniedException ignored) {}
+                            }
+                            catch (AccessDeniedException ignored)
+                            {
+                            }
                         }
                         errRep.logTrace("UpdateVolumeAllocationsTask: Fetched and set volume allocations in %dms",
                             System.currentTimeMillis() - start);
@@ -127,12 +133,16 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task {
             .subscribe();
 
         long nextUpdate = Long.parseLong(DEFAULT_UPDATE_SLEEP);
-        try (LockGuard ignored = lockGuardFactory.build(READ, CTRL_CONFIG)) {
+        try (LockGuard ignored = lockGuardFactory.build(READ, CTRL_CONFIG))
+        {
             nextUpdate = Long.parseLong(systemConfRepository.getCtrlConfForView(sysCtx)
                 .getPropWithDefault(ApiConsts.KEY_UPDATE_CACHE_INTERVAL, DEFAULT_UPDATE_SLEEP));
         }
-        catch (AccessDeniedException ignored) {}
-        catch (NumberFormatException nfe) {
+        catch (AccessDeniedException ignored)
+        {
+        }
+        catch (NumberFormatException nfe)
+        {
             errRep.reportError(nfe);
         }
         return nextUpdate * 1000;

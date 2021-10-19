@@ -93,7 +93,8 @@ public class DaemonHandler
                     proc.waitFor(500, TimeUnit.MILLISECONDS);
                 }
                 catch (InterruptedException ignored)
-                {}
+                {
+                }
                 if (proc.isAlive())
                 {
                     throw new ImplementationError("Process is still running");

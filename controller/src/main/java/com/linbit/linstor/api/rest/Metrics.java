@@ -32,7 +32,8 @@ import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
 @Path("metrics")
-public class Metrics {
+public class Metrics
+{
     private final ErrorReporter errorReporter;
     private final RequestHelper requestHelper;
     private final CtrlApiCallHandler ctrlApiCallHandler;
@@ -76,20 +77,26 @@ public class Metrics {
         long scrape_start = System.currentTimeMillis();
 
         List<ErrorReport> errorReportsTmp = null;
-        if (withErrorReports) {
+        if (withErrorReports)
+        {
             Flux<List<ErrorReport>> fluxErrorReports = ctrlErrorListApiCallHandler.listErrorReports(
                 Collections.emptySet(), false, null, null, Collections.emptySet())
                 .subscriberContext(requestHelper.createContext("metrics", request));
 
-            try {
+            try
+            {
                 long start = System.currentTimeMillis();
                 errorReportsTmp = fluxErrorReports.next().block(Duration.ofSeconds(BLOCK_TIMEOUT));
                 errorReporter.logTrace("Metric/ListErrorReports: %dms", System.currentTimeMillis() - start);
-            } catch (RuntimeException timeoutExc) {
+            }
+            catch (RuntimeException timeoutExc)
+            {
                 errorReporter.reportError(
                     new LinStorRuntimeException(
                         String.format("Gathering error reports took longer than %d seconds", BLOCK_TIMEOUT),
-                        timeoutExc));
+                        timeoutExc
+                    )
+                );
             }
         }
 

@@ -169,7 +169,8 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
      * Simple event forcing this thread to kill itself
      */
     private static class PoisonEvent implements Event
-    {}
+    {
+    }
 
     @Override
     public void shutdown(boolean runAfterTerminationRef)

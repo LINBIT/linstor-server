@@ -60,21 +60,29 @@ public final class RscLayerSuffixes
 
     public static DeviceLayerKind getLayerKindBySuffix(String rscNameSuffixRef)
     {
+        final DeviceLayerKind selectedKind;
         switch (rscNameSuffixRef)
         {
             case SUFFIX_DATA:
-                return DeviceLayerKind.STORAGE;
+                selectedKind = DeviceLayerKind.STORAGE;
+                break;
             case SUFFIX_DRBD_META:
-                return DeviceLayerKind.DRBD;
+                selectedKind = DeviceLayerKind.DRBD;
+                break;
             case SUFFIX_WRITECACHE_CACHE:
-                return DeviceLayerKind.WRITECACHE;
+                selectedKind = DeviceLayerKind.WRITECACHE;
+                break;
             case SUFFIX_BCACHE_CACHE:
-                return DeviceLayerKind.BCACHE;
-            case SUFFIX_CACHE_CACHE: // fall-through
+                selectedKind = DeviceLayerKind.BCACHE;
+                break;
+            case SUFFIX_CACHE_CACHE:
+                // fall-through
             case SUFFIX_CACHE_META:
-                return DeviceLayerKind.CACHE;
+                selectedKind = DeviceLayerKind.CACHE;
+                break;
             default:
                 throw new ImplementationError("Unknown RscLayerSuffix given: " + rscNameSuffixRef);
         }
+        return selectedKind;
     }
 }

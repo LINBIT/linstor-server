@@ -570,7 +570,9 @@ public class MigrationUtils
                     fkName
                 );
             case UNKNOWN:
+                // fall-through
             case ETCD:
+                // fall-through
             default:
                 throw new ImplementationError("Unexpected database type: " + dbProductRef);
         }
@@ -681,7 +683,8 @@ public class MigrationUtils
         return sb.toString();
     }
 
-    private static int[] getVersion (String str) {
+    private static int[] getVersion(String str)
+    {
         int[] ret;
         Matcher matcher = VERSION_PATTERN.matcher(str);
         if (matcher.find())

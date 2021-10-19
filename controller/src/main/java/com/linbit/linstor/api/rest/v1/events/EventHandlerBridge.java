@@ -21,7 +21,8 @@ import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 
 @Singleton
-public class EventHandlerBridge {
+public class EventHandlerBridge
+{
     private final ErrorReporter errorReporter;
     private final ArrayList<EventOutput> rscClients = new ArrayList<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -49,13 +50,16 @@ public class EventHandlerBridge {
             ResourceList resourceList = ctrlApiCallHandler.listResource(
                 Collections.emptyList(), Collections.emptyList());
 
-            resourceList.getResources().forEach(rsc -> {
-                if (rsc.getLayerData().getLayerKind() == DeviceLayerKind.DRBD)
+            resourceList.getResources().forEach(
+                rsc ->
                 {
-                    DrbdRscPojo drbdRscPojo = (DrbdRscPojo)rsc.getLayerData();
-                    triggerMayPromote(rsc, drbdRscPojo.mayPromote());
+                    if (rsc.getLayerData().getLayerKind() == DeviceLayerKind.DRBD)
+                    {
+                        DrbdRscPojo drbdRscPojo = (DrbdRscPojo) rsc.getLayerData();
+                        triggerMayPromote(rsc, drbdRscPojo.mayPromote());
+                    }
                 }
-            });
+            );
         }
     }
 
@@ -73,9 +77,10 @@ public class EventHandlerBridge {
             eventBuilder.data(objectMapper.writeValueAsString(eventMayPromoteChange));
             final OutboundEvent event = eventBuilder.build();
             sendRscEvent(event);
-        } catch (JsonProcessingException e)
+        }
+        catch (JsonProcessingException exc)
         {
-            errorReporter.reportError(e);
+            errorReporter.reportError(exc);
         }
     }
 
@@ -89,7 +94,8 @@ public class EventHandlerBridge {
                 try
                 {
                     eventOutput.write(event);
-                } catch (IOException e)
+                }
+                catch (IOException exc)
                 {
                     closeEvents.remove(eventOutput);
                 }
@@ -100,7 +106,10 @@ public class EventHandlerBridge {
                 try
                 {
                     eventOutput.close();
-                } catch (IOException ignored) {}
+                }
+                catch (IOException ignored)
+                {
+                }
                 rscClients.remove(eventOutput);
             }
         }

@@ -64,9 +64,9 @@ public class MultipathUtils
         String out = new String(outputData.stdoutData);
         String[] rows = out.split("\n");
         // skip first row (headers)
-        for (int i = 1; i < rows.length; i++)
+        for (int idx = 1; idx < rows.length; idx++)
         {
-            String line = rows[i];
+            String line = rows[idx];
             String[] parts = line.trim().split("\\s+");
 
             String hcil = parts[0];

@@ -170,7 +170,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
         Set<NodeName> nodeNamesToDelete = new TreeSet<>();
         NodeName nodeName = rsc.getNode().getName();
-        ResourceName rscName = rsc.getDefinition().getName();
 
         ctrlRscDeleteApiHelper.ensureNotInUse(rsc);
         ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc);
@@ -213,6 +212,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             );
             flux = Flux.just(responses);
 
+            ResourceName rscName = rsc.getDefinition().getName();
             flux = flux.concatWith(
                 ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(nodeNamesToDelete, rscName)
             );
@@ -338,8 +338,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                                 throw new ApiRcException(
                                     ApiCallRcImpl.simpleEntry(
                                         ApiConsts.FAIL_EXISTS_SNAPSHOT,
-                                        "Resource '" + rsc.getDefinition().getName()
-                                            + "' cannot be deleted because volume " +
+                                        "Resource '" + rsc.getDefinition().getName() +
+                                            "' cannot be deleted because volume " +
                                             snapshotVlm.getVolumeNumber() + " has dependent snapshot '" +
                                             snapshot.getSnapshotName() + "'"
                                     )

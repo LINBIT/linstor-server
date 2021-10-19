@@ -308,8 +308,10 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                     .concatWith(resizeDrbd(rscName, vlmNr))
                     .concatWith(finishResize(rscName, vlmNr));
             }
-        } else {
-            if (notifyStlts) {
+        } else
+        {
+            if (notifyStlts)
+            {
                 updateResponses = updateResponses.concatWith(updateSatellites(rscName, vlmNr, false));
             }
         }
@@ -338,7 +340,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 Resource rsc = rscIt.next();
                 layerKindSet.addAll(LayerRscUtils.getLayerStack(rsc, apiCtx));
                 Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, apiCtx, true);
-                for (StorPool sp : storPools) {
+                for (StorPool sp : storPools)
+                {
                     providerKindSet.add(sp.getDeviceProviderKind());
                 }
             }
@@ -408,7 +411,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 StringBuilder sb = new StringBuilder();
                 for (StorPool.Key key : storPoolKeySet)
                 {
-                    sb.append("Node: ").append(key.getNodeName().displayValue).append(", StorPool: ").append(key.getStorPoolName().displayValue).append("\n");
+                    sb.append("Node: ").append(key.getNodeName().displayValue)
+                        .append(", StorPool: ").append(key.getStorPoolName().displayValue).append("\n");
                 }
                 sb.setLength(sb.length() - 1); // cut last \n
 

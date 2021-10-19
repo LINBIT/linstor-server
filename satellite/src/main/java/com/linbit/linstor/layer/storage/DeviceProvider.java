@@ -27,7 +27,8 @@ public interface DeviceProvider
      * where the DeviceManager is already accessible through the injected Provider<DeviceManager>
      */
     default void initialize()
-    {}
+    {
+    }
 
     void clearCache() throws StorageException;
 

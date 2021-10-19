@@ -228,7 +228,7 @@ public final class DatabaseConstantsGenerator
                     {"boolean", "isNullable"}
                 },
                 new String[][] {
-                    { INTERFACE_NAME_SQL, "table" }
+                    {INTERFACE_NAME_SQL, "table"}
                 }
             );
 
@@ -487,7 +487,8 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("private %s()", clazzName);
             try (IndentLevel constructor = new IndentLevel())
-            {}
+            {
+            }
 
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
@@ -575,7 +576,7 @@ public final class DatabaseConstantsGenerator
                         try (IndentLevel caseIndent = new IndentLevel())
                         {
                             appendLine("return new %s(", tblNameCamelCase);
-                            try (IndentLevel CrArgIndent = new IndentLevel("", "", false, false))
+                            try (IndentLevel crArgIndent = new IndentLevel("", "", false, false))
                             {
                                 appendLine("new %s(", specClassName);
                                 try (IndentLevel specArgIndent = new IndentLevel("", "", false, false))
@@ -705,15 +706,15 @@ public final class DatabaseConstantsGenerator
 
     private GeneratorVersion getVersion(String strVersion)
     {
-        Matcher m = VERSION_PATTERN.matcher(strVersion);
-        if (!m.find())
+        Matcher mtc = VERSION_PATTERN.matcher(strVersion);
+        if (!mtc.find())
         {
             throw new ImplementationError("Failed to parse version '" + strVersion + "'");
         }
-        String major = m.group(1);
-        String minor = m.group(2);
-        String patch = m.group(3);
-        String additional = m.group(4);
+        String major = mtc.group(1);
+        String minor = mtc.group(2);
+        String patch = mtc.group(3);
+        String additional = mtc.group(4);
         return new GeneratorVersion(
             new Version(
                 Integer.parseInt(major),
@@ -752,7 +753,7 @@ public final class DatabaseConstantsGenerator
         try (IndentLevel createMethodIndent = new IndentLevel())
         {
             appendLine("return new %s(", tblNameCamelCase);
-            try (IndentLevel CrArgIndent = new IndentLevel("", "", false, false))
+            try (IndentLevel crArgIndent = new IndentLevel("", "", false, false))
             {
                 appendLine("new %s(", specClassName);
                 try (IndentLevel specArgIndent = new IndentLevel("", "", false, false))
@@ -1271,10 +1272,13 @@ public final class DatabaseConstantsGenerator
         switch (clmRef.sqlType)
         {
             case "CHAR":
+                // fall-through
             case "VARCHAR":
+                // fall-through
             case "CLOB":
                 return "String";
             case "BIGINT":
+                // fall-through
             case "TIMESTAMP":
                 return clmRef.nullable ? "Long" : "long";
             case "INTEGER":

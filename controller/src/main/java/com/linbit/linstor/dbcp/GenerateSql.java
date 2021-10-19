@@ -39,7 +39,8 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
 
-public class GenerateSql {
+public class GenerateSql
+{
     private static final Path CRD_INIT_RELATIVE_LOCATION_FROM_GITROOT = Paths.get(
         "server",
         "generated-resources",
@@ -161,7 +162,8 @@ public class GenerateSql {
         {
             Process process = pb.start();
             int ec = process.waitFor();
-            if (ec != 0) {
+            if (ec != 0)
+            {
                 throw new ImplementationError("'" + pb.command() + "' returned with exit code: " + ec);
             }
             ret = new BufferedReader(
@@ -227,7 +229,9 @@ public class GenerateSql {
         Pattern pattern = Pattern.compile("public static final String VERSION = \"([^\"]+)\";");
         Matcher matcher = pattern.matcher(ret);
         if (!matcher.find())
+        {
             throw new ImplementationError("No version found");
+        }
         String version = matcher.group(1);
         version = version.replaceAll("[-_]", "[-_]");
 
@@ -245,9 +249,9 @@ public class GenerateSql {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] encodedhash = digest.digest(javaCodeRef.getBytes(StandardCharsets.UTF_8));
             StringBuilder hexString = new StringBuilder(2 * encodedhash.length);
-            for (int i = 0; i < encodedhash.length; i++)
+            for (int idx = 0; idx < encodedhash.length; idx++)
             {
-                String hex = Integer.toHexString(0xff & encodedhash[i]);
+                String hex = Integer.toHexString(0xFF & encodedhash[idx]);
                 if (hex.length() == 1)
                 {
                     hexString.append('0');
@@ -314,12 +318,14 @@ public class GenerateSql {
         }
         return Files.list(generatedCrdDir)
             .map(path -> path.getFileName().toString())
-            .filter(path ->
-            {
-                Matcher m = DatabaseConstantsGenerator.VERSION_PATTERN.matcher(path.toString());
-                boolean ret = m.find();
-                return ret;
-            })
+            .filter(
+                path ->
+                {
+                    Matcher mtc = DatabaseConstantsGenerator.VERSION_PATTERN.matcher(path.toString());
+                    boolean ret = mtc.find();
+                    return ret;
+                }
+            )
             .collect(Collectors.toSet());
     }
 
@@ -423,13 +429,13 @@ public class GenerateSql {
     private static String getGitRoot() throws IOException, InterruptedException
     {
         ProcessBuilder pb = new ProcessBuilder("git", "rev-parse", "--show-toplevel");
-        Process p = pb.start();
-        int rc = p.waitFor();
+        Process proc = pb.start();
+        int rc = proc.waitFor();
         if (rc != 0)
         {
             throw new RuntimeException("git base path checking failed:" + pb.toString());
         }
-        final String gitRoot = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))
+        final String gitRoot = new BufferedReader(new InputStreamReader(proc.getInputStream(), StandardCharsets.UTF_8))
             .lines()
             .collect(Collectors.joining("\n"));
         return gitRoot;

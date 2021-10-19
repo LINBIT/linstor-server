@@ -348,6 +348,7 @@ public class LinstorParsingUtils
                 break;
             default:
                 kind = null;
+                break;
         }
         return kind;
     }

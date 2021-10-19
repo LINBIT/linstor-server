@@ -147,8 +147,10 @@ public class ResourceCreateCheck
                                 )
                             );
                         }
+                        break;
                     default:
                         // no further checks needed in this case
+                        break;
                 }
             }
         }

@@ -11,7 +11,9 @@ public class UdevAdmUtils
     {
         OutputData outputData = Commands.genericExecutor(
             extCmdFactoryRef.create().setSaveWithoutSharedLocks(true),
-            new String[] { "/bin/bash", "-c", "udevadm info -n " + devPathRef.substring("/dev/".length()) +
+            new String[]
+            {
+                "/bin/bash", "-c", "udevadm info -n " + devPathRef.substring("/dev/".length()) +
                 " | grep SCSI_IDENT_SERIAL"
             },
             "Failed to grep SCSI_IDENT_SERIAL from udevadm info",

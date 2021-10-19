@@ -492,7 +492,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                 Snapshot snap = data.srcSnapshot;
 
                 snap.getFlags().enableFlags(accCtx, Snapshot.Flags.BACKUP_SOURCE);
-                snap.setTakeSnapshot(accCtx, true);// needed by source-satellite to actually start sending
+                snap.setTakeSnapshot(accCtx, true); // needed by source-satellite to actually start sending
 
                 if (responseRef.srcSnapDfnUuid != null && !responseRef.srcSnapDfnUuid.isEmpty())
                 {
@@ -500,12 +500,14 @@ public class CtrlBackupL2LSrcApiCallHandler
                     UUID prevSnapUuid = UUID.fromString(responseRef.srcSnapDfnUuid);
                     for (SnapshotDefinition snapDfn : snap.getResourceDefinition().getSnapshotDfns(accCtx))
                     {
-                        if (snapDfn.getUuid().equals(prevSnapUuid)) {
+                        if (snapDfn.getUuid().equals(prevSnapUuid))
+                        {
                             prevSnapDfn = snapDfn;
                             break;
                         }
                     }
-                    if (prevSnapDfn == null) {
+                    if (prevSnapDfn == null)
+                    {
                         throw new ImplementationError(
                             "SnapshotDefinition selected by destination cluster not found locally: " +
                                 responseRef.srcSnapDfnUuid
@@ -605,7 +607,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         private final RestHttpClient restClient;
         private final ObjectMapper objMapper;
 
-        public BackupShippingRestClient(ErrorReporter errorReporterRef)
+        BackupShippingRestClient(ErrorReporter errorReporterRef)
         {
             errorReporter = errorReporterRef;
             restClient = new RestHttpClient(errorReporterRef);
@@ -676,7 +678,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                                     )
                                         .setCause("Probably the destination controller is not recent enough")
                                         .setCorrection(
-                                            "Make sure the destination cluster is on the same version as the current cluster (" +
+                                            "Make sure the destination cluster is on the same version as the " +
+                                                "current cluster (" +
                                                 LinStor.VERSION_INFO_PROVIDER.getVersion() + ")"
                                         )
                                         .build()
@@ -806,7 +809,7 @@ public class CtrlBackupL2LSrcApiCallHandler
 
         private StltRemote stltRemote;
 
-        public BackupShippingData(
+        BackupShippingData(
             String srcClusterIdRef,
             String srcNodeNameRef,
             String srcRscNameRef,

@@ -135,8 +135,9 @@ public class Migration_16_FixDuplicatedRestoredLayerData extends BaseEtcdMigrati
         String snapName;
         String kind;
 
-        public LriKey()
-        {}
+        LriKey()
+        {
+        }
 
         @Override
         public int hashCode()

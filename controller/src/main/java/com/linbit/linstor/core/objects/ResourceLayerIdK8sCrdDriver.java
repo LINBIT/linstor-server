@@ -97,7 +97,7 @@ public class ResourceLayerIdK8sCrdDriver implements ResourceLayerIdCtrlDatabaseD
                 rscData.getRscLayerId(),
                 absRsc.getNode().getName().value,
                 rscData.getResourceName().value,
-                absRsc instanceof Snapshot ? ((Snapshot)absRsc).getSnapshotName().value : null,
+                absRsc instanceof Snapshot ? ((Snapshot) absRsc).getSnapshotName().value : null,
                 rscData.getLayerKind().name(),
                 rscData.getParent() != null ? rscData.getParent().getRscLayerId() : null,
                 rscData.getResourceNameSuffix(),
@@ -140,7 +140,7 @@ public class ResourceLayerIdK8sCrdDriver implements ResourceLayerIdCtrlDatabaseD
 
     @SuppressWarnings("unchecked")
     @Override
-    public <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>> SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean> getSuspendDriver()
+    public <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>>SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean> getSuspendDriver()
     {
         return (SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean>) ((Object) updateDriver);
     }

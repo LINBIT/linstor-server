@@ -52,7 +52,7 @@ class StorPoolFilter
     private final ErrorReporter errorReporter;
 
     @Inject
-    public StorPoolFilter(
+    StorPoolFilter(
         @SystemContext AccessContext apiAccCtxRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
@@ -93,8 +93,10 @@ class StorPoolFilter
 
                         if (
                             storPool.getDeviceProviderKind().hasBackingDevice() == diskful &&
-                                storPool.getNode().getObjProt().queryAccess(peerCtx).hasAccess(AccessType.USE) && // access
-                                storPool.getNode().getPeer(apiAccCtx).isConnected() // online
+                                // have USE access
+                                storPool.getNode().getObjProt().queryAccess(peerCtx).hasAccess(AccessType.USE) &&
+                                // peer is online
+                                storPool.getNode().getPeer(apiAccCtx).isConnected()
                         )
                         {
                             ret.add(storPool);
@@ -144,10 +146,6 @@ class StorPoolFilter
     )
         throws AccessDeniedException
     {
-        ArrayList<StorPool> filteredList = new ArrayList<>();
-
-        Map<Node, Boolean> nodeMatchesMap = new HashMap<>();
-
         ArrayList<Props> alreadyDeployedNodesProps = new ArrayList<>();
         if (rscDfnRef != null)
         {
@@ -207,12 +205,14 @@ class StorPoolFilter
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_INVLD_LAYER_STACK,
-                            "You have to specify a --layer-list containing at least 'nvme' when autoplacing an nvme-initiator"
+                            "You have to specify a --layer-list containing at least 'nvme' when autoplacing an " +
+                                "nvme-initiator"
                         )
                     );
                 }
             }
-            else if (disklessTypeRef.equals(Resource.Flags.DRBD_DISKLESS))
+            else
+            if (disklessTypeRef.equals(Resource.Flags.DRBD_DISKLESS))
             {
                 if (filterLayerList == null || !filterLayerList.contains(DeviceLayerKind.DRBD))
                 {
@@ -264,6 +264,8 @@ class StorPoolFilter
             skipAlreadyPlacedOnAllNodesCheck = false;
         }
 
+        ArrayList<StorPool> filteredList = new ArrayList<>();
+        Map<Node, Boolean> nodeMatchesMap = new HashMap<>();
         for (StorPool sp : availableStorPoolsRef)
         {
             boolean storPoolMatches = true;
@@ -307,7 +309,8 @@ class StorPoolFilter
                         {
                             nodeMatches = false;
                             errorReporter.logTrace(
-                                "Autoplacer.Filter: Disqualifying node '%s' as it does not have the property '%s' set (required by replicas-on-same)",
+                                "Autoplacer.Filter: Disqualifying node '%s' as it does not have the property '%s' " +
+                                    "set (required by replicas-on-same)",
                                 nodeDisplayValue,
                                 matchEntry.getKey(),
                                 valueToMatch,
@@ -320,7 +323,8 @@ class StorPoolFilter
                         {
                             nodeMatches = false;
                             errorReporter.logTrace(
-                                "Autoplacer.Filter: Disqualifying node '%s' as it does not match fixed same property '%s'. Value required: '%s', but was: '%s'",
+                                "Autoplacer.Filter: Disqualifying node '%s' as it does not match fixed same " +
+                                    "property '%s'. Value required: '%s', but was: '%s'",
                                 nodeDisplayValue,
                                 matchEntry.getKey(),
                                 valueToMatch,
@@ -340,7 +344,8 @@ class StorPoolFilter
                         {
                             anyMatch = true;
                             errorReporter.logTrace(
-                                "Autoplacer.Filter: Disqualifying node '%s' as it does not match fixed different property '%s'. Value prohibited: %s, but node has: '%s'",
+                                "Autoplacer.Filter: Disqualifying node '%s' as it does not match fixed different " +
+                                    "property '%s'. Value prohibited: %s, but node has: '%s'",
                                 nodeDisplayValue,
                                 mismatchEntry.getKey(),
                                 mismatchEntry.getValue(),
@@ -361,7 +366,8 @@ class StorPoolFilter
                         {
                             nodeMatches = false;
                             errorReporter.logTrace(
-                                "Autoplacer.Filter: Disqualifying node '%s' as it does not support required layer '%s'",
+                                "Autoplacer.Filter: Disqualifying node '%s' as it does not support required " +
+                                    "layer '%s'",
                                 nodeDisplayValue,
                                 layer.name()
                             );
@@ -471,7 +477,8 @@ class StorPoolFilter
                     if (!storPoolMatches)
                     {
                         errorReporter.logTrace(
-                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool does not have enough free space",
+                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool " +
+                                "does not have enough free space",
                             sp.getName().displayValue,
                             sp.getNode().getName().displayValue
                         );
@@ -498,7 +505,8 @@ class StorPoolFilter
                     if (!storPoolNameFound)
                     {
                         errorReporter.logTrace(
-                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool does not match the given name filter",
+                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool " +
+                                "does not match the given name filter",
                             sp.getName().displayValue,
                             sp.getNode().getName().displayValue
                         );
@@ -510,7 +518,8 @@ class StorPoolFilter
                     if (!storPoolMatches)
                     {
                         errorReporter.logTrace(
-                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool does not match the given device provider filter",
+                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the storage pool " +
+                                "does not match the given device provider filter",
                             sp.getName().displayValue,
                             sp.getNode().getName().displayValue
                         );

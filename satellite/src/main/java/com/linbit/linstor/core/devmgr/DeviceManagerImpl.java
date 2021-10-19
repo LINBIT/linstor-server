@@ -659,7 +659,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         sched.wait();
                     }
                     catch (InterruptedException ignored)
-                    {}
+                    {
+                    }
                 }
             }
 
@@ -1136,21 +1137,24 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 allStorPools.addAll(LayerVlmUtils.getStorPools(snap, wrkCtx, true));
             }
 
-            TreeSet<SharedStorPoolName> requiredLocks = new TreeSet<>();
+            TreeSet<SharedStorPoolName> curRequiredLocks = new TreeSet<>();
             for (StorPool sp : allStorPools)
             {
                 if (sp.isShared())
                 {
-                    requiredLocks.add(sp.getSharedStorPoolName());
+                    curRequiredLocks.add(sp.getSharedStorPoolName());
                 }
             }
             if (
-                !requiredLocks.isEmpty() &&
-                    (!requiredLocks.equals(grantedLocks) || !requiredLocks.equals(this.requiredLocks))
+                !curRequiredLocks.isEmpty() &&
+                    (!curRequiredLocks.equals(grantedLocks) || !curRequiredLocks.equals(requiredLocks))
             )
             {
+                // FIXME: This looks very suspicious, why would it show the same list of locks twice?
+                //        Was this supposed to show the global requiredLocks (member field) vs. the locks determined
+                //        to be required in this method, and then show which ones of the locks were actually granted?
                 throw new ImplementationError(
-                    "Required locks: " + requiredLocks + ", requested locks: " + requiredLocks + ", granted locks: " +
+                    "Required locks: " + curRequiredLocks + ", requested locks: " + curRequiredLocks + ", granted locks: " +
                         grantedLocks
                 );
             }
@@ -1295,7 +1299,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         sched.wait();
                     }
                     catch (InterruptedException ignored)
-                    {}
+                    {
+                    }
                 }
                 if (!svcCondFlag.get())
                 {

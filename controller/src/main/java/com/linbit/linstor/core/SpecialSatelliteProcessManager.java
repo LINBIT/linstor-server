@@ -198,7 +198,8 @@ public class SpecialSatelliteProcessManager
      * @throws IOException
      * @throws PortAlreadyInUseException
      */
-    public void startLocalSatelliteProcess(String nodeNameStr, Integer port) throws IOException, PortAlreadyInUseException
+    public void startLocalSatelliteProcess(String nodeNameStr, Integer port)
+        throws IOException, PortAlreadyInUseException
     {
         Path ofSatLogDir = errorReporter.getLogDirectory().resolve(SATELLITE_LOG_DIRECTORY);
         Path ofErrLogDir = ofSatLogDir.resolve(String.format(SATELLITE_ERR_LOG_DIRECTORY, port));

@@ -166,7 +166,8 @@ public class CtrlVlmApiCallHandler
                 ApiSuccessUtils.defaultModifiedEntry(vlm.getUuid(), getVlmDescriptionInline(vlm))
             );
 
-            if (notifyStlts) {
+            if (notifyStlts)
+            {
                 flux = ctrlSatelliteUpdateCaller
                     .updateSatellites(vlm.getResourceDefinition(), Flux.empty())
                     .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());

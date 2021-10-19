@@ -107,10 +107,12 @@ public class StorPoolDbDriver
     {
         final NodeName nodeName = raw.build(NODE_NAME, NodeName::new);
         final StorPoolName poolName = raw.build(POOL_NAME, StorPoolName::new);
-        final SharedStorPoolName sharedStorPoolName = raw.build(FREE_SPACE_MGR_DSP_NAME, SharedStorPoolName::restoreName);
+        final SharedStorPoolName sharedStorPoolName = raw.build(
+            FREE_SPACE_MGR_DSP_NAME, SharedStorPoolName::restoreName
+        );
         final boolean externalLocking;
 
-        switch(getDbType())
+        switch (getDbType())
         {
             case ETCD:
                 externalLocking = raw.build(EXTERNAL_LOCKING, Boolean::parseBoolean);

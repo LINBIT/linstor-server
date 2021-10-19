@@ -34,8 +34,8 @@ import java.util.TreeMap;
 @Singleton
 public class LuksLayerETCDDriver extends BaseEtcdDriver implements LuksLayerCtrlDatabaseDriver
 {
-    private final static int PK_V_LRI_ID_IDX = 0;
-    private final static int PK_V_VLM_NR_IDX = 1;
+    private static final int PK_V_LRI_ID_IDX = 0;
+    private static final int PK_V_VLM_NR_IDX = 1;
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;

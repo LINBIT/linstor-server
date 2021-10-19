@@ -18,7 +18,8 @@ import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseFeature;
 
 @Path("v1/events")
-public class Events {
+public class Events
+{
     private final RequestHelper requestHelper;
     private final EventHandlerBridge eventHandlerBridge;
 
@@ -40,12 +41,16 @@ public class Events {
         @HeaderParam("Last-Event-ID") String lastEventId) throws IOException
     {
         final EventOutput eventOutput = new EventOutput();
-        Response resp = requestHelper.doInScope(requestHelper.createContext("Events-drbd-promotion", request), () ->
-        {
-            eventHandlerBridge.registerResourceClient(
-                eventOutput, lastEventId != null && lastEventId.equals("current"));
-            return null;
-        }, false);
+        Response resp = requestHelper.doInScope(
+            requestHelper.createContext("Events-drbd-promotion", request),
+            () ->
+            {
+                eventHandlerBridge.registerResourceClient(
+                    eventOutput, lastEventId != null && lastEventId.equals("current"));
+                return null;
+            },
+            false
+        );
 
         if (resp != null)
         {

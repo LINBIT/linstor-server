@@ -230,8 +230,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                             ctx.responses.addEntries(
                                 ApiCallRcImpl.singleApiCallRc(
                                     ApiConsts.INFO_PROP_SET,
-                                    "Disabling auto-tiebreaker on resource-definition '"
-                                        + tieBreaker.getDefinition().getName() +
+                                    "Disabling auto-tiebreaker on resource-definition '" +
+                                        tieBreaker.getDefinition().getName() +
                                         "' as tiebreaker resource was manually deleted"
                                 )
                             );

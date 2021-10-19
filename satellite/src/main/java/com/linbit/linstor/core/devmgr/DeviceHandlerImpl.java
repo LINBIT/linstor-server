@@ -937,7 +937,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     // FIXME: this method also needs to be called when the localnode's properties change, not just
     // (as currently) when a fullSync was applied
     @Override
-    public void localNodePropsChanged(Props localNodeProps) throws StorageException, AccessDeniedException
+    public void localNodePropsChanged(Props newLocalNodeProps) throws StorageException, AccessDeniedException
     {
         LocalPropsChangePojo collectedChanged = new LocalPropsChangePojo();
 
@@ -945,7 +945,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         while (devHandlerIt.hasNext())
         {
             DeviceLayer deviceLayer = devHandlerIt.next();
-            LocalPropsChangePojo pojo = deviceLayer.setLocalNodeProps(localNodeProps);
+            LocalPropsChangePojo pojo = deviceLayer.setLocalNodeProps(newLocalNodeProps);
 
             // TODO we could implement a safeguard here such that a layer can only change/delete properties
             // from its own namespace.
@@ -1083,10 +1083,10 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             symlinkProps.get().clear();
         }
-        for (int i = 0; i < prefixedList.size(); i++)
+        for (int idx = 0; idx < prefixedList.size(); idx++)
         {
-            String symlink = prefixedList.get(i);
-            vlmProps.setProp(Integer.toString(i), symlink, ApiConsts.NAMESPC_STLT_DEV_SYMLINKS);
+            String symlink = prefixedList.get(idx);
+            vlmProps.setProp(Integer.toString(idx), symlink, ApiConsts.NAMESPC_STLT_DEV_SYMLINKS);
         }
     }
 }

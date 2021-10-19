@@ -392,8 +392,10 @@ public class CacheLayer implements DeviceLayer
         }
         else
         {
-            AbsRscLayerObject<Resource> cacheRscChild = layerDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
-            AbsRscLayerObject<Resource> metaRscChild = layerDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_META);
+            AbsRscLayerObject<Resource> cacheRscChild =
+                layerDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
+            AbsRscLayerObject<Resource> metaRscChild =
+                layerDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_META);
 
             if (cacheRscChild == null && metaRscChild == null)
             {
