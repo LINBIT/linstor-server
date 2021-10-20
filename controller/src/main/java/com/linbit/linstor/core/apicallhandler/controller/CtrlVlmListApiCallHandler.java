@@ -139,81 +139,83 @@ public class CtrlVlmListApiCallHandler
                         {
                             // prop filter
                             final Props props = rsc.getProps(peerAccCtx.get());
-                            if (!props.contains(propFilters))
-                                continue;
-
-                            // create our api object ourselves to filter the volumes by storage pools
-
-                            // build volume list filtered by storage pools (if provided)
-                            List<VolumeApi> volumes = new ArrayList<>();
-                            List<AbsRscLayerObject<Resource>> storageRscList = LayerUtils
-                                .getChildLayerDataByKind(
-                                rsc.getLayerData(peerAccCtx.get()),
-                                DeviceLayerKind.STORAGE
-                            );
-                            Iterator<Volume> itVolumes = rsc.iterateVolumes();
-                            while (itVolumes.hasNext())
+                            if (props.contains(propFilters))
                             {
-                                Volume vlm = itVolumes.next();
-                                boolean addToList = storPoolsFilter.isEmpty();
-                                if (!addToList)
-                                {
-                                    VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
-                                    for (AbsRscLayerObject<Resource> storageRsc : storageRscList)
-                                    {
-                                        if (storPoolsFilter.contains(
-                                            storageRsc.getVlmProviderObject(vlmNr).getStorPool().getName())
-                                        )
-                                        {
-                                            addToList = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (addToList)
-                                {
-                                    if (vlmAllocatedAnswers != null)
-                                    {
-                                        VlmAllocatedResult vlmAllocResult = vlmAllocatedAnswers.get(vlm.getKey());
-                                        if (vlmAllocResult != null)
-                                        {
-                                            vlm.clearReports();
-                                            vlm.addReports(vlmAllocResult.getApiCallRc());
-                                        }
-                                    }
-                                    volumes.add(vlm.getApiData(
-                                        getAllocated(vlmAllocatedAnswers, vlm),
-                                        peerAccCtx.get()
-                                    ));
-                                }
-                            }
+                                // create our api object ourselves to filter the volumes by storage pools
 
-                            List<ResourceConnectionApi> rscConns = new ArrayList<>();
-                            for (ResourceConnection rscConn : rsc.streamAbsResourceConnections(peerAccCtx.get())
-                                    .collect(toList()))
-                            {
-                                rscConns.add(rscConn.getApiData(peerAccCtx.get()));
-                            }
-
-                            if (!volumes.isEmpty())
-                            {
-                                RscPojo filteredRscVlms = new RscPojo(
-                                    rscDfn.getName().getDisplayName(),
-                                    rsc.getNode().getName().getDisplayName(),
-                                    rsc.getNode().getUuid(),
-                                    rscDfn.getApiData(peerAccCtx.get()),
-                                    rsc.getUuid(),
-                                    rsc.getStateFlags().getFlagsBits(peerAccCtx.get()),
-                                    rsc.getProps(peerAccCtx.get()).map(),
-                                    volumes,
-                                    null,
-                                    rscConns,
-                                    null,
-                                    null,
-                                    rsc.getLayerData(peerAccCtx.get()).asPojo(peerAccCtx.get()),
-                                    rsc.getCreateTimestamp().orElse(null)
+                                // build volume list filtered by storage pools (if provided)
+                                List<VolumeApi> volumes = new ArrayList<>();
+                                List<AbsRscLayerObject<Resource>> storageRscList = LayerUtils
+                                    .getChildLayerDataByKind(
+                                    rsc.getLayerData(peerAccCtx.get()),
+                                    DeviceLayerKind.STORAGE
                                 );
-                                rscList.addResource(filteredRscVlms);
+                                Iterator<Volume> itVolumes = rsc.iterateVolumes();
+                                while (itVolumes.hasNext())
+                                {
+                                    Volume vlm = itVolumes.next();
+                                    boolean addToList = storPoolsFilter.isEmpty();
+                                    if (!addToList)
+                                    {
+                                        VolumeNumber vlmNr = vlm.getVolumeDefinition().getVolumeNumber();
+                                        for (AbsRscLayerObject<Resource> storageRsc : storageRscList)
+                                        {
+                                            if (storPoolsFilter.contains(
+                                                storageRsc.getVlmProviderObject(vlmNr).getStorPool().getName())
+                                            )
+                                            {
+                                                addToList = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (addToList)
+                                    {
+                                        if (vlmAllocatedAnswers != null)
+                                        {
+                                            VlmAllocatedResult vlmAllocResult = vlmAllocatedAnswers.get(vlm.getKey());
+                                            if (vlmAllocResult != null)
+                                            {
+                                                vlm.clearReports();
+                                                vlm.addReports(vlmAllocResult.getApiCallRc());
+                                            }
+                                        }
+                                        volumes.add(vlm.getApiData(
+                                            getAllocated(
+                                                vlmAllocatedAnswers, vlm),
+                                                peerAccCtx.get()
+                                            )
+                                        );
+                                    }
+                                }
+
+                                List<ResourceConnectionApi> rscConns = new ArrayList<>();
+                                for (ResourceConnection rscConn : rsc.streamAbsResourceConnections(peerAccCtx.get())
+                                        .collect(toList()))
+                                {
+                                    rscConns.add(rscConn.getApiData(peerAccCtx.get()));
+                                }
+
+                                if (!volumes.isEmpty())
+                                {
+                                    RscPojo filteredRscVlms = new RscPojo(
+                                        rscDfn.getName().getDisplayName(),
+                                        rsc.getNode().getName().getDisplayName(),
+                                        rsc.getNode().getUuid(),
+                                        rscDfn.getApiData(peerAccCtx.get()),
+                                        rsc.getUuid(),
+                                        rsc.getStateFlags().getFlagsBits(peerAccCtx.get()),
+                                        rsc.getProps(peerAccCtx.get()).map(),
+                                        volumes,
+                                        null,
+                                        rscConns,
+                                        null,
+                                        null,
+                                        rsc.getLayerData(peerAccCtx.get()).asPojo(peerAccCtx.get()),
+                                        rsc.getCreateTimestamp().orElse(null)
+                                    );
+                                    rscList.addResource(filteredRscVlms);
+                                }
                             }
                         }
                     }
@@ -282,11 +284,8 @@ public class CtrlVlmListApiCallHandler
                 {
                     allocated = vlm.getAllocatedSize(peerAccCtx.get());
                 }
-//                else
-//                {
-//                    the satellite is offline, but an appropriate message should already have been
-//                    generated by our caller method
-//                }
+                // else the satellite is offline, but an appropriate message should already have been
+                // generated by our caller method
             }
             else
             {
@@ -350,30 +349,6 @@ public class CtrlVlmListApiCallHandler
             return assembleList(nodesFilter, storPoolsFilter, resourceFilter, propFilters, null);
         }
     }
-
-//    private Long getDiskAllocated(Map<Volume.Key, Long> vlmAllocatedCapacities, Volume vlm)
-//        throws AccessDeniedException
-//    {
-//        Long allocated;
-//        Long fetchedAllocated = vlmAllocatedCapacities.get(vlm.getKey());
-//        if (fetchedAllocated != null)
-//        {
-//            allocated = fetchedAllocated;
-//        }
-//        else
-//        {
-//            DeviceProviderKind driverKind = vlm.getStorPools(peerAccCtx.get()).getDeviceProviderKind();
-//            if (driverKind.usesThinProvisioning() || !driverKind.hasBackingDevice())
-//            {
-//                allocated = null;
-//            }
-//            else
-//            {
-//                allocated = vlm.getVolumeDefinition().getVolumeSize(peerAccCtx.get());
-//            }
-//        }
-//        return allocated;
-//    }
 
     public static String getVlmDescriptionInline(Volume vlm)
     {
