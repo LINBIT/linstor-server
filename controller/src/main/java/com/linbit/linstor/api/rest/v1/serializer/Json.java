@@ -490,7 +490,9 @@ public class Json
             case BCACHE:
                 BCacheRscPojo bcacheRscPojo = (BCacheRscPojo) rscLayerDataApi;
                 resourceLayer.bcache = pojoToBCacheResource(bcacheRscPojo);
+                break;
             default:
+                break;
         }
         return resourceLayer;
     }
@@ -514,7 +516,8 @@ public class Json
 
         if (withVolumes)
         {
-            rsc.volumes = rscApi.getVlmList().stream().map(vlmApi ->
+            rsc.volumes = rscApi.getVlmList().stream().map(
+                vlmApi ->
                 {
                     JsonGenTypes.Volume vlmData = Json.apiToVolume(vlmApi);
                     JsonGenTypes.VolumeState vlmState = null;
@@ -545,7 +548,8 @@ public class Json
                     }
                     vlmData.state = vlmState;
                     return vlmData;
-                }).collect(Collectors.toList());
+                }
+            ).collect(Collectors.toList());
         }
 
         try
@@ -585,28 +589,26 @@ public class Json
     {
         LinkedList<RscLayerDataApi> toExplore = new LinkedList<>();
         toExplore.add(rscApiRef.getLayerData());
+        String sharedName = null;
         while (!toExplore.isEmpty())
         {
             RscLayerDataApi cur = toExplore.removeFirst();
             if (cur.getLayerKind().equals(DeviceLayerKind.STORAGE))
             {
-                if (cur.getVolumeList().isEmpty())
+                if (!cur.getVolumeList().isEmpty())
                 {
-                    return null; // no volumes, no sharedName
+                    String freeSpaceManagerName = cur.getVolumeList().get(0).getStorPoolApi().getFreeSpaceManagerName();
+                    if (SharedStorPoolName.isShared(freeSpaceManagerName))
+                    {
+                        sharedName = freeSpaceManagerName;
+                    }
                 }
-                String freeSpaceManagerName = cur.getVolumeList().get(0).getStorPoolApi().getFreeSpaceManagerName();
-                if (SharedStorPoolName.isShared(freeSpaceManagerName))
-                {
-                    return freeSpaceManagerName;
-                }
-                else
-                {
-                    return null; // do not return if sharedSpName is not shared
-                }
+                // else no volumes => no sharedName, or freeSpaceManagerName is not shared => not a shared name
+                break;
             }
             toExplore.addAll(cur.getChildren());
         }
-        return null;
+        return sharedName;
     }
 
     public static JsonGenTypes.Resource apiToResource(
