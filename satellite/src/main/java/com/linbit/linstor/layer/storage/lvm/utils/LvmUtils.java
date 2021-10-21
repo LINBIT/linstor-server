@@ -10,8 +10,10 @@ import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
 
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_ATTRIBUTES;
+import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_CHUNK_SIZE;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_DATA_PERCENT;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_IDENTIFIER;
+import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_METADATA_PERCENT;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_PATH;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_POOL_LV;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_SIZE;
@@ -53,6 +55,8 @@ public class LvmUtils
         public final long size;
         public final float dataPercent;
         public final String attributes;
+        public final String metaDataPercentStr;
+        public final long chunkSizeInKib;
 
         LvsInfo(
             String volumeGroupRef,
@@ -61,7 +65,9 @@ public class LvmUtils
             String pathRef,
             long sizeRef,
             float dataPercentRef,
-            String attributesRef
+            String attributesRef,
+            String metaDataPercentStrRef,
+            long chunkSizeInKibRef
         )
         {
             volumeGroup = volumeGroupRef;
@@ -71,6 +77,8 @@ public class LvmUtils
             size = sizeRef;
             dataPercent = dataPercentRef;
             attributes = attributesRef;
+            metaDataPercentStr = metaDataPercentStrRef;
+            chunkSizeInKib = chunkSizeInKibRef;
         }
     }
 
@@ -171,7 +179,7 @@ public class LvmUtils
         final HashMap<String, LvsInfo> infoByIdentifier = new HashMap<>();
 
         final String[] lines = stdOut.split("\n");
-        final int expectedColCount = 7;
+        final int expectedColCount = 9;
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
@@ -184,10 +192,10 @@ public class LvmUtils
                 final String thinPoolStr;
                 final float dataPercent;
                 final String attributes = data[LVS_COL_ATTRIBUTES].trim();
-                if (data.length <= LVS_COL_DATA_PERCENT ||
+                if (
                     data[LVS_COL_POOL_LV] == null ||
                     data[LVS_COL_POOL_LV].isEmpty()
-                    )
+                )
                 {
                     thinPoolStr = null;
                 }
@@ -239,6 +247,27 @@ public class LvmUtils
                         );
                 }
 
+                String metaDataPercentStr = data[LVS_COL_METADATA_PERCENT];
+
+                String chunkSizeInKiBStr = data[LVS_COL_CHUNK_SIZE];
+                long chunkSizeInKib;
+                try
+                {
+                    chunkSizeInKib = StorageUtils.parseDecimalAsLong(chunkSizeInKiBStr);
+                }
+                catch (NumberFormatException nfExc)
+                {
+                    throw new StorageException(
+                        "Unable to parse logical chunk size",
+                        "Size to parse: '" + chunkSizeInKiBStr + "'",
+                        null,
+                        null,
+                        "External command used to query logical volume info: " +
+                            String.join(" ", output.executedCommand),
+                        nfExc
+                    );
+                }
+
                 final LvsInfo state = new LvsInfo(
                     vgStr,
                     thinPoolStr,
@@ -246,8 +275,10 @@ public class LvmUtils
                     path,
                     size,
                     dataPercent,
-                    attributes
-                    );
+                    attributes,
+                    metaDataPercentStr,
+                    chunkSizeInKib
+                );
                 infoByIdentifier.put(vgStr + File.separator + identifier, state);
             }
         }

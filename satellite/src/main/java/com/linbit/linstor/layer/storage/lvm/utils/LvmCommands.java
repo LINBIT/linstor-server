@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.lvm.utils;
 
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
@@ -26,6 +27,8 @@ public class LvmCommands
     public static final int LVS_COL_POOL_LV = 4;
     public static final int LVS_COL_DATA_PERCENT = 5;
     public static final int LVS_COL_ATTRIBUTES = 6;
+    public static final int LVS_COL_METADATA_PERCENT = 7;
+    public static final int LVS_COL_CHUNK_SIZE = 8;
 
     public static final String LVM_TAG_CLONE_SNAPSHOT = "linstor_clone_snapshot";
 
@@ -74,7 +77,7 @@ public class LvmCommands
                 "lvs",
                 lvmConfig,
                 volumeGroups,
-                "-o", "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr",
+                "-o", "lv_name,lv_path,lv_size,vg_name,pool_lv,data_percent,lv_attr,metadata_percent,chunk_size",
                 "--separator", LvmUtils.DELIMITER,
                 "--noheadings",
                 "--units", "k",
