@@ -34,6 +34,11 @@ public class StorageConfigReader
         {
             throw new ImplementationError("Invalid hardcoded storPool prop key", exc);
         }
+        checkVolumeGroupEntry(extCmdFactory, volumeGroup);
+    }
+
+    private static void checkVolumeGroupEntry(ExtCmdFactory extCmdFactory, String volumeGroup) throws StorageException
+    {
         if (volumeGroup != null)
         {
             volumeGroup = volumeGroup.trim();
@@ -63,6 +68,55 @@ public class StorageConfigReader
             LvmUtils.checkVgExists(extCmdFactory, volumeGroup); // throws an exception
             // if volume group does not exist
         }
+    }
+
+    public static void checkThinPoolEntry(ExtCmdFactory extCmdFactory, Props props) throws StorageException
+    {
+        String volumeGroup;
+        String thinPool;
+        try
+        {
+            String prop = props.getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY);
+            String[] split = prop.split("/");
+            if (split.length != 2)
+            {
+                throw new StorageException(
+                    "Storage pool name '" + prop + "' is not a valid thinpool name ('$VG/$THIN_POOL')"
+                );
+            }
+            volumeGroup = split[0];
+            thinPool = split[1];
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError("Invalid hardcoded storPool prop key", exc);
+        }
+        checkVolumeGroupEntry(extCmdFactory, volumeGroup);
+
+        try
+        {
+            Checks.nameCheck(
+                thinPool,
+                1,
+                Integer.MAX_VALUE,
+                VALID_CHARS,
+                VALID_INNER_CHARS
+            );
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            final String cause = String.format("Invalid name for thin pool: %s", thinPool);
+            throw new StorageException(
+                "Invalid configuration, " + cause,
+                null,
+                cause,
+                "Specify a valid and existing thin pool",
+                null
+            );
+        }
+
+        LvmUtils.checkThinPoolExists(extCmdFactory, volumeGroup, thinPool); // throws an exception
+        // if volume group does not exist
     }
 
     public static void checkToleranceFactor(Props props) throws StorageException
