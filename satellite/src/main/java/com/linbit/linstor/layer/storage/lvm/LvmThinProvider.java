@@ -9,19 +9,23 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
+import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -38,6 +42,7 @@ import javax.inject.Singleton;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 @Singleton
@@ -561,6 +566,32 @@ public class LvmThinProvider extends LvmProvider
         // LVM_THIN doesn't have a long run operation, but it is vital that the device manager runs
         // through before getting updated flags, so keep the clone daemon a bit busy
         return new String[] {"sleep", "1"};
+    }
+
+    @Override
+    public LocalNodePropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    {
+        Props props = DeviceLayerUtils.getNamespaceStorDriver(
+            storPool.getProps(storDriverAccCtx)
+        );
+        StorageConfigReader.checkThinPoolEntry(extCmdFactory, props);
+        StorageConfigReader.checkToleranceFactor(props);
+
+        String vlmGrp = getVolumeGroup(storPool);
+        String thinPool = getThinPool(storPool);
+        HashMap<String, LvsInfo> lvsInfo = LvmUtils.getLvsInfo(extCmdFactory, Collections.singleton(vlmGrp));
+        LvsInfo thinPoolInfo = lvsInfo.get(vlmGrp + File.separator + thinPool);
+
+        if (!thinPoolInfo.attributes.contains("z"))
+        {
+            LvmUtils.execWithRetry(
+                extCmdFactory,
+                Collections.singleton(vlmGrp),
+                config ->  LvmCommands.activateZero(extCmdFactory, vlmGrp, thinPool,config)
+            );
+        }
+
+        return null;
     }
 
     /**

@@ -406,6 +406,31 @@ public class LvmUtils
         }
     }
 
+    public static boolean checkThinPoolExistsBool(
+        ExtCmdFactory extCmdFactory,
+        String volumeGroup,
+        String thinPool
+    )
+        throws StorageException
+    {
+        HashMap<String, LvsInfo> map = getLvsInfo(extCmdFactory, Collections.singleton(volumeGroup));
+        LvsInfo lvsInfo = map.get(volumeGroup + File.separator + thinPool);
+        return lvsInfo != null;
+    }
+
+    public static void checkThinPoolExists(
+        ExtCmdFactory extCmdFactory,
+        String volumeGroup,
+        String thinPool
+    )
+        throws StorageException
+    {
+        if (!checkThinPoolExistsBool(extCmdFactory, volumeGroup, thinPool))
+        {
+            throw new StorageException("Thin pool '" + volumeGroup + "/" + thinPool + "' not found");
+        }
+    }
+
     public static List<String> getPhysicalVolumes(ExtCmdFactory extCmdFactory, String volumeGroup)
         throws StorageException
     {

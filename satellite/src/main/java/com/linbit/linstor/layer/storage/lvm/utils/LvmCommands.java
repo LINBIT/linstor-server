@@ -519,6 +519,22 @@ public class LvmCommands
         );
     }
 
+    public static OutputData activateZero(ExtCmdFactory extCmdFactory, String vlmGrp, String thinPool, String lvmConfig)
+        throws StorageException
+    {
+        String failMsg = "Failed to activate --zero y on thin pool: " + vlmGrp + "/" + thinPool;
+        return genericExecutor(
+            extCmdFactory.create().setSaveWithoutSharedLocks(false),
+            buildCmd(
+                "lvchange",
+                lvmConfig,
+            (Collection<String>) null,
+            "--zero",
+            "y",
+            vlmGrp + File.separator + thinPool
+        ), failMsg, failMsg);
+    }
+
     public static OutputData listExistingVolumeGroups(ExtCmd extCmd, String lvmConfig) throws StorageException
     {
         String failMsg = "Failed to query list of volume groups";
