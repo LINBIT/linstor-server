@@ -28,6 +28,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.StltExternalFileHandler;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.StltStorPoolApiCallHandler.ChangedData;
@@ -144,6 +145,7 @@ public class StltApiCallHandler
     private DrbdEventPublisher drbdEventPublisher;
     private DrbdVersion drbdVersion;
     private final BackupShippingMgr backupShippingMgr;
+    private final StltExternalFileHandler stltExtFileHandler;
 
     @Inject
     public StltApiCallHandler(
@@ -187,7 +189,8 @@ public class StltApiCallHandler
         DeviceProviderMapper deviceProviderMapperRef,
         DrbdVersion drbdVersionRef,
         ExtCmdFactory extCmdFactoryRef,
-        BackupShippingMgr backupShippingMgrRef
+        BackupShippingMgr backupShippingMgrRef,
+        StltExternalFileHandler stltExtFileHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -231,6 +234,7 @@ public class StltApiCallHandler
         drbdVersion = drbdVersionRef;
         extCmdFactory = extCmdFactoryRef;
         backupShippingMgr = backupShippingMgrRef;
+        stltExtFileHandler = stltExtFileHandlerRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -337,6 +341,7 @@ public class StltApiCallHandler
                 rscDfnMap.clear();
                 storPoolDfnMap.clear();
                 extFileMap.clear();
+                stltExtFileHandler.clear(); // also clear internal cache
                 remoteMap.clear();
 
                 for (NodePojo node : nodes)
