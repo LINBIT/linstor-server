@@ -20,7 +20,7 @@ public class InternalApiConsts
     public static final String API_REQUEST_NODE       = "RequestNode";
     public static final String API_APPLY_NODE         = "ApplyNode";
     public static final String API_APPLY_NODE_DELETED = "ApplyDeletedNode";
-    public static final String API_UPDATE_LOCAL_NODE_PROPS_FROM_STLT = "ApplyNodePropsFromStlt";
+    public static final String API_UPDATE_LOCAL_PROPS_FROM_STLT = "ApplyPropsFromStlt";
 
     public static final String API_NOTIFY_VLM_DRBD_RESIZED = "NotifyDrbdVlmResized";
     public static final String API_NOTIFY_RSC_APPLIED    = "NotifyRscApplied";

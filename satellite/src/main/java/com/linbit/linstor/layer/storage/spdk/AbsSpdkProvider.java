@@ -11,7 +11,6 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
-import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
@@ -22,6 +21,7 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
@@ -416,7 +416,7 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     }
 
     @Override
-    public LocalNodePropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)

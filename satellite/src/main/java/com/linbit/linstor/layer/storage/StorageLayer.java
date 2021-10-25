@@ -10,12 +10,12 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
-import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
@@ -80,29 +80,22 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public LocalNodePropsChangePojo setLocalNodeProps(Props localNodeProps)
+    public LocalPropsChangePojo setLocalNodeProps(Props localNodeProps)
         throws StorageException, AccessDeniedException
     {
-        Map<String, String> changedProps = new HashMap<>();
-        Set<String> deletedProps = new HashSet<>();
+        LocalPropsChangePojo ret = new LocalPropsChangePojo();
         for (DeviceProvider devProvider : deviceProviderMapper.getDriverList())
         {
-            LocalNodePropsChangePojo pojo = devProvider.setLocalNodeProps(localNodeProps);
+            LocalPropsChangePojo pojo = devProvider.setLocalNodeProps(localNodeProps);
             if (pojo != null)
             {
                 // TODO we could implement a safeguard here such that a layer can only change/delete properties
                 // from its own namespace.
 
-                changedProps.putAll(pojo.changedProps);
-                deletedProps.addAll(pojo.deletedProps);
+                ret.putAll(pojo);
             }
         }
 
-        LocalNodePropsChangePojo ret = null;
-        if (!changedProps.isEmpty() || !deletedProps.isEmpty())
-        {
-            ret = new LocalNodePropsChangePojo(changedProps, deletedProps);
-        }
         return ret;
     }
 
@@ -424,10 +417,10 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public LocalNodePropsChangePojo checkStorPool(StorPool storPool, boolean update)
+    public LocalPropsChangePojo checkStorPool(StorPool storPool, boolean update)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        LocalNodePropsChangePojo setLocalNodePojo;
+        LocalPropsChangePojo setLocalNodePojo;
 
         DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
         setLocalNodePojo = deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
@@ -435,17 +428,17 @@ public class StorageLayer implements DeviceLayer
         {
             deviceProvider.update(storPool);
         }
-        LocalNodePropsChangePojo checkCfgPropsPojo = deviceProvider.checkConfig(storPool);
+        LocalPropsChangePojo checkCfgPropsPojo = deviceProvider.checkConfig(storPool);
 
-        LocalNodePropsChangePojo ret;
+        LocalPropsChangePojo ret = null;
         if (setLocalNodePojo != null || checkCfgPropsPojo != null)
         {
-            ret = new LocalNodePropsChangePojo();
+            ret = new LocalPropsChangePojo();
             ret.putAll(setLocalNodePojo);
             ret.putAll(checkCfgPropsPojo);
         }
 
-        return setLocalNodePojo;
+        return ret;
     }
 
     private boolean isVolumeFlagSetPrivileged(Volume vlm, Volume.Flags flag) {

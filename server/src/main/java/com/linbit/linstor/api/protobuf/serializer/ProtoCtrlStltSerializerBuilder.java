@@ -9,6 +9,7 @@ import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
@@ -25,6 +26,7 @@ import com.linbit.linstor.core.objects.StltRemote;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.common.CryptoEntryOuterClass;
@@ -736,16 +738,22 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public CtrlStltSerializerBuilder updateLocalNodeProps(
-        Map<String, String> changedLocalNodePropsRef,
-        Set<String> deletedLocalNodePropsRef
-    )
+    public CtrlStltSerializerBuilder updateLocalProps(LocalPropsChangePojo pojoRef)
     {
         try
         {
-            MsgIntUpdateLocalNodeChangeOuterClass.MsgIntUpdateLocalNodeChange.newBuilder()
-                .putAllChangedProps(changedLocalNodePropsRef)
-                .addAllDeletedProps(deletedLocalNodePropsRef)
+            MsgIntUpdateLocalNodeChangeOuterClass.MsgIntUpdateLocalNodeChange.Builder builder = MsgIntUpdateLocalNodeChangeOuterClass.MsgIntUpdateLocalNodeChange.newBuilder();
+            builder.setChangedNodeProps(mapToProps(pojoRef.changedNodeProps))
+                .setDeletedNodeProps(setToSet(pojoRef.deletedNodeProps));
+            for (Entry<StorPoolName, Map<String, String>> entry : pojoRef.changedStorPoolProps.entrySet())
+            {
+                builder.putChangedStorPoolProps(entry.getKey().displayValue, mapToProps(entry.getValue()));
+            }
+            for (Entry<StorPoolName, Set<String>> entry : pojoRef.deletedStorPoolProps.entrySet())
+            {
+                builder.putDeletedStorPoolProps(entry.getKey().displayValue, setToSet(entry.getValue()));
+            }
+            builder
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -754,6 +762,16 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             handleIOException(exc);
         }
         return this;
+    }
+
+    private MsgIntUpdateLocalNodeChangeOuterClass.Props mapToProps(Map<String, String> map)
+    {
+        return MsgIntUpdateLocalNodeChangeOuterClass.Props.newBuilder().putAllProps(map).build();
+    }
+
+    private MsgIntUpdateLocalNodeChangeOuterClass.Set setToSet(Set<String> set)
+    {
+        return MsgIntUpdateLocalNodeChangeOuterClass.Set.newBuilder().addAllKeys(set).build();
     }
 
     @Override

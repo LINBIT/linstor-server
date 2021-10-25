@@ -18,7 +18,6 @@ import com.linbit.linstor.core.UdevHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
-import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -29,6 +28,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
@@ -939,31 +939,29 @@ public class DeviceHandlerImpl implements DeviceHandler
     @Override
     public void localNodePropsChanged(Props localNodeProps) throws StorageException, AccessDeniedException
     {
-        Map<String, String> changedLocalNodeProps = new HashMap<>();
-        Set<String> deletedLocalNodeProps = new HashSet<>();
+        LocalPropsChangePojo collectedChanged = new LocalPropsChangePojo();
 
         Iterator<DeviceLayer> devHandlerIt = layerFactory.iterateDeviceHandlers();
         while (devHandlerIt.hasNext())
         {
             DeviceLayer deviceLayer = devHandlerIt.next();
-            LocalNodePropsChangePojo pojo = deviceLayer.setLocalNodeProps(localNodeProps);
+            LocalPropsChangePojo pojo = deviceLayer.setLocalNodeProps(localNodeProps);
 
             // TODO we could implement a safeguard here such that a layer can only change/delete properties
             // from its own namespace.
 
             if (pojo != null)
             {
-                changedLocalNodeProps.putAll(pojo.changedProps);
-                deletedLocalNodeProps.addAll(pojo.deletedProps);
+                collectedChanged.putAll(pojo);
             }
         }
 
-        if (!changedLocalNodeProps.isEmpty() || !deletedLocalNodeProps.isEmpty())
+        if (!collectedChanged.isEmpty())
         {
             controllerPeerConnector.getControllerPeer().sendMessage(
                 interComSerializer
-                    .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_NODE_PROPS_FROM_STLT)
-                    .updateLocalNodeProps(changedLocalNodeProps, deletedLocalNodeProps)
+                    .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT)
+                    .updateLocalProps(collectedChanged)
                     .build()
             );
         }
@@ -998,15 +996,15 @@ public class DeviceHandlerImpl implements DeviceHandler
                     throw new ImplementationError("Unknown provider kind: " + storPool.getDeviceProviderKind());
             }
 
-            LocalNodePropsChangePojo pojo = layer.checkStorPool(storPool, update);
+            LocalPropsChangePojo pojo = layer.checkStorPool(storPool, update);
             spaceInfo = layer.getStoragePoolSpaceInfo(storPool);
 
             if (pojo != null)
             {
                 controllerPeerConnector.getControllerPeer().sendMessage(
                     interComSerializer
-                        .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_NODE_PROPS_FROM_STLT)
-                        .updateLocalNodeProps(pojo.changedProps, pojo.deletedProps)
+                        .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT)
+                        .updateLocalProps(pojo)
                         .build()
                 );
             }

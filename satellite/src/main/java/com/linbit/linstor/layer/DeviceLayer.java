@@ -8,12 +8,12 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
-import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.openflex.OpenflexLayer;
 import com.linbit.linstor.layer.storage.StorageLayer;
@@ -97,7 +97,7 @@ public interface DeviceLayer
 
     void clearCache() throws StorageException;
 
-    LocalNodePropsChangePojo setLocalNodeProps(Props localNodeProps) throws StorageException, AccessDeniedException;
+    LocalPropsChangePojo setLocalNodeProps(Props localNodeProps) throws StorageException, AccessDeniedException;
 
     boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
 
@@ -110,7 +110,7 @@ public interface DeviceLayer
      * @throws AccessDeniedException
      * @throws StorageException
      */
-    default LocalNodePropsChangePojo checkStorPool(StorPool storPoolRef, boolean update)
+    default LocalPropsChangePojo checkStorPool(StorPool storPoolRef, boolean update)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op, no change in props

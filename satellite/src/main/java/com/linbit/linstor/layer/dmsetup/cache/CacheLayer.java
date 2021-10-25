@@ -9,10 +9,10 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
-import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -375,7 +375,7 @@ public class CacheLayer implements DeviceLayer
     }
 
     @Override
-    public LocalNodePropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
     {
         localNodeProps = localNodePropsRef;
         return null;

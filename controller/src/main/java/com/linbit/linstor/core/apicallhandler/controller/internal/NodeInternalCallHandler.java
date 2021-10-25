@@ -13,6 +13,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -28,6 +29,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -216,7 +218,12 @@ public class NodeInternalCallHandler
         }
     }
 
-    public void handleNodeUpdate(Map<String, String> changedPropsRef, List<String> deletedPropsListRef)
+    public void handleNodeUpdate(
+        Map<String, String> changedPropsRef,
+        List<String> deletedPropsListRef,
+        Map<String, Map<String, String>> changedStorPoolPropsRef,
+        Map<String, List<String>> deletedStorPoolPropsRef
+    )
     {
         Node node = peer.get().getNode();
 
@@ -228,21 +235,44 @@ public class NodeInternalCallHandler
         )
         {
             Props props = node.getProps(apiCtx);
-            boolean changed = false;
-            for (String key : deletedPropsListRef)
+            boolean changedNode = false;
+            changedNode |= delete(props, deletedPropsListRef);
+            changedNode |= update(props, changedPropsRef);
+
+            Set<StorPool> changedStorPoolSet = new HashSet<>();
+            for (Entry<String, List<String>> entry : deletedStorPoolPropsRef.entrySet())
             {
-                changed |= props.removeProp(key) != null;
+                StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
+                Props spProps = storPool.getProps(apiCtx);
+                boolean changedSp = delete(spProps, entry.getValue());
+                if (changedSp)
+                {
+                    changedStorPoolSet.add(storPool);
+                }
             }
-            for (Entry<String, String> entry : changedPropsRef.entrySet())
+            for (Entry<String, Map<String, String>> entry : changedStorPoolPropsRef.entrySet())
             {
-                String value = entry.getValue();
-                changed |= !Objects.equal(value, props.setProp(entry.getKey(), value));
+                StorPool storPool = ctrlApiDataLoader.loadStorPool(entry.getKey(), node, true);
+                Props spProps = storPool.getProps(apiCtx);
+                boolean changedSp = update(spProps, entry.getValue());
+                if (changedSp)
+                {
+                    changedStorPoolSet.add(storPool);
+                }
             }
 
-            if (changed)
+            if (changedNode || !changedStorPoolSet.isEmpty())
             {
                 ctrlTransactionHelper.commit();
-                stltUpdater.updateSatellites(node);
+
+                if (changedNode)
+                {
+                    stltUpdater.updateSatellites(node);
+                }
+                for (StorPool storPool : changedStorPoolSet)
+                {
+                    stltUpdater.updateSatellite(storPool);
+                }
             }
         }
         catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
@@ -253,5 +283,28 @@ public class NodeInternalCallHandler
         {
             errorReporter.reportError(exc);
         }
+    }
+
+    private boolean delete(Props propsRef, List<String> deletedPropsListRef)
+        throws InvalidKeyException, AccessDeniedException, DatabaseException
+    {
+        boolean changed = false;
+        for (String key : deletedPropsListRef)
+        {
+            changed |= propsRef.removeProp(key) != null;
+        }
+        return changed;
+    }
+
+    private boolean update(Props propsRef, Map<String, String> changedPropsRef)
+        throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
+    {
+        boolean changed = false;
+        for (Entry<String, String> entry : changedPropsRef.entrySet())
+        {
+            String value = entry.getValue();
+            changed |= !Objects.equal(value, propsRef.setProp(entry.getKey(), value));
+        }
+        return changed;
     }
 }

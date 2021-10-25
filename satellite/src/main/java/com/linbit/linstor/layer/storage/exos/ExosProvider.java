@@ -10,7 +10,6 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
-import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsVolume;
@@ -21,6 +20,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
@@ -879,7 +879,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
-    public LocalNodePropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
         throws StorageException, AccessDeniedException
     {
         super.setLocalNodeProps(localNodePropsRef);
@@ -887,9 +887,9 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         return reinit();
     }
 
-    private LocalNodePropsChangePojo reinit() throws StorageException, AccessDeniedException
+    private LocalPropsChangePojo reinit() throws StorageException, AccessDeniedException
     {
-        LocalNodePropsChangePojo ret = null;
+        LocalPropsChangePojo ret = null;
         if (extToolsChecker.areSupported(false, ExtTools.LSSCSI, ExtTools.SAS_PHY, ExtTools.SAS_DEVICE))
         {
             initNewExosRestClients(stltConfigAccessor.getReadonlyProps());
@@ -1009,11 +1009,10 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
      * @throws AccessDeniedException
      * @throws DatabaseException
      */
-    private LocalNodePropsChangePojo reinitTargetIds(Props localNodePropsRef)
+    private LocalPropsChangePojo reinitTargetIds(Props localNodePropsRef)
         throws StorageException, AccessDeniedException
     {
-        HashMap<String, String> localNodePropsChanges = new HashMap<>();
-        HashSet<String> localNodePropsToDelete = new HashSet<>();
+        LocalPropsChangePojo ret = new LocalPropsChangePojo();
 
         // recache controller[].port[].target-id -> controller map
         Set<String> localScsiTargetIds = SysClassUtils.getScsiTargetIds(extCmdFactory);
@@ -1027,7 +1026,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             {
                 if (propKey.contains("/Ports/"))
                 {
-                    localNodePropsToDelete.add(propKey);
+                    ret.deletedNodeProps.add(propKey);
                 }
             }
         }
@@ -1053,10 +1052,10 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                             String currentValue = localNodePropsRef.getProp(propKey);
                             if (!Objects.equal(currentValue, ExosMappingManager.CONNECTED))
                             {
-                                localNodePropsChanges.put(propKey, ExosMappingManager.CONNECTED);
+                                ret.changedNodeProps.put(propKey, ExosMappingManager.CONNECTED);
                             }
 
-                            localNodePropsToDelete.remove(propKey);
+                            ret.deletedNodeProps.remove(propKey);
 
                             errorReporter.logDebug(
                                 "Found connected port to enclosure: %s, port: %s",
@@ -1075,11 +1074,11 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         }
         exosCtrlNameMapByTargetId = exosCtrlNameMapByTargetIdNew;
 
-        return new LocalNodePropsChangePojo(localNodePropsChanges, localNodePropsToDelete);
+        return ret;
     }
 
     @Override
-    public LocalNodePropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)

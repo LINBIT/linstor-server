@@ -4,10 +4,10 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
-import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.propscon.Props;
@@ -61,9 +61,9 @@ public interface DeviceProvider
      * @throws StorageException
      * @throws AccessDeniedException
      */
-    LocalNodePropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
+    LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
 
-    LocalNodePropsChangePojo setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException;
+    LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException;
 
     Collection<StorPool> getChangedStorPools();
 

@@ -2,9 +2,22 @@ syntax = "proto3";
 
 package com.linbit.linstor.proto.javainternal.s2c;
 
-// Internal message about a successful node creation or modification
+// Internal message about a changed or deleted properties of the local node and / or its storage pool(s)
 message MsgIntUpdateLocalNodeChange
 {
-    map<string, string>     changed_props = 1;
-    repeated string         deleted_props = 2;
+    Props               changed_node_props      = 1;
+    Set                 deleted_node_props      = 2;
+
+    map<string, Props>  changed_stor_pool_props = 3;
+    map<string, Set>    deleted_stor_pool_props = 4;
+}
+
+message Props
+{
+    map<string, string> props = 1;
+}
+
+message Set
+{
+    repeated string keys = 1;
 }

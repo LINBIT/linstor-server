@@ -7,9 +7,9 @@ import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
-import com.linbit.linstor.core.devmgr.pojos.LocalNodePropsChangePojo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -169,7 +169,7 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public LocalNodePropsChangePojo setLocalNodeProps(Props localNodeProps)
+    public LocalPropsChangePojo setLocalNodeProps(Props localNodeProps)
     {
         // no-op
         return null;
