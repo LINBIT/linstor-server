@@ -571,6 +571,8 @@ public class LvmThinProvider extends LvmProvider
     @Override
     public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
+        LocalPropsChangePojo ret = new LocalPropsChangePojo();
+
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
         );
@@ -591,7 +593,17 @@ public class LvmThinProvider extends LvmProvider
             );
         }
 
-        return null;
+        ret.changeStorPoolProp(
+            storPool,
+            StorageConstants.NAMESPACE_INTERNAL + StorageConstants.KEY_INT_THIN_POOL_GRANULARITY,
+            Long.toString(thinPoolInfo.chunkSizeInKib)
+        );
+        ret.changeStorPoolProp(
+            storPool,
+            StorageConstants.NAMESPACE_INTERNAL + StorageConstants.KEY_INT_THIN_POOL_METADATA_PERCENT,
+            thinPoolInfo.metaDataPercentStr
+        );
+        return ret;
     }
 
     /**

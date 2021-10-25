@@ -5,14 +5,11 @@ import com.linbit.linstor.api.ApiConsts;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- *
- * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
- */
 public class StorageConstants
 {
     public static final String NAMESPACE_STOR_DRIVER = ApiConsts.NAMESPC_STORAGE_DRIVER;
     public static final String NAMESPACE_NVME = ApiConsts.NAMESPC_STORAGE_DRIVER + "/NVME";
+    public static final String NAMESPACE_INTERNAL = NAMESPACE_STOR_DRIVER + "/internal/";
 
     /*
      * LVM
@@ -30,6 +27,8 @@ public class StorageConstants
 
     public static final String CONFIG_SIZE_ALIGN_TOLERANCE_KEY = "alignmentTolerance";
 
+    public static final String KEY_INT_THIN_POOL_GRANULARITY = "lvmthin/thinPoolGranularity";
+    public static final String KEY_INT_THIN_POOL_METADATA_PERCENT = "lvmthin/thinPoolMetadataPercent";
     /*
      * ZFS
      */
